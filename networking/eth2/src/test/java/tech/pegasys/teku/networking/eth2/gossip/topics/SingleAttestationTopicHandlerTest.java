@@ -47,6 +47,7 @@ public class SingleAttestationTopicHandlerTest
         gossipEncoding,
         forkDigest,
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
+        spec.getGenesisSchemaDefinitions().getAttestationSchema(),
         SUBNET_ID,
         GOSSIP_MAX_SIZE);
   }
@@ -141,6 +142,7 @@ public class SingleAttestationTopicHandlerTest
             gossipEncoding,
             forkDigest,
             topicName,
+            spec.getGenesisSchemaDefinitions().getAttestationSchema(),
             0,
             GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");

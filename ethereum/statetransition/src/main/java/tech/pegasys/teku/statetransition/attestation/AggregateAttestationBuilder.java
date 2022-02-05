@@ -65,14 +65,17 @@ class AggregateAttestationBuilder {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
     return ValidateableAttestation.from(
         spec,
-        new Attestation(
-            currentAggregateBits,
-            attestationData,
-            BLS.aggregate(
-                includedAttestations.stream()
-                    .map(ValidateableAttestation::getAttestation)
-                    .map(Attestation::getAggregateSignature)
-                    .collect(Collectors.toList()))));
+        spec.atSlot(attestationData.getSlot())
+            .getSchemaDefinitions()
+            .getAttestationSchema()
+            .create(
+                currentAggregateBits,
+                attestationData,
+                BLS.aggregate(
+                    includedAttestations.stream()
+                        .map(ValidateableAttestation::getAttestation)
+                        .map(Attestation::getAggregateSignature)
+                        .collect(Collectors.toList()))));
   }
 
   public Collection<ValidateableAttestation> getIncludedAttestations() {

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.duties.attestations;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -24,11 +25,15 @@ import tech.pegasys.teku.validator.client.duties.DutyFactory;
 public class AttestationDutyFactory
     implements DutyFactory<AttestationProductionDuty, AggregationDuty> {
 
+  private final Spec spec;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
 
   public AttestationDutyFactory(
-      final ForkProvider forkProvider, final ValidatorApiChannel validatorApiChannel) {
+      final Spec spec,
+      final ForkProvider forkProvider,
+      final ValidatorApiChannel validatorApiChannel) {
+    this.spec = spec;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
   }
@@ -37,6 +42,7 @@ public class AttestationDutyFactory
   public AttestationProductionDuty createProductionDuty(
       final UInt64 slot, final Validator validator) {
     return new AttestationProductionDuty(
+        spec,
         slot,
         forkProvider,
         validatorApiChannel,
@@ -46,6 +52,7 @@ public class AttestationDutyFactory
   @Override
   public AggregationDuty createAggregationDuty(final UInt64 slot, final Validator validator) {
     return new AggregationDuty(
+        spec,
         slot,
         validatorApiChannel,
         forkProvider,

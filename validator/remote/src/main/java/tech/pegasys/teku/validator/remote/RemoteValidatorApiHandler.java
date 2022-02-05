@@ -344,7 +344,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         () ->
             apiClient
                 .createAggregate(slot, attestationHashTreeRoot)
-                .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
+                .map(attestation -> attestation.asInternalAttestation(spec)));
   }
 
   @Override

@@ -37,6 +37,15 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
           .put(
+              "ssz_static/AggregateAndProof",
+              new SszTestExecutor<>(SchemaDefinitions::getAggregateAndProofSchema))
+          .put(
+              "ssz_static/Attestation",
+              new SszTestExecutor<>(SchemaDefinitions::getAttestationSchema))
+          .put(
+              "ssz_static/SignedAggregateAndProof",
+              new SszTestExecutor<>(SchemaDefinitions::getSignedAggregateAndProofSchema))
+          .put(
               "ssz_static/BeaconState",
               new SszTestExecutor<>(SchemaDefinitions::getBeaconStateSchema))
           .put(

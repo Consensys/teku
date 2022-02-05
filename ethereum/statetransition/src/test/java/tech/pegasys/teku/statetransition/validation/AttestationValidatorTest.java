@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -81,6 +82,8 @@ class AttestationValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -120,12 +123,12 @@ class AttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAttestation_whenManyBlocksHaveBeenSkipped() {
     final StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
-    final UInt64 currentSlot = head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3);
+    final UInt64 currentSlot = head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3L);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     final Attestation attestation =
         attestationGenerator.validAttestation(
-            head, head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3));
+            head, head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3L));
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
@@ -140,7 +143,7 @@ class AttestationValidatorTest {
             .ofBits(validAggregationBits.size() + 1)
             .or(validAggregationBits);
     final Attestation invalidAttestation =
-        new Attestation(
+        attestationSchema.create(
             invalidAggregationBits, attestation.getData(), attestation.getAggregateSignature());
     assertThat(validate(invalidAttestation).code()).isEqualTo(REJECT);
   }
@@ -305,7 +308,7 @@ class AttestationValidatorTest {
             validator.validate(
                 ValidateableAttestation.fromNetwork(
                     spec,
-                    new Attestation(
+                    attestationSchema.create(
                         attestation.getAggregationBits(),
                         new AttestationData(
                             data.getSlot(),
@@ -330,7 +333,7 @@ class AttestationValidatorTest {
             validator.validate(
                 ValidateableAttestation.fromNetwork(
                     spec,
-                    new Attestation(
+                    attestationSchema.create(
                         attestation.getAggregationBits(),
                         new AttestationData(
                             data.getSlot(),

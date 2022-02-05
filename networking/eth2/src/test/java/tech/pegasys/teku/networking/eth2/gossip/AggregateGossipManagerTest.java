@@ -65,6 +65,7 @@ public class AggregateGossipManagerTest {
         .subscribe(contains(GossipTopicName.BEACON_AGGREGATE_AND_PROOF.toString()), any());
     gossipManager =
         new AggregateGossipManager(
+            spec,
             storageSystem.recentChainData(),
             asyncRunner,
             gossipNetwork,

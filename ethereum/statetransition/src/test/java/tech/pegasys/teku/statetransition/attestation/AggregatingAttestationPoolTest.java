@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
@@ -48,6 +49,8 @@ class AggregatingAttestationPoolTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final Spec mockSpec = mock(Spec.class);
 
   private final AggregatingAttestationPool aggregatingPool =
@@ -69,6 +72,7 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.getCurrentEpoch(any())).thenAnswer(i -> spec.getCurrentEpoch(i.getArgument(0)));
     when(mockSpec.createAttestationWorthinessChecker(any()))
         .thenAnswer(i -> spec.createAttestationWorthinessChecker(i.getArgument(0)));
+    when(mockSpec.atSlot(any())).thenAnswer(invocation -> spec.atSlot(invocation.getArgument(0)));
   }
 
   @Test
@@ -505,8 +509,7 @@ class AggregatingAttestationPoolTest {
   }
 
   private Attestation createAttestation(final AttestationData data, final int... validators) {
-    final SszBitlist bitlist =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(20, validators);
-    return new Attestation(bitlist, data, dataStructureUtil.randomSignature());
+    final SszBitlist bitlist = attestationSchema.getAggregationBitsSchema().ofBits(20, validators);
+    return attestationSchema.create(bitlist, data, dataStructureUtil.randomSignature());
   }
 }

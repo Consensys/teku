@@ -100,7 +100,7 @@ public class BeaconBlockBody {
               .graffiti(graffiti)
               .attestations(
                   attestations.stream()
-                      .map(Attestation::asInternalAttestation)
+                      .map(attestation -> attestation.asInternalAttestation(spec))
                       .collect(schema.getAttestationsSchema().collector()))
               .proposerSlashings(
                   proposer_slashings.stream()

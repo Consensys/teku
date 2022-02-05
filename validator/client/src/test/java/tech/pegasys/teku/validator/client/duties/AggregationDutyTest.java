@@ -39,10 +39,14 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -55,7 +59,12 @@ import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSe
 class AggregationDutyTest {
   private static final String TYPE = "aggregate";
   private static final UInt64 SLOT = UInt64.valueOf(2832);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AggregateAndProofSchema aggregateAndProofSchema =
+      spec.getGenesisSchemaDefinitions().getAggregateAndProofSchema();
+  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema =
+      spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
@@ -69,6 +78,7 @@ class AggregationDutyTest {
 
   private final AggregationDuty duty =
       new AggregationDuty(
+          spec,
           SLOT,
           validatorApiChannel,
           forkProvider,
@@ -106,7 +116,7 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
-        new AggregateAndProof(UInt64.valueOf(validatorIndex), aggregate, proof);
+        aggregateAndProofSchema.create(UInt64.valueOf(validatorIndex), aggregate, proof);
     final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(expectedAggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature));
@@ -115,7 +125,9 @@ class AggregationDutyTest {
 
     verify(validatorApiChannel)
         .sendAggregateAndProofs(
-            List.of(new SignedAggregateAndProof(expectedAggregateAndProof, aggregateSignature)));
+            List.of(
+                signedAggregateAndProofSchema.create(
+                    expectedAggregateAndProof, aggregateSignature)));
   }
 
   @SuppressWarnings("unchecked")
@@ -152,10 +164,10 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
-        new AggregateAndProof(
+        aggregateAndProofSchema.create(
             UInt64.valueOf(validator1Index), committee1Aggregate, validator1Proof);
     final AggregateAndProof aggregateAndProof2 =
-        new AggregateAndProof(
+        aggregateAndProofSchema.create(
             UInt64.valueOf(validator2Index), committee2Aggregate, validator2Proof);
     final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
     final BLSSignature aggregateSignature2 = dataStructureUtil.randomSignature();
@@ -172,8 +184,8 @@ class AggregationDutyTest {
 
     assertThat(argumentCaptor.getValue())
         .containsExactlyInAnyOrder(
-            new SignedAggregateAndProof(aggregateAndProof1, aggregateSignature1),
-            new SignedAggregateAndProof(aggregateAndProof2, aggregateSignature2));
+            signedAggregateAndProofSchema.create(aggregateAndProof1, aggregateSignature1),
+            signedAggregateAndProofSchema.create(aggregateAndProof2, aggregateSignature2));
   }
 
   @Test
@@ -207,7 +219,7 @@ class AggregationDutyTest {
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(UInt64.valueOf(validator1Index), aggregate, validator1Proof);
+        aggregateAndProofSchema.create(UInt64.valueOf(validator1Index), aggregate, validator1Proof);
     final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(aggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature1));
@@ -216,7 +228,7 @@ class AggregationDutyTest {
 
     verify(validatorApiChannel)
         .sendAggregateAndProofs(
-            List.of(new SignedAggregateAndProof(aggregateAndProof, aggregateSignature1)));
+            List.of(signedAggregateAndProofSchema.create(aggregateAndProof, aggregateSignature1)));
     // Only one proof should be sent.
     verify(validatorApiChannel, times(1)).sendAggregateAndProofs(anyList());
     verify(validatorLogger)

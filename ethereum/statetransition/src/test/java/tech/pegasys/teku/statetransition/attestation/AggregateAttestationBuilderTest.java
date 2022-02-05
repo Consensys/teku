@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -33,6 +33,8 @@ class AggregateAttestationBuilderTest {
   public static final int BITLIST_SIZE = 10;
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
   private final AggregateAttestationBuilder builder =
@@ -78,7 +80,7 @@ class AggregateAttestationBuilderTest {
     builder.aggregate(attestation3);
 
     final SszBitlist expectedAggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(BITLIST_SIZE, 1, 2, 3);
+        attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, 1, 2, 3);
 
     final BLSSignature expectedSignature =
         BLS.aggregate(
@@ -91,7 +93,8 @@ class AggregateAttestationBuilderTest {
         .isEqualTo(
             ValidateableAttestation.from(
                 spec,
-                new Attestation(expectedAggregationBits, attestationData, expectedSignature)));
+                attestationSchema.create(
+                    expectedAggregationBits, attestationData, expectedSignature)));
   }
 
   @Test
@@ -101,9 +104,10 @@ class AggregateAttestationBuilderTest {
 
   private ValidateableAttestation createAttestation(final int... validators) {
     final SszBitlist aggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
+        attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
     return ValidateableAttestation.from(
         spec,
-        new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
+        attestationSchema.create(
+            aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

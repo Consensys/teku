@@ -49,8 +49,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
   static final long ATTESTATION_RETENTION_EPOCHS = 2;
-  private static final SszListSchema<Attestation, ?> ATTESTATIONS_SCHEMA =
-      SszListSchema.create(Attestation.SSZ_SCHEMA, 128);
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
@@ -137,6 +135,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
+    final SszListSchema<Attestation, ?> attestationsSchema =
+        spec.atSlot(stateAtBlockSlot.getSlot())
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .getAttestationsSchema();
+
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
     return dataHashBySlot.descendingMap().values().stream()
         .flatMap(Collection::stream)
@@ -146,7 +150,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .filter(group -> worthinessChecker.areAttestationsWorthy(group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
-        .limit(ATTESTATIONS_SCHEMA.getMaxLength())
+        .limit(attestationsSchema.getMaxLength())
         .map(ValidateableAttestation::getAttestation)
         .filter(
             att -> {
@@ -156,7 +160,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               }
               return true;
             })
-        .collect(ATTESTATIONS_SCHEMA.collector());
+        .collect(attestationsSchema.collector());
   }
 
   public synchronized Stream<Attestation> getAttestations(

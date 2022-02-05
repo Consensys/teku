@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -66,6 +67,8 @@ class ForkChoiceTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
           .storageMode(StateStorageMode.PRUNE)
@@ -640,8 +643,8 @@ class ForkChoiceTest {
     // Attestation where the target checkpoint has a slot prior to the block it references
     final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
     final Attestation attestation =
-        new Attestation(
-            Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(5),
+        attestationSchema.create(
+            attestationSchema.getAggregationBitsSchema().ofBits(5),
             new AttestationData(
                 targetBlock.getSlot(),
                 spec.computeEpochAtSlot(targetBlock.getSlot()),
@@ -667,8 +670,8 @@ class ForkChoiceTest {
     final ValidateableAttestation updatedVote =
         ValidateableAttestation.from(
             spec,
-            new Attestation(
-                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(16),
+            attestationSchema.create(
+                attestationSchema.getAggregationBitsSchema().ofBits(16),
                 new AttestationData(
                     updatedAttestationSlot,
                     UInt64.ONE,
