@@ -78,6 +78,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
     final BatchSync batchSync =
         BatchSync.create(
             eventThread,
+            asyncRunner,
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
             new BatchFactory(eventThread, new PeerScoringConflictResolutionStrategy()),

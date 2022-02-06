@@ -15,6 +15,7 @@ package tech.pegasys.teku.sync.forward.multipeer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
+import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.SERVICE_OFFLINE;
 import static tech.pegasys.teku.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
 import static tech.pegasys.teku.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 
@@ -33,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -63,6 +66,7 @@ class BatchSyncTest {
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
   private final SyncSource syncSource = mock(SyncSource.class);
   private final BatchImporter batchImporter = mock(BatchImporter.class);
@@ -78,6 +82,7 @@ class BatchSyncTest {
   private final BatchSync sync =
       BatchSync.create(
           eventThread,
+          asyncRunner,
           recentChainData,
           batchImporter,
           batches,
@@ -906,6 +911,52 @@ class BatchSyncTest {
           assertThat(sync.getLastImportTimerStartPointSeconds())
               .isEqualTo(timeProvider.getTimeInSeconds());
         });
+  }
+
+  @Test
+  void shouldPauseImportingWhenImportingServiceOffline() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    final Batch batch2 = batches.get(2);
+
+    // Receive a sequence of blocks that all form a chain
+    batches.receiveBlocks(
+        batch0, chainBuilder.generateBlockAtSlot(batch0.getFirstSlot()).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+    batches.receiveBlocks(
+        batch2, chainBuilder.generateBlockAtSlot(batch2.getFirstSlot()).getBlock());
+
+    // But then it turns out that a batch0 is not processed because importing is offline
+    batches.getImportResult(batch0).complete(SERVICE_OFFLINE);
+
+    // This shouldn't make batches invalid
+    batches.assertNotMarkedInvalid(batch0);
+    batches.assertNotMarkedInvalid(batch1);
+    batches.assertNotMarkedInvalid(batch2);
+
+    // Check that later we still have no changes since importing is still offline
+    timeProvider.advanceTimeBySeconds(100);
+    asyncRunner.executeDueActionsRepeatedly();
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    assertBatchActive(batch0);
+    assertBatchActive(batch1);
+
+    // But then it turns out that an importing goes back online
+    batches.resetImportResult(batch0);
+    batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
+    timeProvider.advanceTimeBySeconds(10);
+    asyncRunner.executeDueActionsRepeatedly();
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    batches.getImportResult(batch1).complete(IMPORTED_ALL_BLOCKS);
+    assertBatchNotActive(batch0);
+    // Because there were several retries for batch0
+    verify(batchImporter, atLeastOnce()).importBatch(batches.getEventThreadOnlyBatch(batch0));
+    assertBatchImported(batch1);
+    verify(batchImporter).importBatch(batches.getEventThreadOnlyBatch(batch1));
+    assertBatchNotActive(batch1);
   }
 
   private void assertBatchNotActive(final Batch batch) {

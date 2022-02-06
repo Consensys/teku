@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.forward.multipeer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -151,6 +152,40 @@ class BatchImporterTest {
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
     verify(batch).getSource();
     verify(syncSource).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+
+    verifyNoMoreInteractions(blockImporter);
+  }
+
+  @Test
+  void shouldNotDisconnectPeersWhenServiceOffline() {
+    when(syncSource.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
+
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final SafeFuture<BlockImportResult> importResult1 = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> importResult2 = new SafeFuture<>();
+    when(batch.getBlocks()).thenReturn(List.of(block1, block2));
+    when(blockImporter.importBlock(block1)).thenReturn(importResult1);
+    when(blockImporter.importBlock(block2)).thenReturn(importResult2);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+
+    // Should not be started on the calling thread
+    verifyNoInteractions(blockImporter);
+
+    asyncRunner.executeQueuedActions();
+
+    blockImportedSuccessfully(block1, importResult1);
+    assertThat(result).isNotDone();
+
+    ignoreFuture(verify(blockImporter).importBlock(block2));
+    verifyNoMoreInteractions(blockImporter);
+
+    // Import failed due to service being offline
+    importResult2.complete(BlockImportResult.failedExecutionPayloadExecution(new Error()));
+    assertThat(result).isCompletedWithValue(BatchImportResult.SERVICE_OFFLINE);
+    verify(batch).getSource();
+    verify(syncSource, never()).disconnectCleanly(any());
 
     verifyNoMoreInteractions(blockImporter);
   }

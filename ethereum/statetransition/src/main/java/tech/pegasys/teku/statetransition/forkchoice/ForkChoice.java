@@ -254,8 +254,6 @@ public class ForkChoice {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    final ExecutionPayloadStatus payloadResultStatus = payloadResult.getStatus().orElseThrow();
-
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
 
     // Now that we're on the fork choice thread, make sure the block still descends from finalized
@@ -289,8 +287,7 @@ public class ForkChoice {
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
-    forkChoiceStrategy.onExecutionPayloadResult(
-        block.getRoot(), payloadResultStatus, payloadResult.getLatestValidHash());
+    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -302,6 +299,7 @@ public class ForkChoice {
     }
 
     final BlockImportResult result;
+    final ExecutionPayloadStatus payloadResultStatus = payloadResult.getStatus().orElseThrow();
     if (payloadResultStatus == ExecutionPayloadStatus.VALID) {
       result = BlockImportResult.successful(block);
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
@@ -332,8 +330,7 @@ public class ForkChoice {
               recentChainData
                   .getForkChoiceStrategy()
                   .orElseThrow()
-                  .onExecutionPayloadResult(
-                      blockRoot, result.getStatus().orElseThrow(), result.getLatestValidHash());
+                  .onExecutionPayloadResult(blockRoot, result);
             })
         .reportExceptions();
   }
