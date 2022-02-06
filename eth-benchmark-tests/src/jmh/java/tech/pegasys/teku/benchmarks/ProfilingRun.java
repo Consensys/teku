@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -62,7 +61,6 @@ public class ProfilingRun {
   @Test
   public void importBlocks() throws Exception {
 
-    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
@@ -144,7 +142,6 @@ public class ProfilingRun {
   @Test
   public void importBlocksMemProfiling() throws Exception {
 
-    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
