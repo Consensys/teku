@@ -26,7 +26,6 @@ import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
@@ -36,8 +35,6 @@ public class JsonProvider {
   private void addTekuMappers() {
     SimpleModule module = new SimpleModule("TekuJson", new Version(1, 0, 0, null, null, null));
 
-    module.addSerializer(SszBitlist.class, new SszBitlistSerializer());
-    module.addDeserializer(SszBitlist.class, new SszBitlistDeserializer());
     module.addDeserializer(SszBitvector.class, new SszBitvectorDeserializer());
     module.addSerializer(SszBitvector.class, new SszBitvectorSerializer());
 
