@@ -58,9 +58,7 @@ class MetricsDataFactoryTest {
     final MetricsDataFactory factory =
         new MetricsDataFactory(prometheusMetricsSystem, timeProvider, tempDir.toFile());
     MetricsPublisherSource source =
-        StubMetricsPublisherSource.builder()
-            .isBeaconNodePresent(true)
-            .build();
+        StubMetricsPublisherSource.builder().isBeaconNodePresent(true).build();
 
     final List<BaseMetricData> data = factory.getMetricData(source);
     assertThat(data.size()).isEqualTo(1);

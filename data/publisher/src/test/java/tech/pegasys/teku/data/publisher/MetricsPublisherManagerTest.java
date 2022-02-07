@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +63,9 @@ class MetricsPublisherManagerTest {
 
   @Test
   public void shouldRunPublisherEveryXSeconds(@TempDir final Path tempDir) throws IOException {
-    when(prometheusMetricsSystem.streamObservations()).thenReturn(metricsStream()).thenReturn(metricsStream());
+    when(prometheusMetricsSystem.streamObservations())
+        .thenReturn(metricsStream())
+        .thenReturn(metricsStream());
     when(dataDirLayout.getBeaconDataDirectory()).thenReturn(tempDir);
     publisherManager =
         new MetricsPublisherManager(
@@ -105,14 +106,12 @@ class MetricsPublisherManagerTest {
     verify(metricsPublisher, never()).publishMetrics(anyString());
   }
 
-
   private Stream<Observation> metricsStream() {
     return Stream.of(
         new Observation(
             TekuMetricCategory.VALIDATOR,
             "local_validator_counts",
             44.0,
-            List.of("active_ongoing"))
-    );
+            List.of("active_ongoing")));
   }
 }
