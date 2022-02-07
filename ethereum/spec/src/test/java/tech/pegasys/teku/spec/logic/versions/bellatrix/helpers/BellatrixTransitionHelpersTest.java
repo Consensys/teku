@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
@@ -78,16 +77,11 @@ class BellatrixTransitionHelpersTest {
   }
 
   @Test
-  void shouldExecutePayloadIfTerminalDifficultyConditionsMet() {
+  void shouldBeValidIfTerminalDifficultyConditionsMet() {
     final PowBlock powBlock = withPowBlock(payload.getParentHash(), terminalDifficulty.plus(1));
     withPowBlock(powBlock.getParentHash(), terminalDifficulty.subtract(1));
 
-    final ExecutePayloadResult expectedPayloadResult = ExecutePayloadResult.VALID;
-    when(executionEngine.executePayload(payload))
-        .thenReturn(SafeFuture.completedFuture(expectedPayloadResult));
-
-    assertThat(validateMergeBlock()).isCompletedWithValue(expectedPayloadResult);
-    verify(executionEngine).executePayload(payload);
+    assertThat(validateMergeBlock()).isCompletedWithValue(ExecutePayloadResult.VALID);
   }
 
   private PowBlock withPowBlock(final Bytes32 hash, final UInt256 totalDifficulty) {

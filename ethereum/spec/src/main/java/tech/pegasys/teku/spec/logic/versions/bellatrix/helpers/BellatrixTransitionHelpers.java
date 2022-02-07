@@ -50,14 +50,11 @@ public class BellatrixTransitionHelpers {
       final ExecutionEngineChannel executionEngine, final ExecutionPayload executionPayload) {
     return executionEngine
         .getPowBlock(executionPayload.getParentHash())
-        .thenCompose(
-            maybePowBlock -> validatePowBlock(executionEngine, executionPayload, maybePowBlock));
+        .thenCompose(maybePowBlock -> validatePowBlock(executionEngine, maybePowBlock));
   }
 
   private SafeFuture<ExecutePayloadResult> validatePowBlock(
-      final ExecutionEngineChannel executionEngine,
-      final ExecutionPayload executionPayload,
-      final Optional<PowBlock> maybePowBlock) {
+      final ExecutionEngineChannel executionEngine, final Optional<PowBlock> maybePowBlock) {
     if (maybePowBlock.isEmpty()) {
       return completedFuture(ExecutePayloadResult.SYNCING);
     }
@@ -65,7 +62,7 @@ public class BellatrixTransitionHelpers {
     if (isBelowTotalDifficulty(powBlock)) {
       return invalid("PowBlock has not reached terminal total difficulty");
     }
-    return validateParentPowBlock(executionEngine, executionPayload, powBlock.getParentHash());
+    return validateParentPowBlock(executionEngine, powBlock.getParentHash());
   }
 
   private static SafeFuture<ExecutePayloadResult> invalid(final String message) {
@@ -73,9 +70,7 @@ public class BellatrixTransitionHelpers {
   }
 
   private SafeFuture<ExecutePayloadResult> validateParentPowBlock(
-      final ExecutionEngineChannel executionEngine,
-      final ExecutionPayload executionPayload,
-      final Bytes32 parentBlockHash) {
+      final ExecutionEngineChannel executionEngine, final Bytes32 parentBlockHash) {
     return executionEngine
         .getPowBlock(parentBlockHash)
         .thenCompose(
@@ -87,7 +82,7 @@ public class BellatrixTransitionHelpers {
               if (!isBelowTotalDifficulty(parentPowBlock)) {
                 return invalid("Parent PowBlock exceeds terminal total difficulty");
               }
-              return executionEngine.executePayload(executionPayload);
+              return completedFuture(ExecutePayloadResult.VALID);
             });
   }
 
