@@ -14,8 +14,6 @@
 package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.File;
-import org.apache.commons.io.FileUtils;
 import tech.pegasys.teku.infrastructure.metrics.MetricsPublishCategories;
 
 public class BeaconNodeMetricData extends GeneralProcessMetricData {
@@ -49,14 +47,9 @@ public class BeaconNodeMetricData extends GeneralProcessMetricData {
   @JsonProperty("slasher_active")
   private final boolean slasherActive = false;
 
-  public BeaconNodeMetricData(
-      final long timestamp, final MetricsPublisherSource source, final File dataDirectory) {
+  public BeaconNodeMetricData(final long timestamp, final MetricsPublisherSource source) {
     super(timestamp, MetricsPublishCategories.BEACON_NODE.getDisplayName(), source);
-    if (dataDirectory != null && dataDirectory.exists() && dataDirectory.isDirectory()) {
-      this.diskBytesTotal = FileUtils.sizeOfDirectory(dataDirectory);
-    } else {
-      this.diskBytesTotal = 0L;
-    }
+    this.diskBytesTotal = 0L;
     this.libp2pBytesReceived = source.getGossipBytesTotalReceived();
     this.libp2pBytesTotalTransmitted = source.getGossipBytesTotalSent();
     this.networkPeersConnected = source.getPeerCount();

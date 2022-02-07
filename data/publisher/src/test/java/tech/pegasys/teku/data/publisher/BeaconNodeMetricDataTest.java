@@ -18,9 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
@@ -28,7 +26,7 @@ public class BeaconNodeMetricDataTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
-  void shouldSerialize(@TempDir final Path tempDir) throws JsonProcessingException {
+  void shouldSerialize() throws JsonProcessingException {
     final MetricsPublisherSource source =
         StubMetricsPublisherSource.builder()
             .gossipBytesReceived(998L)
@@ -36,7 +34,7 @@ public class BeaconNodeMetricDataTest {
             .gossipBytesSent(776L)
             .isEth2Synced(true)
             .build();
-    final BeaconNodeMetricData process = new BeaconNodeMetricData(10L, source, tempDir.toFile());
+    final BeaconNodeMetricData process = new BeaconNodeMetricData(10L, source);
     final String data = jsonProvider.objectToJSON(process);
     final ObjectMapper mapper = jsonProvider.getObjectMapper();
     final JsonNode node = mapper.readTree(data);

@@ -76,7 +76,7 @@ public abstract class AbstractNode implements Node {
             dataDirLayout);
     this.metricsPublisher =
         new MetricsPublisherManager(
-            asyncRunnerFactory, serviceConfig.getTimeProvider(), metricsEndpoint, dataDirLayout);
+            asyncRunnerFactory, serviceConfig.getTimeProvider(), metricsEndpoint);
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getSpec());
   }
 

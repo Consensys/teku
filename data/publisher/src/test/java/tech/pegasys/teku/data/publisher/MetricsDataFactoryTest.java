@@ -16,11 +16,9 @@ package tech.pegasys.teku.data.publisher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import java.nio.file.Path;
 import java.util.List;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -35,13 +33,10 @@ class MetricsDataFactoryTest {
   @ParameterizedTest(name = "Total_{0}_Active_{1}")
   @MethodSource("getValidatorParams")
   void shouldIncludeValidatorMetricsInPublish(
-      final int validatorsTotal,
-      final int validatorsActive,
-      final boolean isValidatorActive,
-      @TempDir final Path tempDir) {
+      final int validatorsTotal, final int validatorsActive, final boolean isValidatorActive) {
 
     final MetricsDataFactory factory =
-        new MetricsDataFactory(prometheusMetricsSystem, timeProvider, tempDir.toFile());
+        new MetricsDataFactory(prometheusMetricsSystem, timeProvider);
     MetricsPublisherSource source =
         StubMetricsPublisherSource.builder()
             .validatorsActive(validatorsActive)
@@ -54,9 +49,9 @@ class MetricsDataFactoryTest {
   }
 
   @Test
-  void shouldIncludeBeaconMetricsInPublish(@TempDir final Path tempDir) {
+  void shouldIncludeBeaconMetricsInPublish() {
     final MetricsDataFactory factory =
-        new MetricsDataFactory(prometheusMetricsSystem, timeProvider, tempDir.toFile());
+        new MetricsDataFactory(prometheusMetricsSystem, timeProvider);
     MetricsPublisherSource source =
         StubMetricsPublisherSource.builder().isBeaconNodePresent(true).build();
 

@@ -17,7 +17,6 @@ import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EXECUTOR;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.VALIDATOR;
 
 import java.util.List;
@@ -29,8 +28,6 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
   private long cpuSecondsTotal;
   private long memoryProcessBytes;
   private long headSlot;
-  private long gossipBytesTotalSent;
-  private long gossipBytesTotalReceived;
   private int validatorsTotal;
   private int validatorsActive;
   private int peerCount;
@@ -94,12 +91,12 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
 
   @Override
   public long getGossipBytesTotalSent() {
-    return gossipBytesTotalSent;
+    return 0L;
   }
 
   @Override
   public long getGossipBytesTotalReceived() {
-    return gossipBytesTotalReceived;
+    return 0L;
   }
 
   private void storeObservationIfNeeded(final Observation observation) {
@@ -114,18 +111,6 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
       readJvmCategoryItem(observation);
     } else if (category.equals(BEACON)) {
       readBeaconCategoryItem(observation);
-    } else if (category.equals(LIBP2P)) {
-      readLibP2pCategoryItem(observation);
-    }
-  }
-
-  private void readLibP2pCategoryItem(final Observation observation) {
-    if (observation.getMetricName().equals("gossip_bytes_total")) {
-      if (observation.getLabels().contains("received_bytes")) {
-        gossipBytesTotalReceived = getLongValue(observation.getValue());
-      } else if (observation.getLabels().contains("sent_bytes")) {
-        gossipBytesTotalSent = getLongValue(observation.getValue());
-      }
     }
   }
 
