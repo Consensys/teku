@@ -299,8 +299,7 @@ public class ForkChoice {
     }
 
     final BlockImportResult result;
-    final ExecutionPayloadStatus payloadResultStatus = payloadResult.getStatus().orElseThrow();
-    if (payloadResultStatus.isValid()) {
+    if (payloadResult.hasValidStatus()) {
       result = BlockImportResult.successful(block);
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     } else {
