@@ -15,7 +15,7 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:ssz')
   implementation project(':pow')
-  implementation project(':sync')
+  implementation project(':beacon:sync')
   implementation project(':data:serializer')
   implementation project(':data:provider')
   implementation project(':infrastructure:events')

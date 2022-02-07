@@ -1,0 +1,56 @@
+dependencies {
+    implementation project(':data')
+    implementation project(':ethereum:core')
+    implementation project(':ethereum:spec')
+    implementation project(':ethereum:statetransition')
+    implementation project(':infrastructure:async')
+    implementation project(':networking:p2p')
+    implementation project(':networking:eth2')
+    implementation project(':infrastructure:collections')
+    implementation project(':infrastructure:exceptions')
+    implementation project(':infrastructure:logging')
+    implementation project(':infrastructure:metrics')
+    implementation project(':infrastructure:subscribers')
+    implementation project(':infrastructure:serviceutils')
+    implementation project(':infrastructure:ssz')
+    implementation project(':storage')
+    implementation project(':storage:api')
+    implementation project(':infrastructure:events')
+
+    implementation 'org.apache.tuweni:tuweni-bytes'
+
+    testImplementation testFixtures(project(':ethereum:core'))
+    testImplementation testFixtures(project(':ethereum:spec'))
+    testImplementation testFixtures(project(':ethereum:statetransition'))
+    testImplementation project(':ethereum:weaksubjectivity')
+    testImplementation testFixtures(project(':infrastructure:async'))
+    testImplementation testFixtures(project(':infrastructure:time'))
+    testImplementation testFixtures(project('::networking:eth2'))
+    testImplementation testFixtures(project('::networking:p2p'))
+    testImplementation 'org.hyperledger.besu.internal:metrics-core'
+
+    integrationTestImplementation testFixtures(project(':infrastructure:bls'))
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
+    integrationTestImplementation testFixtures(project('::networking:eth2'))
+    integrationTestImplementation testFixtures(project(':beacon:sync'))
+
+    testFixturesImplementation project(':infrastructure:serviceutils')
+    testFixturesImplementation project(':ethereum:statetransition')
+    testFixturesImplementation project(':ethereum:weaksubjectivity')
+
+    testFixturesImplementation testFixtures(project(':ethereum:core'))
+    testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+    testFixturesImplementation testFixtures(project(':ethereum:spec'))
+    testFixturesImplementation testFixtures(project(':ethereum:networks'))
+    testFixturesImplementation testFixtures(project(':ethereum:weaksubjectivity'))
+    testFixturesImplementation testFixtures(project(':infrastructure:async'))
+    testFixturesImplementation testFixtures(project(':infrastructure:unsigned'))
+    testFixturesImplementation testFixtures(project('::networking:eth2'))
+    testFixturesImplementation testFixtures(project('::networking:p2p'))
+    testFixturesImplementation testFixtures(project('::infrastructure:events'))
+
+    testFixturesImplementation 'org.mockito:mockito-core'
+    testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+    testFixturesImplementation 'com.google.guava:guava'
+}

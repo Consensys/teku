@@ -23,8 +23,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STA
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.sync.events.SyncState;
 
 public class GetHealthTest extends AbstractBeaconHandlerTest {
 

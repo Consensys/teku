@@ -24,6 +24,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
+import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -46,9 +49,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.events.SyncState;
-import tech.pegasys.teku.sync.events.SyncStateProvider;
-import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 public class ValidatorApiHandlerIntegrationTest {

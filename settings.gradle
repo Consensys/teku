@@ -1,5 +1,6 @@
 rootProject.name='teku'
 include 'acceptance-tests'
+include 'beacon:sync'
 include 'beacon:validator'
 include 'ethereum:core'
 include 'ethereum:spec'
