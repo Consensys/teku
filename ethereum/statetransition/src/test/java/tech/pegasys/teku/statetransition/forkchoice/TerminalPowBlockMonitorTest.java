@@ -55,7 +55,7 @@ public class TerminalPowBlockMonitorTest {
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;

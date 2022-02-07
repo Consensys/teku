@@ -114,7 +114,6 @@ class ForkChoicePayloadExecutorTest {
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
         .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
-    ;
   }
 
   @Test
