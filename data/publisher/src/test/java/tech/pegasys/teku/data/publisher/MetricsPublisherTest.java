@@ -43,29 +43,13 @@ class MetricsPublisherTest {
 
   @Test
   void shouldPublishMetrics() throws IOException, InterruptedException {
-    String json =
-        "{ \"version\": 1, \"timestamp\": "
-            + System.currentTimeMillis()
-            + ", \"process\": \"validator\", "
-            + "\"client_name\": \"Teku\", "
-            + "\"client_version\": \"1.1\", "
-            + "\"client_build\": 11}";
-    metricsPublisher = new MetricsPublisher(okHttpClient);
+    String json = "{ \"version\": 1}";
+    metricsPublisher = new MetricsPublisher(okHttpClient, mockWebServer.url("/"));
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
-    metricsPublisher.publishMetrics(mockWebServer.url("/").toString(), json);
+    metricsPublisher.publishMetrics(json);
 
     RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(json);
-  }
-
-  @Test
-  void shouldReturnErrorFromServer() throws IOException {
-    String json = "{}";
-    int serverInternalError = 500;
-    metricsPublisher = new MetricsPublisher(okHttpClient);
-    mockWebServer.enqueue(new MockResponse().setResponseCode(serverInternalError));
-    int responseCode = metricsPublisher.publishMetrics(mockWebServer.url("/").toString(), json);
-    assertThat(responseCode).isEqualTo(serverInternalError);
   }
 }

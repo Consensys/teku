@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
@@ -30,20 +31,23 @@ public class AttesterSlashing
   public static class AttesterSlashingSchema
       extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
-    public AttesterSlashingSchema() {
+    public AttesterSlashingSchema(final IndexedAttestationSchema indexedAttestationSchema) {
       super(
           "AttesterSlashing",
-          namedSchema("attestation_1", IndexedAttestation.SSZ_SCHEMA),
-          namedSchema("attestation_2", IndexedAttestation.SSZ_SCHEMA));
+          namedSchema("attestation_1", indexedAttestationSchema),
+          namedSchema("attestation_2", indexedAttestationSchema));
     }
 
     @Override
     public AttesterSlashing createFromBackingNode(TreeNode node) {
       return new AttesterSlashing(this, node);
     }
-  }
 
-  public static final AttesterSlashingSchema SSZ_SCHEMA = new AttesterSlashingSchema();
+    public AttesterSlashing create(
+        final IndexedAttestation attestation1, final IndexedAttestation attestation2) {
+      return new AttesterSlashing(this, attestation1, attestation2);
+    }
+  }
 
   private final Supplier<Set<UInt64>> intersectingIndices =
       Suppliers.memoize(
@@ -59,8 +63,16 @@ public class AttesterSlashing
     super(type, backingNode);
   }
 
-  public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
-    super(SSZ_SCHEMA, attestation_1, attestation_2);
+  private AttesterSlashing(
+      final AttesterSlashingSchema schema,
+      final IndexedAttestation attestation1,
+      final IndexedAttestation attestation2) {
+    super(schema, attestation1, attestation2);
+  }
+
+  @Override
+  public AttesterSlashingSchema getSchema() {
+    return (AttesterSlashingSchema) super.getSchema();
   }
 
   public Set<UInt64> getIntersectingValidatorIndices() {

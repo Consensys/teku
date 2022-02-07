@@ -23,10 +23,12 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -38,6 +40,7 @@ public class AggregationDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final ConcurrentMap<Integer, CommitteeAggregator> aggregatorsByCommitteeIndex =
       new ConcurrentHashMap<>();
+  private final Spec spec;
   private final UInt64 slot;
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
@@ -45,11 +48,13 @@ public class AggregationDuty implements Duty {
   private final SendingStrategy<SignedAggregateAndProof> sendingStrategy;
 
   public AggregationDuty(
+      final Spec spec,
       final UInt64 slot,
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final ValidatorLogger validatorLogger,
       final SendingStrategy<SignedAggregateAndProof> sendingStrategy) {
+    this.spec = spec;
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
@@ -131,8 +136,12 @@ public class AggregationDuty implements Duty {
 
   private SafeFuture<ProductionResult<SignedAggregateAndProof>> createSignedAggregateAndProof(
       final CommitteeAggregator aggregator, final Attestation aggregate) {
+    final SchemaDefinitions schemaDefinitions =
+        spec.atSlot(aggregate.getData().getSlot()).getSchemaDefinitions();
     final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(aggregator.validatorIndex, aggregate, aggregator.proof);
+        schemaDefinitions
+            .getAggregateAndProofSchema()
+            .create(aggregator.validatorIndex, aggregate, aggregator.proof);
     return forkProvider
         .getForkInfo(slot)
         .thenCompose(
@@ -146,7 +155,9 @@ public class AggregationDuty implements Duty {
                             ProductionResult.success(
                                 aggregator.validator.getPublicKey(),
                                 aggregateAndProof.getAggregate().getData().getBeacon_block_root(),
-                                new SignedAggregateAndProof(aggregateAndProof, signature))));
+                                schemaDefinitions
+                                    .getSignedAggregateAndProofSchema()
+                                    .create(aggregateAndProof, signature))));
   }
 
   private static class CommitteeAggregator {

@@ -153,7 +153,9 @@ public class ValidatorDataProvider {
       List<Attestation> attestations) {
     return validatorApiChannel
         .sendSignedAttestations(
-            attestations.stream().map(Attestation::asInternalAttestation).collect(toList()))
+            attestations.stream()
+                .map(attestation -> attestation.asInternalAttestation(spec))
+                .collect(toList()))
         .thenApply(this::convertToPostDataFailureResponse);
   }
 
@@ -239,7 +241,7 @@ public class ValidatorDataProvider {
     return validatorApiChannel
         .sendAggregateAndProofs(
             aggregateAndProofs.stream()
-                .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
+                .map(proof -> proof.asInternalSignedAggregateAndProof(spec))
                 .collect(toList()))
         .thenApply(this::convertToPostDataFailureResponse);
   }

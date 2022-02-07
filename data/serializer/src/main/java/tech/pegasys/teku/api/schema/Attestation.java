@@ -20,11 +20,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final SszBitlist aggregation_bits;
+  public final Bytes aggregation_bits;
 
   public final AttestationData data;
 
@@ -32,14 +35,14 @@ public class Attestation {
   public final BLSSignature signature;
 
   public Attestation(tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
-    this.aggregation_bits = attestation.getAggregationBits();
+    this.aggregation_bits = attestation.getAggregationBits().sszSerialize();
     this.data = new AttestationData(attestation.getData());
     this.signature = new BLSSignature(attestation.getAggregateSignature());
   }
 
   @JsonCreator
   public Attestation(
-      @JsonProperty("aggregation_bits") final SszBitlist aggregation_bits,
+      @JsonProperty("aggregation_bits") final Bytes aggregation_bits,
       @JsonProperty("data") final AttestationData data,
       @JsonProperty("signature") final BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
@@ -47,9 +50,19 @@ public class Attestation {
     this.signature = signature;
   }
 
-  public tech.pegasys.teku.spec.datastructures.operations.Attestation asInternalAttestation() {
-    return new tech.pegasys.teku.spec.datastructures.operations.Attestation(
-        aggregation_bits, data.asInternalAttestationData(), signature.asInternalBLSSignature());
+  public tech.pegasys.teku.spec.datastructures.operations.Attestation asInternalAttestation(
+      final Spec spec) {
+    return asInternalAttestation(spec.atSlot(data.slot));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.operations.Attestation asInternalAttestation(
+      final SpecVersion specVersion) {
+    final AttestationSchema attestationSchema =
+        specVersion.getSchemaDefinitions().getAttestationSchema();
+    return attestationSchema.create(
+        attestationSchema.getAggregationBitsSchema().sszDeserialize(aggregation_bits),
+        data.asInternalAttestationData(),
+        signature.asInternalBLSSignature());
   }
 
   @Override

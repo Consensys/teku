@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.util;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
@@ -93,6 +94,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -106,12 +108,14 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
@@ -516,20 +520,27 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation() {
-    return new Attestation(randomBitlist(), randomAttestationData(), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {
-    return new Attestation(
-        randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {
-    return new AggregateAndProof(randomUInt64(), randomAttestation(), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getAggregateAndProofSchema()
+        .create(randomUInt64(), randomAttestation(), randomSignature());
   }
 
   public SignedAggregateAndProof randomSignedAggregateAndProof() {
-    return new SignedAggregateAndProof(randomAggregateAndProof(), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getSignedAggregateAndProofSchema()
+        .create(randomAggregateAndProof(), randomSignature());
   }
 
   public VoteTracker randomVoteTracker() {
@@ -537,7 +548,18 @@ public final class DataStructureUtil {
   }
 
   public PendingAttestation randomPendingAttestation() {
-    return new PendingAttestation(
+    final BeaconStateSchema<?, ?> beaconStateSchema = getBeaconStateSchema();
+    checkState(
+        beaconStateSchema instanceof BeaconStateSchemaPhase0,
+        "Pending attestations only exist in phase0");
+    final PendingAttestationSchema pendingAttestationSchema =
+        ((BeaconStateSchemaPhase0) beaconStateSchema).getPendingAttestationSchema();
+    return randomPendingAttestation(pendingAttestationSchema);
+  }
+
+  public PendingAttestation randomPendingAttestation(
+      final PendingAttestationSchema pendingAttestationSchema) {
+    return pendingAttestationSchema.create(
         randomBitlist(), randomAttestationData(), randomUInt64(), randomUInt64());
   }
 
@@ -548,7 +570,9 @@ public final class DataStructureUtil {
   public AttesterSlashing randomAttesterSlashing(final UInt64... attestingIndices) {
     IndexedAttestation attestation1 = randomIndexedAttestation(attestingIndices);
     IndexedAttestation attestation2 = randomIndexedAttestation(attestingIndices);
-    return new AttesterSlashing(attestation1, attestation2);
+    return spec.getGenesisSchemaDefinitions()
+        .getAttesterSlashingSchema()
+        .create(attestation1, attestation2);
   }
 
   public List<SignedBeaconBlock> randomSignedBeaconBlockSequence(
@@ -820,9 +844,12 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndices) {
+    final IndexedAttestationSchema indexedAttestationSchema =
+        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     SszUInt64List attesting_indices =
-        IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().of(attestingIndices);
-    return new IndexedAttestation(attesting_indices, randomAttestationData(), randomSignature());
+        indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndices);
+    return indexedAttestationSchema.create(
+        attesting_indices, randomAttestationData(), randomSignature());
   }
 
   public DepositData randomDepositData() {

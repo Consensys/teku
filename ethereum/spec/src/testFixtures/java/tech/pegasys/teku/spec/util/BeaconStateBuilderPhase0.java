@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -76,25 +74,11 @@ public class BeaconStateBuilderPhase0
         dataStructureUtil.randomSszList(
             schema.getPreviousEpochAttestationsSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil::randomPendingAttestation);
+            () -> dataStructureUtil.randomPendingAttestation(schema.getPendingAttestationSchema()));
     currentEpochAttestations =
         dataStructureUtil.randomSszList(
             schema.getCurrentEpochAttestationsSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil::randomPendingAttestation);
-  }
-
-  public BeaconStateBuilderPhase0 previousEpochAttestations(
-      final SszList<PendingAttestation> previousEpochAttestations) {
-    checkNotNull(previousEpochAttestations);
-    this.previousEpochAttestations = previousEpochAttestations;
-    return this;
-  }
-
-  public BeaconStateBuilderPhase0 currentEpochAttestations(
-      final SszList<PendingAttestation> currentEpochAttestations) {
-    checkNotNull(currentEpochAttestations);
-    this.currentEpochAttestations = currentEpochAttestations;
-    return this;
+            () -> dataStructureUtil.randomPendingAttestation(schema.getPendingAttestationSchema()));
   }
 }

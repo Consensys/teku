@@ -149,7 +149,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     switch (operation) {
       case ATTESTER_SLASHING:
         final AttesterSlashing attesterSlashing =
-            loadSsz(testDefinition, dataFileName, AttesterSlashing.SSZ_SCHEMA);
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getAttesterSlashingSchema());
         processor.processAttesterSlashing(state, attesterSlashing);
         break;
       case PROPOSER_SLASHING:
@@ -176,7 +179,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         break;
       case ATTESTATION:
         final Attestation attestation =
-            loadSsz(testDefinition, dataFileName, Attestation.SSZ_SCHEMA);
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
         processor.processAttestation(state, attestation);
         break;
       case SYNC_AGGREGATE:

@@ -15,139 +15,42 @@ package tech.pegasys.teku.data.publisher;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
-public class MetricsDataFactory {
-  private final MetricsSystem metricsSystem;
-  private static final int PROTOCOL_VERSION = 1;
-  private static final String CLIENT_NAME = VersionProvider.CLIENT_IDENTITY;
+class MetricsDataFactory {
   private static final Logger LOG = LogManager.getLogger();
 
-  public MetricsDataFactory(MetricsSystem metricsSystem) {
+  private final MetricsSystem metricsSystem;
+  private final TimeProvider timeProvider;
+
+  public MetricsDataFactory(final MetricsSystem metricsSystem, final TimeProvider timeProvider) {
     this.metricsSystem = metricsSystem;
+    this.timeProvider = timeProvider;
   }
 
-  public List<BaseMetricData> getMetricData(final TimeProvider timeProvider) {
-    List<BaseMetricData> metricList = new ArrayList<>();
-    if (metricsSystem instanceof PrometheusMetricsSystem) {
-      Map<String, Observation> values = getStringObjectMap((PrometheusMetricsSystem) metricsSystem);
-      metricList.add(extractBeaconNodeData(values, timeProvider));
-      metricList.add(extractValidatorData(values, timeProvider));
-      metricList.add(extractSystemData(values, timeProvider));
-    } else {
-      LOG.error("Prometheus metric system not found.");
-      metricList.add(
-          new MinimalMetricData(
-              PROTOCOL_VERSION,
-              timeProvider.getTimeInMillis().longValue(),
-              MetricsDataClient.MINIMAL.getDataClient(),
-              metricsSystem));
+  List<BaseMetricData> getMetricData(final MetricsPublisherSource source) {
+    final List<BaseMetricData> metricList = new ArrayList<>();
+    final long timeMillis = timeProvider.getTimeInMillis().longValue();
+    if (source.isValidatorPresent()) {
+      metricList.add(new ValidatorMetricData(timeMillis, source));
     }
+    if (source.isBeaconNodePresent()) {
+      metricList.add(new BeaconNodeMetricData(timeMillis, source));
+    }
+
     return metricList;
   }
 
-  private BaseMetricData extractSystemData(
-      final Map<String, Observation> values, final TimeProvider timeProvider) {
-
-    final Integer cpuThreads = getIntegerValue(values, "threads_current");
-    final Long cpuNodeSystemSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long memoryNodeBytesTotal = getLongValue(values, "memory_bytes_max");
-    final Long miscNodeBootTsSeconds = getLongValue(values, "start_time_second");
-    final String miscOS = getNormalizedOSVersion();
-    return new SystemMetricData(
-        PROTOCOL_VERSION,
-        timeProvider.getTimeInMillis().longValue(),
-        MetricsDataClient.SYSTEM.getDataClient(),
-        cpuThreads,
-        cpuNodeSystemSecondsTotal,
-        memoryNodeBytesTotal,
-        miscNodeBootTsSeconds,
-        miscOS);
-  }
-
-  private static BaseMetricData extractBeaconNodeData(
-      final Map<String, Observation> values, final TimeProvider timeProvider) {
-
-    final Integer networkPeersConnected = getIntegerValue(values, "peer_count");
-    final Long cpuProcessSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long memoryProcessBytes = getLongValue(values, "resident_memory_bytes");
-    final Long syncBeaconHeadSlot = getLongValue(values, "head_slot");
-
-    return new BeaconNodeMetricData(
-        PROTOCOL_VERSION,
-        timeProvider.getTimeInMillis().longValue(),
-        MetricsDataClient.BEACON_NODE.getDataClient(),
-        cpuProcessSecondsTotal,
-        memoryProcessBytes,
-        MetricsDataFactory.CLIENT_NAME,
-        VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", ""),
-        networkPeersConnected,
-        syncBeaconHeadSlot);
-  }
-
-  private static BaseMetricData extractValidatorData(
-      final Map<String, Observation> values, final TimeProvider timeProvider) {
-
-    final Long cpuProcessSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long memoryProcessBytes = getLongValue(values, "resident_memory_bytes");
-    final Integer validatorTotal = getIntegerValue(values, "local_validator_count");
-    final Integer validatorActive = getIntegerValue(values, "local_validator_counts");
-    return new ValidatorMetricData(
-        PROTOCOL_VERSION,
-        timeProvider.getTimeInMillis().longValue(),
-        MetricsDataClient.VALIDATOR.getDataClient(),
-        cpuProcessSecondsTotal,
-        memoryProcessBytes,
-        MetricsDataFactory.CLIENT_NAME,
-        VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", ""),
-        validatorTotal,
-        validatorActive);
-  }
-
-  private static Long getLongValue(Map<String, Observation> values, String key) {
-    if (values.containsKey(key)) {
-      Double observation = (Double) values.get(key).getValue();
-      return observation.longValue();
+  public List<BaseMetricData> getMetricData() {
+    if (!(metricsSystem instanceof PrometheusMetricsSystem)) {
+      LOG.error("Prometheus metric system not found, cannot export metrics data.");
+      return new ArrayList<>();
     }
-    return null;
-  }
-
-  private static Integer getIntegerValue(Map<String, Observation> values, String key) {
-    if (values.containsKey(key)) {
-      Double observation = (Double) values.get(key).getValue();
-      return observation.intValue();
-    }
-    return null;
-  }
-
-  private static String getNormalizedOSVersion() {
-    String currentVersionInfo = VersionProvider.VERSION;
-    if (currentVersionInfo.contains("linux")) return "lin";
-    if (currentVersionInfo.contains("windows")) return "win";
-    if (currentVersionInfo.contains("osx")) return "mac";
-    return "unk";
-  }
-
-  private static Map<String, Observation> getStringObjectMap(
-      PrometheusMetricsSystem prometheusMetricsSystem) {
-    Map<String, Observation> values;
-    values =
-        prometheusMetricsSystem
-            .streamObservations()
-            .collect(
-                Collectors.toMap(
-                    Observation::getMetricName,
-                    Function.identity(),
-                    (existing, replacement) -> existing));
-    return values;
+    return getMetricData(
+        new PrometheusMetricsPublisherSource((PrometheusMetricsSystem) metricsSystem));
   }
 }

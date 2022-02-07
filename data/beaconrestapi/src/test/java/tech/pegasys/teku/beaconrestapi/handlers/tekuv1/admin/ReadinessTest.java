@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.sync.events.SyncState;
 
 public class ReadinessTest extends AbstractBeaconHandlerTest {
 

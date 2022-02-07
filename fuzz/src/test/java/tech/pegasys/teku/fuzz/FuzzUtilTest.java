@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -71,18 +69,15 @@ class FuzzUtilTest {
 
   // *************** START Deposit Tests *****************
 
-  @AfterEach
-  public void cleanup() {
-    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
-  }
-
   @Test
   public void fuzzAttestation_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
     final Attestation data =
-        loadSsz(testCaseDir.resolve("attestation.ssz"), Attestation.SSZ_SCHEMA);
+        loadSsz(
+            testCaseDir.resolve("attestation.ssz"),
+            spec.getGenesisSchemaDefinitions().getAttestationSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
@@ -103,7 +98,9 @@ class FuzzUtilTest {
     final Path testCaseDir =
         Path.of("minimal/operations/attester_slashing/pyspec_tests/success_surround");
     final AttesterSlashing data =
-        loadSsz(testCaseDir.resolve("attester_slashing.ssz"), AttesterSlashing.SSZ_SCHEMA);
+        loadSsz(
+            testCaseDir.resolve("attester_slashing.ssz"),
+            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);

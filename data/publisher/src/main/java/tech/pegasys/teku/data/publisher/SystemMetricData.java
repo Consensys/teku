@@ -35,7 +35,7 @@ public class SystemMetricData extends BaseMetricData {
       @JsonProperty("memory_node_bytes_total") Long memoryNodeBytesTotal,
       @JsonProperty("misc_node_boot_ts_seconds") Long miscNodeBootTsSeconds,
       @JsonProperty("misc_os") String miscOS) {
-    super(version, timestamp, process);
+    super(timestamp, process);
     this.cpu_threads = cpuThreads;
     this.cpu_node_system_seconds_total = cpuNodeSystemSecondsTotal;
     this.memory_node_bytes_total = memoryNodeBytesTotal;

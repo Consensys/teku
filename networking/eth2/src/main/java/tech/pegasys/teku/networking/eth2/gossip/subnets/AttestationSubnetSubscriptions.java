@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -39,6 +40,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final OperationProcessor<ValidateableAttestation> processor;
   private final ForkInfo forkInfo;
   private final int maxMessageSize;
+  private final AttestationSchema attestationSchema;
 
   public AttestationSubnetSubscriptions(
       final Spec spec,
@@ -56,6 +58,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
     this.processor = processor;
     this.forkInfo = forkInfo;
     this.maxMessageSize = maxMessageSize;
+    attestationSchema =
+        spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions().getAttestationSchema();
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -91,6 +95,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         gossipEncoding,
         forkInfo.getForkDigest(spec),
         topicName,
+        attestationSchema,
         subnetId,
         maxMessageSize);
   }

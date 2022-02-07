@@ -13,30 +13,32 @@
 
 package tech.pegasys.teku.data.publisher;
 
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class BaseMetricData {
+public class BaseMetricData {
+  @JsonProperty("version")
+  private final int version = 1;
 
-  public final int version;
-  public final long timestamp;
-  public final String process;
+  @JsonProperty("timestamp")
+  private final long timestamp;
 
-  public BaseMetricData(int version, long timestamp, String process) {
-    this.version = version;
+  @JsonProperty("process")
+  private final String process;
+
+  public BaseMetricData(long timestamp, String process) {
     this.timestamp = timestamp;
     this.process = process;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    BaseMetricData that = (BaseMetricData) o;
-    return version == that.version && timestamp == that.timestamp && process.equals(that.process);
+  public int getVersion() {
+    return version;
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(version, timestamp, process);
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  public String getProcess() {
+    return process;
   }
 }

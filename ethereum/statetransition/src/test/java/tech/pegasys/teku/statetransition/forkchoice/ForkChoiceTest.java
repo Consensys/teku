@@ -37,15 +37,16 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
@@ -66,6 +67,8 @@ class ForkChoiceTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
           .storageMode(StateStorageMode.PRUNE)
@@ -545,7 +548,7 @@ class ForkChoiceTest {
 
   private void assertForkChoiceUpdateNotification(
       final SignedBlockAndState blockAndState, final boolean optimisticHead) {
-    final ForkChoiceStrategy forkChoiceStrategy =
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
@@ -640,8 +643,8 @@ class ForkChoiceTest {
     // Attestation where the target checkpoint has a slot prior to the block it references
     final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
     final Attestation attestation =
-        new Attestation(
-            Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(5),
+        attestationSchema.create(
+            attestationSchema.getAggregationBitsSchema().ofBits(5),
             new AttestationData(
                 targetBlock.getSlot(),
                 spec.computeEpochAtSlot(targetBlock.getSlot()),
@@ -667,8 +670,8 @@ class ForkChoiceTest {
     final ValidateableAttestation updatedVote =
         ValidateableAttestation.from(
             spec,
-            new Attestation(
-                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(16),
+            attestationSchema.create(
+                attestationSchema.getAggregationBitsSchema().ofBits(16),
                 new AttestationData(
                     updatedAttestationSlot,
                     UInt64.ONE,
@@ -677,9 +680,11 @@ class ForkChoiceTest {
                     new Checkpoint(
                         spec.computeEpochAtSlot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
+    final IndexedAttestationSchema indexedAttestationSchema =
+        spec.atSlot(updatedAttestationSlot).getSchemaDefinitions().getIndexedAttestationSchema();
     updatedVote.setIndexedAttestation(
-        new IndexedAttestation(
-            IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().of(validatorIndex),
+        indexedAttestationSchema.create(
+            indexedAttestationSchema.getAttestingIndicesSchema().of(validatorIndex),
             updatedVote.getData(),
             updatedVote.getAttestation().getAggregateSignature()));
 

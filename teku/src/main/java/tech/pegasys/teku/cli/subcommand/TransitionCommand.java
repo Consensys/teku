@@ -35,7 +35,6 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -125,7 +124,6 @@ public class TransitionCommand implements Runnable {
   private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
     final Spec spec = params.eth2NetworkOptions.getNetworkConfiguration().getSpec();
-    Constants.setConstants(params.eth2NetworkOptions.getNetworkConfiguration().getSpec());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));

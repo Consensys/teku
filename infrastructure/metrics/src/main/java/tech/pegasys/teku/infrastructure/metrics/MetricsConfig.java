@@ -14,9 +14,11 @@
 package tech.pegasys.teku.infrastructure.metrics;
 
 import com.google.common.collect.ImmutableSet;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -42,7 +44,7 @@ public class MetricsConfig {
   private final String metricsInterface;
   private final Set<MetricCategory> metricsCategories;
   private final List<String> metricsHostAllowlist;
-  private final String metricsEndpoint;
+  private final Optional<URL> metricsEndpoint;
   private final int publicationInterval;
   private final int idleTimeoutSeconds;
 
@@ -52,7 +54,7 @@ public class MetricsConfig {
       final String metricsInterface,
       final Set<MetricCategory> metricsCategories,
       final List<String> metricsHostAllowlist,
-      final String metricsEndpoint,
+      final URL metricsEndpoint,
       final int publicationInterval,
       final int idleTimeoutSeconds) {
     this.metricsEnabled = metricsEnabled;
@@ -60,7 +62,7 @@ public class MetricsConfig {
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
     this.metricsHostAllowlist = metricsHostAllowlist;
-    this.metricsEndpoint = metricsEndpoint;
+    this.metricsEndpoint = Optional.ofNullable(metricsEndpoint);
     this.publicationInterval = publicationInterval;
     this.idleTimeoutSeconds = idleTimeoutSeconds;
   }
@@ -89,7 +91,7 @@ public class MetricsConfig {
     return metricsHostAllowlist;
   }
 
-  public String getMetricsEndpoint() {
+  public Optional<URL> getMetricsEndpoint() {
     return metricsEndpoint;
   }
 
@@ -108,8 +110,8 @@ public class MetricsConfig {
     private String metricsInterface = DEFAULT_METRICS_INTERFACE;
     private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
     private List<String> metricsHostAllowlist = DEFAULT_METRICS_HOST_ALLOWLIST;
-    private String metricsEndpoint = null;
-    private int metricsPublicationInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
+    private URL metricsPublishEndpoint = null;
+    private int metricsPublishInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
 
     private MetricsConfigBuilder() {}
@@ -143,17 +145,17 @@ public class MetricsConfig {
       return this;
     }
 
-    public MetricsConfigBuilder metricsEndpoint(String metricsEndpoint) {
-      this.metricsEndpoint = metricsEndpoint;
+    public MetricsConfigBuilder metricsPublishEndpoint(URL metricsPublishEndpoint) {
+      this.metricsPublishEndpoint = metricsPublishEndpoint;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPublicationInterval(int metricsPublicationInterval) {
-      if (metricsPublicationInterval < 0) {
+    public MetricsConfigBuilder metricsPublishInterval(int metricsPublishInterval) {
+      if (metricsPublishInterval < 0) {
         throw new InvalidConfigurationException(
-            String.format("Invalid metricsPublicationInterval: %d", metricsPublicationInterval));
+            String.format("Invalid metricsPublishInterval: %d", metricsPublishInterval));
       }
-      this.metricsPublicationInterval = metricsPublicationInterval;
+      this.metricsPublishInterval = metricsPublishInterval;
       return this;
     }
 
@@ -173,8 +175,8 @@ public class MetricsConfig {
           metricsInterface,
           metricsCategories,
           metricsHostAllowlist,
-          metricsEndpoint,
-          metricsPublicationInterval,
+          metricsPublishEndpoint,
+          metricsPublishInterval,
           idleTimeoutSeconds);
     }
   }

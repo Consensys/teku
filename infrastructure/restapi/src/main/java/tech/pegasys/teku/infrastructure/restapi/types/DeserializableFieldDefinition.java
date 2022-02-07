@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 
-public interface DeserializableFieldDefinition<TObject>
+public interface DeserializableFieldDefinition<TObject, TBuilder>
     extends SerializableFieldDefinition<TObject> {
-  void readField(TObject target, JsonParser parser) throws IOException;
+  void readField(TBuilder target, JsonParser parser) throws IOException;
 }

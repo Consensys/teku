@@ -16,14 +16,17 @@ package tech.pegasys.teku.benchmarks.ssz;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attestation> {
 
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
+  private static final Spec spec = TestSpecFactory.createDefault();
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1, spec);
   private static final Attestation anAttestation = dataStructureUtil.randomAttestation();
 
   private static final SszBitlist aggregation_bits = anAttestation.getAggregationBits();
@@ -32,12 +35,12 @@ public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attes
 
   @Override
   protected Attestation createContainer() {
-    return new Attestation(aggregation_bits, attestationData, signature);
+    return getContainerType().create(aggregation_bits, attestationData, signature);
   }
 
   @Override
-  protected SszSchema<Attestation> getContainerType() {
-    return Attestation.SSZ_SCHEMA;
+  protected AttestationSchema getContainerType() {
+    return spec.getGenesisSchemaDefinitions().getAttestationSchema();
   }
 
   @Override

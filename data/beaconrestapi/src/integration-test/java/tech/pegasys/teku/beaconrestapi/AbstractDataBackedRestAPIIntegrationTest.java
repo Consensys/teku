@@ -36,6 +36,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -71,7 +72,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 @SuppressWarnings("unchecked")

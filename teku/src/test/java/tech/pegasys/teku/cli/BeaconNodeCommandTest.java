@@ -477,8 +477,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
                     .logPathPattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)))
-        .metrics(
-            b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES).metricsPublicationInterval(60))
+        .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
         .discovery(
@@ -595,8 +594,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .metricsInterface("127.0.0.1")
                     .metricsCategories(Set.of(BEACON, LIBP2P, NETWORK, EVENTBUS, JVM, PROCESS))
                     .metricsHostAllowlist(List.of("127.0.0.1", "localhost"))
-                    .metricsEndpoint(null)
-                    .metricsPublicationInterval(60)
                     .idleTimeoutSeconds(60))
         .interop(
             b ->

@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -66,6 +67,8 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public class BlockImporterTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
@@ -189,7 +192,8 @@ public class BlockImporterTest {
     int invalidAttIdx = aggregatedAttestations.size() / 2;
     Attestation att = aggregatedAttestations.get(invalidAttIdx);
     Attestation invalidAtt =
-        new Attestation(att.getAggregationBits(), att.getData(), BLSTestUtil.randomSignature(1));
+        attestationSchema.create(
+            att.getAggregationBits(), att.getData(), BLSTestUtil.randomSignature(1));
     aggregatedAttestations.set(invalidAttIdx, invalidAtt);
 
     UInt64 currentSlotFinal = currentSlot.plus(UInt64.ONE);

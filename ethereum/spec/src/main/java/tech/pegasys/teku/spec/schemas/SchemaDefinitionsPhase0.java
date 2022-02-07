@@ -24,14 +24,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
-  private final BeaconStateSchema<?, ?> beaconStateSchema;
+  private final BeaconStateSchemaPhase0 beaconStateSchema;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;
 
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
-    this.beaconBlockBodySchema = BeaconBlockBodySchemaPhase0.create(specConfig);
+    this.beaconBlockBodySchema =
+        BeaconBlockBodySchemaPhase0.create(specConfig, getAttesterSlashingSchema());
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0();
   }
 

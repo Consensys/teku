@@ -21,18 +21,26 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class PendingAttestationTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private SszBitlist participationBitfield = dataStructureUtil.randomBitlist();
-  private AttestationData data = dataStructureUtil.randomAttestationData();
-  private UInt64 inclusionDelay = dataStructureUtil.randomUInt64();
-  private UInt64 proposerIndex = dataStructureUtil.randomUInt64();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final PendingAttestationSchema schema =
+      BeaconStateSchemaPhase0.required(spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+          .getPendingAttestationSchema();
+  private final SszBitlist participationBitfield = dataStructureUtil.randomBitlist();
+  private final AttestationData data = dataStructureUtil.randomAttestationData();
+  private final UInt64 inclusionDelay = dataStructureUtil.randomUInt64();
+  private final UInt64 proposerIndex = dataStructureUtil.randomUInt64();
 
-  private PendingAttestation pendingAttestation =
-      new PendingAttestation(participationBitfield, data, inclusionDelay, proposerIndex);
+  private final PendingAttestation pendingAttestation =
+      schema.create(participationBitfield, data, inclusionDelay, proposerIndex);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -44,7 +52,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield, data, inclusionDelay, proposerIndex);
+        schema.create(participationBitfield, data, inclusionDelay, proposerIndex);
 
     assertEquals(pendingAttestation, testPendingAttestation);
   }
@@ -58,8 +66,7 @@ class PendingAttestationTest {
       otherAttestationData = dataStructureUtil.randomAttestationData();
     }
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(
-            participationBitfield, otherAttestationData, inclusionDelay, proposerIndex);
+        schema.create(participationBitfield, otherAttestationData, inclusionDelay, proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -67,8 +74,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(
-            dataStructureUtil.randomBitlist(), data, inclusionDelay, proposerIndex);
+        schema.create(dataStructureUtil.randomBitlist(), data, inclusionDelay, proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -76,7 +82,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(
+        schema.create(
             participationBitfield,
             data,
             inclusionDelay.plus(dataStructureUtil.randomUInt64()),
@@ -88,7 +94,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(
+        schema.create(
             participationBitfield,
             data,
             inclusionDelay,
@@ -100,13 +106,13 @@ class PendingAttestationTest {
   @Test
   void testSszRoundtripWithEmptyBitlist() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(
-            PendingAttestation.SSZ_SCHEMA.getAggregationBitfieldSchema().empty(),
+        schema.create(
+            schema.getAggregationBitfieldSchema().empty(),
             data,
             inclusionDelay,
             proposerIndex.plus(dataStructureUtil.randomUInt64()));
     Bytes ssz = testPendingAttestation.sszSerialize();
-    PendingAttestation attestation = PendingAttestation.SSZ_SCHEMA.sszDeserialize(ssz);
+    PendingAttestation attestation = schema.sszDeserialize(ssz);
     assertEquals(testPendingAttestation, attestation);
   }
 }

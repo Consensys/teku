@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 
 public class AggregateAndProof {
 
@@ -48,10 +50,18 @@ public class AggregateAndProof {
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof
-      asInternalAggregateAndProof() {
-    return new tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof(
-        aggregator_index,
-        aggregate.asInternalAttestation(),
-        selection_proof.asInternalBLSSignature());
+      asInternalAggregateAndProof(final Spec spec) {
+    return asInternalAggregateAndProof(spec.atSlot(aggregate.data.slot));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof
+      asInternalAggregateAndProof(final SpecVersion specVersion) {
+    return specVersion
+        .getSchemaDefinitions()
+        .getAggregateAndProofSchema()
+        .create(
+            aggregator_index,
+            aggregate.asInternalAttestation(specVersion),
+            selection_proof.asInternalBLSSignature());
   }
 }

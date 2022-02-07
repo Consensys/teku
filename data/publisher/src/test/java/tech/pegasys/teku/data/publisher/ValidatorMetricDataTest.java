@@ -16,20 +16,26 @@ package tech.pegasys.teku.data.publisher;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
 class ValidatorMetricDataTest {
-
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
-    final ValidatorMetricData process =
-        new ValidatorMetricData(
-            1, UInt64.valueOf(10L).longValue(), "system", 11L, 12L, "teku", "21.8", 3, 4);
+    final MetricsPublisherSource source =
+        StubMetricsPublisherSource.builder().validatorsActive(33).validatorsTotal(44).build();
+    final ValidatorMetricData process = new ValidatorMetricData(10L, source);
     final String data = jsonProvider.objectToJSON(process);
-    assertThat(process).isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
+    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    final JsonNode node = mapper.readTree(data);
+    assertThat(node.size()).isEqualTo(12);
+    assertThat(node.get("process").asText()).isEqualTo("validator");
+    assertThat(node.get("validator_total").asInt()).isEqualTo(44);
+    assertThat(node.get("validator_active").asInt()).isEqualTo(33);
   }
 }

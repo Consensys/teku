@@ -1095,7 +1095,7 @@ class RecentChainDataTest {
   }
 
   private void disableForkChoicePruneThreshold() {
-    recentChainData.getForkChoiceStrategy().orElseThrow().setPruneThreshold(0);
+    recentChainData.getUpdatableForkChoiceStrategy().orElseThrow().setPruneThreshold(0);
   }
 
   private long getReorgCountMetric(final StorageSystem storageSystem) {

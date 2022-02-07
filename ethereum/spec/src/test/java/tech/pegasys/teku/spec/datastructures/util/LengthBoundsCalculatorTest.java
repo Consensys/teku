@@ -29,23 +29,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 /**
@@ -67,10 +62,16 @@ public class LengthBoundsCalculatorTest {
   // Expected values taken from https://gist.github.com/protolambda/db75c7faa1e94f2464787a480e5d613e
   static Stream<Arguments> generateParameters() {
     return Stream.of(
-        Arguments.of(getProvider(AggregateAndProof.SSZ_SCHEMA), SszLengthBounds.ofBytes(337, 593)),
-        Arguments.of(getProvider(Attestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(229, 485)),
+        Arguments.of(
+            (SchemaProvider) SchemaDefinitions::getAggregateAndProofSchema,
+            SszLengthBounds.ofBytes(337, 593)),
+        Arguments.of(
+            (SchemaProvider) SchemaDefinitions::getAttestationSchema,
+            SszLengthBounds.ofBytes(229, 485)),
         Arguments.of(getProvider(AttestationData.SSZ_SCHEMA), SszLengthBounds.ofBytes(128, 128)),
-        Arguments.of(getProvider(AttesterSlashing.SSZ_SCHEMA), SszLengthBounds.ofBytes(464, 33232)),
+        Arguments.of(
+            (SchemaProvider) SchemaDefinitions::getAttesterSlashingSchema,
+            SszLengthBounds.ofBytes(464, 33232)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconBlockSchema,
             SszLengthBounds.ofBytes(304, 157656)),
@@ -92,11 +93,18 @@ public class LengthBoundsCalculatorTest {
             (SchemaProvider) SchemaDefinitions::getHistoricalBatchSchema,
             SszLengthBounds.ofBytes(524288, 524288)),
         Arguments.of(
-            getProvider(IndexedAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(228, 16612)),
-        Arguments.of(getProvider(PendingAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(149, 405)),
+            (SchemaProvider) SchemaDefinitions::getIndexedAttestationSchema,
+            SszLengthBounds.ofBytes(228, 16612)),
+        Arguments.of(
+            (SchemaProvider)
+                definitions ->
+                    BeaconStateSchemaPhase0.required(definitions.getBeaconStateSchema())
+                        .getPendingAttestationSchema(),
+            SszLengthBounds.ofBytes(149, 405)),
         Arguments.of(getProvider(ProposerSlashing.SSZ_SCHEMA), SszLengthBounds.ofBytes(416, 416)),
         Arguments.of(
-            getProvider(SignedAggregateAndProof.SSZ_SCHEMA), SszLengthBounds.ofBytes(437, 693)),
+            (SchemaProvider) SchemaDefinitions::getSignedAggregateAndProofSchema,
+            SszLengthBounds.ofBytes(437, 693)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getSignedBeaconBlockSchema,
             SszLengthBounds.ofBytes(404, 157756)),

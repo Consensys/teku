@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
 import java.io.IOException;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -26,24 +28,24 @@ import org.apache.logging.log4j.Logger;
 public class MetricsPublisher {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
   private final OkHttpClient client;
-  private final MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+  private final HttpUrl endpoint;
 
-  public MetricsPublisher(final OkHttpClient client) {
+  public MetricsPublisher(final OkHttpClient client, final HttpUrl endpoint) {
     this.client = client;
+    this.endpoint = endpoint;
   }
 
-  public int publishMetrics(final String endpointAddress, final String json) throws IOException {
-    HttpUrl endpoint = HttpUrl.get(endpointAddress);
-    RequestBody body = RequestBody.create(json, mediaType);
+  public void publishMetrics(final String json) throws IOException {
+    RequestBody body = RequestBody.create(json, MEDIA_TYPE);
     Request request = new Request.Builder().url(endpoint).post(body).build();
     Response response = this.client.newCall(request).execute();
     int responseCode = response.code();
     response.close();
-    if (responseCode != 200) {
+    if (responseCode != SC_OK) {
       LOG.error(
           "Failed to publish metrics to external metrics service. Response code {}", responseCode);
     }
-    return responseCode;
   }
 }

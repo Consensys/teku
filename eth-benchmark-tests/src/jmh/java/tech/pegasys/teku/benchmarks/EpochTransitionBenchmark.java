@@ -38,7 +38,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -86,7 +85,6 @@ public class EpochTransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 
     String blocksFile =

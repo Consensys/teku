@@ -16,17 +16,22 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AggregateAndProofTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   void roundTripViaSsz() {
     AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     assertEquals(
         aggregateAndProof,
-        AggregateAndProof.SSZ_SCHEMA.sszDeserialize(aggregateAndProof.sszSerialize()));
+        spec.getGenesisSchemaDefinitions()
+            .getAggregateAndProofSchema()
+            .sszDeserialize(aggregateAndProof.sszSerialize()));
   }
 }

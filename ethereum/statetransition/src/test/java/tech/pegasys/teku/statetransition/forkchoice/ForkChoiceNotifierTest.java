@@ -40,11 +40,11 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
@@ -67,7 +67,7 @@ class ForkChoiceNotifierTest {
 
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
-  private ForkChoiceStrategy forkChoiceStrategy;
+  private ReadOnlyForkChoiceStrategy forkChoiceStrategy;
   private PayloadAttributesCalculator payloadAttributesCalculator;
   private Optional<Bytes20> defaultFeeRecipient =
       Optional.of(Bytes20.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));

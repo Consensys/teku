@@ -37,7 +37,7 @@ dependencies {
   implementation project(':services:timer')
   implementation project(':storage')
   implementation project(':storage:api')
-  implementation project(':sync')
+  implementation project(':beacon:sync')
   implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':validator:remote')

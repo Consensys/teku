@@ -67,11 +67,19 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
   private final NavigableMap<UInt64, SszBitlist> includedValidatorsBySlot = new TreeMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
-  private SszBitlist includedValidators = Attestation.createEmptyAggregationBits();
+  private SszBitlist includedValidators;
 
   public MatchingDataAttestationGroup(final Spec spec, final AttestationData attestationData) {
     this.spec = spec;
     this.attestationData = attestationData;
+    this.includedValidators = createEmptyAggregationBits();
+  }
+
+  private SszBitlist createEmptyAggregationBits() {
+    return spec.atSlot(attestationData.getSlot())
+        .getSchemaDefinitions()
+        .getAttestationSchema()
+        .createEmptyAggregationBits();
   }
 
   public AttestationData getAttestationData() {
@@ -183,7 +191,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     // can't do a simple remove
     includedValidators =
         includedValidatorsBySlot.values().stream()
-            .reduce(Attestation.createEmptyAggregationBits(), SszBitlist::or);
+            .reduce(createEmptyAggregationBits(), SszBitlist::or);
   }
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {

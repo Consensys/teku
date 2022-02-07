@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -52,12 +51,6 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   protected BeaconBlockBodyBellatrix createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     return (BeaconBlockBodyBellatrix) getBlockBodySchema().createBlockBody(contentProvider);
-  }
-
-  @Override
-  protected BeaconBlockBodySchema<? extends BeaconBlockBodyBellatrix> getBlockBodySchema() {
-    return (BeaconBlockBodySchemaBellatrix<?>)
-        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   @Override

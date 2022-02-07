@@ -16,23 +16,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 
 public interface BeaconBlockBodySchemaAltair<T extends BeaconBlockBodyAltair>
     extends BeaconBlockBodySchema<T> {
-
-  static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(
-      final SpecConfig specConfig) {
-
-    return BeaconBlockBodySchemaAltairImpl.create(
-        specConfig.getMaxProposerSlashings(),
-        specConfig.getMaxAttesterSlashings(),
-        specConfig.getMaxAttestations(),
-        specConfig.getMaxDeposits(),
-        specConfig.getMaxVoluntaryExits(),
-        specConfig.toVersionAltair().orElseThrow().getSyncCommitteeSize());
-  }
 
   static BeaconBlockBodySchemaAltair<?> required(final BeaconBlockBodySchema<?> schema) {
     checkArgument(

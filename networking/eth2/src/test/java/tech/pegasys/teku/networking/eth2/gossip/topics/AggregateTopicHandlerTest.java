@@ -21,7 +21,6 @@ import io.libp2p.core.pubsub.ValidationResult;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -30,8 +29,18 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
 
   @Override
   protected Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest) {
-    return AggregateAttestationTopicHandler.createHandler(
-        recentChainData, asyncRunner, processor, gossipEncoding, forkDigest, GOSSIP_MAX_SIZE);
+    return new Eth2TopicHandler<>(
+        recentChainData,
+        asyncRunner,
+        proofMessage ->
+            processor.process(
+                ValidateableAttestation.aggregateFromNetwork(
+                    recentChainData.getSpec(), proofMessage)),
+        gossipEncoding,
+        forkDigest,
+        GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
+        spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema(),
+        GOSSIP_MAX_SIZE);
   }
 
   @Test
@@ -101,9 +110,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    Eth2TopicHandler<?> topicHandler =
-        AggregateAttestationTopicHandler.createHandler(
-            recentChainData, asyncRunner, processor, gossipEncoding, forkDigest, GOSSIP_MAX_SIZE);
+    Eth2TopicHandler<?> topicHandler = createHandler(forkDigest);
     assertThat(topicHandler.getTopic())
         .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }

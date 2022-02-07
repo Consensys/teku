@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
@@ -44,7 +45,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
-    this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
+    this.beaconBlockBodySchema =
+        BeaconBlockBodySchemaAltairImpl.create(specConfig, getAttesterSlashingSchema());
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
     this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);

@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -21,10 +23,13 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Spec spec;
   private final SignedBeaconBlock block;
   private final ExecutionEngineChannel executionEngine;
@@ -50,9 +55,32 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     if (executionPayload.isDefault()) {
       // We're still pre-merge so no payload to execute
       // Note that the BlockProcessor will have already failed if this is default and shouldn't be
-      // because it check the parentRoot matches
+      // because it checks the parentRoot matches
       return true;
     }
+    result =
+        Optional.of(
+            executionEngine
+                .executePayload(executionPayload)
+                .thenCompose(
+                    result -> {
+                      if (result.hasStatus(ExecutionPayloadStatus.VALID)
+                          && latestExecutionPayloadHeader.isDefault()) {
+                        return validateTransitionPayload(executionPayload);
+                      } else {
+                        return SafeFuture.completedFuture(result);
+                      }
+                    })
+                .exceptionally(
+                    error -> {
+                      LOG.error("Error while validating payload", error);
+                      return ExecutePayloadResult.failedExecution(error);
+                    }));
+    return true;
+  }
+
+  private SafeFuture<ExecutePayloadResult> validateTransitionPayload(
+      final ExecutionPayload executionPayload) {
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         spec.atSlot(block.getSlot())
             .getBellatrixTransitionHelpers()
@@ -60,15 +88,6 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                 () ->
                     new IllegalStateException(
                         "Attempting to validate a bellatrix block when spec does not have bellatrix transition helpers"));
-
-    if (latestExecutionPayloadHeader.isDefault()) {
-      // This is the first filled payload, so need to check it's a valid merge block
-      result =
-          Optional.of(
-              bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
-    } else {
-      result = Optional.of(executionEngine.executePayload(executionPayload));
-    }
-    return true;
+    return bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload);
   }
 }

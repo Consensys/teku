@@ -223,7 +223,7 @@ public class DiscoveryConfig {
 
     public Builder minRandomlySelectedPeers(final Integer minRandomlySelectedPeers) {
       checkNotNull(minRandomlySelectedPeers);
-      if (maxPeers < 0) {
+      if (minRandomlySelectedPeers < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid minRandomlySelectedPeers: %d", minRandomlySelectedPeers));
       }

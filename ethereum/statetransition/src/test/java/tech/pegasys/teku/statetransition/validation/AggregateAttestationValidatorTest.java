@@ -45,10 +45,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -99,6 +100,10 @@ class AggregateAttestationValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema =
+      spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();
+  private final AggregateAndProofSchema aggregateAndProofSchema =
+      spec.getGenesisSchemaDefinitions().getAggregateAndProofSchema();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -281,8 +286,8 @@ class AggregateAttestationValidatorTest {
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
 
     final SignedAggregateAndProof aggregateAndProof2 =
-        new SignedAggregateAndProof(
-            new AggregateAndProof(UInt64.valueOf(2), attestation, BLSSignature.empty()),
+        signedAggregateAndProofSchema.create(
+            aggregateAndProofSchema.create(UInt64.valueOf(2), attestation, BLSSignature.empty()),
             BLSSignature.empty());
 
     whenAttestationIsValid(aggregateAndProof1);
@@ -312,8 +317,8 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
     final SignedAggregateAndProof aggregateAndProof2 =
-        new SignedAggregateAndProof(
-            new AggregateAndProof(UInt64.valueOf(2), attestation, BLSSignature.empty()),
+        signedAggregateAndProofSchema.create(
+            aggregateAndProofSchema.create(UInt64.valueOf(2), attestation, BLSSignature.empty()),
             BLSSignature.empty());
 
     whenAttestationIsValid(aggregateAndProof1);
@@ -482,7 +487,7 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof validAggregate =
         generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
     final SignedAggregateAndProof invalidAggregate =
-        new SignedAggregateAndProof(
+        signedAggregateAndProofSchema.create(
             validAggregate.getMessage(), dataStructureUtil.randomSignature());
     whenAttestationIsValid(invalidAggregate);
     whenAttestationIsValid(validAggregate);

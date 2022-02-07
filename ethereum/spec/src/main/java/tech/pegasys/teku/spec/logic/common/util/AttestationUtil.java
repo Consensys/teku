@@ -39,22 +39,28 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SchemaDefinitions schemaDefinitions;
   private final BeaconStateAccessors beaconStateAccessors;
   private final MiscHelpers miscHelpers;
 
   public AttestationUtil(
-      final BeaconStateAccessors beaconStateAccessors, final MiscHelpers miscHelpers) {
+      final SchemaDefinitions schemaDefinitions,
+      final BeaconStateAccessors beaconStateAccessors,
+      final MiscHelpers miscHelpers) {
+    this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
   }
@@ -89,11 +95,13 @@ public class AttestationUtil {
     List<Integer> attesting_indices =
         getAttestingIndices(state, attestation.getData(), attestation.getAggregationBits());
 
-    return new IndexedAttestation(
+    final IndexedAttestationSchema indexedAttestationSchema =
+        schemaDefinitions.getIndexedAttestationSchema();
+    return indexedAttestationSchema.create(
         attesting_indices.stream()
             .sorted()
             .map(UInt64::valueOf)
-            .collect(IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().collectorUnboxed()),
+            .collect(indexedAttestationSchema.getAttestingIndicesSchema().collectorUnboxed()),
         attestation.getData(),
         attestation.getAggregateSignature());
   }

@@ -79,7 +79,6 @@ public class InteropConfig {
     private InteropConfigBuilder() {}
 
     public InteropConfigBuilder interopGenesisTime(Integer interopGenesisTime) {
-      checkNotNull(interopGenesisTime);
       if (interopGenesisTime < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid interopGenesisTime: %d", interopGenesisTime));

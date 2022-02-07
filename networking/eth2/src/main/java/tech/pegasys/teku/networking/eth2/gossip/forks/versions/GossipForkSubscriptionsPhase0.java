@@ -147,6 +147,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     aggregateGossipManager =
         new AggregateGossipManager(
+            spec,
             recentChainData,
             asyncRunner,
             discoveryNetwork,
@@ -180,6 +181,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
+            spec,
             recentChainData,
             asyncRunner,
             discoveryNetwork,

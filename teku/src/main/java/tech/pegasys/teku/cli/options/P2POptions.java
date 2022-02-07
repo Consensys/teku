@@ -21,11 +21,11 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.sync.SyncConfig;
 
 public class P2POptions {
 

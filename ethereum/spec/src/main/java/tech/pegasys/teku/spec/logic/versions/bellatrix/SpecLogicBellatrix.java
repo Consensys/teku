@@ -111,7 +111,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
-    final AttestationUtil attestationUtil = new AttestationUtil(beaconStateAccessors, miscHelpers);
+    final AttestationUtil attestationUtil =
+        new AttestationUtil(schemaDefinitions, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
         OperationValidator.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
