@@ -20,6 +20,8 @@ import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,8 +36,10 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
 
 class ValidatorTypesTest {
   private final DataStructureUtil dataStructureUtil =
@@ -156,5 +160,31 @@ class ValidatorTypesTest {
       throws JsonProcessingException {
     final T result = parse(serialize(value, type), type);
     assertThat(result).isEqualTo(value);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void postRemoteKeysRequest_shouldFormatPostRemoteKeysRequestOptionalUrl() throws Exception {
+    BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+    BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+
+    List<ExternalValidator> externalValidators =
+        List.of(
+            new ExternalValidator(publicKey1, Optional.empty(), true),
+            new ExternalValidator(publicKey2, Optional.of(new URL("http://host.com")), false));
+    final PostRemoteKeysRequest request = new PostRemoteKeysRequest(externalValidators);
+    final Map<String, Object> result =
+        JsonTestUtil.parse(JsonUtil.serialize(request, ValidatorTypes.POST_REMOTE_KEYS_REQUEST));
+
+    assertThat(result).containsOnlyKeys("remote_keys").isInstanceOf(HashMap.class);
+
+    List<Map<String, Object>> remoteKeys = (List<Map<String, Object>>) result.get("remote_keys");
+    assertThat(remoteKeys)
+        .containsExactly(
+            Map.of("pubkey", publicKey1.toString(), "readonly", true),
+            Map.of(
+                "pubkey", publicKey2.toString(),
+                "readonly", false,
+                "url", new URL("http://host.com").toString()));
   }
 }

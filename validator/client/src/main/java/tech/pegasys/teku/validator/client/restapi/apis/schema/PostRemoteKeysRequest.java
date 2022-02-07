@@ -21,6 +21,10 @@ public class PostRemoteKeysRequest {
 
   public PostRemoteKeysRequest() {}
 
+  public PostRemoteKeysRequest(List<ExternalValidator> externalValidators) {
+    this.externalValidators = externalValidators;
+  }
+
   public List<ExternalValidator> getExternalValidators() {
     return externalValidators;
   }
