@@ -106,6 +106,30 @@ public class ExternalMetricNode extends Node {
           assertThat(publishedData.get("validator_active")).isNotNull().isEqualTo(validatorCount);
         });
   }
+  public void waitForBeaconNodeMetricPublication() {
+    Waiter.waitFor(
+        () -> {
+          Map<String, Object> publishedData = getPublisher("beaconnode", getPublishedObjects());
+          assertThat(publishedData).isNotNull();
+          assertThat(publishedData.size()).isEqualTo(20);
+          checkBaseMetricData(publishedData);
+          checkGeneralProcessMetricData(publishedData);
+          for(String field: List.of("disk_beaconchain_bytes_total",
+              "network_libp2p_bytes_total_receive",
+              "network_libp2p_bytes_total_transmit",
+              "network_peers_connected",
+              "sync_eth2_synced",
+              "sync_beacon_head_slot",
+              "sync_eth1_connected",
+              "sync_eth1_fallback_configured",
+              "sync_eth1_fallback_connected",
+              "slasher_active"
+              )) {
+            assertThat(publishedData.containsKey(field)).isTrue();
+            assertThat(publishedData.get(field)).isNotNull();
+          }
+        });
+  }
 
   private Map<String, Object> getPublisher(
       final String publisherName, final List<Map<String, Object>> publishedObjects) {
