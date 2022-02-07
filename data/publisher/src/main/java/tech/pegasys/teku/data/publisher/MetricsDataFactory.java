@@ -34,8 +34,12 @@ class MetricsDataFactory {
 
   List<BaseMetricData> getMetricData(final MetricsPublisherSource source) {
     final List<BaseMetricData> metricList = new ArrayList<>();
-    if (source.getValidatorsTotal() > 0L || source.getValidatorsActive() > 0L) {
-      metricList.add(new ValidatorMetricData(timeProvider.getTimeInMillis().longValue(), source));
+    final long timeMillis = timeProvider.getTimeInMillis().longValue();
+    if (source.isValidatorPresent()) {
+      metricList.add(new ValidatorMetricData(timeMillis, source));
+    }
+    if (source.isBeaconNodePresent()) {
+      metricList.add(new BeaconNodeMetricData(timeMillis, source));
     }
 
     return metricList;

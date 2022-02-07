@@ -13,15 +13,27 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
+import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EXECUTOR;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.VALIDATOR;
+
 import java.util.List;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public class PrometheusMetricsPublisherSource implements MetricsPublisherSource {
   private long cpuSecondsTotal;
   private long memoryProcessBytes;
+  private long headSlot;
   private int validatorsTotal;
   private int validatorsActive;
+  private int peerCount;
+  private boolean isBeaconNodePresent;
+  private boolean isEth2Synced;
+  private boolean isEth1Connected;
 
   public PrometheusMetricsPublisherSource(final PrometheusMetricsSystem metricsSystem) {
     metricsSystem.streamObservations().forEach(this::storeObservationIfNeeded);
@@ -47,17 +59,97 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
     return validatorsActive;
   }
 
+  @Override
+  public long getHeadSlot() {
+    return headSlot;
+  }
+
+  @Override
+  public boolean isValidatorPresent() {
+    return validatorsTotal > 0;
+  }
+
+  @Override
+  public boolean isBeaconNodePresent() {
+    return isBeaconNodePresent;
+  }
+
+  @Override
+  public boolean isEth2Synced() {
+    return isEth2Synced;
+  }
+
+  @Override
+  public boolean isEth1Connected() {
+    return isEth1Connected;
+  }
+
+  @Override
+  public int getPeerCount() {
+    return peerCount;
+  }
+
+  @Override
+  public long getGossipBytesTotalSent() {
+    return 0L;
+  }
+
+  @Override
+  public long getGossipBytesTotalReceived() {
+    return 0L;
+  }
+
   private void storeObservationIfNeeded(final Observation observation) {
+    MetricCategory category = observation.getCategory();
+    if (category.equals(EXECUTOR)) {
+      readExecutorCategoryItem(observation);
+    } else if (category.equals(PROCESS)) {
+      readProcessCategoryItem(observation);
+    } else if (category.equals(VALIDATOR)) {
+      readValidatorCategoryItem(observation);
+    } else if (category.equals(JVM)) {
+      readJvmCategoryItem(observation);
+    } else if (category.equals(BEACON)) {
+      readBeaconCategoryItem(observation);
+    }
+  }
+
+  private void readBeaconCategoryItem(final Observation observation) {
+    isBeaconNodePresent = true;
     switch (observation.getMetricName()) {
-      case "cpu_seconds_total":
-        cpuSecondsTotal = getLongValue(observation.getValue());
+      case "head_slot":
+        headSlot = getLongValue(observation.getValue());
         break;
-      case "memory_pool_bytes_used":
-        addToMemoryPoolBytesUsed((Double) observation.getValue());
+      case "eth1_request_queue_size":
+        isEth1Connected = true;
         break;
-      case "local_validator_counts":
-        addToLocalValidators(observation.getLabels(), (Double) observation.getValue());
+      case "peer_count":
+        peerCount = getIntValue(observation.getValue());
         break;
+    }
+  }
+
+  private void readExecutorCategoryItem(final Observation observation) {
+    if ("sync_thread_active_count".equals(observation.getMetricName())) {
+      isEth2Synced = getLongValue(observation.getValue()) == 0;
+    }
+  }
+
+  private void readProcessCategoryItem(final Observation observation) {
+    if ("cpu_seconds_total".equals(observation.getMetricName())) {
+      cpuSecondsTotal = getLongValue(observation.getValue());
+    }
+  }
+
+  private void readJvmCategoryItem(final Observation observation) {
+    if ("memory_pool_bytes_used".equals(observation.getMetricName())) {
+      addToMemoryPoolBytesUsed((Double) observation.getValue());
+    }
+  }
+
+  private void readValidatorCategoryItem(final Observation observation) {
+    if ("local_validator_counts".equals(observation.getMetricName())) {
+      addToLocalValidators(observation.getLabels(), (Double) observation.getValue());
     }
   }
 
@@ -75,5 +167,10 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
   private long getLongValue(final Object value) {
     Double current = (Double) value;
     return current.longValue();
+  }
+
+  private int getIntValue(final Object value) {
+    Double current = (Double) value;
+    return current.intValue();
   }
 }

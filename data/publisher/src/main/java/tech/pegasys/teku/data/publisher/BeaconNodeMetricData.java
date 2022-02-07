@@ -13,64 +13,90 @@
 
 package tech.pegasys.teku.data.publisher;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Objects;
+import tech.pegasys.teku.infrastructure.metrics.MetricsPublishCategories;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class BeaconNodeMetricData extends BaseMetricData {
+public class BeaconNodeMetricData extends GeneralProcessMetricData {
+  @JsonProperty("disk_beaconchain_bytes_total")
+  private final long diskBytesTotal;
 
-  public final Long cpu_process_seconds_total;
-  public final Long memory_process_bytes;
-  public final String client_name;
-  public final String client_version;
-  public final Integer network_peers_connected;
-  public final Long sync_beacon_head_slot;
+  @JsonProperty("network_libp2p_bytes_total_receive")
+  private final long libp2pBytesReceived;
 
-  @JsonCreator
-  public BeaconNodeMetricData(
-      @JsonProperty("version") int version,
-      @JsonProperty("timestamp") long timestamp,
-      @JsonProperty("process") String process,
-      @JsonProperty("cpu_process_seconds_total") Long cpuProcessSecondsTotal,
-      @JsonProperty("memory_process_bytes") Long memoryProcessBytes,
-      @JsonProperty("client_name") String clientName,
-      @JsonProperty("client_version") String clientVersion,
-      @JsonProperty("network_peers_connected") Integer networkPeersConnected,
-      @JsonProperty("sync_beacon_head_slot") Long syncBeaconHeadSlot) {
-    super(timestamp, process);
-    this.cpu_process_seconds_total = cpuProcessSecondsTotal;
-    this.memory_process_bytes = memoryProcessBytes;
-    this.client_name = clientName;
-    this.client_version = clientVersion;
-    this.network_peers_connected = networkPeersConnected;
-    this.sync_beacon_head_slot = syncBeaconHeadSlot;
+  @JsonProperty("network_libp2p_bytes_total_transmit")
+  private final long libp2pBytesTotalTransmitted;
+
+  @JsonProperty("network_peers_connected")
+  private final int networkPeersConnected;
+
+  @JsonProperty("sync_eth1_connected")
+  private final boolean eth1Connected;
+
+  @JsonProperty("sync_eth2_synced")
+  private final boolean eth2Synced;
+
+  @JsonProperty("sync_beacon_head_slot")
+  private final long headSlot;
+
+  @JsonProperty("sync_eth1_fallback_configured")
+  private final boolean eth1FallbackConfigured;
+
+  @JsonProperty("sync_eth1_fallback_connected")
+  private final boolean eth1FallbackConnected;
+
+  @JsonProperty("slasher_active")
+  private final boolean slasherActive = false;
+
+  public BeaconNodeMetricData(final long timestamp, final MetricsPublisherSource source) {
+    super(timestamp, MetricsPublishCategories.BEACON_NODE.getDisplayName(), source);
+    this.diskBytesTotal = 0L;
+    this.libp2pBytesReceived = source.getGossipBytesTotalReceived();
+    this.libp2pBytesTotalTransmitted = source.getGossipBytesTotalSent();
+    this.networkPeersConnected = source.getPeerCount();
+    this.eth1Connected = source.isEth1Connected();
+    this.eth2Synced = source.isEth2Synced();
+    this.headSlot = source.getHeadSlot();
+    this.eth1FallbackConfigured = false;
+    this.eth1FallbackConnected = false;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
-    BeaconNodeMetricData that = (BeaconNodeMetricData) o;
-    return Objects.equals(cpu_process_seconds_total, that.cpu_process_seconds_total)
-        && Objects.equals(memory_process_bytes, that.memory_process_bytes)
-        && Objects.equals(client_name, that.client_name)
-        && Objects.equals(client_version, that.client_version)
-        && Objects.equals(network_peers_connected, that.network_peers_connected)
-        && Objects.equals(sync_beacon_head_slot, that.sync_beacon_head_slot);
+  public long getDiskBytesTotal() {
+    return diskBytesTotal;
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        super.hashCode(),
-        cpu_process_seconds_total,
-        memory_process_bytes,
-        client_name,
-        client_version,
-        network_peers_connected,
-        sync_beacon_head_slot);
+  public long getLibp2pBytesReceived() {
+    return libp2pBytesReceived;
+  }
+
+  public long getLibp2pBytesTotalTransmitted() {
+    return libp2pBytesTotalTransmitted;
+  }
+
+  public int getNetworkPeersConnected() {
+    return networkPeersConnected;
+  }
+
+  public boolean isEth1Connected() {
+    return eth1Connected;
+  }
+
+  public boolean isEth2Synced() {
+    return eth2Synced;
+  }
+
+  public long getHeadSlot() {
+    return headSlot;
+  }
+
+  public boolean isEth1FallbackConfigured() {
+    return eth1FallbackConfigured;
+  }
+
+  public boolean isEth1FallbackConnected() {
+    return eth1FallbackConnected;
+  }
+
+  public boolean isSlasherActive() {
+    return slasherActive;
   }
 }

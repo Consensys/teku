@@ -29,7 +29,11 @@ public class GeneralProcessMetricDataTest {
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
     final String processField = "system";
-    final MetricsPublisherSource source = new StubMetricsPublisherSource(1100L, 2200L, 44, 33);
+    final MetricsPublisherSource source =
+        StubMetricsPublisherSource.builder()
+            .cpuSecondsTotal(1100L)
+            .memoryProcessBytes(2200L)
+            .build();
     final GeneralProcessMetricData process =
         new GeneralProcessMetricData(10L, processField, source);
     final String data = jsonProvider.objectToJSON(process);

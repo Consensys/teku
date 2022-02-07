@@ -78,7 +78,9 @@ public class MetricsPublisherManager extends Service {
 
   private void publishMetrics() throws IOException {
     List<BaseMetricData> clientData = metricsDataFactory.getMetricData();
-    metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
+    if (!clientData.isEmpty()) {
+      metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
+    }
   }
 
   @Override
