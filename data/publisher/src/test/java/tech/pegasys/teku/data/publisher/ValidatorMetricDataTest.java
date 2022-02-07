@@ -27,14 +27,15 @@ class ValidatorMetricDataTest {
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
-    final MetricsPublisherSource source = new StubMetricsPublisherSource(1100L, 2200L, 44, 33);
+    final MetricsPublisherSource source =
+        StubMetricsPublisherSource.builder().validatorsActive(33).validatorsTotal(44).build();
     final ValidatorMetricData process = new ValidatorMetricData(10L, source);
     final String data = jsonProvider.objectToJSON(process);
     final ObjectMapper mapper = jsonProvider.getObjectMapper();
     final JsonNode node = mapper.readTree(data);
     assertThat(node.size()).isEqualTo(12);
     assertThat(node.get("process").asText()).isEqualTo("validator");
-    assertThat(node.get("validator_total").asInt()).isEqualTo(44L);
-    assertThat(node.get("validator_active").asInt()).isEqualTo(33L);
+    assertThat(node.get("validator_total").asInt()).isEqualTo(44);
+    assertThat(node.get("validator_active").asInt()).isEqualTo(33);
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -26,16 +27,25 @@ class MetricsDataFactory {
 
   private final MetricsSystem metricsSystem;
   private final TimeProvider timeProvider;
+  private final File beaconDataDirectory;
 
-  public MetricsDataFactory(final MetricsSystem metricsSystem, final TimeProvider timeProvider) {
+  public MetricsDataFactory(
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final File beaconDataDirectory) {
     this.metricsSystem = metricsSystem;
     this.timeProvider = timeProvider;
+    this.beaconDataDirectory = beaconDataDirectory;
   }
 
   List<BaseMetricData> getMetricData(final MetricsPublisherSource source) {
     final List<BaseMetricData> metricList = new ArrayList<>();
-    if (source.getValidatorsTotal() > 0L || source.getValidatorsActive() > 0L) {
-      metricList.add(new ValidatorMetricData(timeProvider.getTimeInMillis().longValue(), source));
+    final long timeMillis = timeProvider.getTimeInMillis().longValue();
+    if (source.isValidatorPresent()) {
+      metricList.add(new ValidatorMetricData(timeMillis, source));
+    }
+    if (source.isBeaconNodePresent()) {
+      metricList.add(new BeaconNodeMetricData(timeMillis, source, beaconDataDirectory));
     }
 
     return metricList;

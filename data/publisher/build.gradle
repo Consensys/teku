@@ -12,6 +12,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'org.hyperledger.besu.internal:metrics-core'
     implementation 'com.squareup.okhttp3:okhttp'
+    implementation 'commons-io:commons-io'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.assertj:assertj-core'

@@ -13,15 +13,30 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
+import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EXECUTOR;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.VALIDATOR;
+
 import java.util.List;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public class PrometheusMetricsPublisherSource implements MetricsPublisherSource {
   private long cpuSecondsTotal;
   private long memoryProcessBytes;
+  private long headSlot;
+  private long gossipBytesTotalSent;
+  private long gossipBytesTotalReceived;
   private int validatorsTotal;
   private int validatorsActive;
+  private int peerCount;
+  private boolean isBeaconNodePresent;
+  private boolean isEth2Synced;
+  private boolean isEth1Connected;
 
   public PrometheusMetricsPublisherSource(final PrometheusMetricsSystem metricsSystem) {
     metricsSystem.streamObservations().forEach(this::storeObservationIfNeeded);
@@ -47,7 +62,89 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
     return validatorsActive;
   }
 
+  @Override
+  public long getHeadSlot() {
+    return headSlot;
+  }
+
+  @Override
+  public boolean isValidatorPresent() {
+    return validatorsTotal > 0;
+  }
+
+  @Override
+  public boolean isBeaconNodePresent() {
+    return isBeaconNodePresent;
+  }
+
+  @Override
+  public boolean isEth2Synced() {
+    return isEth2Synced;
+  }
+
+  @Override
+  public boolean isEth1Connected() {
+    return isEth1Connected;
+  }
+
+  @Override
+  public int getPeerCount() {
+    return peerCount;
+  }
+
+  @Override
+  public long getGossipBytesTotalSent() {
+    return gossipBytesTotalSent;
+  }
+
+  @Override
+  public long getGossipBytesTotalReceived() {
+    return gossipBytesTotalReceived;
+  }
+
   private void storeObservationIfNeeded(final Observation observation) {
+    MetricCategory category = observation.getCategory();
+    if (category.equals(EXECUTOR)) {
+      readExecutorCategoryItem(observation);
+    } else if (category.equals(PROCESS)) {
+      readProcessCategoryItem(observation);
+    } else if (category.equals(VALIDATOR)) {
+      readValidatorCategoryItem(observation);
+    } else if (category.equals(JVM)) {
+      readJvmCategoryItem(observation);
+    } else if (category.equals(BEACON)) {
+      readBeaconCategoryItem(observation);
+    } else if (category.equals(LIBP2P)) {
+      readLibP2pCategoryItem(observation);
+    }
+  }
+
+  private void readLibP2pCategoryItem(final Observation observation) {
+    if (observation.getMetricName().equals("gossip_bytes_total")) {
+      if (observation.getLabels().contains("received_bytes")) {
+        gossipBytesTotalReceived = getLongValue(observation.getValue());
+      } else if (observation.getLabels().contains("sent_bytes")) {
+        gossipBytesTotalSent = getLongValue(observation.getValue());
+      }
+    }
+  }
+
+  private void readBeaconCategoryItem(final Observation observation) {
+    isBeaconNodePresent = true;
+    switch (observation.getMetricName()) {
+      case "head_slot":
+        headSlot = getLongValue(observation.getValue());
+        break;
+      case "eth1_request_queue_size":
+        isEth1Connected = true;
+        break;
+      case "peer_count":
+        peerCount = getIntValue(observation.getValue());
+        break;
+    }
+  }
+
+  private void readExecutorCategoryItem(final Observation observation) {
     switch (observation.getMetricName()) {
       case "cpu_seconds_total":
         cpuSecondsTotal = getLongValue(observation.getValue());
@@ -55,6 +152,29 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
       case "memory_pool_bytes_used":
         addToMemoryPoolBytesUsed((Double) observation.getValue());
         break;
+      case "sync_thread_active_count":
+        isEth2Synced = getLongValue(observation.getValue()) == 0;
+    }
+  }
+
+  private void readProcessCategoryItem(final Observation observation) {
+    switch (observation.getMetricName()) {
+      case "cpu_seconds_total":
+        cpuSecondsTotal = getLongValue(observation.getValue());
+        break;
+    }
+  }
+
+  private void readJvmCategoryItem(final Observation observation) {
+    switch (observation.getMetricName()) {
+      case "memory_pool_bytes_used":
+        addToMemoryPoolBytesUsed((Double) observation.getValue());
+        break;
+    }
+  }
+
+  private void readValidatorCategoryItem(final Observation observation) {
+    switch (observation.getMetricName()) {
       case "local_validator_counts":
         addToLocalValidators(observation.getLabels(), (Double) observation.getValue());
         break;
@@ -75,5 +195,10 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
   private long getLongValue(final Object value) {
     Double current = (Double) value;
     return current.longValue();
+  }
+
+  private int getIntValue(final Object value) {
+    Double current = (Double) value;
+    return current.intValue();
   }
 }

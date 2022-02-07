@@ -18,34 +18,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
-public class GeneralProcessMetricDataTest {
-
+public class BeaconNodeMetricDataTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
-  public void shouldSerializeObject() throws JsonProcessingException {
-    final String processField = "system";
+  void shouldSerialize(@TempDir final Path tempDir) throws JsonProcessingException {
     final MetricsPublisherSource source =
         StubMetricsPublisherSource.builder()
-            .cpuSecondsTotal(1100L)
-            .memoryProcessBytes(2200L)
+            .gossipBytesReceived(998L)
+            .headSlot(1012L)
+            .gossipBytesSent(776L)
+            .isEth2Synced(true)
             .build();
-    final GeneralProcessMetricData process =
-        new GeneralProcessMetricData(10L, processField, source);
+    final BeaconNodeMetricData process = new BeaconNodeMetricData(10L, source, tempDir.toFile());
     final String data = jsonProvider.objectToJSON(process);
     final ObjectMapper mapper = jsonProvider.getObjectMapper();
     final JsonNode node = mapper.readTree(data);
-    assertThat(node.size()).isEqualTo(10);
-    assertThat(node.get("client_build").asInt()).isEqualTo(0);
-    assertThat(node.get("client_name").asText()).isEqualTo("teku");
-    assertThat(node.get("client_version").asText()).isNotEmpty();
-    assertThat(node.get("sync_eth2_fallback_connected").asBoolean()).isFalse();
-    assertThat(node.get("sync_eth2_fallback_configured").asBoolean()).isFalse();
-    assertThat(node.get("cpu_process_seconds_total").asLong()).isEqualTo(1100L);
-    assertThat(node.get("memory_process_bytes").asLong()).isEqualTo(2200L);
+    assertThat(node.size()).isEqualTo(20);
+    assertThat(node.get("process").asText()).isEqualTo("beaconnode");
+    assertThat(node.get("disk_beaconchain_bytes_total").asLong()).isEqualTo(0L);
+    assertThat(node.get("network_libp2p_bytes_total_receive").asLong()).isEqualTo(998L);
+    assertThat(node.get("network_libp2p_bytes_total_transmit").asLong()).isEqualTo(776L);
+    assertThat(node.get("sync_eth1_connected").asInt()).isEqualTo(0);
+    assertThat(node.get("sync_eth2_synced").asBoolean()).isTrue();
+    assertThat(node.get("sync_beacon_head_slot").asLong()).isEqualTo(1012L);
+    assertThat(node.get("sync_eth1_fallback_configured").asBoolean()).isFalse();
+    assertThat(node.get("sync_eth1_fallback_connected").asBoolean()).isFalse();
+    assertThat(node.get("slasher_active").asBoolean()).isFalse();
   }
 }

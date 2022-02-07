@@ -47,6 +47,8 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
   private final TopicHandler handler;
   private final Set<Bytes> processedMessages = LimitedSet.create(MAX_SENT_MESSAGES);
   private final Counter messageCounter;
+  private final Counter bytesSentCounter;
+  private final Counter bytesReceivedCounter;
 
   public GossipHandler(
       final MetricsSystem metricsSystem,
@@ -64,6 +66,22 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
                 "Total number of gossip messages received (avoid libp2p deduplication)",
                 "topic")
             .labels(topic.getTopic());
+    this.bytesSentCounter =
+        metricsSystem
+            .createLabelledCounter(
+                TekuMetricCategory.LIBP2P,
+                "gossip_bytes_total",
+                "Total count of bytes sent and received on gossip",
+                "direction")
+            .labels("sent_bytes");
+    this.bytesReceivedCounter =
+        metricsSystem
+            .createLabelledCounter(
+                TekuMetricCategory.LIBP2P,
+                "gossip_bytes_total",
+                "Total count of bytes sent and received on gossip",
+                "direction")
+            .labels("received_bytes");
   }
 
   @Override
@@ -87,6 +105,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
       return VALIDATION_IGNORED;
     }
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
+    bytesReceivedCounter.inc(bytes.size());
 
     PubsubMessage pubsubMessage = message.getOriginalMessage();
     if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
@@ -102,8 +121,8 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
       // We've already gossiped this data
       return;
     }
-
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
+    bytesSentCounter.inc(bytes.size());
     SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
         .finish(
             () -> LOG.trace("Successfully gossiped message on {}", topic),

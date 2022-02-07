@@ -23,15 +23,23 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+
+import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 
 class MetricsPublisherManagerTest {
 
@@ -40,6 +48,7 @@ class MetricsPublisherManagerTest {
   private final MetricsEndpoint metricsEndpoint = mock(MetricsEndpoint.class);
   private final MetricsConfig metricsConfig = mock(MetricsConfig.class);
   private final MetricsPublisher metricsPublisher = mock(MetricsPublisher.class);
+  private final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
   private final PrometheusMetricsSystem prometheusMetricsSystem =
       mock(PrometheusMetricsSystem.class);
 
@@ -51,13 +60,15 @@ class MetricsPublisherManagerTest {
     when(metricsEndpoint.getMetricsSystem()).thenReturn(prometheusMetricsSystem);
     when(metricsEndpoint.getMetricConfig()).thenReturn(metricsConfig);
     when(metricsConfig.getMetricsEndpoint()).thenReturn(Optional.of(new URL("http://host.com/")));
-    publisherManager =
-        new MetricsPublisherManager(
-            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
   }
 
   @Test
-  public void shouldRunPublisherEveryXSeconds() throws IOException {
+  public void shouldRunPublisherEveryXSeconds(@TempDir final Path tempDir) throws IOException {
+    when(prometheusMetricsSystem.streamObservations()).thenReturn(metricsStream()).thenReturn(metricsStream());
+    when(dataDirLayout.getBeaconDataDirectory()).thenReturn(tempDir);
+    publisherManager =
+        new MetricsPublisherManager(
+            asyncRunnerFactory, timeProvider, metricsEndpoint, dataDirLayout, metricsPublisher);
     assertThat(asyncRunnerFactory.getStubAsyncRunners().size()).isEqualTo(0);
     verify(metricsPublisher, times(0)).publishMetrics(anyString());
 
@@ -72,13 +83,36 @@ class MetricsPublisherManagerTest {
   }
 
   @Test
-  public void shouldStopGracefully() throws IOException {
-    final MetricsPublisherManager publisherManager =
+  public void shouldNotPublishEmptyResult(@TempDir final Path tempDir) throws IOException {
+    when(dataDirLayout.getBeaconDataDirectory()).thenReturn(tempDir);
+    publisherManager =
         new MetricsPublisherManager(
-            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
+            asyncRunnerFactory, timeProvider, metricsEndpoint, dataDirLayout, metricsPublisher);
+    assertThat(publisherManager.doStart()).isEqualTo(SafeFuture.COMPLETE);
+    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
+    verify(metricsPublisher, never()).publishMetrics(anyString());
+  }
+
+  @Test
+  public void shouldStopGracefully(@TempDir final Path tempDir) throws IOException {
+    when(dataDirLayout.getBeaconDataDirectory()).thenReturn(tempDir);
+    publisherManager =
+        new MetricsPublisherManager(
+            asyncRunnerFactory, timeProvider, metricsEndpoint, dataDirLayout, metricsPublisher);
     assertThat(publisherManager.doStart()).isEqualTo(SafeFuture.COMPLETE);
     assertThat(publisherManager.doStop()).isEqualTo(SafeFuture.COMPLETE);
     asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
     verify(metricsPublisher, never()).publishMetrics(anyString());
+  }
+
+
+  private Stream<Observation> metricsStream() {
+    return Stream.of(
+        new Observation(
+            TekuMetricCategory.VALIDATOR,
+            "local_validator_counts",
+            44.0,
+            List.of("active_ongoing"))
+    );
   }
 }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 
 public class MetricsPublisherManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,11 +47,15 @@ public class MetricsPublisherManager extends Service {
       final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
       final MetricsEndpoint metricsEndpoint,
+      final DataDirLayout dataDirLayout,
       final MetricsPublisher metricsPublisher) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.metricsUrl = metricsEndpoint.getMetricConfig().getMetricsEndpoint().map(HttpUrl::get);
     this.metricsDataFactory =
-        new MetricsDataFactory(metricsEndpoint.getMetricsSystem(), timeProvider);
+        new MetricsDataFactory(
+            metricsEndpoint.getMetricsSystem(),
+            timeProvider,
+            dataDirLayout.getBeaconDataDirectory().toFile());
     this.intervalBetweenPublications = metricsEndpoint.getMetricConfig().getPublicationInterval();
     this.metricsPublisher = metricsPublisher;
   }
@@ -58,11 +63,13 @@ public class MetricsPublisherManager extends Service {
   public MetricsPublisherManager(
       final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
-      final MetricsEndpoint metricsEndpoint) {
+      final MetricsEndpoint metricsEndpoint,
+      final DataDirLayout dataDirLayout) {
     this(
         asyncRunnerFactory,
         timeProvider,
         metricsEndpoint,
+        dataDirLayout,
         new MetricsPublisher(
             new OkHttpClient(),
             metricsEndpoint.getMetricConfig().getMetricsEndpoint().map(HttpUrl::get).orElse(null)));
@@ -78,7 +85,9 @@ public class MetricsPublisherManager extends Service {
 
   private void publishMetrics() throws IOException {
     List<BaseMetricData> clientData = metricsDataFactory.getMetricData();
-    metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
+    if (!clientData.isEmpty()) {
+      metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
+    }
   }
 
   @Override
