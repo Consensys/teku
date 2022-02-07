@@ -576,6 +576,14 @@ class ForkChoiceTest {
 
     assertForkChoiceUpdateNotification(blockAndState, true);
 
+    // let's import a new block on top the optimistic head
+    // let's make the EL return ACCEPTED on newPayload call but return INVALID on forkChoiceUpdated
+    // call
+    // INVALID will give us a lastValidHash corresponding to the previous block payload (imported
+    // optimistically)
+
+    executionEngine.setPayloadStatus(PayloadStatus.ACCEPTED);
+
     PayloadStatus invalidWithLastValidBlockHash =
         PayloadStatus.create(
             ExecutionPayloadStatus.INVALID,
@@ -593,11 +601,20 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndStatePlus1 =
         storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot.increment());
 
+    // before importing, previous block is optimistic
     assertThat(isFullyValidated(blockAndState.getRoot())).isFalse();
 
     importBlockOptimistically(blockAndStatePlus1);
 
+    // after importing, previous block is fully valid
     assertThat(isFullyValidated(blockAndState.getRoot())).isTrue();
+
+    // processing the head
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
+    processHead(blockAndStatePlus1.getSlot());
+
+    // we have now no optimistic head
+    assertHeadIsFullyValidated(blockAndState);
   }
 
   private void assertHeadIsOptimistic(final SignedBlockAndState blockAndState) {
@@ -606,6 +623,14 @@ class ForkChoiceTest {
     assertThat(optimisticHead.isHeadOptimistic()).isTrue();
     assertThat(optimisticHead.getHeadBlockSlot()).isEqualTo(blockAndState.getSlot());
     assertThat(optimisticHead.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+  }
+
+  private void assertHeadIsFullyValidated(final SignedBlockAndState blockAndState) {
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+    assertThat(recentChainData.getChainHead().orElseThrow().getSlot())
+        .isEqualTo(blockAndState.getSlot());
+    assertThat(recentChainData.getChainHead().orElseThrow().getRoot())
+        .isEqualTo(blockAndState.getRoot());
   }
 
   private boolean isFullyValidated(final Bytes32 root) {
