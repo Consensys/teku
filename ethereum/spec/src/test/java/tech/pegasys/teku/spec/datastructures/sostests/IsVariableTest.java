@@ -36,8 +36,8 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class IsVariableTest {
@@ -52,7 +52,9 @@ public class IsVariableTest {
         Arguments.of(AttesterSlashing.SSZ_SCHEMA),
         Arguments.of(IndexedAttestation.SSZ_SCHEMA),
         Arguments.of(SCHEMA_DEFINITIONS.getBeaconStateSchema()),
-        Arguments.of(PendingAttestation.SSZ_SCHEMA),
+        Arguments.of(
+            BeaconStateSchemaPhase0.required(SCHEMA_DEFINITIONS.getBeaconStateSchema())
+                .getPendingAttestationSchema()),
         Arguments.of(AggregateAndProof.SSZ_SCHEMA));
   }
 

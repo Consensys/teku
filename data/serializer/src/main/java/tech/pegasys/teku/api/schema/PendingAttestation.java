@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 
 public class PendingAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
@@ -54,8 +55,8 @@ public class PendingAttestation {
   }
 
   public tech.pegasys.teku.spec.datastructures.state.PendingAttestation
-      asInternalPendingAttestation() {
-    return new tech.pegasys.teku.spec.datastructures.state.PendingAttestation(
+      asInternalPendingAttestation(final PendingAttestationSchema pendingAttestationSchema) {
+    return pendingAttestationSchema.create(
         aggregation_bits, data.asInternalAttestationData(), inclusion_delay, proposer_index);
   }
 }

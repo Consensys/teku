@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 
@@ -78,9 +77,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
           .put(
               "ssz_static/IndexedAttestation",
               new SszTestExecutorDeprecated<>(IndexedAttestation.SSZ_SCHEMA))
-          .put(
-              "ssz_static/PendingAttestation",
-              new SszTestExecutorDeprecated<>(PendingAttestation.SSZ_SCHEMA))
           .put(
               "ssz_static/ProposerSlashing",
               new SszTestExecutorDeprecated<>(ProposerSlashing.SSZ_SCHEMA))

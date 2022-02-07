@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -517,16 +518,19 @@ class BeaconChainMetricsTest {
     return Stream.of(bitlists)
         .map(
             bitlist1 ->
-                new PendingAttestation(
-                    bitlist1,
-                    new AttestationData(
-                        UInt64.valueOf(slot),
-                        UInt64.valueOf(index),
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomCheckpoint(),
-                        dataStructureUtil.randomCheckpoint()),
-                    dataStructureUtil.randomUInt64(),
-                    dataStructureUtil.randomUInt64()));
+                BeaconStateSchemaPhase0.required(
+                        spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+                    .getPendingAttestationSchema()
+                    .create(
+                        bitlist1,
+                        new AttestationData(
+                            UInt64.valueOf(slot),
+                            UInt64.valueOf(index),
+                            dataStructureUtil.randomBytes32(),
+                            dataStructureUtil.randomCheckpoint(),
+                            dataStructureUtil.randomCheckpoint()),
+                        dataStructureUtil.randomUInt64(),
+                        dataStructureUtil.randomUInt64()));
   }
 
   private Stream<PendingAttestation> createAttestationsWithTargetCheckpoint(
@@ -534,16 +538,19 @@ class BeaconChainMetricsTest {
     return Stream.of(bitlists)
         .map(
             bitlist1 ->
-                new PendingAttestation(
-                    bitlist1,
-                    new AttestationData(
-                        UInt64.valueOf(slot),
-                        UInt64.valueOf(index),
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomCheckpoint(),
-                        target),
-                    dataStructureUtil.randomUInt64(),
-                    dataStructureUtil.randomUInt64()));
+                BeaconStateSchemaPhase0.required(
+                        spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+                    .getPendingAttestationSchema()
+                    .create(
+                        bitlist1,
+                        new AttestationData(
+                            UInt64.valueOf(slot),
+                            UInt64.valueOf(index),
+                            dataStructureUtil.randomBytes32(),
+                            dataStructureUtil.randomCheckpoint(),
+                            target),
+                        dataStructureUtil.randomUInt64(),
+                        dataStructureUtil.randomUInt64()));
   }
 
   private SszBitlist bitlistOf(final int... indices) {
