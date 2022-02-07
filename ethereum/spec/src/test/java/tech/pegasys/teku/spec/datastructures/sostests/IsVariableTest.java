@@ -26,10 +26,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -47,8 +45,8 @@ public class IsVariableTest {
         Arguments.of(SCHEMA_DEFINITIONS.getBeaconBlockBodySchema()),
         Arguments.of(SCHEMA_DEFINITIONS.getBeaconBlockSchema()),
         Arguments.of(SCHEMA_DEFINITIONS.getAttestationSchema()),
-        Arguments.of(AttesterSlashing.SSZ_SCHEMA),
-        Arguments.of(IndexedAttestation.SSZ_SCHEMA),
+        Arguments.of(SCHEMA_DEFINITIONS.getAttesterSlashingSchema()),
+        Arguments.of(SCHEMA_DEFINITIONS.getIndexedAttestationSchema()),
         Arguments.of(SCHEMA_DEFINITIONS.getBeaconStateSchema()),
         Arguments.of(
             BeaconStateSchemaPhase0.required(SCHEMA_DEFINITIONS.getBeaconStateSchema())

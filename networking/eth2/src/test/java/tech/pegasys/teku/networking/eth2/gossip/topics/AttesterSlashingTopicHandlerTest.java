@@ -37,7 +37,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
         gossipEncoding,
         forkDigest,
         GossipTopicName.ATTESTER_SLASHING,
-        AttesterSlashing.SSZ_SCHEMA,
+        spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema(),
         GOSSIP_MAX_SIZE);
   }
 
@@ -98,7 +98,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
             gossipEncoding,
             forkDigest,
             GossipTopicName.ATTESTER_SLASHING,
-            AttesterSlashing.SSZ_SCHEMA,
+            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema(),
             GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
   }

@@ -14,16 +14,11 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public interface BeaconBlockBodySchemaBellatrix<T extends BeaconBlockBodyBellatrix>
     extends BeaconBlockBodySchemaAltair<T> {
-
-  static BeaconBlockBodySchemaBellatrix<?> create(final SpecConfigBellatrix specConfig) {
-    return BeaconBlockBodySchemaBellatrixImpl.create(specConfig);
-  }
 
   ExecutionPayloadSchema getExecutionPayloadSchema();
 

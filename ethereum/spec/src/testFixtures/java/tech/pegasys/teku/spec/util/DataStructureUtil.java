@@ -94,6 +94,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -569,7 +570,9 @@ public final class DataStructureUtil {
   public AttesterSlashing randomAttesterSlashing(final UInt64... attestingIndices) {
     IndexedAttestation attestation1 = randomIndexedAttestation(attestingIndices);
     IndexedAttestation attestation2 = randomIndexedAttestation(attestingIndices);
-    return new AttesterSlashing(attestation1, attestation2);
+    return spec.getGenesisSchemaDefinitions()
+        .getAttesterSlashingSchema()
+        .create(attestation1, attestation2);
   }
 
   public List<SignedBeaconBlock> randomSignedBeaconBlockSequence(
@@ -841,9 +844,12 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndices) {
+    final IndexedAttestationSchema indexedAttestationSchema =
+        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     SszUInt64List attesting_indices =
-        IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().of(attestingIndices);
-    return new IndexedAttestation(attesting_indices, randomAttestationData(), randomSignature());
+        indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndices);
+    return indexedAttestationSchema.create(
+        attesting_indices, randomAttestationData(), randomSignature());
   }
 
   public DepositData randomDepositData() {

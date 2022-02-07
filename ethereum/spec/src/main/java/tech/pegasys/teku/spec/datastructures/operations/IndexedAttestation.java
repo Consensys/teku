@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -29,12 +29,12 @@ public class IndexedAttestation
   public static class IndexedAttestationSchema
       extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
-    public IndexedAttestationSchema() {
+    public IndexedAttestationSchema(final SpecConfig config) {
       super(
           "IndexedAttestation",
           namedSchema(
               "attesting_indices",
-              SszUInt64ListSchema.create(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+              SszUInt64ListSchema.create(config.getMaxValidatorsPerCommittee())),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
@@ -47,17 +47,30 @@ public class IndexedAttestation
     public IndexedAttestation createFromBackingNode(TreeNode node) {
       return new IndexedAttestation(this, node);
     }
-  }
 
-  public static final IndexedAttestationSchema SSZ_SCHEMA = new IndexedAttestationSchema();
+    public IndexedAttestation create(
+        final SszUInt64List attestingIndices,
+        final AttestationData data,
+        final BLSSignature signature) {
+      return new IndexedAttestation(this, attestingIndices, data, signature);
+    }
+  }
 
   private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public IndexedAttestation(
-      SszUInt64List attesting_indices, AttestationData data, BLSSignature signature) {
-    super(SSZ_SCHEMA, attesting_indices, data, new SszSignature(signature));
+  private IndexedAttestation(
+      final IndexedAttestationSchema schema,
+      final SszUInt64List attestingIndices,
+      final AttestationData data,
+      final BLSSignature signature) {
+    super(schema, attestingIndices, data, new SszSignature(signature));
+  }
+
+  @Override
+  public IndexedAttestationSchema getSchema() {
+    return (IndexedAttestationSchema) super.getSchema();
   }
 
   public SszUInt64List getAttesting_indices() {

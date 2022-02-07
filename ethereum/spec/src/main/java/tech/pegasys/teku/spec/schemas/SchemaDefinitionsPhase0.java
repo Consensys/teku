@@ -31,7 +31,8 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
-    this.beaconBlockBodySchema = BeaconBlockBodySchemaPhase0.create(specConfig);
+    this.beaconBlockBodySchema =
+        BeaconBlockBodySchemaPhase0.create(specConfig, getAttesterSlashingSchema());
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0();
   }
 

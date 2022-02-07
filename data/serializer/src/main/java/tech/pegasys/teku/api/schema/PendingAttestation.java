@@ -18,13 +18,13 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 
 public class PendingAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final SszBitlist aggregation_bits;
+  public final Bytes aggregation_bits;
 
   public final AttestationData data;
 
@@ -36,7 +36,7 @@ public class PendingAttestation {
 
   @JsonCreator
   public PendingAttestation(
-      @JsonProperty("aggregation_bits") final SszBitlist aggregation_bits,
+      @JsonProperty("aggregation_bits") final Bytes aggregation_bits,
       @JsonProperty("data") final AttestationData data,
       @JsonProperty("inclusion_delay") final UInt64 inclusion_delay,
       @JsonProperty("proposer_index") final UInt64 proposer_index) {
@@ -48,7 +48,7 @@ public class PendingAttestation {
 
   public PendingAttestation(
       final tech.pegasys.teku.spec.datastructures.state.PendingAttestation pendingAttestation) {
-    this.aggregation_bits = pendingAttestation.getAggregation_bits();
+    this.aggregation_bits = pendingAttestation.getAggregation_bits().sszSerialize();
     this.data = new AttestationData(pendingAttestation.getData());
     this.inclusion_delay = pendingAttestation.getInclusion_delay();
     this.proposer_index = pendingAttestation.getProposer_index();
@@ -57,6 +57,9 @@ public class PendingAttestation {
   public tech.pegasys.teku.spec.datastructures.state.PendingAttestation
       asInternalPendingAttestation(final PendingAttestationSchema pendingAttestationSchema) {
     return pendingAttestationSchema.create(
-        aggregation_bits, data.asInternalAttestationData(), inclusion_delay, proposer_index);
+        pendingAttestationSchema.getAggregationBitfieldSchema().sszDeserialize(aggregation_bits),
+        data.asInternalAttestationData(),
+        inclusion_delay,
+        proposer_index);
   }
 }

@@ -181,6 +181,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
+            spec,
             recentChainData,
             asyncRunner,
             discoveryNetwork,

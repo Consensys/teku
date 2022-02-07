@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -38,7 +39,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
     this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
-    this.beaconBlockBodySchema = BeaconBlockBodySchemaBellatrix.create(specConfig);
+    this.beaconBlockBodySchema =
+        BeaconBlockBodySchemaBellatrixImpl.create(specConfig, getAttesterSlashingSchema());
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
     this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);

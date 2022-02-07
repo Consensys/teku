@@ -108,7 +108,7 @@ public class BeaconBlockBody {
                       .collect(schema.getProposerSlashingsSchema().collector()))
               .attesterSlashings(
                   attester_slashings.stream()
-                      .map(AttesterSlashing::asInternalAttesterSlashing)
+                      .map(slashing -> slashing.asInternalAttesterSlashing(spec))
                       .collect(schema.getAttesterSlashingsSchema().collector()))
               .deposits(
                   deposits.stream()
