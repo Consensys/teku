@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -70,11 +68,6 @@ class FuzzUtilTest {
   // uses process_deposits.
 
   // *************** START Deposit Tests *****************
-
-  @AfterEach
-  public void cleanup() {
-    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
-  }
 
   @Test
   public void fuzzAttestation_minimal() {

@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -66,18 +65,11 @@ public class FuzzUtil {
             ? TestSpecFactory.createMainnetPhase0()
             : TestSpecFactory.createMinimalPhase0();
     beaconBlockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
-    initialize(useMainnetConfig, disable_bls);
+    initialize(disable_bls);
     this.signatureVerifier = disable_bls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
   }
 
-  public static void initialize(final boolean useMainnetConfig, final boolean disable_bls) {
-    // NOTE: makes global Constants/config changes
-    if (useMainnetConfig) {
-      Constants.setConstants(TestSpecFactory.createMainnetPhase0());
-    } else {
-      Constants.setConstants(TestSpecFactory.createMinimalPhase0());
-    }
-
+  public static void initialize(final boolean disable_bls) {
     if (disable_bls) {
       BLSConstants.disableBLSVerification();
     }

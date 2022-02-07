@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -115,7 +114,6 @@ public class DebugDbCommand implements Runnable {
                   "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
-    setConstants(eth2NetworkOptions);
     try (final Database database =
         createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       return writeState(
@@ -149,7 +147,6 @@ public class DebugDbCommand implements Runnable {
               description = "File to write the block matching the latest finalized state to")
           final Path blockOutputFile)
       throws Exception {
-    setConstants(eth2NetworkOptions);
     final AsyncRunner asyncRunner =
         ScheduledExecutorAsyncRunner.create(
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
@@ -176,10 +173,6 @@ public class DebugDbCommand implements Runnable {
     } finally {
       asyncRunner.shutdown();
     }
-  }
-
-  private void setConstants(@Mixin final Eth2NetworkOptions eth2NetworkOptions) {
-    Constants.setConstants(eth2NetworkOptions.getNetworkConfiguration().getSpec());
   }
 
   private Database createDatabase(
