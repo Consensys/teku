@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -374,7 +375,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     storageSystem.chainUpdater().saveBlock(block1);
     assertThat(block1.getExecutionBlockHash()).isNotEmpty();
 
-    final ForkChoiceStrategy strategy =
+    final ReadOnlyForkChoiceStrategy strategy =
         storageSystem.recentChainData().getForkChoiceStrategy().orElseThrow();
     assertThat(strategy.executionBlockHash(block1.getRoot()))
         .isEqualTo(block1.getExecutionBlockHash());

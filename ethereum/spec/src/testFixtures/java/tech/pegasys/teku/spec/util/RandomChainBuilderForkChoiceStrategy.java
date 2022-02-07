@@ -15,12 +15,15 @@ package tech.pegasys.teku.spec.util;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
@@ -49,6 +52,18 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   @Override
   public Optional<Bytes32> blockParentRoot(final Bytes32 blockRoot) {
     return getBlock(blockRoot).map(SignedBeaconBlock::getParentRoot);
+  }
+
+  @Override
+  public Optional<Bytes32> executionBlockHash(final Bytes32 blockRoot) {
+    return getBlock(blockRoot)
+        .map(
+            block -> {
+              final BeaconBlockBody blockBody = block.getMessage().getBody();
+              return blockBody instanceof BeaconBlockBodyBellatrix
+                  ? ((BeaconBlockBodyBellatrix) blockBody).getExecutionPayload().getBlockHash()
+                  : null;
+            });
   }
 
   @Override
@@ -84,8 +99,18 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public List<Map<String, Object>> getNodeData() {
+    return Collections.emptyList();
+  }
+
+  @Override
   public boolean contains(final Bytes32 blockRoot) {
     return getBlock(blockRoot).isPresent();
+  }
+
+  @Override
+  public boolean isOptimistic(final Bytes32 blockRoot) {
+    return false;
   }
 
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {

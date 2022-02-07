@@ -284,6 +284,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
   public boolean isOptimistic(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
@@ -394,6 +395,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
   public List<Map<String, Object>> getNodeData() {
     protoArrayLock.readLock().lock();
     try {

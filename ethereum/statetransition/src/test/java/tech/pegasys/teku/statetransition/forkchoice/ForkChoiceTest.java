@@ -37,12 +37,12 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -545,7 +545,7 @@ class ForkChoiceTest {
 
   private void assertForkChoiceUpdateNotification(
       final SignedBlockAndState blockAndState, final boolean optimisticHead) {
-    final ForkChoiceStrategy forkChoiceStrategy =
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
