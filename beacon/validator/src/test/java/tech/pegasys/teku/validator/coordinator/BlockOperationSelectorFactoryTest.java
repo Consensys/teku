@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
@@ -117,7 +116,7 @@ class BlockOperationSelectorFactoryTest {
   private final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
   private final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
 
-  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
 
   private final ExecutionPayload defaultExecutionPayload =
