@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -72,12 +73,16 @@ public class BlockValidatorTest {
   }
 
   @TestTemplate
-  void shouldReturnValidForValidBlock() {
+  void shouldReturnValidForValidBlock(SpecContext specContext) {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     final SignedBlockAndState signedBlockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      setExecutionPayloadStatus(block.getParentRoot(), PayloadStatus.VALID);
+    }
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
@@ -92,12 +97,16 @@ public class BlockValidatorTest {
   }
 
   @TestTemplate
-  void shouldReturnInvalidForSecondValidBlockForSlotAndProposer() {
+  void shouldReturnInvalidForSecondValidBlockForSlotAndProposer(SpecContext specContext) {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     final SignedBlockAndState signedBlockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      setExecutionPayloadStatus(block.getParentRoot(), PayloadStatus.VALID);
+    }
 
     InternalValidationResult result1 = blockValidator.validate(block).join();
     assertTrue(result1.isAccept());
@@ -195,7 +204,7 @@ public class BlockValidatorTest {
   }
 
   @TestTemplate
-  void shouldReturnInvalidForBlockWithWrongSignature() {
+  void shouldReturnInvalidForBlockWithWrongSignature(SpecContext specContext) {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
@@ -204,6 +213,10 @@ public class BlockValidatorTest {
             spec,
             storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock().getMessage(),
             BLSTestUtil.randomSignature(0));
+
+    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      setExecutionPayloadStatus(block.getParentRoot(), PayloadStatus.VALID);
+    }
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isReject());
@@ -254,6 +267,8 @@ public class BlockValidatorTest {
 
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
+    setExecutionPayloadStatus(block.getParentRoot(), PayloadStatus.VALID);
+
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
   }
@@ -280,8 +295,55 @@ public class BlockValidatorTest {
                     .setExecutionPayload(
                         specContext.getDataStructureUtil().randomExecutionPayload()));
 
+    setExecutionPayloadStatus(signedBlockAndState.getBlock().getParentRoot(), PayloadStatus.VALID);
+
     InternalValidationResult result =
         blockValidator.validate(signedBlockAndState.getBlock()).join();
     assertTrue(result.isReject());
+  }
+
+  @TestTemplate
+  void shouldReturnIgnoreIfParentPayloadIsNotYetValidated(SpecContext specContext) {
+    specContext.assumeBellatrixActive();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    InternalValidationResult result = blockValidator.validate(block).join();
+    assertTrue(result.isIgnore());
+  }
+
+  @TestTemplate
+  void shouldReturnIgnoreIfParentPayloadIsAccepted(SpecContext specContext) {
+    specContext.assumeBellatrixActive();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    setExecutionPayloadStatus(block.getParentRoot(), PayloadStatus.ACCEPTED);
+
+    InternalValidationResult result = blockValidator.validate(block).join();
+    assertTrue(result.isIgnore());
+  }
+
+  private void setExecutionPayloadStatus(final Bytes32 parentRoot, final PayloadStatus status) {
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .orElseThrow()
+        .onExecutionPayloadResult(parentRoot, status);
   }
 }

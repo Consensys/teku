@@ -135,6 +135,19 @@ public class BlockValidator {
                                 "Execution Payload timestamp is not consistence with and block slot time");
                           }
                         }
+
+                        if (!recentChainData
+                            .getForkChoiceStrategy()
+                            .map(
+                                forkChoiceStrategy ->
+                                    forkChoiceStrategy.isFullyValidated(
+                                        parentBlock.get().getRoot()))
+                            .orElse(false)) {
+                          LOG.trace(
+                              "Parent block wasn't fully validated against execution engine.");
+                          return InternalValidationResult.IGNORE;
+                        }
+
                         if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                           return reject("Block signature is invalid");
                         }
