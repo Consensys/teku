@@ -124,7 +124,7 @@ public class ValidatorTypes {
           .name("Signer")
           .formatter(URL::toString)
           .parser(
-              url -> { // TODO Fix
+              url -> {
                 try {
                   return new URL(url);
                 } catch (MalformedURLException e) {
