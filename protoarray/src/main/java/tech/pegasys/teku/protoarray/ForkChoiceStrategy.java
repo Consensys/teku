@@ -275,6 +275,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
   public boolean isFullyValidated(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
