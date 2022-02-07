@@ -25,7 +25,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -85,17 +84,6 @@ class JsonProviderTest {
   public void UInt64ShouldDeserializeNonHex() throws JsonProcessingException {
     final UInt256 data = jsonProvider.jsonToObject("10", UInt256.class);
     assertEquals(data, UInt256.fromHexString("0xa"));
-  }
-
-  @Test
-  public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
-    final int BITLIST_SIZE = 40;
-    final SszBitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
-    final String asJson = jsonProvider.objectToJSON(data);
-    final SszBitlist asData = jsonProvider.jsonToObject(asJson, SszBitlist.class);
-
-    assertThat(data.getAllSetBits()).containsExactlyElementsOf(asData.getAllSetBits());
-    assertThat(asData.size()).isEqualTo(BITLIST_SIZE);
   }
 
   @Test
