@@ -31,6 +31,12 @@ public class PayloadStatus {
           Optional.empty(),
           Optional.empty(),
           Optional.empty());
+  public static final PayloadStatus ACCEPTED =
+      new PayloadStatus(
+          Optional.of(ExecutionPayloadStatus.ACCEPTED),
+          Optional.empty(),
+          Optional.empty(),
+          Optional.empty());
 
   public static PayloadStatus failedExecution(final Throwable cause) {
     return new PayloadStatus(
