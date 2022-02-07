@@ -99,13 +99,13 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     byte[] arr = new byte[message.getData().readableBytes()];
     message.getData().slice().readBytes(arr);
     Bytes bytes = Bytes.wrap(arr);
+    bytesReceivedCounter.inc(bytes.size());
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", topic, bytes.size());
       return VALIDATION_IGNORED;
     }
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
-    bytesReceivedCounter.inc(bytes.size());
 
     PubsubMessage pubsubMessage = message.getOriginalMessage();
     if (!(pubsubMessage instanceof PreparedPubsubMessage)) {

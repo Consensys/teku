@@ -145,39 +145,26 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
   }
 
   private void readExecutorCategoryItem(final Observation observation) {
-    switch (observation.getMetricName()) {
-      case "cpu_seconds_total":
-        cpuSecondsTotal = getLongValue(observation.getValue());
-        break;
-      case "memory_pool_bytes_used":
-        addToMemoryPoolBytesUsed((Double) observation.getValue());
-        break;
-      case "sync_thread_active_count":
-        isEth2Synced = getLongValue(observation.getValue()) == 0;
+    if ("sync_thread_active_count".equals(observation.getMetricName())) {
+      isEth2Synced = getLongValue(observation.getValue()) == 0;
     }
   }
 
   private void readProcessCategoryItem(final Observation observation) {
-    switch (observation.getMetricName()) {
-      case "cpu_seconds_total":
-        cpuSecondsTotal = getLongValue(observation.getValue());
-        break;
+    if ("cpu_seconds_total".equals(observation.getMetricName())) {
+      cpuSecondsTotal = getLongValue(observation.getValue());
     }
   }
 
   private void readJvmCategoryItem(final Observation observation) {
-    switch (observation.getMetricName()) {
-      case "memory_pool_bytes_used":
-        addToMemoryPoolBytesUsed((Double) observation.getValue());
-        break;
+    if ("memory_pool_bytes_used".equals(observation.getMetricName())) {
+      addToMemoryPoolBytesUsed((Double) observation.getValue());
     }
   }
 
   private void readValidatorCategoryItem(final Observation observation) {
-    switch (observation.getMetricName()) {
-      case "local_validator_counts":
-        addToLocalValidators(observation.getLabels(), (Double) observation.getValue());
-        break;
+    if ("local_validator_counts".equals(observation.getMetricName())) {
+      addToLocalValidators(observation.getLabels(), (Double) observation.getValue());
     }
   }
 
