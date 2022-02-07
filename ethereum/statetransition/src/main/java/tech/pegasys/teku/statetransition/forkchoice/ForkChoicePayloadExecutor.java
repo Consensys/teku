@@ -54,7 +54,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     if (executionPayload.isDefault()) {
       // We're still pre-merge so no payload to execute
       // Note that the BlockProcessor will have already failed if this is default and shouldn't be
-      // because it check the parentRoot matches
+      // because it checks the parentRoot matches
       return true;
     }
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =

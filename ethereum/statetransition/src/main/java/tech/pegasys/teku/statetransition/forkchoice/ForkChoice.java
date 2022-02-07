@@ -327,10 +327,7 @@ public class ForkChoice {
                 }
               }
 
-              recentChainData
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onExecutionPayloadResult(blockRoot, result);
+              getForkChoiceStrategy().onExecutionPayloadResult(blockRoot, result);
             })
         .reportExceptions();
   }
@@ -484,7 +481,7 @@ public class ForkChoice {
   private ForkChoiceStrategy getForkChoiceStrategy() {
     forkChoiceExecutor.checkOnEventThread();
     return recentChainData
-        .getForkChoiceStrategy()
+        .getUpdatableForkChoiceStrategy()
         .orElseThrow(
             () ->
                 new IllegalStateException(

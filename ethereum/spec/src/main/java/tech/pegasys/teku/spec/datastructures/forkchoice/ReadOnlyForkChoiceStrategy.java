@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +26,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
 
+  Optional<Bytes32> executionBlockHash(Bytes32 blockRoot);
+
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
   Set<Bytes32> getBlockRootsAtSlot(UInt64 slot);
@@ -34,5 +37,9 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Map<Bytes32, UInt64> getOptimisticChainHeads();
 
+  List<Map<String, Object>> getNodeData();
+
   boolean contains(Bytes32 blockRoot);
+
+  boolean isOptimistic(Bytes32 blockRoot);
 }

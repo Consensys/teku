@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -231,8 +232,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
   }
 
-  public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
+  public Optional<ForkChoiceStrategy> getUpdatableForkChoiceStrategy() {
     return Optional.ofNullable(store).map(UpdatableStore::getForkChoiceStrategy);
+  }
+
+  public Optional<ReadOnlyForkChoiceStrategy> getForkChoiceStrategy() {
+    return Optional.ofNullable(store).map(ReadOnlyStore::getForkChoiceStrategy);
   }
 
   public StoreTransaction startStoreTransaction() {

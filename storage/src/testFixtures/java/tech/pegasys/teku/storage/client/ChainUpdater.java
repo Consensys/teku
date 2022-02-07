@@ -191,7 +191,7 @@ public class ChainUpdater {
     tx.putBlockAndState(block.getBlock(), block.getState());
     assertThat(tx.commit()).isCompleted();
     recentChainData
-        .getForkChoiceStrategy()
+        .getUpdatableForkChoiceStrategy()
         .orElseThrow()
         .onExecutionPayloadResult(block.getRoot(), ExecutePayloadResult.VALID);
     saveBlockTime(block);
