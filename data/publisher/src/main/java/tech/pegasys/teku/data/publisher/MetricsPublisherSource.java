@@ -21,4 +21,20 @@ public interface MetricsPublisherSource {
   int getValidatorsTotal();
 
   int getValidatorsActive();
+
+  long getHeadSlot();
+
+  boolean isValidatorPresent();
+
+  boolean isBeaconNodePresent();
+
+  boolean isEth2Synced();
+
+  boolean isEth1Connected();
+
+  int getPeerCount();
+
+  long getGossipBytesTotalSent();
+
+  long getGossipBytesTotalReceived();
 }

@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
 import io.javalin.http.Handler;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.sync.events.SyncState;
 
 public abstract class AbstractValidatorApiTest extends AbstractBeaconHandlerTest {
   protected Handler handler;

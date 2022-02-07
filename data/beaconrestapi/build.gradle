@@ -15,7 +15,7 @@ dependencies {
     implementation project(':infrastructure:serviceutils')
     implementation project(':storage')
     implementation project(':storage:api')
-    implementation project(':sync')
+    implementation project(':beacon:sync')
     implementation project(':validator:api')
 
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'

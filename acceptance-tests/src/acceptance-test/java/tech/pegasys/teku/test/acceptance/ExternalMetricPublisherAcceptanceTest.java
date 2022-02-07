@@ -34,7 +34,7 @@ public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
                     .withInteropNumberOfValidators(VALIDATOR_COUNT));
     tekuNode.start();
 
-    // externalMetricNode.waitForBeaconNodeMetricPublication();
+    externalMetricNode.waitForBeaconNodeMetricPublication();
     externalMetricNode.waitForValidatorMetricPublication(VALIDATOR_COUNT);
     // externalMetricNode.waitForSystemMetricPublication();
 
