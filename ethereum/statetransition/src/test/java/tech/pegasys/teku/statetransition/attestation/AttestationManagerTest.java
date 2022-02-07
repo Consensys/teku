@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -57,6 +58,8 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
@@ -217,8 +220,8 @@ class AttestationManagerTest {
   }
 
   private Attestation attestationFromSlot(final long slot, final Bytes32 targetRoot) {
-    return new Attestation(
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(1),
+    return attestationSchema.create(
+        attestationSchema.getAggregationBitsSchema().ofBits(1),
         new AttestationData(
             UInt64.valueOf(slot),
             UInt64.ZERO,

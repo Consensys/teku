@@ -73,7 +73,7 @@ public class SszSnappyGossipEncodingTest {
 
     final Bytes encoded = encoding.encode(original);
     final SignedAggregateAndProof decoded =
-        decode(topicName, encoding, encoded, SignedAggregateAndProof.SSZ_SCHEMA);
+        decode(topicName, encoding, encoded, original.getSchema());
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -83,7 +83,7 @@ public class SszSnappyGossipEncodingTest {
     final Attestation original = dataStructureUtil.randomAttestation();
 
     final Bytes encoded = encoding.encode(original);
-    final Attestation decoded = decode(topicName, encoding, encoded, Attestation.SSZ_SCHEMA);
+    final Attestation decoded = decode(topicName, encoding, encoded, original.getSchema());
 
     assertThat(decoded).isEqualTo(original);
   }

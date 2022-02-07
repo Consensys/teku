@@ -82,7 +82,9 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
     final Attestation data =
-        loadSsz(testCaseDir.resolve("attestation.ssz"), Attestation.SSZ_SCHEMA);
+        loadSsz(
+            testCaseDir.resolve("attestation.ssz"),
+            spec.getGenesisSchemaDefinitions().getAttestationSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);

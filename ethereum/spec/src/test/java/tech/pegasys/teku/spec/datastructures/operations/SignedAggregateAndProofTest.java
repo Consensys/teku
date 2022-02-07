@@ -17,16 +17,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedAggregateAndProofTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   public void shouldRoundTripViaSsz() {
     final SignedAggregateAndProof original = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes data = original.sszSerialize();
-    final SignedAggregateAndProof result = SignedAggregateAndProof.SSZ_SCHEMA.sszDeserialize(data);
+    final SignedAggregateAndProof result =
+        spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema().sszDeserialize(data);
     assertThat(result).isEqualTo(original);
   }
 }

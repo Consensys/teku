@@ -18,6 +18,8 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 
 public class SignedAggregateAndProof {
 
@@ -42,8 +44,12 @@ public class SignedAggregateAndProof {
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof
-      asInternalSignedAggregateAndProof() {
-    return new tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof(
-        message.asInternalAggregateAndProof(), signature.asInternalBLSSignature());
+      asInternalSignedAggregateAndProof(final Spec spec) {
+    final SpecVersion specVersion = spec.atSlot(message.aggregate.data.slot);
+    return specVersion
+        .getSchemaDefinitions()
+        .getSignedAggregateAndProofSchema()
+        .create(
+            message.asInternalAggregateAndProof(specVersion), signature.asInternalBLSSignature());
   }
 }

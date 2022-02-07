@@ -183,7 +183,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final String attestationName = get(step, "attestation");
     final Attestation attestation =
         TestDataUtils.loadSsz(
-            testDefinition, attestationName + ".ssz_snappy", Attestation.SSZ_SCHEMA);
+            testDefinition,
+            attestationName + ".ssz_snappy",
+            testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
     final Spec spec = testDefinition.getSpec();
     assertThat(forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation)))
         .isCompleted();

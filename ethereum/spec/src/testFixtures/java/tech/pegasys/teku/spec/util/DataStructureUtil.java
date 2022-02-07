@@ -519,20 +519,27 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation() {
-    return new Attestation(randomBitlist(), randomAttestationData(), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {
-    return new Attestation(
-        randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {
-    return new AggregateAndProof(randomUInt64(), randomAttestation(), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getAggregateAndProofSchema()
+        .create(randomUInt64(), randomAttestation(), randomSignature());
   }
 
   public SignedAggregateAndProof randomSignedAggregateAndProof() {
-    return new SignedAggregateAndProof(randomAggregateAndProof(), randomSignature());
+    return spec.getGenesisSchemaDefinitions()
+        .getSignedAggregateAndProofSchema()
+        .create(randomAggregateAndProof(), randomSignature());
   }
 
   public VoteTracker randomVoteTracker() {

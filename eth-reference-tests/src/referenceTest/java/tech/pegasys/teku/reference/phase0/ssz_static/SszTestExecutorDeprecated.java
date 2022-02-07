@@ -27,8 +27,6 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -36,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -51,10 +48,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
-          .put(
-              "ssz_static/AggregateAndProof",
-              new SszTestExecutorDeprecated<>(AggregateAndProof.SSZ_SCHEMA))
-          .put("ssz_static/Attestation", new SszTestExecutorDeprecated<>(Attestation.SSZ_SCHEMA))
           .put(
               "ssz_static/AttestationData",
               new SszTestExecutorDeprecated<>(AttestationData.SSZ_SCHEMA))
@@ -80,9 +73,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
           .put(
               "ssz_static/ProposerSlashing",
               new SszTestExecutorDeprecated<>(ProposerSlashing.SSZ_SCHEMA))
-          .put(
-              "ssz_static/SignedAggregateAndProof",
-              new SszTestExecutorDeprecated<>(SignedAggregateAndProof.SSZ_SCHEMA))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
               new SszTestExecutorDeprecated<>(SignedBeaconBlockHeader.SSZ_SCHEMA))

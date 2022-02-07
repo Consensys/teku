@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
@@ -554,7 +553,10 @@ class BeaconChainMetricsTest {
   }
 
   private SszBitlist bitlistOf(final int... indices) {
-    return Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(10, indices);
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .getAggregationBitsSchema()
+        .ofBits(10, indices);
   }
 
   private Validator validator(

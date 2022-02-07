@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -93,7 +94,8 @@ class BeaconBlockBodySchemaBellatrixImpl
                 AttesterSlashing.SSZ_SCHEMA, specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS.name(),
-            SszListSchema.create(Attestation.SSZ_SCHEMA, specConfig.getMaxAttestations())),
+            SszListSchema.create(
+                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS.name(),
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),

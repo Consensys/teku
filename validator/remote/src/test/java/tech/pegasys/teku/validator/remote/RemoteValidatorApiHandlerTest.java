@@ -454,7 +454,9 @@ class RemoteValidatorApiHandlerTest {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final SignedAggregateAndProof signedAggregateAndProof =
-        new SignedAggregateAndProof(aggregateAndProof, signature);
+        spec.getGenesisSchemaDefinitions()
+            .getSignedAggregateAndProofSchema()
+            .create(aggregateAndProof, signature);
 
     tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggAndProof =
         new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);

@@ -86,10 +86,12 @@ public class AttestationGossipManagerTest {
     DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Attestation attestation = dataStructureUtil.randomAttestation(3);
     final Attestation attestation2 =
-        new Attestation(
-            dataStructureUtil.randomBitlist(),
-            dataStructureUtil.randomAttestationData(UInt64.valueOf(13)),
-            dataStructureUtil.randomSignature());
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationSchema()
+            .create(
+                dataStructureUtil.randomBitlist(),
+                dataStructureUtil.randomAttestationData(UInt64.valueOf(13)),
+                dataStructureUtil.randomSignature());
     final int subnetId = computeSubnetId(attestation);
     // Sanity check the attestations are for the same subnet
     assertThat(computeSubnetId(attestation2)).isEqualTo(subnetId);
