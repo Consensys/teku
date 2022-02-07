@@ -1,5 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
+import tech.pegasys.teku.depcheck.DepCheckPlugin
 
 import java.text.SimpleDateFormat
 
@@ -68,6 +69,15 @@ allprojects {
   apply plugin: 'io.spring.dependency-management'
   apply plugin: 'net.ltgt.errorprone'
   apply from: "${rootDir}/gradle/versions.gradle"
+  apply plugin: DepCheckPlugin
+
+  dependencyRules {
+    rules {
+      register(":infrastructure:") {
+        allowed = [":infrastructure:"]
+      }
+    }
+  }
 
   version = rootProject.version
 
