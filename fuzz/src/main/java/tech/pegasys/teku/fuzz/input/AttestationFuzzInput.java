@@ -29,7 +29,7 @@ public class AttestationFuzzInput
       final SpecVersion spec) {
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        Attestation.SSZ_SCHEMA,
+        spec.getSchemaDefinitions().getAttestationSchema(),
         AttestationFuzzInput::new);
   }
 

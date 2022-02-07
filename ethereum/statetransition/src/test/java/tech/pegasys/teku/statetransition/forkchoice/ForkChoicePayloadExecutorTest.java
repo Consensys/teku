@@ -103,6 +103,22 @@ class ForkChoicePayloadExecutorTest {
   }
 
   @Test
+  void optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELOffline() {
+    when(executionEngine.getPowBlock(payload.getParentHash()))
+        .thenReturn(SafeFuture.failedFuture(new Error()));
+    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
+    final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
+
+    // Should defer execution until it has checked the terminal difficulty so we expect getPoWBlock
+    verify(executionEngine).getPowBlock(payload.getParentHash());
+    verify(executionEngine, never()).executePayload(payload);
+    assertThat(execution).isTrue();
+    assertThat(payloadExecutor.getExecutionResult())
+        .isCompletedWithValueMatching(ExecutePayloadResult::hasFailedExecution);
+    ;
+  }
+
+  @Test
   void shouldReturnValidImmediatelyWhenNoPayloadExecuted() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
 

@@ -61,9 +61,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -245,7 +245,7 @@ public class ChainDataProvider {
   public List<Map<String, Object>> getProtoArrayData() {
     return recentChainData
         .getForkChoiceStrategy()
-        .map(ForkChoiceStrategy::getNodeData)
+        .map(ReadOnlyForkChoiceStrategy::getNodeData)
         .orElse(Collections.emptyList());
   }
 

@@ -16,16 +16,20 @@ package tech.pegasys.teku.api.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PendingAttestationTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final tech.pegasys.teku.spec.datastructures.state.PendingAttestation attestationInternal =
       dataStructureUtil.randomPendingAttestation();
 
   @Test
   public void shouldConvertToInternalObject() {
     final PendingAttestation pendingAttestation = new PendingAttestation(attestationInternal);
-    assertThat(pendingAttestation.asInternalPendingAttestation()).isEqualTo(attestationInternal);
+    assertThat(pendingAttestation.asInternalPendingAttestation(attestationInternal.getSchema()))
+        .isEqualTo(attestationInternal);
   }
 }

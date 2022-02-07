@@ -41,8 +41,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -59,8 +61,8 @@ class AttestationProductionDutyTest {
   private static final String TYPE = "attestation";
   private static final UInt64 SLOT = UInt64.valueOf(1488);
 
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -68,6 +70,7 @@ class AttestationProductionDutyTest {
 
   private final AttestationProductionDuty duty =
       new AttestationProductionDuty(
+          spec,
           SLOT,
           forkProvider,
           validatorApiChannel,
@@ -427,9 +430,11 @@ class AttestationProductionDutyTest {
       final int committeePosition,
       final int committeeSize,
       final BLSSignature signature) {
+    final AttestationSchema attestationSchema =
+        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     final SszBitlist expectedAggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(committeeSize, committeePosition);
-    return new Attestation(expectedAggregationBits, attestationData, signature);
+        attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, committeePosition);
+    return attestationSchema.create(expectedAggregationBits, attestationData, signature);
   }
 
   private void performAndReportDuty() {

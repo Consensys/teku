@@ -163,13 +163,15 @@ public class SyncSourceBatch implements Batch {
   @Override
   public void markAsContested() {
     contested = true;
-    conflictResolutionStrategy.verifyBatch(this, currentSyncSource.orElseThrow());
+    currentSyncSource.ifPresentOrElse(
+        source -> conflictResolutionStrategy.verifyBatch(this, source), this::reset);
   }
 
   @Override
   public void markAsInvalid() {
     if (!contested) {
-      conflictResolutionStrategy.reportInvalidBatch(this, currentSyncSource.orElseThrow());
+      currentSyncSource.ifPresent(
+          source -> conflictResolutionStrategy.reportInvalidBatch(this, source));
     }
     currentSyncSource = Optional.empty();
     reset();

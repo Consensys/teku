@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -191,9 +191,9 @@ public class ChainUpdater {
     tx.putBlockAndState(block.getBlock(), block.getState());
     assertThat(tx.commit()).isCompleted();
     recentChainData
-        .getForkChoiceStrategy()
+        .getUpdatableForkChoiceStrategy()
         .orElseThrow()
-        .onExecutionPayloadResult(block.getRoot(), ExecutionPayloadStatus.VALID, Optional.empty());
+        .onExecutionPayloadResult(block.getRoot(), ExecutePayloadResult.VALID);
     saveBlockTime(block);
   }
 

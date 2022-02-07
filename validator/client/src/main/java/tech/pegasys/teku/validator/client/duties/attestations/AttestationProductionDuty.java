@@ -27,7 +27,9 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -40,16 +42,19 @@ import tech.pegasys.teku.validator.client.duties.ProductionResult;
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Integer, ScheduledCommittee> validatorsByCommitteeIndex = new HashMap<>();
+  private final Spec spec;
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final SendingStrategy<Attestation> sendingStrategy;
 
   public AttestationProductionDuty(
+      final Spec spec,
       final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
       final SendingStrategy<Attestation> sendingStrategy) {
+    this.spec = spec;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
@@ -172,10 +177,12 @@ public class AttestationProductionDuty implements Duty {
       final AttestationData attestationData,
       final ValidatorWithCommitteePositionAndIndex validator,
       final BLSSignature signature) {
+    final AttestationSchema attestationSchema =
+        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     SszBitlist aggregationBits =
-        Attestation.SSZ_SCHEMA
+        attestationSchema
             .getAggregationBitsSchema()
             .ofBits(validator.getCommitteeSize(), validator.getCommitteePosition());
-    return new Attestation(aggregationBits, attestationData, signature);
+    return attestationSchema.create(aggregationBits, attestationData, signature);
   }
 }

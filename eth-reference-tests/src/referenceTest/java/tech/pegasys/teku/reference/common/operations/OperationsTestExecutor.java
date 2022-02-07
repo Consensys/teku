@@ -176,7 +176,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         break;
       case ATTESTATION:
         final Attestation attestation =
-            loadSsz(testDefinition, dataFileName, Attestation.SSZ_SCHEMA);
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
         processor.processAttestation(state, attestation);
         break;
       case SYNC_AGGREGATE:

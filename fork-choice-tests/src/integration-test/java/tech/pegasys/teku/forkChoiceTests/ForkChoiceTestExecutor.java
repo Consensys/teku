@@ -124,7 +124,11 @@ public class ForkChoiceTestExecutor {
         }
       case attestation:
         {
-          return resolvePart(Attestation.class, Attestation.SSZ_SCHEMA, file, value);
+          return resolvePart(
+              Attestation.class,
+              SPEC.getGenesisSchemaDefinitions().getAttestationSchema(),
+              file,
+              value);
         }
       case checks:
         {

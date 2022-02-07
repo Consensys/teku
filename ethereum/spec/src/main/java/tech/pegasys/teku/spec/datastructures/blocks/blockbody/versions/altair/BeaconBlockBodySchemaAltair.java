@@ -25,13 +25,7 @@ public interface BeaconBlockBodySchemaAltair<T extends BeaconBlockBodyAltair>
   static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(
       final SpecConfig specConfig) {
 
-    return BeaconBlockBodySchemaAltairImpl.create(
-        specConfig.getMaxProposerSlashings(),
-        specConfig.getMaxAttesterSlashings(),
-        specConfig.getMaxAttestations(),
-        specConfig.getMaxDeposits(),
-        specConfig.getMaxVoluntaryExits(),
-        specConfig.toVersionAltair().orElseThrow().getSyncCommitteeSize());
+    return BeaconBlockBodySchemaAltairImpl.create(specConfig);
   }
 
   static BeaconBlockBodySchemaAltair<?> required(final BeaconBlockBodySchema<?> schema) {

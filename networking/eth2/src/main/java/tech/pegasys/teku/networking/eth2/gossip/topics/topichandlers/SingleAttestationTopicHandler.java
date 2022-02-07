@@ -19,6 +19,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SingleAttestationTopicHandler {
@@ -30,6 +31,7 @@ public class SingleAttestationTopicHandler {
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
+      final AttestationSchema attestationSchema,
       final int subnetId,
       final int maxMessageSize) {
 
@@ -46,7 +48,7 @@ public class SingleAttestationTopicHandler {
         gossipEncoding,
         forkDigest,
         topicName,
-        Attestation.SSZ_SCHEMA,
+        attestationSchema,
         maxMessageSize);
   }
 }

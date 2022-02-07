@@ -20,6 +20,8 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -29,28 +31,39 @@ public class AggregateAndProof
   public static class AggregateAndProofSchema
       extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
-    public AggregateAndProofSchema() {
+    public AggregateAndProofSchema(final SpecConfig specConfig) {
       super(
           "AggregateAndProof",
           namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("aggregate", Attestation.SSZ_SCHEMA),
+          namedSchema("aggregate", new AttestationSchema(specConfig)),
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));
+    }
+
+    public AttestationSchema getAttestationSchema() {
+      return (AttestationSchema) getFieldSchema1();
     }
 
     @Override
     public AggregateAndProof createFromBackingNode(TreeNode node) {
       return new AggregateAndProof(this, node);
     }
-  }
 
-  public static final AggregateAndProofSchema SSZ_SCHEMA = new AggregateAndProofSchema();
+    public AggregateAndProof create(
+        final UInt64 index, final Attestation aggregate, final BLSSignature selectionProof) {
+      return new AggregateAndProof(this, index, aggregate, selectionProof);
+    }
+  }
 
   private AggregateAndProof(AggregateAndProofSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
-    super(SSZ_SCHEMA, SszUInt64.of(index), aggregate, new SszSignature(selection_proof));
+  private AggregateAndProof(
+      AggregateAndProofSchema schema,
+      UInt64 index,
+      Attestation aggregate,
+      BLSSignature selectionProof) {
+    super(schema, SszUInt64.of(index), aggregate, new SszSignature(selectionProof));
   }
 
   public UInt64 getIndex() {

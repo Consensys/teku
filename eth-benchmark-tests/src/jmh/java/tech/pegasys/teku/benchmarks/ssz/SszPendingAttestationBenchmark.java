@@ -17,14 +17,19 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszPendingAttestationBenchmark
     extends SszAbstractContainerBenchmark<PendingAttestation> {
 
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
+  private static final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1, spec);
   private static final PendingAttestation aPendingAttestation =
       dataStructureUtil.randomPendingAttestation();
 
@@ -32,16 +37,19 @@ public class SszPendingAttestationBenchmark
   private static final AttestationData attestationData = aPendingAttestation.getData();
   private static final UInt64 inclusion_delay = aPendingAttestation.getInclusion_delay();
   private static final UInt64 proposer_index = aPendingAttestation.getProposer_index();
+  private final PendingAttestationSchema schema =
+      BeaconStateSchemaPhase0.required(spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+          .getPendingAttestationSchema();
 
   @Override
   protected PendingAttestation createContainer() {
     return new PendingAttestation(
-        aggregation_bits, attestationData, inclusion_delay, proposer_index);
+        schema, aggregation_bits, attestationData, inclusion_delay, proposer_index);
   }
 
   @Override
   protected SszSchema<PendingAttestation> getContainerType() {
-    return PendingAttestation.SSZ_SCHEMA;
+    return schema;
   }
 
   @Override

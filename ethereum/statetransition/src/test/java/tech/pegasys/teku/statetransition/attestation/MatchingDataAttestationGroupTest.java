@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -30,6 +31,8 @@ class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
 
   private final MatchingDataAttestationGroup group =
@@ -58,7 +61,7 @@ class MatchingDataAttestationGroupTest {
   @Test
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
     final Attestation attestation = addAttestation(1).getAttestation();
-    final Attestation copy = Attestation.SSZ_SCHEMA.sszDeserialize(attestation.sszSerialize());
+    final Attestation copy = attestationSchema.sszDeserialize(attestation.sszSerialize());
     int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, copy);
 
     assertThat(group.stream()).isEmpty();
@@ -120,8 +123,7 @@ class MatchingDataAttestationGroupTest {
     final ValidateableAttestation attestation = addAttestation(1);
     final ValidateableAttestation copy =
         ValidateableAttestation.from(
-            spec,
-            Attestation.SSZ_SCHEMA.sszDeserialize(attestation.getAttestation().sszSerialize()));
+            spec, attestationSchema.sszDeserialize(attestation.getAttestation().sszSerialize()));
 
     assertThat(group.add(copy)).isFalse();
     assertThat(group.stream()).containsExactly(attestation);
@@ -301,9 +303,10 @@ class MatchingDataAttestationGroupTest {
 
   private ValidateableAttestation createAttestation(final int... validators) {
     final SszBitlist aggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(10, validators);
+        attestationSchema.getAggregationBitsSchema().ofBits(10, validators);
     return ValidateableAttestation.from(
         spec,
-        new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
+        attestationSchema.create(
+            aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

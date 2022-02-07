@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
@@ -27,9 +28,11 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
       SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
   private final HistoricalBatchSchema historicalBatchSchema;
+  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
 
   public AbstractSchemaDefinitions(final SpecConfig specConfig) {
     this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
+    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(specConfig);
   }
 
   @Override
@@ -45,5 +48,10 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   @Override
   public HistoricalBatchSchema getHistoricalBatchSchema() {
     return historicalBatchSchema;
+  }
+
+  @Override
+  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
+    return signedAggregateAndProofSchema;
   }
 }

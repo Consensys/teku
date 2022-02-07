@@ -257,10 +257,12 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
     performanceTracker.saveProducedAttestation(
-        new Attestation(
-            dataStructureUtil.randomBitlist(),
-            dataStructureUtil.randomAttestationData(UInt64.ONE),
-            BLSTestUtil.randomSignature(0)));
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationSchema()
+            .create(
+                dataStructureUtil.randomBitlist(),
+                dataStructureUtil.randomAttestationData(UInt64.ONE),
+                BLSTestUtil.randomSignature(0)));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
     assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
     assertThat(performanceTracker.producedBlocksByEpoch).isEmpty();

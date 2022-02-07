@@ -147,7 +147,10 @@ public class AggregateGenerator {
         final BLSSignature validSelectionProof) {
       final BLSSignature selectionProof = this.selectionProof.orElse(validSelectionProof);
       final AggregateAndProof aggregateAndProof =
-          new AggregateAndProof(aggregatorIndex, aggregate, selectionProof);
+          spec.atSlot(aggregate.getData().getSlot())
+              .getSchemaDefinitions()
+              .getAggregateAndProofSchema()
+              .create(aggregatorIndex, aggregate, selectionProof);
       return createSignedAggregateAndProof(aggregatorIndex, aggregateAndProof, stateAtSlot);
     }
 
@@ -196,7 +199,10 @@ public class AggregateGenerator {
           getSignerForValidatorIndex(aggregatorIndex.intValue())
               .signAggregateAndProof(aggregateAndProof, state.getForkInfo())
               .join();
-      return new SignedAggregateAndProof(aggregateAndProof, aggregateSignature);
+      return spec.atSlot(aggregateAndProof.getAggregate().getData().getSlot())
+          .getSchemaDefinitions()
+          .getSignedAggregateAndProofSchema()
+          .create(aggregateAndProof, aggregateSignature);
     }
 
     private BeaconState generateHeadState(final BeaconState state, final UInt64 slot) {

@@ -74,6 +74,9 @@ public class BatchImporter {
               lastBlockImportResult -> {
                 if (lastBlockImportResult.isSuccessful()) {
                   return BatchImportResult.IMPORTED_ALL_BLOCKS;
+                } else if (lastBlockImportResult.getFailureReason()
+                    == BlockImportResult.FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION) {
+                  return BatchImportResult.SERVICE_OFFLINE;
                 }
                 LOG.debug(
                     "Failed to import batch {}: {}",
@@ -105,7 +108,8 @@ public class BatchImporter {
 
   public enum BatchImportResult {
     IMPORTED_ALL_BLOCKS,
-    IMPORT_FAILED;
+    IMPORT_FAILED,
+    SERVICE_OFFLINE;
 
     public boolean isFailure() {
       return this == IMPORT_FAILED;

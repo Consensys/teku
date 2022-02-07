@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -34,11 +34,12 @@ public class Attestation
   public static class AttestationSchema
       extends ContainerSchema3<Attestation, SszBitlist, AttestationData, SszSignature> {
 
-    public AttestationSchema() {
+    public AttestationSchema(final SpecConfig specConfig) {
       super(
           "Attestation",
           namedSchema(
-              "aggregation_bits", SszBitlistSchema.create(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+              "aggregation_bits",
+              SszBitlistSchema.create(specConfig.getMaxValidatorsPerCommittee())),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
@@ -51,24 +52,35 @@ public class Attestation
     public Attestation createFromBackingNode(TreeNode node) {
       return new Attestation(this, node);
     }
+
+    public Attestation create(
+        final SszBitlist aggregationBits,
+        final AttestationData data,
+        final BLSSignature signature) {
+      return new Attestation(this, aggregationBits, data, signature);
+    }
+
+    public SszBitlist createEmptyAggregationBits() {
+      final SszBitlistSchema<?> bitsSchema = getAggregationBitsSchema();
+      return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()));
+    }
   }
 
-  public static final AttestationSchema SSZ_SCHEMA = new AttestationSchema();
-
-  private Attestation(AttestationSchema type, TreeNode backingNode) {
+  private Attestation(final AttestationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public Attestation(SszBitlist aggregation_bits, AttestationData data, BLSSignature signature) {
-    super(SSZ_SCHEMA, aggregation_bits, data, new SszSignature(signature));
+  private Attestation(
+      final AttestationSchema schema,
+      final SszBitlist aggregationBits,
+      final AttestationData data,
+      final BLSSignature signature) {
+    super(schema, aggregationBits, data, new SszSignature(signature));
   }
 
-  public Attestation() {
-    super(SSZ_SCHEMA);
-  }
-
-  public static SszBitlist createEmptyAggregationBits() {
-    return SSZ_SCHEMA.getAggregationBitsSchema().ofBits(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  @Override
+  public AttestationSchema getSchema() {
+    return (AttestationSchema) super.getSchema();
   }
 
   public UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {

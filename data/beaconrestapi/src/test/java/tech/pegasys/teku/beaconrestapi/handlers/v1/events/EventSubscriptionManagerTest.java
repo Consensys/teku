@@ -330,7 +330,7 @@ public class EventSubscriptionManagerTest {
 
   private void triggerAttestationEvent() {
     manager.onNewAttestation(
-        ValidateableAttestation.from(spec, sampleAttestation.asInternalAttestation()));
+        ValidateableAttestation.from(spec, sampleAttestation.asInternalAttestation(spec)));
     asyncRunner.executeQueuedActions();
   }
 
