@@ -32,7 +32,7 @@ public abstract class AbstractFuzzInputTest<T extends SszData> {
 
   @BeforeEach
   public void setup() {
-    FuzzUtil.initialize(false, true);
+    FuzzUtil.initialize(true);
   }
 
   @Test

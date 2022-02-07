@@ -33,7 +33,6 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
@@ -98,7 +97,6 @@ public class DepositOptions {
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     final tech.pegasys.teku.spec.Spec spec = networkConfig.getSpec();
-    Constants.setConstants(networkConfig.getSpec());
     return new DepositSender(
         spec,
         eth1NodeUrl,

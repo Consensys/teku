@@ -15,11 +15,8 @@ package tech.pegasys.teku.spec.config;
 
 import java.time.Duration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 
 public class Constants {
-
-  @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
@@ -62,26 +59,4 @@ public class Constants {
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
-
-  static {
-    setConstants(SpecConfigLoader.loadConfig("minimal"));
-  }
-
-  /**
-   * @deprecated Use tech.pegasys.teku.spec.constants.SpecConfig
-   * @param spec The spec from which to load constants
-   */
-  @Deprecated
-  public static void setConstants(final Spec spec) {
-    setConstants(spec.getGenesisSpecConfig());
-  }
-
-  /**
-   * @deprecated Use tech.pegasys.teku.spec.constants.SpecConfig
-   * @param config The config from which to load constants
-   */
-  @Deprecated
-  public static void setConstants(final SpecConfig config) {
-    MAX_VALIDATORS_PER_COMMITTEE = config.getMaxValidatorsPerCommittee();
-  }
 }

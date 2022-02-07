@@ -37,7 +37,6 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.Constants;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -76,7 +75,6 @@ public abstract class AbstractNode implements Node {
     this.metricsPublisher =
         new MetricsPublisherManager(
             asyncRunnerFactory, serviceConfig.getTimeProvider(), metricsEndpoint);
-    Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getSpec());
   }
 
   private void reportOverrides(final TekuConfiguration tekuConfig) {
