@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
@@ -31,10 +30,5 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
   protected BeaconBlockBodyPhase0 createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     return (BeaconBlockBodyPhase0) getBlockBodySchema().createBlockBody(contentProvider);
-  }
-
-  @Override
-  protected BeaconBlockBodySchema<BeaconBlockBodyPhase0> getBlockBodySchema() {
-    return BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
   }
 }

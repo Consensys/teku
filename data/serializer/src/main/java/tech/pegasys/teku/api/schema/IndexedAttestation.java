@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
 public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
@@ -52,11 +55,16 @@ public class IndexedAttestation {
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
-      asInternalIndexedAttestation() {
-    return new tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation(
-        tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.SSZ_SCHEMA
-            .getAttestingIndicesSchema()
-            .of(attesting_indices),
+      asInternalIndexedAttestation(final Spec spec) {
+    return asInternalIndexedAttestation(spec.atSlot(data.slot));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
+      asInternalIndexedAttestation(final SpecVersion spec) {
+    final IndexedAttestationSchema indexedAttestationSchema =
+        spec.getSchemaDefinitions().getIndexedAttestationSchema();
+    return indexedAttestationSchema.create(
+        indexedAttestationSchema.getAttestingIndicesSchema().of(attesting_indices),
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature());
   }

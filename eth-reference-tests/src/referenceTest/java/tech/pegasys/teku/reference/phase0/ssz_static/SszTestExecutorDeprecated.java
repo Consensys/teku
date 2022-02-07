@@ -28,11 +28,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -52,9 +50,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
               "ssz_static/AttestationData",
               new SszTestExecutorDeprecated<>(AttestationData.SSZ_SCHEMA))
           .put(
-              "ssz_static/AttesterSlashing",
-              new SszTestExecutorDeprecated<>(AttesterSlashing.SSZ_SCHEMA))
-          .put(
               "ssz_static/BeaconBlockHeader",
               new SszTestExecutorDeprecated<>(BeaconBlockHeader.SSZ_SCHEMA))
           .put("ssz_static/Checkpoint", new SszTestExecutorDeprecated<>(Checkpoint.SSZ_SCHEMA))
@@ -67,9 +62,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
           .put("ssz_static/Eth1Data", new SszTestExecutorDeprecated<>(Eth1Data.SSZ_SCHEMA))
           .put("ssz_static/Fork", new SszTestExecutorDeprecated<>(Fork.SSZ_SCHEMA))
           .put("ssz_static/ForkData", new SszTestExecutorDeprecated<>(ForkData.SSZ_SCHEMA))
-          .put(
-              "ssz_static/IndexedAttestation",
-              new SszTestExecutorDeprecated<>(IndexedAttestation.SSZ_SCHEMA))
           .put(
               "ssz_static/ProposerSlashing",
               new SszTestExecutorDeprecated<>(ProposerSlashing.SSZ_SCHEMA))

@@ -191,6 +191,7 @@ public class DataProvider {
       final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2pNetwork);
       final NodeDataProvider nodeDataProvider =
           new NodeDataProvider(
+              spec,
               attestationPool,
               attesterSlashingPool,
               proposerSlashingPool,

@@ -97,7 +97,11 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   protected abstract T createBlockBody(final Consumer<BeaconBlockBodyBuilder> contentProvider);
 
-  protected abstract BeaconBlockBodySchema<? extends T> getBlockBodySchema();
+  @SuppressWarnings("unchecked")
+  protected BeaconBlockBodySchema<? extends T> getBlockBodySchema() {
+    return (BeaconBlockBodySchema<? extends T>)
+        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema();
+  }
 
   protected T createDefaultBlockBody() {
     return createBlockBody();

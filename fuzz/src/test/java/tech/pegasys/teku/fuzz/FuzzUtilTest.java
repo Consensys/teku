@@ -105,7 +105,9 @@ class FuzzUtilTest {
     final Path testCaseDir =
         Path.of("minimal/operations/attester_slashing/pyspec_tests/success_surround");
     final AttesterSlashing data =
-        loadSsz(testCaseDir.resolve("attester_slashing.ssz"), AttesterSlashing.SSZ_SCHEMA);
+        loadSsz(
+            testCaseDir.resolve("attester_slashing.ssz"),
+            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
