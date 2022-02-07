@@ -14,7 +14,7 @@ dependencies {
     implementation project(':infrastructure:ssz')
     implementation project(':protoarray')
     implementation project(':storage')
-    implementation project(':sync')
+    implementation project(':beacon:sync')
     implementation project(':validator:api')
 
     implementation 'com.google.code.gson:gson'

@@ -22,10 +22,10 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.node.Syncing;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
+import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.events.SyncingStatus;
 
 public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
