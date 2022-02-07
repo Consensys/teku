@@ -57,7 +57,6 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -70,7 +69,7 @@ class BlockFactoryTest {
   final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
-  final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
