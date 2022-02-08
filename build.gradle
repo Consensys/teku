@@ -63,6 +63,13 @@ def userHome = System.getProperty("user.home")
 def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
 def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
 
+var baseInfrastructureProjects = [
+    ':infrastructure:unsigned',
+    ':infrastructure:exceptions',
+    ':infrastructure:collections',
+    ':infrastructure:subscribers'
+]
+
 allprojects {
   apply plugin: 'java-library'
   apply plugin: 'java-test-fixtures'
@@ -73,8 +80,12 @@ allprojects {
 
   dependencyRules {
     rules {
+      baseInfrastructureProjects.each { register(it) { allowed = [] }}
       register(":infrastructure:") {
         allowed = [":infrastructure:"]
+      }
+      register(":infrastructure:logging") {
+        allowed = [":infrastructure:unsigned"]
       }
     }
   }
@@ -732,7 +743,7 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
   }
 
-  if (project.name != 'unsigned') {
+  if (!baseInfrastructureProjects.contains(project.path)) {
     dependencies.implementation(project(':infrastructure:unsigned'))
     dependencies.testRuntimeOnly(dependencies.testFixtures(project(':infrastructure:logging')))
   }

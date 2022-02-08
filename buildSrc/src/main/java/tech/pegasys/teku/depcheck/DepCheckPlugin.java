@@ -22,13 +22,13 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.provider.SetProperty;
-import org.gradle.tooling.BuildException;
 
 public class DepCheckPlugin implements Plugin<Project> {
 
   @Override
   public void apply(final Project project) {
     project.getExtensions().create("dependencyRules", DependencyRules.class);
+    // Should apply plugin to root project only and have it add task automatically to all projects.
     project.task("checkModuleDependencies").doLast(task -> checkDependencies(project));
   }
 
@@ -40,11 +40,10 @@ public class DepCheckPlugin implements Plugin<Project> {
             .map(dependency -> dependency.getDependencyProject().getPath())
             .collect(toSet());
     if (!illegalDependencies.isEmpty()) {
-      throw new BuildException(
+      throw new IllegalStateException(
           String.format(
               "Found illegal dependencies in %s\n%s",
-              project.getDisplayName(), String.join("\n", illegalDependencies)),
-          null);
+              project.getDisplayName(), String.join("\n", illegalDependencies)));
     }
   }
 
@@ -53,6 +52,8 @@ public class DepCheckPlugin implements Plugin<Project> {
         .flatMap(config -> config.getAllDependencies().stream())
         .filter(dep -> dep instanceof ProjectDependency)
         .map(dep -> (ProjectDependency) dep)
+        // Modules are allowed to depend on themselves (e.g. for test configurations)
+        .filter(dep -> !dep.getDependencyProject().getPath().equals(project.getPath()))
         .filter(dep -> isIllegal(rule, dep));
   }
 
