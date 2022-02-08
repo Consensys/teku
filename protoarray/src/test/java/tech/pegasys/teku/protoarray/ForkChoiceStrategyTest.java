@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -84,7 +84,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ProtoArray protoArray = mock(ProtoArray.class);
     final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
     forkChoiceStrategy.onExecutionPayloadResult(
-        dataStructureUtil.randomBytes32(), ExecutePayloadResult.failedExecution(new Error()));
+        dataStructureUtil.randomBytes32(), PayloadStatus.failedExecution(new Error()));
     verify(protoArray, never()).markNodeInvalid(any(), any());
     verify(protoArray, never()).markNodeValid(any());
   }

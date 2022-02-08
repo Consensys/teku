@@ -37,7 +37,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Spec spec;
 
-  private ExecutePayloadResult executePayloadResult = ExecutePayloadResult.VALID;
+  private PayloadStatus payloadStatus = PayloadStatus.VALID;
 
   public StubExecutionEngineChannel(Spec spec) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
@@ -64,7 +64,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
       final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes) {
     return SafeFuture.completedFuture(
         new ForkChoiceUpdatedResult(
-            ForkChoiceUpdatedStatus.SUCCESS,
+            PayloadStatus.VALID,
             payloadAttributes.map(
                 payloadAttributes1 -> {
                   Bytes8 payloadId =
@@ -119,16 +119,16 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<ExecutePayloadResult> executePayload(final ExecutionPayload executionPayload) {
-    return SafeFuture.completedFuture(executePayloadResult);
+  public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
+    return SafeFuture.completedFuture(payloadStatus);
   }
 
-  public ExecutePayloadResult getExecutePayloadResult() {
-    return executePayloadResult;
+  public PayloadStatus getPayloadStatus() {
+    return payloadStatus;
   }
 
-  public void setExecutePayloadResult(ExecutePayloadResult executePayloadResult) {
-    this.executePayloadResult = executePayloadResult;
+  public void setPayloadStatus(PayloadStatus payloadStatus) {
+    this.payloadStatus = payloadStatus;
   }
 
   private static class HeadAndAttributes {

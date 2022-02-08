@@ -35,13 +35,16 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
 public class DepositStorageTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private DepositStorage depositStorage;
 
   private final MinGenesisTimeBlockEvent genesis_100 =
@@ -61,7 +64,7 @@ public class DepositStorageTest {
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
-    storageSystem = storageSystemSupplier.get(dataDirectory);
+    storageSystem = storageSystemSupplier.get(dataDirectory, spec);
     database = storageSystem.database();
     eventsChannel = storageSystem.eth1EventsChannel();
 

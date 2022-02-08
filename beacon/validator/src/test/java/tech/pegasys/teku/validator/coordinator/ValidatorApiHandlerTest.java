@@ -79,6 +79,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -120,7 +121,7 @@ class ValidatorApiHandlerTest {
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
-  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
   private final SyncCommitteeContributionPool syncCommitteeContributionPool =

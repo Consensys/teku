@@ -69,8 +69,8 @@ public abstract class AbstractDatabaseTest {
 
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   protected final ChainProperties chainProperties = new ChainProperties(spec);
 
   protected UInt64 genesisTime = UInt64.valueOf(100);
@@ -684,7 +684,7 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void orphanedBlockStorageTest_multiple() {
     createStorage(storageMode, StoreConfig.createDefault(), true);
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
@@ -753,7 +753,7 @@ public abstract class AbstractDatabaseTest {
   protected CreateForkChainResult createForkChain(final boolean restartStorage) {
     // Setup chains
     // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
@@ -901,7 +901,7 @@ public abstract class AbstractDatabaseTest {
       Consumer<StateStorageMode> initializeDatabase) {
     // Setup chains
     // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
@@ -1179,7 +1179,7 @@ public abstract class AbstractDatabaseTest {
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {
     StoreTransaction tx = recentChainData.startStoreTransaction();
     justifyAndFinalizeEpoch(epoch, block, tx);
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
   }
 
   protected void justifyAndFinalizeEpoch(

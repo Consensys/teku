@@ -19,7 +19,7 @@
       "description" : "Bytes32 hexadecimal",
       "format" : "byte"
     },
-    "receipt_root" : {
+    "receipts_root" : {
       "pattern" : "^0x[a-fA-F0-9]{64}$",
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
