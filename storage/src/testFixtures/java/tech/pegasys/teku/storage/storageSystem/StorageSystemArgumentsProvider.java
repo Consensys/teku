@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -40,8 +41,9 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
         for (DatabaseVersion databaseVersion : supportedDatabaseVersions()) {
           storageSystems.put(
               describeStorage(databaseVersion.name() + " (in-memory)", storageFrequency),
-              (dataPath) ->
+              (dataPath, spec) ->
                   InMemoryStorageSystemBuilder.create()
+                      .specProvider(spec)
                       .version(databaseVersion)
                       .storageMode(mode)
                       .stateStorageFrequency(storageFrequency)
@@ -49,8 +51,9 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
 
           storageSystems.put(
               describeStorage(databaseVersion.name() + " (file-backed)", storageFrequency),
-              (dataPath) ->
+              (dataPath, spec) ->
                   FileBackedStorageSystemBuilder.create()
+                      .specProvider(spec)
                       .version(databaseVersion)
                       .dataDir(dataPath)
                       .storageMode(mode)
@@ -70,6 +73,6 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
   @FunctionalInterface
   public interface StorageSystemSupplier {
 
-    StorageSystem get(final Path dataDirectory);
+    StorageSystem get(final Path dataDirectory, final Spec spec);
   }
 }

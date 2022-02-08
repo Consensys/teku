@@ -47,7 +47,7 @@ public class ChainStorageTest {
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
-    storageSystem = storageSystemSupplier.get(dataDirectory);
+    storageSystem = storageSystemSupplier.get(dataDirectory, spec);
     chainStorage = storageSystem.chainStorage();
     chainBuilder = storageSystem.chainBuilder();
 
