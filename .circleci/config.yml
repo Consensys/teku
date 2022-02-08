@@ -30,6 +30,7 @@ executors:
     resource_class: medium
     working_directory: ~/project
     environment:
+      DOCKER_CLI_EXPERIMENTAL: enabled
       JAVA_TOOL_OPTIONS: -Xmx2g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
@@ -55,11 +56,22 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx3g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
-  machine_executor:
+  machine_executor_amd64:
     machine:
       image: ubuntu-2004:202008-01 #Ubuntu 20.04, docker 19.03, docker-compose 1.27.4
       docker_layer_caching: true
     working_directory: ~/project
+    environment:
+      architecture: "amd64"
+      platform: "linux/amd64"
+
+  machine_executor_arm64:
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
+    environment:
+      architecture: "arm64"
+      platform: "linux/arm64"
 
   node_executor:
     docker:
@@ -114,15 +126,27 @@ commands:
       - store_artifacts:
           path: build/test-artifacts
 
-  install_docker_buildx:
-    description: "Install Docker buildx plugin"
+  docker_trust_sign:
+    description: "Sign docker images"
     steps:
       - run:
-          name: "Install Docker buildx plugin"
+          name: "Sign Docker images"
           command: |
-            mkdir -vp ~/.docker/cli-plugins/
-            curl --fail -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
-            chmod a+x ~/.docker/cli-plugins/docker-buildx
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
+            # dct signing setup
+            mkdir -p $HOME/.docker/trust/private
+            echo $DCT_KEY | base64 --decode > $HOME/.docker/trust/private/$DCT_HASH.key
+            chmod 600 $HOME/.docker/trust/private/$DCT_HASH.key
+            docker trust key load $HOME/.docker/trust/private/$DCT_HASH.key --name opsquorum
+
+  docker_publish_images:
+    description: "Upload the docker images"
+    steps:
+      - run:
+          name: "Publish Docker Images"
+          command: |
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
+            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" uploadDocker
 
   notify:
     description: "Notify Slack"
@@ -267,15 +291,11 @@ jobs:
 
   acceptanceTests:
     parallelism: 3
-    executor: machine_executor
+    executor: machine_executor_amd64
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
-      - install_docker_buildx
-      - run:
-          name: Configure Buildx
-          command: docker buildx install
       - run:
           name: AcceptanceTests
           command: |
@@ -377,23 +397,35 @@ jobs:
             ./gradlew --no-daemon --parallel cloudsmithUpload publish
       - notify
 
-  publishDocker:
-    executor: machine_executor
+  publishDockerAmd64:
+    executor: machine_executor_amd64
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
-      - install_docker_buildx
+      - docker_trust_sign
+      - docker_publish_images
+      - notify
+
+  publishDockerArm64:
+    executor: machine_executor_arm64
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - docker_trust_sign
+      - docker_publish_images
+      - notify
+
+  manifestDocker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - docker_trust_sign
       - run:
-          name: Configure Buildx for Multi-Arch
+          name: Create and publish docker manifest
           command: |
-            docker run --rm --privileged tonistiigi/binfmt:latest --install "linux/amd64,linux/arm64"
-            docker buildx create --use --driver docker-container
-      - run:
-          name: Publish Docker
-          command: |
-            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
+            ./gradlew --no-daemon --parallel manifestDocker
       - notify
 
   extractAPISpec:
@@ -531,7 +563,7 @@ workflows:
             - windowsBuild
           context:
             - cloudsmith-protocols
-      - publishDocker:
+      - publishDockerAmd64:
           filters:
             branches:
               only:
@@ -549,6 +581,40 @@ workflows:
             - windowsBuild
           context:
             - dockerhub-quorumengineering-rw
+            - dockerhub-opsquorum-dct         
+      - publishDockerArm64:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - extractAPISpec
+            - spotless
+            - windowsBuild
+          context:
+            - dockerhub-quorumengineering-rw
+            - dockerhub-opsquorum-dct      
+      - manifestDocker:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - publishDockerArm64
+            - publishDockerAmd64
+          context:
+            - dockerhub-quorumengineering-rw
+            - dockerhub-opsquorum-dct                               
       - publishAPISpec:
           filters:
             branches:
