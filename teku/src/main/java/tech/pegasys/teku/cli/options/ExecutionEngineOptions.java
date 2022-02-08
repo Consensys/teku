@@ -27,7 +27,16 @@ public class ExecutionEngineOptions {
       hidden = true)
   private String executionEngineEndpoint = null;
 
+  @Option(
+      names = {"--Xee-version"},
+      paramLabel = "<STRING>",
+      description = "Execution Engine API version. Possible values are: kintsugi (default) or kiln",
+      arity = "1",
+      hidden = true)
+  private String executionEngineVersion = "kintsugi";
+
   public void configure(final Builder builder) {
-    builder.executionEngine(b -> b.endpoint(executionEngineEndpoint));
+    builder.executionEngine(
+        b -> b.endpoint(executionEngineEndpoint).version(executionEngineVersion));
   }
 }
