@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.VALID;
+import static tech.pegasys.teku.spec.executionengine.PayloadStatus.VALID;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -91,36 +91,35 @@ class ForkChoicePayloadExecutorTest {
    */
   @Test
   void optimisticallyExecute_shouldValidateMergeBlockWhenThisIsTheMergeBlock() {
-    when(executionEngine.executePayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
+    when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
     when(executionEngine.getPowBlock(payload.getParentHash())).thenReturn(new SafeFuture<>());
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     // Should execute first and then begin validation of the transition block conditions.
-    verify(executionEngine).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
     verify(executionEngine).getPowBlock(payload.getParentHash());
-    verify(executionEngine, never()).newPayload(payload);
     assertThat(result).isTrue();
   }
 
   @Test
   void optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELOfflineAtExecution() {
-    when(executionEngine.executePayload(payload)).thenReturn(SafeFuture.failedFuture(new Error()));
+    when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     // Should not attempt to validate transition conditions because execute payload failed
     verify(executionEngine, never()).getPowBlock(payload.getParentHash());
-    verify(executionEngine).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValueMatching(ExecutePayloadResult::hasFailedExecution);
+        .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
   }
 
   @Test
   void
       optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELGoesOfflineAfterExecution() {
-    when(executionEngine.executePayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
+    when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
     when(executionEngine.getPowBlock(payload.getParentHash()))
         .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
@@ -135,14 +134,14 @@ class ForkChoicePayloadExecutorTest {
 
   @Test
   void optimisticallyExecute_shouldReturnNotVerifyTransitionIfExecutePayloadIsInvalid() {
-    final ExecutePayloadResult expectedResult =
-        ExecutePayloadResult.invalid(Optional.empty(), Optional.of("Nope"));
-    when(executionEngine.executePayload(payload))
+    final PayloadStatus expectedResult =
+        PayloadStatus.invalid(Optional.empty(), Optional.of("Nope"));
+    when(executionEngine.newPayload(payload))
         .thenReturn(SafeFuture.completedFuture(expectedResult));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
-    verify(executionEngine).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
     verify(executionEngine, never()).getPowBlock(payload.getParentHash());
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(expectedResult);
@@ -152,7 +151,7 @@ class ForkChoicePayloadExecutorTest {
   void shouldReturnValidImmediatelyWhenNoPayloadExecuted() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
 
-    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
     assertThat(result).isCompletedWithValue(VALID);
   }
 

@@ -60,11 +60,10 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     result =
         Optional.of(
             executionEngine
-                .executePayload(executionPayload)
+                .newPayload(executionPayload)
                 .thenCompose(
                     result -> {
-                      if (result.isValid()
-                          && latestExecutionPayloadHeader.isDefault()) {
+                      if (result.hasValidStatus() && latestExecutionPayloadHeader.isDefault()) {
                         return validateTransitionPayload(executionPayload);
                       } else {
                         return SafeFuture.completedFuture(result);
@@ -78,7 +77,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     return true;
   }
 
-  private SafeFuture<ExecutePayloadResult> validateTransitionPayload(
+  private SafeFuture<PayloadStatus> validateTransitionPayload(
       final ExecutionPayload executionPayload) {
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         spec.atSlot(block.getSlot())

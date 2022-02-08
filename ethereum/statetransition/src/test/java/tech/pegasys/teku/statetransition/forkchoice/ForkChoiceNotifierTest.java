@@ -158,7 +158,7 @@ class ForkChoiceNotifierTest {
   @Test
   void onForkChoiceUpdated_shouldSendNotificationToExecutionEngine() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
   }
 
@@ -169,7 +169,7 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel)
         .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
   }
@@ -186,17 +186,17 @@ class ForkChoiceNotifierTest {
             new BeaconPreparableProposer(
                 UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomBytes20())));
 
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
   }
 
   @Test
   void onForkChoiceUpdated_shouldNotSendNotificationWhenHeadBlockHashIsZero() {
-    notifier
-        .onForkChoiceUpdated(
-            new ForkChoiceState(
-                Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false))
-        .reportExceptions();
+    assertThat(
+            notifier.onForkChoiceUpdated(
+                new ForkChoiceState(
+                    Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false)))
+        .isCompleted();
 
     verifyNoInteractions(executionEngineChannel);
   }
@@ -227,9 +227,9 @@ class ForkChoiceNotifierTest {
         .when(payloadAttributesCalculator)
         .calculatePayloadAttributes(any(), anyBoolean(), any(), anyBoolean());
 
-    notifier
-        .onForkChoiceUpdated(forkChoiceState)
-        .reportExceptions(); // calculate attributes for slot 2
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState))
+        .isCompleted(); // calculate attributes for slot 2
+
     // it is called once with no attributes. the one with attributes is pending
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
@@ -242,9 +242,8 @@ class ForkChoiceNotifierTest {
         .chainUpdater()
         .setCurrentSlot(headState.getSlot().plus(1)); // set current slot to 2
 
-    notifier
-        .onForkChoiceUpdated(forkChoiceState)
-        .reportExceptions(); // calculate attributes for slot 3
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState))
+        .isCompleted(); // calculate attributes for slot 3
 
     // expect a call with second attributes
     verify(executionEngineChannel)
@@ -269,9 +268,8 @@ class ForkChoiceNotifierTest {
 
     // current slot is 1
 
-    notifier
-        .onForkChoiceUpdated(forkChoiceState)
-        .reportExceptions(); // calculate attributes for slot 2
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState))
+        .isCompleted(); // calculate attributes for slot 2
 
     // expect attributes for slot 2
     verify(executionEngineChannel)
@@ -281,9 +279,8 @@ class ForkChoiceNotifierTest {
         .chainUpdater()
         .setCurrentSlot(headState.getSlot().plus(1)); // set current slot to 2
 
-    notifier
-        .onForkChoiceUpdated(forkChoiceState)
-        .reportExceptions(); // calculate attributes for slot 3
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState))
+        .isCompleted(); // calculate attributes for slot 3
 
     // expect attributes for slot 3
     verify(executionEngineChannel)
@@ -297,7 +294,7 @@ class ForkChoiceNotifierTest {
   void onAttestationsDue_shouldNotSendUpdateIfNotChanged() {
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
     notifier.onAttestationsDue(headState.getSlot());
@@ -321,7 +318,7 @@ class ForkChoiceNotifierTest {
 
     // slot is 1 and is not empty -> sending forkChoiceUpdated
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     // We are proposing block on slot 2
     verify(executionEngineChannel)
         .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
@@ -358,7 +355,7 @@ class ForkChoiceNotifierTest {
 
     final PayloadAttributes payloadAttributes = withProposerForSlot(blockSlot);
 
-    notifier.onForkChoiceUpdated(getCurrentForkChoiceState()).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(getCurrentForkChoiceState())).isCompleted();
 
     verify(executionEngineChannel)
         .forkChoiceUpdated(getCurrentForkChoiceState(), Optional.of(payloadAttributes));
@@ -370,7 +367,7 @@ class ForkChoiceNotifierTest {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifier.onSyncingStatusChanged(false);
 
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
 
     // We're syncing so don't include payload attributes
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
@@ -379,7 +376,7 @@ class ForkChoiceNotifierTest {
   @Test
   void onUpdatePreparableProposers_shouldNotIncludePayloadAttributesWhileSyncing() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
     notifier.onSyncingStatusChanged(false);
@@ -395,7 +392,7 @@ class ForkChoiceNotifierTest {
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
     final UInt64 blockSlot = headState.getSlot().plus(1);
 
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
@@ -416,7 +413,7 @@ class ForkChoiceNotifierTest {
     when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
 
     // Initially has no payload ID.
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot)).isNotCompleted();
@@ -443,7 +440,7 @@ class ForkChoiceNotifierTest {
     when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
-    notifier.onForkChoiceUpdated(forkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
 
     responseFuture.complete(
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
@@ -504,7 +501,7 @@ class ForkChoiceNotifierTest {
     final ForkChoiceState nonFinalizedForkChoiceState = getCurrentForkChoiceState();
     assertThat(nonFinalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isEqualTo(Bytes32.ZERO);
-    notifier.onForkChoiceUpdated(nonFinalizedForkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(nonFinalizedForkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(nonFinalizedForkChoiceState, Optional.empty());
 
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
@@ -523,7 +520,7 @@ class ForkChoiceNotifierTest {
     ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
     assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isNotEqualTo(Bytes32.ZERO);
-    notifier.onForkChoiceUpdated(finalizedForkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(finalizedForkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
 
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
@@ -545,7 +542,7 @@ class ForkChoiceNotifierTest {
     ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
     assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isNotEqualTo(Bytes32.ZERO);
-    notifier.onForkChoiceUpdated(finalizedForkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(finalizedForkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
 
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
@@ -569,7 +566,7 @@ class ForkChoiceNotifierTest {
     ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
     assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isNotEqualTo(Bytes32.ZERO);
-    notifier.onForkChoiceUpdated(finalizedForkChoiceState).reportExceptions();
+    assertThat(notifier.onForkChoiceUpdated(finalizedForkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
 
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
