@@ -6,6 +6,7 @@
 *.launch
 *.swp
 *.log
+.lh/*
 db/
 db.version
 .classpath

@@ -62,7 +62,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -147,7 +147,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         useMockForkChoice
             ? mock(ForkChoice.class)
             : new ForkChoice(
-                spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
+                spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
     beaconChainUtil =
         BeaconChainUtil.create(
             spec, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);

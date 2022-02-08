@@ -21,11 +21,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
@@ -34,10 +35,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
@@ -50,7 +51,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       String eeEndpoint, Spec spec, TimeProvider timeProvider) {
     checkNotNull(eeEndpoint);
     return new ExecutionEngineChannelImpl(
-        new Web3JExecutionEngineClient(eeEndpoint, timeProvider), spec);
+        new KintsugiWeb3JExecutionEngineClient(eeEndpoint, timeProvider), spec);
   }
 
   private ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {
@@ -130,21 +131,16 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<ExecutePayloadResult> executePayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling executePayload(executionPayload={})", executionPayload);
+  public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
+    LOG.trace("calling newPayload(executionPayload={})", executionPayload);
 
     return executionEngineClient
-        .executePayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
+        .newPayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
-        .thenApply(
-            tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutePayloadResult
-                ::asInternalExecutionPayload)
+        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(
-            executePayloadResult ->
-                LOG.trace(
-                    "executePayload(executionPayload={}) -> {}",
-                    executionPayload,
-                    executePayloadResult))
-        .exceptionally(ExecutePayloadResult::failedExecution);
+            payloadStatus ->
+                LOG.trace("newPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
+        .exceptionally(PayloadStatus::failedExecution);
   }
 }

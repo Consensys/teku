@@ -39,9 +39,9 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -275,6 +275,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
   public boolean isFullyValidated(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
@@ -456,7 +457,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return protoArray.getProtoNode(blockRoot);
   }
 
-  public void onExecutionPayloadResult(final Bytes32 blockRoot, final ExecutePayloadResult result) {
+  public void onExecutionPayloadResult(final Bytes32 blockRoot, final PayloadStatus result) {
     if (result.hasFailedExecution()) {
       LOG.warn(
           "Unable to execute Payload for block root {}, Execution Engine is offline",
@@ -465,21 +466,18 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       return;
     }
     ExecutionPayloadStatus status = result.getStatus().orElseThrow();
-    if (status == ExecutionPayloadStatus.SYNCING) {
+    if (status.isNotValidated()) {
       return;
     }
     protoArrayLock.writeLock().lock();
     try {
-      switch (status) {
-        case VALID:
-          protoArray.markNodeValid(blockRoot);
-          break;
-        case INVALID:
-          LOG.warn("Payload for block root {} was invalid", blockRoot);
-          protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown payload status: " + status);
+      if (status.isValid()) {
+        protoArray.markNodeValid(blockRoot);
+      } else if (status.isInvalid()) {
+        LOG.warn("Payload for block root {} was invalid", blockRoot);
+        protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
+      } else {
+        throw new IllegalArgumentException("Unknown payload validity status: " + status);
       }
     } finally {
       protoArrayLock.writeLock().unlock();

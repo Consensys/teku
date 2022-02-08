@@ -42,7 +42,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
-      @JsonProperty("receipt_root") Bytes32 receiptRoot,
+      @JsonProperty("receipts_root") Bytes32 receiptsRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
       @JsonProperty("random") Bytes32 random,
       @JsonProperty("block_number") UInt64 blockNumber,
@@ -57,7 +57,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         parentHash,
         feeRecipient,
         stateRoot,
-        receiptRoot,
+        receiptsRoot,
         logsBloom,
         random,
         blockNumber,
@@ -76,7 +76,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         executionPayload.getParentHash(),
         executionPayload.getFeeRecipient(),
         executionPayload.getStateRoot(),
-        executionPayload.getReceiptRoot(),
+        executionPayload.getReceiptsRoot(),
         executionPayload.getLogsBloom(),
         executionPayload.getRandom(),
         executionPayload.getBlockNumber(),
@@ -112,7 +112,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
                     parentHash,
                     feeRecipient,
                     stateRoot,
-                    receiptRoot,
+                    receiptsRoot,
                     logsBloom,
                     random,
                     blockNumber,
@@ -151,7 +151,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         .add("parentHash", parentHash)
         .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
-        .add("receiptRoot", receiptRoot)
+        .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
         .add("random", random)
         .add("blockNumber", blockNumber)

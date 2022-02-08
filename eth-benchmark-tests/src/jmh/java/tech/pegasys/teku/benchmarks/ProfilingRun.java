@@ -46,7 +46,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -90,7 +90,7 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice =
           new ForkChoice(
-              spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
+              spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
@@ -172,7 +172,7 @@ public class ProfilingRun {
       initialState = null;
       ForkChoice forkChoice =
           new ForkChoice(
-              spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
+              spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
       BlockImporter blockImporter =
           new BlockImporter(
               spec,

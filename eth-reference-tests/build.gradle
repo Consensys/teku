@@ -5,6 +5,7 @@ dependencies {
   referenceTestImplementation project(':ethereum:networks')
   referenceTestImplementation project(':ethereum:spec')
   referenceTestImplementation testFixtures(project(':ethereum:spec'))
+  referenceTestImplementation testFixtures(project(':ethereum:statetransition'))
   referenceTestImplementation project(':ethereum:statetransition')
   referenceTestImplementation project(':eth-tests')
   referenceTestImplementation project(':infrastructure:bls')
