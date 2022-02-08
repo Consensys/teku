@@ -15,11 +15,13 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.verification.VerificationMode;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -42,6 +45,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -49,8 +53,10 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -88,8 +94,12 @@ class ForkChoiceTest {
 
   @BeforeEach
   public void setup() {
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     reset(forkChoiceNotifier); // Clear any notifications from setting genesis
+
+    // by default everything is valid
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
 
     storageSystem
         .chainUpdater()
@@ -352,8 +362,7 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldUpdateLatestValidFinalizedSlotPreMergeBlock() {
     // make EL returning INVALID, but will never be called
-    executionEngine.setExecutePayloadResult(
-        ExecutePayloadResult.invalid(Optional.empty(), Optional.empty()));
+    executionEngine.setPayloadStatus(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
 
     UInt64 slotToImport = prepFinalizeEpoch(2);
 
@@ -386,7 +395,7 @@ class ForkChoiceTest {
     UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning SYNCING
-    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
 
     // generate block which finalize epoch 2
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
@@ -399,8 +408,8 @@ class ForkChoiceTest {
     UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning low level error
-    executionEngine.setExecutePayloadResult(
-        ExecutePayloadResult.failedExecution(new RuntimeException("net error")));
+    executionEngine.setPayloadStatus(
+        PayloadStatus.failedExecution(new RuntimeException("net error")));
 
     // generate block which finalize epoch 2
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
@@ -416,8 +425,7 @@ class ForkChoiceTest {
     importBlock(epoch4Block);
 
     // make EL returning INVALID
-    executionEngine.setExecutePayloadResult(
-        ExecutePayloadResult.invalid(Optional.empty(), Optional.empty()));
+    executionEngine.setPayloadStatus(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
 
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockWithError(chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
@@ -434,11 +442,15 @@ class ForkChoiceTest {
     slotToImport = prepFinalizeEpoch(4);
 
     // make EL returning SYNCING
-    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
 
     // generate block which finalize epoch 4
     final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlockOptimistically(epoch6Block);
+
+    assertForkChoiceUpdateNotification(epoch6Block, true);
+    assertHeadIsOptimistic(epoch6Block);
 
     // Should now have finalized epoch 3
     assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(4));
@@ -446,11 +458,16 @@ class ForkChoiceTest {
     // latest valid finalized slot should remain 16
     assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(24));
 
-    // we now simulate an update from OptimisticHeadValidator
-    forkChoice.onExecutionPayloadResult(
-        epoch6Block.getRoot(),
-        ExecutePayloadResult.VALID,
-        recentChainData.getStore().getLatestFinalizedBlockSlot());
+    // import another block which EL is going to validate
+    executionEngine.setPayloadStatus(PayloadStatus.VALID);
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
+    storageSystem.chainUpdater().setCurrentSlot(slotToImport.plus(1));
+    final SignedBlockAndState epoch6BlockPlus1 =
+        chainBuilder.generateBlockAtSlot(slotToImport.plus(1));
+    importBlock(epoch6BlockPlus1);
+
+    assertForkChoiceUpdateNotification(epoch6BlockPlus1, false);
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
 
     // latest valid finalized should have advanced to 32
     assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(32));
@@ -471,7 +488,7 @@ class ForkChoiceTest {
     slotToImport = prepFinalizeEpoch(4);
 
     // make EL returning SYNCING
-    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
 
     // generate block which finalize epoch 4
     final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
@@ -486,7 +503,7 @@ class ForkChoiceTest {
     ChainBuilder alternativeChain = chainBuilder.fork();
 
     // make EL returning SYNCING
-    executionEngine.setExecutePayloadResult(ExecutePayloadResult.VALID);
+    executionEngine.setPayloadStatus(PayloadStatus.VALID);
 
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot));
 
@@ -497,7 +514,7 @@ class ForkChoiceTest {
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot.plus(1)));
 
     // make EL returning SYNCING
-    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
 
     // import a fork which won't be canonical
     importBlockOptimistically(alternativeChain.generateBlockAtSlot(forkSlot));
@@ -526,28 +543,104 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot);
 
-    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
+    importBlockOptimistically(blockAndState);
+    assertForkChoiceUpdateNotification(blockAndState, true);
+
+    // Optimistic head should be tracked
+    assertHeadIsOptimistic(blockAndState);
+
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
+    processHead(recentChainData.getHeadSlot());
+
+    assertForkChoiceUpdateNotification(blockAndState, true, times(2));
+  }
+
+  @Test
+  void onBlock_shouldUseLatestValidHashFromForkChoiceUpdated() {
+    doMerge();
+    finalizeEpoch(2);
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+
+    final UInt64 nextBlockSlot = storageSystem.chainBuilder().getLatestSlot().plus(1);
+    storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot);
+    final SignedBlockAndState blockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot);
+
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
 
-    // Optimistic head should be tracked
+    // let's import a new block on top the optimistic head
+    // let's make the EL return ACCEPTED on newPayload call but return INVALID on forkChoiceUpdated
+    // call
+    // INVALID will give us a lastValidHash corresponding to the previous block payload (imported
+    // optimistically)
+
+    executionEngine.setPayloadStatus(PayloadStatus.ACCEPTED);
+
+    PayloadStatus invalidWithLastValidBlockHash =
+        PayloadStatus.create(
+            ExecutionPayloadStatus.INVALID,
+            blockAndState
+                .getBlock()
+                .getMessage()
+                .getBody()
+                .getOptionalExecutionPayload()
+                .map(ExecutionPayload::getBlockHash),
+            Optional.empty());
+
+    setForkChoiceNotifierForkChoiceUpdatedResult(invalidWithLastValidBlockHash);
+
+    storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot.increment());
+    final SignedBlockAndState blockAndStatePlus1 =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot.increment());
+
+    // before importing, previous block is optimistic
+    assertThat(isFullyValidated(blockAndState.getRoot())).isFalse();
+
+    importBlockOptimistically(blockAndStatePlus1);
+
+    // after importing, previous block is fully valid
+    assertThat(isFullyValidated(blockAndState.getRoot())).isTrue();
+
+    // processing the head
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
+    processHead(blockAndStatePlus1.getSlot());
+
+    // we have now no optimistic head
+    assertHeadIsFullyValidated(blockAndState);
+  }
+
+  private void assertHeadIsOptimistic(final SignedBlockAndState blockAndState) {
     assertThat(recentChainData.getOptimisticHead()).isPresent();
     final ForkChoiceState optimisticHead = recentChainData.getOptimisticHead().orElseThrow();
     assertThat(optimisticHead.isHeadOptimistic()).isTrue();
     assertThat(optimisticHead.getHeadBlockSlot()).isEqualTo(blockAndState.getSlot());
     assertThat(optimisticHead.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+  }
 
-    // Optimistic head should not be present once the block is validated
-    forkChoice.onExecutionPayloadResult(blockAndState.getRoot(), ExecutePayloadResult.VALID, ZERO);
-    processHead(recentChainData.getHeadSlot());
+  private void assertHeadIsFullyValidated(final SignedBlockAndState blockAndState) {
     assertThat(recentChainData.getOptimisticHead()).isEmpty();
+    assertThat(recentChainData.getChainHead().orElseThrow().getSlot())
+        .isEqualTo(blockAndState.getSlot());
+    assertThat(recentChainData.getChainHead().orElseThrow().getRoot())
+        .isEqualTo(blockAndState.getRoot());
+  }
+
+  private boolean isFullyValidated(final Bytes32 root) {
+    return recentChainData.getForkChoiceStrategy().orElseThrow().isFullyValidated(root);
   }
 
   private void assertForkChoiceUpdateNotification(
-      final SignedBlockAndState blockAndState, final boolean optimisticHead) {
+      final SignedBlockAndState blockAndState,
+      final boolean optimisticHead,
+      final VerificationMode mode) {
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
     final Bytes32 headExecutionHash =
@@ -556,7 +649,7 @@ class ForkChoiceTest {
         forkChoiceStrategy
             .executionBlockHash(recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot())
             .orElseThrow();
-    verify(forkChoiceNotifier)
+    verify(forkChoiceNotifier, mode)
         .onForkChoiceUpdated(
             new ForkChoiceState(
                 blockAndState.getRoot(),
@@ -565,6 +658,11 @@ class ForkChoiceTest {
                 headExecutionHash,
                 finalizedExecutionHash,
                 optimisticHead));
+  }
+
+  private void assertForkChoiceUpdateNotification(
+      final SignedBlockAndState blockAndState, final boolean optimisticHead) {
+    assertForkChoiceUpdateNotification(blockAndState, optimisticHead, times(1));
   }
 
   private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
@@ -729,5 +827,18 @@ class ForkChoiceTest {
 
   private void processHead(final UInt64 slot) {
     assertThat(forkChoice.processHead(slot)).isCompleted();
+  }
+
+  private void setForkChoiceNotifierForkChoiceUpdatedResult(final PayloadStatus status) {
+    setForkChoiceNotifierForkChoiceUpdatedResult(Optional.of(status));
+  }
+
+  private void setForkChoiceNotifierForkChoiceUpdatedResult(final Optional<PayloadStatus> status) {
+    ForkChoiceUpdatedResult result =
+        status
+            .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()))
+            .orElse(null);
+    when(forkChoiceNotifier.onForkChoiceUpdated(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.ofNullable(result)));
   }
 }
