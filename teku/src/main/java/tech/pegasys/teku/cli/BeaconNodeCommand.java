@@ -152,13 +152,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ExecutionEngineOptions executionEngineOptions;
 
   @Mixin(name = "Logging")
-  public LoggingOptions loggingOptions;
+  private LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
 
   @Mixin(name = "Data")
-  public BeaconNodeDataOptions dataOptions;
+  private BeaconNodeDataOptions dataOptions;
 
   @Mixin(name = "Data Storage")
   private DataStorageOptions dataStorageOptions;

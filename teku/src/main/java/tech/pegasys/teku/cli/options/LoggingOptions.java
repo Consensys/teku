@@ -81,7 +81,7 @@ public class LoggingOptions {
       description =
           "Whether a logger is added for the console, the log file, or both (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
-  public LoggingDestination logDestination = DEFAULT_BOTH;
+  private LoggingDestination logDestination = DEFAULT_BOTH;
 
   @CommandLine.Option(
       names = {"--log-file"},
