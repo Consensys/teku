@@ -28,12 +28,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
@@ -87,13 +87,12 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayload>> onStorageUpdate(final StorageUpdate event) {
+  public SafeFuture<UpdateResult> onStorageUpdate(final StorageUpdate event) {
     return SafeFuture.of(
         () -> {
-          final Optional<ExecutionPayload> finalizedOptimisticExecutionPayload =
-              database.update(event);
+          final UpdateResult updateResult = database.update(event);
           handleStoreUpdate();
-          return finalizedOptimisticExecutionPayload;
+          return updateResult;
         });
   }
 

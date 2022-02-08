@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -241,9 +242,9 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<ExecutionPayload> update(final StorageUpdate event) {
+  public UpdateResult update(final StorageUpdate event) {
     if (event.isEmpty()) {
-      return Optional.empty();
+      return UpdateResult.EMPTY;
     }
     return doUpdate(event);
   }
@@ -541,7 +542,7 @@ public class KvStoreDatabase implements Database {
     finalizedDao.close();
   }
 
-  private Optional<ExecutionPayload> doUpdate(final StorageUpdate update) {
+  private UpdateResult doUpdate(final StorageUpdate update) {
     LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
     final Optional<ExecutionPayload> finalizedOptimisticExecutionPayload =
@@ -585,7 +586,7 @@ public class KvStoreDatabase implements Database {
       updater.commit();
     }
     LOG.trace("Update complete");
-    return finalizedOptimisticExecutionPayload;
+    return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
 
   private Optional<ExecutionPayload> updateFinalizedData(

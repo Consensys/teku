@@ -162,12 +162,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               return storageUpdateChannel
                   .onStorageUpdate(updates.createStorageUpdate())
                   .thenAccept(
-                      newFinalizedOptimisticTransitionPayload -> {
+                      updateResult -> {
                         // Propagate changes to Store
                         writeLock.lock();
                         try {
                           // Add new data
-                          updates.applyToStore(store, newFinalizedOptimisticTransitionPayload);
+                          updates.applyToStore(store, updateResult);
                         } finally {
                           writeLock.unlock();
                         }
