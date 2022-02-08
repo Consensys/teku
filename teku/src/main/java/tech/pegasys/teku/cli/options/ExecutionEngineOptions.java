@@ -33,7 +33,7 @@ public class ExecutionEngineOptions {
       description = "Execution Engine API version. Possible values are: kintsugi (default) or kiln",
       arity = "1",
       hidden = true)
-  private String executionEngineVersion = "kintsugi";
+  private String executionEngineVersion = null;
 
   public void configure(final Builder builder) {
     builder.executionEngine(

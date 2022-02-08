@@ -24,10 +24,10 @@ public class ExecutionEngineConfiguration {
 
   private final Spec spec;
   private final Optional<String> endpoint;
-  private final Version version;
+  private final Optional<Version> version;
 
   private ExecutionEngineConfiguration(
-      final Spec spec, final Optional<String> endpoint, final Version version) {
+      final Spec spec, final Optional<String> endpoint, final Optional<Version> version) {
     this.spec = spec;
     this.endpoint = endpoint;
     this.version = version;
@@ -52,14 +52,14 @@ public class ExecutionEngineConfiguration {
                 "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
   }
 
-  public Version getVersion() {
+  public Optional<Version> getVersion() {
     return version;
   }
 
   public static class Builder {
     private Spec spec;
     private Optional<String> endpoint = Optional.empty();
-    private Version version;
+    private Optional<Version> version = Optional.empty();
 
     private Builder() {}
 
@@ -74,8 +74,11 @@ public class ExecutionEngineConfiguration {
     }
 
     public Builder version(final String version) {
+      if (version == null) {
+        return this;
+      }
       try {
-        this.version = Version.valueOf(version);
+        this.version = Optional.of(Version.valueOf(version));
         return this;
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
