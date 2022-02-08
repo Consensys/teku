@@ -148,7 +148,16 @@ commands:
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" uploadDocker
 
-
+  install_docker_buildx:
+    description: "Install Docker buildx plugin"
+    steps:
+      - run:
+          name: "Install Docker buildx plugin"
+          command: |
+            mkdir -vp ~/.docker/cli-plugins/
+            curl --fail -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
+            chmod a+x ~/.docker/cli-plugins/docker-buildx
+            
   notify:
     description: "Notify Slack"
     steps:
