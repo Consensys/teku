@@ -14,12 +14,13 @@
 package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import java.net.URL;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class ExternalValidator {
   private BLSPublicKey publicKey;
-  private Optional<URL> url;
+  private Optional<URL> url = Optional.empty();
   private boolean readOnly;
 
   public ExternalValidator() {}
@@ -52,5 +53,18 @@ public class ExternalValidator {
 
   public void setReadOnly(boolean readOnly) {
     this.readOnly = readOnly;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ExternalValidator that = (ExternalValidator) o;
+    return readOnly == that.readOnly && publicKey.equals(that.publicKey) && url.equals(that.url);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(publicKey, url, readOnly);
   }
 }
