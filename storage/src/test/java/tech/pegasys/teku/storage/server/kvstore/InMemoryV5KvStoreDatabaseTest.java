@@ -28,6 +28,7 @@ public class InMemoryV5KvStoreDatabaseTest extends AbstractKvStoreDatabaseWithHo
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
     return InMemoryStorageSystemBuilder.create()
+        .specProvider(spec)
         .version(DatabaseVersion.V5)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)

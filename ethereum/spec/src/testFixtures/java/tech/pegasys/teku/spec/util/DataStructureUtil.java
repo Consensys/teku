@@ -124,7 +124,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public final class DataStructureUtil {
-  private static final Spec DEFAULT_SPEC_PROVIDER = TestSpecFactory.createMinimalPhase0();
+  private static final Supplier<Spec> DEFAULT_SPEC_PROVIDER = TestSpecFactory::createMinimalPhase0;
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
@@ -135,12 +135,12 @@ public final class DataStructureUtil {
 
   @Deprecated
   public DataStructureUtil() {
-    this(92892824, DEFAULT_SPEC_PROVIDER);
+    this(92892824, DEFAULT_SPEC_PROVIDER.get());
   }
 
   @Deprecated
   public DataStructureUtil(final int seed) {
-    this(seed, DEFAULT_SPEC_PROVIDER);
+    this(seed, DEFAULT_SPEC_PROVIDER.get());
   }
 
   public DataStructureUtil(final Spec spec) {
