@@ -96,7 +96,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      parentCommand.setLogLevels();
+      parentCommand.configureLogging(dataOptions.getDataPath(), LOG_FILE_PREFIX);
       final TekuConfiguration globalConfiguration = tekuConfiguration();
       parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
@@ -157,7 +157,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     validatorRestApiOptions.configure(builder);
-    loggingOptions.configure(builder, LOG_FILE_PREFIX);
+    loggingOptions.configureWireLogs(builder);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
     return builder.build();

@@ -15,15 +15,29 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class LoggingOptions {
 
   private static final String WINDOWS_SEP = "\\";
   private static final String LINUX_SEP = "/";
+
+  @Option(
+      names = {"-l", "--logging"},
+      converter = LogTypeConverter.class,
+      paramLabel = "<LOG VERBOSITY LEVEL>",
+      description =
+          "Logging verbosity levels: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
+      arity = "1")
+  private Level logLevel;
 
   @CommandLine.Option(
       names = {"--log-color-enabled"},
@@ -67,7 +81,7 @@ public class LoggingOptions {
       description =
           "Whether a logger is added for the console, the log file, or both (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
-  private LoggingDestination logDestination = DEFAULT_BOTH;
+  public LoggingDestination logDestination = DEFAULT_BOTH;
 
   @CommandLine.Option(
       names = {"--log-file"},
@@ -129,40 +143,45 @@ public class LoggingOptions {
     return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
 
-  public TekuConfiguration.Builder configure(
-      final TekuConfiguration.Builder builder, final String defaultLogFileNamePrefix) {
+  public TekuConfiguration.Builder configureWireLogs(final TekuConfiguration.Builder builder) {
+    return builder.wireLogs(
+        b ->
+            b.logWireCipher(logWireCipherEnabled)
+                .logWirePlain(logWirePlainEnabled)
+                .logWireMuxFrames(logWireMuxEnabled)
+                .logWireGossip(logWireGossipEnabled));
+  }
 
-    return builder
-        .logging(
-            loggingBuilder -> {
-              loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
-
-              if (logFile != null) {
-                if (containsPath(logFile)) {
-                  loggingBuilder.logPath(logFile);
-                } else {
-                  loggingBuilder.logFileName(logFile);
-                }
-              }
-              if (logFileNamePattern != null) {
-                if (containsPath(logFileNamePattern)) {
-                  loggingBuilder.logPathPattern(logFileNamePattern);
-                } else {
-                  loggingBuilder.logFileNamePattern(logFileNamePattern);
-                }
-              }
-              loggingBuilder
-                  .colorEnabled(logColorEnabled)
-                  .includeEventsEnabled(logIncludeEventsEnabled)
-                  .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
-                  .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
-                  .destination(logDestination);
-            })
-        .wireLogs(
-            b ->
-                b.logWireCipher(logWireCipherEnabled)
-                    .logWirePlain(logWirePlainEnabled)
-                    .logWireMuxFrames(logWireMuxEnabled)
-                    .logWireGossip(logWireGossipEnabled));
+  public void applyLoggingConfiguration(
+      final String dataDirectory, final String defaultLogFileNamePrefix) {
+    if (logLevel != null) {
+      // set log level per CLI flags
+      LoggingConfigurator.setAllLevels(logLevel);
+    }
+    final LoggingConfig.LoggingConfigBuilder loggingBuilder = LoggingConfig.builder();
+    loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
+    loggingBuilder.dataDirectory(dataDirectory);
+    if (logFile != null) {
+      if (containsPath(logFile)) {
+        loggingBuilder.logPath(logFile);
+      } else {
+        loggingBuilder.logFileName(logFile);
+      }
+    }
+    if (logFileNamePattern != null) {
+      if (containsPath(logFileNamePattern)) {
+        loggingBuilder.logPathPattern(logFileNamePattern);
+      } else {
+        loggingBuilder.logFileNamePattern(logFileNamePattern);
+      }
+    }
+    loggingBuilder
+        .colorEnabled(logColorEnabled)
+        .includeEventsEnabled(logIncludeEventsEnabled)
+        .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+        .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
+        .destination(logDestination);
+    LoggingConfig config = loggingBuilder.build();
+    LoggingConfigurator.update(config);
   }
 }

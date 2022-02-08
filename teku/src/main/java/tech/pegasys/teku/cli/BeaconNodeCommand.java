@@ -31,7 +31,6 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.Unmatched;
-import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
@@ -126,15 +125,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   @Option(
-      names = {"-l", "--logging"},
-      converter = LogTypeConverter.class,
-      paramLabel = "<LOG VERBOSITY LEVEL>",
-      description =
-          "Logging verbosity levels: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
-      arity = "1")
-  private Level logLevel;
-
-  @Option(
       names = {"-c", CONFIG_FILE_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Path/filename of the yaml config file (default: none)",
@@ -162,13 +152,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ExecutionEngineOptions executionEngineOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  public LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
 
   @Mixin(name = "Data")
-  private BeaconNodeDataOptions dataOptions;
+  public BeaconNodeDataOptions dataOptions;
 
   @Mixin(name = "Data Storage")
   private DataStorageOptions dataStorageOptions;
@@ -295,7 +285,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      setLogLevels();
+      configureLogging(dataOptions.getDataPath(), LOG_FILE_PREFIX);
       final TekuConfiguration tekuConfig = tekuConfiguration();
       startAction.start(tekuConfig, false);
       return 0;
@@ -336,17 +326,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return LogManager.getLogger();
   }
 
-  public void setLogLevels() {
-    if (logLevel != null) {
-      // set log level per CLI flags
-      LoggingConfigurator.setAllLevels(logLevel);
-    }
+  public void configureLogging(final String logDirectoryPath, final String logFilePrefix) {
+    loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
-  }
-
-  public Level getLogLevel() {
-    return this.logLevel;
   }
 
   public StartAction getStartAction() {
@@ -366,7 +349,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       p2POptions.configure(builder);
       beaconRestApiOptions.configure(builder);
       validatorRestApiOptions.configure(builder);
-      loggingOptions.configure(builder, LOG_FILE_PREFIX);
+      loggingOptions.configureWireLogs(builder);
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
       metricsOptions.configure(builder);
