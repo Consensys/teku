@@ -97,6 +97,7 @@ public class ChainBuilder {
     return ChainBuilder.create(spec, DEFAULT_VALIDATOR_KEYS);
   }
 
+  @Deprecated
   public static ChainBuilder create(final List<BLSKeyPair> validatorKeys) {
     return create(TestSpecFactory.createMinimalPhase0(), validatorKeys);
   }

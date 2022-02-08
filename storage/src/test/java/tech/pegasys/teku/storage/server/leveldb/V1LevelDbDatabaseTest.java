@@ -40,6 +40,7 @@ public class V1LevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesT
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
+        .specProvider(spec)
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.LEVELDB1)
         .storageMode(storageMode)

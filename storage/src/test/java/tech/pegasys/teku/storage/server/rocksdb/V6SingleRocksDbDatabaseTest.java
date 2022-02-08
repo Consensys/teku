@@ -40,6 +40,7 @@ public class V6SingleRocksDbDatabaseTest extends AbstractKvStoreDatabaseWithHotS
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
+        .specProvider(spec)
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.V6)
         .storageMode(storageMode)
