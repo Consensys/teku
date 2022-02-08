@@ -702,8 +702,9 @@ public abstract class AbstractDatabaseTest {
     assertThat(tx.commit()).isCompleted();
 
     // Finalize the next epoch
-    final List<SignedBlockAndState> laterBlocks = chainBuilder.generateBlocksUpToSlot(
-        chainBuilder.getLatestSlot().plus(spec.getSlotsPerEpoch(chainBuilder.getLatestSlot())));
+    final List<SignedBlockAndState> laterBlocks =
+        chainBuilder.generateBlocksUpToSlot(
+            chainBuilder.getLatestSlot().plus(spec.getSlotsPerEpoch(chainBuilder.getLatestSlot())));
     add(laterBlocks);
     final Checkpoint finalizedCheckpoint2 =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
