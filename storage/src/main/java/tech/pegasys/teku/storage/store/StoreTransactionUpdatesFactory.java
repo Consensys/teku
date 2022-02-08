@@ -25,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.BlockMetadataStore.HaltableNodeProcessor;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.storage.events.FinalizedChainData;
 class StoreTransactionUpdatesFactory {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final Store baseStore;
   private final StoreTransaction tx;
 
@@ -50,7 +53,11 @@ class StoreTransactionUpdatesFactory {
       Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public StoreTransactionUpdatesFactory(
-      final Store baseStore, final StoreTransaction tx, final AnchorPoint latestFinalized) {
+      final Spec spec,
+      final Store baseStore,
+      final StoreTransaction tx,
+      final AnchorPoint latestFinalized) {
+    this.spec = spec;
     this.baseStore = baseStore;
     this.tx = tx;
     this.latestFinalized = latestFinalized;
@@ -69,8 +76,11 @@ class StoreTransactionUpdatesFactory {
   }
 
   public static StoreTransactionUpdates create(
-      final Store baseStore, final StoreTransaction tx, final AnchorPoint latestFinalized) {
-    return new StoreTransactionUpdatesFactory(baseStore, tx, latestFinalized).build();
+      final Spec spec,
+      final Store baseStore,
+      final StoreTransaction tx,
+      final AnchorPoint latestFinalized) {
+    return new StoreTransactionUpdatesFactory(spec, baseStore, tx, latestFinalized).build();
   }
 
   public StoreTransactionUpdates build() {
@@ -87,9 +97,24 @@ class StoreTransactionUpdatesFactory {
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
     final Map<Bytes32, Bytes32> finalizedChildToParent =
-        collectFinalizedRoots(baseStore, latestFinalized.getRoot());
+        collectFinalizedRoots(latestFinalized.getRoot());
     Set<SignedBeaconBlock> finalizedBlocks = collectFinalizedBlocks(tx, finalizedChildToParent);
     Map<Bytes32, BeaconState> finalizedStates = collectFinalizedStates(tx, finalizedChildToParent);
+
+    final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
+    if (!spec.isMergeTransitionComplete(baseStore.getLatestFinalized().getState())
+        && spec.isMergeTransitionComplete(latestFinalized.getState())) {
+      // Transition block was finalized by this transaction
+      final TransitionBlockFindingNodeProcessor transitionBlockFinder =
+          new TransitionBlockFindingNodeProcessor();
+      baseStore.forkChoiceStrategy.processHashesInChainWhile(
+          latestFinalized.getRoot(), transitionBlockFinder);
+      final Optional<Bytes32> optimisticTransitionBlockRoot =
+          transitionBlockFinder
+              .getTransitionBlockRoot()
+              .filter(baseStore.forkChoiceStrategy::isOptimistic);
+      finalizedChainDataBuilder.optimisticTransitionBlockRoot(optimisticTransitionBlockRoot);
+    }
 
     // Prune collections
     calculatePrunedHotBlockRoots();
@@ -98,7 +123,7 @@ class StoreTransactionUpdatesFactory {
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
-            FinalizedChainData.builder()
+            finalizedChainDataBuilder
                 .latestFinalized(latestFinalized)
                 .finalizedChildAndParent(finalizedChildToParent)
                 .finalizedBlocks(finalizedBlocks)
@@ -129,8 +154,7 @@ class StoreTransactionUpdatesFactory {
         .or(() -> baseStore.forkChoiceStrategy.blockSlot(root));
   }
 
-  private Map<Bytes32, Bytes32> collectFinalizedRoots(
-      final Store baseStore, final Bytes32 newlyFinalizedBlockRoot) {
+  private Map<Bytes32, Bytes32> collectFinalizedRoots(final Bytes32 newlyFinalizedBlockRoot) {
     final HashMap<Bytes32, Bytes32> childToParent = new HashMap<>();
     // Add any new blocks that were immediately finalized
     Bytes32 finalizedChainHeadRoot = newlyFinalizedBlockRoot;
@@ -210,5 +234,27 @@ class StoreTransactionUpdatesFactory {
         getHotStatesToPersist(),
         prunedHotBlockRoots,
         stateRoots);
+  }
+
+  private static class TransitionBlockFindingNodeProcessor implements HaltableNodeProcessor {
+
+    private Bytes32 transitionBlockRoot;
+
+    @Override
+    public boolean process(
+        final Bytes32 childRoot,
+        final UInt64 slot,
+        final Bytes32 parentRoot,
+        final Bytes32 executionHash) {
+      if (executionHash.isZero()) {
+        return false;
+      }
+      transitionBlockRoot = childRoot;
+      return true;
+    }
+
+    public Optional<Bytes32> getTransitionBlockRoot() {
+      return Optional.ofNullable(transitionBlockRoot);
+    }
   }
 }

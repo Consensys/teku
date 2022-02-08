@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -45,7 +46,7 @@ public class ChainStorage
 
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
-  private volatile Optional<StoreBuilder> cachedStore = Optional.empty();
+  private Optional<StoreBuilder> cachedStore = Optional.empty();
 
   private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
     this.database = database;
@@ -86,11 +87,13 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onStorageUpdate(final StorageUpdate event) {
-    return SafeFuture.fromRunnable(
+  public SafeFuture<Optional<ExecutionPayload>> onStorageUpdate(final StorageUpdate event) {
+    return SafeFuture.of(
         () -> {
-          database.update(event);
+          final Optional<ExecutionPayload> finalizedOptimisticExecutionPayload =
+              database.update(event);
           handleStoreUpdate();
+          return finalizedOptimisticExecutionPayload;
         });
   }
 

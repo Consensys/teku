@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -77,7 +78,8 @@ class StoreTransactionUpdates {
         stateRoots);
   }
 
-  public void applyToStore(final Store store) {
+  public void applyToStore(
+      final Store store, final Optional<ExecutionPayload> newFinalizedOptimisticTransitionPayload) {
     // Add new data
     tx.time.filter(t -> t.isGreaterThan(store.getTime())).ifPresent(value -> store.time = value);
     tx.genesisTime.ifPresent(value -> store.genesisTime = value);
@@ -88,7 +90,12 @@ class StoreTransactionUpdates {
 
     // Update finalized data
     finalizedChainData.ifPresent(
-        finalizedData -> store.finalizedAnchor = finalizedData.getLatestFinalized());
+        finalizedData -> {
+          store.finalizedAnchor = finalizedData.getLatestFinalized();
+          if (finalizedData.isOptimisticTransitionBlockRootSet()) {
+            store.finalizedOptimisticTransitionPayload = newFinalizedOptimisticTransitionPayload;
+          }
+        });
 
     // Prune blocks and states
     prunedHotBlockRoots.forEach(

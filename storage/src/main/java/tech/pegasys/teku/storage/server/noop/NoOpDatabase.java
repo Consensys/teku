@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -42,7 +43,9 @@ public class NoOpDatabase implements Database {
   public void storeInitialAnchor(final AnchorPoint genesis) {}
 
   @Override
-  public void update(final StorageUpdate event) {}
+  public Optional<ExecutionPayload> update(final StorageUpdate event) {
+    return Optional.empty();
+  }
 
   @Override
   public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {}

@@ -367,7 +367,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
             nodeProcessor.process(
                 currentNode.getBlockRoot(),
                 currentNode.getBlockSlot(),
-                currentNode.getParentRoot());
+                currentNode.getParentRoot(),
+                currentNode.getExecutionBlockHash());
         if (!shouldContinue || currentNode.getParentIndex().isEmpty()) {
           break;
         }

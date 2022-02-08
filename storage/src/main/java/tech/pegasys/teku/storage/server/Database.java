@@ -26,6 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -38,7 +39,7 @@ public interface Database extends AutoCloseable {
 
   void storeInitialAnchor(AnchorPoint genesis);
 
-  void update(StorageUpdate event);
+  Optional<ExecutionPayload> update(StorageUpdate event);
 
   void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
 

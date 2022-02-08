@@ -241,11 +241,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void update(final StorageUpdate event) {
+  public Optional<ExecutionPayload> update(final StorageUpdate event) {
     if (event.isEmpty()) {
-      return;
+      return Optional.empty();
     }
-    doUpdate(event);
+    return doUpdate(event);
   }
 
   public void ingestDatabase(
@@ -358,6 +358,11 @@ public class KvStoreDatabase implements Database {
         hotDao.getHotBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
         AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
+    final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload =
+        finalizedDao
+            .getOptimisticTransitionBlockSlot()
+            .flatMap(finalizedDao::getFinalizedBlockAtSlot)
+            .flatMap(block -> block.getMessage().getBody().getOptionalExecutionPayload());
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -373,6 +378,7 @@ public class KvStoreDatabase implements Database {
             .anchor(maybeAnchor)
             .genesisTime(genesisTime)
             .latestFinalized(latestFinalized)
+            .finalizedOptimisticTransitionPayload(finalizedOptimisticTransitionPayload)
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .blockInformation(blockInformation)
@@ -535,14 +541,17 @@ public class KvStoreDatabase implements Database {
     finalizedDao.close();
   }
 
-  private void doUpdate(final StorageUpdate update) {
+  private Optional<ExecutionPayload> doUpdate(final StorageUpdate update) {
     LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
-    updateFinalizedData(
-        update.getFinalizedChildToParentMap(),
-        update.getFinalizedBlocks(),
-        update.getFinalizedStates(),
-        update.getDeletedHotBlocks());
+    final Optional<ExecutionPayload> finalizedOptimisticExecutionPayload =
+        updateFinalizedData(
+            update.getFinalizedChildToParentMap(),
+            update.getFinalizedBlocks(),
+            update.getFinalizedStates(),
+            update.getDeletedHotBlocks(),
+            update.isFinalizedOptimisticBlockRootSet(),
+            update.getOptimisticTransitionBlockRoot());
     LOG.trace("Applying hot updates");
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
@@ -576,18 +585,24 @@ public class KvStoreDatabase implements Database {
       updater.commit();
     }
     LOG.trace("Update complete");
+    return finalizedOptimisticExecutionPayload;
   }
 
-  private void updateFinalizedData(
+  private Optional<ExecutionPayload> updateFinalizedData(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
-      final Set<Bytes32> deletedHotBlocks) {
+      final Set<Bytes32> deletedHotBlocks,
+      final boolean isFinalizedOptimisticBlockRootSet,
+      final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
     if (finalizedChildToParentMap.isEmpty()) {
       // Nothing to do
-      return;
+      return Optional.empty();
     }
 
+    final Optional<ExecutionPayload> optimisticTransitionPayload =
+        updateFinalizedOptimisticTransitionBlock(
+            isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
     switch (stateStorageMode) {
       case ARCHIVE:
         updateFinalizedDataArchiveMode(finalizedChildToParentMap, finalizedBlocks, finalizedStates);
@@ -606,6 +621,25 @@ public class KvStoreDatabase implements Database {
               .filter(root -> !finalizedChildToParentMap.containsKey(root))
               .flatMap(root -> getHotBlock(root).stream())
               .collect(Collectors.toSet()));
+    }
+
+    return optimisticTransitionPayload;
+  }
+
+  private Optional<ExecutionPayload> updateFinalizedOptimisticTransitionBlock(
+      final boolean isFinalizedOptimisticBlockRootSet,
+      final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
+    if (isFinalizedOptimisticBlockRootSet) {
+      final Optional<SignedBeaconBlock> transitionBlock =
+          finalizedOptimisticTransitionBlockRoot.flatMap(this::getHotBlock);
+      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+        updater.setOptimisticTransitionBlockSlot(transitionBlock.map(SignedBeaconBlock::getSlot));
+        updater.commit();
+      }
+      return transitionBlock.flatMap(
+          block -> block.getMessage().getBody().getOptionalExecutionPayload());
+    } else {
+      return Optional.empty();
     }
   }
 
