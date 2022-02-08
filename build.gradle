@@ -29,6 +29,7 @@ def specificVersion = calculateVersion()
 def isDevelopBuild = rootProject.version.contains('develop')
 
 apply plugin: 'application'
+apply plugin: DepCheckPlugin
 
 defaultTasks 'build','checkLicense'
 
@@ -70,25 +71,24 @@ var baseInfrastructureProjects = [
     ':infrastructure:subscribers'
 ]
 
+dependencyRules {
+  rules {
+    baseInfrastructureProjects.each { register(it) { allowed = [] }}
+    register(":infrastructure:") {
+      allowed = [":infrastructure:"]
+    }
+    register(":infrastructure:logging") {
+      allowed = [":infrastructure:unsigned"]
+    }
+  }
+}
+
 allprojects {
   apply plugin: 'java-library'
   apply plugin: 'java-test-fixtures'
   apply plugin: 'io.spring.dependency-management'
   apply plugin: 'net.ltgt.errorprone'
   apply from: "${rootDir}/gradle/versions.gradle"
-  apply plugin: DepCheckPlugin
-
-  dependencyRules {
-    rules {
-      baseInfrastructureProjects.each { register(it) { allowed = [] }}
-      register(":infrastructure:") {
-        allowed = [":infrastructure:"]
-      }
-      register(":infrastructure:logging") {
-        allowed = [":infrastructure:unsigned"]
-      }
-    }
-  }
 
   version = rootProject.version
 

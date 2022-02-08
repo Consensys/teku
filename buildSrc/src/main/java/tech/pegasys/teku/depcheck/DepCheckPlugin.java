@@ -28,13 +28,22 @@ public class DepCheckPlugin implements Plugin<Project> {
   @Override
   public void apply(final Project project) {
     project.getExtensions().create("dependencyRules", DependencyRules.class);
-    // Should apply plugin to root project only and have it add task automatically to all projects.
-    project.task("checkModuleDependencies").doLast(task -> checkDependencies(project));
+
+    project.allprojects(
+        subproject ->
+            subproject
+                .task("checkModuleDependencies")
+                .doLast(task -> checkDependencies(subproject)));
   }
 
-  private void checkDependencies(final Project project) {
+  private synchronized void checkDependencies(final Project project) {
     final Set<String> illegalDependencies =
-        project.getExtensions().getByType(DependencyRules.class).getRules().stream()
+        project
+            .getRootProject()
+            .getExtensions()
+            .getByType(DependencyRules.class)
+            .getRules()
+            .stream()
             .filter(rule -> isApplicable(rule, project))
             .flatMap(rule -> illegalDependencies(rule, project))
             .map(dependency -> dependency.getDependencyProject().getPath())
