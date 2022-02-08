@@ -181,7 +181,8 @@ class ValidatorTypesTest {
 
     assertThat(result).containsOnlyKeys("remote_keys").isInstanceOf(HashMap.class);
 
-    final List<Map<String, Object>> remoteKeys = (List<Map<String, Object>>) result.get("remote_keys");
+    final List<Map<String, Object>> remoteKeys =
+        (List<Map<String, Object>>) result.get("remote_keys");
     assertThat(remoteKeys)
         .containsExactly(
             Map.of("pubkey", publicKey1.toString(), "readonly", true),
@@ -214,7 +215,8 @@ class ValidatorTypesTest {
 
   @Test
   void externalValidatorType_roundTrip() throws Exception {
-    final ExternalValidator externalValidator = new ExternalValidator(dataStructureUtil.randomPublicKey(), Optional.empty(), true);
+    final ExternalValidator externalValidator =
+        new ExternalValidator(dataStructureUtil.randomPublicKey(), Optional.empty(), true);
     assertRoundTrip(externalValidator, ValidatorTypes.EXTERNAL_VALIDATOR_TYPE);
   }
 }
