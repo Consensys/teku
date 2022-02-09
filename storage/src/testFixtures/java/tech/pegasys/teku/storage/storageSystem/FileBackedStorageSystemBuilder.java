@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -36,7 +35,7 @@ public class FileBackedStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
-  private Spec spec = TestSpecFactory.createMinimalPhase0();
+  private Spec spec;
 
   // Version-dependent fields
   private Path dataDir;
@@ -88,6 +87,7 @@ public class FileBackedStorageSystemBuilder {
 
   private FileBackedStorageSystemBuilder copy() {
     return create()
+        .specProvider(spec)
         .version(version)
         .dataDir(dataDir)
         .storageMode(storageMode)
@@ -96,6 +96,7 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private void validate() {
+    checkNotNull(spec, "Must specify spec");
     checkState(dataDir != null);
   }
 

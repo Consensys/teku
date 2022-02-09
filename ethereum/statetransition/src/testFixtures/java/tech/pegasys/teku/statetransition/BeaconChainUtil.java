@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.List;
@@ -46,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -109,8 +108,7 @@ public class BeaconChainUtil {
         spec,
         storageClient,
         validatorKeys,
-        new ForkChoice(
-            spec, new InlineEventThread(), storageClient, mock(ForkChoiceNotifier.class)),
+        new ForkChoice(spec, new InlineEventThread(), storageClient, new StubForkChoiceNotifier()),
         true);
   }
 
@@ -131,8 +129,7 @@ public class BeaconChainUtil {
         spec,
         validatorKeys,
         storageClient,
-        new ForkChoice(
-            spec, new InlineEventThread(), storageClient, mock(ForkChoiceNotifier.class)),
+        new ForkChoice(spec, new InlineEventThread(), storageClient, new StubForkChoiceNotifier()),
         signDeposits);
   }
 
@@ -370,8 +367,7 @@ public class BeaconChainUtil {
       if (forkChoice == null) {
         final InlineEventThread forkChoiceExecutor = new InlineEventThread();
         forkChoice =
-            new ForkChoice(
-                spec, forkChoiceExecutor, recentChainData, mock(ForkChoiceNotifier.class));
+            new ForkChoice(spec, forkChoiceExecutor, recentChainData, new StubForkChoiceNotifier());
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);

@@ -22,26 +22,25 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes8Deserializer;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
 
 public class ForkChoiceUpdatedResult {
-  private final ForkChoiceUpdatedStatus status;
+  private final PayloadStatusV1 payloadStatus;
 
   @JsonDeserialize(using = Bytes8Deserializer.class)
   private final Bytes8 payloadId;
 
   public ForkChoiceUpdatedResult(
-      @JsonProperty("status") ForkChoiceUpdatedStatus status,
+      @JsonProperty("payloadStatus") PayloadStatusV1 payloadStatus,
       @JsonProperty("payloadId") Bytes8 payloadId) {
-    checkNotNull(status, "status");
-    this.status = status;
+    checkNotNull(payloadStatus, "payloadStatus cannot be null");
+    this.payloadStatus = payloadStatus;
     this.payloadId = payloadId;
   }
 
   public tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
       asInternalExecutionPayload() {
     return new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
-        status, Optional.ofNullable(payloadId));
+        payloadStatus.asInternalExecutionPayload(), Optional.ofNullable(payloadId));
   }
 
   @Override
@@ -49,18 +48,19 @@ public class ForkChoiceUpdatedResult {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final ForkChoiceUpdatedResult that = (ForkChoiceUpdatedResult) o;
-    return Objects.equals(status, that.status) && Objects.equals(payloadId, that.payloadId);
+    return Objects.equals(payloadStatus, that.payloadStatus)
+        && Objects.equals(payloadId, that.payloadId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, payloadId);
+    return Objects.hash(payloadStatus, payloadId);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("status", status)
+        .add("payloadStatus", payloadStatus)
         .add("payloadId", payloadId)
         .toString();
   }

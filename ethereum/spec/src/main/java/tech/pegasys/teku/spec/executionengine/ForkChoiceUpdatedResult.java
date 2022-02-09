@@ -19,16 +19,16 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 
 public class ForkChoiceUpdatedResult {
-  private final ForkChoiceUpdatedStatus status;
+  private final PayloadStatus payloadStatus;
   private final Optional<Bytes8> payloadId;
 
-  public ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus status, Optional<Bytes8> payloadId) {
-    this.status = status;
+  public ForkChoiceUpdatedResult(PayloadStatus payloadStatus, Optional<Bytes8> payloadId) {
+    this.payloadStatus = payloadStatus;
     this.payloadId = payloadId;
   }
 
-  public ForkChoiceUpdatedStatus getStatus() {
-    return status;
+  public PayloadStatus getPayloadStatus() {
+    return payloadStatus;
   }
 
   public Optional<Bytes8> getPayloadId() {
@@ -40,18 +40,19 @@ public class ForkChoiceUpdatedResult {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final ForkChoiceUpdatedResult that = (ForkChoiceUpdatedResult) o;
-    return Objects.equals(status, that.status) && Objects.equals(payloadId, that.payloadId);
+    return Objects.equals(payloadStatus, that.payloadStatus)
+        && Objects.equals(payloadId, that.payloadId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, payloadId);
+    return Objects.hash(payloadStatus, payloadId);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("status", status)
+        .add("payloadStatus", payloadStatus)
         .add("payloadId", payloadId)
         .toString();
   }

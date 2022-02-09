@@ -55,6 +55,8 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
   Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(Bytes32 stateRoot);
 
+  Optional<UInt64> getOptimisticTransitionBlockSlot();
+
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
   void ingest(KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger);
@@ -70,6 +72,8 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
     void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
+
+    void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
 
     void commit();
 
