@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print
 
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class SubCommandLogger {
@@ -93,7 +92,7 @@ public class SubCommandLogger {
         "Failed to send deposit transaction: %s : %s %n", cause.getClass(), cause.getMessage());
   }
 
-  public synchronized void enableLogger(final String name) {
-    this.log = Optional.of(LogManager.getLogger(name));
+  public synchronized void setLogger(final Logger logger) {
+    this.log = Optional.of(logger);
   }
 }

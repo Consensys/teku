@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -137,7 +138,7 @@ public class VoluntaryExitCommand implements Runnable {
         loggingOptions.applyLoggingConfiguration(
             dataOptions.getDataPath(), LOG_FILE_PREFIX, LoggingDestination.FILE);
     LoggingConfigurator.update(loggingConfig, true);
-    SUB_COMMAND_LOG.enableLogger("VoluntaryExit");
+    SUB_COMMAND_LOG.setLogger(LogManager.getLogger("VoluntaryExit"));
   }
 
   private void confirmExits() {
