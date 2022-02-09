@@ -99,6 +99,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(final Bytes32 head) {
+    return Optional.empty();
+  }
+
+  @Override
   public List<Map<String, Object>> getNodeData() {
     return Collections.emptyList();
   }
