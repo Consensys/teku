@@ -17,19 +17,22 @@ import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -47,7 +50,7 @@ public class BlockManager extends Service
   private final BlockValidator validator;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
-  private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
+  private final Map<Bytes32, FailureReason> invalidBlockRoots = LimitedMap.create(500);
   private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
@@ -167,7 +170,7 @@ public class BlockManager extends Service
                         "Unable to import block for reason {}: {}",
                         result.getFailureReason(),
                         block);
-                    dropInvalidBlock(block);
+                    dropInvalidBlock(block, result.getFailureReason());
                 }
               }
             });
@@ -177,8 +180,9 @@ public class BlockManager extends Service
     if (blockIsKnown(block)) {
       return false;
     }
-    if (blockIsInvalid(block)) {
-      dropInvalidBlock(block);
+    final Optional<FailureReason> failureReason = blockIsInvalid(block);
+    if (failureReason.isPresent()) {
+      dropInvalidBlock(block, failureReason.get());
       return false;
     }
     return true;
@@ -190,12 +194,12 @@ public class BlockManager extends Service
         || recentChainData.containsBlock(block.getRoot());
   }
 
-  private boolean blockIsInvalid(final SignedBeaconBlock block) {
-    return invalidBlockRoots.contains(block.getRoot())
-        || invalidBlockRoots.contains(block.getParentRoot());
+  private Optional<FailureReason> blockIsInvalid(final SignedBeaconBlock block) {
+    return Optional.ofNullable(invalidBlockRoots.get(block.getRoot()))
+        .or(() -> Optional.ofNullable(invalidBlockRoots.get(block.getParentRoot())));
   }
 
-  private void dropInvalidBlock(final SignedBeaconBlock block) {
+  private void dropInvalidBlock(final SignedBeaconBlock block, final FailureReason failureReason) {
     final Bytes32 blockRoot = block.getRoot();
     final Set<SignedBeaconBlock> blocksToDrop = new HashSet<>();
     blocksToDrop.add(block);
@@ -203,7 +207,7 @@ public class BlockManager extends Service
 
     blocksToDrop.forEach(
         blockToDrop -> {
-          invalidBlockRoots.add(blockToDrop.getMessage().hashTreeRoot());
+          invalidBlockRoots.put(blockToDrop.getMessage().hashTreeRoot(), failureReason);
           pendingBlocks.remove(blockToDrop);
         });
   }
