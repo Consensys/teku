@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -42,7 +43,9 @@ public class NoOpDatabase implements Database {
   public void storeInitialAnchor(final AnchorPoint genesis) {}
 
   @Override
-  public void update(final StorageUpdate event) {}
+  public UpdateResult update(final StorageUpdate event) {
+    return new UpdateResult(Optional.empty());
+  }
 
   @Override
   public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {}

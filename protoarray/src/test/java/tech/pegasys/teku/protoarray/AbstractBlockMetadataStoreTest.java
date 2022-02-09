@@ -207,7 +207,7 @@ abstract class AbstractBlockMetadataStoreTest {
     final AtomicReference<Bytes32> expectedBlock = new AtomicReference<>(headRoot);
     store.processHashesInChainWhile(
         headRoot,
-        (childRoot, slot, parentRoot) -> {
+        (childRoot, slot, parentRoot, executionHash) -> {
           assertThat(seenBlocks).doesNotContain(childRoot);
           seenBlocks.add(childRoot);
 
@@ -215,6 +215,7 @@ abstract class AbstractBlockMetadataStoreTest {
           assertThat(childRoot).isEqualTo(block.getRoot());
           assertThat(slot).isEqualTo(block.getSlot());
           assertThat(parentRoot).isEqualTo(block.getParentRoot());
+          assertThat(executionHash).isEqualTo(Bytes32.ZERO);
 
           expectedBlock.set(block.getParentRoot());
           return !slot.equals(UInt64.valueOf(3));
