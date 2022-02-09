@@ -26,6 +26,7 @@ import io.javalin.jetty.JettyServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {

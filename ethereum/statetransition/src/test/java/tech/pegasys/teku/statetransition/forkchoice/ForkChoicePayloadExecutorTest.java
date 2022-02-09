@@ -19,7 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.executionengine.PayloadStatus.VALID;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -46,7 +48,7 @@ class ForkChoicePayloadExecutorTest {
   private final ExecutionPayloadHeader defaultPayloadHeader =
       schemaDefinitionsBellatrix.getExecutionPayloadHeaderSchema().getDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SafeFuture<ExecutePayloadResult> executionResult = new SafeFuture<>();
+  private final SafeFuture<PayloadStatus> executionResult = new SafeFuture<>();
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final ExecutionPayloadHeader payloadHeader =
       dataStructureUtil.randomExecutionPayloadHeader();
@@ -59,14 +61,14 @@ class ForkChoicePayloadExecutorTest {
 
   @BeforeEach
   void setUp() {
-    when(executionEngine.executePayload(any())).thenReturn(executionResult);
+    when(executionEngine.newPayload(any())).thenReturn(executionResult);
   }
 
   @Test
   void optimisticallyExecute_shouldSendToExecutionEngineAndReturnTrue() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
-    verify(executionEngine).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
     assertThat(result).isTrue();
   }
 
@@ -74,56 +76,83 @@ class ForkChoicePayloadExecutorTest {
   void optimisticallyExecute_shouldNotExecuteDefaultPayload() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, defaultPayload);
-    verify(executionEngine, never()).executePayload(any());
+    verify(executionEngine, never()).newPayload(any());
     assertThat(result).isTrue();
-    assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValue(ExecutePayloadResult.VALID);
+    assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(PayloadStatus.VALID);
   }
 
   /**
    * The details of how we validate the merge block are all handled by {@link
    * BellatrixTransitionHelpers} so we don't want to retest all that here. Instead, we check that
-   * those extra checks started (the call to {@link ExecutionEngineChannel#getPowBlock(Bytes32)})
-   * and check that we didn't execute the payload as {@link BellatrixTransitionHelpers} will take
-   * care of that after the TTD validations are done.
+   * those extra checks started (the call to {@link ExecutionEngineChannel#getPowBlock(Bytes32)}).
    *
    * <p>Since the future we return from getPowBlock is never completed we never complete the
    * validations which saves us a bunch of mocking.
    */
   @Test
   void optimisticallyExecute_shouldValidateMergeBlockWhenThisIsTheMergeBlock() {
+    when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
     when(executionEngine.getPowBlock(payload.getParentHash())).thenReturn(new SafeFuture<>());
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
-    // Should defer execution until it has checked the terminal difficulty so we expect getPoWBlock
+    // Should execute first and then begin validation of the transition block conditions.
+    verify(executionEngine).newPayload(payload);
     verify(executionEngine).getPowBlock(payload.getParentHash());
-    verify(executionEngine, never()).executePayload(payload);
     assertThat(result).isTrue();
   }
 
   @Test
-  void optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELOffline() {
+  void optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELOfflineAtExecution() {
+    when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.failedFuture(new Error()));
+    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
+    final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
+
+    // Should not attempt to validate transition conditions because execute payload failed
+    verify(executionEngine, never()).getPowBlock(payload.getParentHash());
+    verify(executionEngine).newPayload(payload);
+    assertThat(execution).isTrue();
+    assertThat(payloadExecutor.getExecutionResult())
+        .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
+  }
+
+  @Test
+  void
+      optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELGoesOfflineAfterExecution() {
+    when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
     when(executionEngine.getPowBlock(payload.getParentHash()))
         .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
-    // Should defer execution until it has checked the terminal difficulty so we expect getPoWBlock
     verify(executionEngine).getPowBlock(payload.getParentHash());
-    verify(executionEngine, never()).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValueMatching(ExecutePayloadResult::hasFailedExecution);
-    ;
+        .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
+  }
+
+  @Test
+  void optimisticallyExecute_shouldReturnNotVerifyTransitionIfExecutePayloadIsInvalid() {
+    final PayloadStatus expectedResult =
+        PayloadStatus.invalid(Optional.empty(), Optional.of("Nope"));
+    when(executionEngine.newPayload(payload))
+        .thenReturn(SafeFuture.completedFuture(expectedResult));
+    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
+    final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
+
+    verify(executionEngine).newPayload(payload);
+    verify(executionEngine, never()).getPowBlock(payload.getParentHash());
+    assertThat(execution).isTrue();
+    assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(expectedResult);
   }
 
   @Test
   void shouldReturnValidImmediatelyWhenNoPayloadExecuted() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
 
-    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
-    assertThat(result).isCompletedWithValue(ExecutePayloadResult.VALID);
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
+    assertThat(result).isCompletedWithValue(VALID);
   }
 
   @Test
@@ -131,12 +160,12 @@ class ForkChoicePayloadExecutorTest {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
-    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();
 
-    this.executionResult.complete(ExecutePayloadResult.VALID);
+    this.executionResult.complete(VALID);
 
-    assertThat(result).isCompletedWithValue(ExecutePayloadResult.VALID);
+    assertThat(result).isCompletedWithValue(VALID);
   }
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {

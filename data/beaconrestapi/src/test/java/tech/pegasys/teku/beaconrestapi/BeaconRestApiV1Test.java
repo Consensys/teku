@@ -30,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
@@ -97,7 +98,6 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {

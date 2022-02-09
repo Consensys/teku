@@ -23,11 +23,11 @@ import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 
 public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel {
   private final ExecutionEngineChannel delegate;
@@ -69,7 +69,7 @@ public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel 
   }
 
   @Override
-  public SafeFuture<ExecutePayloadResult> executePayload(ExecutionPayload executionPayload) {
-    return taskQueue.queueTask(() -> delegate.executePayload(executionPayload));
+  public SafeFuture<PayloadStatus> newPayload(ExecutionPayload executionPayload) {
+    return taskQueue.queueTask(() -> delegate.newPayload(executionPayload));
   }
 }

@@ -113,6 +113,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return false;
   }
 
+  @Override
+  public boolean isFullyValidated(Bytes32 blockRoot) {
+    return true;
+  }
+
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {
     return chainBuilder
         .getBlock(root)

@@ -15,26 +15,24 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutePayloadResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineClient {
-  long MESSAGE_ORDER_RESET_ID = 0;
-
   SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
 
   SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId);
 
-  SafeFuture<Response<ExecutePayloadResult>> executePayload(ExecutionPayloadV1 executionPayload);
+  SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdated(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);

@@ -36,6 +36,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -61,7 +62,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -71,7 +72,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 @SuppressWarnings("unchecked")
@@ -147,7 +147,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         useMockForkChoice
             ? mock(ForkChoice.class)
             : new ForkChoice(
-                spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
+                spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
     beaconChainUtil =
         BeaconChainUtil.create(
             spec, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);

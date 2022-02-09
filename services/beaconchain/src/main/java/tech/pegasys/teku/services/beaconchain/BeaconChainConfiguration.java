@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;

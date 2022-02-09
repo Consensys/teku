@@ -21,8 +21,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
@@ -32,7 +32,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private final Spec spec;
   private final SignedBeaconBlock block;
   private final ExecutionEngineChannel executionEngine;
-  private Optional<SafeFuture<ExecutePayloadResult>> result = Optional.empty();
+  private Optional<SafeFuture<PayloadStatus>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
       final Spec spec,
@@ -43,8 +43,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     this.executionEngine = executionEngine;
   }
 
-  public SafeFuture<ExecutePayloadResult> getExecutionResult() {
-    return result.orElse(SafeFuture.completedFuture(ExecutePayloadResult.VALID));
+  public SafeFuture<PayloadStatus> getExecutionResult() {
+    return result.orElse(SafeFuture.completedFuture(PayloadStatus.VALID));
   }
 
   @Override
@@ -57,6 +57,28 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // because it checks the parentRoot matches
       return true;
     }
+    result =
+        Optional.of(
+            executionEngine
+                .newPayload(executionPayload)
+                .thenCompose(
+                    result -> {
+                      if (result.hasValidStatus() && latestExecutionPayloadHeader.isDefault()) {
+                        return validateTransitionPayload(executionPayload);
+                      } else {
+                        return SafeFuture.completedFuture(result);
+                      }
+                    })
+                .exceptionally(
+                    error -> {
+                      LOG.error("Error while validating payload", error);
+                      return PayloadStatus.failedExecution(error);
+                    }));
+    return true;
+  }
+
+  private SafeFuture<PayloadStatus> validateTransitionPayload(
+      final ExecutionPayload executionPayload) {
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         spec.atSlot(block.getSlot())
             .getBellatrixTransitionHelpers()
@@ -64,21 +86,6 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                 () ->
                     new IllegalStateException(
                         "Attempting to validate a bellatrix block when spec does not have bellatrix transition helpers"));
-
-    if (latestExecutionPayloadHeader.isDefault()) {
-      // This is the first filled payload, so need to check it's a valid merge block
-      result =
-          Optional.of(
-              bellatrixTransitionHelpers
-                  .validateMergeBlock(executionEngine, executionPayload)
-                  .exceptionally(
-                      error -> {
-                        LOG.error("Error while validating merge block", error);
-                        return ExecutePayloadResult.failedExecution(error);
-                      }));
-    } else {
-      result = Optional.of(executionEngine.executePayload(executionPayload));
-    }
-    return true;
+    return bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload);
   }
 }

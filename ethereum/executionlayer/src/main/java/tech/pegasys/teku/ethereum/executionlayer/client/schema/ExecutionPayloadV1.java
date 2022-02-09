@@ -166,7 +166,7 @@ public class ExecutionPayloadV1 {
         executionPayload.getParentHash(),
         executionPayload.getFeeRecipient(),
         executionPayload.getStateRoot(),
-        executionPayload.getReceiptRoot(),
+        executionPayload.getReceiptsRoot(),
         executionPayload.getLogsBloom(),
         executionPayload.getRandom(),
         executionPayload.getBlockNumber(),

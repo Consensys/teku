@@ -14,7 +14,34 @@
 package tech.pegasys.teku.spec.executionengine;
 
 public enum ExecutionPayloadStatus {
-  VALID,
-  INVALID,
-  SYNCING
+  VALID(Validity.VALID),
+  INVALID(Validity.INVALID),
+  SYNCING(Validity.NOT_VALIDATED),
+  ACCEPTED(Validity.NOT_VALIDATED),
+  INVALID_BLOCK_HASH(Validity.INVALID),
+  INVALID_TERMINAL_BLOCK(Validity.INVALID);
+
+  private final Validity validity;
+
+  ExecutionPayloadStatus(final Validity validity) {
+    this.validity = validity;
+  }
+
+  public boolean isValid() {
+    return validity == Validity.VALID;
+  }
+
+  public boolean isNotValidated() {
+    return validity == Validity.NOT_VALIDATED;
+  }
+
+  public boolean isInvalid() {
+    return validity == Validity.INVALID;
+  }
+
+  private enum Validity {
+    VALID,
+    NOT_VALIDATED,
+    INVALID
+  }
 }

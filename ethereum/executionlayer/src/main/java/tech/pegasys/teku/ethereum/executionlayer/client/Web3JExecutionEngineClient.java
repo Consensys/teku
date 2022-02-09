@@ -32,11 +32,11 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutePayloadResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
@@ -49,9 +49,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
   private static final int NO_ERROR_TIME = -1;
   private final Web3j eth1Web3j;
-  private final HttpService eeWeb3jService;
+  protected final HttpService eeWeb3jService;
   private final TimeProvider timeProvider;
-  private final AtomicLong nextId = new AtomicLong(MESSAGE_ORDER_RESET_ID);
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
 
   public Web3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
@@ -107,14 +106,13 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutePayloadResult>> executePayload(
-      ExecutionPayloadV1 executionPayload) {
-    Request<?, ExecutePayloadWeb3jResponse> web3jRequest =
+  public SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload) {
+    Request<?, NewPayloadWeb3jResponse> web3jRequest =
         new Request<>(
-            "engine_executePayloadV1",
+            "engine_newPayloadV1",
             Collections.singletonList(executionPayload),
             eeWeb3jService,
-            ExecutePayloadWeb3jResponse.class);
+            NewPayloadWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
 
@@ -152,9 +150,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         .thenPeek(__ -> handleSuccess());
   }
 
-  private <T> SafeFuture<Response<T>> doRequest(
+  protected <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
-    web3jRequest.setId(nextId.getAndIncrement());
     CompletableFuture<Response<T>> responseFuture =
         web3jRequest
             .sendAsync()
@@ -179,8 +176,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   static class GetPayloadWeb3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
-  static class ExecutePayloadWeb3jResponse
-      extends org.web3j.protocol.core.Response<ExecutePayloadResult> {}
+  static class NewPayloadWeb3jResponse extends org.web3j.protocol.core.Response<PayloadStatusV1> {}
 
   static class ForkChoiceUpdatedWeb3jResponse
       extends org.web3j.protocol.core.Response<ForkChoiceUpdatedResult> {}
@@ -191,7 +187,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
    * @param items the items to put in a list
    * @return the list
    */
-  private List<Object> list(final Object... items) {
+  protected List<Object> list(final Object... items) {
     final List<Object> list = new ArrayList<>();
     for (Object item : items) {
       list.add(item);

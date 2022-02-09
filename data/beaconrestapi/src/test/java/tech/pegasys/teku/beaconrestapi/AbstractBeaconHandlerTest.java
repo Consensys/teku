@@ -26,6 +26,8 @@ import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beacon.sync.SyncService;
+import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,8 +35,6 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.events.SyncingStatus;
 
 public abstract class AbstractBeaconHandlerTest {
 

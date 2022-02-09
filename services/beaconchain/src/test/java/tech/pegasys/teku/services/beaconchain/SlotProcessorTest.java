@@ -27,6 +27,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -41,11 +42,11 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.forward.ForwardSync;
 
 public class SlotProcessorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -62,7 +63,7 @@ public class SlotProcessorTest {
 
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
-  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final EpochCachePrimer epochCachePrimer = mock(EpochCachePrimer.class);

@@ -20,10 +20,10 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.sync.events.SyncState;
 
 public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
