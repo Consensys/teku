@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.Validity;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -50,7 +52,7 @@ public class BlockManager extends Service
   private final BlockValidator validator;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
-  private final Map<Bytes32, FailureReason> invalidBlockRoots = LimitedMap.create(500);
+  private final Map<Bytes32, Validity> invalidBlockRoots = LimitedMap.create(500);
   private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
@@ -86,7 +88,8 @@ public class BlockManager extends Service
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
-    SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
+    SafeFuture<InternalValidationResult> validationResult =
+        validator.validate(block, this::getStrictBlockInvalidity);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
@@ -139,7 +142,8 @@ public class BlockManager extends Service
               if (result.isSuccessful()) {
                 LOG.trace("Imported block: {}", block);
               } else {
-                switch (result.getFailureReason()) {
+                final FailureReason failureReason = result.getFailureReason();
+                switch (failureReason) {
                   case UNKNOWN_PARENT:
                     // Add to the pending pool so it is triggered once the parent is imported
                     pendingBlocks.add(block);
@@ -166,11 +170,15 @@ public class BlockManager extends Service
                         result.getFailureCause().orElse(null));
                     break;
                   default:
-                    LOG.trace(
-                        "Unable to import block for reason {}: {}",
-                        result.getFailureReason(),
-                        block);
-                    dropInvalidBlock(block, result.getFailureReason());
+                    LOG.trace("Unable to import block for reason {}: {}", failureReason, block);
+                }
+
+                switch (failureReason.validity) {
+                  case OPTIMISTIC:
+                  case INVALID:
+                    applyFailureValidity(block, failureReason.validity);
+                    break;
+                  default:
                 }
               }
             });
@@ -180,12 +188,9 @@ public class BlockManager extends Service
     if (blockIsKnown(block)) {
       return false;
     }
-    final Optional<FailureReason> failureReason = blockIsInvalid(block);
-    if (failureReason.isPresent()) {
-      dropInvalidBlock(block, failureReason.get());
-      return false;
-    }
-    return true;
+    final Optional<Validity> failureValidity = getBlockInvalidity(block);
+    failureValidity.ifPresent(validity -> applyFailureValidity(block, validity));
+    return failureValidity.map(validity -> !validity.equals(Validity.INVALID)).orElse(true);
   }
 
   private boolean blockIsKnown(final SignedBeaconBlock block) {
@@ -194,21 +199,38 @@ public class BlockManager extends Service
         || recentChainData.containsBlock(block.getRoot());
   }
 
-  private Optional<FailureReason> blockIsInvalid(final SignedBeaconBlock block) {
+  private Optional<Validity> getBlockInvalidity(final SignedBeaconBlock block) {
     return Optional.ofNullable(invalidBlockRoots.get(block.getRoot()))
         .or(() -> Optional.ofNullable(invalidBlockRoots.get(block.getParentRoot())));
   }
 
-  private void dropInvalidBlock(final SignedBeaconBlock block, final FailureReason failureReason) {
-    final Bytes32 blockRoot = block.getRoot();
-    final Set<SignedBeaconBlock> blocksToDrop = new HashSet<>();
-    blocksToDrop.add(block);
-    blocksToDrop.addAll(pendingBlocks.getItemsDependingOn(blockRoot, true));
+  private Optional<Validity> getStrictBlockInvalidity(final Bytes32 blockRoot) {
+    return Optional.ofNullable(invalidBlockRoots.get(blockRoot));
+  }
 
-    blocksToDrop.forEach(
-        blockToDrop -> {
-          invalidBlockRoots.put(blockToDrop.getMessage().hashTreeRoot(), failureReason);
-          pendingBlocks.remove(blockToDrop);
-        });
+  private void applyFailureValidity(final SignedBeaconBlock block, final Validity failureValidity) {
+    final Bytes32 blockRoot = block.getRoot();
+    final Set<SignedBeaconBlock> blocksToProcess = new HashSet<>();
+    blocksToProcess.add(block);
+    blocksToProcess.addAll(pendingBlocks.getItemsDependingOn(blockRoot, true));
+
+    final Consumer<SignedBeaconBlock> processor =
+        failureValidity == Validity.INVALID
+            ? blockToDrop -> {
+              addInvalidBlock(blockToDrop, failureValidity);
+              pendingBlocks.remove(blockToDrop);
+            }
+            : blockToProcess -> addInvalidBlock(blockToProcess, failureValidity);
+
+    blocksToProcess.forEach(processor);
+  }
+
+  private void addInvalidBlock(
+      final SignedBeaconBlock failedBlock, final Validity failureValidity) {
+    invalidBlockRoots.merge(
+        failedBlock.getMessage().hashTreeRoot(),
+        failureValidity,
+        (oldValidity, newValidity) ->
+            oldValidity.ordinal() < newValidity.ordinal() ? oldValidity : newValidity);
   }
 }

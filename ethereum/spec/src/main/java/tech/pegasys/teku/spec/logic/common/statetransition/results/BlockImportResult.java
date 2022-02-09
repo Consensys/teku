@@ -57,14 +57,26 @@ public interface BlockImportResult {
   }
 
   enum FailureReason {
-    UNKNOWN_PARENT,
-    BLOCK_IS_FROM_FUTURE,
-    DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
-    FAILED_STATE_TRANSITION,
-    FAILED_WEAK_SUBJECTIVITY_CHECKS,
-    FAILED_EXECUTION_PAYLOAD_EXECUTION,
-    FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
-    INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
+    UNKNOWN_PARENT(Validity.UNKNOWN),
+    BLOCK_IS_FROM_FUTURE(Validity.UNKNOWN),
+    DOES_NOT_DESCEND_FROM_LATEST_FINALIZED(Validity.INVALID),
+    FAILED_STATE_TRANSITION(Validity.INVALID),
+    FAILED_WEAK_SUBJECTIVITY_CHECKS(Validity.INVALID),
+    FAILED_EXECUTION_PAYLOAD_EXECUTION(Validity.OPTIMISTIC),
+    FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING(Validity.OPTIMISTIC),
+    INTERNAL_ERROR(Validity.INVALID); // A catch-all category for unexpected errors (bugs)
+
+    public final Validity validity;
+
+    FailureReason(final Validity validity) {
+      this.validity = validity;
+    }
+
+    public enum Validity {
+      INVALID, // from most important (never overwritten by parent)
+      UNKNOWN,
+      OPTIMISTIC // to the least important (can be overwritten by all the above by parent)
+    }
   }
 
   boolean isSuccessful();
