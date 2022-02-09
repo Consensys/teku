@@ -89,7 +89,7 @@ class Store implements UpdatableStore {
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
   UInt64 latestValidFinalizedSlot = UInt64.ZERO;
-  Optional<ExecutionPayload> finalizedOptimisticTransitionPayload = Optional.empty();
+  Optional<ExecutionPayload> finalizedOptimisticTransitionPayload;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
