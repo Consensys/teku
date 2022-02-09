@@ -493,7 +493,7 @@ class ProtoArrayTest {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
     addOptimisticBlock(2, block2a, block1a, Bytes32.ZERO);
     addOptimisticBlock(3, block3a, block2a, Bytes32.ZERO);
-    addOptimisticBlock(3, block4a, block3a);
+    addOptimisticBlock(4, block4a, block3a);
     assertThat(protoArray.findMergeTransitionBlock(block3a)).isEmpty();
   }
 
