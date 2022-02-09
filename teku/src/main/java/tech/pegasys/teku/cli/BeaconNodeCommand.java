@@ -40,9 +40,9 @@ import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ExecutionEngineOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
-import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NatOptions;
+import tech.pegasys.teku.cli.options.NodeLoggingOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -65,6 +65,7 @@ import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -152,7 +153,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ExecutionEngineOptions executionEngineOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  private NodeLoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -285,7 +286,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      configureLogging(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+      startLogging();
       final TekuConfiguration tekuConfig = tekuConfiguration();
       startAction.start(tekuConfig, false);
       return 0;
@@ -326,10 +327,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return LogManager.getLogger();
   }
 
-  public void configureLogging(final String logDirectoryPath, final String logFilePrefix) {
-    loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
+  protected void startLogging() {
+    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfigurator.update(loggingConfig, false);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
+  }
+
+  public LoggingConfig buildLoggingConfig(
+      final String logDirectoryPath, final String logFilePrefix) {
+    return loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
   }
 
   public StartAction getStartAction() {

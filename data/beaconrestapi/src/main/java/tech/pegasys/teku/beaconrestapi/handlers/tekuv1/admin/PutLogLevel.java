@@ -70,7 +70,7 @@ public class PutLogLevel extends AbstractHandler implements Handler {
       final String[] logFilters = params.getLogFilter().orElseGet(() -> new String[] {""});
 
       for (final String logFilter : logFilters) {
-        LoggingConfigurator.setAllLevels(logFilter, params.getLevel());
+        LoggingConfigurator.setAllLevels(logFilter, params.getLevel(), false);
       }
 
       ctx.status(SC_NO_CONTENT);

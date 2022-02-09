@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMM
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -25,8 +26,8 @@ import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
-import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
+import tech.pegasys.teku.cli.options.NodeLoggingOptions;
 import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.cli.options.ValidatorRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
@@ -71,7 +74,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Logging")
   @SuppressWarnings("FieldMayBeFinal")
-  private LoggingOptions loggingOptions = new LoggingOptions();
+  private NodeLoggingOptions loggingOptions = new NodeLoggingOptions();
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -96,7 +99,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      parentCommand.configureLogging(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+      startLogging();
       final TekuConfiguration globalConfiguration = tekuConfiguration();
       parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
@@ -112,6 +115,14 @@ public class ValidatorClientCommand implements Callable<Integer> {
       parentCommand.reportUnexpectedError(t);
     }
     return 1;
+  }
+
+  private void startLogging() {
+    LoggingConfig loggingConfig =
+        parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfigurator.update(loggingConfig, false);
+    // jupnp logs a lot of context to level WARN, and it is quite verbose.
+    LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
   private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {

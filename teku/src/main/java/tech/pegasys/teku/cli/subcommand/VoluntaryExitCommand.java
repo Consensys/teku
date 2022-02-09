@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.subcommand;
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
 import com.google.common.base.Throwables;
-import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -32,10 +31,13 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -44,6 +46,9 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -69,6 +74,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
 public class VoluntaryExitCommand implements Runnable {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
+  public static final String LOG_FILE_PREFIX = "teku-exit";
   private OkHttpValidatorRestApiClient apiClient;
   private tech.pegasys.teku.spec.datastructures.state.Fork fork;
   private Bytes32 genesisRoot;
@@ -82,6 +88,12 @@ public class VoluntaryExitCommand implements Runnable {
 
   @CommandLine.Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
+
+  @Mixin(name = "Logging")
+  private LoggingOptions loggingOptions;
+
+  @Mixin(name = "Data")
+  private DataOptions dataOptions;
 
   @CommandLine.Option(
       names = {"--epoch"},
@@ -103,17 +115,29 @@ public class VoluntaryExitCommand implements Runnable {
   public void run() {
     SUB_COMMAND_LOG.display("Loading configuration...");
     try {
+      startLogging();
       initialise();
       if (confirmationEnabled) {
         confirmExits();
       }
       getValidatorIndices(validators).forEach(this::submitExitForValidator);
-    } catch (UncheckedIOException ex) {
+    } catch (InvalidConfigurationException ex) {
       if (Throwables.getRootCause(ex) instanceof ConnectException) {
         SUB_COMMAND_LOG.error(getFailedToConnectMessage());
         System.exit(1);
       }
+    } catch (Exception ex) {
+      SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
+      System.exit(1);
     }
+  }
+
+  private void startLogging() {
+    LoggingConfig loggingConfig =
+        loggingOptions.applyLoggingConfiguration(
+            dataOptions.getDataPath(), LOG_FILE_PREFIX, LoggingDestination.FILE);
+    LoggingConfigurator.update(loggingConfig, true);
+    SUB_COMMAND_LOG.enableLogger("VoluntaryExit");
   }
 
   private void confirmExits() {
@@ -281,7 +305,6 @@ public class VoluntaryExitCommand implements Runnable {
             .validatorClient()
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
-            .orElse(URI.create("http://127.0.0.1:5051"))
-            .toString());
+            .orElse(URI.create("http://127.0.0.1:5051")));
   }
 }

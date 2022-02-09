@@ -58,6 +58,7 @@ public class LoggingConfigurator {
   private static String FILE;
   private static String FILE_PATTERN;
   private static Level ROOT_LOG_LEVEL = Level.INFO;
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   public static boolean isColorEnabled() {
     return COLOR.get();
@@ -71,14 +72,19 @@ public class LoggingConfigurator {
     COLOR.set(isEnabled);
   }
 
-  public static synchronized void setAllLevels(final Level level) {
-    StatusLogger.getLogger().info("Setting logging level to {}", level.name());
+  public static synchronized void setAllLevels(final Level level, final boolean quietConsole) {
+    if (!quietConsole) {
+      STATUS_LOG.info("Setting logging level to {}", level.name());
+    }
     Configurator.setAllLevels("", level);
     ROOT_LOG_LEVEL = level;
   }
 
-  public static synchronized void setAllLevels(final String filter, final Level level) {
-    StatusLogger.getLogger().info("Setting logging level on filter {} to {}", filter, level.name());
+  public static synchronized void setAllLevels(
+      final String filter, final Level level, final boolean quietConsole) {
+    if (!quietConsole) {
+      STATUS_LOG.info("Setting logging level on filter {} to {}", filter, level.name());
+    }
     Configurator.setAllLevels(filter, level);
   }
 
@@ -86,7 +92,9 @@ public class LoggingConfigurator {
     Configurator.setAllLevels(filter, level);
   }
 
-  public static synchronized void update(final LoggingConfig configuration) {
+  public static synchronized void update(
+      final LoggingConfig configuration, final boolean quietConsole) {
+    setAllLevels(configuration.getLogLevel(), true);
     COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
     INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
@@ -96,36 +104,38 @@ public class LoggingConfigurator {
     FILE_PATTERN = configuration.getLogFileNamePattern();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    addLoggers((AbstractConfiguration) ctx.getConfiguration());
+    addLoggers((AbstractConfiguration) ctx.getConfiguration(), quietConsole);
     ctx.updateLoggers();
   }
 
   public static synchronized void addLoggersProgrammatically(
       final AbstractConfiguration configuration) {
-    addLoggers(configuration);
+    addLoggers(configuration, false);
   }
 
-  private static void addLoggers(final AbstractConfiguration configuration) {
+  private static void addLoggers(
+      final AbstractConfiguration configuration, final boolean quietConsole) {
 
     if (isUninitialized()) {
       return;
     }
 
     if (isProgrammaticLoggingDisabled()) {
-      displayLoggingConfigurationDisabled();
+      displayLoggingConfigurationDisabled(quietConsole);
       return;
     }
 
     if (isProgrammaticLoggingRedundant()) {
-      displayCustomLog4jConfigUsed();
+      displayCustomLog4jConfigUsed(quietConsole);
       return;
     }
 
-    displayProgrammaticLoggingConfiguration();
+    if (!quietConsole) {
+      displayProgrammaticLoggingConfiguration();
+    }
 
     Appender consoleAppender;
     Appender fileAppender;
-
     switch (DESTINATION) {
       case CONSOLE:
         consoleAppender = consoleAppender(configuration, false);
@@ -146,7 +156,7 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
       default:
-        displayUnknownDestinationConfigured();
+        displayUnknownDestinationConfigured(quietConsole);
         // fall through
       case DEFAULT_BOTH:
         // fall through
@@ -165,51 +175,56 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
     }
-    StatusLogger.getLogger().info("Include P2P warnings set to: {}", INCLUDE_P2P_WARNINGS);
+    if (!quietConsole) {
+      STATUS_LOG.info("Include P2P warnings set to: {}", INCLUDE_P2P_WARNINGS);
+    }
     configuration.getLoggerContext().updateLoggers();
   }
 
   private static void displayProgrammaticLoggingConfiguration() {
     switch (DESTINATION) {
       case CONSOLE:
-        StatusLogger.getLogger().info("Configuring logging for destination: console");
+        STATUS_LOG.info("Configuring logging for destination: console");
         break;
       case FILE:
-        StatusLogger.getLogger().info("Configuring logging for destination: file");
-        StatusLogger.getLogger().info("Logging file location: {}", FILE);
+        STATUS_LOG.info("Configuring logging for destination: file");
+        STATUS_LOG.info("Logging file location: {}", FILE);
         break;
       default:
         // fall through
       case DEFAULT_BOTH:
         // fall through
       case BOTH:
-        StatusLogger.getLogger().info("Configuring logging for destination: console and file");
-        StatusLogger.getLogger().info("Logging file location: {}", FILE);
+        STATUS_LOG.info("Configuring logging for destination: console and file");
+        STATUS_LOG.info("Logging file location: {}", FILE);
         break;
     }
 
-    StatusLogger.getLogger().info("Logging includes events: {}", INCLUDE_EVENTS);
-    StatusLogger.getLogger()
-        .info("Logging includes validator duties: {}", INCLUDE_VALIDATOR_DUTIES);
-    StatusLogger.getLogger().info("Logging includes color: {}", COLOR);
+    STATUS_LOG.info("Logging includes events: {}", INCLUDE_EVENTS);
+    STATUS_LOG.info("Logging includes validator duties: {}", INCLUDE_VALIDATOR_DUTIES);
+    STATUS_LOG.info("Logging includes color: {}", COLOR);
   }
 
-  private static void displayCustomLog4jConfigUsed() {
-    StatusLogger.getLogger()
-        .info(
-            "Custom logging configuration applied from: {}", getCustomLog4jConfigFile().orElse(""));
+  private static void displayCustomLog4jConfigUsed(final boolean quietConsole) {
+    if (!quietConsole) {
+      STATUS_LOG.info(
+          "Custom logging configuration applied from: {}", getCustomLog4jConfigFile().orElse(""));
+    }
   }
 
-  private static void displayLoggingConfigurationDisabled() {
-    StatusLogger.getLogger().info("Teku logging configuration disabled.");
+  private static void displayLoggingConfigurationDisabled(final boolean quietConsole) {
+    if (!quietConsole) {
+      STATUS_LOG.info("Teku logging configuration disabled.");
+    }
   }
 
-  private static void displayUnknownDestinationConfigured() {
-    StatusLogger.getLogger()
-        .warn(
-            "Unknown logging destination: {}, applying default: {}",
-            DESTINATION,
-            LoggingDestination.BOTH);
+  private static void displayUnknownDestinationConfigured(final boolean quietConsole) {
+    if (!quietConsole) {
+      STATUS_LOG.warn(
+          "Unknown logging destination: {}, applying default: {}",
+          DESTINATION,
+          LoggingDestination.BOTH);
+    }
   }
 
   private static boolean isUninitialized() {
