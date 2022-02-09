@@ -75,15 +75,6 @@ public class BlockValidator {
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
-    if (!recentChainData.containsBlock(block.getParentRoot())) {
-      LOG.trace("Block parent is not available. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-
-    if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
-      return completedFuture(reject("Block does not descend from finalized checkpoint"));
-    }
-
     Optional<Validity> parentValidity = validityRetriever.apply(block.getMessage().getParentRoot());
     if (parentValidity.isPresent()) {
       switch (parentValidity.get()) {
@@ -94,6 +85,15 @@ public class BlockValidator {
           return completedFuture(InternalValidationResult.IGNORE);
         default:
       }
+    }
+
+    if (!recentChainData.containsBlock(block.getParentRoot())) {
+      LOG.trace("Block parent is not available. It will be saved for future processing");
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
+      return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
     return recentChainData
