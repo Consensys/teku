@@ -207,6 +207,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
   public Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(final Bytes32 head) {
     protoArrayLock.readLock().lock();
     try {
