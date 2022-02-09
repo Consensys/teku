@@ -66,7 +66,9 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload);
 
   enum Version {
-    kintsugi,
-    kiln
+    KINTSUGI,
+    KILN;
+
+    public static Version DEFAULT_VERSION = KINTSUGI;
   }
 }

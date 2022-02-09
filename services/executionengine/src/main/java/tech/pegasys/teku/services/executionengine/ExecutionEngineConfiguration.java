@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.executionengine;
 
-import java.util.Arrays;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
@@ -24,10 +23,10 @@ public class ExecutionEngineConfiguration {
 
   private final Spec spec;
   private final Optional<String> endpoint;
-  private final Optional<Version> version;
+  private final Version version;
 
   private ExecutionEngineConfiguration(
-      final Spec spec, final Optional<String> endpoint, final Optional<Version> version) {
+      final Spec spec, final Optional<String> endpoint, final Version version) {
     this.spec = spec;
     this.endpoint = endpoint;
     this.version = version;
@@ -52,14 +51,14 @@ public class ExecutionEngineConfiguration {
                 "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
   }
 
-  public Optional<Version> getVersion() {
+  public Version getVersion() {
     return version;
   }
 
   public static class Builder {
     private Spec spec;
     private Optional<String> endpoint = Optional.empty();
-    private Optional<Version> version = Optional.empty();
+    private Version version = Version.DEFAULT_VERSION;
 
     private Builder() {}
 
@@ -73,17 +72,9 @@ public class ExecutionEngineConfiguration {
       return this;
     }
 
-    public Builder version(final String version) {
-      if (version == null) {
-        return this;
-      }
-      try {
-        this.version = Optional.of(Version.valueOf(version));
-        return this;
-      } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException(
-            "Invalid \"--Xee-version\". Allowed values are: " + Arrays.toString(Version.values()));
-      }
+    public Builder version(final Version version) {
+      this.version = version;
+      return this;
     }
 
     public Builder specProvider(final Spec spec) {

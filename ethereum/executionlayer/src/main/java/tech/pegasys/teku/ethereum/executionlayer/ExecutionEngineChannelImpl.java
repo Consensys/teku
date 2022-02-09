@@ -52,7 +52,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final String eeEndpoint,
       final Spec spec,
       final TimeProvider timeProvider,
-      final Optional<Version> version) {
+      final Version version) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
     return new ExecutionEngineChannelImpl(
@@ -60,13 +60,12 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   private static ExecutionEngineClient createEngineClient(
-      final String eeEndpoint, final TimeProvider timeProvider, final Optional<Version> version) {
-    final Version actualVersion = version.orElse(Version.kintsugi);
-    LOG.info("Execution Engine version: {}", actualVersion);
-    switch (actualVersion) {
-      case kiln:
+      final String eeEndpoint, final TimeProvider timeProvider, final Version version) {
+    LOG.info("Execution Engine version: {}", version);
+    switch (version) {
+      case KILN:
         return new Web3JExecutionEngineClient(eeEndpoint, timeProvider);
-      case kintsugi:
+      case KINTSUGI:
       default:
         return new KintsugiWeb3JExecutionEngineClient(eeEndpoint, timeProvider);
     }
