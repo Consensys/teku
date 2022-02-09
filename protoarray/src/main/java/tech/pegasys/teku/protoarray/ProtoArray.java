@@ -169,6 +169,29 @@ public class ProtoArray {
         .orElseThrow(fatalException("Finalized block was found to be invalid."));
   }
 
+  public Optional<ProtoNode> findMergeTransitionBlock(final Bytes32 head) {
+    final Optional<ProtoNode> maybeStartingNode = getProtoNode(head);
+    if (maybeStartingNode.isEmpty()) {
+      return Optional.empty();
+    }
+    ProtoNode currentNode = maybeStartingNode.get();
+    if (currentNode.getExecutionBlockHash().isZero()) {
+      // Transition not yet reached so no transition block
+      return Optional.empty();
+    }
+    while (contains(currentNode.getBlockRoot())) {
+      if (currentNode.getParentIndex().isEmpty()) {
+        return Optional.empty();
+      }
+      final ProtoNode parentNode = getNodeByIndex(currentNode.getParentIndex().get());
+      if (parentNode.getExecutionBlockHash().isZero()) {
+        return Optional.of(currentNode);
+      }
+      currentNode = parentNode;
+    }
+    return Optional.empty();
+  }
+
   private Supplier<FatalServiceFailureException> fatalException(final String message) {
     return () -> new FatalServiceFailureException("fork choice", message);
   }

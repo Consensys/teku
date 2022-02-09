@@ -37,6 +37,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Map<Bytes32, UInt64> getOptimisticChainHeads();
 
+  Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(Bytes32 head);
+
   List<Map<String, Object>> getNodeData();
 
   boolean contains(Bytes32 blockRoot);
