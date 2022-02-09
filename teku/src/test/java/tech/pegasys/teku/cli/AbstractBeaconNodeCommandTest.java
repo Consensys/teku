@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -43,13 +44,24 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   final StartAction startAction = mock(StartAction.class);
 
+  static class BeaconNodeCommandNoLogging extends BeaconNodeCommand {
+    public BeaconNodeCommandNoLogging(
+        PrintWriter outputWriter,
+        PrintWriter errorWriter,
+        Map<String, String> environment,
+        StartAction startAction) {
+      super(outputWriter, errorWriter, environment, startAction);
+    }
+
+    @Override
+    public void startLogging() {
+      // disable logging startup, so file appenders are not really created
+    }
+  }
+
   protected BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction) {
-        @Override
-        public void startLogging() {
-          // disable logging startup, so file appenders are not really created
-        }
-      };
+      new BeaconNodeCommandNoLogging(
+          outputWriter, errorWriter, Collections.emptyMap(), startAction);
 
   @TempDir Path dataPath;
 

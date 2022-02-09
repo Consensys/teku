@@ -43,6 +43,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
@@ -67,6 +68,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   final Eth1Address address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
+
+  @BeforeEach
+  public void resetBeaconNodeCommand() {
+    this.beaconNodeCommand =
+        new BeaconNodeCommandNoLogging(
+            outputWriter, errorWriter, Collections.emptyMap(), startAction);
+  }
 
   @Test
   public void unknownOptionShouldDisplayShortHelpMessage() {
@@ -168,7 +176,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   void ignoreVersionAndHelpEnvVars() {
     beaconNodeCommand =
-        new BeaconNodeCommand(
+        new BeaconNodeCommandNoLogging(
             outputWriter,
             errorWriter,
             Map.of("TEKU_VERSION", "1.2.3", "TEKU_HELP", "what?"),
@@ -183,7 +191,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";
     beaconNodeCommand =
-        new BeaconNodeCommand(
+        new BeaconNodeCommandNoLogging(
             outputWriter,
             errorWriter,
             Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"),
@@ -201,7 +209,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final Path configFile = createConfigFile();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
     beaconNodeCommand =
-        new BeaconNodeCommand(
+        new BeaconNodeCommandNoLogging(
             outputWriter,
             errorWriter,
             Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"),
@@ -233,7 +241,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInEnvironmentVariables() {
     beaconNodeCommand =
-        new BeaconNodeCommand(
+        new BeaconNodeCommandNoLogging(
             outputWriter,
             errorWriter,
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"),
