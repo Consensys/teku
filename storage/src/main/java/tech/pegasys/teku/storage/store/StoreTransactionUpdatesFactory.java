@@ -25,7 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.BlockMetadataStore.HaltableNodeProcessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
@@ -105,13 +104,10 @@ class StoreTransactionUpdatesFactory {
     if (!spec.isMergeTransitionComplete(baseStore.getLatestFinalized().getState())
         && spec.isMergeTransitionComplete(latestFinalized.getState())) {
       // Transition block was finalized by this transaction
-      final TransitionBlockFindingNodeProcessor transitionBlockFinder =
-          new TransitionBlockFindingNodeProcessor();
-      baseStore.forkChoiceStrategy.processHashesInChainWhile(
-          latestFinalized.getRoot(), transitionBlockFinder);
       final Optional<Bytes32> optimisticTransitionBlockRoot =
-          transitionBlockFinder
-              .getTransitionBlockRoot()
+          baseStore
+              .forkChoiceStrategy
+              .getOptimisticallySyncedTransitionBlockRoot(latestFinalized.getRoot())
               .filter(baseStore.forkChoiceStrategy::isOptimistic);
       finalizedChainDataBuilder.optimisticTransitionBlockRoot(optimisticTransitionBlockRoot);
     }
@@ -234,27 +230,5 @@ class StoreTransactionUpdatesFactory {
         getHotStatesToPersist(),
         prunedHotBlockRoots,
         stateRoots);
-  }
-
-  private static class TransitionBlockFindingNodeProcessor implements HaltableNodeProcessor {
-
-    private Bytes32 transitionBlockRoot;
-
-    @Override
-    public boolean process(
-        final Bytes32 childRoot,
-        final UInt64 slot,
-        final Bytes32 parentRoot,
-        final Bytes32 executionHash) {
-      if (executionHash.isZero()) {
-        return false;
-      }
-      transitionBlockRoot = childRoot;
-      return true;
-    }
-
-    public Optional<Bytes32> getTransitionBlockRoot() {
-      return Optional.ofNullable(transitionBlockRoot);
-    }
   }
 }
