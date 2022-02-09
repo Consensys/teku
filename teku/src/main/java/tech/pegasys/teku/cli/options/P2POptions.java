@@ -132,7 +132,7 @@ public class P2POptions {
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
       paramLabel = "<INTEGER>",
       description =
-          "Number of peers that should be selected randomly (default 20% of lower-bound target)",
+          "Number of peers that should be selected randomly (default 20%% of lower-bound target)",
       arity = "1",
       hidden = true)
   private Integer minimumRandomlySelectedPeerCount;
