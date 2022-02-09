@@ -188,7 +188,7 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
 
     final ForkChoicePayloadExecutor payloadExecutor =
-        new ForkChoicePayloadExecutor(spec, block, executionEngine);
+        new ForkChoicePayloadExecutor(spec, recentChainData, block, executionEngine);
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
     final BlockImportResult preconditionCheckResult =
         forkChoiceUtil.checkOnBlockConditions(
