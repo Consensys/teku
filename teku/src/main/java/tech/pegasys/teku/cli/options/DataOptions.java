@@ -18,7 +18,7 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 
-public class DataOptions {
+public abstract class DataOptions {
 
   @Option(
       names = {"--data-base-path", "--data-path"},
