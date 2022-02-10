@@ -65,16 +65,20 @@ public abstract class AbstractNode implements Node {
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
+    final DataDirLayout dataDirLayout = DataDirLayout.createFrom(tekuConfig.dataConfig());
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
             new SystemTimeProvider(),
             eventChannels,
             metricsSystem,
-            DataDirLayout.createFrom(tekuConfig.dataConfig()));
+            dataDirLayout);
     this.metricsPublisher =
         new MetricsPublisherManager(
-            asyncRunnerFactory, serviceConfig.getTimeProvider(), metricsEndpoint);
+            asyncRunnerFactory,
+            serviceConfig.getTimeProvider(),
+            metricsEndpoint,
+            dataDirLayout.getBeaconDataDirectory().toFile());
   }
 
   private void reportOverrides(final TekuConfiguration tekuConfig) {

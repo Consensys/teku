@@ -5,7 +5,7 @@
     "remote_keys" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/ExternalValidator"
+        "$ref" : "#/components/schemas/ImportRemoteSignerDefinition"
       }
     }
   }

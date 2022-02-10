@@ -49,7 +49,8 @@ public class ExecutionEngineService extends Service {
     LOG.info("Using execution engine at {}", endpoint);
     final ExecutionEngineChannel executionEngine =
         new ThrottlingExecutionEngineChannel(
-            ExecutionEngineChannelImpl.create(endpoint, config.getSpec(), timeProvider),
+            ExecutionEngineChannelImpl.create(
+                endpoint, config.getSpec(), timeProvider, config.getVersion()),
             MAXIMUM_CONCURRENT_EE_REQUESTS,
             metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);

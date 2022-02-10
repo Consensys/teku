@@ -173,8 +173,8 @@ class ValidatorTypesTest {
 
     final List<ExternalValidator> externalValidators =
         List.of(
-            new ExternalValidator(publicKey1, Optional.empty(), true),
-            new ExternalValidator(publicKey2, Optional.of(new URL("http://host.com")), false));
+            new ExternalValidator(publicKey1, Optional.empty()),
+            new ExternalValidator(publicKey2, Optional.of(new URL("http://host.com"))));
     final PostRemoteKeysRequest request = new PostRemoteKeysRequest(externalValidators);
     final Map<String, Object> result =
         JsonTestUtil.parse(JsonUtil.serialize(request, ValidatorTypes.POST_REMOTE_KEYS_REQUEST));
@@ -185,10 +185,9 @@ class ValidatorTypesTest {
         (List<Map<String, Object>>) result.get("remote_keys");
     assertThat(remoteKeys)
         .containsExactly(
-            Map.of("pubkey", publicKey1.toString(), "readonly", true),
+            Map.of("pubkey", publicKey1.toString()),
             Map.of(
                 "pubkey", publicKey2.toString(),
-                "readonly", false,
                 "url", new URL("http://host.com").toString()));
   }
 
@@ -198,7 +197,7 @@ class ValidatorTypesTest {
             () ->
                 parse(
                     "{ \"pubkey\": \"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\"}",
-                    ValidatorTypes.EXTERNAL_VALIDATOR_TYPE))
+                    ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE))
         .isInstanceOf(MissingRequiredFieldException.class);
   }
 
@@ -208,7 +207,7 @@ class ValidatorTypesTest {
             () ->
                 parse(
                     "{ \"pubkey\": \"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\", \"url\": \"/\", \"readonly\": true}",
-                    ValidatorTypes.EXTERNAL_VALIDATOR_TYPE))
+                    ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE))
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasRootCauseInstanceOf(MalformedURLException.class);
   }
@@ -217,6 +216,6 @@ class ValidatorTypesTest {
   void externalValidatorType_roundTrip() throws Exception {
     final ExternalValidator externalValidator =
         new ExternalValidator(dataStructureUtil.randomPublicKey(), Optional.empty(), true);
-    assertRoundTrip(externalValidator, ValidatorTypes.EXTERNAL_VALIDATOR_TYPE);
+    assertRoundTrip(externalValidator, ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE);
   }
 }
