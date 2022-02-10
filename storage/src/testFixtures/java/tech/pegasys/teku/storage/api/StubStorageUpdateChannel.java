@@ -23,8 +23,8 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
-  public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
-    return SafeFuture.COMPLETE;
+  public SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event) {
+    return SafeFuture.completedFuture(UpdateResult.EMPTY);
   }
 
   @Override

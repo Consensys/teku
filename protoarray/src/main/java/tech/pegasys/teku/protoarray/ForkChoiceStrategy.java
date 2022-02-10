@@ -207,6 +207,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
+  public Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(final Bytes32 head) {
+    protoArrayLock.readLock().lock();
+    try {
+      return protoArray.findMergeTransitionBlock(head).map(ProtoNode::getBlockRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   void processAttestation(
       VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
@@ -368,7 +378,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
             nodeProcessor.process(
                 currentNode.getBlockRoot(),
                 currentNode.getBlockSlot(),
-                currentNode.getParentRoot());
+                currentNode.getParentRoot(),
+                currentNode.getExecutionBlockHash());
         if (!shouldContinue || currentNode.getParentIndex().isEmpty()) {
           break;
         }

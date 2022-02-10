@@ -118,6 +118,16 @@ public class StorageUpdate {
     return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
   }
 
+  public boolean isFinalizedOptimisticBlockRootSet() {
+    return finalizedChainData
+        .map(FinalizedChainData::isOptimisticTransitionBlockRootSet)
+        .orElse(false);
+  }
+
+  public Optional<Bytes32> getOptimisticTransitionBlockRoot() {
+    return finalizedChainData.flatMap(FinalizedChainData::getOptimisticTransitionBlockRoot);
+  }
+
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {
     return stateRoots;
   }

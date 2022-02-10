@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
+  public static final int VOTE_TRACKER_SPARE_CAPACITY = 1000;
 
   private final int hotStatePersistenceFrequencyInEpochs;
 
@@ -87,12 +89,12 @@ class Store implements UpdatableStore {
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
   UInt64 latestValidFinalizedSlot = UInt64.ZERO;
+  Optional<ExecutionPayload> finalizedOptimisticTransitionPayload;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   VoteTracker[] votes;
-  public static final int VOTE_TRACKER_SPARE_CAPACITY = 1000;
   UInt64 highestVotedValidatorIndex;
 
   private Store(
@@ -106,6 +108,7 @@ class Store implements UpdatableStore {
       final UInt64 time,
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
+      final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final ForkChoiceStrategy forkChoiceStrategy,
@@ -144,6 +147,7 @@ class Store implements UpdatableStore {
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
+    this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
 
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
@@ -168,6 +172,7 @@ class Store implements UpdatableStore {
       final UInt64 time,
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
+      final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -203,6 +208,7 @@ class Store implements UpdatableStore {
         time,
         genesisTime,
         finalizedAnchor,
+        finalizedOptimisticTransitionPayload,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
         forkChoiceStrategy,
@@ -339,6 +345,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return finalizedAnchor;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<ExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+    readLock.lock();
+    try {
+      return finalizedOptimisticTransitionPayload;
     } finally {
       readLock.unlock();
     }
@@ -625,7 +641,7 @@ class Store implements UpdatableStore {
     try {
       forkChoiceStrategy.processHashesInChainWhile(
           blockRoot,
-          (root, slot, parent) -> {
+          (root, slot, parent, executionHash) -> {
             treeBuilder.childAndParentRoots(root, parent);
             final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
             blockState.ifPresent(
