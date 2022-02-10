@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.BeaconNodeFacade;
 import tech.pegasys.teku.TekuFacade;
 import tech.pegasys.teku.cli.TempDirUtils;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
@@ -106,7 +105,6 @@ public class TekuConfigurationTest {
     TekuConfiguration tekuConfiguration =
         TekuConfiguration.builder()
             .data(b -> b.dataBasePath(tempDir))
-            .logging(b -> b.destination(LoggingDestination.CONSOLE))
             .beaconChainControllerFactory(customControllerFactory)
             .build();
 
