@@ -5,18 +5,7 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "type" : "object",
-        "properties" : {
-          "pubkey" : {
-            "$ref" : "#/components/schemas/PubKey"
-          },
-          "url" : {
-            "type" : "string"
-          },
-          "readonly" : {
-            "type" : "boolean"
-          }
-        }
+        "$ref" : "#/components/schemas/SignerDefinition"
       }
     }
   }
