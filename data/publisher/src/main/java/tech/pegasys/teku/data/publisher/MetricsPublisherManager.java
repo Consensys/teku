@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -46,11 +47,13 @@ public class MetricsPublisherManager extends Service {
       final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
       final MetricsEndpoint metricsEndpoint,
-      final MetricsPublisher metricsPublisher) {
+      final MetricsPublisher metricsPublisher,
+      final File beaconNodeDataDirectory) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.metricsUrl = metricsEndpoint.getMetricConfig().getMetricsEndpoint().map(HttpUrl::get);
     this.metricsDataFactory =
-        new MetricsDataFactory(metricsEndpoint.getMetricsSystem(), timeProvider);
+        new MetricsDataFactory(
+            metricsEndpoint.getMetricsSystem(), timeProvider, beaconNodeDataDirectory);
     this.intervalBetweenPublications = metricsEndpoint.getMetricConfig().getPublicationInterval();
     this.metricsPublisher = metricsPublisher;
   }
@@ -58,14 +61,16 @@ public class MetricsPublisherManager extends Service {
   public MetricsPublisherManager(
       final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
-      final MetricsEndpoint metricsEndpoint) {
+      final MetricsEndpoint metricsEndpoint,
+      final File beaconNodeDataDirectory) {
     this(
         asyncRunnerFactory,
         timeProvider,
         metricsEndpoint,
         new MetricsPublisher(
             new OkHttpClient(),
-            metricsEndpoint.getMetricConfig().getMetricsEndpoint().map(HttpUrl::get).orElse(null)));
+            metricsEndpoint.getMetricConfig().getMetricsEndpoint().map(HttpUrl::get).orElse(null)),
+        beaconNodeDataDirectory);
   }
 
   @Override

@@ -633,6 +633,10 @@ public class Spec {
     return atState(state).createAttestationWorthinessChecker(state);
   }
 
+  public boolean isMergeTransitionComplete(final BeaconState state) {
+    return atState(state).miscHelpers().isMergeTransitionComplete(state);
+  }
+
   // Private helpers
   private SpecVersion atState(final BeaconState state) {
     return atSlot(state.getSlot());

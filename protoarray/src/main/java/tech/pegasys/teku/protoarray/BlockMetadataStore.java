@@ -43,7 +43,7 @@ public interface BlockMetadataStore {
   interface HaltableNodeProcessor {
 
     static HaltableNodeProcessor fromNodeProcessor(final NodeProcessor processor) {
-      return (child, slot, parent) -> {
+      return (child, slot, parent, executionHash) -> {
         processor.process(child, slot, parent);
         return true;
       };
@@ -53,10 +53,13 @@ public interface BlockMetadataStore {
      * Process parent and child and return a status indicating whether to continue
      *
      * @param childRoot The child root
+     * @param slot The child slot
      * @param parentRoot The parent root
+     * @param executionHash the child execution payload hash or {@link Bytes32#ZERO} if there is no
+     *     payload or it's the default payload.
      * @return True if processing should continue, false if processing should halt
      */
-    boolean process(Bytes32 childRoot, UInt64 slot, Bytes32 parentRoot);
+    boolean process(Bytes32 childRoot, UInt64 slot, Bytes32 parentRoot, Bytes32 executionHash);
   }
 
   interface NodeProcessor {

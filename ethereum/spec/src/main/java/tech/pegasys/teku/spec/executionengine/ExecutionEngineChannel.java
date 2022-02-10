@@ -64,4 +64,11 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot);
 
   SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload);
+
+  enum Version {
+    KINTSUGI,
+    KILN;
+
+    public static Version DEFAULT_VERSION = KINTSUGI;
+  }
 }
