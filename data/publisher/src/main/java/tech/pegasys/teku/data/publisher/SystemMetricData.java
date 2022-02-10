@@ -57,10 +57,10 @@ public class SystemMetricData extends BaseMetricData {
   private final long memoryNodeBytesBuffers = 0L;
 
   @JsonProperty("disk_node_bytes_total")
-  private long diskNodeBytesTotal = 0L;
+  private final long diskNodeBytesTotal;
 
   @JsonProperty("disk_node_bytes_free")
-  private long diskNodeBytesFree = 0L;
+  private final long diskNodeBytesFree;
 
   @JsonProperty("disk_node_io_seconds")
   private final long diskNodeIoSeconds = 0L;
