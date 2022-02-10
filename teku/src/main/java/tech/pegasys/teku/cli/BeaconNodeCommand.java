@@ -108,6 +108,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
   private final StartAction startAction;
+  private final LoggingConfigurator loggingConfigurator;
   private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
@@ -185,11 +186,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
       final Map<String, String> environment,
-      final StartAction startAction) {
+      final StartAction startAction,
+      final LoggingConfigurator loggingConfigurator) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
     this.startAction = startAction;
+    this.loggingConfigurator = loggingConfigurator;
 
     metricCategoryConverter.addCategories(TekuMetricCategory.class);
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
@@ -327,9 +330,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return LogManager.getLogger();
   }
 
-  protected void startLogging() {
+  private void startLogging() {
     LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
-    LoggingConfigurator.update(loggingConfig);
+    loggingConfigurator.startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
@@ -367,6 +370,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
+  }
+
+  public LoggingConfigurator getLoggingConfigurator() {
+    return loggingConfigurator;
   }
 
   @FunctionalInterface

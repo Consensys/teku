@@ -72,8 +72,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @BeforeEach
   public void resetBeaconNodeCommand() {
     this.beaconNodeCommand =
-        new BeaconNodeCommandNoLogging(
-            outputWriter, errorWriter, Collections.emptyMap(), startAction);
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
   }
 
   @Test
@@ -176,11 +176,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   void ignoreVersionAndHelpEnvVars() {
     beaconNodeCommand =
-        new BeaconNodeCommandNoLogging(
+        new BeaconNodeCommand(
             outputWriter,
             errorWriter,
             Map.of("TEKU_VERSION", "1.2.3", "TEKU_HELP", "what?"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     // No error from invalid --version or --help arg.
     assertThat(beaconNodeCommand.parse(new String[0])).isZero();
@@ -191,11 +192,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";
     beaconNodeCommand =
-        new BeaconNodeCommandNoLogging(
+        new BeaconNodeCommand(
             outputWriter,
             errorWriter,
             Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     beaconNodeCommand.parse(args);
 
@@ -209,11 +211,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final Path configFile = createConfigFile();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
     beaconNodeCommand =
-        new BeaconNodeCommandNoLogging(
+        new BeaconNodeCommand(
             outputWriter,
             errorWriter,
             Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     beaconNodeCommand.parse(args);
 
@@ -241,11 +244,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInEnvironmentVariables() {
     beaconNodeCommand =
-        new BeaconNodeCommandNoLogging(
+        new BeaconNodeCommand(
             outputWriter,
             errorWriter,
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     beaconNodeCommand.parse(new String[] {});
 

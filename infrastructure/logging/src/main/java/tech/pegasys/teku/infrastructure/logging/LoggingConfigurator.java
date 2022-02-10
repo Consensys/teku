@@ -87,6 +87,10 @@ public class LoggingConfigurator {
     Configurator.setAllLevels(filter, level);
   }
 
+  public void startLogging(final LoggingConfig configuration) {
+    update(configuration);
+  }
+
   public static synchronized void update(final LoggingConfig configuration) {
     setAllLevels(configuration.getLogLevel());
     COLOR.set(configuration.isColorEnabled());

@@ -120,7 +120,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private void startLogging() {
     LoggingConfig loggingConfig =
         parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
-    LoggingConfigurator.update(loggingConfig);
+    parentCommand.getLoggingConfigurator().startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }

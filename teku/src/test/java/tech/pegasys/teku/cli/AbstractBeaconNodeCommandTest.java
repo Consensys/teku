@@ -24,7 +24,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -35,33 +34,20 @@ import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public abstract class AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();
   final StringWriter stringWriter = new StringWriter();
   protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
+  protected final LoggingConfigurator loggingConfigurator = mock(LoggingConfigurator.class);
 
   final StartAction startAction = mock(StartAction.class);
 
-  static class BeaconNodeCommandNoLogging extends BeaconNodeCommand {
-    public BeaconNodeCommandNoLogging(
-        PrintWriter outputWriter,
-        PrintWriter errorWriter,
-        Map<String, String> environment,
-        StartAction startAction) {
-      super(outputWriter, errorWriter, environment, startAction);
-    }
-
-    @Override
-    public void startLogging() {
-      // disable logging startup, so file appenders are not really created
-    }
-  }
-
   protected BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommandNoLogging(
-          outputWriter, errorWriter, Collections.emptyMap(), startAction);
+      new BeaconNodeCommand(
+          outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
 
   @TempDir Path dataPath;
 
