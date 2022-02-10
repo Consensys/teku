@@ -103,22 +103,6 @@ public class ValidatorTypes {
           .withField("data", listOf(ACTIVE_VALIDATOR), Function.identity())
           .build();
 
-  public static SerializableTypeDefinition<Validator> REMOTE_KEY =
-      SerializableTypeDefinition.object(Validator.class)
-          .withField("pubkey", PUBKEY_TYPE, Validator::getPublicKey)
-          .withOptionalField(
-              "url",
-              STRING_TYPE,
-              validator -> validator.getSigner().getSigningServiceUrl().map(URL::toString))
-          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
-          .build();
-
-  public static SerializableTypeDefinition<List<Validator>> LIST_REMOTE_KEYS_RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<Validator>>object()
-          .name("ListRemoteKeysResponse")
-          .withField("data", listOf(REMOTE_KEY), Function.identity())
-          .build();
-
   public static DeserializableTypeDefinition<URL> URL_TYPE =
       DeserializableTypeDefinition.string(URL.class)
           .name("Signer")
@@ -133,9 +117,9 @@ public class ValidatorTypes {
               })
           .build();
 
-  public static DeserializableTypeDefinition<ExternalValidator> EXTERNAL_VALIDATOR_TYPE =
+  public static DeserializableTypeDefinition<ExternalValidator> EXTERNAL_VALIDATOR_RESPONSE_TYPE =
       DeserializableTypeDefinition.object(ExternalValidator.class)
-          .name("ExternalValidator")
+          .name("SignerDefinition")
           .initializer(ExternalValidator::new)
           .withField(
               "pubkey",
@@ -150,21 +134,33 @@ public class ValidatorTypes {
               ExternalValidator::setReadOnly)
           .build();
 
+  public static SerializableTypeDefinition<List<ExternalValidator>> LIST_REMOTE_KEYS_RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<ExternalValidator>>object()
+          .name("ListRemoteKeysResponse")
+          .withField("data", listOf(EXTERNAL_VALIDATOR_RESPONSE_TYPE), Function.identity())
+          .build();
+
+  public static DeserializableTypeDefinition<ExternalValidator> EXTERNAL_VALIDATOR_REQUEST_TYPE =
+      DeserializableTypeDefinition.object(ExternalValidator.class)
+          .name("ImportRemoteSignerDefinition")
+          .initializer(ExternalValidator::new)
+          .withField(
+              "pubkey",
+              PUBKEY_TYPE,
+              ExternalValidator::getPublicKey,
+              ExternalValidator::setPublicKey)
+          .withOptionalField("url", URL_TYPE, ExternalValidator::getUrl, ExternalValidator::setUrl)
+          .build();
+
   public static final DeserializableTypeDefinition<PostRemoteKeysRequest> POST_REMOTE_KEYS_REQUEST =
       DeserializableTypeDefinition.object(PostRemoteKeysRequest.class)
           .name("PostRemoteKeysRequest")
           .initializer(PostRemoteKeysRequest::new)
           .withField(
               "remote_keys",
-              DeserializableTypeDefinition.listOf(EXTERNAL_VALIDATOR_TYPE),
+              DeserializableTypeDefinition.listOf(EXTERNAL_VALIDATOR_REQUEST_TYPE),
               PostRemoteKeysRequest::getExternalValidators,
               PostRemoteKeysRequest::setExternalValidators)
-          .build();
-
-  public static final SerializableTypeDefinition<List<PostKeyResult>> POST_REMOTE_KEYS_RESPONSE =
-      SerializableTypeDefinition.<List<PostKeyResult>>object()
-          .name("PostRemoteKeysResponse")
-          .withField("data", listOf(POST_KEY_RESULT), Function.identity())
           .build();
 
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
