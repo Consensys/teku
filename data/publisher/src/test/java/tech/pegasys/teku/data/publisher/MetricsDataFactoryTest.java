@@ -16,9 +16,11 @@ package tech.pegasys.teku.data.publisher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.nio.file.Path;
 import java.util.List;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,10 +35,13 @@ class MetricsDataFactoryTest {
   @ParameterizedTest(name = "Total_{0}_Active_{1}")
   @MethodSource("getValidatorParams")
   void shouldIncludeValidatorMetricsInPublish(
-      final int validatorsTotal, final int validatorsActive, final boolean isValidatorActive) {
+      final int validatorsTotal,
+      final int validatorsActive,
+      final boolean isValidatorActive,
+      @TempDir final Path tempDir) {
 
     final MetricsDataFactory factory =
-        new MetricsDataFactory(prometheusMetricsSystem, timeProvider);
+        new MetricsDataFactory(prometheusMetricsSystem, timeProvider, tempDir.toFile());
     MetricsPublisherSource source =
         StubMetricsPublisherSource.builder()
             .validatorsActive(validatorsActive)
@@ -44,20 +49,34 @@ class MetricsDataFactoryTest {
             .build();
 
     final List<BaseMetricData> data = factory.getMetricData(source);
-    assertThat(data.size()).isEqualTo(isValidatorActive ? 1 : 0);
-    data.forEach(element -> assertThat(element).isInstanceOf(ValidatorMetricData.class));
+    assertThat(data.size()).isEqualTo(isValidatorActive ? 2 : 1);
+    data.stream()
+        .filter(el -> el.getProcess().equals("validator"))
+        .forEach(element -> assertThat(element).isInstanceOf(ValidatorMetricData.class));
   }
 
   @Test
-  void shouldIncludeBeaconMetricsInPublish() {
+  void shouldIncludeBeaconMetricsInPublish(@TempDir final Path tempDir) {
     final MetricsDataFactory factory =
-        new MetricsDataFactory(prometheusMetricsSystem, timeProvider);
+        new MetricsDataFactory(prometheusMetricsSystem, timeProvider, tempDir.toFile());
     MetricsPublisherSource source =
         StubMetricsPublisherSource.builder().isBeaconNodePresent(true).build();
 
     final List<BaseMetricData> data = factory.getMetricData(source);
+    assertThat(data.size()).isEqualTo(2);
+    data.stream()
+        .filter(el -> el.getProcess().equals("beaconnode"))
+        .forEach(element -> assertThat(element).isInstanceOf(BeaconNodeMetricData.class));
+  }
+
+  @Test
+  void shouldIncludeSystemMetricsInPublish(@TempDir final Path tempDir) {
+    final MetricsDataFactory factory =
+        new MetricsDataFactory(prometheusMetricsSystem, timeProvider, tempDir.toFile());
+    MetricsPublisherSource source = StubMetricsPublisherSource.builder().build();
+    final List<BaseMetricData> data = factory.getMetricData(source);
     assertThat(data.size()).isEqualTo(1);
-    data.forEach(element -> assertThat(element).isInstanceOf(BeaconNodeMetricData.class));
+    data.forEach(element -> assertThat(element).isInstanceOf(SystemMetricData.class));
   }
 
   public static java.util.stream.Stream<Arguments> getValidatorParams() {
