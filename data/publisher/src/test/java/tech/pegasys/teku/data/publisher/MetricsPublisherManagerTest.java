@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -30,6 +31,7 @@ import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
@@ -58,13 +60,13 @@ class MetricsPublisherManagerTest {
   }
 
   @Test
-  public void shouldRunPublisherEveryXSeconds() throws IOException {
+  public void shouldRunPublisherEveryXSeconds(@TempDir final Path tempDir) throws IOException {
     when(prometheusMetricsSystem.streamObservations())
         .thenReturn(metricsStream())
         .thenReturn(metricsStream());
     publisherManager =
         new MetricsPublisherManager(
-            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
+            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher, tempDir.toFile());
     assertThat(asyncRunnerFactory.getStubAsyncRunners().size()).isEqualTo(0);
     verify(metricsPublisher, times(0)).publishMetrics(anyString());
 
@@ -79,20 +81,10 @@ class MetricsPublisherManagerTest {
   }
 
   @Test
-  public void shouldNotPublishEmptyResult() throws IOException {
+  public void shouldStopGracefully(@TempDir final Path tempDir) throws IOException {
     publisherManager =
         new MetricsPublisherManager(
-            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
-    assertThat(publisherManager.doStart()).isEqualTo(SafeFuture.COMPLETE);
-    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
-    verify(metricsPublisher, never()).publishMetrics(anyString());
-  }
-
-  @Test
-  public void shouldStopGracefully() throws IOException {
-    publisherManager =
-        new MetricsPublisherManager(
-            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
+            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher, tempDir.toFile());
     assertThat(publisherManager.doStart()).isEqualTo(SafeFuture.COMPLETE);
     assertThat(publisherManager.doStop()).isEqualTo(SafeFuture.COMPLETE);
     asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
