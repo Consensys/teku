@@ -17,15 +17,19 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 
 public class ExecutionEngineConfiguration {
 
   private final Spec spec;
   private final Optional<String> endpoint;
+  private final Version version;
 
-  private ExecutionEngineConfiguration(final Spec spec, final Optional<String> endpoint) {
+  private ExecutionEngineConfiguration(
+      final Spec spec, final Optional<String> endpoint, final Version version) {
     this.spec = spec;
     this.endpoint = endpoint;
+    this.version = version;
   }
 
   public static Builder builder() {
@@ -47,18 +51,29 @@ public class ExecutionEngineConfiguration {
                 "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
   }
 
+  public Version getVersion() {
+    return version;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> endpoint = Optional.empty();
+    private Version version = Version.DEFAULT_VERSION;
 
     private Builder() {}
 
     public ExecutionEngineConfiguration build() {
-      return new ExecutionEngineConfiguration(spec, endpoint);
+
+      return new ExecutionEngineConfiguration(spec, endpoint, version);
     }
 
     public Builder endpoint(final String endpoint) {
       this.endpoint = Optional.ofNullable(endpoint);
+      return this;
+    }
+
+    public Builder version(final Version version) {
+      this.version = version;
       return this;
     }
 

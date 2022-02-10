@@ -44,6 +44,9 @@ public class V6SnapshotSchemaFinalized implements SchemaFinalizedSnapshotState {
   private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
       KvStoreColumn.create(ID_OFFSET + 6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
 
+  private static final KvStoreVariable<UInt64> OPTIMISTIC_TRANSITION_BLOCK_SLOT =
+      KvStoreVariable.create(ID_OFFSET + 1, UINT64_SERIALIZER);
+
   public V6SnapshotSchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
         KvStoreColumn.create(
@@ -84,5 +87,10 @@ public class V6SnapshotSchemaFinalized implements SchemaFinalizedSnapshotState {
   @Override
   public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
     return NON_CANONICAL_BLOCK_ROOTS_BY_SLOT;
+  }
+
+  @Override
+  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+    return OPTIMISTIC_TRANSITION_BLOCK_SLOT;
   }
 }
