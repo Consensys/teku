@@ -88,7 +88,6 @@ public class SystemMetricData extends BaseMetricData {
 
     SystemInfo systemInfo = new SystemInfo();
     final HardwareAbstractionLayer hardware = systemInfo.getHardware();
-    hardware.getProcessor().getPhysicalProcessorCount();
     this.cpuCores = hardware.getProcessor().getPhysicalProcessorCount();
     this.cpuThreads = hardware.getProcessor().getLogicalProcessorCount();
     this.memoryNodeBytesFree = hardware.getMemory().getAvailable();
@@ -96,7 +95,7 @@ public class SystemMetricData extends BaseMetricData {
     this.miscNodeBootTsSeconds = getNodeBootSeconds();
 
     final long[] processStats =
-        setProcessLoadTicks(hardware.getProcessor().getProcessorCpuLoadTicks());
+        calculateProcessLoadTicks(hardware.getProcessor().getProcessorCpuLoadTicks());
     this.cpuNodeUserSecondsTotal = processStats[0];
     this.cpuNodeSystemSecondsTotal = processStats[1];
     this.cpuNodeIdleSecondsTotal = processStats[2];
@@ -125,7 +124,7 @@ public class SystemMetricData extends BaseMetricData {
     }
   }
 
-  private long[] setProcessLoadTicks(final long[][] processorCpuLoadTicks) {
+  private long[] calculateProcessLoadTicks(final long[][] processorCpuLoadTicks) {
 
     long idle = 0L;
     long system = 0L;
@@ -148,9 +147,13 @@ public class SystemMetricData extends BaseMetricData {
 
   private static String getNormalizedOSVersion() {
     String currentVersionInfo = VersionProvider.VERSION;
-    if (currentVersionInfo.contains("linux")) return "lin";
-    if (currentVersionInfo.contains("windows")) return "win";
-    if (currentVersionInfo.contains("osx")) return "mac";
+    if (currentVersionInfo.contains("linux")) {
+      return "lin";
+    } else if (currentVersionInfo.contains("windows")) {
+      return "win";
+    } else if (currentVersionInfo.contains("osx")) {
+      return "mac";
+    }
     return "unk";
   }
 
