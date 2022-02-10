@@ -21,34 +21,6 @@ import org.junit.jupiter.api.Test;
 
 public class ListQueryParameterUtilsTest {
   @Test
-  public void integerList_shouldHandleMultipleIndividualEntries() {
-    final Map<String, List<String>> data = Map.of("index", List.of("1", "2", "3"));
-    assertThat(ListQueryParameterUtils.getParameterAsIntegerList(data, "index"))
-        .isEqualTo(List.of(1, 2, 3));
-  }
-
-  @Test
-  public void integerList_shouldHandleCompoundEntries() {
-    final Map<String, List<String>> data = Map.of("index", List.of("1,2,3", "4,5,6", "7"));
-    assertThat(ListQueryParameterUtils.getParameterAsIntegerList(data, "index"))
-        .isEqualTo(List.of(1, 2, 3, 4, 5, 6, 7));
-  }
-
-  @Test
-  public void integerList_shouldHandleSingleEntry() {
-    final Map<String, List<String>> data = Map.of("index", List.of("1"));
-    assertThat(ListQueryParameterUtils.getParameterAsIntegerList(data, "index"))
-        .isEqualTo(List.of(1));
-  }
-
-  @Test
-  public void integerList_shouldTolerateAMissingEntry() {
-    final Map<String, List<String>> data = Map.of("index", List.of("1,,2", "", "3,4,5,"));
-    assertThat(ListQueryParameterUtils.getParameterAsIntegerList(data, "index"))
-        .isEqualTo(List.of(1, 2, 3, 4, 5));
-  }
-
-  @Test
   public void stringList_shouldGetDistinct() {
     final Map<String, List<String>> data = Map.of("index", List.of("a", "b", "a", "c"));
     assertThat(ListQueryParameterUtils.getParameterAsStringList(data, "index"))
