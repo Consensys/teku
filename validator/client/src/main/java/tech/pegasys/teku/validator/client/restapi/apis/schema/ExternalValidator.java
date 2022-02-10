@@ -21,9 +21,14 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 public class ExternalValidator {
   private BLSPublicKey publicKey;
   private Optional<URL> url = Optional.empty();
-  private boolean readOnly;
+  private boolean readOnly = false;
 
   public ExternalValidator() {}
+
+  public ExternalValidator(BLSPublicKey publicKey, Optional<URL> url) {
+    this.publicKey = publicKey;
+    this.url = url;
+  }
 
   public ExternalValidator(BLSPublicKey publicKey, Optional<URL> url, boolean readOnly) {
     this.publicKey = publicKey;

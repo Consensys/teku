@@ -1,5 +1,5 @@
 {
-  "title" : "ExternalValidator",
+  "title" : "ImportRemoteSignerDefinition",
   "type" : "object",
   "properties" : {
     "pubkey" : {
@@ -7,9 +7,6 @@
     },
     "url" : {
       "$ref" : "#/components/schemas/Signer"
-    },
-    "readonly" : {
-      "type" : "boolean"
     }
   }
 }
