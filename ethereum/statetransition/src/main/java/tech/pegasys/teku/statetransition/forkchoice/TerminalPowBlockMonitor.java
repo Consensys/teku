@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
@@ -110,8 +111,18 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
+    final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix = getSpecConfigBellatrix();
+    if (maybeSpecConfigBellatrix.isEmpty()) {
+      LOG.error("Unable to obtain Bellatrix spec configuration");
+      return;
+    }
+    final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
+
+    callExchangeTransitionConfiguration(specConfigBellatrix);
+
     maybeBlockHashTracking.ifPresentOrElse(
-        this::checkTerminalBlockByBlockHash, this::checkTerminalBlockByTTD);
+        blockHashTracking -> checkTerminalBlockByBlockHash(blockHashTracking, specConfigBellatrix),
+        () -> checkTerminalBlockByTTD(specConfigBellatrix));
   }
 
   private void initMergeState() {
@@ -161,15 +172,10 @@ public class TerminalPowBlockMonitor {
     LOG.info("Monitor is now active");
   }
 
-  private void checkTerminalBlockByBlockHash(Bytes32 blockHashTracking) {
-    UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
+  private void checkTerminalBlockByBlockHash(
+      final Bytes32 blockHashTracking, final SpecConfigBellatrix specConfigBellatrix) {
+    final UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
     final SpecVersion specVersion = spec.atSlot(slot);
-    final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix =
-        specVersion.getConfig().toVersionBellatrix();
-    if (maybeSpecConfigBellatrix.isEmpty()) {
-      return;
-    }
-    final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
 
     final boolean isActivationEpochReached =
         specVersion
@@ -202,20 +208,12 @@ public class TerminalPowBlockMonitor {
     }
   }
 
-  private void checkTerminalBlockByTTD() {
+  private void checkTerminalBlockByTTD(final SpecConfigBellatrix specConfigBellatrix) {
     executionEngine
         .getPowChainHead()
         .thenCompose(
             powBlock -> {
-              final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix =
-                  recentChainData
-                      .getCurrentEpoch()
-                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionBellatrix());
-              if (maybeSpecConfigBellatrix.isEmpty()) {
-                return SafeFuture.COMPLETE;
-              }
-              final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
-              UInt256 totalDifficulty = powBlock.getTotalDifficulty();
+              final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
                 return SafeFuture.COMPLETE;
@@ -266,5 +264,33 @@ public class TerminalPowBlockMonitor {
 
   private boolean notYetFound(Bytes32 blockHash) {
     return !foundTerminalBlockHash.map(blockHash::equals).orElse(false);
+  }
+
+  private void callExchangeTransitionConfiguration(SpecConfigBellatrix specConfigBellatrix) {
+    TransitionConfiguration localTransitionConfiguration =
+        new TransitionConfiguration(
+            specConfigBellatrix.getTerminalTotalDifficulty(),
+            specConfigBellatrix.getTerminalBlockHash(),
+            UInt64.ZERO);
+    executionEngine
+        .exchangeTransitionConfiguration(localTransitionConfiguration)
+        .thenAccept(
+            remoteTransitionConfiguration -> {
+              // CHECK localTransitionConfiguration vs remoteTransitionConfiguration
+            })
+        .finish(
+            error -> {
+              if (error instanceof UnsupportedOperationException) {
+                LOG.debug("unsupported operation by current execution engine version");
+                return;
+              }
+              LOG.error("an error occurred while querying remote transition configuration", error);
+            });
+  }
+
+  private Optional<SpecConfigBellatrix> getSpecConfigBellatrix() {
+    return recentChainData
+        .getCurrentEpoch()
+        .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionBellatrix());
   }
 }
