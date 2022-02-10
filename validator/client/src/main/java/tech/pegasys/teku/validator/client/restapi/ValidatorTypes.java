@@ -163,12 +163,6 @@ public class ValidatorTypes {
               PostRemoteKeysRequest::setExternalValidators)
           .build();
 
-  public static final SerializableTypeDefinition<List<PostKeyResult>> POST_REMOTE_KEYS_RESPONSE =
-      SerializableTypeDefinition.<List<PostKeyResult>>object()
-          .name("PostRemoteKeysResponse")
-          .withField("data", listOf(POST_KEY_RESULT), Function.identity())
-          .build();
-
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)
           .name("DeleteKeyResult")
