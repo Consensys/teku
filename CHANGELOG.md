@@ -14,5 +14,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 ### Additions and Improvements
+- Added support for exporting metrics to an external consumer with `--metrics-publish-endpoint`.
 
 ### Bug Fixes
