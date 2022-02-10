@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
+
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.LogTypeConverter;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
@@ -70,6 +73,14 @@ public class LoggingOptions {
   private boolean logIncludeP2pWarningsEnabled = false;
 
   @Option(
+      names = {"--log-destination"},
+      paramLabel = "<LOG_DESTINATION>",
+      description =
+          "Whether a logger is added for the console, the log file, or both (Valid values: ${COMPLETION-CANDIDATES})",
+      arity = "1")
+  private LoggingDestination logDestination = DEFAULT_BOTH;
+
+  @Option(
       names = {"--log-file"},
       paramLabel = "<FILENAME>",
       description =
@@ -89,14 +100,57 @@ public class LoggingOptions {
       arity = "1")
   private String logFileNamePattern;
 
+  @Option(
+      names = {"--Xlog-wire-cipher-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether raw encrypted wire packets are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireCipherEnabled = false;
+
+  @Option(
+      names = {"--Xlog-wire-plain-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether raw decrypted wire packets are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWirePlainEnabled = false;
+
+  @Option(
+      names = {"--Xlog-wire-mux-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether multiplexer wire packets (aka Libp2p stream frames) are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireMuxEnabled = false;
+
+  @Option(
+      names = {"--Xlog-wire-gossip-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether gossip messages are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireGossipEnabled = false;
+
   private boolean containsPath(String file) {
     return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
 
+  public TekuConfiguration.Builder configureWireLogs(final TekuConfiguration.Builder builder) {
+    return builder.wireLogs(
+        b ->
+            b.logWireCipher(logWireCipherEnabled)
+                .logWirePlain(logWirePlainEnabled)
+                .logWireMuxFrames(logWireMuxEnabled)
+                .logWireGossip(logWireGossipEnabled));
+  }
+
   public LoggingConfig applyLoggingConfiguration(
-      final String dataDirectory,
-      final String defaultLogFileNamePrefix,
-      final LoggingDestination logDestination) {
+      final String dataDirectory, final String defaultLogFileNamePrefix) {
     final LoggingConfig.LoggingConfigBuilder loggingBuilder = LoggingConfig.builder();
     loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
     loggingBuilder.dataDirectory(dataDirectory);

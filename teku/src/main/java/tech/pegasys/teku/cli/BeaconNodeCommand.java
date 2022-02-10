@@ -40,9 +40,9 @@ import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ExecutionEngineOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
+import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NatOptions;
-import tech.pegasys.teku.cli.options.NodeLoggingOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -153,7 +153,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ExecutionEngineOptions executionEngineOptions;
 
   @Mixin(name = "Logging")
-  private NodeLoggingOptions loggingOptions;
+  private LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -329,7 +329,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   protected void startLogging() {
     LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
-    LoggingConfigurator.update(loggingConfig, false);
+    LoggingConfigurator.update(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }

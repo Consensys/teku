@@ -26,8 +26,8 @@ import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
+import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.NodeLoggingOptions;
 import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
@@ -74,7 +74,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Logging")
   @SuppressWarnings("FieldMayBeFinal")
-  private NodeLoggingOptions loggingOptions = new NodeLoggingOptions();
+  private LoggingOptions loggingOptions = new LoggingOptions();
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -120,7 +120,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private void startLogging() {
     LoggingConfig loggingConfig =
         parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
-    LoggingConfigurator.update(loggingConfig, false);
+    LoggingConfigurator.update(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }

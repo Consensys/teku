@@ -37,7 +37,7 @@ public class BLSPerformanceRunner {
   private static final Logger LOG = LogManager.getLogger();
 
   public BLSPerformanceRunner() {
-    LoggingConfigurator.setAllLevels(Level.INFO, false);
+    LoggingConfigurator.setAllLevels(Level.INFO);
   }
 
   private Long executeRun(Runnable r, Integer count) {

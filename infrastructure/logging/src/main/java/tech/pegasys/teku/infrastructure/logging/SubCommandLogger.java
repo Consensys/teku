@@ -15,14 +15,11 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
-import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 
 public class SubCommandLogger {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
-  private Optional<Logger> log = Optional.empty();
 
   static {
     LoggingConfigurator.setColorEnabled(true);
@@ -59,18 +56,15 @@ public class SubCommandLogger {
 
   public void error(final String message) {
     System.err.println(message);
-    log.ifPresent(l -> l.error(message));
   }
 
   public void error(final String message, final Exception cause) {
     System.err.println(message);
     cause.printStackTrace();
-    log.ifPresent(l -> l.error(message, cause));
   }
 
   public void display(final String message) {
     System.out.println(message);
-    log.ifPresent(l -> l.info(message));
   }
 
   public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
@@ -90,9 +84,5 @@ public class SubCommandLogger {
   public void sendDepositFailure(final Throwable cause) {
     System.err.printf(
         "Failed to send deposit transaction: %s : %s %n", cause.getClass(), cause.getMessage());
-  }
-
-  public synchronized void setLogger(final Logger logger) {
-    this.log = Optional.of(logger);
   }
 }
