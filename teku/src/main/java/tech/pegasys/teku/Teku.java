@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
 
@@ -56,7 +57,9 @@ public final class Teku {
   private static int start(StartAction startAction, final String... args) {
     final PrintWriter outputWriter = new PrintWriter(System.out, true, Charset.defaultCharset());
     final PrintWriter errorWriter = new PrintWriter(System.err, true, Charset.defaultCharset());
-    return new BeaconNodeCommand(outputWriter, errorWriter, System.getenv(), startAction)
+    final LoggingConfigurator loggingConfigurator = new LoggingConfigurator();
+    return new BeaconNodeCommand(
+            outputWriter, errorWriter, System.getenv(), startAction, loggingConfigurator)
         .parse(args);
   }
 

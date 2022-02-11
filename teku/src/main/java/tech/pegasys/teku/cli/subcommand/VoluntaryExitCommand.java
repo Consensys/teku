@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.subcommand;
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
 import com.google.common.base.Throwables;
-import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -108,11 +107,14 @@ public class VoluntaryExitCommand implements Runnable {
         confirmExits();
       }
       getValidatorIndices(validators).forEach(this::submitExitForValidator);
-    } catch (UncheckedIOException ex) {
+    } catch (InvalidConfigurationException ex) {
       if (Throwables.getRootCause(ex) instanceof ConnectException) {
         SUB_COMMAND_LOG.error(getFailedToConnectMessage());
         System.exit(1);
       }
+    } catch (Exception ex) {
+      SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
+      System.exit(1);
     }
   }
 
@@ -281,7 +283,6 @@ public class VoluntaryExitCommand implements Runnable {
             .validatorClient()
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
-            .orElse(URI.create("http://127.0.0.1:5051"))
-            .toString());
+            .orElse(URI.create("http://127.0.0.1:5051")));
   }
 }
