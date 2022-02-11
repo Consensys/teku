@@ -107,13 +107,13 @@ public class VoluntaryExitCommand implements Runnable {
         confirmExits();
       }
       getValidatorIndices(validators).forEach(this::submitExitForValidator);
-    } catch (InvalidConfigurationException ex) {
-      if (Throwables.getRootCause(ex) instanceof ConnectException) {
-        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
-        System.exit(1);
-      }
     } catch (Exception ex) {
-      SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
+      if (ex instanceof InvalidConfigurationException
+          && Throwables.getRootCause(ex) instanceof ConnectException) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+      } else {
+        SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
+      }
       System.exit(1);
     }
   }
