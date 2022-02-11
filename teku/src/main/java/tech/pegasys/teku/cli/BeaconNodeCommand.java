@@ -31,7 +31,6 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.Unmatched;
-import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
@@ -66,6 +65,7 @@ import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -108,6 +108,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
   private final StartAction startAction;
+  private final LoggingConfigurator loggingConfigurator;
   private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
@@ -124,15 +125,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
     @Unmatched
     List<String> otherOptions;
   }
-
-  @Option(
-      names = {"-l", "--logging"},
-      converter = LogTypeConverter.class,
-      paramLabel = "<LOG VERBOSITY LEVEL>",
-      description =
-          "Logging verbosity levels: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
-      arity = "1")
-  private Level logLevel;
 
   @Option(
       names = {"-c", CONFIG_FILE_OPTION_NAME},
@@ -194,11 +186,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
       final Map<String, String> environment,
-      final StartAction startAction) {
+      final StartAction startAction,
+      final LoggingConfigurator loggingConfigurator) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
     this.startAction = startAction;
+    this.loggingConfigurator = loggingConfigurator;
 
     metricCategoryConverter.addCategories(TekuMetricCategory.class);
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
@@ -295,7 +289,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      setLogLevels();
+      startLogging();
       final TekuConfiguration tekuConfig = tekuConfiguration();
       startAction.start(tekuConfig, false);
       return 0;
@@ -336,17 +330,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return LogManager.getLogger();
   }
 
-  public void setLogLevels() {
-    if (logLevel != null) {
-      // set log level per CLI flags
-      LoggingConfigurator.setAllLevels(logLevel);
-    }
+  private void startLogging() {
+    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    loggingConfigurator.startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
-  public Level getLogLevel() {
-    return this.logLevel;
+  public LoggingConfig buildLoggingConfig(
+      final String logDirectoryPath, final String logFilePrefix) {
+    return loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
   }
 
   public StartAction getStartAction() {
@@ -366,7 +359,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       p2POptions.configure(builder);
       beaconRestApiOptions.configure(builder);
       validatorRestApiOptions.configure(builder);
-      loggingOptions.configure(builder, LOG_FILE_PREFIX);
+      loggingOptions.configureWireLogs(builder);
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
       metricsOptions.configure(builder);
@@ -377,6 +370,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
+  }
+
+  public LoggingConfigurator getLoggingConfigurator() {
+    return loggingConfigurator;
   }
 
   @FunctionalInterface
