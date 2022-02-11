@@ -368,30 +368,54 @@ public class TerminalPowBlockMonitorTest {
   }
 
   @Test
-  void shouldDetectTerminalConfigDifferences() {
+  void shouldDetectTerminalConfigProblems() {
     setUpTerminalBlockHashConfig();
-    final UInt256 remoteTTD = dataStructureUtil.randomUInt256();
-    final Bytes32 remoteTBH = dataStructureUtil.randomBytes32();
-    TransitionConfiguration wrongRemoteTransitionConfiguration =
-        new TransitionConfiguration(remoteTTD, remoteTBH, UInt64.ZERO);
+    final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
+    final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
 
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteTransitionConfiguration));
+    TransitionConfiguration wrongRemoteConfig;
 
     terminalPowBlockMonitor.start();
+
+    // wrong TTD
+    wrongRemoteConfig =
+        new TransitionConfiguration(
+            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
 
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
-        .differentTransitionConfigurationDetected(
-            "TerminalTotalDifficulty",
-            localTransitionConfiguration.getTerminalTotalDifficulty().toString(),
-            remoteTTD.toString());
+        .transitionConfiguration_TTD_TBH_mismatch(
+            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+
+    // wrong TBH
+    wrongRemoteConfig =
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+
+    asyncRunner.executeQueuedActions();
+
     verify(eventLogger)
-        .differentTransitionConfigurationDetected(
-            "TerminalBlockHash",
-            localTransitionConfiguration.getTerminalBlockHash().toString(),
-            remoteTBH.toString());
+        .transitionConfiguration_TTD_TBH_mismatch(
+            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+
+    // remote TBH TBN inconsistency
+    wrongRemoteConfig =
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(),
+            localTransitionConfiguration.getTerminalBlockHash(),
+            UInt64.ZERO);
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger)
+        .transitionConfigurationRemote_TBH_TBN_inconsistency(wrongRemoteConfig.toString());
 
     verifyNoMoreInteractions(eventLogger);
   }

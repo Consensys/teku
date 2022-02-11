@@ -194,16 +194,24 @@ public class EventLogger {
         Color.GREEN);
   }
 
-  public void differentTransitionConfigurationDetected(
-      final String parameter, final String localConfig, final String remoteConfig) {
-    final String genesisEventLog =
+  public void transitionConfiguration_TTD_TBH_mismatch(
+      final String localConfig, final String remoteConfig) {
+    final String configurationErrorEventLog =
         String.format(
-            "Transition Configuration difference detected *** \n"
-                + "local %s:\n%s\n"
-                + "remote %s:\n%s\n"
-                + "Action required.",
-            parameter, localConfig, parameter, remoteConfig);
-    error(genesisEventLog, Color.RED);
+            "Merge       *** Transition Configuration error: local TerminalTotalDifficulty and TerminalBlockHash not matching remote Execution Client values\n"
+                + "  local  configuration: %s\n"
+                + "  remote configuration: %s",
+            localConfig, remoteConfig);
+    error(configurationErrorEventLog, Color.RED);
+  }
+
+  public void transitionConfigurationRemote_TBH_TBN_inconsistency(final String remoteConfig) {
+    final String configurationErrorEventLog =
+        String.format(
+            "Merge       *** Transition Configuration error: remote Execution Client TerminalBlockHash and TerminalBlockNumber are inconsistent\n"
+                + "  remote configuration: %s",
+            remoteConfig);
+    error(configurationErrorEventLog, Color.RED);
   }
 
   private void info(final String message, final Color color) {

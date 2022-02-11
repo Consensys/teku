@@ -275,20 +275,20 @@ public class TerminalPowBlockMonitor {
         .thenAccept(
             remoteTransitionConfiguration -> {
               if (!localTransitionConfiguration
-                  .getTerminalTotalDifficulty()
-                  .equals(remoteTransitionConfiguration.getTerminalTotalDifficulty())) {
-                eventLogger.differentTransitionConfigurationDetected(
-                    "TerminalTotalDifficulty",
-                    localTransitionConfiguration.getTerminalTotalDifficulty().toString(),
-                    remoteTransitionConfiguration.getTerminalTotalDifficulty().toString());
-              }
-              if (!localTransitionConfiguration
-                  .getTerminalBlockHash()
-                  .equals(remoteTransitionConfiguration.getTerminalBlockHash())) {
-                eventLogger.differentTransitionConfigurationDetected(
-                    "TerminalBlockHash",
-                    localTransitionConfiguration.getTerminalBlockHash().toString(),
-                    remoteTransitionConfiguration.getTerminalBlockHash().toString());
+                      .getTerminalTotalDifficulty()
+                      .equals(remoteTransitionConfiguration.getTerminalTotalDifficulty())
+                  || !localTransitionConfiguration
+                      .getTerminalBlockHash()
+                      .equals(remoteTransitionConfiguration.getTerminalBlockHash())) {
+
+                eventLogger.transitionConfiguration_TTD_TBH_mismatch(
+                    localTransitionConfiguration.toString(),
+                    remoteTransitionConfiguration.toString());
+              } else if (remoteTransitionConfiguration.getTerminalBlockHash().isZero()
+                  != remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
+
+                eventLogger.transitionConfigurationRemote_TBH_TBN_inconsistency(
+                    remoteTransitionConfiguration.toString());
               }
             })
         .finish(
