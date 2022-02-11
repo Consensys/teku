@@ -97,7 +97,7 @@ public class ValidatorLoader {
         ownedValidators, validatorProviders, graffitiProvider);
   }
 
-  public DeleteKeyResult deleteMutableValidator(final BLSPublicKey publicKey) {
+  public DeleteKeyResult deleteLocalMutableValidator(final BLSPublicKey publicKey) {
     if (mutableLocalValidatorSource.isEmpty()) {
       return DeleteKeyResult.error(
           "Unable to delete validator, could not determine the storage location.");
@@ -105,7 +105,7 @@ public class ValidatorLoader {
     return mutableLocalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized PostKeyResult loadMutableValidator(
+  public synchronized PostKeyResult loadLocalMutableValidator(
       final KeyStoreData keyStoreData,
       final String password,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {

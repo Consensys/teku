@@ -143,7 +143,7 @@ public class ActiveKeyManager implements KeyManager {
     signer.delete();
     LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
     final DeleteKeyResult deleteKeyResult =
-        validatorLoader.deleteMutableValidator(activeValidator.getPublicKey());
+        validatorLoader.deleteLocalMutableValidator(activeValidator.getPublicKey());
     if (deleteKeyResult.getStatus() == DeletionStatus.DELETED) {
       Optional<String> error =
           exporter.addPublicKeyToExport(activeValidator.getPublicKey(), LOG::debug);
@@ -193,7 +193,7 @@ public class ActiveKeyManager implements KeyManager {
       return PostKeyResult.error(ex.getMessage());
     }
 
-    return validatorLoader.loadMutableValidator(keyStoreData, password, slashingProtectionImporter);
+    return validatorLoader.loadLocalMutableValidator(keyStoreData, password, slashingProtectionImporter);
   }
 
   @Override
