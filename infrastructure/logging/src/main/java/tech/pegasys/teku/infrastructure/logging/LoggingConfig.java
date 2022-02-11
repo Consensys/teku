@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 
 public class LoggingConfig {
@@ -24,7 +25,7 @@ public class LoggingConfig {
 
   public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
-  private final Level logLevel;
+  private final Optional<Level> logLevel;
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
   private final boolean includeValidatorDutiesEnabled;
@@ -34,7 +35,7 @@ public class LoggingConfig {
   private final String logFileNamePattern;
 
   private LoggingConfig(
-      final Level logLevel,
+      final Optional<Level> logLevel,
       final boolean colorEnabled,
       final boolean includeEventsEnabled,
       final boolean includeValidatorDutiesEnabled,
@@ -56,7 +57,7 @@ public class LoggingConfig {
     return new LoggingConfigBuilder();
   }
 
-  public Level getLogLevel() {
+  public Optional<Level> getLogLevel() {
     return logLevel;
   }
 
@@ -91,7 +92,7 @@ public class LoggingConfig {
   public static final class LoggingConfigBuilder {
     public static final String SEP = System.getProperty("file.separator");
 
-    private Level logLevel;
+    private Optional<Level> logLevel = Optional.empty();
     private boolean colorEnabled = true;
     private boolean includeEventsEnabled = true;
     private boolean includeValidatorDutiesEnabled = true;
@@ -110,9 +111,6 @@ public class LoggingConfig {
     private LoggingConfigBuilder() {}
 
     private void initMissingDefaults() {
-      if (logLevel == null) {
-        logLevel = Level.INFO;
-      }
       if (logPath == null || logPathPattern == null) {
         if (logFileName == null) {
           logFileName = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_SUFFIX;
@@ -144,7 +142,7 @@ public class LoggingConfig {
     }
 
     public LoggingConfigBuilder logLevel(Level logLevel) {
-      this.logLevel = logLevel;
+      this.logLevel = Optional.ofNullable(logLevel);
       return this;
     }
 
