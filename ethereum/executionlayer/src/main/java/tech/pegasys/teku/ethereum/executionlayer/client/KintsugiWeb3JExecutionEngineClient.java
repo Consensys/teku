@@ -70,8 +70,7 @@ public class KintsugiWeb3JExecutionEngineClient extends Web3JExecutionEngineClie
   @Override
   public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
       TransitionConfigurationV1 transitionConfiguration) {
-    return SafeFuture.failedFuture(
-        new UnsupportedOperationException("Not Implemented in Kintsugi version"));
+    return SafeFuture.completedFuture(new Response<>(transitionConfiguration));
   }
 
   private Response<ForkChoiceUpdatedResult> fromKintsugiForkChoiceUpdatedResultResponse(

@@ -361,7 +361,12 @@ public class BeaconChainController extends Service
       terminalPowBlockMonitor =
           Optional.of(
               new TerminalPowBlockMonitor(
-                  executionEngine, spec, recentChainData, forkChoiceNotifier, beaconAsyncRunner));
+                  executionEngine,
+                  spec,
+                  recentChainData,
+                  forkChoiceNotifier,
+                  beaconAsyncRunner,
+                  EVENT_LOG));
     }
   }
 

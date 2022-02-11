@@ -56,7 +56,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         @Override
         public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
             TransitionConfiguration transitionConfiguration) {
-          return SafeFuture.completedFuture(null);
+          return SafeFuture.completedFuture(transitionConfiguration);
         }
       };
 

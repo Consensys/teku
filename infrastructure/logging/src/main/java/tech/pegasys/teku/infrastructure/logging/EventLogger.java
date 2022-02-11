@@ -194,6 +194,18 @@ public class EventLogger {
         Color.GREEN);
   }
 
+  public void differentTransitionConfigurationDetected(
+      final String parameter, final String localConfig, final String remoteConfig) {
+    final String genesisEventLog =
+        String.format(
+            "Transition Configuration difference detected *** \n"
+                + "local %s:\n%s\n"
+                + "remote %s:\n%s\n"
+                + "Action required.",
+            parameter, localConfig, parameter, remoteConfig);
+    error(genesisEventLog, Color.RED);
+  }
+
   private void info(final String message, final Color color) {
     log.info(print(message, color));
   }
@@ -204,5 +216,9 @@ public class EventLogger {
 
   private void error(final String message, final Color color, final Throwable error) {
     log.error(print(message, color), error);
+  }
+
+  private void error(final String message, final Color color) {
+    log.error(print(message, color));
   }
 }
