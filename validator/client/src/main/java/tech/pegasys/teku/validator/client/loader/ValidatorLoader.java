@@ -48,7 +48,7 @@ public class ValidatorLoader {
   private static final Logger LOG = LogManager.getLogger();
   private final List<ValidatorSource> validatorSources;
   private final Optional<ValidatorSource> mutableLocalValidatorSource;
-  private Optional<ValidatorSource> mutableExternalValidatorSource;
+  private final Optional<ValidatorSource> mutableExternalValidatorSource;
   private final OwnedValidators ownedValidators = new OwnedValidators();
   private final GraffitiProvider graffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
@@ -56,7 +56,7 @@ public class ValidatorLoader {
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
       final Optional<ValidatorSource> mutableLocalValidatorSource,
-      Optional<ValidatorSource> mutableExternalValidatorSource,
+      final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout) {
     this.validatorSources = validatorSources;
