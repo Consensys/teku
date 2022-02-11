@@ -60,7 +60,7 @@ public class SpecConfigLoaderTest {
    * sufficient.
    */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"prater", "pyrmont", "mainnet"})
+  @ValueSource(strings = {"prater", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
     final SpecConfig config = SpecConfigLoader.loadConfig(name);
     assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
