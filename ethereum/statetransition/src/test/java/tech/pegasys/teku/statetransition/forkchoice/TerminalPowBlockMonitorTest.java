@@ -87,12 +87,23 @@ public class TerminalPowBlockMonitorTest {
                 .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
+
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new TransitionConfiguration(
+                    localTransitionConfiguration.getTerminalTotalDifficulty(),
+                    localTransitionConfiguration.getTerminalBlockHash(),
+                    dataStructureUtil.randomUInt64())));
   }
 
   private void setUpTTDConfig() {
     setUpCommon(
         bellatrixBuilder ->
             bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
+
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(localTransitionConfiguration));
   }
 
   private void setUpCommon(Consumer<BellatrixBuilder> bellatrixBuilder) {
@@ -121,9 +132,6 @@ public class TerminalPowBlockMonitorTest {
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
             executionEngine, spec, recentChainData, forkChoiceNotifier, asyncRunner, eventLogger);
-
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(localTransitionConfiguration));
   }
 
   private void goToSlot(UInt64 slot) {
