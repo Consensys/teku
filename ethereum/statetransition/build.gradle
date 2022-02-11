@@ -14,7 +14,7 @@ dependencies {
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
   implementation project(':pow')
-  implementation project(':protoarray')
+  implementation project(':ethereum:forkchoice')
   implementation project(':infrastructure:serviceutils')
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
@@ -42,7 +42,7 @@ dependencies {
   testFixturesImplementation project(':ethereum:core')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
-  testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
+  testFixturesImplementation testFixtures(project(':ethereum:forkchoice'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
 }
