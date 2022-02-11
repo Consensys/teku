@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -53,8 +52,6 @@ public abstract class AbstractNode implements Node {
   protected final ServiceConfig serviceConfig;
 
   protected AbstractNode(final TekuConfiguration tekuConfig) {
-    LoggingConfigurator.update(tekuConfig.loggingConfig());
-
     STATUS_LOG.onStartup(VersionProvider.VERSION);
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
