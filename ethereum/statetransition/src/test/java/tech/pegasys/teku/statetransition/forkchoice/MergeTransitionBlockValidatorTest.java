@@ -73,8 +73,9 @@ class MergeTransitionBlockValidatorTest {
   }
 
   @Test
-  void shouldReturnValidImmediatelyWhenThereIsNoTransitionBlock() {
-    final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
+  void shouldReturnValidImmediatelyWhenThereIsTransitionBlockFullyVerified() {
+    final SignedBlockAndState chainHead = generateNonfinalizedTransition();
+    storageSystem.chainUpdater().saveBlock(chainHead);
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
     final MergeTransitionBlockValidator transitionVerifier =
@@ -87,7 +88,7 @@ class MergeTransitionBlockValidatorTest {
                 .getForkChoiceStrategy()
                 .orElseThrow()
                 .getOptimisticallySyncedTransitionBlockRoot(chainHead.getRoot()))
-        .isPresent();
+        .isEmpty();
 
     final SafeFuture<PayloadStatus> result =
         transitionVerifier.verifyTransitionBlock(

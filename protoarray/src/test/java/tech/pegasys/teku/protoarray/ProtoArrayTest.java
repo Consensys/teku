@@ -470,59 +470,68 @@ class ProtoArrayTest {
   }
 
   @Test
-  void findMergeTransitionBlock_emptyWhenHeadNotKnown() {
-    assertThat(protoArray.findMergeTransitionBlock(block1a)).isEmpty();
+  void findOptimisticallySyncedMergeTransitionBlock_emptyWhenHeadNotKnown() {
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block1a)).isEmpty();
   }
 
   @Test
-  void findMergeTransitionBlock_emptyWhenTransitionNotYetHappened() {
+  void findOptimisticallySyncedMergeTransitionBlock_emptyWhenTransitionNotYetHappened() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
-    assertThat(protoArray.findMergeTransitionBlock(block1a)).isEmpty();
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block1a)).isEmpty();
   }
 
   @Test
-  void findMergeTransitionBlock_emptyWhenTransitionBeforeStartOfProtoArray() {
+  void findOptimisticallySyncedMergeTransitionBlock_emptyWhenTransitionBeforeStartOfProtoArray() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(3, block3a, block2a);
-    assertThat(protoArray.findMergeTransitionBlock(block3a)).isEmpty();
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block3a)).isEmpty();
   }
 
   @Test
-  void findMergeTransitionBlock_emptyWhenAfterSpecifiedHead() {
+  void findOptimisticallySyncedMergeTransitionBlock_emptyWhenAfterSpecifiedHead() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
     addOptimisticBlock(2, block2a, block1a, Bytes32.ZERO);
     addOptimisticBlock(3, block3a, block2a, Bytes32.ZERO);
     addOptimisticBlock(4, block4a, block3a);
-    assertThat(protoArray.findMergeTransitionBlock(block3a)).isEmpty();
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block3a)).isEmpty();
   }
 
   @Test
-  void findMergeTransitionBlock_transitionBlockIsHead() {
+  void findOptimisticallySyncedMergeTransitionBlock_transitionBlockIsHead() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
     addOptimisticBlock(2, block2a, block1a, Bytes32.ZERO);
     addOptimisticBlock(3, block3a, block2a);
-    assertThat(protoArray.findMergeTransitionBlock(block3a))
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block3a))
         .isEqualTo(protoArray.getProtoNode(block3a));
   }
 
   @Test
-  void findMergeTransitionBlock_transitionBlockIsParent() {
+  void findOptimisticallySyncedMergeTransitionBlock_transitionBlockIsParent() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(3, block3a, block2a);
-    assertThat(protoArray.findMergeTransitionBlock(block3a))
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block3a))
         .isEqualTo(protoArray.getProtoNode(block2a));
   }
 
   @Test
-  void findMergeTransitionBlock_transitionBlockIsDescendant() {
+  void findOptimisticallySyncedMergeTransitionBlock_transitionBlockIsDescendant() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(3, block3a, block2a);
     addOptimisticBlock(4, block4a, block3a);
-    assertThat(protoArray.findMergeTransitionBlock(block4a))
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block4a))
         .isEqualTo(protoArray.getProtoNode(block2a));
+  }
+
+  @Test
+  void findOptimisticallySyncedMergeTransitionBlock_transitionBlockIsFullyValidated() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
+    addValidBlock(2, block2a, block1a);
+    addValidBlock(3, block3a, block2a);
+    addValidBlock(4, block4a, block3a);
+    assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block4a)).isEmpty();
   }
 
   private void assertOptimisticHead(final Bytes32 expectedBlockHash) {
@@ -537,7 +546,15 @@ class ProtoArrayTest {
   }
 
   private void addValidBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
-    addOptimisticBlock(slot, blockRoot, parentRoot);
+    addValidBlock(slot, blockRoot, parentRoot, getExecutionBlockHash(blockRoot));
+  }
+
+  private void addValidBlock(
+      final long slot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 executionBlockHash) {
+    addOptimisticBlock(slot, blockRoot, parentRoot, executionBlockHash);
     protoArray.markNodeValid(blockRoot);
   }
 
