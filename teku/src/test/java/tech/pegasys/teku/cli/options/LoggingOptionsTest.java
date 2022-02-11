@@ -158,7 +158,7 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   public void loglevel_shouldAcceptValues(String level) {
     final String[] args = {"--logging", level};
     final LoggingConfig config = getLoggingConfigurationFromArguments(args);
-    assertThat(config.getLogLevel().toString()).isEqualToIgnoringCase(level);
+    assertThat(config.getLogLevel().orElseThrow().toString()).isEqualToIgnoringCase(level);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -166,7 +166,7 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   public void loglevel_shouldAcceptValuesMixedCase(String level) {
     final String[] args = {"--logging", level};
     final LoggingConfig config = getLoggingConfigurationFromArguments(args);
-    assertThat(config.getLogLevel().toString()).isEqualTo(level.toUpperCase());
+    assertThat(config.getLogLevel().orElseThrow().toString()).isEqualTo(level.toUpperCase());
   }
 
   @Test
