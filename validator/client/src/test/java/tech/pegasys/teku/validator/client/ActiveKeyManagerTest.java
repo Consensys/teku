@@ -85,7 +85,8 @@ class ActiveKeyManagerTest {
     when(activeValidator.isReadOnly()).thenReturn(false);
     when(activeValidator.getSigner()).thenReturn(signer);
     when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
-    when(validatorLoader.deleteLocalMutableValidator(publicKey)).thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.deleteLocalMutableValidator(publicKey))
+        .thenReturn(DeleteKeyResult.success());
 
     final DeleteKeyResult result = keyManager.deleteValidator(activeValidator, exporter);
     verify(signer).delete();
@@ -107,7 +108,8 @@ class ActiveKeyManagerTest {
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
     when(activeValidator.isReadOnly()).thenReturn(false);
     when(activeValidator.getSigner()).thenReturn(signer);
-    when(validatorLoader.deleteLocalMutableValidator(publicKey)).thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.deleteLocalMutableValidator(publicKey))
+        .thenReturn(DeleteKeyResult.success());
 
     final DeleteKeyResult result = keyManager.deleteValidator(activeValidator, exporter);
     verify(signer).delete();
@@ -127,7 +129,8 @@ class ActiveKeyManagerTest {
     when(validatorLoader.getOwnedValidators())
         .thenReturn(new OwnedValidators(Map.of(publicKey, activeValidator)));
     when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
-    when(validatorLoader.deleteLocalMutableValidator(publicKey)).thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.deleteLocalMutableValidator(publicKey))
+        .thenReturn(DeleteKeyResult.success());
 
     final DeleteKeysResponse response = keyManager.deleteValidators(List.of(publicKey), tempDir);
     verify(signer).delete();

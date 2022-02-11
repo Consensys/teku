@@ -193,7 +193,8 @@ public class ActiveKeyManager implements KeyManager {
       return PostKeyResult.error(ex.getMessage());
     }
 
-    return validatorLoader.loadLocalMutableValidator(keyStoreData, password, slashingProtectionImporter);
+    return validatorLoader.loadLocalMutableValidator(
+        keyStoreData, password, slashingProtectionImporter);
   }
 
   @Override

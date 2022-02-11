@@ -653,7 +653,8 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final PostKeyResult result = validatorLoader.loadLocalMutableValidator(null, "", Optional.empty());
+    final PostKeyResult result =
+        validatorLoader.loadLocalMutableValidator(null, "", Optional.empty());
     assertThat(result).isEqualTo(PostKeyResult.error("Not able to add validator"));
   }
 
