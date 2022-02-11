@@ -92,7 +92,7 @@ public class LoggingConfigurator {
   }
 
   public static synchronized void update(final LoggingConfig configuration) {
-    setAllLevels(configuration.getLogLevel());
+    configuration.getLogLevel().ifPresent(LoggingConfigurator::setAllLevels);
     COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
     INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
