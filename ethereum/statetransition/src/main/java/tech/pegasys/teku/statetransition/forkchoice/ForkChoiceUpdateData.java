@@ -149,22 +149,25 @@ public class ForkChoiceUpdateData {
     return payloadId;
   }
 
-  public void send(final ExecutionEngineChannel executionEngine) {
+  public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
+      final ExecutionEngineChannel executionEngine) {
     if (sent) {
       LOG.debug("send - already sent");
-      return;
+      return SafeFuture.completedFuture(Optional.empty());
     }
     sent = true;
 
     if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
       payloadId.complete(Optional.empty());
-      return;
+      return SafeFuture.completedFuture(Optional.empty());
     }
 
     LOG.debug("send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadAttributes);
-    executionEngine
-        .forkChoiceUpdated(forkChoiceState, payloadAttributes)
+    SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
+        executionEngine.forkChoiceUpdated(forkChoiceState, payloadAttributes);
+
+    forkChoiceUpdatedResult
         .thenApply(ForkChoiceUpdatedResult::getPayloadId)
         .thenPeek(
             payloadId ->
@@ -174,6 +177,8 @@ public class ForkChoiceUpdateData {
                     forkChoiceState,
                     payloadAttributes))
         .propagateTo(payloadId);
+
+    return forkChoiceUpdatedResult.thenApply(Optional::of);
   }
 
   public boolean hasHeadBlockHash() {

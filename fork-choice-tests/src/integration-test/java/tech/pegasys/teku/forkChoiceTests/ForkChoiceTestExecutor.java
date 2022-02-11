@@ -15,7 +15,6 @@ package tech.pegasys.teku.forkChoiceTests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -52,7 +51,7 @@ import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -176,7 +175,7 @@ public class ForkChoiceTestExecutor {
 
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     ForkChoice forkChoice =
-        new ForkChoice(SPEC, forkChoiceExecutor, storageClient, mock(ForkChoiceNotifier.class));
+        new ForkChoice(SPEC, forkChoiceExecutor, storageClient, new StubForkChoiceNotifier());
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();

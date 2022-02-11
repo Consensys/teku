@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
 
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 
 public class ExecutionEngineOptions {
 
@@ -27,7 +28,16 @@ public class ExecutionEngineOptions {
       hidden = true)
   private String executionEngineEndpoint = null;
 
+  @Option(
+      names = {"--Xee-version"},
+      paramLabel = "<EXECUTION_ENGINE_VERSION>",
+      description = "Execution Engine API version. Possible values are: kintsugi (default) or kiln",
+      arity = "1",
+      hidden = true)
+  private Version executionEngineVersion = Version.DEFAULT_VERSION;
+
   public void configure(final Builder builder) {
-    builder.executionEngine(b -> b.endpoint(executionEngineEndpoint));
+    builder.executionEngine(
+        b -> b.endpoint(executionEngineEndpoint).version(executionEngineVersion));
   }
 }

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -32,11 +33,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutePayloadResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Serializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
@@ -54,7 +55,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
@@ -201,44 +202,38 @@ public class Web3JExecutionEngineClientTest {
 
   @TestTemplate
   void shouldDeserializeExecutionPayloadResultWithNulls() throws IOException {
-    ExecutePayloadResult executePayloadResultExpected =
-        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, null, null);
-    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult
-        internalExecutePayloadResultExpected =
-            tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.VALID;
+    PayloadStatusV1 payloadStatusV1Expected =
+        new PayloadStatusV1(ExecutionPayloadStatus.VALID, null, null);
+    PayloadStatus internalPayloadStatusExpected = PayloadStatus.VALID;
     String json = "{\"status\": \"VALID\", \"latestValidHash\": null, \"validationError\": null }";
-    ExecutePayloadResult executePayloadResultDeserialized =
-        objectMapper.readValue(json, ExecutePayloadResult.class);
+    PayloadStatusV1 payloadStatusV1Deserialized =
+        objectMapper.readValue(json, PayloadStatusV1.class);
 
-    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult internalExecutePayloadResult =
-        executePayloadResultDeserialized.asInternalExecutionPayload();
+    PayloadStatus internalPayloadStatus = payloadStatusV1Deserialized.asInternalExecutionPayload();
 
-    assertThat(executePayloadResultDeserialized).isEqualTo(executePayloadResultExpected);
-    assertThat(internalExecutePayloadResult).isEqualTo(internalExecutePayloadResultExpected);
+    assertThat(payloadStatusV1Deserialized).isEqualTo(payloadStatusV1Expected);
+    assertThat(internalPayloadStatus).isEqualTo(internalPayloadStatusExpected);
   }
 
   @TestTemplate
   void shouldDeserializeExecutionPayloadResult() throws IOException {
     Bytes32 lastValidHash = dataStructureUtil.randomBytes32();
-    ExecutePayloadResult executePayloadResultExpected =
-        new ExecutePayloadResult(ExecutionPayloadStatus.INVALID, lastValidHash, "test");
-    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult
-        internalExecutePayloadResultExpected =
-            tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.invalid(
-                Optional.of(lastValidHash), Optional.of("test"));
+    PayloadStatusV1 payloadStatusV1Expected =
+        new PayloadStatusV1(ExecutionPayloadStatus.INVALID, lastValidHash, "test");
+    PayloadStatus internalPayloadStatusExpected =
+        PayloadStatus.invalid(Optional.of(lastValidHash), Optional.of("test"));
 
     String json =
         "{\"status\": \"INVALID\", \"latestValidHash\": \""
             + lastValidHash.toHexString()
             + "\", \"validationError\": \"test\" }";
-    ExecutePayloadResult executePayloadResultDeserialized =
-        objectMapper.readValue(json, ExecutePayloadResult.class);
+    PayloadStatusV1 payloadStatusV1Deserialized =
+        objectMapper.readValue(json, PayloadStatusV1.class);
 
-    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult internalExecutePayloadResult =
-        executePayloadResultDeserialized.asInternalExecutionPayload();
+    PayloadStatus internalPayloadStatus = payloadStatusV1Deserialized.asInternalExecutionPayload();
 
-    assertThat(executePayloadResultDeserialized).isEqualTo(executePayloadResultExpected);
-    assertThat(internalExecutePayloadResult).isEqualTo(internalExecutePayloadResultExpected);
+    assertThat(payloadStatusV1Deserialized).isEqualTo(payloadStatusV1Expected);
+    assertThat(internalPayloadStatus).isEqualTo(internalPayloadStatusExpected);
   }
 
   @TestTemplate
@@ -248,14 +243,14 @@ public class Web3JExecutionEngineClientTest {
         () -> {
           String json =
               "{\"status\": \"wrong\", \"latestValidHash\": null, \"validationError\": null }";
-          objectMapper.readValue(json, ExecutePayloadResult.class);
+          objectMapper.readValue(json, PayloadStatusV1.class);
         });
 
     assertThrows(
         ValueInstantiationException.class,
         () -> {
           String json = "{\"status\": null, \"latestValidHash\": null, \"validationError\": null }";
-          objectMapper.readValue(json, ExecutePayloadResult.class);
+          objectMapper.readValue(json, PayloadStatusV1.class);
         });
 
     assertThrows(
@@ -263,19 +258,19 @@ public class Web3JExecutionEngineClientTest {
         () -> {
           String json =
               "{\"status\": null, \"latestValidHash\": \"wrong\", \"validationError\": null }";
-          objectMapper.readValue(json, ExecutePayloadResult.class);
+          objectMapper.readValue(json, PayloadStatusV1.class);
         });
   }
 
   @TestTemplate
   void shouldDeserializeForkChoiceUpdatedResultWithNulls() throws IOException {
     ForkChoiceUpdatedResult forkChoiceUpdatedResultExpected =
-        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SYNCING, null);
+        createExternalForkChoiceUpdatedResult(ExecutionPayloadStatus.SYNCING, null, null);
     tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
         internalForkChoiceUpdatedResultExpected =
-            new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
-                ForkChoiceUpdatedStatus.SYNCING, Optional.empty());
-    String json = "{\"status\": \"SYNCING\", \"payloadId\": null }";
+            createInternalForkChoiceUpdatedResult(
+                ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty());
+    String json = "{\"payloadStatus\": {\"status\": \"SYNCING\"}, \"payloadId\": null }";
     ForkChoiceUpdatedResult executeForkChoiceUpdatedResultDeserialized =
         objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
 
@@ -290,13 +285,20 @@ public class Web3JExecutionEngineClientTest {
   @TestTemplate
   void shouldDeserializeForkChoiceUpdatedResult() throws IOException {
     Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    Bytes32 latestValidHash = dataStructureUtil.randomBytes32();
     ForkChoiceUpdatedResult forkChoiceUpdatedResultExpected =
-        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, payloadId);
+        createExternalForkChoiceUpdatedResult(
+            ExecutionPayloadStatus.VALID, latestValidHash, payloadId);
     tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
         internalForkChoiceUpdatedResultExpected =
-            new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
-                ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId));
-    String json = "{\"status\": \"SUCCESS\", \"payloadId\": \"" + payloadId.toHexString() + "\" }";
+            createInternalForkChoiceUpdatedResult(
+                ExecutionPayloadStatus.VALID, Optional.of(latestValidHash), Optional.of(payloadId));
+    String json =
+        "{\"payloadStatus\": {\"status\": \"VALID\", \"latestValidHash\": \""
+            + latestValidHash.toHexString()
+            + "\"}, \"payloadId\": \""
+            + payloadId.toHexString()
+            + "\" }";
     ForkChoiceUpdatedResult executeForkChoiceUpdatedResultDeserialized =
         objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
 
@@ -311,23 +313,37 @@ public class Web3JExecutionEngineClientTest {
   @TestTemplate
   void shouldThrowDeserializingInvalidForkChoiceUpdatedResult() {
     assertThrows(
+        ValueInstantiationException.class,
+        () -> {
+          String json = "{\"wrong\": \"wrong\", \"payloadId\": null }";
+          objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+        });
+
+    assertThrows(
+        MismatchedInputException.class,
+        () -> {
+          String json = "{\"payloadStatus\": \"wrong\", \"payloadId\": null }";
+          objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+        });
+
+    assertThrows(
         InvalidFormatException.class,
         () -> {
-          String json = "{\"status\": \"wrong\", \"payloadId\": null }";
+          String json = "{\"payloadStatus\": {\"status\": \"wrong\"}, \"payloadId\": null }";
           objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
         });
 
     assertThrows(
         ValueInstantiationException.class,
         () -> {
-          String json = "{\"status\": null, \"payloadId\": null }";
+          String json = "{\"payloadStatus\": null, \"payloadId\": null }";
           objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
         });
 
     assertThrows(
         JsonMappingException.class,
         () -> {
-          String json = "{\"status\": null, \"payloadId\": \"wrong\" }";
+          String json = "{\"payloadStatus\": null, \"payloadId\": \"wrong\" }";
           objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
         });
   }
@@ -356,5 +372,20 @@ public class Web3JExecutionEngineClientTest {
     String serialized = objectMapper.writeValueAsString(payloadAttributes);
 
     assertThat(serialized).isNotEmpty();
+  }
+
+  private ForkChoiceUpdatedResult createExternalForkChoiceUpdatedResult(
+      ExecutionPayloadStatus status, Bytes32 latestValidHash, Bytes8 payloadId) {
+    return new ForkChoiceUpdatedResult(
+        new PayloadStatusV1(status, latestValidHash, null), payloadId);
+  }
+
+  private tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+      createInternalForkChoiceUpdatedResult(
+          ExecutionPayloadStatus status,
+          Optional<Bytes32> latestValidHash,
+          Optional<Bytes8> payloadId) {
+    return new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
+        PayloadStatus.create(status, latestValidHash, Optional.empty()), payloadId);
   }
 }

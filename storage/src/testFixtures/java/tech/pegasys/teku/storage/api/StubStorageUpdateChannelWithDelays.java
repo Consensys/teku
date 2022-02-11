@@ -29,8 +29,8 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
-  public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
-    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  public SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event) {
+    return asyncRunner.runAsync(() -> SafeFuture.completedFuture(UpdateResult.EMPTY));
   }
 
   @Override
