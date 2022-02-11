@@ -21,6 +21,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -112,10 +113,10 @@ public class LocalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddLocalValidatorResult addValidator(
+  public AddValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
     if (!canUpdateValidators()) {
-      return new AddLocalValidatorResult(
+      return new AddValidatorResult(
           PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
     }
 
@@ -128,7 +129,7 @@ public class LocalValidatorSource implements ValidatorSource {
       ensureDirectoryExists(ValidatorClientService.getManagedLocalKeystorePath(dataDirLayout));
 
       if (passwordPath.toFile().exists() || keystorePath.toFile().exists()) {
-        return new AddLocalValidatorResult(PostKeyResult.duplicate(), Optional.empty());
+        return new AddValidatorResult(PostKeyResult.duplicate(), Optional.empty());
       }
       Files.write(passwordPath, password.getBytes(UTF_8));
       KeyStoreLoader.saveToFile(keystorePath, keyStoreData);
@@ -137,14 +138,18 @@ public class LocalValidatorSource implements ValidatorSource {
               spec, keyStoreData, keystorePath, publicKey, password, readOnly);
       localValidatorSourceMap.put(
           publicKey, new ActiveLocalValidatorSource(keystorePath, passwordPath));
-      return new AddLocalValidatorResult(
-          PostKeyResult.success(), Optional.of(provider.createSigner()));
+      return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
     } catch (InvalidConfigurationException | IOException ex) {
       cleanupIncompleteSave(keystorePath);
       cleanupIncompleteSave(passwordPath);
       keystoreLocker.unlockKeystore(keystorePath);
-      return new AddLocalValidatorResult(PostKeyResult.error(ex.getMessage()), Optional.empty());
+      return new AddValidatorResult(PostKeyResult.error(ex.getMessage()), Optional.empty());
     }
+  }
+
+  @Override
+  public AddValidatorResult addValidator(BLSPublicKey publicKey, URL signerUrl) {
+    throw new UnsupportedOperationException();
   }
 
   private Path getKeystorePath(final BLSPublicKey publicKey) {

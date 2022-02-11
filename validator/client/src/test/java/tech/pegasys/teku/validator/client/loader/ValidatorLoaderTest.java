@@ -390,6 +390,7 @@ class ValidatorLoaderTest {
         ValidatorLoader.create(
             List.of(validatorSource),
             Optional.of(validatorSource),
+            Optional.of(validatorSource),
             null,
             Optional.of(dataDirLayout));
 

@@ -210,7 +210,7 @@ class LocalValidatorSourceTest {
   void shouldRejectAddingValidatorIfReadOnlySource() {
     final KeyStoreData keyStoreData = mock(KeyStoreData.class);
     when(keyStoreData.getPubkey()).thenReturn(dataStructureUtil.randomPublicKey().toSSZBytes());
-    final AddLocalValidatorResult result =
+    final AddValidatorResult result =
         validatorSource.addValidator(keyStoreData, "pass", dataStructureUtil.randomPublicKey());
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.ERROR);
     assertThat(result.getResult().getMessage().orElse("")).contains("read only source");
@@ -218,7 +218,7 @@ class LocalValidatorSourceTest {
 
   @Test
   void shouldAddValidatorIfNotReadOnlySource(@TempDir Path tempDir) throws IOException {
-    final AddLocalValidatorResult result =
+    final AddValidatorResult result =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
@@ -227,12 +227,12 @@ class LocalValidatorSourceTest {
 
   @Test
   void shouldDetectDuplicatesOnAddValidator(@TempDir Path tempDir) throws IOException {
-    final AddLocalValidatorResult result =
+    final AddValidatorResult result =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(result.getSigner()).isNotEmpty();
-    final AddLocalValidatorResult result2 =
+    final AddValidatorResult result2 =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
     assertThat(result2.getResult().getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
@@ -241,7 +241,7 @@ class LocalValidatorSourceTest {
 
   @Test
   void shouldErrorIfPasswordIsIncorrectOnAddValidator(@TempDir Path tempDir) throws IOException {
-    final AddLocalValidatorResult result =
+    final AddValidatorResult result =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", "zz", dataStructureUtil.randomPublicKey());
 
@@ -269,7 +269,7 @@ class LocalValidatorSourceTest {
     };
   }
 
-  private AddLocalValidatorResult getResultFromAddingValidator(
+  private AddValidatorResult getResultFromAddingValidator(
       final Path tempDir,
       final String resourceName,
       final String password,
