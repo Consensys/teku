@@ -80,6 +80,10 @@ dependencyRules {
     register(":infrastructure:logging") {
       allowed = [":infrastructure:unsigned"]
     }
+
+    register(":ethereum:") {
+      allowed = [":infrastructure:", ":ethereum:"]
+    }
   }
 }
 
