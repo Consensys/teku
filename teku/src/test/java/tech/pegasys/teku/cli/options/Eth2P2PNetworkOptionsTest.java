@@ -34,14 +34,14 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
     final Eth2NetworkConfiguration eth2NetworkConfig =
-        Eth2NetworkConfiguration.builder("pyrmont").build();
+        Eth2NetworkConfiguration.builder("prater").build();
     final TekuConfiguration config = getTekuConfigurationFromFile("networkOptions_config.yaml");
     assertThat(config.eth2NetworkConfiguration().getConstants())
         .isEqualTo(eth2NetworkConfig.getConstants());
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "pyrmont", "prater"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "prater"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         Eth2NetworkConfiguration.builder(networkName).build();
@@ -113,7 +113,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void overrideDefaultBootnodesWithEmptyList() {
-    beaconNodeCommand.parse(new String[] {"--network", "pyrmont", "--p2p-discovery-bootnodes"});
+    beaconNodeCommand.parse(new String[] {"--network", "prater", "--p2p-discovery-bootnodes"});
 
     TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     final List<String> bootnodes = tekuConfiguration.discovery().getBootnodes();
@@ -123,7 +123,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             createConfigBuilder()
                 .eth2NetworkConfig(
                     b -> {
-                      b.applyNetworkDefaults(Eth2Network.PYRMONT);
+                      b.applyNetworkDefaults(Eth2Network.PRATER);
                     })
                 .discovery(b -> b.bootnodes(List.of()))
                 .build())
@@ -198,7 +198,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void initialState_shouldDefaultToNetworkValue() {
-    final String network = "pyrmont";
+    final String network = "prater";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     assertThat(networkConfig.getInitialState()).isPresent();
@@ -212,7 +212,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void initialState_shouldOverrideNetworkValue() {
     final String state = "state.ssz";
-    final String network = "pyrmont";
+    final String network = "prater";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     assertThat(networkConfig.getInitialState()).isPresent();

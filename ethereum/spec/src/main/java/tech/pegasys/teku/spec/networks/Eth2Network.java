@@ -19,7 +19,6 @@ import java.util.Optional;
 public enum Eth2Network {
   // Live networks
   MAINNET,
-  PYRMONT,
   PRATER,
   KINTSUGI,
   // Test networks

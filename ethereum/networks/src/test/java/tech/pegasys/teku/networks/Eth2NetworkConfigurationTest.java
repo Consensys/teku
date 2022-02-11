@@ -123,7 +123,6 @@ public class Eth2NetworkConfigurationTest {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
         Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
-        Arguments.of(Eth2Network.PYRMONT, (NetworkDefinition) b -> b.applyPyrmontNetworkDefaults()),
         Arguments.of(Eth2Network.PRATER, (NetworkDefinition) b -> b.applyPraterNetworkDefaults()),
         Arguments.of(
             Eth2Network.KINTSUGI, (NetworkDefinition) b -> b.applyKintsugiNetworkDefaults()),
