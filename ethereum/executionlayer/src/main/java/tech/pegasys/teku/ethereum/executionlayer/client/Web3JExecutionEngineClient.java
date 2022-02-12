@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
@@ -31,15 +39,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Logger LOG = LogManager.getLogger();

@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.services.executionengine;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
-
-import java.util.Optional;
 
 public class ExecutionEngineConfiguration {
 

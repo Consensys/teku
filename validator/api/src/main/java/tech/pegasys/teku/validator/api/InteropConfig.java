@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.validator.api;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class InteropConfig {
 
