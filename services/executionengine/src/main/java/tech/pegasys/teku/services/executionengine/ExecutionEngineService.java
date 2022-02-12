@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.services.executionengine;
 
-import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -26,6 +24,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 public class ExecutionEngineService extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -50,7 +50,11 @@ public class ExecutionEngineService extends Service {
     final ExecutionEngineChannel executionEngine =
         new ThrottlingExecutionEngineChannel(
             ExecutionEngineChannelImpl.create(
-                endpoint, config.getSpec(), timeProvider, config.getVersion()),
+                endpoint,
+                config.getSpec(),
+                timeProvider,
+                config.getVersion(),
+                config.getHexEncodedJwtKey()),
             MAXIMUM_CONCURRENT_EE_REQUESTS,
             metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);

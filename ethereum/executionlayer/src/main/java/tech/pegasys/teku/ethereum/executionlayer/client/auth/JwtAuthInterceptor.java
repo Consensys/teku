@@ -1,30 +1,27 @@
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import okhttp3.Interceptor;
-import okhttp3.Request;
 import okhttp3.Response;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Date;
+import java.util.Optional;
 
 public class JwtAuthInterceptor implements Interceptor {
-  private String jwtToken;
+  private final SafeTokenProvider tokenProvider;
 
-  public JwtAuthInterceptor() {}
-
-  public void setJwtToken(String jwtToken) {
-    this.jwtToken = jwtToken;
+  public JwtAuthInterceptor(final JwtConfig jwtConfig) {
+    this.tokenProvider = new SafeTokenProvider(new TokenProvider(jwtConfig));
   }
 
-  @NotNull
   @Override
   public Response intercept(final Chain chain) throws IOException {
-    final Request original = chain.request();
-
-    final String authHeader = String.format("%s", jwtToken);
-    Request.Builder builder = original.newBuilder().header("Authorization", authHeader);
-
-    final Request request = builder.build();
-    return chain.proceed(request);
+    Optional<Token> optionalToken = tokenProvider.token(new Date());
+    if (optionalToken.isEmpty()) {
+      return chain.proceed(chain.request());
+    }
+    final Token token = optionalToken.get();
+    final String authHeader = String.format("%s", token.getJwtToken());
+    return chain.proceed(chain.request().newBuilder().header("Authorization", authHeader).build());
   }
 }

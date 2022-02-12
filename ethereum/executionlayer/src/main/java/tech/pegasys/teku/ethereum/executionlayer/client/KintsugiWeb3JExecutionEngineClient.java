@@ -13,34 +13,32 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.MoreObjects;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.core.Request;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.*;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes8Deserializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class KintsugiWeb3JExecutionEngineClient extends Web3JExecutionEngineClient {
 
   private final AtomicLong nextId = new AtomicLong(0);
 
-  public KintsugiWeb3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
-    super(eeEndpoint, timeProvider);
+  public KintsugiWeb3JExecutionEngineClient(
+      String eeEndpoint, TimeProvider timeProvider, JwtConfig jwtConfig) {
+    super(eeEndpoint, timeProvider, jwtConfig);
   }
 
   @Override
