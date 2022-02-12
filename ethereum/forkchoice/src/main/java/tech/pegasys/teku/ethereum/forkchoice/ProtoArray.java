@@ -169,7 +169,7 @@ public class ProtoArray {
         .orElseThrow(fatalException("Finalized block was found to be invalid."));
   }
 
-  public Optional<ProtoNode> findMergeTransitionBlock(final Bytes32 head) {
+  public Optional<ProtoNode> findOptimisticallySyncedMergeTransitionBlock(final Bytes32 head) {
     final Optional<ProtoNode> maybeStartingNode = getProtoNode(head);
     if (maybeStartingNode.isEmpty()) {
       return Optional.empty();
@@ -180,7 +180,8 @@ public class ProtoArray {
       return Optional.empty();
     }
     while (contains(currentNode.getBlockRoot())) {
-      if (currentNode.getParentIndex().isEmpty()) {
+      if (currentNode.getParentIndex().isEmpty() || currentNode.isFullyValidated()) {
+        // Stop searching when we reach fully validated nodes or a node we don't have the parent for
         return Optional.empty();
       }
       final ProtoNode parentNode = getNodeByIndex(currentNode.getParentIndex().get());
