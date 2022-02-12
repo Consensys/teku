@@ -22,19 +22,18 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.executionengine.PayloadStatus.VALID;
 
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -50,14 +49,21 @@ class ForkChoicePayloadExecutorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SafeFuture<PayloadStatus> executionResult = new SafeFuture<>();
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  private final MergeTransitionBlockValidator transitionValidator =
+      mock(MergeTransitionBlockValidator.class);
   private final ExecutionPayloadHeader payloadHeader =
       dataStructureUtil.randomExecutionPayloadHeader();
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
-  private final StateAndBlockSummary chainHead =
-      StateAndBlockSummary.create(dataStructureUtil.randomBeaconState());
-  private final SignedBeaconBlock block =
-      dataStructureUtil.randomSignedBeaconBlock(0, chainHead.getRoot());
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+  }
 
   @BeforeEach
   void setUp() {
@@ -81,14 +87,6 @@ class ForkChoicePayloadExecutorTest {
     assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(PayloadStatus.VALID);
   }
 
-  /**
-   * The details of how we validate the merge block are all handled by {@link
-   * BellatrixTransitionHelpers} so we don't want to retest all that here. Instead, we check that
-   * those extra checks started (the call to {@link ExecutionEngineChannel#getPowBlock(Bytes32)}).
-   *
-   * <p>Since the future we return from getPowBlock is never completed we never complete the
-   * validations which saves us a bunch of mocking.
-   */
   @Test
   void optimisticallyExecute_shouldValidateMergeBlockWhenThisIsTheMergeBlock() {
     when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
@@ -98,7 +96,7 @@ class ForkChoicePayloadExecutorTest {
 
     // Should execute first and then begin validation of the transition block conditions.
     verify(executionEngine).newPayload(payload);
-    verify(executionEngine).getPowBlock(payload.getParentHash());
+    verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, payload);
     assertThat(result).isTrue();
   }
 
@@ -109,7 +107,7 @@ class ForkChoicePayloadExecutorTest {
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     // Should not attempt to validate transition conditions because execute payload failed
-    verify(executionEngine, never()).getPowBlock(payload.getParentHash());
+    verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, payload);
     verify(executionEngine).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
@@ -120,12 +118,12 @@ class ForkChoicePayloadExecutorTest {
   void
       optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELGoesOfflineAfterExecution() {
     when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
-    when(executionEngine.getPowBlock(payload.getParentHash()))
+    when(transitionValidator.verifyTransitionBlock(defaultPayloadHeader, payload))
         .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
-    verify(executionEngine).getPowBlock(payload.getParentHash());
+    verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, payload);
     verify(executionEngine).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
@@ -133,7 +131,7 @@ class ForkChoicePayloadExecutorTest {
   }
 
   @Test
-  void optimisticallyExecute_shouldReturnNotVerifyTransitionIfExecutePayloadIsInvalid() {
+  void optimisticallyExecute_shouldNotVerifyTransitionIfExecutePayloadIsInvalid() {
     final PayloadStatus expectedResult =
         PayloadStatus.invalid(Optional.empty(), Optional.of("Nope"));
     when(executionEngine.newPayload(payload))
@@ -142,7 +140,7 @@ class ForkChoicePayloadExecutorTest {
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     verify(executionEngine).newPayload(payload);
-    verify(executionEngine, never()).getPowBlock(payload.getParentHash());
+    verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(expectedResult);
   }
@@ -157,6 +155,8 @@ class ForkChoicePayloadExecutorTest {
 
   @Test
   void shouldReturnExecutionResultWhenExecuted() {
+    when(transitionValidator.verifyTransitionBlock(payloadHeader, payload))
+        .thenReturn(SafeFuture.completedFuture(VALID));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
@@ -169,6 +169,6 @@ class ForkChoicePayloadExecutorTest {
   }
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {
-    return new ForkChoicePayloadExecutor(spec, block, executionEngine);
+    return new ForkChoicePayloadExecutor(executionEngine, transitionValidator);
   }
 }

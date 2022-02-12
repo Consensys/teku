@@ -24,13 +24,13 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -188,7 +188,7 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
 
     final ForkChoicePayloadExecutor payloadExecutor =
-        new ForkChoicePayloadExecutor(spec, block, executionEngine);
+        ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionEngine);
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
     final BlockImportResult preconditionCheckResult =
         forkChoiceUtil.checkOnBlockConditions(
