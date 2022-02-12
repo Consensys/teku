@@ -59,6 +59,15 @@ public class InteropOptions {
       arity = "0..1")
   private boolean interopEnabled = false;
 
+  @Option(
+      hidden = true,
+      names = {"--Xjwt-secret"},
+      paramLabel = "<FILENAME>",
+      description =
+          "Location of the file specifying the hex-encoded 256 bit secret key to be used for verifying/generating jwt tokens",
+      arity = "1")
+  private String jwtSecretFile = null;
+
   public TekuConfiguration.Builder configure(final TekuConfiguration.Builder builder) {
     return builder.interop(
         interopBuilder ->
@@ -67,6 +76,7 @@ public class InteropOptions {
                 .interopOwnedValidatorStartIndex(interopOwnerValidatorStartIndex)
                 .interopOwnedValidatorCount(interopOwnerValidatorCount)
                 .interopNumberOfValidators(interopNumberOfValidators)
-                .interopEnabled(interopEnabled));
+                .interopEnabled(interopEnabled)
+                .jwtSecretFile(jwtSecretFile));
   }
 }

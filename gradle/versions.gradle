@@ -162,5 +162,6 @@ dependencyManagement {
 
     dependency 'org.jupnp:org.jupnp.support:2.6.0'
     dependency 'org.jupnp:org.jupnp:2.6.0'
+    dependency 'io.jsonwebtoken:jjwt:0.9.1'
   }
 }

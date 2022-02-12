@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.validator.api;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class InteropConfig {
 
@@ -29,18 +29,21 @@ public class InteropConfig {
   private final int interopOwnedValidatorCount;
   private final int interopNumberOfValidators;
   private final boolean interopEnabled;
+  private final String jwtSecretFile;
 
   private InteropConfig(
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
       final int interopNumberOfValidators,
-      final boolean interopEnabled) {
+      final boolean interopEnabled,
+      final String jwtSecretFile) {
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
+    this.jwtSecretFile = jwtSecretFile;
   }
 
   public static InteropConfigBuilder builder() {
@@ -67,6 +70,10 @@ public class InteropConfig {
     return interopEnabled;
   }
 
+  public String getJwtSecretFile() {
+    return jwtSecretFile;
+  }
+
   public static final class InteropConfigBuilder {
 
     private Integer interopGenesisTime = DEFAULT_INTEROP_GENESIS_TIME;
@@ -75,6 +82,7 @@ public class InteropConfig {
     private int interopNumberOfValidators = DEFAULT_INTEROP_NUMBER_OF_VALIDATORS;
     private boolean interopEnabled = false;
     private Spec spec;
+    private String jwtSecretFile;
 
     private InteropConfigBuilder() {}
 
@@ -126,6 +134,11 @@ public class InteropConfig {
       return this;
     }
 
+    public InteropConfigBuilder jwtSecretFile(String jwtSecretFile) {
+      checkNotNull(jwtSecretFile);
+      return this;
+    }
+
     public InteropConfig build() {
       initMissingDefaults();
       validate();
@@ -134,7 +147,8 @@ public class InteropConfig {
           interopOwnedValidatorStartIndex,
           interopOwnedValidatorCount,
           interopNumberOfValidators,
-          interopEnabled);
+          interopEnabled,
+          jwtSecretFile);
     }
 
     private void initMissingDefaults() {

@@ -10,6 +10,7 @@ dependencies {
 
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.jsonwebtoken:jjwt'
 
   testImplementation testFixtures(project(':ethereum:spec'))
 }
