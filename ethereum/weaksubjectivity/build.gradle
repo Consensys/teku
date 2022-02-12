@@ -1,10 +1,10 @@
 dependencies {
     implementation project(':ethereum:core')
+    implementation project(':ethereum:forkchoice')
     implementation project(':ethereum:spec')
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:logging')
     implementation project(':infrastructure:time')
-    implementation project(':protoarray')
     implementation project(':storage')
     implementation 'com.google.guava:guava'
 
