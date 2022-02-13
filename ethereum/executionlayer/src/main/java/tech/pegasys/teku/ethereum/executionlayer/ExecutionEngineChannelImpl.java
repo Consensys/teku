@@ -90,7 +90,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
         response.getErrorMessage() == null,
         "Invalid remote response: %s",
         response.getErrorMessage());
-    return response.getPayload();
+    return checkNotNull(response.getPayload(), "No payload content found");
   }
 
   @Override

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMM
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.cli.options.ValidatorRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
@@ -96,7 +99,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      parentCommand.setLogLevels();
+      startLogging();
       final TekuConfiguration globalConfiguration = tekuConfiguration();
       parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
@@ -112,6 +115,14 @@ public class ValidatorClientCommand implements Callable<Integer> {
       parentCommand.reportUnexpectedError(t);
     }
     return 1;
+  }
+
+  private void startLogging() {
+    LoggingConfig loggingConfig =
+        parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    parentCommand.getLoggingConfigurator().startLogging(loggingConfig);
+    // jupnp logs a lot of context to level WARN, and it is quite verbose.
+    LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
   private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
@@ -157,7 +168,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     validatorRestApiOptions.configure(builder);
-    loggingOptions.configure(builder, LOG_FILE_PREFIX);
+    loggingOptions.configureWireLogs(builder);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
     return builder.build();

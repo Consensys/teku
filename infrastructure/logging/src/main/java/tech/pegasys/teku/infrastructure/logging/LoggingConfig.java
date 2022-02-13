@@ -15,6 +15,9 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
+import org.apache.logging.log4j.Level;
+
 public class LoggingConfig {
   public static final String DEFAULT_LOG_FILE_NAME_PREFIX = "teku-node";
   public static final String DEFAULT_LOG_FILE_NAME_SUFFIX = ".log";
@@ -22,6 +25,7 @@ public class LoggingConfig {
 
   public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
+  private final Optional<Level> logLevel;
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
   private final boolean includeValidatorDutiesEnabled;
@@ -31,6 +35,7 @@ public class LoggingConfig {
   private final String logFileNamePattern;
 
   private LoggingConfig(
+      final Optional<Level> logLevel,
       final boolean colorEnabled,
       final boolean includeEventsEnabled,
       final boolean includeValidatorDutiesEnabled,
@@ -38,6 +43,7 @@ public class LoggingConfig {
       final LoggingDestination destination,
       final String logFile,
       final String logFileNamePattern) {
+    this.logLevel = logLevel;
     this.colorEnabled = colorEnabled;
     this.includeEventsEnabled = includeEventsEnabled;
     this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
@@ -49,6 +55,10 @@ public class LoggingConfig {
 
   public static LoggingConfigBuilder builder() {
     return new LoggingConfigBuilder();
+  }
+
+  public Optional<Level> getLogLevel() {
+    return logLevel;
   }
 
   public boolean isColorEnabled() {
@@ -82,6 +92,7 @@ public class LoggingConfig {
   public static final class LoggingConfigBuilder {
     public static final String SEP = System.getProperty("file.separator");
 
+    private Optional<Level> logLevel = Optional.empty();
     private boolean colorEnabled = true;
     private boolean includeEventsEnabled = true;
     private boolean includeValidatorDutiesEnabled = true;
@@ -128,6 +139,11 @@ public class LoggingConfig {
       checkArgument(
           logPathPattern != null,
           "LoggingConfig error: none of logPathPattern, dataDirectory or logDirectory values was specified");
+    }
+
+    public LoggingConfigBuilder logLevel(Level logLevel) {
+      this.logLevel = Optional.ofNullable(logLevel);
+      return this;
     }
 
     public LoggingConfigBuilder colorEnabled(boolean colorEnabled) {
@@ -195,6 +211,7 @@ public class LoggingConfig {
       initMissingDefaults();
       validateValues();
       return new LoggingConfig(
+          logLevel,
           colorEnabled,
           includeEventsEnabled,
           includeValidatorDutiesEnabled,

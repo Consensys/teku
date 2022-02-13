@@ -1,5 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
+import tech.pegasys.teku.depcheck.DepCheckPlugin
 
 import java.text.SimpleDateFormat
 
@@ -28,6 +29,7 @@ def specificVersion = calculateVersion()
 def isDevelopBuild = rootProject.version.contains('develop')
 
 apply plugin: 'application'
+apply plugin: DepCheckPlugin
 
 defaultTasks 'build','checkLicense'
 
@@ -61,6 +63,25 @@ def userHome = System.getProperty("user.home")
 
 def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
 def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
+
+var baseInfrastructureProjects = [
+    ':infrastructure:unsigned',
+    ':infrastructure:exceptions',
+    ':infrastructure:collections',
+    ':infrastructure:subscribers'
+]
+
+dependencyRules {
+  rules {
+    baseInfrastructureProjects.each { register(it) { allowed = [] }}
+    register(":infrastructure:") {
+      allowed = [":infrastructure:"]
+    }
+    register(":infrastructure:logging") {
+      allowed = [":infrastructure:unsigned"]
+    }
+  }
+}
 
 allprojects {
   apply plugin: 'java-library'
@@ -722,7 +743,7 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
   }
 
-  if (project.name != 'unsigned') {
+  if (!baseInfrastructureProjects.contains(project.path)) {
     dependencies.implementation(project(':infrastructure:unsigned'))
     dependencies.testRuntimeOnly(dependencies.testFixtures(project(':infrastructure:logging')))
   }
