@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
+
 import com.google.common.base.Strings;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -167,5 +170,20 @@ public class ValidatorLogger {
                 + " but proposer hasn't been prepared by any Validator Client. "
                 + "Using Beacon Node's default fee recipient.",
             Color.YELLOW));
+  }
+
+  public void proposedBlockImportFailed(
+      final String failureReason,
+      final UInt64 slot,
+      final Bytes32 root,
+      final Optional<Throwable> error) {
+    log.error(
+        ColorConsolePrinter.print(
+            "Failed to import proposed block due to "
+                + failureReason
+                + ": "
+                + formatBlock(slot, root),
+            Color.RED),
+        error.orElse(null));
   }
 }
