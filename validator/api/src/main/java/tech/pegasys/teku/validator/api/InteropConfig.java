@@ -29,21 +29,18 @@ public class InteropConfig {
   private final int interopOwnedValidatorCount;
   private final int interopNumberOfValidators;
   private final boolean interopEnabled;
-  private final String jwtSecretFile;
 
   private InteropConfig(
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
       final int interopNumberOfValidators,
-      final boolean interopEnabled,
-      final String jwtSecretFile) {
+      final boolean interopEnabled) {
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
-    this.jwtSecretFile = jwtSecretFile;
   }
 
   public static InteropConfigBuilder builder() {
@@ -68,10 +65,6 @@ public class InteropConfig {
 
   public boolean isInteropEnabled() {
     return interopEnabled;
-  }
-
-  public String getJwtSecretFile() {
-    return jwtSecretFile;
   }
 
   public static final class InteropConfigBuilder {
@@ -134,11 +127,6 @@ public class InteropConfig {
       return this;
     }
 
-    public InteropConfigBuilder jwtSecretFile(String jwtSecretFile) {
-      checkNotNull(jwtSecretFile);
-      return this;
-    }
-
     public InteropConfig build() {
       initMissingDefaults();
       validate();
@@ -147,8 +135,7 @@ public class InteropConfig {
           interopOwnedValidatorStartIndex,
           interopOwnedValidatorCount,
           interopNumberOfValidators,
-          interopEnabled,
-          jwtSecretFile);
+          interopEnabled);
     }
 
     private void initMissingDefaults() {

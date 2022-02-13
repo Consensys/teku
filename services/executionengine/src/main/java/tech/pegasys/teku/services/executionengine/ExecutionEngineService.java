@@ -54,7 +54,7 @@ public class ExecutionEngineService extends Service {
                 config.getSpec(),
                 timeProvider,
                 config.getVersion(),
-                config.getHexEncodedJwtKey()),
+                config.getJwtSecretFile()),
             MAXIMUM_CONCURRENT_EE_REQUESTS,
             metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);

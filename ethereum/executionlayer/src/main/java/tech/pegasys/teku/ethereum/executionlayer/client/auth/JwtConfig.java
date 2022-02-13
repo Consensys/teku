@@ -13,21 +13,19 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
+import java.security.Key;
+
 public class JwtConfig {
-  private String hexEncodedSecretKey;
 
   private final long expiresInSeconds = 5;
+  private Key key;
 
-  public JwtConfig(final String hexEncodedSecretKey) {
-    this.hexEncodedSecretKey = hexEncodedSecretKey;
+  public JwtConfig(final Key key) {
+    this.key = key;
   }
 
-  public String getHexEncodedSecretKey() {
-    return hexEncodedSecretKey;
-  }
-
-  public void setHexEncodedSecretKey(String hexEncodedSecretKey) {
-    this.hexEncodedSecretKey = hexEncodedSecretKey;
+  public Key getKey() {
+    return key;
   }
 
   public long getExpiresInSeconds() {

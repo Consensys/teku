@@ -34,7 +34,12 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthInterceptor;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.*;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -52,19 +57,20 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   public Web3JExecutionEngineClient(
       String eeEndpoint, TimeProvider timeProvider, JwtConfig jwtConfig) {
-    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig));
+    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
     this.eth1Web3j = Web3j.build(eeWeb3jService);
     this.timeProvider = timeProvider;
   }
 
-  private static OkHttpClient createOkHttpClient(final JwtConfig jwtConfig) {
+  private static OkHttpClient createOkHttpClient(
+      final JwtConfig jwtConfig, final TimeProvider timeProvider) {
     final OkHttpClient.Builder builder = new OkHttpClient.Builder();
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);
       builder.addInterceptor(logging);
     }
-    builder.addInterceptor(new JwtAuthInterceptor(jwtConfig));
+    builder.addInterceptor(new JwtAuthInterceptor(jwtConfig, timeProvider));
     return builder.build();
   }
 

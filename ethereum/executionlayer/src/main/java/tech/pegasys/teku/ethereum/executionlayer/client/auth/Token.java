@@ -19,12 +19,12 @@ public class Token {
   private final String jwtToken;
   private final Date expiry;
 
-  public Token(String jwtToken, Date expiry) {
+  public Token(final String jwtToken, final Date expiry) {
     this.jwtToken = jwtToken;
     this.expiry = expiry;
   }
 
-  public boolean isAvailableAt(Date instant) {
+  public boolean isAvailableAt(final Date instant) {
     return instant.before(expiry);
   }
 

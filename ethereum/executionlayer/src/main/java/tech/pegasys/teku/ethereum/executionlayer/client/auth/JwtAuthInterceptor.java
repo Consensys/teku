@@ -13,27 +13,36 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
+import com.google.common.net.HttpHeaders;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import okhttp3.Interceptor;
 import okhttp3.Response;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class JwtAuthInterceptor implements Interceptor {
   private final SafeTokenProvider tokenProvider;
 
-  public JwtAuthInterceptor(final JwtConfig jwtConfig) {
+  private final TimeProvider timeProvider;
+
+  public JwtAuthInterceptor(final JwtConfig jwtConfig, final TimeProvider timeProvider) {
     this.tokenProvider = new SafeTokenProvider(new TokenProvider(jwtConfig));
+    this.timeProvider = timeProvider;
   }
 
   @Override
   public Response intercept(final Chain chain) throws IOException {
-    Optional<Token> optionalToken = tokenProvider.token(new Date());
+    Optional<Token> optionalToken =
+        tokenProvider.token(
+            Date.from(Instant.ofEpochMilli(timeProvider.getTimeInMillis().longValue())));
     if (optionalToken.isEmpty()) {
       return chain.proceed(chain.request());
     }
     final Token token = optionalToken.get();
     final String authHeader = String.format("%s", token.getJwtToken());
-    return chain.proceed(chain.request().newBuilder().header("Authorization", authHeader).build());
+    return chain.proceed(
+        chain.request().newBuilder().header(HttpHeaders.AUTHORIZATION, authHeader).build());
   }
 }

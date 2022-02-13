@@ -24,7 +24,13 @@ import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.*;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -49,27 +55,28 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final Spec spec,
       final TimeProvider timeProvider,
       final Version version,
-      final String hexEncodedJwtKey) {
+      final Optional<String> jwtSecretFile) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
     return new ExecutionEngineChannelImpl(
-        createEngineClient(eeEndpoint, timeProvider, version, hexEncodedJwtKey), spec);
+        createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile), spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
       final String eeEndpoint,
       final TimeProvider timeProvider,
       final Version version,
-      final String hexEncodedJwtKey) {
+      final Optional<String> jwtSecretFile) {
     LOG.info("Execution Engine version: {}", version);
+    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile);
     switch (version) {
       case KILN:
         return new Web3JExecutionEngineClient(
-            eeEndpoint, timeProvider, new JwtConfig(hexEncodedJwtKey));
+            eeEndpoint, timeProvider, new JwtConfig(keyLoader.getSecretKey()));
       case KINTSUGI:
       default:
         return new KintsugiWeb3JExecutionEngineClient(
-            eeEndpoint, timeProvider, new JwtConfig(hexEncodedJwtKey));
+            eeEndpoint, timeProvider, new JwtConfig(keyLoader.getSecretKey()));
     }
   }
 
