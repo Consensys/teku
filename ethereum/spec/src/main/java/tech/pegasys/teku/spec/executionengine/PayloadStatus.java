@@ -114,17 +114,22 @@ public class PayloadStatus {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PayloadStatus that = (PayloadStatus) o;
     return Objects.equals(status, that.status)
         && Objects.equals(latestValidHash, that.latestValidHash)
-        && Objects.equals(validationError, that.validationError);
+        && Objects.equals(validationError, that.validationError)
+        && Objects.equals(failureCause, that.failureCause);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, latestValidHash, validationError);
+    return Objects.hash(status, latestValidHash, validationError, failureCause);
   }
 
   @Override
@@ -133,6 +138,7 @@ public class PayloadStatus {
         .add("status", status)
         .add("latestValidHash", latestValidHash)
         .add("validationError", validationError)
+        .add("failureCause", failureCause)
         .toString();
   }
 }

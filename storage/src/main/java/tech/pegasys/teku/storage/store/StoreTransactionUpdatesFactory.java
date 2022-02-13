@@ -105,10 +105,8 @@ class StoreTransactionUpdatesFactory {
         && spec.isMergeTransitionComplete(latestFinalized.getState())) {
       // Transition block was finalized by this transaction
       final Optional<Bytes32> optimisticTransitionBlockRoot =
-          baseStore
-              .forkChoiceStrategy
-              .getOptimisticallySyncedTransitionBlockRoot(latestFinalized.getRoot())
-              .filter(baseStore.forkChoiceStrategy::isOptimistic);
+          baseStore.forkChoiceStrategy.getOptimisticallySyncedTransitionBlockRoot(
+              latestFinalized.getRoot());
       finalizedChainDataBuilder.optimisticTransitionBlockRoot(optimisticTransitionBlockRoot);
     }
 
