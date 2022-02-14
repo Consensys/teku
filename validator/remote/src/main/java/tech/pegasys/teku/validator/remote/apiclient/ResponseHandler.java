@@ -22,9 +22,9 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_TOO_MANY_REQUESTS;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -35,7 +35,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class ResponseHandler<T> {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Integer, Handler<T>> handlers = new HashMap<>();
+  private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
   private final JsonProvider jsonProvider;
   private final Class<T> responseClass;
   private Class<T> badReqeustResponseClass;

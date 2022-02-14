@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import java.util.HashMap;
-import java.util.Map;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
@@ -26,7 +26,8 @@ abstract class CommitteeSubnetSubscriptions {
   protected final GossipNetwork gossipNetwork;
   protected final GossipEncoding gossipEncoding;
 
-  private final Map<Integer, RequestedSubscription> subnetIdToSubscription = new HashMap<>();
+  private final Int2ObjectMap<RequestedSubscription> subnetIdToSubscription =
+      new Int2ObjectOpenHashMap<>();
   private boolean subscribed = false;
 
   protected CommitteeSubnetSubscriptions(
@@ -36,7 +37,7 @@ abstract class CommitteeSubnetSubscriptions {
   }
 
   protected synchronized Optional<TopicChannel> getChannelForSubnet(final int subnetId) {
-    return Optional.ofNullable(subnetIdToSubscription.get(subnetId))
+    return Optional.ofNullable(subnetIdToSubscription.getOrDefault(subnetId, null))
         .flatMap(RequestedSubscription::getChannel);
   }
 
@@ -50,9 +51,8 @@ abstract class CommitteeSubnetSubscriptions {
   }
 
   public synchronized void unsubscribeFromSubnetId(final int subnetId) {
-    final RequestedSubscription subscription = subnetIdToSubscription.remove(subnetId);
-    if (subscription != null) {
-      subscription.unsubscribe();
+    if (subnetIdToSubscription.containsKey(subnetId)) {
+      subnetIdToSubscription.remove(subnetId).unsubscribe();
     }
   }
 
