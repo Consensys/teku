@@ -22,19 +22,29 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 
 class GetRemoteKeysTest {
   final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
 
   @Test
   void shouldListValidatorKeys() throws Exception {
-    final List<Validator> activeRemoteValidatorList = getValidatorList();
+    final List<ExternalValidator> activeRemoteValidatorList =
+        getValidatorList().stream()
+            .map(
+                val ->
+                    new ExternalValidator(
+                        val.getPublicKey(),
+                        val.getSigner().getSigningServiceUrl(),
+                        val.isReadOnly()))
+            .collect(Collectors.toList());
     when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
     final GetRemoteKeys endpoint = new GetRemoteKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
@@ -45,7 +55,7 @@ class GetRemoteKeysTest {
 
   @Test
   void shouldListEmptyValidatorKeys() throws Exception {
-    final List<Validator> activeRemoteValidatorList = Collections.emptyList();
+    final List<ExternalValidator> activeRemoteValidatorList = Collections.emptyList();
     when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
     final GetRemoteKeys endpoint = new GetRemoteKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);

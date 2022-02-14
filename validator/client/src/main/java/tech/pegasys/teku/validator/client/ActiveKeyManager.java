@@ -33,6 +33,7 @@ import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class ActiveKeyManager implements KeyManager {
@@ -56,9 +57,10 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   @Override
-  public List<Validator> getActiveRemoteValidatorKeys() {
+  public List<ExternalValidator> getActiveRemoteValidatorKeys() {
     return validatorLoader.getOwnedValidators().getActiveValidators().stream()
         .filter(validator -> !validator.getSigner().isLocal())
+        .map(ExternalValidator::create)
         .collect(Collectors.toList());
   }
 
@@ -141,7 +143,7 @@ public class ActiveKeyManager implements KeyManager {
     signer.delete();
     LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
     final DeleteKeyResult deleteKeyResult =
-        validatorLoader.deleteMutableValidator(activeValidator.getPublicKey());
+        validatorLoader.deleteLocalMutableValidator(activeValidator.getPublicKey());
     if (deleteKeyResult.getStatus() == DeletionStatus.DELETED) {
       Optional<String> error =
           exporter.addPublicKeyToExport(activeValidator.getPublicKey(), LOG::debug);
@@ -191,6 +193,22 @@ public class ActiveKeyManager implements KeyManager {
       return PostKeyResult.error(ex.getMessage());
     }
 
-    return validatorLoader.loadMutableValidator(keyStoreData, password, slashingProtectionImporter);
+    return validatorLoader.loadLocalMutableValidator(
+        keyStoreData, password, slashingProtectionImporter);
+  }
+
+  @Override
+  public List<PostKeyResult> importExternalValidators(final List<ExternalValidator> validators) {
+    final List<PostKeyResult> importResults = new ArrayList<>();
+    for (ExternalValidator v : validators) {
+      try {
+        importResults.add(
+            validatorLoader.loadExternalMutableValidator(v.getPublicKey(), v.getUrl()));
+      } catch (Exception e) {
+        importResults.add(PostKeyResult.error(e.getMessage()));
+      }
+    }
+
+    return importResults;
   }
 }

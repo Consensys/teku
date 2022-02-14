@@ -16,13 +16,16 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang3.NotImplementedException;
+import java.util.Collections;
+import java.util.List;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
 
 public class PostRemoteKeys extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/remotekeys";
@@ -47,6 +50,14 @@ public class PostRemoteKeys extends RestApiEndpoint {
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException();
+    final PostRemoteKeysRequest body = request.getRequestBody();
+
+    if (body.getExternalValidators().isEmpty()) {
+      request.respondOk(Collections.emptyList());
+      return;
+    }
+
+    List<ExternalValidator> validators = body.getExternalValidators();
+    request.respondOk(keyManager.importExternalValidators(validators));
   }
 }
