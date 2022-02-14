@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -78,8 +79,15 @@ public class BlockImporterTest {
   private final WeakSubjectivityValidator weakSubjectivityValidator =
       mock(WeakSubjectivityValidator.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  private final MergeTransitionBlockValidator transitionBlockValidator =
+      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
   private final ForkChoice forkChoice =
-      new ForkChoice(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier);
+      new ForkChoice(
+          spec,
+          new InlineEventThread(),
+          recentChainData,
+          forkChoiceNotifier,
+          transitionBlockValidator);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
 
@@ -418,7 +426,11 @@ public class BlockImporterTest {
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
+            spec,
+            new InlineEventThread(),
+            storageSystem.recentChainData(),
+            forkChoiceNotifier,
+            transitionBlockValidator);
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -457,7 +469,11 @@ public class BlockImporterTest {
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
+            spec,
+            new InlineEventThread(),
+            storageSystem.recentChainData(),
+            forkChoiceNotifier,
+            transitionBlockValidator);
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -504,7 +520,11 @@ public class BlockImporterTest {
     storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
+            spec,
+            new InlineEventThread(),
+            storageSystem.recentChainData(),
+            forkChoiceNotifier,
+            transitionBlockValidator);
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -543,7 +563,11 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
+            spec,
+            new InlineEventThread(),
+            storageSystem.recentChainData(),
+            forkChoiceNotifier,
+            transitionBlockValidator);
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -570,7 +594,11 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
+            spec,
+            new InlineEventThread(),
+            storageSystem.recentChainData(),
+            forkChoiceNotifier,
+            transitionBlockValidator);
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,

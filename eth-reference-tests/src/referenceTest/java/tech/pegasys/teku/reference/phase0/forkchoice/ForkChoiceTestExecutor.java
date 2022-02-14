@@ -45,9 +45,11 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -94,9 +96,16 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             spec, new SignedBlockAndState(anchorBlock, anchorState)),
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesis_time()));
 
+    final MergeTransitionBlockValidator transitionBlockValidator =
+        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier(), true);
+            spec,
+            new InlineEventThread(),
+            recentChainData,
+            new StubForkChoiceNotifier(),
+            transitionBlockValidator,
+            true);
     final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
 
     runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);
