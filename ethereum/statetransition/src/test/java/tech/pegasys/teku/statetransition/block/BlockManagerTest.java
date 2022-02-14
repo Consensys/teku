@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -277,15 +278,23 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
+    invalidBlockDescendants.stream()
+        .forEach(
+            invalidBlockDescendant ->
+                assertImportBlockWithResult(
+                    invalidBlockDescendant, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
 
     // Gossip next block, causing dependent blocks to be dropped when the import fails
-    blockManager.importBlock(invalidBlock).join();
+    assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
+    invalidBlockDescendants.stream()
+        .forEach(
+            invalidBlockDescendant ->
+                assertImportBlockWithResult(
+                    invalidBlockDescendant, BlockImportResult.FAILED_INVALID_BLOCK_DESCENDANT));
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -307,20 +316,28 @@ public class BlockManagerTest {
 
     // Gossip all blocks except the first two
     invalidBlockDescendants.subList(1, invalidChainDepth).stream()
-        .forEach(blockManager::importBlock);
+        .forEach(
+            invalidBlockDescendant ->
+                assertImportBlockWithResult(
+                    invalidBlockDescendant, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip invalid block, which should fail to import and be marked invalid
-    blockManager.importBlock(invalidBlock);
+    assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip the child of the invalid block, which should also be marked invalid causing
     // the rest of the chain to be marked invalid and dropped
-    blockManager.importBlock(invalidBlockDescendants.get(0));
+    assertImportBlockWithResult(
+        invalidBlockDescendants.get(0), BlockImportResult.FAILED_INVALID_BLOCK_DESCENDANT);
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
+    invalidBlockDescendants.stream()
+        .forEach(
+            invalidBlockDescendant ->
+                assertImportBlockWithResult(
+                    invalidBlockDescendant, BlockImportResult.FAILED_INVALID_BLOCK_DESCENDANT));
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -355,6 +372,17 @@ public class BlockManagerTest {
     incrementSlot();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(0);
+  }
+
+  private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {
+    assertThat(blockManager.importBlock(block))
+        .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
+  }
+
+  private void assertImportBlockWithResult(
+      SignedBeaconBlock block, BlockImportResult importResult) {
+    assertThat(blockManager.importBlock(block))
+        .isCompletedWithValueMatching(result -> result.equals(importResult));
   }
 
   private UInt64 incrementSlot() {

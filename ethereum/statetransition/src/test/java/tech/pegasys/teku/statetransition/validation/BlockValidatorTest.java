@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.Validity;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -81,7 +79,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
   }
 
@@ -89,7 +87,7 @@ public class BlockValidatorTest {
   void shouldIgnoreAlreadyImportedBlock() {
     final SignedBeaconBlock block = storageSystem.chainUpdater().advanceChain().getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isIgnore());
   }
 
@@ -101,10 +99,10 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    InternalValidationResult result1 = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result1 = blockValidator.validate(block).join();
     assertTrue(result1.isAccept());
 
-    InternalValidationResult result2 = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result2 = blockValidator.validate(block).join();
     assertTrue(result2.isIgnore());
   }
 
@@ -114,7 +112,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isSaveForFuture());
   }
 
@@ -144,8 +142,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock blockWithNoParent =
         SignedBeaconBlock.create(spec, block, blockSignature);
 
-    InternalValidationResult result =
-        blockValidator.validate(blockWithNoParent, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(blockWithNoParent).join();
     assertTrue(result.isSaveForFuture());
   }
 
@@ -161,7 +158,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block =
         storageSystem2.chainBuilder().generateBlockAtSlot(finalizedSlot.minus(ONE)).getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isIgnore());
   }
 
@@ -193,8 +190,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock invalidProposerSignedBlock =
         SignedBeaconBlock.create(spec, block, blockSignature);
 
-    InternalValidationResult result =
-        blockValidator.validate(invalidProposerSignedBlock, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock).join();
     assertTrue(result.isReject());
   }
 
@@ -209,7 +205,7 @@ public class BlockValidatorTest {
             storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock().getMessage(),
             BLSTestUtil.randomSignature(0));
 
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isReject());
   }
 
@@ -240,7 +236,7 @@ public class BlockValidatorTest {
         chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
     chainUpdater.saveBlockTime(blockAndState);
     final SafeFuture<InternalValidationResult> result =
-        blockValidator.validate(blockAndState.getBlock(), this::alwaysValid);
+        blockValidator.validate(blockAndState.getBlock());
     assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -258,7 +254,7 @@ public class BlockValidatorTest {
 
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysValid).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
   }
 
@@ -285,43 +281,7 @@ public class BlockValidatorTest {
                         specContext.getDataStructureUtil().randomExecutionPayload()));
 
     InternalValidationResult result =
-        blockValidator.validate(signedBlockAndState.getBlock(), this::alwaysValid).join();
+        blockValidator.validate(signedBlockAndState.getBlock()).join();
     assertTrue(result.isReject());
-  }
-
-  @TestTemplate
-  void shouldReturnIgnoreForValidBlockWithOptimisticParent() {
-    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    final SignedBlockAndState signedBlockAndState =
-        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
-    final SignedBeaconBlock block = signedBlockAndState.getBlock();
-    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
-
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysOptimistic).join();
-    assertTrue(result.isIgnore());
-  }
-
-  @TestTemplate
-  void shouldReturnRejectForValidBlockWithInvalidParent() {
-    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    final SignedBlockAndState signedBlockAndState =
-        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
-    final SignedBeaconBlock block = signedBlockAndState.getBlock();
-    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
-
-    InternalValidationResult result = blockValidator.validate(block, this::alwaysInvalid).join();
-    assertTrue(result.isReject());
-  }
-
-  private Optional<Validity> alwaysInvalid(final Bytes32 __) {
-    return Optional.of(Validity.INVALID);
-  }
-
-  private Optional<Validity> alwaysOptimistic(final Bytes32 __) {
-    return Optional.of(Validity.OPTIMISTIC);
-  }
-
-  private Optional<Validity> alwaysValid(final Bytes32 __) {
-    return Optional.empty();
   }
 }

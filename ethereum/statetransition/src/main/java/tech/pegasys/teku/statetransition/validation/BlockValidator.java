@@ -21,7 +21,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import com.google.common.base.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.Validity;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidator {
@@ -54,8 +52,7 @@ public class BlockValidator {
     this.recentChainData = recentChainData;
   }
 
-  public SafeFuture<InternalValidationResult> validate(
-      SignedBeaconBlock block, final Function<Bytes32, Optional<Validity>> validityRetriever) {
+  public SafeFuture<InternalValidationResult> validate(SignedBeaconBlock block) {
 
     if (!blockSlotIsGreaterThanLatestFinalizedSlot(block)
         || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
@@ -73,18 +70,6 @@ public class BlockValidator {
     if (recentChainData.containsBlock(block.getRoot())) {
       LOG.trace("Block is already imported");
       return completedFuture(InternalValidationResult.IGNORE);
-    }
-
-    Optional<Validity> parentValidity = validityRetriever.apply(block.getMessage().getParentRoot());
-    if (parentValidity.isPresent()) {
-      switch (parentValidity.get()) {
-        case INVALID:
-          return completedFuture(reject("Parent block is invalid."));
-        case OPTIMISTIC:
-          LOG.trace("Parent block execution payload is not validated.");
-          return completedFuture(InternalValidationResult.IGNORE);
-        default:
-      }
     }
 
     if (!recentChainData.containsBlock(block.getParentRoot())) {

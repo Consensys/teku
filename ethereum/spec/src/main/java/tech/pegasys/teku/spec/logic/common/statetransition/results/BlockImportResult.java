@@ -31,6 +31,9 @@ public interface BlockImportResult {
       new FailedBlockImportResult(
           FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING, Optional.empty());
 
+  BlockImportResult FAILED_INVALID_BLOCK_DESCENDANT =
+      new FailedBlockImportResult(FailureReason.INVALID_BLOCK_DESCENDANT, Optional.empty());
+
   static BlockImportResult failedExecutionPayloadExecution(final Throwable cause) {
     return new FailedBlockImportResult(
         FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION, Optional.of(cause));
@@ -57,26 +60,15 @@ public interface BlockImportResult {
   }
 
   enum FailureReason {
-    UNKNOWN_PARENT(Validity.UNKNOWN),
-    BLOCK_IS_FROM_FUTURE(Validity.UNKNOWN),
-    DOES_NOT_DESCEND_FROM_LATEST_FINALIZED(Validity.INVALID),
-    FAILED_STATE_TRANSITION(Validity.INVALID),
-    FAILED_WEAK_SUBJECTIVITY_CHECKS(Validity.INVALID),
-    FAILED_EXECUTION_PAYLOAD_EXECUTION(Validity.OPTIMISTIC),
-    FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING(Validity.OPTIMISTIC),
-    INTERNAL_ERROR(Validity.INVALID); // A catch-all category for unexpected errors (bugs)
-
-    public final Validity validity;
-
-    FailureReason(final Validity validity) {
-      this.validity = validity;
-    }
-
-    public enum Validity {
-      INVALID, // from most important (never overwritten by parent)
-      UNKNOWN,
-      OPTIMISTIC // to the least important (can be overwritten by all the above by parent)
-    }
+    UNKNOWN_PARENT,
+    BLOCK_IS_FROM_FUTURE,
+    DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
+    FAILED_STATE_TRANSITION,
+    FAILED_WEAK_SUBJECTIVITY_CHECKS,
+    FAILED_EXECUTION_PAYLOAD_EXECUTION,
+    FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
+    INVALID_BLOCK_DESCENDANT,
+    INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
   boolean isSuccessful();

@@ -15,12 +15,9 @@ package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,8 +30,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.Validity;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.FailedBlockImportResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -52,7 +48,7 @@ public class BlockManager extends Service
   private final BlockValidator validator;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
-  private final Map<Bytes32, Validity> invalidBlockRoots = LimitedMap.create(500);
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.create(500);
   private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
@@ -88,8 +84,11 @@ public class BlockManager extends Service
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
-    SafeFuture<InternalValidationResult> validationResult =
-        validator.validate(block, this::getStrictBlockInvalidity);
+    if (blockIsInvalid(block)) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
+    }
+    SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
@@ -130,8 +129,13 @@ public class BlockManager extends Service
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(final SignedBeaconBlock block) {
+    final Optional<BlockImportResult> blockImportResult = getInvalidImportResultForBlock(block);
+    if (blockImportResult.isPresent()) {
+      dropInvalidBlock(block, blockImportResult.get());
+      return SafeFuture.completedFuture(blockImportResult.get());
+    }
     notifyReceivedBlockSubscribers(block);
-    if (!shouldImportBlock(block)) {
+    if (blockIsKnown(block)) {
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
 
@@ -142,8 +146,7 @@ public class BlockManager extends Service
               if (result.isSuccessful()) {
                 LOG.trace("Imported block: {}", block);
               } else {
-                final FailureReason failureReason = result.getFailureReason();
-                switch (failureReason) {
+                switch (result.getFailureReason()) {
                   case UNKNOWN_PARENT:
                     // Add to the pending pool so it is triggered once the parent is imported
                     pendingBlocks.add(block);
@@ -170,27 +173,14 @@ public class BlockManager extends Service
                         result.getFailureCause().orElse(null));
                     break;
                   default:
-                    LOG.trace("Unable to import block for reason {}: {}", failureReason, block);
-                }
-
-                switch (failureReason.validity) {
-                  case OPTIMISTIC:
-                  case INVALID:
-                    applyFailureValidity(block, failureReason.validity);
-                    break;
-                  default:
+                    LOG.trace(
+                        "Unable to import block for reason {}: {}",
+                        result.getFailureReason(),
+                        block);
+                    dropInvalidBlock(block, result);
                 }
               }
             });
-  }
-
-  private boolean shouldImportBlock(final SignedBeaconBlock block) {
-    if (blockIsKnown(block)) {
-      return false;
-    }
-    final Optional<Validity> failureValidity = getBlockInvalidity(block);
-    failureValidity.ifPresent(validity -> applyFailureValidity(block, validity));
-    return failureValidity.map(validity -> !validity.equals(Validity.INVALID)).orElse(true);
   }
 
   private boolean blockIsKnown(final SignedBeaconBlock block) {
@@ -199,38 +189,38 @@ public class BlockManager extends Service
         || recentChainData.containsBlock(block.getRoot());
   }
 
-  private Optional<Validity> getBlockInvalidity(final SignedBeaconBlock block) {
+  private boolean blockIsInvalid(final SignedBeaconBlock block) {
+    return invalidBlockRoots.containsKey(block.getRoot())
+        || invalidBlockRoots.containsKey(block.getParentRoot());
+  }
+
+  private Optional<BlockImportResult> getInvalidImportResultForBlock(
+      final SignedBeaconBlock block) {
     return Optional.ofNullable(invalidBlockRoots.get(block.getRoot()))
-        .or(() -> Optional.ofNullable(invalidBlockRoots.get(block.getParentRoot())));
+        .or(
+            () -> {
+              if (invalidBlockRoots.containsKey(block.getParentRoot())) {
+                return Optional.of(FailedBlockImportResult.FAILED_INVALID_BLOCK_DESCENDANT);
+              }
+              return Optional.empty();
+            });
   }
 
-  private Optional<Validity> getStrictBlockInvalidity(final Bytes32 blockRoot) {
-    return Optional.ofNullable(invalidBlockRoots.get(blockRoot));
-  }
-
-  private void applyFailureValidity(final SignedBeaconBlock block, final Validity failureValidity) {
+  private void dropInvalidBlock(
+      final SignedBeaconBlock block, final BlockImportResult blockImportResult) {
     final Bytes32 blockRoot = block.getRoot();
-    final Set<SignedBeaconBlock> blocksToProcess = new HashSet<>();
-    blocksToProcess.add(block);
-    blocksToProcess.addAll(pendingBlocks.getItemsDependingOn(blockRoot, true));
 
-    final Consumer<SignedBeaconBlock> processor =
-        failureValidity == Validity.INVALID
-            ? blockToDrop -> {
-              addInvalidBlock(blockToDrop, failureValidity);
+    invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
+    pendingBlocks.remove(block);
+
+    pendingBlocks
+        .getItemsDependingOn(blockRoot, true)
+        .forEach(
+            blockToDrop -> {
+              invalidBlockRoots.put(
+                  blockToDrop.getMessage().hashTreeRoot(),
+                  BlockImportResult.FAILED_INVALID_BLOCK_DESCENDANT);
               pendingBlocks.remove(blockToDrop);
-            }
-            : blockToProcess -> addInvalidBlock(blockToProcess, failureValidity);
-
-    blocksToProcess.forEach(processor);
-  }
-
-  private void addInvalidBlock(
-      final SignedBeaconBlock failedBlock, final Validity failureValidity) {
-    invalidBlockRoots.merge(
-        failedBlock.getMessage().hashTreeRoot(),
-        failureValidity,
-        (oldValidity, newValidity) ->
-            oldValidity.ordinal() < newValidity.ordinal() ? oldValidity : newValidity);
+            });
   }
 }
