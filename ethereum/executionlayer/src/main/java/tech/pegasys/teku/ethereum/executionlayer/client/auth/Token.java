@@ -13,19 +13,19 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
-import java.util.Date;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Token {
   private final String jwtToken;
-  private final Date expiry;
+  private final UInt64 expiryInMillis;
 
-  public Token(final String jwtToken, final Date expiry) {
+  public Token(final String jwtToken, final UInt64 expiryInMillis) {
     this.jwtToken = jwtToken;
-    this.expiry = expiry;
+    this.expiryInMillis = expiryInMillis;
   }
 
-  public boolean isAvailableAt(final Date instant) {
-    return instant.before(expiry);
+  public boolean isAvailableAt(final UInt64 instantInMillis) {
+    return expiryInMillis.isGreaterThan(instantInMillis);
   }
 
   public String getJwtToken() {

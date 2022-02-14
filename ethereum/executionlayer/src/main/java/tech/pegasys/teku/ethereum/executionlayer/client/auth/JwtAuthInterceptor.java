@@ -15,8 +15,6 @@ package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import com.google.common.net.HttpHeaders;
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Date;
 import java.util.Optional;
 import okhttp3.Interceptor;
 import okhttp3.Response;
@@ -34,9 +32,7 @@ public class JwtAuthInterceptor implements Interceptor {
 
   @Override
   public Response intercept(final Chain chain) throws IOException {
-    final Optional<Token> optionalToken =
-        tokenProvider.token(
-            Date.from(Instant.ofEpochMilli(timeProvider.getTimeInMillis().longValue())));
+    final Optional<Token> optionalToken = tokenProvider.token(timeProvider.getTimeInMillis());
     if (optionalToken.isEmpty()) {
       return chain.proceed(chain.request());
     }

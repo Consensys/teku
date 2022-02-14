@@ -18,6 +18,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TokenProvider {
   private final JwtConfig jwtConfig;
@@ -26,12 +27,12 @@ public class TokenProvider {
     this.jwtConfig = jwtConfig;
   }
 
-  public Optional<Token> token(final Date instant) {
-    final long expiresInMilliseconds = TimeUnit.SECONDS.toMillis(jwtConfig.getExpiresInSeconds());
-    final Date expiry = new Date(instant.getTime() + expiresInMilliseconds);
+  public Optional<Token> token(final UInt64 instantInMillis) {
+    final long expiresInMillis = TimeUnit.SECONDS.toMillis(jwtConfig.getExpiresInSeconds());
+    final UInt64 expiry = instantInMillis.plus(expiresInMillis);
     final String jwtToken =
         Jwts.builder()
-            .setIssuedAt(instant)
+            .setIssuedAt(new Date(instantInMillis.longValue()))
             .signWith(SignatureAlgorithm.HS256, jwtConfig.getKey())
             .compact();
     return Optional.of(new Token(jwtToken, expiry));
