@@ -148,7 +148,7 @@ public class LocalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddValidatorResult addValidator(BLSPublicKey publicKey, URL signerUrl) {
+  public AddValidatorResult addValidator(BLSPublicKey publicKey, Optional<URL> signerUrl) {
     throw new UnsupportedOperationException();
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -30,7 +31,7 @@ public interface ValidatorSource {
   AddValidatorResult addValidator(
       KeyStoreData keyStoreData, String password, BLSPublicKey publicKey);
 
-  AddValidatorResult addValidator(final BLSPublicKey publicKey, URL signerUrl);
+  AddValidatorResult addValidator(final BLSPublicKey publicKey, Optional<URL> signerUrl);
 
   interface ValidatorProvider {
     BLSPublicKey getPublicKey();

@@ -113,7 +113,7 @@ public class ExternalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddValidatorResult addValidator(final BLSPublicKey publicKey, URL signerUrl) {
+  public AddValidatorResult addValidator(final BLSPublicKey publicKey, Optional<URL> signerUrl) {
     if (!canUpdateValidators()) {
       return new AddValidatorResult(
           PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
@@ -122,7 +122,8 @@ public class ExternalValidatorSource implements ValidatorSource {
     try {
       final ValidatorProvider provider =
           new ExternalValidatorSource.ExternalValidatorProvider(spec, publicKey);
-      externalValidatorSourceMap.put(publicKey, signerUrl);
+      externalValidatorSourceMap.put(
+          publicKey, signerUrl.orElse(config.getValidatorExternalSignerUrl()));
       return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
 
     } catch (InvalidConfigurationException ex) {

@@ -137,7 +137,7 @@ public class ValidatorLoader {
   }
 
   public synchronized PostKeyResult loadExternalMutableValidator(
-      final BLSPublicKey publicKey, final URL signerUrl) {
+      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     if (!canAddExternalValidator()) {
       return PostKeyResult.error("Not able to add validator");
     }

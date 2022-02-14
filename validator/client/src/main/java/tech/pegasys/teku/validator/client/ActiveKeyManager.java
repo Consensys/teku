@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -201,11 +200,12 @@ public class ActiveKeyManager implements KeyManager {
   public List<PostKeyResult> importExternalValidators(final List<ExternalValidator> validators) {
     final List<PostKeyResult> importResults = new ArrayList<>();
     for (ExternalValidator v : validators) {
-      // TODO assumed external validator has URL even though optional field in endpoint
-      Optional<URL> signingServiceUrl = v.getUrl();
-      if (signingServiceUrl.isEmpty()) break;
-      importResults.add(
-          validatorLoader.loadExternalMutableValidator(v.getPublicKey(), signingServiceUrl.get()));
+      try {
+        importResults.add(
+            validatorLoader.loadExternalMutableValidator(v.getPublicKey(), v.getUrl()));
+      } catch (Exception e) {
+        importResults.add(PostKeyResult.error(e.getMessage()));
+      }
     }
 
     return importResults;

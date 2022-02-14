@@ -150,7 +150,7 @@ public class ValidatorSourceFactory {
   }
 
   private Optional<ValidatorSource> addMutableExternalValidatorSource() {
-    if (config.getValidatorExternalSignerPublicKeySources().isEmpty()) {
+    if (config.getValidatorExternalSignerUrl() == null) {
       return Optional.empty();
     }
 
