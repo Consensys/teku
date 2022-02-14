@@ -16,8 +16,12 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
@@ -25,10 +29,11 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
@@ -41,6 +46,8 @@ public class ExternalValidatorSource implements ValidatorSource {
   private final PublicKeyLoader publicKeyLoader;
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
+  private final boolean readOnly;
+  private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
   private ExternalValidatorSource(
       final Spec spec,
@@ -48,13 +55,15 @@ public class ExternalValidatorSource implements ValidatorSource {
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final PublicKeyLoader publicKeyLoader,
       final ThrottlingTaskQueue externalSignerTaskQueue,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final boolean readOnly) {
     this.spec = spec;
     this.config = config;
     this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
     this.publicKeyLoader = publicKeyLoader;
     this.externalSignerTaskQueue = externalSignerTaskQueue;
     this.metricsSystem = metricsSystem;
+    this.readOnly = readOnly;
   }
 
   public static ExternalValidatorSource create(
@@ -63,13 +72,9 @@ public class ExternalValidatorSource implements ValidatorSource {
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final PublicKeyLoader publicKeyLoader,
-      final AsyncRunner asyncRunner) {
-    final ThrottlingTaskQueue externalSignerTaskQueue =
-        new ThrottlingTaskQueue(
-            config.getValidatorExternalSignerConcurrentRequestLimit(),
-            metricsSystem,
-            TekuMetricCategory.VALIDATOR,
-            "external_signer_request_queue_size");
+      final AsyncRunner asyncRunner,
+      final boolean readOnly,
+      final ThrottlingTaskQueue externalSignerTaskQueue) {
     setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, asyncRunner);
     return new ExternalValidatorSource(
         spec,
@@ -77,7 +82,8 @@ public class ExternalValidatorSource implements ValidatorSource {
         externalSignerHttpClientFactory,
         publicKeyLoader,
         externalSignerTaskQueue,
-        metricsSystem);
+        metricsSystem,
+        readOnly);
   }
 
   @Override
@@ -91,7 +97,7 @@ public class ExternalValidatorSource implements ValidatorSource {
 
   @Override
   public boolean canUpdateValidators() {
-    return false;
+    return !readOnly;
   }
 
   @Override
@@ -101,9 +107,28 @@ public class ExternalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddLocalValidatorResult addValidator(
+  public AddValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public AddValidatorResult addValidator(final BLSPublicKey publicKey, Optional<URL> signerUrl) {
+    if (!canUpdateValidators()) {
+      return new AddValidatorResult(
+          PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
+    }
+
+    try {
+      final ValidatorProvider provider =
+          new ExternalValidatorSource.ExternalValidatorProvider(spec, publicKey);
+      externalValidatorSourceMap.put(
+          publicKey, signerUrl.orElse(config.getValidatorExternalSignerUrl()));
+      return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
+
+    } catch (InvalidConfigurationException ex) {
+      return new AddValidatorResult(PostKeyResult.error(ex.getMessage()), Optional.empty());
+    }
   }
 
   private static void setupExternalSignerStatusLogging(

@@ -15,7 +15,9 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toList;
 
+import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,8 +67,13 @@ public class MockStartValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddLocalValidatorResult addValidator(
+  public AddValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public AddValidatorResult addValidator(BLSPublicKey publicKey, Optional<URL> signerUrl) {
     throw new UnsupportedOperationException();
   }
 
