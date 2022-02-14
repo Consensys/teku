@@ -37,7 +37,7 @@ public class JwtAuthInterceptor implements Interceptor {
       return chain.proceed(chain.request());
     }
     final Token token = optionalToken.get();
-    final String authHeader = String.format("%s", token.getJwtToken());
+    final String authHeader = token.getJwtToken();
     return chain.proceed(
         chain.request().newBuilder().header(HttpHeaders.AUTHORIZATION, authHeader).build());
   }
