@@ -60,10 +60,7 @@ public class ActiveKeyManager implements KeyManager {
   public List<ExternalValidator> getActiveRemoteValidatorKeys() {
     return validatorLoader.getOwnedValidators().getActiveValidators().stream()
         .filter(validator -> !validator.getSigner().isLocal())
-        .map(
-            val ->
-                new ExternalValidator(
-                    val.getPublicKey(), val.getSigner().getSigningServiceUrl(), val.isReadOnly()))
+        .map(ExternalValidator::create)
         .collect(Collectors.toList());
   }
 
