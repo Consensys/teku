@@ -146,6 +146,26 @@ public class Web3JExecutionEngineClientTest {
     assertThat(originalUInt256).isEqualTo(result);
   }
 
+  @TestTemplate
+  void shouldThrowDeserializingUIntQuantityNot0xPrefixed() {
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("123");
+          UInt256AsHexDeserializer deserializer = new UInt256AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("123");
+          UInt64AsHexDeserializer deserializer = new UInt64AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+  }
+
   private JsonParser prepareDeserializationContext(String serializedValue) throws IOException {
     String json = String.format("{\"value\":%s}", serializedValue);
     JsonParser parser = objectMapper.getFactory().createParser(json);
