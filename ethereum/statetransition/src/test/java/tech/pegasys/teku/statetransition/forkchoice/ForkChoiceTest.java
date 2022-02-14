@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.verification.VerificationMode;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -724,11 +726,23 @@ class ForkChoiceTest {
   }
 
   private void doMerge() {
+    final UInt256 terminalTotalDifficulty =
+        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
+    final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
+    final PowBlock terminalBlock =
+        new PowBlock(terminalBlockHash, terminalBlockParentHash, terminalTotalDifficulty.plus(1));
+    final PowBlock terminalParentBlock =
+        new PowBlock(
+            terminalBlockParentHash,
+            dataStructureUtil.randomBytes32(),
+            terminalTotalDifficulty.subtract(1));
+    executionEngine.addPowBlock(terminalBlock);
+    executionEngine.addPowBlock(terminalParentBlock);
     final SignedBlockAndState epoch4Block =
         chainBuilder.generateBlockAtSlot(
             storageSystem.chainUpdater().getHeadSlot().plus(1),
-            ChainBuilder.BlockOptions.create()
-                .setTerminalBlockHash(dataStructureUtil.randomBytes32()));
+            ChainBuilder.BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
 
     storageSystem.chainUpdater().updateBestBlock(epoch4Block);
   }

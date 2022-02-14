@@ -38,6 +38,7 @@ import org.mockserver.model.JsonBody;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 
@@ -47,6 +48,7 @@ public class ValidatorClientCommandTest {
   private final StringWriter stringWriter = new StringWriter();
   private final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   private final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
+  private final LoggingConfigurator loggingConfigurator = mock(LoggingConfigurator.class);
 
   private final StartAction startAction = mock(StartAction.class);
 
@@ -65,7 +67,8 @@ public class ValidatorClientCommandTest {
           .getPath();
 
   private final BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
+      new BeaconNodeCommand(
+          outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
 
   @BeforeEach
   public void setup(ClientAndServer server) {

@@ -39,21 +39,21 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
+import tech.pegasys.teku.ethereum.forkchoice.ProtoArray;
+import tech.pegasys.teku.ethereum.forkchoice.StoredBlockMetadata;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -89,7 +89,7 @@ class Store implements UpdatableStore {
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
   UInt64 latestValidFinalizedSlot = UInt64.ZERO;
-  Optional<ExecutionPayload> finalizedOptimisticTransitionPayload;
+  Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
@@ -108,7 +108,7 @@ class Store implements UpdatableStore {
       final UInt64 time,
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
-      final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload,
+      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final ForkChoiceStrategy forkChoiceStrategy,
@@ -172,7 +172,7 @@ class Store implements UpdatableStore {
       final UInt64 time,
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
-      final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload,
+      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -351,7 +351,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<ExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+  public Optional<SlotAndExecutionPayload> getFinalizedOptimisticTransitionPayload() {
     readLock.lock();
     try {
       return finalizedOptimisticTransitionPayload;

@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -592,10 +593,10 @@ public abstract class AbstractDatabaseTest {
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
     assertThat(tx.commit()).isCompleted();
 
-    final Optional<ExecutionPayload> transitionPayload =
-        transitionBlock.getBlock().getMessage().getBody().getOptionalExecutionPayload();
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
-    assertThat(transitionPayload.get().isDefault()).isFalse();
+    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
   }
@@ -649,10 +650,10 @@ public abstract class AbstractDatabaseTest {
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
     assertThat(tx.commit()).isCompleted();
 
-    final Optional<ExecutionPayload> transitionPayload =
-        transitionBlock.getBlock().getMessage().getBody().getOptionalExecutionPayload();
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
-    assertThat(transitionPayload.get().isDefault()).isFalse();
+    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
   }
@@ -673,8 +674,8 @@ public abstract class AbstractDatabaseTest {
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
     assertThat(tx.commit()).isCompleted();
 
-    final Optional<ExecutionPayload> transitionPayload =
-        transitionBlock.getBlock().getMessage().getBody().getOptionalExecutionPayload();
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
@@ -712,10 +713,10 @@ public abstract class AbstractDatabaseTest {
     tx2.setFinalizedCheckpoint(finalizedCheckpoint2);
     assertThat(tx2.commit()).isCompleted();
 
-    final Optional<ExecutionPayload> transitionPayload =
-        transitionBlock.getBlock().getMessage().getBody().getOptionalExecutionPayload();
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
-    assertThat(transitionPayload.get().isDefault()).isFalse();
+    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
   }

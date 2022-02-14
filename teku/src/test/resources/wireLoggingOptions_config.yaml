@@ -1,0 +1,5 @@
+# wire logs
+Xlog-wire-cipher-enabled: True
+Xlog-wire-plain-enabled: True
+Xlog-wire-mux-enabled: True
+Xlog-wire-gossip-enabled: True

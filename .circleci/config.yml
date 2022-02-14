@@ -220,7 +220,7 @@ jobs:
       - run:
           name: Spotless
           command: |
-            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
+            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck checkModuleDependencies
       - notify
 
   dockerScan:

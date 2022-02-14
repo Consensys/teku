@@ -14,25 +14,26 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 
 public class UpdateResult {
 
   public static final UpdateResult EMPTY = new UpdateResult(Optional.empty());
 
-  private final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload;
+  private final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
 
-  public UpdateResult(final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload) {
+  public UpdateResult(
+      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload) {
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
   }
 
   /**
-   * Get the execution payload from the block specified in {@link
+   * Get the slot and execution payload from the block specified in {@link
    * FinalizedChainData#getOptimisticTransitionBlockRoot()}. If no transition block root is
    * specified this will always be empty.
    */
-  public Optional<ExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+  public Optional<SlotAndExecutionPayload> getFinalizedOptimisticTransitionPayload() {
     return finalizedOptimisticTransitionPayload;
   }
 }
