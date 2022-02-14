@@ -31,7 +31,7 @@ public class NoOpKeyManager implements KeyManager {
   }
 
   @Override
-  public List<Validator> getActiveRemoteValidatorKeys() {
+  public List<ExternalValidator> getActiveRemoteValidatorKeys() {
     return Collections.emptyList();
   }
 

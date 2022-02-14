@@ -57,9 +57,13 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   @Override
-  public List<Validator> getActiveRemoteValidatorKeys() {
+  public List<ExternalValidator> getActiveRemoteValidatorKeys() {
     return validatorLoader.getOwnedValidators().getActiveValidators().stream()
         .filter(validator -> !validator.getSigner().isLocal())
+        .map(
+            val ->
+                new ExternalValidator(
+                    val.getPublicKey(), val.getSigner().getSigningServiceUrl(), val.isReadOnly()))
         .collect(Collectors.toList());
   }
 
