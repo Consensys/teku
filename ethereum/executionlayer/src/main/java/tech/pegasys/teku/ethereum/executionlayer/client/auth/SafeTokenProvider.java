@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class SafeTokenProvider {
   private final ReentrantLock lock = new ReentrantLock();
-  private Token token;
+  private Optional<Token> token;
 
   private final TokenProvider tokenProvider;
 
@@ -30,11 +30,11 @@ public class SafeTokenProvider {
   public Optional<Token> token(final Date instant) {
     lock.lock();
     try {
-      if (token == null) {
+      if (token.isEmpty()) {
         return refreshTokenFromSource(instant);
       }
-      if (token.isAvailableAt(instant)) {
-        return Optional.of(token);
+      if (token.get().isAvailableAt(instant)) {
+        return token;
       }
       return refreshTokenFromSource(instant);
     } finally {
@@ -43,11 +43,8 @@ public class SafeTokenProvider {
   }
 
   private Optional<Token> refreshTokenFromSource(final Date instant) {
-    final Optional<Token> possibleToken = tokenProvider.token(instant);
-    if (possibleToken.isEmpty()) {
-      return possibleToken;
-    }
-    token = possibleToken.get();
-    return possibleToken;
+    final Optional<Token> optionalToken = tokenProvider.token(instant);
+    this.token = optionalToken;
+    return optionalToken;
   }
 }

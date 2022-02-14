@@ -17,6 +17,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class TokenProvider {
   private final JwtConfig jwtConfig;
@@ -26,7 +27,7 @@ public class TokenProvider {
   }
 
   public Optional<Token> token(final Date instant) {
-    final long expiresInMilliseconds = jwtConfig.getExpiresInSeconds() * 1000;
+    final long expiresInMilliseconds = TimeUnit.SECONDS.toMillis(jwtConfig.getExpiresInSeconds());
     final Date expiry = new Date(instant.getTime() + expiresInMilliseconds);
     final String jwtToken =
         Jwts.builder()

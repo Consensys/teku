@@ -75,7 +75,6 @@ public class InteropConfig {
     private int interopNumberOfValidators = DEFAULT_INTEROP_NUMBER_OF_VALIDATORS;
     private boolean interopEnabled = false;
     private Spec spec;
-    private String jwtSecretFile;
 
     private InteropConfigBuilder() {}
 

@@ -34,7 +34,7 @@ public class JwtAuthInterceptor implements Interceptor {
 
   @Override
   public Response intercept(final Chain chain) throws IOException {
-    Optional<Token> optionalToken =
+    final Optional<Token> optionalToken =
         tokenProvider.token(
             Date.from(Instant.ofEpochMilli(timeProvider.getTimeInMillis().longValue())));
     if (optionalToken.isEmpty()) {
