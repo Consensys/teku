@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -37,25 +38,23 @@ public class MergeTransitionBlockValidator {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final ExecutionEngineChannel executionEngine;
-  private final SignedBeaconBlock block;
 
   public MergeTransitionBlockValidator(
       final Spec spec,
       final RecentChainData recentChainData,
-      final ExecutionEngineChannel executionEngine,
-      final SignedBeaconBlock block) {
+      final ExecutionEngineChannel executionEngine) {
     this.spec = spec;
-    this.block = block;
     this.recentChainData = recentChainData;
     this.executionEngine = executionEngine;
   }
 
   public SafeFuture<PayloadStatus> verifyTransitionBlock(
-      final ExecutionPayloadHeader latestExecutionPayloadHeader,
-      final ExecutionPayload executionPayload) {
+      final ExecutionPayloadHeader latestExecutionPayloadHeader, final SignedBeaconBlock block) {
     if (latestExecutionPayloadHeader.isDefault()) {
       // This is the first filled payload, so verify it meets transition conditions
-      return verifyTransitionPayload(executionPayload);
+      return verifyTransitionPayload(
+          block.getSlot(),
+          BeaconBlockBodyBellatrix.required(block.getMessage().getBody()).getExecutionPayload());
     }
 
     if (transitionBlockNotFinalized()) {
@@ -80,7 +79,10 @@ public class MergeTransitionBlockValidator {
     return recentChainData
         .getStore()
         .getFinalizedOptimisticTransitionPayload()
-        .map(this::verifyTransitionPayload)
+        .map(
+            slotAndPayload ->
+                verifyTransitionPayload(
+                    slotAndPayload.getSlot(), slotAndPayload.getExecutionPayload()))
         .orElse(SafeFuture.completedFuture(PayloadStatus.VALID));
   }
 
@@ -103,14 +105,14 @@ public class MergeTransitionBlockValidator {
               final ExecutionPayload transitionExecutionPayload =
                   BeaconBlockBodyBellatrix.required(transitionBlock.getBody())
                       .getExecutionPayload();
-              return verifyTransitionPayload(transitionExecutionPayload);
+              return verifyTransitionPayload(transitionBlock.getSlot(), transitionExecutionPayload);
             });
   }
 
   private SafeFuture<PayloadStatus> verifyTransitionPayload(
-      final ExecutionPayload executionPayload) {
+      final UInt64 slot, final ExecutionPayload executionPayload) {
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
-        spec.atSlot(block.getSlot())
+        spec.atSlot(slot)
             .getBellatrixTransitionHelpers()
             .orElseThrow(
                 () ->
