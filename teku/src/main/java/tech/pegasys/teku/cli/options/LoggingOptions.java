@@ -15,17 +15,28 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
-import picocli.CommandLine;
+import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class LoggingOptions {
-
   private static final String WINDOWS_SEP = "\\";
   private static final String LINUX_SEP = "/";
 
-  @CommandLine.Option(
+  @Option(
+      names = {"-l", "--logging"},
+      converter = LogTypeConverter.class,
+      paramLabel = "<LOG VERBOSITY LEVEL>",
+      description =
+          "Logging verbosity levels: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
+      arity = "1")
+  private Level logLevel;
+
+  @Option(
       names = {"--log-color-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -34,7 +45,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logColorEnabled = true;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--log-include-events-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -43,7 +54,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logIncludeEventsEnabled = true;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--log-include-validator-duties-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -52,7 +63,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logIncludeValidatorDutiesEnabled = true;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xlog-include-p2p-warnings-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Whether warnings are logged for invalid P2P messages",
@@ -61,7 +72,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logIncludeP2pWarningsEnabled = false;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--log-destination"},
       paramLabel = "<LOG_DESTINATION>",
       description =
@@ -69,7 +80,7 @@ public class LoggingOptions {
       arity = "1")
   private LoggingDestination logDestination = DEFAULT_BOTH;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--log-file"},
       paramLabel = "<FILENAME>",
       description =
@@ -79,7 +90,7 @@ public class LoggingOptions {
       arity = "1")
   private String logFile;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--log-file-name-pattern"},
       paramLabel = "<REGEX>",
       // Note: PicoCLI uses String.format to format the description so %% is needed for a single %
@@ -89,7 +100,7 @@ public class LoggingOptions {
       arity = "1")
   private String logFileNamePattern;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xlog-wire-cipher-enabled"},
       hidden = true,
       paramLabel = "<BOOLEAN>",
@@ -98,7 +109,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireCipherEnabled = false;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xlog-wire-plain-enabled"},
       hidden = true,
       paramLabel = "<BOOLEAN>",
@@ -107,7 +118,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWirePlainEnabled = false;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xlog-wire-mux-enabled"},
       hidden = true,
       paramLabel = "<BOOLEAN>",
@@ -116,7 +127,7 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireMuxEnabled = false;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xlog-wire-gossip-enabled"},
       hidden = true,
       paramLabel = "<BOOLEAN>",
@@ -129,40 +140,41 @@ public class LoggingOptions {
     return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
 
-  public TekuConfiguration.Builder configure(
-      final TekuConfiguration.Builder builder, final String defaultLogFileNamePrefix) {
+  public TekuConfiguration.Builder configureWireLogs(final TekuConfiguration.Builder builder) {
+    return builder.wireLogs(
+        b ->
+            b.logWireCipher(logWireCipherEnabled)
+                .logWirePlain(logWirePlainEnabled)
+                .logWireMuxFrames(logWireMuxEnabled)
+                .logWireGossip(logWireGossipEnabled));
+  }
 
-    return builder
-        .logging(
-            loggingBuilder -> {
-              loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
-
-              if (logFile != null) {
-                if (containsPath(logFile)) {
-                  loggingBuilder.logPath(logFile);
-                } else {
-                  loggingBuilder.logFileName(logFile);
-                }
-              }
-              if (logFileNamePattern != null) {
-                if (containsPath(logFileNamePattern)) {
-                  loggingBuilder.logPathPattern(logFileNamePattern);
-                } else {
-                  loggingBuilder.logFileNamePattern(logFileNamePattern);
-                }
-              }
-              loggingBuilder
-                  .colorEnabled(logColorEnabled)
-                  .includeEventsEnabled(logIncludeEventsEnabled)
-                  .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
-                  .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
-                  .destination(logDestination);
-            })
-        .wireLogs(
-            b ->
-                b.logWireCipher(logWireCipherEnabled)
-                    .logWirePlain(logWirePlainEnabled)
-                    .logWireMuxFrames(logWireMuxEnabled)
-                    .logWireGossip(logWireGossipEnabled));
+  public LoggingConfig applyLoggingConfiguration(
+      final String dataDirectory, final String defaultLogFileNamePrefix) {
+    final LoggingConfig.LoggingConfigBuilder loggingBuilder = LoggingConfig.builder();
+    loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
+    loggingBuilder.dataDirectory(dataDirectory);
+    if (logFile != null) {
+      if (containsPath(logFile)) {
+        loggingBuilder.logPath(logFile);
+      } else {
+        loggingBuilder.logFileName(logFile);
+      }
+    }
+    if (logFileNamePattern != null) {
+      if (containsPath(logFileNamePattern)) {
+        loggingBuilder.logPathPattern(logFileNamePattern);
+      } else {
+        loggingBuilder.logFileNamePattern(logFileNamePattern);
+      }
+    }
+    loggingBuilder
+        .logLevel(logLevel)
+        .colorEnabled(logColorEnabled)
+        .includeEventsEnabled(logIncludeEventsEnabled)
+        .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+        .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
+        .destination(logDestination);
+    return loggingBuilder.build();
   }
 }

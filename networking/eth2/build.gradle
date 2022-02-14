@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':ethereum:core')
   implementation project(':ethereum:events')
+  implementation project(':ethereum:forkchoice')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
@@ -16,7 +17,6 @@ dependencies {
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':storage:api')
-  implementation project(':protoarray')
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'

@@ -22,7 +22,6 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
-import static tech.pegasys.teku.spec.networks.Eth2Network.PYRMONT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import com.google.common.base.Strings;
@@ -363,8 +362,6 @@ public class Eth2NetworkConfiguration {
           return applyMainnetNetworkDefaults();
         case MINIMAL:
           return applyMinimalNetworkDefaults();
-        case PYRMONT:
-          return applyPyrmontNetworkDefaults();
         case PRATER:
           return applyPraterNetworkDefaults();
         case KINTSUGI:
@@ -452,34 +449,6 @@ public class Eth2NetworkConfiguration {
               // Nimbus bootstrap nodes
               "enr:-LK4QMzPq4Q7w5R-rnGQDcI8BYky6oPVBGQTbS1JJLVtNi_8PzBLV7Bdzsoame9nJK5bcJYpGHn4SkaDN2CM6tR5G_4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpB53wQoAAAQIP__________gmlkgnY0gmlwhAN4yvyJc2VjcDI1NmsxoQKa8Qnp_P2clLIP6VqLKOp_INvEjLszalEnW0LoBZo4YYN0Y3CCI4yDdWRwgiOM",
               "enr:-LK4QLM_pPHa78R8xlcU_s40Y3XhFjlb3kPddW9lRlY67N5qeFE2Wo7RgzDgRs2KLCXODnacVHMFw1SfpsW3R474RZEBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpB53wQoAAAQIP__________gmlkgnY0gmlwhANBY-yJc2VjcDI1NmsxoQNsZkFXgKbTzuxF7uwxlGauTGJelE6HD269CcFlZ_R7A4N0Y3CCI4yDdWRwgiOM");
-    }
-
-    public Builder applyPyrmontNetworkDefaults() {
-      return reset()
-          .constants(PYRMONT.configName())
-          .startupTimeoutSeconds(120)
-          .eth1DepositContractDeployBlock(3743587)
-          .initialStateFromClasspath("pyrmont-genesis.ssz")
-          .discoveryBootnodes(
-              // @protolambda bootnode 1
-              "enr:-Ku4QOA5OGWObY8ep_x35NlGBEj7IuQULTjkgxC_0G1AszqGEA0Wn2RNlyLFx9zGTNB1gdFBA6ZDYxCgIza1uJUUOj4Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDVTPWXAAAgCf__________gmlkgnY0gmlwhDQPSjiJc2VjcDI1NmsxoQM6yTQB6XGWYJbI7NZFBjp4Yb9AYKQPBhVrfUclQUobb4N1ZHCCIyg",
-              // @protolambda bootnode 2
-              "enr:-Ku4QOksdA2tabOGrfOOr6NynThMoio6Ggka2oDPqUuFeWCqcRM2alNb8778O_5bK95p3EFt0cngTUXm2H7o1jkSJ_8Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDVTPWXAAAgCf__________gmlkgnY0gmlwhDaa13aJc2VjcDI1NmsxoQKdNQJvnohpf0VO0ZYCAJxGjT0uwJoAHbAiBMujGjK0SoN1ZHCCIyg",
-              // lighthouse bootnode 1
-              "enr:-LK4QDiPGwNomqUqNDaM3iHYvtdX7M5qngson6Qb2xGIg1LwC8-Nic0aQwO0rVbJt5xp32sRE3S1YqvVrWO7OgVNv0kBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBKNA4qJc2VjcDI1NmsxoQKbBS4ROQ_sldJm5tMgi36qm5I5exKJFb4C8dDVS_otAoN0Y3CCIyiDdWRwgiMo",
-              // lighthouse bootnode 2
-              "enr:-LK4QKAezYUw_R4P1vkzfw9qMQQFJvRQy3QsUblWxIZ4FSduJ2Kueik-qY5KddcVTUsZiEO-oZq0LwbaSxdYf27EjckBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhCOmkIaJc2VjcDI1NmsxoQOQgTD4a8-rESfTdbCG0V6Yz1pUvze02jB2Py3vzGWhG4N0Y3CCIyiDdWRwgiMo",
-              // nimbus bootnodes
-              "enr:-LK4QK6e16UnTLbi8mJuXHdUSNN8BUcUqhnhyy2bL2_JeX7iMfK9lRbtq8M4kMDGhFwyUQLkHxaDNxS0IPuGS53c1osBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhAN_0AGJc2VjcDI1NmsxoQOPQv1VILGXeB10y088SeuU6-w8Yh689Fv_uWjhtFqbLIN0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QHy7BBDm_mxT0i-EBatHvHGfzNH4BcaAdNguNS8fuaxFDfHP0qVJ9f9A38Q_lMmRUK5PSVHEEoC1mwrExO51T2cBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBLGXiqJc2VjcDI1NmsxoQJV51WZn_NLj-0vHAmmZ6tWtzIdu-P_xVr7k9zMEkvaA4N0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QE8QIkEl2k67fj53vn6SgLwj07ElmWZJrIeEpZUfh91oe-PNAlIzeRwI47_wZTK1S2KretXF56XkZqP0v5VlBVUBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBLB_8yJc2VjcDI1NmsxoQOEowpACJVUFtcWKhpEk9HlEyY4AEcTB4fONkPEvpeYmIN0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QJMF9O8D7hNcGP1Xxh5E09lxUwrzFwokYDxIxUjj_yOnDOWX5HjTDJ4TLZle3HVozC3vJuiZF7jImJMt79t8FuYBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBKeOTGJc2VjcDI1NmsxoQJLajuu1S9v-NREUDo5kzUY-ook9CqYLDiHf8z1nMSY1oN0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QOTyWBISU1AysyKFt35m_epniDd54LEAsTS2x0OSo1FFTY2ZxETVm43VcZYkmYMQo2ECUAV-0RwAFZcC9_xjRQ4Bh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhAN9a7CJc2VjcDI1NmsxoQJCIUgdHgGuE_k9CVThmgiiXXYW1lfdCZbWHj4p_SAkY4N0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QHOOeQg3HjXSGoXGZPJYeBQ3o9beIGLU1Fxv2PIZX5NEeBLJPB9kpP5xNX_dJ23lsZ0RhBwAxXXTtziC9EMuZuMBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhCOc7_OJc2VjcDI1NmsxoQPMp2C3hjMNBt6Dr4npyfTG0__GpHtxYXrnho4lT2g2c4N0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QOMpgA7LUM-YUJqWWGX1t01wJkqDMjDJrhxyJHp7ZOCyWkJEYqkHOHYms_K6PI0Ky9Bw57R3ayk9LzE5E9v54WEBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBLApGOJc2VjcDI1NmsxoQNGyxAQW2ZUvt_n-MZByer467sfBWclC3pJtvnZDaLhZYN0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QL3Y2elAiia5WV18p_pu9t_7syTsZs-rWGD6_IHhiEvBUIzZtT88VMsI-rN8fNSukaHuq7qtDhZwRISdG9O4uQsBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBLGowKJc2VjcDI1NmsxoQK13jMsuO1LbguOsFZ0hxvRe7PT8V1W9qeUMs6fgiwuM4N0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QAtPY91umFgpKmvSEcsDdzXxB6Ss5pa55oqk-t58Uv9qF-B68jEjsN7B_SBGe4qCH1thKwokbS8-zC8Xy-NsED8Bh2F0dG5ldHOI__________-EZXRoMpDzGkhaAAAAAP__________gmlkgnY0gmlwhBKeqH2Jc2VjcDI1NmsxoQIRA0fHAr6eECjjIZZK-GB6dE0awWYtTrOMACfjq12M5oN0Y3CCI4yDdWRwgiOM",
-              "enr:-LK4QLvxqICUmpMitpwHDwJNEUGj1ecsW_ZlGImx6SwfyFJICV2SO6lYcdxDKHAK0RzdWYo8dGm3tL__NpP_4Afy5psBh2F0dG5ldHOI__________-EZXRoMpDzGkhaAAAAAP__________gmlkgnY0gmlwhBLBEDqJc2VjcDI1NmsxoQJw2JPyabX2G_f9eAkbjhBDshIeUP-eZ-KoMGqFTdxUToN0Y3CCI4yDdWRwgiOM");
     }
 
     public Builder applyKintsugiNetworkDefaults() {
