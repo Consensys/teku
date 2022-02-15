@@ -16,9 +16,8 @@ package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 import java.security.Key;
 
 public class JwtConfig {
-
-  private final long expiresInSeconds = 5;
-  private Key key;
+  public static long EXPIRES_IN_SECONDS = 5;
+  private final Key key;
 
   public JwtConfig(final Key key) {
     this.key = key;
@@ -26,9 +25,5 @@ public class JwtConfig {
 
   public Key getKey() {
     return key;
-  }
-
-  public long getExpiresInSeconds() {
-    return expiresInSeconds;
   }
 }

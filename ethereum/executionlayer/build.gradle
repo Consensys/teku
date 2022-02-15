@@ -12,6 +12,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'io.jsonwebtoken:jjwt-api'
   implementation 'io.jsonwebtoken:jjwt-impl'
+  implementation 'io.jsonwebtoken:jjwt-jackson'
 
   testImplementation testFixtures(project(':ethereum:spec'))
 }

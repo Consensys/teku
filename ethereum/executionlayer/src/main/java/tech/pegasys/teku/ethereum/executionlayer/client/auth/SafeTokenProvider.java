@@ -14,12 +14,10 @@
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SafeTokenProvider {
-  private final ReentrantLock lock = new ReentrantLock();
-  private Optional<Token> token;
+  private Optional<Token> token = Optional.empty();
 
   private final TokenProvider tokenProvider;
 
@@ -27,19 +25,14 @@ public class SafeTokenProvider {
     this.tokenProvider = tokenProvider;
   }
 
-  public Optional<Token> token(final UInt64 instantInMillis) {
-    lock.lock();
-    try {
-      if (token.isEmpty()) {
-        return refreshTokenFromSource(instantInMillis);
-      }
-      if (token.get().isAvailableAt(instantInMillis)) {
-        return token;
-      }
+  public synchronized Optional<Token> token(final UInt64 instantInMillis) {
+    if (token.isEmpty()) {
       return refreshTokenFromSource(instantInMillis);
-    } finally {
-      lock.unlock();
     }
+    if (token.get().isAvailableAt(instantInMillis)) {
+      return token;
+    }
+    return refreshTokenFromSource(instantInMillis);
   }
 
   private Optional<Token> refreshTokenFromSource(final UInt64 instantInMillis) {

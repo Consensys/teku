@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Token {
@@ -30,5 +31,22 @@ public class Token {
 
   public String getJwtToken() {
     return jwtToken;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Token token = (Token) o;
+    return jwtToken.equals(token.jwtToken);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(jwtToken);
   }
 }
