@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,48 +23,71 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final EventLogger eventLogger;
   private final ExecutionEngineChannel executionEngine;
   private final AsyncRunner asyncRunner;
   private Optional<Cancellable> timer = Optional.empty();
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
-
-  private final AtomicBoolean isBellatrix = new AtomicBoolean(false);
+  private final AtomicBoolean isBellatrixActive = new AtomicBoolean(false);
 
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
-
   private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
+  private SpecConfigBellatrix specConfigBellatrix;
+  private TransitionConfiguration localTransitionConfiguration;
 
   public TerminalPowBlockMonitor(
-      ExecutionEngineChannel executionEngine,
-      Spec spec,
-      RecentChainData recentChainData,
-      ForkChoiceNotifier forkChoiceNotifier,
-      AsyncRunner asyncRunner) {
+      final ExecutionEngineChannel executionEngine,
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final AsyncRunner asyncRunner,
+      final EventLogger eventLogger) {
     this.executionEngine = executionEngine;
     this.asyncRunner = asyncRunner;
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
+    this.eventLogger = eventLogger;
   }
 
   public synchronized void start() {
     if (timer.isPresent()) {
       return;
     }
+
+    Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix = getSpecConfigBellatrix();
+    if (maybeSpecConfigBellatrix.isEmpty()) {
+      LOG.error("Bellatrix spec config not found. Monitor will shutdown.");
+      stop();
+      return;
+    }
+    specConfigBellatrix = maybeSpecConfigBellatrix.get();
+
+    localTransitionConfiguration =
+        new TransitionConfiguration(
+            specConfigBellatrix.getTerminalTotalDifficulty(),
+            specConfigBellatrix.getTerminalBlockHash(),
+            UInt64.ZERO);
+
     final Duration pollingPeriod =
         Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
     timer =
@@ -93,9 +114,11 @@ public class TerminalPowBlockMonitor {
   }
 
   private synchronized void monitor() {
-    if (!isBellatrix.get()) {
+    verifyTransitionConfiguration();
+
+    if (!isBellatrixActive.get()) {
       initMergeState();
-      if (!isBellatrix.get()) {
+      if (!isBellatrixActive.get()) {
         LOG.trace("Monitor is sill inactive. BELLATRIX fork not yet activated.");
         return;
       }
@@ -104,7 +127,7 @@ public class TerminalPowBlockMonitor {
     // beaconState must be available at this stage
     BeaconState beaconState = recentChainData.getBestState().orElseThrow();
 
-    if (spec.atSlot(beaconState.getSlot()).miscHelpers().isMergeTransitionComplete(beaconState)) {
+    if (spec.isMergeTransitionComplete(beaconState)) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -115,30 +138,23 @@ public class TerminalPowBlockMonitor {
   }
 
   private void initMergeState() {
-    Optional<UInt64> maybeSlot = recentChainData.getCurrentSlot();
-    if (maybeSlot.isEmpty()) {
+    Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();
+    if (maybeEpoch.isEmpty()) {
       return;
     }
 
-    UInt64 epoch = spec.computeEpochAtSlot(maybeSlot.get());
-    Optional<SpecConfigBellatrix> maybeBellatrixSpecConfig =
-        spec.getSpecConfig(epoch).toVersionBellatrix();
-    if (maybeBellatrixSpecConfig.isEmpty()
-        || maybeBellatrixSpecConfig.get().getBellatrixForkEpoch().isGreaterThan(epoch)) {
+    if (specConfigBellatrix.getBellatrixForkEpoch().isGreaterThan(maybeEpoch.get())) {
+      LOG.trace("Bellatrix not yet activated");
       return;
     }
-
-    SpecConfigBellatrix specConfigBellatrix = maybeBellatrixSpecConfig.get();
 
     Optional<BeaconState> beaconState = recentChainData.getBestState();
     if (beaconState.isEmpty()) {
-      LOG.trace("beaconState not yet available");
+      LOG.trace("Beacon state not yet available");
       return;
     }
 
-    if (spec.atSlot(beaconState.get().getSlot())
-        .miscHelpers()
-        .isMergeTransitionComplete(beaconState.get())) {
+    if (spec.isMergeTransitionComplete(beaconState.get())) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -157,19 +173,13 @@ public class TerminalPowBlockMonitor {
           specConfigBellatrix.getTerminalBlockHashActivationEpoch());
     }
 
-    isBellatrix.set(true);
+    isBellatrixActive.set(true);
     LOG.info("Monitor is now active");
   }
 
-  private void checkTerminalBlockByBlockHash(Bytes32 blockHashTracking) {
-    UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
+  private void checkTerminalBlockByBlockHash(final Bytes32 blockHashTracking) {
+    final UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
     final SpecVersion specVersion = spec.atSlot(slot);
-    final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix =
-        specVersion.getConfig().toVersionBellatrix();
-    if (maybeSpecConfigBellatrix.isEmpty()) {
-      return;
-    }
-    final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
 
     final boolean isActivationEpochReached =
         specVersion
@@ -207,15 +217,7 @@ public class TerminalPowBlockMonitor {
         .getPowChainHead()
         .thenCompose(
             powBlock -> {
-              final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix =
-                  recentChainData
-                      .getCurrentEpoch()
-                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionBellatrix());
-              if (maybeSpecConfigBellatrix.isEmpty()) {
-                return SafeFuture.COMPLETE;
-              }
-              final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
-              UInt256 totalDifficulty = powBlock.getTotalDifficulty();
+              final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
                 return SafeFuture.COMPLETE;
@@ -224,7 +226,7 @@ public class TerminalPowBlockMonitor {
               // TTD is reached
               if (notYetFound(powBlock.getBlockHash())) {
                 LOG.trace("checkTerminalBlockByTTD: Terminal Block found!");
-                return validateTerminalBlockParentByTTD(specConfigBellatrix, powBlock)
+                return validateTerminalBlockParentByTTD(powBlock)
                     .thenAccept(
                         valid -> {
                           if (valid) {
@@ -242,8 +244,7 @@ public class TerminalPowBlockMonitor {
         .finish(error -> LOG.error("Unexpected error while checking TTD", error));
   }
 
-  private SafeFuture<Boolean> validateTerminalBlockParentByTTD(
-      final SpecConfigBellatrix specConfigBellatrix, final PowBlock terminalBlock) {
+  private SafeFuture<Boolean> validateTerminalBlockParentByTTD(final PowBlock terminalBlock) {
     return executionEngine
         .getPowBlock(terminalBlock.getParentHash())
         .thenApply(
@@ -261,10 +262,49 @@ public class TerminalPowBlockMonitor {
   private void onTerminalPowBlockFound(Bytes32 blockHash) {
     foundTerminalBlockHash = Optional.of(blockHash);
     forkChoiceNotifier.onTerminalBlockReached(blockHash);
-    EVENT_LOG.terminalPowBlockDetected(blockHash);
+    eventLogger.terminalPowBlockDetected(blockHash);
   }
 
   private boolean notYetFound(Bytes32 blockHash) {
     return !foundTerminalBlockHash.map(blockHash::equals).orElse(false);
+  }
+
+  private void verifyTransitionConfiguration() {
+    executionEngine
+        .exchangeTransitionConfiguration(localTransitionConfiguration)
+        .thenAccept(
+            remoteTransitionConfiguration -> {
+              if (!localTransitionConfiguration
+                      .getTerminalTotalDifficulty()
+                      .equals(remoteTransitionConfiguration.getTerminalTotalDifficulty())
+                  || !localTransitionConfiguration
+                      .getTerminalBlockHash()
+                      .equals(remoteTransitionConfiguration.getTerminalBlockHash())) {
+
+                eventLogger.transitionConfigurationTtdTbhMismatch(
+                    localTransitionConfiguration.toString(),
+                    remoteTransitionConfiguration.toString());
+              } else if (remoteTransitionConfiguration.getTerminalBlockHash().isZero()
+                  != remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
+
+                eventLogger.transitionConfigurationRemoteTbhTbnInconsistency(
+                    remoteTransitionConfiguration.toString());
+              }
+            })
+        .finish(
+            error -> {
+              LOG.error("an error occurred while querying remote transition configuration", error);
+            });
+  }
+
+  private Optional<SpecConfigBellatrix> getSpecConfigBellatrix() {
+    return spec.getForkSchedule()
+        .streamMilestoneBoundarySlots()
+        .filter(
+            specMilestoneAndSlot -> specMilestoneAndSlot.getLeft().equals(SpecMilestone.BELLATRIX))
+        .findFirst()
+        .map(TekuPair::getRight)
+        .map(slot -> spec.atSlot(slot).getConfig())
+        .flatMap(SpecConfig::toVersionBellatrix);
   }
 }

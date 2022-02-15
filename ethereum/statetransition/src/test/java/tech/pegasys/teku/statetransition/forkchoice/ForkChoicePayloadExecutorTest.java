@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -54,6 +55,7 @@ class ForkChoicePayloadExecutorTest {
   private final ExecutionPayloadHeader payloadHeader =
       dataStructureUtil.randomExecutionPayloadHeader();
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+  private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(0);
 
   @BeforeAll
   public static void initSession() {
@@ -96,7 +98,7 @@ class ForkChoicePayloadExecutorTest {
 
     // Should execute first and then begin validation of the transition block conditions.
     verify(executionEngine).newPayload(payload);
-    verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, payload);
+    verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, block);
     assertThat(result).isTrue();
   }
 
@@ -107,7 +109,7 @@ class ForkChoicePayloadExecutorTest {
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     // Should not attempt to validate transition conditions because execute payload failed
-    verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, payload);
+    verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, block);
     verify(executionEngine).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
@@ -118,12 +120,12 @@ class ForkChoicePayloadExecutorTest {
   void
       optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELGoesOfflineAfterExecution() {
     when(executionEngine.newPayload(payload)).thenReturn(SafeFuture.completedFuture(VALID));
-    when(transitionValidator.verifyTransitionBlock(defaultPayloadHeader, payload))
+    when(transitionValidator.verifyTransitionBlock(defaultPayloadHeader, block))
         .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
-    verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, payload);
+    verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, block);
     verify(executionEngine).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
@@ -140,7 +142,7 @@ class ForkChoicePayloadExecutorTest {
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     verify(executionEngine).newPayload(payload);
-    verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, payload);
+    verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, block);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(expectedResult);
   }
@@ -155,7 +157,7 @@ class ForkChoicePayloadExecutorTest {
 
   @Test
   void shouldReturnExecutionResultWhenExecuted() {
-    when(transitionValidator.verifyTransitionBlock(payloadHeader, payload))
+    when(transitionValidator.verifyTransitionBlock(payloadHeader, block))
         .thenReturn(SafeFuture.completedFuture(VALID));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     payloadExecutor.optimisticallyExecute(payloadHeader, payload);
@@ -169,6 +171,6 @@ class ForkChoicePayloadExecutorTest {
   }
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {
-    return new ForkChoicePayloadExecutor(executionEngine, transitionValidator);
+    return new ForkChoicePayloadExecutor(block, executionEngine, transitionValidator);
   }
 }

@@ -40,6 +40,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdated
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -133,6 +134,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return doRequest(web3jRequest);
   }
 
+  @Override
+  public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
+      TransitionConfigurationV1 transitionConfiguration) {
+    Request<?, ExchangeTransitionConfigurationWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_exchangeTransitionConfigurationV1",
+            Collections.singletonList(transitionConfiguration),
+            eeWeb3jService,
+            ExchangeTransitionConfigurationWeb3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
   private void handleError(Throwable error) {
     final long errorTime = lastError.get();
     if (errorTime == NO_ERROR_TIME
@@ -185,6 +198,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class ForkChoiceUpdatedWeb3jResponse
       extends org.web3j.protocol.core.Response<ForkChoiceUpdatedResult> {}
+
+  static class ExchangeTransitionConfigurationWeb3jResponse
+      extends org.web3j.protocol.core.Response<TransitionConfigurationV1> {}
 
   /**
    * Returns a list that supports null items.
