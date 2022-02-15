@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 
 public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel {
   private final ExecutionEngineChannel delegate;
@@ -71,5 +72,12 @@ public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel 
   @Override
   public SafeFuture<PayloadStatus> newPayload(ExecutionPayload executionPayload) {
     return taskQueue.queueTask(() -> delegate.newPayload(executionPayload));
+  }
+
+  @Override
+  public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+      TransitionConfiguration transitionConfiguration) {
+    return taskQueue.queueTask(
+        () -> delegate.exchangeTransitionConfiguration(transitionConfiguration));
   }
 }
