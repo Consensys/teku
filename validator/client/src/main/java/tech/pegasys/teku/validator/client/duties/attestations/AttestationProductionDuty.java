@@ -16,9 +16,9 @@ package tech.pegasys.teku.validator.client.duties.attestations;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +41,8 @@ import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Integer, ScheduledCommittee> validatorsByCommitteeIndex = new HashMap<>();
+  private final Int2ObjectMap<ScheduledCommittee> validatorsByCommitteeIndex =
+      new Int2ObjectOpenHashMap<>();
   private final Spec spec;
   private final UInt64 slot;
   private final ForkProvider forkProvider;
@@ -101,11 +102,11 @@ public class AttestationProductionDuty implements Duty {
   private Stream<SafeFuture<ProductionResult<Attestation>>> produceAllAttestations(
       final UInt64 slot,
       final ForkInfo forkInfo,
-      final Map<Integer, ScheduledCommittee> validatorsByCommitteeIndex) {
-    return validatorsByCommitteeIndex.entrySet().stream()
+      final Int2ObjectMap<ScheduledCommittee> validatorsByCommitteeIndex) {
+    return validatorsByCommitteeIndex.int2ObjectEntrySet().stream()
         .flatMap(
             entry ->
-                produceAttestationsForCommittee(slot, forkInfo, entry.getKey(), entry.getValue())
+                produceAttestationsForCommittee(slot, forkInfo, entry.getIntKey(), entry.getValue())
                     .stream());
   }
 

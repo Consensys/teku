@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 
 public class SyncCommitteeSubscriptionManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Integer, UInt64> subcommitteeToUnsubscribeSlot = new HashMap<>();
+  private final Int2ObjectMap<UInt64> subcommitteeToUnsubscribeSlot = new Int2ObjectOpenHashMap<>();
   final Eth2P2PNetwork p2PNetwork;
 
   public SyncCommitteeSubscriptionManager(final Eth2P2PNetwork p2PNetwork) {
@@ -33,20 +33,21 @@ public class SyncCommitteeSubscriptionManager implements SlotEventsChannel {
 
   @Override
   public synchronized void onSlot(final UInt64 slot) {
-    final Iterator<Map.Entry<Integer, UInt64>> iterator =
-        subcommitteeToUnsubscribeSlot.entrySet().iterator();
+    final ObjectIterator<Int2ObjectMap.Entry<UInt64>> iterator =
+        subcommitteeToUnsubscribeSlot.int2ObjectEntrySet().iterator();
     while (iterator.hasNext()) {
-      final Map.Entry<Integer, UInt64> entry = iterator.next();
+      final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
       if (entry.getValue().isLessThanOrEqualTo(slot)) {
+        LOG.trace("Unsubscribing at slot {}, committee subnet {}", slot, entry.getIntKey());
+        p2PNetwork.unsubscribeFromSyncCommitteeSubnetId(entry.getIntKey());
         iterator.remove();
-        LOG.trace("Unsubscribing at slot {}, committee subnet {}", slot, entry.getKey());
-        p2PNetwork.unsubscribeFromSyncCommitteeSubnetId(entry.getKey());
       }
     }
   }
 
-  public synchronized void subscribe(final Integer committeeSubnet, final UInt64 unsubscribeSlot) {
-    final UInt64 currentUnsubscribeSlot = subcommitteeToUnsubscribeSlot.get(committeeSubnet);
+  public synchronized void subscribe(final int committeeSubnet, final UInt64 unsubscribeSlot) {
+    final UInt64 currentUnsubscribeSlot =
+        subcommitteeToUnsubscribeSlot.getOrDefault(committeeSubnet, null);
     if (currentUnsubscribeSlot == null) {
       LOG.trace(
           "Subscribe to committee subnet {}, unsubscribe due at slot {}",
