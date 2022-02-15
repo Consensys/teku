@@ -60,7 +60,7 @@ public class SyncCommitteeSubscriptionManager implements SlotEventsChannel {
           "Update subscription of committee subnet {}, unsubscribe due at slot {}",
           committeeSubnet,
           unsubscribeSlot.toString());
-      subcommitteeToUnsubscribeSlot.replace(committeeSubnet, unsubscribeSlot);
+      subcommitteeToUnsubscribeSlot.put(committeeSubnet, unsubscribeSlot);
     }
   }
 }
