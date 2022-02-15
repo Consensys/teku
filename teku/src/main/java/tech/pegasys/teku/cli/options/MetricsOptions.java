@@ -75,16 +75,14 @@ public class MetricsOptions {
   private int idleTimeoutSeconds = MetricsConfig.DEFAULT_IDLE_TIMEOUT_SECONDS;
 
   @Option(
-      names = {"--Xmetrics-publish-endpoint"},
-      hidden = true,
+      names = {"--metrics-publish-endpoint"},
       paramLabel = "<URL>",
       description = "Publish metrics for node monitoring to an external service",
       arity = "1")
   private String metricsEndpoint = null;
 
   @Option(
-      names = {"--Xmetrics-publish-interval"},
-      hidden = true,
+      names = {"--metrics-publish-interval"},
       paramLabel = "<INTEGER>",
       description =
           "Interval between metric publications to the external service (measured in seconds)",
