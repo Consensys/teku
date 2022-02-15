@@ -226,8 +226,7 @@ public class GossipForkManager {
   }
 
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
-    if (currentAttestationSubnets.contains(subnetId)) {
-      currentAttestationSubnets.remove(subnetId);
+    if (currentAttestationSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromAttestationSubnetId(subnetId));
     }
@@ -241,8 +240,7 @@ public class GossipForkManager {
   }
 
   public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
-    if (currentSyncCommitteeSubnets.contains(subnetId)) {
-      currentSyncCommitteeSubnets.remove(subnetId);
+    if (currentSyncCommitteeSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromSyncCommitteeSubnet(subnetId));
     }

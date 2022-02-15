@@ -51,8 +51,9 @@ abstract class CommitteeSubnetSubscriptions {
   }
 
   public synchronized void unsubscribeFromSubnetId(final int subnetId) {
-    if (subnetIdToSubscription.containsKey(subnetId)) {
-      subnetIdToSubscription.remove(subnetId).unsubscribe();
+    final RequestedSubscription subscription = subnetIdToSubscription.remove(subnetId);
+    if (subscription != null) {
+      subscription.unsubscribe();
     }
   }
 
