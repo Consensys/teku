@@ -281,13 +281,13 @@ public class TerminalPowBlockMonitor {
                       .getTerminalBlockHash()
                       .equals(remoteTransitionConfiguration.getTerminalBlockHash())) {
 
-                eventLogger.transitionConfiguration_TTD_TBH_mismatch(
+                eventLogger.transitionConfigurationTtdTbhMismatch(
                     localTransitionConfiguration.toString(),
                     remoteTransitionConfiguration.toString());
               } else if (remoteTransitionConfiguration.getTerminalBlockHash().isZero()
                   != remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
 
-                eventLogger.transitionConfigurationRemote_TBH_TBN_inconsistency(
+                eventLogger.transitionConfigurationRemoteTbhTbnInconsistency(
                     remoteTransitionConfiguration.toString());
               }
             })

@@ -194,7 +194,7 @@ public class EventLogger {
         Color.GREEN);
   }
 
-  public void transitionConfiguration_TTD_TBH_mismatch(
+  public void transitionConfigurationTtdTbhMismatch(
       final String localConfig, final String remoteConfig) {
     final String configurationErrorEventLog =
         String.format(
@@ -205,7 +205,7 @@ public class EventLogger {
     error(configurationErrorEventLog, Color.RED);
   }
 
-  public void transitionConfigurationRemote_TBH_TBN_inconsistency(final String remoteConfig) {
+  public void transitionConfigurationRemoteTbhTbnInconsistency(final String remoteConfig) {
     final String configurationErrorEventLog =
         String.format(
             "Merge       *** Transition Configuration error: remote Execution Client TerminalBlockHash and TerminalBlockNumber are inconsistent\n"

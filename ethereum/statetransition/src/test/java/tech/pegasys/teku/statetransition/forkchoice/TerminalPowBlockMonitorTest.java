@@ -395,7 +395,7 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
-        .transitionConfiguration_TTD_TBH_mismatch(
+        .transitionConfigurationTtdTbhMismatch(
             localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
 
     // wrong TBH
@@ -408,7 +408,7 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
-        .transitionConfiguration_TTD_TBH_mismatch(
+        .transitionConfigurationTtdTbhMismatch(
             localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
 
     // remote TBH TBN inconsistency
@@ -423,7 +423,7 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
-        .transitionConfigurationRemote_TBH_TBN_inconsistency(wrongRemoteConfig.toString());
+        .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
 
     verifyNoMoreInteractions(eventLogger);
   }
