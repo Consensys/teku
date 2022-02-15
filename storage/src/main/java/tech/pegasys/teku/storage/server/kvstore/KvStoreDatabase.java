@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -359,11 +360,11 @@ public class KvStoreDatabase implements Database {
         hotDao.getHotBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
         AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
-    final Optional<ExecutionPayload> finalizedOptimisticTransitionPayload =
+    final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload =
         finalizedDao
             .getOptimisticTransitionBlockSlot()
             .flatMap(finalizedDao::getFinalizedBlockAtSlot)
-            .flatMap(block -> block.getMessage().getBody().getOptionalExecutionPayload());
+            .flatMap(SlotAndExecutionPayload::fromBlock);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -545,7 +546,7 @@ public class KvStoreDatabase implements Database {
   private UpdateResult doUpdate(final StorageUpdate update) {
     LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
-    final Optional<ExecutionPayload> finalizedOptimisticExecutionPayload =
+    final Optional<SlotAndExecutionPayload> finalizedOptimisticExecutionPayload =
         updateFinalizedData(
             update.getFinalizedChildToParentMap(),
             update.getFinalizedBlocks(),
@@ -589,7 +590,7 @@ public class KvStoreDatabase implements Database {
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
 
-  private Optional<ExecutionPayload> updateFinalizedData(
+  private Optional<SlotAndExecutionPayload> updateFinalizedData(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
@@ -601,7 +602,7 @@ public class KvStoreDatabase implements Database {
       return Optional.empty();
     }
 
-    final Optional<ExecutionPayload> optimisticTransitionPayload =
+    final Optional<SlotAndExecutionPayload> optimisticTransitionPayload =
         updateFinalizedOptimisticTransitionBlock(
             isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
     switch (stateStorageMode) {
@@ -627,7 +628,7 @@ public class KvStoreDatabase implements Database {
     return optimisticTransitionPayload;
   }
 
-  private Optional<ExecutionPayload> updateFinalizedOptimisticTransitionBlock(
+  private Optional<SlotAndExecutionPayload> updateFinalizedOptimisticTransitionBlock(
       final boolean isFinalizedOptimisticBlockRootSet,
       final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
     if (isFinalizedOptimisticBlockRootSet) {
@@ -637,8 +638,7 @@ public class KvStoreDatabase implements Database {
         updater.setOptimisticTransitionBlockSlot(transitionBlock.map(SignedBeaconBlock::getSlot));
         updater.commit();
       }
-      return transitionBlock.flatMap(
-          block -> block.getMessage().getBody().getOptionalExecutionPayload());
+      return transitionBlock.flatMap(SlotAndExecutionPayload::fromBlock);
     } else {
       return Optional.empty();
     }

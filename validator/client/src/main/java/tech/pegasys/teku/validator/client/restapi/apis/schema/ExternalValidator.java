@@ -17,6 +17,7 @@ import java.net.URL;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.validator.client.Validator;
 
 public class ExternalValidator {
   private BLSPublicKey publicKey;
@@ -34,6 +35,13 @@ public class ExternalValidator {
     this.publicKey = publicKey;
     this.url = url;
     this.readOnly = readOnly;
+  }
+
+  public static ExternalValidator create(Validator validator) {
+    return new ExternalValidator(
+        validator.getPublicKey(),
+        validator.getSigner().getSigningServiceUrl(),
+        validator.isReadOnly());
   }
 
   public BLSPublicKey getPublicKey() {

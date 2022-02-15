@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toList;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
@@ -52,19 +53,23 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddLocalValidatorResult addValidator(
+  public AddValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
-    AddLocalValidatorResult delegateResult =
-        delegate.addValidator(keyStoreData, password, publicKey);
+    AddValidatorResult delegateResult = delegate.addValidator(keyStoreData, password, publicKey);
 
     if (delegateResult.getSigner().isEmpty()) {
       return delegateResult;
     }
 
     final Signer signer = delegateResult.getSigner().get();
-    return new AddLocalValidatorResult(
+    return new AddValidatorResult(
         delegateResult.getResult(),
         Optional.of(new SlashingProtectedSigner(publicKey, slashingProtector, signer)));
+  }
+
+  @Override
+  public AddValidatorResult addValidator(BLSPublicKey publicKey, Optional<URL> signerUrl) {
+    return delegate.addValidator(publicKey, signerUrl);
   }
 
   private class SlashingProtectedValidatorProvider implements ValidatorProvider {

@@ -472,11 +472,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             })
         .exceptionally(
             error -> {
-              LOG.error(
-                  "Failed to send signed attestation for slot {}, block {}",
-                  attestation.getData().getSlot(),
-                  attestation.getData().getBeacon_block_root());
-              return AttestationProcessingResult.invalid("Unexpected error");
+              final String errorText =
+                  "Failed to send signed attestation for slot "
+                      + attestation.getData().getSlot()
+                      + ", block "
+                      + attestation.getData().getBeacon_block_root();
+              LOG.debug(errorText, error);
+              return AttestationProcessingResult.invalid(errorText);
             });
   }
 
@@ -531,12 +533,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     formatBlock(block.getSlot(), block.getRoot()));
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               } else {
-                LOG.error(
-                    "Failed to import proposed block due to "
-                        + result.getFailureReason()
-                        + ": "
-                        + formatBlock(block.getSlot(), block.getRoot()),
-                    result.getFailureCause().orElse(null));
+                VALIDATOR_LOGGER.proposedBlockImportFailed(
+                    result.getFailureReason().toString(),
+                    block.getSlot(),
+                    block.getRoot(),
+                    result.getFailureCause());
+
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               }
             });

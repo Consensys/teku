@@ -90,6 +90,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -452,7 +453,12 @@ public class BeaconChainController extends Service
     final boolean proposerBoostEnabled = beaconConfig.eth2NetworkConfig().isProposerBoostEnabled();
     forkChoice =
         new ForkChoice(
-            spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerBoostEnabled);
+            spec,
+            forkChoiceExecutor,
+            recentChainData,
+            forkChoiceNotifier,
+            new MergeTransitionBlockValidator(spec, recentChainData, executionEngine),
+            proposerBoostEnabled);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
 

@@ -29,7 +29,6 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -78,9 +77,7 @@ class MergeTransitionBlockValidatorTest {
     storageSystem.chainUpdater().saveBlock(chainHead);
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
-    final MergeTransitionBlockValidator transitionVerifier =
-        createTransitionValidator(blockToVerify.getBlock());
-    final ExecutionPayload newExecutionPayload = getExecutionPayload(blockToVerify);
+    final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
 
     assertThat(
             storageSystem
@@ -97,7 +94,7 @@ class MergeTransitionBlockValidatorTest {
                 .toVersionBellatrix()
                 .orElseThrow()
                 .getLatestExecutionPayloadHeader(),
-            newExecutionPayload);
+            blockToVerify.getBlock());
 
     verifyNoInteractions(executionEngine);
     assertThat(result).isCompletedWithValue(PayloadStatus.VALID);
@@ -109,9 +106,7 @@ class MergeTransitionBlockValidatorTest {
     final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
-    final MergeTransitionBlockValidator transitionVerifier =
-        createTransitionValidator(blockToVerify.getBlock());
-    final ExecutionPayload newExecutionPayload = getExecutionPayload(blockToVerify);
+    final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
 
     assertThat(
             storageSystem
@@ -128,7 +123,7 @@ class MergeTransitionBlockValidatorTest {
                 .toVersionBellatrix()
                 .orElseThrow()
                 .getLatestExecutionPayloadHeader(),
-            newExecutionPayload);
+            blockToVerify.getBlock());
 
     verify(executionEngine).getPowBlock(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isNotCompleted();
@@ -147,16 +142,14 @@ class MergeTransitionBlockValidatorTest {
 
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
-    final MergeTransitionBlockValidator transitionVerifier =
-        createTransitionValidator(blockToVerify.getBlock());
-    final ExecutionPayload newExecutionPayload = getExecutionPayload(blockToVerify);
+    final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
 
     assertThat(storageSystem.recentChainData().getStore().getFinalizedOptimisticTransitionPayload())
         .isPresent();
 
     final SafeFuture<PayloadStatus> result =
         transitionVerifier.verifyTransitionBlock(
-            chainHeadState.getLatestExecutionPayloadHeader(), newExecutionPayload);
+            chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
 
     verify(executionEngine).getPowBlock(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isNotCompleted();
@@ -200,8 +193,8 @@ class MergeTransitionBlockValidatorTest {
         .orElseThrow();
   }
 
-  private MergeTransitionBlockValidator createTransitionValidator(final SignedBeaconBlock block) {
+  private MergeTransitionBlockValidator createTransitionValidator() {
     return new MergeTransitionBlockValidator(
-        spec, storageSystem.recentChainData(), executionEngine, block);
+        spec, storageSystem.recentChainData(), executionEngine);
   }
 }
