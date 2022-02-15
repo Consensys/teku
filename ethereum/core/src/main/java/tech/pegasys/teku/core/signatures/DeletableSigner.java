@@ -115,4 +115,9 @@ public class DeletableSigner implements Signer {
 
     return future.alwaysRun(readLock::unlock);
   }
+
+  @Override
+  public boolean isSlashingProtectedLocally() {
+    return delegate.isSlashingProtectedLocally();
+  }
 }

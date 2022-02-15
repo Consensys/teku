@@ -41,12 +41,10 @@ public class LocalSlashingProtector implements SlashingProtector {
   @Override
   public synchronized SafeFuture<Boolean> maySignBlock(
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
-    return SafeFuture.of(
-        () -> {
-          final ValidatorSigningRecord signingRecord =
-              loadSigningRecord(validator, genesisValidatorsRoot);
-          return handleResult(validator, signingRecord.maySignBlock(genesisValidatorsRoot, slot));
-        });
+    return loadSigningRecord(validator, genesisValidatorsRoot)
+        .thenApplyChecked(
+            signingRecord ->
+                handleResult(validator, signingRecord.maySignBlock(genesisValidatorsRoot, slot)));
   }
 
   @Override
@@ -55,14 +53,13 @@ public class LocalSlashingProtector implements SlashingProtector {
       final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
       final UInt64 targetEpoch) {
-    return SafeFuture.of(
-        () -> {
-          final ValidatorSigningRecord signingRecord =
-              loadSigningRecord(validator, genesisValidatorsRoot);
-          return handleResult(
-              validator,
-              signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
-        });
+    return loadSigningRecord(validator, genesisValidatorsRoot)
+        .thenApplyChecked(
+            signingRecord ->
+                handleResult(
+                    validator,
+                    signingRecord.maySignAttestation(
+                        genesisValidatorsRoot, sourceEpoch, targetEpoch)));
   }
 
   private Boolean handleResult(
@@ -75,19 +72,22 @@ public class LocalSlashingProtector implements SlashingProtector {
     return true;
   }
 
-  private ValidatorSigningRecord loadSigningRecord(
-      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
-    ValidatorSigningRecord record = signingRecords.get(validator);
-    if (record != null) {
-      return record;
-    }
-    record =
-        dataAccessor
-            .read(validatorRecordPath(validator))
-            .map(ValidatorSigningRecord::fromBytes)
-            .orElseGet(() -> new ValidatorSigningRecord(genesisValidatorsRoot));
-    signingRecords.put(validator, record);
-    return record;
+  @Override
+  public SafeFuture<ValidatorSigningRecord> loadSigningRecord(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) {
+    return SafeFuture.of(
+        () -> {
+          ValidatorSigningRecord record = signingRecords.get(validator);
+          if (record == null) {
+            record =
+                dataAccessor
+                    .read(validatorRecordPath(validator))
+                    .map(ValidatorSigningRecord::fromBytes)
+                    .orElseGet(() -> new ValidatorSigningRecord(genesisValidatorsRoot));
+            signingRecords.put(validator, record);
+          }
+          return record;
+        });
   }
 
   private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)

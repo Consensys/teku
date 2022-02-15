@@ -132,6 +132,7 @@ public final class DataStructureUtil {
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
+  private final Supplier<BLSKeyPair> keyPairGenerator = () -> BLSTestUtil.randomKeyPair(nextSeed());
 
   @Deprecated
   public DataStructureUtil() {
@@ -302,6 +303,10 @@ public final class DataStructureUtil {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
     return SszBitvectorSchema.create(n).ofBits(bits);
+  }
+
+  public BLSKeyPair randomKeyPair() {
+    return keyPairGenerator.get();
   }
 
   public BLSPublicKey randomPublicKey() {

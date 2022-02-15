@@ -150,4 +150,9 @@ public class SlashingProtectedSigner implements Signer {
   public void delete() {
     delegate.delete();
   }
+
+  @Override
+  public boolean isSlashingProtectedLocally() {
+    return true;
+  }
 }

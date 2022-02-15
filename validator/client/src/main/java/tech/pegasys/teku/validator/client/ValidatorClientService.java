@@ -46,8 +46,10 @@ import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.DefaultSlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
+import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
@@ -125,7 +127,8 @@ public class ValidatorClientService extends Service {
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
-    final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
+    final ValidatorLoader validatorLoader =
+        createValidatorLoader(config, asyncRunner, services, forkProvider);
 
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
@@ -161,16 +164,20 @@ public class ValidatorClientService extends Service {
   private static ValidatorLoader createValidatorLoader(
       final ValidatorClientConfiguration config,
       final AsyncRunner asyncRunner,
-      final ServiceConfig services) {
+      final ServiceConfig services,
+      final ForkProvider forkProvider) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(
             SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
+    final SlashingProtectionLogger slashingProtectionLogger =
+        new DefaultSlashingProtectionLogger(slashingProtector, forkProvider);
     return ValidatorLoader.create(
         config.getSpec(),
         config.getValidatorConfig(),
         config.getInteropConfig(),
         slashingProtector,
+        slashingProtectionLogger,
         new PublicKeyLoader(),
         asyncRunner,
         services.getMetricsSystem(),

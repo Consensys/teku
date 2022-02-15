@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
+import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -227,6 +228,7 @@ public class VoluntaryExitCommand implements Runnable {
             config.validatorClient().getValidatorConfig(),
             config.validatorClient().getInteropConfig(),
             new RejectingSlashingProtector(),
+            SlashingProtectionLogger.NOOP,
             new PublicKeyLoader(),
             asyncRunner,
             metricsSystem,

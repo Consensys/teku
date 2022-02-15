@@ -50,16 +50,19 @@ public class ValidatorLoader {
   private final OwnedValidators ownedValidators = new OwnedValidators();
   private final GraffitiProvider graffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
+  private final SlashingProtectionLogger slashingProtectionLogger;
 
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
       final Optional<ValidatorSource> mutableValidatorSource,
       final GraffitiProvider graffitiProvider,
-      final Optional<DataDirLayout> maybeDataDirLayout) {
+      final Optional<DataDirLayout> maybeDataDirLayout,
+      final SlashingProtectionLogger slashingProtectionLogger) {
     this.validatorSources = validatorSources;
     this.mutableValidatorSource = mutableValidatorSource;
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
+    this.slashingProtectionLogger = slashingProtectionLogger;
   }
 
   public static ValidatorLoader create(
@@ -67,6 +70,7 @@ public class ValidatorLoader {
       final ValidatorConfig config,
       final InteropConfig interopConfig,
       final SlashingProtector slashingProtector,
+      final SlashingProtectionLogger slashingProtectorLogger,
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
@@ -79,6 +83,7 @@ public class ValidatorLoader {
         interopConfig,
         externalSignerHttpClientFactory,
         slashingProtector,
+        slashingProtectorLogger,
         publicKeyLoader,
         asyncRunner,
         metricsSystem,
@@ -91,6 +96,7 @@ public class ValidatorLoader {
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
         ownedValidators, validatorProviders, graffitiProvider);
+    slashingProtectionLogger.logSlashingProtection(ownedValidators.getActiveValidators());
   }
 
   public DeleteKeyResult deleteMutableValidator(final BLSPublicKey publicKey) {
@@ -156,6 +162,7 @@ public class ValidatorLoader {
       final InteropConfig interopConfig,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final SlashingProtector slashingProtector,
+      final SlashingProtectionLogger slashingProtectionLogger,
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
@@ -177,7 +184,8 @@ public class ValidatorLoader {
         validatorSourceList,
         validatorSources.getMutableLocalValidatorSource(),
         config.getGraffitiProvider(),
-        maybeMutableDir);
+        maybeMutableDir,
+        slashingProtectionLogger);
   }
 
   @VisibleForTesting
@@ -185,9 +193,14 @@ public class ValidatorLoader {
       final List<ValidatorSource> validatorSources,
       final Optional<ValidatorSource> mutableValidatorSource,
       final GraffitiProvider graffitiProvider,
-      final Optional<DataDirLayout> maybeDataDirLayout) {
+      final Optional<DataDirLayout> maybeDataDirLayout,
+      final SlashingProtectionLogger slashingProtectionLogger) {
     return new ValidatorLoader(
-        validatorSources, mutableValidatorSource, graffitiProvider, maybeDataDirLayout);
+        validatorSources,
+        mutableValidatorSource,
+        graffitiProvider,
+        maybeDataDirLayout,
+        slashingProtectionLogger);
   }
 
   private void addValidatorsFromSource(

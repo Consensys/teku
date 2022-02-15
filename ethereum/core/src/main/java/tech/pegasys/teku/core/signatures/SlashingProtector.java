@@ -15,6 +15,7 @@ package tech.pegasys.teku.core.signatures;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -27,4 +28,7 @@ public interface SlashingProtector {
       final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
       final UInt64 targetEpoch);
+
+  SafeFuture<ValidatorSigningRecord> loadSigningRecord(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot);
 }
