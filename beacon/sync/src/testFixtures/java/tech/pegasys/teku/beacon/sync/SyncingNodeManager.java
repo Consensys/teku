@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -92,9 +94,15 @@ public class SyncingNodeManager {
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
+    final MergeTransitionBlockValidator transitionBlockValidator =
+        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
     ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
+            spec,
+            new InlineEventThread(),
+            recentChainData,
+            new StubForkChoiceNotifier(),
+            transitionBlockValidator);
     BlockImporter blockImporter =
         new BlockImporter(
             spec,

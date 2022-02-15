@@ -63,6 +63,7 @@ public class ForkChoice {
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
+  private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean proposerBoostEnabled;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
@@ -74,11 +75,13 @@ public class ForkChoice {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean proposerBoostEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
+    this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
@@ -92,8 +95,15 @@ public class ForkChoice {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final ForkChoiceNotifier forkChoiceNotifier) {
-    this(spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, false);
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final MergeTransitionBlockValidator transitionBlockValidator) {
+    this(
+        spec,
+        forkChoiceExecutor,
+        recentChainData,
+        forkChoiceNotifier,
+        transitionBlockValidator,
+        false);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -157,7 +167,7 @@ public class ForkChoice {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(headBlockRoot);
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
                       return true;
                     }));
   }
@@ -305,28 +315,36 @@ public class ForkChoice {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(block.getRoot());
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
     return result;
   }
 
   private void onExecutionPayloadResult(
-      final Bytes32 blockRoot, final PayloadStatus result, final UInt64 latestFinalizedBlockSlot) {
-    onForkChoiceThread(
-            () -> {
-              if (result.hasStatus(ExecutionPayloadStatus.VALID)) {
-                UInt64 latestValidFinalizedSlotInStore =
-                    recentChainData.getLatestValidFinalizedSlot();
+      final Bytes32 blockRoot,
+      final PayloadStatus payloadResult,
+      final UInt64 latestFinalizedBlockSlot) {
+    final SafeFuture<PayloadStatus> transitionValidatedStatus;
+    if (payloadResult.hasValidStatus()) {
+      transitionValidatedStatus = transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot);
+    } else {
+      transitionValidatedStatus = SafeFuture.completedFuture(payloadResult);
+    }
+    transitionValidatedStatus.finishAsync(
+        result -> {
+          if (result.hasStatus(ExecutionPayloadStatus.VALID)) {
+            UInt64 latestValidFinalizedSlotInStore = recentChainData.getLatestValidFinalizedSlot();
 
-                if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
-                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                  transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
-                  transaction.commit().join();
-                }
-              }
+            if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
+              final StoreTransaction transaction = recentChainData.startStoreTransaction();
+              transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
+              transaction.commit().join();
+            }
+          }
 
-              getForkChoiceStrategy().onExecutionPayloadResult(blockRoot, result);
-            })
-        .reportExceptions();
+          getForkChoiceStrategy().onExecutionPayloadResult(blockRoot, result);
+        },
+        error -> LOG.error("Failed to apply payload result for block {}", blockRoot, error),
+        forkChoiceExecutor);
   }
 
   private void updateForkChoiceForImportedBlock(
@@ -379,7 +397,7 @@ public class ForkChoice {
         result.getFailureCause());
   }
 
-  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(final Bytes32 blockRoot) {
+  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
     final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
@@ -394,7 +412,7 @@ public class ForkChoice {
                 maybeForkChoiceUpdatedResult.ifPresent(
                     forkChoiceUpdatedResult ->
                         onExecutionPayloadResult(
-                            blockRoot,
+                            forkChoiceState.getHeadBlockRoot(),
                             forkChoiceUpdatedResult.getPayloadStatus(),
                             latestFinalizedBlockSlot)))
         .reportExceptions();

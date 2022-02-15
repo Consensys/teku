@@ -57,6 +57,10 @@ public class MergeTransitionBlockValidator {
           BeaconBlockBodyBellatrix.required(block.getMessage().getBody()).getExecutionPayload());
     }
 
+    return verifyAncestorTransitionBlock(block.getParentRoot());
+  }
+
+  public SafeFuture<PayloadStatus> verifyAncestorTransitionBlock(final Bytes32 chainHeadRoot) {
     if (transitionBlockNotFinalized()) {
       // The transition block hasn't been finalized yet
       final Optional<Bytes32> maybeTransitionBlockRoot =
@@ -64,7 +68,7 @@ public class MergeTransitionBlockValidator {
               .getForkChoiceStrategy()
               .orElseThrow()
               // Use the parent root because the block itself won't yet be imported
-              .getOptimisticallySyncedTransitionBlockRoot(block.getParentRoot());
+              .getOptimisticallySyncedTransitionBlockRoot(chainHeadRoot);
       if (maybeTransitionBlockRoot.isPresent()) {
         return retrieveAndVerifyNonFinalizedTransitionBlock(maybeTransitionBlockRoot.get());
       }
