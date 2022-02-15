@@ -22,9 +22,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +77,7 @@ class SyncCommitteePerformanceTrackerTest {
 
   @Test
   void shouldExpectMessagesForEachPositionInCommitteeAtEachSlot() {
-    tracker.saveExpectedSyncCommitteeParticipant(1, Set.of(2, 5, 6), UInt64.valueOf(3));
+    tracker.saveExpectedSyncCommitteeParticipant(1, IntSet.of(2, 5, 6), UInt64.valueOf(3));
 
     final int expected = 3 * spec.getSlotsPerEpoch(UInt64.ZERO);
     assertThat(calculatePerformance(UInt64.ONE).getNumberOfExpectedMessages()).isEqualTo(expected);
@@ -85,7 +85,7 @@ class SyncCommitteePerformanceTrackerTest {
 
   @Test
   void shouldCountNumberOfProducedMessages() {
-    tracker.saveExpectedSyncCommitteeParticipant(1, Set.of(2, 7, 8), UInt64.valueOf(3));
+    tracker.saveExpectedSyncCommitteeParticipant(1, IntSet.of(2, 7, 8), UInt64.valueOf(3));
     tracker.saveProducedSyncCommitteeMessage(createMessage(1, 1));
     tracker.saveProducedSyncCommitteeMessage(createMessage(1, 3));
 
@@ -106,7 +106,7 @@ class SyncCommitteePerformanceTrackerTest {
         .getBlockRootAtSlot(eq(chainHead.getState()), any());
     doReturn(slot1Hash).when(specSpy).getBlockRootAtSlot(chainHead.getState(), UInt64.ONE);
 
-    tracker.saveExpectedSyncCommitteeParticipant(1, Set.of(2, 7, 8), UInt64.valueOf(3));
+    tracker.saveExpectedSyncCommitteeParticipant(1, IntSet.of(2, 7, 8), UInt64.valueOf(3));
     tracker.saveProducedSyncCommitteeMessage(createMessage(1, 1, slot1Hash));
     tracker.saveProducedSyncCommitteeMessage(createMessage(1, 2, wrongBlockRoot));
     tracker.saveProducedSyncCommitteeMessage(createMessage(1, 3, wrongBlockRoot));
@@ -118,7 +118,7 @@ class SyncCommitteePerformanceTrackerTest {
 
   @Test
   void shouldCountNumberOfIncludedMessages() {
-    tracker.saveExpectedSyncCommitteeParticipant(1, Set.of(2, 7, 8), UInt64.valueOf(3));
+    tracker.saveExpectedSyncCommitteeParticipant(1, IntSet.of(2, 7, 8), UInt64.valueOf(3));
 
     // Not included as no block was present
     tracker.saveProducedSyncCommitteeMessage(createMessage(1, 1));

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +53,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class SyncCommitteePerformanceTracker {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final NavigableMap<UInt64, Map<UInt64, Set<Integer>>>
+  private final NavigableMap<UInt64, Map<UInt64, IntSet>>
       expectedSyncCommitteeParticipantsByPeriodEndEpoch = new ConcurrentSkipListMap<>();
 
   // Slot to block root to set of indices of validators that produced a message for that slot+root
@@ -69,7 +70,7 @@ public class SyncCommitteePerformanceTracker {
   }
 
   public SafeFuture<SyncCommitteePerformance> calculatePerformance(final UInt64 epoch) {
-    final Map<UInt64, Set<Integer>> expectedSyncCommitteeParticipants =
+    final Map<UInt64, IntSet> expectedSyncCommitteeParticipants =
         getPeriodEndEpoch(epoch)
             .map(expectedSyncCommitteeParticipantsByPeriodEndEpoch::get)
             .orElse(Collections.emptyMap());
@@ -112,7 +113,7 @@ public class SyncCommitteePerformanceTracker {
 
   private SafeFuture<SyncCommitteePerformance> calculateSyncCommitteePerformance(
       final UInt64 epoch,
-      final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
+      final Map<UInt64, IntSet> assignedSubcommitteeIndicesByValidatorIndex,
       final Map<UInt64, Map<Bytes32, Set<UInt64>>> producingValidatorsBySlotAndBlock) {
 
     final int numberOfExpectedMessages =
@@ -184,7 +185,7 @@ public class SyncCommitteePerformanceTracker {
   }
 
   private synchronized int countIncludedMessages(
-      final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
+      final Map<UInt64, IntSet> assignedSubcommitteeIndicesByValidatorIndex,
       final UInt64 slot,
       final Set<UInt64> producingValidators,
       final SyncAggregate syncAggregate) {
@@ -192,7 +193,7 @@ public class SyncCommitteePerformanceTracker {
     final SszBitvector syncCommitteeBits = syncAggregate.getSyncCommitteeBits();
     int numberOfIncludedMessages = 0;
     for (UInt64 producingValidatorIndex : producingValidators) {
-      final Set<Integer> committeeIndices =
+      final IntSet committeeIndices =
           assignedSubcommitteeIndicesByValidatorIndex.get(producingValidatorIndex);
       if (committeeIndices == null) {
         LOG.debug(
@@ -201,7 +202,7 @@ public class SyncCommitteePerformanceTracker {
             slot);
         continue;
       }
-      for (Integer committeeIndex : committeeIndices) {
+      for (int committeeIndex : committeeIndices) {
         if (syncCommitteeBits.getBit(committeeIndex)) {
           numberOfIncludedMessages++;
         }
@@ -211,12 +212,12 @@ public class SyncCommitteePerformanceTracker {
   }
 
   private int countProducedMessages(
-      final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
+      final Map<UInt64, IntSet> assignedSubcommitteeIndicesByValidatorIndex,
       final UInt64 slot,
       final Set<UInt64> producingValidators) {
     int numberOfProducedMessages = 0;
     for (UInt64 producingValidatorIndex : producingValidators) {
-      final Set<Integer> committeeIndices =
+      final IntSet committeeIndices =
           assignedSubcommitteeIndicesByValidatorIndex.get(producingValidatorIndex);
       if (committeeIndices == null) {
         LOG.debug(
@@ -242,7 +243,7 @@ public class SyncCommitteePerformanceTracker {
 
   public void saveExpectedSyncCommitteeParticipant(
       final int validatorIndex,
-      final Set<Integer> syncCommitteeIndices,
+      final IntSet syncCommitteeIndices,
       final UInt64 subscribeUntilEpoch) {
     getPeriodEndEpoch(subscribeUntilEpoch)
         .ifPresent(

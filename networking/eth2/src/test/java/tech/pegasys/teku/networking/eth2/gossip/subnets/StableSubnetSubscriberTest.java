@@ -22,9 +22,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -181,10 +182,11 @@ public class StableSubnetSubscriberTest {
   }
 
   private void assertSubnetsAreDistinct(Set<SubnetSubscription> subnetSubscriptions) {
-    Set<Integer> subnetIds =
-        subnetSubscriptions.stream()
-            .map(SubnetSubscription::getSubnetId)
-            .collect(Collectors.toSet());
+    IntSet subnetIds =
+        IntOpenHashSet.toSet(
+            subnetSubscriptions.stream()
+                .map(SubnetSubscription::getSubnetId)
+                .mapToInt(Integer::intValue));
     assertThat(subnetSubscriptions).hasSameSizeAs(subnetIds);
   }
 

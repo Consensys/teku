@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
 public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  final List<Integer> validators = List.of(1);
+  final IntList validators = IntList.of(1);
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
