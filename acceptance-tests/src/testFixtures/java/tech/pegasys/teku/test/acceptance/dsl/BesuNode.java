@@ -24,7 +24,7 @@ public class BesuNode extends Node {
   private static final int JSON_RPC_PORT = 8545;
 
   public BesuNode(final Network network) {
-    super(network, "hyperledger/besu:1.5.5", LOG);
+    super(network, "hyperledger/besu:21.10.9", LOG);
     container
         .withExposedPorts(JSON_RPC_PORT)
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
