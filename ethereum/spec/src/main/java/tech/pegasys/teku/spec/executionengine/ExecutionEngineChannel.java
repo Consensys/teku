@@ -76,7 +76,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   enum Version {
     KINTSUGI,
-    KILN;
+    KILNV1,
+    KILNV2;
 
     public static Version DEFAULT_VERSION = KINTSUGI;
   }

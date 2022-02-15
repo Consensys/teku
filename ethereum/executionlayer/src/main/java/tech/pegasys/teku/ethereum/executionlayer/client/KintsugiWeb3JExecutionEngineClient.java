@@ -29,14 +29,13 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdated
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes8Deserializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
-public class KintsugiWeb3JExecutionEngineClient extends Web3JExecutionEngineClient {
+public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngineClient {
 
   private final AtomicLong nextId = new AtomicLong(0);
 
@@ -65,12 +64,6 @@ public class KintsugiWeb3JExecutionEngineClient extends Web3JExecutionEngineClie
             eeWeb3jService,
             KintsugiForkChoiceUpdatedWeb3jResponse.class);
     return doRequest(web3jRequest).thenApply(this::fromKintsugiForkChoiceUpdatedResultResponse);
-  }
-
-  @Override
-  public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
-      TransitionConfigurationV1 transitionConfiguration) {
-    return SafeFuture.completedFuture(new Response<>(transitionConfiguration));
   }
 
   private Response<ForkChoiceUpdatedResult> fromKintsugiForkChoiceUpdatedResultResponse(
