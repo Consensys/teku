@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -274,7 +274,7 @@ class SyncCommitteeAggregationDutyTest {
       final Validator validator, final int validatorIndex, final int... committeeIndices) {
     final ValidatorAndCommitteeIndices assignment =
         new ValidatorAndCommitteeIndices(validator, validatorIndex);
-    assignment.addCommitteeIndices(IntArrayList.of(committeeIndices));
+    assignment.addCommitteeIndices(IntList.of(committeeIndices));
     return assignment;
   }
 

@@ -221,7 +221,7 @@ class SyncCommitteeContributionPoolTest {
             contribution.getSlot(),
             contribution.getBeaconBlockRoot(),
             contribution.getSubcommitteeIndex(),
-            IntArrayList.of(participationBits),
+            IntList.of(participationBits),
             contribution.getSignature());
 
     return syncCommitteeUtil.createSignedContributionAndProof(

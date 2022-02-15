@@ -22,8 +22,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -168,7 +168,7 @@ class ValidatorIndexProviderTest {
     assertThat(result).isNotDone();
 
     requestResult.complete(Map.of(key1, 1));
-    assertThat(result).isCompletedWithValue(IntArrayList.of(1));
+    assertThat(result).isCompletedWithValue(IntList.of(1));
   }
 
   private OwnedValidators ownedValidatorsWithKeys(final BLSPublicKey... keys) {

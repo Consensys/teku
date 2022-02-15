@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -102,7 +102,7 @@ public class SszBitlistSchemaTest extends SszListSchemaTestBase {
     assertThat(schema.ofBits(2, 0, 1).sszSerialize()).isEqualTo(Bytes.of(0b111));
     assertThat(schema.ofBits(300).size()).isEqualTo(300);
     assertThat(schema.ofBits(300).getAllSetBits().isEmpty()).isTrue();
-    assertThat(schema.ofBits(300, 299).getAllSetBits().equals(IntArrayList.of(299))).isTrue();
+    assertThat(schema.ofBits(300, 299).getAllSetBits().equals(IntList.of(299))).isTrue();
     assertThat(schema.ofBits(300, IntStream.range(0, 300).toArray()).streamAllSetBits().distinct())
         .isSorted()
         .hasSize(300);

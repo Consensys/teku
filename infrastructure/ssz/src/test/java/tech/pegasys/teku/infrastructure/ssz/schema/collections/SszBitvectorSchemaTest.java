@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -77,7 +77,7 @@ public class SszBitvectorSchemaTest extends SszVectorSchemaTestBase {
     assertThat(schema.ofBits(0, 1).sszSerialize()).isEqualTo(rightPad(Bytes.of(0b11), 13));
     assertThat(schema.ofBits().size()).isEqualTo(100);
     assertThat(schema.ofBits().getAllSetBits().isEmpty()).isTrue();
-    assertThat(schema.ofBits(99).getAllSetBits().equals(IntArrayList.of(99))).isTrue();
+    assertThat(schema.ofBits(99).getAllSetBits().equals(IntList.of(99))).isTrue();
     assertThat(schema.ofBits(IntStream.range(0, 100).toArray()).streamAllSetBits().distinct())
         .isSorted()
         .hasSize(100);

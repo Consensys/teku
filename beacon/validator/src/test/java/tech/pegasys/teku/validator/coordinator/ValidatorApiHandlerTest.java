@@ -33,8 +33,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -221,7 +221,7 @@ class ValidatorApiHandlerTest {
   public void getAttestationDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<AttesterDuties>> duties =
-        validatorApiHandler.getAttestationDuties(EPOCH, IntArrayList.of(1));
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1));
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
@@ -234,7 +234,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
-        validatorApiHandler.getAttestationDuties(EPOCH, IntArrayList.of());
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of());
     final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties()).isEmpty();
     assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
@@ -248,7 +248,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
-        validatorApiHandler.getAttestationDuties(EPOCH, IntArrayList.of());
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of());
     final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDependentRoot()).isEqualTo(spec.getPreviousDutyDependentRoot(state));
   }
@@ -258,7 +258,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<AttesterDuties>> result =
-        validatorApiHandler.getAttestationDuties(EPOCH, IntArrayList.of(1));
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1));
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
@@ -273,7 +273,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
-        validatorApiHandler.getAttestationDuties(EPOCH, IntArrayList.of(1, 32));
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1, 32));
     final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties())
         .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
@@ -289,7 +289,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
     final SafeFuture<Optional<AttesterDuties>> result =
-        validatorApiHandler.getAttestationDuties(EPOCH, IntArrayList.of(1, 32));
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1, 32));
     final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties())
         .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
@@ -369,7 +369,7 @@ class ValidatorApiHandlerTest {
             .plus(epochsPerSyncCommitteePeriod * 2L);
     assertThatSafeFuture(
             validatorApiHandler.getSyncCommitteeDuties(
-                firstSlotAfterNextSyncCommitteePeriod, IntArrayList.of(1)))
+                firstSlotAfterNextSyncCommitteePeriod, IntList.of(1)))
         .isCompletedExceptionallyWith(IllegalArgumentException.class)
         .hasMessageContaining("not within the current or next sync committee periods");
   }
@@ -405,7 +405,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlotExact(any())).thenReturn(new SafeFuture<>());
 
     final SafeFuture<Optional<SyncCommitteeDuties>> result =
-        validatorApiHandler.getSyncCommitteeDuties(EPOCH, IntArrayList.of(1));
+        validatorApiHandler.getSyncCommitteeDuties(EPOCH, IntList.of(1));
     assertThat(result).isNotDone();
 
     // The start of the sync committee period is prior to the fork block so we should use the
@@ -644,9 +644,9 @@ class ValidatorApiHandlerTest {
   @Test
   void subscribeToSyncCommitteeSubnets_shouldConvertCommitteeIndexToSubnetId() {
     final SyncCommitteeSubnetSubscription subscription1 =
-        new SyncCommitteeSubnetSubscription(1, IntOpenHashSet.of(1, 2, 15, 30), UInt64.valueOf(44));
+        new SyncCommitteeSubnetSubscription(1, IntSet.of(1, 2, 15, 30), UInt64.valueOf(44));
     final SyncCommitteeSubnetSubscription subscription2 =
-        new SyncCommitteeSubnetSubscription(1, IntOpenHashSet.of(5, 10), UInt64.valueOf(35));
+        new SyncCommitteeSubnetSubscription(1, IntSet.of(5, 10), UInt64.valueOf(35));
     validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
     final UInt64 unsubscribeSlotSubscription1 = spec.computeStartSlotAtEpoch(UInt64.valueOf(44));
     final UInt64 unsubscribeSlotSubscription2 = spec.computeStartSlotAtEpoch(UInt64.valueOf(35));

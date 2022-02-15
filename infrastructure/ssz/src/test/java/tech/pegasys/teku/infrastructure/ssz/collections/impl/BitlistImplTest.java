@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -54,7 +54,7 @@ class BitlistImplTest {
   void getAllSetBits() {
     BitlistImpl bitlist = create(0, 1, 3, 8, 9);
 
-    assertThat(bitlist.getAllSetBits().equals(IntArrayList.of(0, 1, 3, 8, 9))).isTrue();
+    assertThat(bitlist.getAllSetBits().equals(IntList.of(0, 1, 3, 8, 9))).isTrue();
   }
 
   @Test
