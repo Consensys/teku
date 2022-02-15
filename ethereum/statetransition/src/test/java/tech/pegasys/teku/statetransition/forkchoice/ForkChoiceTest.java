@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.verification.VerificationMode;
@@ -46,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -89,17 +92,31 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
+  private final MergeTransitionBlockValidator transitionBlockValidator =
+      mock(MergeTransitionBlockValidator.class);
   private ForkChoice forkChoice =
-      new ForkChoice(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier, false);
+      new ForkChoice(
+          spec,
+          new InlineEventThread(),
+          recentChainData,
+          forkChoiceNotifier,
+          transitionBlockValidator,
+          false);
 
   @BeforeEach
   public void setup() {
+    when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
+        .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
-    reset(forkChoiceNotifier); // Clear any notifications from setting genesis
+    reset(
+        forkChoiceNotifier,
+        transitionBlockValidator); // Clear any notifications from setting genesis
 
     // by default everything is valid
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
+    when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
+        .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
 
     storageSystem
         .chainUpdater()
@@ -163,7 +180,13 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain() {
     forkChoice =
-        new ForkChoice(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier, true);
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            recentChainData,
+            forkChoiceNotifier,
+            transitionBlockValidator,
+            true);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -558,6 +581,48 @@ class ForkChoiceTest {
   }
 
   @Test
+  void processHead_shouldValidateAncestorTransitionBlockWhenHeadNowValid() {
+    doMerge();
+
+    assertThat(forkChoice.processHead(recentChainData.getHeadSlot())).isCompleted();
+
+    verify(transitionBlockValidator)
+        .verifyAncestorTransitionBlock(recentChainData.getBestBlockRoot().orElseThrow());
+  }
+
+  @Test
+  void processHead_shouldNotMarkHeadValidWhenTransitionBlockFoundToBeInvalid() {
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+
+    doMerge(true);
+
+    assertThat(recentChainData.getOptimisticHead()).isPresent();
+
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
+    final Bytes32 chainHeadRoot = recentChainData.getOptimisticHead().get().getHeadBlockRoot();
+    when(transitionBlockValidator.verifyAncestorTransitionBlock(chainHeadRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(PayloadStatus.invalid(Optional.empty(), Optional.empty())));
+
+    assertThat(recentChainData.getStore().containsBlock(chainHeadRoot)).isTrue();
+    assertThat(forkChoice.processHead(recentChainData.getHeadSlot())).isCompleted();
+
+    // Chain head was marked invalid so removed from the store
+    assertThat(recentChainData.getStore().containsBlock(chainHeadRoot)).isFalse();
+  }
+
+  @Test
+  void processHead_shouldNotValidateAncestorTransitionBlockWhenHeadNotValid() {
+    doMerge();
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
+
+    assertThat(forkChoice.processHead(recentChainData.getHeadSlot())).isCompleted();
+
+    verifyNoInteractions(transitionBlockValidator);
+  }
+
+  @Test
   void onBlock_shouldUseLatestValidHashFromForkChoiceUpdated() {
     doMerge();
     finalizeEpoch(2);
@@ -724,13 +789,41 @@ class ForkChoiceTest {
   }
 
   private void doMerge() {
+    doMerge(false);
+  }
+
+  private void doMerge(final boolean optimistic) {
+    final UInt256 terminalTotalDifficulty =
+        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
+    final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
+    final PowBlock terminalBlock =
+        new PowBlock(terminalBlockHash, terminalBlockParentHash, terminalTotalDifficulty.plus(1));
+    final PowBlock terminalParentBlock =
+        new PowBlock(
+            terminalBlockParentHash,
+            dataStructureUtil.randomBytes32(),
+            terminalTotalDifficulty.subtract(1));
+    executionEngine.addPowBlock(terminalBlock);
+    executionEngine.addPowBlock(terminalParentBlock);
     final SignedBlockAndState epoch4Block =
         chainBuilder.generateBlockAtSlot(
             storageSystem.chainUpdater().getHeadSlot().plus(1),
-            ChainBuilder.BlockOptions.create()
-                .setTerminalBlockHash(dataStructureUtil.randomBytes32()));
+            ChainBuilder.BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
 
-    storageSystem.chainUpdater().updateBestBlock(epoch4Block);
+    if (optimistic) {
+      storageSystem.chainUpdater().saveOptimisticBlock(epoch4Block);
+      recentChainData.onForkChoiceUpdated(
+          new ForkChoiceState(
+              epoch4Block.getRoot(),
+              epoch4Block.getSlot(),
+              terminalBlockHash,
+              terminalBlockHash,
+              Bytes32.ZERO,
+              true));
+    } else {
+      storageSystem.chainUpdater().updateBestBlock(epoch4Block);
+    }
   }
 
   @Test

@@ -233,7 +233,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   private void sendForkChoiceUpdated() {
-    forkChoiceUpdateData.send(executionEngineChannel).reportExceptions();
+    forkChoiceUpdateData
+        .send(executionEngineChannel)
+        .finish(error -> LOG.error("forkChoiceUpdated notification failed", error));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {

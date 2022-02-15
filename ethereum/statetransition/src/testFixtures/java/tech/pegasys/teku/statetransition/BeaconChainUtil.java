@@ -42,9 +42,11 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -108,7 +110,12 @@ public class BeaconChainUtil {
         spec,
         storageClient,
         validatorKeys,
-        new ForkChoice(spec, new InlineEventThread(), storageClient, new StubForkChoiceNotifier()),
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            storageClient,
+            new StubForkChoiceNotifier(),
+            new MergeTransitionBlockValidator(spec, storageClient, ExecutionEngineChannel.NOOP)),
         true);
   }
 
@@ -129,7 +136,12 @@ public class BeaconChainUtil {
         spec,
         validatorKeys,
         storageClient,
-        new ForkChoice(spec, new InlineEventThread(), storageClient, new StubForkChoiceNotifier()),
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            storageClient,
+            new StubForkChoiceNotifier(),
+            new MergeTransitionBlockValidator(spec, storageClient, ExecutionEngineChannel.NOOP)),
         signDeposits);
   }
 
@@ -367,7 +379,13 @@ public class BeaconChainUtil {
       if (forkChoice == null) {
         final InlineEventThread forkChoiceExecutor = new InlineEventThread();
         forkChoice =
-            new ForkChoice(spec, forkChoiceExecutor, recentChainData, new StubForkChoiceNotifier());
+            new ForkChoice(
+                spec,
+                forkChoiceExecutor,
+                recentChainData,
+                new StubForkChoiceNotifier(),
+                new MergeTransitionBlockValidator(
+                    spec, recentChainData, ExecutionEngineChannel.NOOP));
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);

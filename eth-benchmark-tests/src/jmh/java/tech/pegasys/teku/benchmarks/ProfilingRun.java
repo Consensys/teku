@@ -46,6 +46,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -88,9 +89,15 @@ public class ProfilingRun {
           mock(BlockImportNotifications.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
+      final MergeTransitionBlockValidator transitionBlockValidator =
+          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
       ForkChoice forkChoice =
           new ForkChoice(
-              spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
+              spec,
+              new InlineEventThread(),
+              recentChainData,
+              new StubForkChoiceNotifier(),
+              transitionBlockValidator);
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
@@ -170,9 +177,15 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
+      final MergeTransitionBlockValidator transitionBlockValidator =
+          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
       ForkChoice forkChoice =
           new ForkChoice(
-              spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
+              spec,
+              new InlineEventThread(),
+              recentChainData,
+              new StubForkChoiceNotifier(),
+              transitionBlockValidator);
       BlockImporter blockImporter =
           new BlockImporter(
               spec,

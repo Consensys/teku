@@ -17,8 +17,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,7 +47,6 @@ public class TekuConfiguration {
   private final StorageConfiguration storageConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final DataConfig dataConfig;
-  private final LoggingConfig loggingConfig;
   private final MetricsConfig metricsConfig;
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
@@ -71,7 +68,6 @@ public class TekuConfiguration {
       final P2PConfig p2PConfig,
       final SyncConfig syncConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
-      final LoggingConfig loggingConfig,
       final MetricsConfig metricsConfig,
       final StoreConfig storeConfig,
       final NatConfiguration natConfiguration,
@@ -83,7 +79,6 @@ public class TekuConfiguration {
     this.powchainConfiguration = powchainConfiguration;
     this.executionEngineConfiguration = executionEngineConfiguration;
     this.dataConfig = dataConfig;
-    this.loggingConfig = loggingConfig;
     this.metricsConfig = metricsConfig;
     this.beaconChainConfig =
         new BeaconChainConfiguration(
@@ -157,10 +152,6 @@ public class TekuConfiguration {
     return dataConfig;
   }
 
-  public LoggingConfig loggingConfig() {
-    return loggingConfig;
-  }
-
   public MetricsConfig metricsConfig() {
     return metricsConfig;
   }
@@ -193,7 +184,6 @@ public class TekuConfiguration {
         BeaconRestApiConfig.builder();
     private final ValidatorRestApiConfig.ValidatorRestApiConfigBuilder
         validatorRestApiConfigBuilder = ValidatorRestApiConfig.builder();
-    private final LoggingConfig.LoggingConfigBuilder loggingConfigBuilder = LoggingConfig.builder();
     private final MetricsConfig.MetricsConfigBuilder metricsConfigBuilder = MetricsConfig.builder();
     private final NatConfiguration.Builder natConfigBuilder = NatConfiguration.builder();
     private final StoreConfig.Builder storeConfigBuilder = StoreConfig.builder();
@@ -228,8 +218,6 @@ public class TekuConfiguration {
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
       DataConfig dataConfig = dataConfigBuilder.build();
-      loggingConfigBuilder.dataDirectory(dataConfig.getDataBasePath().toString());
-
       ValidatorConfig validatorConfig = validatorConfigBuilder.build();
       // We don't need to update head for empty slots when using dependent roots
       storeConfigBuilder.updateHeadForEmptySlotsDefault(!validatorConfig.useDependentRoots());
@@ -250,7 +238,6 @@ public class TekuConfiguration {
           p2PConfig,
           syncConfig.build(),
           restApiBuilder.build(),
-          loggingConfigBuilder.build(),
           metricsConfigBuilder.build(),
           storeConfigBuilder.build(),
           natConfigBuilder.build(),
@@ -339,11 +326,6 @@ public class TekuConfiguration {
     public Builder validatorApi(
         final Consumer<ValidatorRestApiConfig.ValidatorRestApiConfigBuilder> validatorApiConsumer) {
       validatorApiConsumer.accept(validatorRestApiConfigBuilder);
-      return this;
-    }
-
-    public Builder logging(final Consumer<LoggingConfigBuilder> loggingConfigBuilderConsumer) {
-      loggingConfigBuilderConsumer.accept(loggingConfigBuilder);
       return this;
     }
 
