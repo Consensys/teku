@@ -85,12 +85,12 @@ class SafeTokenProviderTest {
 
   public static boolean validateJwtTokenAtInstant(
       final Key jwtSecretKey, final String jwtToken, final UInt64 instantInMillis) {
-    final long issuedAtInMillis =
+    final long issuedAtInSeconds =
         Jwts.parser()
             .setSigningKey(jwtSecretKey)
             .parseClaimsJws(jwtToken)
             .getBody()
             .get(Claims.ISSUED_AT, Long.class);
-    return instantInMillis.isLessThan(TimeUnit.SECONDS.toMillis(issuedAtInMillis));
+    return instantInMillis.isLessThan(TimeUnit.SECONDS.toMillis(issuedAtInSeconds));
   }
 }
