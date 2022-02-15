@@ -68,7 +68,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
     switch (version) {
       case KILNV2:
         return new Web3JExecutionEngineClient(eeEndpoint, timeProvider);
-      case KILNV1:
+      case KILN:
         return new KilnV1Web3JExecutionEngineClient(eeEndpoint, timeProvider);
       case KINTSUGI:
       default:
