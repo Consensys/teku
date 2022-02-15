@@ -32,17 +32,22 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public abstract class AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();
   final StringWriter stringWriter = new StringWriter();
   protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
+  protected final LoggingConfigurator loggingConfigurator = mock(LoggingConfigurator.class);
 
   final StartAction startAction = mock(StartAction.class);
 
   protected BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
+      new BeaconNodeCommand(
+          outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
 
   @TempDir Path dataPath;
 
@@ -72,9 +77,20 @@ public abstract class AbstractBeaconNodeCommandTest {
     }
   }
 
+  public LoggingConfig getResultingLoggingConfiguration() {
+    return beaconNodeCommand.buildLoggingConfig(
+        getResultingTekuConfiguration().dataConfig().getDataBasePath().toString(),
+        BeaconNodeCommand.LOG_FILE_PREFIX);
+  }
+
   public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingTekuConfiguration();
+  }
+
+  public LoggingConfig getLoggingConfigurationFromArguments(String... arguments) {
+    beaconNodeCommand.parse(arguments);
+    return getResultingLoggingConfiguration();
   }
 
   public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {
@@ -84,13 +100,27 @@ public abstract class AbstractBeaconNodeCommandTest {
     return getResultingTekuConfiguration();
   }
 
+  public LoggingConfig getLoggingConfigFromFile(String resourceFilename) {
+    final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
+    beaconNodeCommand.parse(args);
+    return getResultingLoggingConfiguration();
+  }
+
   public String getCommandLineOutput() {
     verifyNoInteractions(startAction);
     return new String(stringWriter.getBuffer());
   }
 
   protected TekuConfiguration.Builder createConfigBuilder() {
-    return TekuConfiguration.builder()
-        .logging(b -> b.logFileNamePrefix(BeaconNodeCommand.LOG_FILE_PREFIX));
+    return TekuConfiguration.builder();
+  }
+
+  protected LoggingConfigBuilder createLoggingConfigBuilder() {
+    LoggingConfigBuilder builder = LoggingConfig.builder();
+    return builder
+        .logFileNamePrefix(BeaconNodeCommand.LOG_FILE_PREFIX)
+        .dataDirectory(
+            createConfigBuilder().data(__ -> {}).build().dataConfig().getDataBasePath().toString());
   }
 }

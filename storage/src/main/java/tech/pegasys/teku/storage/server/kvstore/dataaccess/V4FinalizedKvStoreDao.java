@@ -119,6 +119,11 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   }
 
   @Override
+  public Optional<UInt64> getOptimisticTransitionBlockSlot() {
+    return db.get(schema.getOptimisticTransitionBlockSlot());
+  }
+
+  @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
@@ -261,6 +266,15 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
     @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       transaction.put(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot, slot);
+    }
+
+    @Override
+    public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
+      if (transitionBlockSlot.isPresent()) {
+        transaction.put(schema.getOptimisticTransitionBlockSlot(), transitionBlockSlot.get());
+      } else {
+        transaction.delete(schema.getOptimisticTransitionBlockSlot());
+      }
     }
 
     @Override

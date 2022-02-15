@@ -14,11 +14,16 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE_PREFIX;
 import static tech.pegasys.teku.cli.OSUtils.SLASH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
@@ -26,12 +31,15 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
+  private static final String LOG_FILE =
+      LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
+  private static final String LOG_PATTERN =
+      LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
 
   @Test
   public void loggingOptions_shouldReadFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("loggingOptions_config.yaml");
+    final LoggingConfig loggingConfig = getLoggingConfigFromFile("loggingOptions_config.yaml");
 
-    final LoggingConfig loggingConfig = config.loggingConfig();
     assertThat(loggingConfig.getDestination()).isEqualTo(LoggingDestination.FILE);
     assertThat(loggingConfig.isColorEnabled()).isFalse();
     assertThat(loggingConfig.isIncludeEventsEnabled()).isFalse();
@@ -39,7 +47,11 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(VersionProvider.defaultStoragePath() + SLASH + "logs" + SLASH + "a.log");
     assertThat(loggingConfig.getLogFileNamePattern())
         .isEqualTo(VersionProvider.defaultStoragePath() + SLASH + "logs" + SLASH + "a%d.log");
+  }
 
+  @Test
+  public void wireLoggingOptions_shouldReadFromConfigurationFile() {
+    final TekuConfiguration config = getTekuConfigurationFromFile("wireLoggingOptions_config.yaml");
     final WireLogsConfig wireConfig = config.network().getWireLogsConfig();
     assertThat(wireConfig.isLogWireCipher()).isTrue();
     assertThat(wireConfig.isLogWirePlain()).isTrue();
@@ -53,52 +65,139 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     // If it defaults to "both" or some other value custom log4j configs get overwritten
     beaconNodeCommand.parse(new String[0]);
 
-    final LoggingConfig config = getResultingTekuConfiguration().loggingConfig();
+    final LoggingConfig config = getResultingLoggingConfiguration();
     assertThat(config.getDestination()).isEqualTo(DEFAULT_BOTH);
   }
 
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "file");
-    final LoggingConfig config = tekuConfiguration.loggingConfig();
+    final LoggingConfig config = getLoggingConfigurationFromArguments("--log-destination", "file");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.FILE);
-    assertThat(createConfigBuilder().logging(b -> b.destination(LoggingDestination.FILE)).build())
+    assertThat(createLoggingConfigBuilder().destination(LoggingDestination.FILE).build())
         .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
+        .isEqualTo(config);
   }
 
   @Test
   public void includeEvents_shouldNotRequireAValue() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-include-events-enabled");
-    final LoggingConfig config = tekuConfiguration.loggingConfig();
+    final LoggingConfig config =
+        getLoggingConfigurationFromArguments("--log-include-events-enabled");
     assertThat(config.isIncludeEventsEnabled()).isTrue();
-    assertThat(createConfigBuilder().logging(b -> b.includeEventsEnabled(true)).build())
+    assertThat(createLoggingConfigBuilder().includeEventsEnabled(true).build())
         .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
+        .isEqualTo(config);
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "console");
-    final LoggingConfig config = tekuConfiguration.loggingConfig();
+    final LoggingConfig config =
+        getLoggingConfigurationFromArguments("--log-destination", "console");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
-    assertThat(
-            createConfigBuilder().logging(b -> b.destination(LoggingDestination.CONSOLE)).build())
+    assertThat(createLoggingConfigBuilder().destination(LoggingDestination.CONSOLE).build())
         .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
+        .isEqualTo(config);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "both");
-    final LoggingConfig config = tekuConfiguration.loggingConfig();
+    final LoggingConfig config = getLoggingConfigurationFromArguments("--log-destination", "both");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.BOTH);
-    assertThat(createConfigBuilder().logging(b -> b.destination(LoggingDestination.BOTH)).build())
+    assertThat(createLoggingConfigBuilder().destination(LoggingDestination.BOTH).build())
         .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
+        .isEqualTo(config);
+  }
+
+  @Test
+  public void shouldSetLogFileToDefaultDataDirectory() {
+    final String[] args = {};
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFile())
+        .isEqualTo(
+            StringUtils.joinWith(SLASH, VersionProvider.defaultStoragePath(), "logs", LOG_FILE));
+  }
+
+  @Test
+  public void shouldSetLogPatternToDefaultDataDirectory() {
+    final String[] args = {"--data-path", OSUtils.toOSPath("/my/path")};
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFileNamePattern())
+        .isEqualTo(OSUtils.toOSPath("/my/path/logs/" + LOG_PATTERN));
+  }
+
+  @Test
+  public void shouldSetLogPatternOnCommandLine() {
+    final String[] args = {
+      "--data-path",
+      OSUtils.toOSPath("/my/path"),
+      "--log-file-name-pattern",
+      OSUtils.toOSPath("/z/%d.log")
+    };
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFileNamePattern()).isEqualTo(OSUtils.toOSPath("/z/%d.log"));
+  }
+
+  @Test
+  public void shouldSetLogPatternOnWithoutPath() {
+    final String[] args = {"--log-file-name-pattern", "%d.log"};
+    final String expectedLogPatternPath =
+        StringUtils.joinWith(
+            System.getProperty("file.separator"),
+            VersionProvider.defaultStoragePath(),
+            "logs",
+            "%d.log");
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFileNamePattern()).isEqualTo(expectedLogPatternPath);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(
+      strings = {
+        "OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL", "off", "fatal", "error",
+        "warn", "info", "debug", "trace", "all"
+      })
+  public void loglevel_shouldAcceptValues(String level) {
+    final String[] args = {"--logging", level};
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogLevel().orElseThrow().toString()).isEqualToIgnoringCase(level);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"Off", "Fatal", "eRRoR", "WaRN", "InfO", "DebUG", "trACE", "All"})
+  public void loglevel_shouldAcceptValuesMixedCase(String level) {
+    final String[] args = {"--logging", level};
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogLevel().orElseThrow().toString()).isEqualTo(level.toUpperCase());
+  }
+
+  @Test
+  public void logLevel_shouldRejectInvalidValues() {
+    final String[] args = {"--logging", "invalid"};
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("'invalid' is not a valid log level. Supported values are");
+  }
+
+  @Test
+  public void shouldSetLogFileToTheOptionProvided() {
+    final String[] args = {"--log-file", OSUtils.toOSPath("/hello/world.log")};
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFile()).isEqualTo(OSUtils.toOSPath("/hello/world.log"));
+  }
+
+  @Test
+  public void shouldSetLogFileToTheOptionProvidedRegardlessOfDataPath() {
+    final String[] args = {
+      "--log-file", OSUtils.toOSPath("/hello/world.log"),
+      "--data-path", OSUtils.toOSPath("/yo")
+    };
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFile()).isEqualTo(OSUtils.toOSPath("/hello/world.log"));
+  }
+
+  @Test
+  public void shouldSetLogFileRelativeToSetDataDirectory() {
+    final String[] args = {"--data-path", OSUtils.toOSPath("/yo")};
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getLogFile()).isEqualTo(OSUtils.toOSPath("/yo/logs/teku.log"));
   }
 }

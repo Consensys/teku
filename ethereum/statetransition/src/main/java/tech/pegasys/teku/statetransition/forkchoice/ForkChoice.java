@@ -24,13 +24,13 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -44,10 +44,10 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -157,7 +157,7 @@ public class ForkChoice {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(headBlockRoot);
                       return true;
                     }));
   }
@@ -188,7 +188,7 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
 
     final ForkChoicePayloadExecutor payloadExecutor =
-        new ForkChoicePayloadExecutor(spec, block, executionEngine);
+        ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionEngine);
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
     final BlockImportResult preconditionCheckResult =
         forkChoiceUtil.checkOnBlockConditions(
@@ -233,8 +233,8 @@ public class ForkChoice {
       final ForkChoiceUtil forkChoiceUtil,
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
-      final ExecutePayloadResult payloadResult) {
-    if (payloadResult.hasStatus(ExecutionPayloadStatus.INVALID)) {
+      final PayloadStatus payloadResult) {
+    if (payloadResult.hasInvalidStatus()) {
       final BlockImportResult result =
           BlockImportResult.failedStateTransition(
               new IllegalStateException(
@@ -244,7 +244,7 @@ public class ForkChoice {
       return result;
     }
 
-    if (payloadResult.hasStatus(ExecutionPayloadStatus.SYNCING)
+    if (payloadResult.hasNotValidatedStatus()
         && !recentChainData.isOptimisticSyncPossible(block.getSlot())) {
       return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
     }
@@ -278,7 +278,7 @@ public class ForkChoice {
       }
     }
 
-    if (payloadResult.hasStatus(ExecutionPayloadStatus.VALID)) {
+    if (payloadResult.hasValidStatus()) {
       UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
       if (latestValidFinalizedSlot.isGreaterThan(transaction.getLatestValidFinalizedSlot())) {
         transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
@@ -299,21 +299,18 @@ public class ForkChoice {
     }
 
     final BlockImportResult result;
-    final ExecutionPayloadStatus payloadResultStatus = payloadResult.getStatus().orElseThrow();
-    if (payloadResultStatus == ExecutionPayloadStatus.VALID) {
+    if (payloadResult.hasValidStatus()) {
       result = BlockImportResult.successful(block);
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(block.getRoot());
     return result;
   }
 
-  public void onExecutionPayloadResult(
-      final Bytes32 blockRoot,
-      final ExecutePayloadResult result,
-      final UInt64 latestFinalizedBlockSlot) {
+  private void onExecutionPayloadResult(
+      final Bytes32 blockRoot, final PayloadStatus result, final UInt64 latestFinalizedBlockSlot) {
     onForkChoiceThread(
             () -> {
               if (result.hasStatus(ExecutionPayloadStatus.VALID)) {
@@ -382,13 +379,25 @@ public class ForkChoice {
         result.getFailureCause());
   }
 
-  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
+  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(final Bytes32 blockRoot) {
     final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    UInt64 latestFinalizedBlockSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
+
+    forkChoiceNotifier
+        .onForkChoiceUpdated(forkChoiceState)
+        .thenAccept(
+            maybeForkChoiceUpdatedResult ->
+                maybeForkChoiceUpdatedResult.ifPresent(
+                    forkChoiceUpdatedResult ->
+                        onExecutionPayloadResult(
+                            blockRoot,
+                            forkChoiceUpdatedResult.getPayloadStatus(),
+                            latestFinalizedBlockSlot)))
+        .reportExceptions();
     recentChainData.onForkChoiceUpdated(forkChoiceState);
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))

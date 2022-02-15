@@ -52,6 +52,9 @@ public class V6TreeSchemaFinalized implements SchemaFinalizedTreeState {
           KvStoreColumn.create(
               ID_OFFSET + 6, BYTES32_SERIALIZER, COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER);
 
+  private static final KvStoreVariable<UInt64> OPTIMISTIC_TRANSITION_BLOCK_SLOT =
+      KvStoreVariable.create(ID_OFFSET + 1, UINT64_SERIALIZER);
+
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
 
@@ -87,6 +90,11 @@ public class V6TreeSchemaFinalized implements SchemaFinalizedTreeState {
   @Override
   public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
     return NON_CANONICAL_BLOCK_ROOTS_BY_SLOT;
+  }
+
+  @Override
+  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+    return OPTIMISTIC_TRANSITION_BLOCK_SLOT;
   }
 
   @Override

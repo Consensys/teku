@@ -72,7 +72,7 @@ public class ExecutionPayloadHeader
       SszBytes32 parentHash,
       SszByteVector feeRecipient,
       SszBytes32 stateRoot,
-      SszBytes32 receiptRoot,
+      SszBytes32 receiptsRoot,
       SszByteVector logsBloom,
       SszBytes32 random,
       SszUInt64 blockNumber,
@@ -88,7 +88,7 @@ public class ExecutionPayloadHeader
         parentHash,
         feeRecipient,
         stateRoot,
-        receiptRoot,
+        receiptsRoot,
         logsBloom,
         random,
         blockNumber,
@@ -118,7 +118,7 @@ public class ExecutionPayloadHeader
     return getField2().get();
   }
 
-  public Bytes32 getReceiptRoot() {
+  public Bytes32 getReceiptsRoot() {
     return getField3().get();
   }
 

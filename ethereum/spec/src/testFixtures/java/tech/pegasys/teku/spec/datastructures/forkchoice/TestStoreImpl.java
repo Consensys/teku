@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -107,6 +108,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
     final BeaconState state = getBlockState(finalized_checkpoint.getRoot());
     return AnchorPoint.create(spec, finalized_checkpoint, block, state);
+  }
+
+  @Override
+  public Optional<SlotAndExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+    return Optional.empty();
   }
 
   @Override

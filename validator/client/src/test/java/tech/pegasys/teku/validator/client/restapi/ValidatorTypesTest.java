@@ -15,17 +15,22 @@ package tech.pegasys.teku.validator.client.restapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequiredFieldException;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -34,8 +39,10 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
 
 class ValidatorTypesTest {
   private final DataStructureUtil dataStructureUtil =
@@ -156,5 +163,59 @@ class ValidatorTypesTest {
       throws JsonProcessingException {
     final T result = parse(serialize(value, type), type);
     assertThat(result).isEqualTo(value);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void postRemoteKeysRequest_shouldFormatPostRemoteKeysRequestOptionalUrl() throws Exception {
+    final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+
+    final List<ExternalValidator> externalValidators =
+        List.of(
+            new ExternalValidator(publicKey1, Optional.empty()),
+            new ExternalValidator(publicKey2, Optional.of(new URL("http://host.com"))));
+    final PostRemoteKeysRequest request = new PostRemoteKeysRequest(externalValidators);
+    final Map<String, Object> result =
+        JsonTestUtil.parse(JsonUtil.serialize(request, ValidatorTypes.POST_REMOTE_KEYS_REQUEST));
+
+    assertThat(result).containsOnlyKeys("remote_keys").isInstanceOf(HashMap.class);
+
+    final List<Map<String, Object>> remoteKeys =
+        (List<Map<String, Object>>) result.get("remote_keys");
+    assertThat(remoteKeys)
+        .containsExactly(
+            Map.of("pubkey", publicKey1.toString()),
+            Map.of(
+                "pubkey", publicKey2.toString(),
+                "url", new URL("http://host.com").toString()));
+  }
+
+  @Test
+  void externalValidatorType_missingReadOnlyField() {
+    assertThatThrownBy(
+            () ->
+                parse(
+                    "{ \"pubkey\": \"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\"}",
+                    ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE))
+        .isInstanceOf(MissingRequiredFieldException.class);
+  }
+
+  @Test
+  void externalValidatorType_invalidUrl() {
+    assertThatThrownBy(
+            () ->
+                parse(
+                    "{ \"pubkey\": \"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\", \"url\": \"/\", \"readonly\": true}",
+                    ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE))
+        .hasCauseInstanceOf(IllegalArgumentException.class)
+        .hasRootCauseInstanceOf(MalformedURLException.class);
+  }
+
+  @Test
+  void externalValidatorType_roundTrip() throws Exception {
+    final ExternalValidator externalValidator =
+        new ExternalValidator(dataStructureUtil.randomPublicKey(), Optional.empty(), true);
+    assertRoundTrip(externalValidator, ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE);
   }
 }

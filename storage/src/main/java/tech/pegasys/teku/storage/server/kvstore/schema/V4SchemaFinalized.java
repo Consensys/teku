@@ -17,8 +17,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,6 +35,9 @@ public class V4SchemaFinalized implements SchemaFinalizedSnapshotState {
       KvStoreColumn.create(4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
       KvStoreColumn.create(6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
+
+  private static final KvStoreVariable<UInt64> OPTIMISTIC_TRANSITION_BLOCK_SLOT =
+      KvStoreVariable.create(1, UINT64_SERIALIZER);
 
   public V4SchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
@@ -80,7 +81,7 @@ public class V4SchemaFinalized implements SchemaFinalizedSnapshotState {
   }
 
   @Override
-  public List<KvStoreVariable<?>> getAllVariables() {
-    return Collections.emptyList();
+  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+    return OPTIMISTIC_TRANSITION_BLOCK_SLOT;
   }
 }

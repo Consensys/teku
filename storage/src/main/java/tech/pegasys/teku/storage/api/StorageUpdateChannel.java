@@ -23,7 +23,7 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 
 public interface StorageUpdateChannel extends ChannelInterface {
 
-  SafeFuture<Void> onStorageUpdate(StorageUpdate event);
+  SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event);
 
   SafeFuture<Void> onFinalizedBlocks(Collection<SignedBeaconBlock> finalizedBlocks);
 

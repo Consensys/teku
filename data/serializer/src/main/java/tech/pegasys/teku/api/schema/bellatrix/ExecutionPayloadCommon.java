@@ -54,13 +54,13 @@ public abstract class ExecutionPayloadCommon {
       description = DESCRIPTION_BYTES32)
   public final Bytes32 stateRoot;
 
-  @JsonProperty("receipt_root")
+  @JsonProperty("receipts_root")
   @Schema(
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public final Bytes32 receiptRoot;
+  public final Bytes32 receiptsRoot;
 
   @JsonProperty("logs_bloom")
   @Schema(type = "string", format = "byte")
@@ -108,7 +108,7 @@ public abstract class ExecutionPayloadCommon {
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
-      @JsonProperty("receipt_root") Bytes32 receiptRoot,
+      @JsonProperty("receipts_root") Bytes32 receiptsRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
       @JsonProperty("random") Bytes32 random,
       @JsonProperty("block_number") UInt64 blockNumber,
@@ -121,7 +121,7 @@ public abstract class ExecutionPayloadCommon {
     this.parentHash = parentHash;
     this.feeRecipient = feeRecipient;
     this.stateRoot = stateRoot;
-    this.receiptRoot = receiptRoot;
+    this.receiptsRoot = receiptsRoot;
     this.logsBloom = logsBloom;
     this.random = random;
     this.blockNumber = blockNumber;
@@ -138,7 +138,7 @@ public abstract class ExecutionPayloadCommon {
     this.parentHash = executionPayload.getParentHash();
     this.feeRecipient = executionPayload.getFeeRecipient();
     this.stateRoot = executionPayload.getStateRoot();
-    this.receiptRoot = executionPayload.getReceiptRoot();
+    this.receiptsRoot = executionPayload.getReceiptsRoot();
     this.logsBloom = executionPayload.getLogsBloom();
     this.random = executionPayload.getRandom();
     this.blockNumber = executionPayload.getBlockNumber();
@@ -162,7 +162,7 @@ public abstract class ExecutionPayloadCommon {
     return Objects.equals(parentHash, that.parentHash)
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(receiptRoot, that.receiptRoot)
+        && Objects.equals(receiptsRoot, that.receiptsRoot)
         && Objects.equals(logsBloom, that.logsBloom)
         && Objects.equals(random, that.random)
         && Objects.equals(blockNumber, that.blockNumber)
@@ -180,7 +180,7 @@ public abstract class ExecutionPayloadCommon {
         parentHash,
         feeRecipient,
         stateRoot,
-        receiptRoot,
+        receiptsRoot,
         logsBloom,
         random,
         blockNumber,
@@ -198,7 +198,7 @@ public abstract class ExecutionPayloadCommon {
         .add("parentHash", parentHash)
         .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
-        .add("receiptRoot", receiptRoot)
+        .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
         .add("random", random)
         .add("blockNumber", blockNumber)

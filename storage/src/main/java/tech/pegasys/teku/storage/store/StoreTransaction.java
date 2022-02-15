@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -153,7 +154,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               final Lock writeLock = lock.writeLock();
               writeLock.lock();
               try {
-                updates = StoreTransactionUpdatesFactory.create(store, this, latestFinalized);
+                updates = StoreTransactionUpdatesFactory.create(spec, store, this, latestFinalized);
               } finally {
                 writeLock.unlock();
               }
@@ -161,12 +162,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               return storageUpdateChannel
                   .onStorageUpdate(updates.createStorageUpdate())
                   .thenAccept(
-                      __ -> {
+                      updateResult -> {
                         // Propagate changes to Store
                         writeLock.lock();
                         try {
                           // Add new data
-                          updates.applyToStore(store);
+                          updates.applyToStore(store, updateResult);
                         } finally {
                           writeLock.unlock();
                         }
@@ -222,6 +223,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       return AnchorPoint.create(spec, finalizedCheckpoint.get(), finalizedBlockAndState);
     }
     return store.getLatestFinalized();
+  }
+
+  @Override
+  public Optional<SlotAndExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+    return store.getFinalizedOptimisticTransitionPayload();
   }
 
   private SafeFuture<AnchorPoint> retrieveLatestFinalized() {

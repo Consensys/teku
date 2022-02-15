@@ -39,7 +39,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
             final ForkChoiceState forkChoiceState,
             final Optional<PayloadAttributes> payloadAttributes) {
-          return SafeFuture.completedFuture(null);
+          return SafeFuture.completedFuture(
+              new ForkChoiceUpdatedResult(PayloadStatus.SYNCING, Optional.empty()));
         }
 
         @Override
@@ -48,9 +49,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutePayloadResult> executePayload(
-            final ExecutionPayload executionPayload) {
-          return SafeFuture.completedFuture(ExecutePayloadResult.SYNCING);
+        public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
+          return SafeFuture.completedFuture(PayloadStatus.SYNCING);
         }
       };
 
@@ -63,5 +63,12 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot);
 
-  SafeFuture<ExecutePayloadResult> executePayload(final ExecutionPayload executionPayload);
+  SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload);
+
+  enum Version {
+    KINTSUGI,
+    KILN;
+
+    public static Version DEFAULT_VERSION = KINTSUGI;
+  }
 }

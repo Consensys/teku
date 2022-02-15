@@ -52,10 +52,13 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -69,8 +72,8 @@ public abstract class AbstractDatabaseTest {
 
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   protected final ChainProperties chainProperties = new ChainProperties(spec);
 
   protected UInt64 genesisTime = UInt64.valueOf(100);
@@ -574,6 +577,177 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_singleTransaction() {
+    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
+            .collect(toList());
+    // Save all blocks and states in a single transaction
+    add(newBlocks);
+
+    // Then finalize
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
+    assertThat(transitionPayload).isPresent();
+    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
+        .isEqualTo(transitionPayload);
+  }
+
+  @Test
+  public void shouldNotRecordTransitionExecutionPayloadWhenNotOptimistic() {
+    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
+            .collect(toList());
+
+    // Save all blocks and states in a single transaction
+    add(newBlocks);
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .orElseThrow()
+        .onExecutionPayloadResult(transitionBlock.getRoot(), PayloadStatus.VALID);
+
+    // Then finalize
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+
+    final Optional<ExecutionPayload> transitionPayload =
+        transitionBlock.getBlock().getMessage().getBody().getOptionalExecutionPayload();
+    assertThat(transitionPayload).isPresent();
+    assertThat(transitionPayload.get().isDefault()).isFalse();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload()).isEmpty();
+  }
+
+  @Test
+  public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_multiTransaction() {
+    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
+            .collect(toList());
+    // Save all blocks and states in separate transactions
+    for (SignedBlockAndState newBlock : newBlocks) {
+      add(List.of(newBlock));
+    }
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload()).isEmpty();
+
+    // Then finalize
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
+    assertThat(transitionPayload).isPresent();
+    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
+        .isEqualTo(transitionPayload);
+  }
+
+  @Test
+  public void shouldPersistOptimisticTransitionExecutionPayload() {
+    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
+            .collect(toList());
+    // Save all blocks and states in a single transaction
+    add(newBlocks);
+    // Then finalize
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
+    assertThat(transitionPayload).isPresent();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
+        .isEqualTo(transitionPayload);
+
+    restartStorage();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
+        .isEqualTo(transitionPayload);
+  }
+
+  @Test
+  public void shouldNotRemoveOptimisticFinalizedExceptionPayloadWhenFinalizedNextUpdated() {
+    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
+            .collect(toList());
+    // Save all blocks and states in a single transaction
+    add(newBlocks);
+
+    // Then finalize
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+
+    // Finalize the next epoch
+    final List<SignedBlockAndState> laterBlocks =
+        chainBuilder.generateBlocksUpToSlot(
+            chainBuilder.getLatestSlot().plus(spec.getSlotsPerEpoch(chainBuilder.getLatestSlot())));
+    add(laterBlocks);
+    final Checkpoint finalizedCheckpoint2 =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx2 = recentChainData.startStoreTransaction();
+    tx2.setFinalizedCheckpoint(finalizedCheckpoint2);
+    assertThat(tx2.commit()).isCompleted();
+
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
+    assertThat(transitionPayload).isPresent();
+    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
+        .isEqualTo(transitionPayload);
+  }
+
+  /**
+   * Generates a chain in chainBuilder that can be finalized at the current epoch, including a merge
+   * transition block.
+   *
+   * @return the merge transition block
+   */
+  private SignedBlockAndState generateChainWithFinalizableTransitionBlock() {
+    createStorage(StateStorageMode.PRUNE);
+    initGenesis();
+
+    final int startSlot = genesisBlockAndState.getSlot().intValue();
+    final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
+    final UInt64 finalizedEpoch = chainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+
+    chainBuilder.generateBlocksUpToSlot(finalizedSlot.minus(5));
+    final SignedBlockAndState transitionBlock =
+        chainBuilder.generateBlockAtSlot(
+            finalizedSlot.minus(4),
+            BlockOptions.create()
+                .setTransactions(Bytes32.ZERO)
+                .setTerminalBlockHash(Bytes32.fromHexString("0x1234")));
+    chainBuilder.generateBlocksUpToSlot(finalizedSlot);
+    return transitionBlock;
+  }
+
+  @Test
   public void shouldRecordFinalizedBlocksAndStates_pruneMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
   }
@@ -684,7 +858,7 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void orphanedBlockStorageTest_multiple() {
     createStorage(storageMode, StoreConfig.createDefault(), true);
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
@@ -753,7 +927,7 @@ public abstract class AbstractDatabaseTest {
   protected CreateForkChainResult createForkChain(final boolean restartStorage) {
     // Setup chains
     // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
@@ -901,7 +1075,7 @@ public abstract class AbstractDatabaseTest {
       Consumer<StateStorageMode> initializeDatabase) {
     // Setup chains
     // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
@@ -1179,7 +1353,7 @@ public abstract class AbstractDatabaseTest {
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {
     StoreTransaction tx = recentChainData.startStoreTransaction();
     justifyAndFinalizeEpoch(epoch, block, tx);
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
   }
 
   protected void justifyAndFinalizeEpoch(

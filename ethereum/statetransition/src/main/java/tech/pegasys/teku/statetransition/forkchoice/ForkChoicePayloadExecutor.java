@@ -21,31 +21,41 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
-  private final SignedBeaconBlock block;
   private final ExecutionEngineChannel executionEngine;
-  private Optional<SafeFuture<ExecutePayloadResult>> result = Optional.empty();
+  private final SignedBeaconBlock block;
+  private final MergeTransitionBlockValidator transitionBlockValidator;
+  private Optional<SafeFuture<PayloadStatus>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
-      final Spec spec,
       final SignedBeaconBlock block,
-      final ExecutionEngineChannel executionEngine) {
-    this.spec = spec;
+      final ExecutionEngineChannel executionEngine,
+      final MergeTransitionBlockValidator transitionBlockValidator) {
     this.block = block;
+    this.transitionBlockValidator = transitionBlockValidator;
     this.executionEngine = executionEngine;
   }
 
-  public SafeFuture<ExecutePayloadResult> getExecutionResult() {
-    return result.orElse(SafeFuture.completedFuture(ExecutePayloadResult.VALID));
+  public static ForkChoicePayloadExecutor create(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SignedBeaconBlock block,
+      final ExecutionEngineChannel executionEngine) {
+    return new ForkChoicePayloadExecutor(
+        block,
+        executionEngine,
+        new MergeTransitionBlockValidator(spec, recentChainData, executionEngine));
+  }
+
+  public SafeFuture<PayloadStatus> getExecutionResult() {
+    return result.orElse(SafeFuture.completedFuture(PayloadStatus.VALID));
   }
 
   @Override
@@ -58,15 +68,16 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // because it checks the parentRoot matches
       return true;
     }
+
     result =
         Optional.of(
             executionEngine
-                .executePayload(executionPayload)
+                .newPayload(executionPayload)
                 .thenCompose(
                     result -> {
-                      if (result.hasStatus(ExecutionPayloadStatus.VALID)
-                          && latestExecutionPayloadHeader.isDefault()) {
-                        return validateTransitionPayload(executionPayload);
+                      if (result.hasValidStatus()) {
+                        return transitionBlockValidator.verifyTransitionBlock(
+                            latestExecutionPayloadHeader, block);
                       } else {
                         return SafeFuture.completedFuture(result);
                       }
@@ -74,20 +85,9 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                 .exceptionally(
                     error -> {
                       LOG.error("Error while validating payload", error);
-                      return ExecutePayloadResult.failedExecution(error);
+                      return PayloadStatus.failedExecution(error);
                     }));
-    return true;
-  }
 
-  private SafeFuture<ExecutePayloadResult> validateTransitionPayload(
-      final ExecutionPayload executionPayload) {
-    final BellatrixTransitionHelpers bellatrixTransitionHelpers =
-        spec.atSlot(block.getSlot())
-            .getBellatrixTransitionHelpers()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Attempting to validate a bellatrix block when spec does not have bellatrix transition helpers"));
-    return bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload);
+    return true;
   }
 }

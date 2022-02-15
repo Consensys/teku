@@ -3,16 +3,17 @@ jar { enabled = false }
 dependencies {
     integrationTestImplementation project(':data')
     integrationTestImplementation project(':ethereum:core')
+    integrationTestImplementation project(':ethereum:forkchoice')
     integrationTestImplementation testFixtures(project(':ethereum:spec'))
     integrationTestImplementation project(':ethereum:statetransition')
     integrationTestImplementation project(':eth-tests')
-    integrationTestImplementation project(':protoarray')
     integrationTestImplementation project(':infrastructure:bls')
     integrationTestImplementation project(':infrastructure:ssz')
     integrationTestImplementation project(':storage')
     integrationTestImplementation project(':infrastructure:async')
 
     integrationTestImplementation testFixtures(project(':ethereum:networks'))
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
     integrationTestImplementation testFixtures(project(':infrastructure:async'))
     integrationTestImplementation testFixtures(project(':storage'))
 

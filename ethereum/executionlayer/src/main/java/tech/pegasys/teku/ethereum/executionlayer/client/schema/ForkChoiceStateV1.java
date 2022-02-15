@@ -54,7 +54,7 @@ public class ForkChoiceStateV1 {
     return new ForkChoiceStateV1(
         forkChoiceState.getHeadExecutionBlockHash(),
         forkChoiceState.getSafeExecutionBlockHash(),
-        forkChoiceState.getHeadExecutionBlockHash());
+        forkChoiceState.getFinalizedExecutionBlockHash());
   }
 
   @Override

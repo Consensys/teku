@@ -133,6 +133,40 @@ public class ExternalMetricNode extends Node {
         });
   }
 
+  public void waitForSystemMetricPublication() {
+    Waiter.waitFor(
+        () -> {
+          Map<String, Object> publishedData = getPublisher("system", getPublishedObjects());
+          assertThat(publishedData).isNotNull();
+          assertThat(publishedData.size()).isEqualTo(22);
+          checkBaseMetricData(publishedData);
+          for (String field :
+              List.of(
+                  "cpu_cores",
+                  "cpu_threads",
+                  "cpu_node_system_seconds_total",
+                  "cpu_node_user_seconds_total",
+                  "cpu_node_iowait_seconds_total",
+                  "cpu_node_idle_seconds_total",
+                  "memory_node_bytes_total",
+                  "memory_node_bytes_free",
+                  "memory_node_bytes_cached",
+                  "memory_node_bytes_buffers",
+                  "disk_node_bytes_total",
+                  "disk_node_bytes_free",
+                  "disk_node_io_seconds",
+                  "disk_node_reads_total",
+                  "disk_node_writes_total",
+                  "network_node_bytes_total_receive",
+                  "network_node_bytes_total_transmit",
+                  "misc_node_boot_ts_seconds",
+                  "misc_os")) {
+            assertThat(publishedData.containsKey(field)).isTrue();
+            assertThat(publishedData.get(field)).isNotNull();
+          }
+        });
+  }
+
   private Map<String, Object> getPublisher(
       final String publisherName, final List<Map<String, Object>> publishedObjects) {
     for (Map<String, Object> current : publishedObjects) {

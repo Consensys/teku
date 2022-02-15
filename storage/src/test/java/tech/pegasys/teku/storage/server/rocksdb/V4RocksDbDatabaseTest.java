@@ -40,6 +40,7 @@ public class V4RocksDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesT
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
+        .specProvider(spec)
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.V4)
         .storageMode(storageMode)

@@ -43,14 +43,13 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -69,6 +68,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   final Eth1Address address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
+
+  @BeforeEach
+  public void resetBeaconNodeCommand() {
+    this.beaconNodeCommand =
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
+  }
 
   @Test
   public void unknownOptionShouldDisplayShortHelpMessage() {
@@ -163,7 +169,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(expectedDefaultConfigurationBuilder().build());
+    assertTekuAndLoggingConfiguration(
+        expectedDefaultConfigurationBuilder().build(), expectedDefaultLoggingBuilder().build());
   }
 
   @Test
@@ -173,7 +180,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             outputWriter,
             errorWriter,
             Map.of("TEKU_VERSION", "1.2.3", "TEKU_HELP", "what?"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     // No error from invalid --version or --help arg.
     assertThat(beaconNodeCommand.parse(new String[0])).isZero();
@@ -188,13 +196,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             outputWriter,
             errorWriter,
             Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
         expectedConfigurationBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
-    assertTekuConfiguration(expected);
+    assertTekuAndLoggingConfiguration(expected, expectedLoggingBuilder().build());
   }
 
   @Test
@@ -206,13 +215,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             outputWriter,
             errorWriter,
             Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
         expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
-    assertTekuConfiguration(expected);
+    assertTekuAndLoggingConfiguration(
+        expected, expectedCompleteConfigInFileLoggingBuilder().build());
   }
 
   @Test
@@ -226,7 +237,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration expected =
         expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
-    assertTekuConfiguration(expected);
+    assertTekuAndLoggingConfiguration(
+        expected, expectedCompleteConfigInFileLoggingBuilder().build());
   }
 
   @Test
@@ -236,11 +248,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             outputWriter,
             errorWriter,
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"),
-            startAction);
+            startAction,
+            loggingConfigurator);
 
     beaconNodeCommand.parse(new String[] {});
 
-    assertTekuConfiguration(expectedDefaultConfigurationBuilder().build());
+    assertTekuAndLoggingConfiguration(
+        expectedDefaultConfigurationBuilder().build(), expectedDefaultLoggingBuilder().build());
   }
 
   @Test
@@ -250,7 +264,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration configuration = expectedConfigurationBuilder().build();
-    assertTekuConfiguration(configuration);
+    assertTekuAndLoggingConfiguration(configuration, expectedLoggingBuilder().build());
   }
 
   @Test
@@ -260,7 +274,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(expectedCompleteConfigInFileBuilder().build());
+    assertTekuAndLoggingConfiguration(
+        expectedCompleteConfigInFileBuilder().build(),
+        expectedCompleteConfigInFileLoggingBuilder().build());
   }
 
   @Test
@@ -276,111 +292,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertTekuConfiguration(createConfigBuilder().build());
   }
 
-  @ParameterizedTest(name = "{0}")
-  @ValueSource(
-      strings = {
-        "OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL", "off", "fatal", "error",
-        "warn", "info", "debug", "trace", "all"
-      })
-  public void loglevel_shouldAcceptValues(String level) {
-    final String[] args = {"--logging", level};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualToIgnoringCase(level);
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"Off", "Fatal", "eRRoR", "WaRN", "InfO", "DebUG", "trACE", "All"})
-  public void loglevel_shouldAcceptValuesMixedCase(String level) {
-    final String[] args = {"--logging", level};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level.toUpperCase());
-  }
-
-  @Test
-  public void logLevel_shouldRejectInvalidValues() {
-    final String[] args = {"--logging", "invalid"};
-    beaconNodeCommand.parse(args);
-    String str = getCommandLineOutput();
-    assertThat(str).contains("'invalid' is not a valid log level. Supported values are");
-  }
-
-  @Test
-  public void shouldSetLogFileToTheOptionProvided() {
-    final String[] args = {"--log-file", OSUtils.toOSPath("/hello/world.log")};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo(OSUtils.toOSPath("/hello/world.log"));
-  }
-
-  @Test
-  public void shouldSetLogFileToTheOptionProvidedRegardlessOfDataPath() {
-    final String[] args = {
-      "--log-file", OSUtils.toOSPath("/hello/world.log"),
-      "--data-path", OSUtils.toOSPath("/yo")
-    };
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo(OSUtils.toOSPath("/hello/world.log"));
-  }
-
-  @Test
-  public void shouldSetLogFileRelativeToSetDataDirectory() {
-    final String[] args = {"--data-path", OSUtils.toOSPath("/yo")};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo(OSUtils.toOSPath("/yo/logs/teku.log"));
-  }
-
   @Test
   public void shouldSetNatMethod() {
     final String[] args = {"--p2p-nat-method", "upnp"};
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().natConfiguration().getNatMethod())
         .isEqualTo(NatMethod.UPNP);
-  }
-
-  @Test
-  public void shouldSetLogFileToDefaultDataDirectory() {
-    final String[] args = {};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo(
-            StringUtils.joinWith(SLASH, VersionProvider.defaultStoragePath(), "logs", LOG_FILE));
-  }
-
-  @Test
-  public void shouldSetLogPatternToDefaultDataDirectory() {
-    final String[] args = {"--data-path", OSUtils.toOSPath("/my/path")};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFileNamePattern())
-        .isEqualTo(OSUtils.toOSPath("/my/path/logs/" + LOG_PATTERN));
-  }
-
-  @Test
-  public void shouldSetLogPatternOnCommandLine() {
-    final String[] args = {
-      "--data-path",
-      OSUtils.toOSPath("/my/path"),
-      "--log-file-name-pattern",
-      OSUtils.toOSPath("/z/%d.log")
-    };
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFileNamePattern())
-        .isEqualTo(OSUtils.toOSPath("/z/%d.log"));
-  }
-
-  @Test
-  public void shouldSetLogPatternOnWithoutPath() {
-    final String[] args = {"--log-file-name-pattern", "%d.log"};
-    final String expectedLogPatternPath =
-        StringUtils.joinWith(
-            System.getProperty("file.separator"),
-            VersionProvider.defaultStoragePath(),
-            "logs",
-            "%d.log");
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFileNamePattern())
-        .isEqualTo(expectedLogPatternPath);
   }
 
   private Path createConfigFile() throws IOException {
@@ -471,12 +388,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             })
         .storageConfiguration(
             b -> b.eth1DepositContract(networkConfig.getEth1DepositContractAddress()))
-        .logging(
-            b ->
-                b.destination(DEFAULT_BOTH)
-                    .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logPathPattern(
-                        StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
@@ -499,13 +410,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedCompleteConfigInFileBuilder() {
-    return expectedConfigurationBuilder()
-        .logging(
-            b ->
-                b.destination(BOTH)
-                    .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logPathPattern(
-                        StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)));
+    return expectedConfigurationBuilder();
   }
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
@@ -578,15 +483,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .graffitiProvider(new FileBackedGraffitiProvider())
                     .useDependentRoots(true)
                     .generateEarlyAttestations(true))
-        .logging(
-            b ->
-                b.colorEnabled(true)
-                    .destination(DEFAULT_BOTH)
-                    .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logPathPattern(
-                        StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN))
-                    .includeEventsEnabled(true)
-                    .includeValidatorDutiesEnabled(true))
         .metrics(
             b ->
                 b.metricsEnabled(false)
@@ -603,6 +499,38 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .interopNumberOfValidators(64)
                     .interopEnabled(true))
         .natConfig(b -> b.natMethod(NatMethod.NONE));
+  }
+
+  public LoggingConfigBuilder expectedDefaultLoggingBuilder() {
+    return expectedLoggingBuilder()
+        .destination(DEFAULT_BOTH)
+        .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+        .logPathPattern(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN));
+  }
+
+  private LoggingConfigBuilder expectedCompleteConfigInFileLoggingBuilder() {
+    return expectedLoggingBuilder()
+        .destination(BOTH)
+        .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+        .logPathPattern(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN));
+  }
+
+  private LoggingConfigBuilder expectedLoggingBuilder() {
+    LoggingConfigBuilder builder = LoggingConfig.builder();
+    return builder
+        .colorEnabled(true)
+        .destination(DEFAULT_BOTH)
+        .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+        .logPathPattern(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN))
+        .includeEventsEnabled(true)
+        .includeValidatorDutiesEnabled(true);
+  }
+
+  private void assertTekuAndLoggingConfiguration(
+      final TekuConfiguration expected, final LoggingConfig expectedLogging) {
+    assertTekuConfiguration(expected);
+    final LoggingConfig actualLogging = getResultingLoggingConfiguration();
+    assertThat(actualLogging).usingRecursiveComparison().isEqualTo(expectedLogging);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

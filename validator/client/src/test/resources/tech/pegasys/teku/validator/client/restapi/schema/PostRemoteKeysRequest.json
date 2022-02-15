@@ -1,0 +1,12 @@
+{
+  "title" : "PostRemoteKeysRequest",
+  "type" : "object",
+  "properties" : {
+    "remote_keys" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ImportRemoteSignerDefinition"
+      }
+    }
+  }
+}
