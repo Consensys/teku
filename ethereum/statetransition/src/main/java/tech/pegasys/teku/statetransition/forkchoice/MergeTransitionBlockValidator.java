@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -48,19 +49,21 @@ public class MergeTransitionBlockValidator {
     this.executionEngine = executionEngine;
   }
 
-  public SafeFuture<PayloadStatus> verifyTransitionBlock(
+  public SafeFuture<PayloadValidationResult> verifyTransitionBlock(
       final ExecutionPayloadHeader latestExecutionPayloadHeader, final SignedBeaconBlock block) {
     if (latestExecutionPayloadHeader.isDefault()) {
       // This is the first filled payload, so verify it meets transition conditions
       return verifyTransitionPayload(
-          block.getSlot(),
-          BeaconBlockBodyBellatrix.required(block.getMessage().getBody()).getExecutionPayload());
+              block.getSlot(),
+              BeaconBlockBodyBellatrix.required(block.getMessage().getBody()).getExecutionPayload())
+          .thenApply(status -> new PayloadValidationResult(block.getRoot(), status));
     }
 
     return verifyAncestorTransitionBlock(block.getParentRoot());
   }
 
-  public SafeFuture<PayloadStatus> verifyAncestorTransitionBlock(final Bytes32 chainHeadRoot) {
+  public SafeFuture<PayloadValidationResult> verifyAncestorTransitionBlock(
+      final Bytes32 chainHeadRoot) {
     if (transitionBlockNotFinalized()) {
       // The transition block hasn't been finalized yet
       final Optional<Bytes32> maybeTransitionBlockRoot =
@@ -79,7 +82,7 @@ public class MergeTransitionBlockValidator {
     return verifyFinalizedTransitionBlock();
   }
 
-  private SafeFuture<PayloadStatus> verifyFinalizedTransitionBlock() {
+  private SafeFuture<PayloadValidationResult> verifyFinalizedTransitionBlock() {
     return recentChainData
         .getStore()
         .getFinalizedOptimisticTransitionPayload()
@@ -87,7 +90,16 @@ public class MergeTransitionBlockValidator {
             slotAndPayload ->
                 verifyTransitionPayload(
                     slotAndPayload.getSlot(), slotAndPayload.getExecutionPayload()))
-        .orElse(SafeFuture.completedFuture(PayloadStatus.VALID));
+        .orElse(SafeFuture.completedFuture(PayloadStatus.VALID))
+        .thenApply(
+            status -> {
+              if (status.hasInvalidStatus()) {
+                throw new FatalServiceFailureException(
+                    "fork choice",
+                    "Optimistic sync finalized an invalid transition block. Unable to recover.");
+              }
+              return new PayloadValidationResult(status);
+            });
   }
 
   private boolean transitionBlockNotFinalized() {
@@ -95,7 +107,7 @@ public class MergeTransitionBlockValidator {
     return !spec.atSlot(state.getSlot()).miscHelpers().isMergeTransitionComplete(state);
   }
 
-  private SafeFuture<PayloadStatus> retrieveAndVerifyNonFinalizedTransitionBlock(
+  private SafeFuture<PayloadValidationResult> retrieveAndVerifyNonFinalizedTransitionBlock(
       final Bytes32 transitionBlockRoot) {
     return recentChainData
         .retrieveBlockByRoot(transitionBlockRoot)
@@ -109,7 +121,8 @@ public class MergeTransitionBlockValidator {
               final ExecutionPayload transitionExecutionPayload =
                   BeaconBlockBodyBellatrix.required(transitionBlock.getBody())
                       .getExecutionPayload();
-              return verifyTransitionPayload(transitionBlock.getSlot(), transitionExecutionPayload);
+              return verifyTransitionPayload(transitionBlock.getSlot(), transitionExecutionPayload)
+                  .thenApply(status -> new PayloadValidationResult(transitionBlockRoot, status));
             });
   }
 
