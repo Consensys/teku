@@ -47,10 +47,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -174,8 +176,15 @@ public class ForkChoiceTestExecutor {
     storageClient.initializeFromGenesis(genesis, UInt64.ZERO);
 
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
+    final MergeTransitionBlockValidator transitionBlockValidator =
+        new MergeTransitionBlockValidator(SPEC, storageClient, ExecutionEngineChannel.NOOP);
     ForkChoice forkChoice =
-        new ForkChoice(SPEC, forkChoiceExecutor, storageClient, new StubForkChoiceNotifier());
+        new ForkChoice(
+            SPEC,
+            forkChoiceExecutor,
+            storageClient,
+            new StubForkChoiceNotifier(),
+            transitionBlockValidator);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
