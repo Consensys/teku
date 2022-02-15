@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.serialization;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -23,6 +25,8 @@ public class UInt256AsHexDeserializer extends JsonDeserializer<UInt256> {
 
   @Override
   public UInt256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return UInt256.fromHexString(p.getValueAsString());
+    final String hexValue = p.getValueAsString();
+    checkArgument(hexValue.startsWith("0x"), "Hex value must start with 0x");
+    return UInt256.fromHexString(hexValue);
   }
 }

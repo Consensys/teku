@@ -36,7 +36,7 @@ public class AllSyncCommitteeSubscriptions extends SyncCommitteeSubscriptionMana
   }
 
   @Override
-  public synchronized void subscribe(final Integer committeeSubnet, final UInt64 unsubscribeSlot) {
+  public synchronized void subscribe(final int committeeSubnet, final UInt64 unsubscribeSlot) {
     // already subscribed to all subnets
   }
 }
