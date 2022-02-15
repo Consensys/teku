@@ -15,6 +15,8 @@ package tech.pegasys.teku.core.synccomittee;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +49,7 @@ public class SignedContributionAndProofTestBuilder {
   private Optional<BLSSignature> signedContributionAndProofSignature = Optional.empty();
   private Bytes32 beaconBlockRoot;
   private UInt64 slot;
-  private final List<Integer> subcommitteeParticipationIndices = new ArrayList<>();
+  private final IntList subcommitteeParticipationIndices = new IntArrayList();
   private final List<BLSSignature> syncSignatures = new ArrayList<>();
   private int subcommitteeIndex;
   private BeaconStateAltair state;

@@ -13,16 +13,16 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -154,11 +154,11 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
   }
 
   private static class ContributionData {
-    private final Set<Integer> participationIndices = new HashSet<>();
+    private final IntSet participationIndices = new IntOpenHashSet();
     private final List<BLSSignature> signatures = new ArrayList<>();
 
-    public void add(final Set<Integer> participationIndices, final BLSSignature signature) {
-      for (Integer index : participationIndices) {
+    public void add(final IntSet participationIndices, final BLSSignature signature) {
+      for (int index : participationIndices) {
         if (!this.participationIndices.add(index)) {
           throw new IllegalStateException("Already added " + index);
         }
@@ -170,7 +170,7 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
       return signatures.isEmpty();
     }
 
-    public Set<Integer> getParticipationIndices() {
+    public IntSet getParticipationIndices() {
       return participationIndices;
     }
 

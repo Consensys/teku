@@ -72,7 +72,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
     Bytes ssz1 = bitvector1.sszSerialize();
     SszBitvector bitvector2 = bitvector1.getSchema().sszDeserialize(ssz1);
 
-    assertThat(bitvector2.getAllSetBits()).isEqualTo(bitvector1.getAllSetBits());
+    assertThat(bitvector2.getAllSetBits().equals(bitvector1.getAllSetBits())).isTrue();
     Assertions.assertThat(bitvector2.size()).isEqualTo(bitvector1.size());
     for (int i = 0; i < bitvector1.size(); i++) {
       assertThat(bitvector2.getBit(i)).isEqualTo(bitvector1.getBit(i));
@@ -87,7 +87,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
     TreeNode tree = bitvector1.getBackingNode();
     SszBitvector bitvector2 = bitvector1.getSchema().createFromBackingNode(tree);
 
-    assertThat(bitvector2.getAllSetBits()).isEqualTo(bitvector1.getAllSetBits());
+    assertThat(bitvector2.getAllSetBits().equals(bitvector1.getAllSetBits())).isTrue();
     Assertions.assertThat(bitvector2.size()).isEqualTo(bitvector1.size());
     for (int i = 0; i < bitvector1.size(); i++) {
       assertThat(bitvector2.getBit(i)).isEqualTo(bitvector1.getBit(i));

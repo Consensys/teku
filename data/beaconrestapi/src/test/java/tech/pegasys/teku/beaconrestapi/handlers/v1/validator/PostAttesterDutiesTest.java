@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +83,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
-    when(validatorDataProvider.getAttesterDuties(UInt64.valueOf(100), List.of(2)))
+    when(validatorDataProvider.getAttesterDuties(UInt64.valueOf(100), IntList.of(2)))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));
 
     handler.handle(context);

@@ -14,16 +14,19 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntIterable;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -206,7 +209,7 @@ public class SyncCommitteeUtil {
     return bytesToUInt64(Hash.sha256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
-  public Set<Integer> getCommitteeIndices(
+  public IntSet getCommitteeIndices(
       final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
     final SyncSubcommitteeAssignments assignments =
         getSyncSubcommittees(state, epoch)
@@ -214,9 +217,12 @@ public class SyncCommitteeUtil {
     return assignments.getCommitteeIndices();
   }
 
-  public Set<Integer> getSyncSubcommittees(final Set<Integer> committeeIndices) {
+  public IntSet getSyncSubcommittees(final IntSet committeeIndices) {
     final int subcommitteeSize = getSubcommitteeSize();
-    return committeeIndices.stream().map(index -> index / subcommitteeSize).collect(toSet());
+    return IntOpenHashSet.toSet(
+        committeeIndices.stream()
+            .map(index -> index / subcommitteeSize)
+            .mapToInt(Integer::intValue));
   }
 
   public Bytes32 getSyncCommitteeMessageSigningRoot(
@@ -267,7 +273,7 @@ public class SyncCommitteeUtil {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final UInt64 subcommitteeIndex,
-      final Iterable<Integer> setParticipationBits,
+      final IntIterable setParticipationBits,
       final BLSSignature signature) {
     final SyncCommitteeContributionSchema schema =
         schemaDefinitionsAltair.getSyncCommitteeContributionSchema();
@@ -348,7 +354,7 @@ public class SyncCommitteeUtil {
         BeaconBlockBodySchemaAltair.required(schemaDefinitionsAltair.getBeaconBlockBodySchema())
             .getSyncAggregateSchema();
 
-    final List<Integer> participantIndices = new ArrayList<>();
+    final IntList participantIndices = new IntArrayList();
     final List<BLSSignature> signatures = new ArrayList<>();
     for (SyncCommitteeContribution contribution : contributions) {
       final int subcommitteeIndex = contribution.getSubcommitteeIndex().intValue();

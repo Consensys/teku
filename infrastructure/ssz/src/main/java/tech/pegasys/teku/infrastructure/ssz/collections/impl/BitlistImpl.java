@@ -16,9 +16,9 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
-import java.util.ArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.BitSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -93,8 +93,8 @@ class BitlistImpl {
     return other.streamAllSetBits().allMatch(idx -> idx < getCurrentSize() && getBit(idx));
   }
 
-  public List<Integer> getAllSetBits() {
-    final List<Integer> setBits = new ArrayList<>();
+  public IntList getAllSetBits() {
+    final IntList setBits = new IntArrayList();
     for (int i = data.nextSetBit(0); i >= 0; i = data.nextSetBit(i + 1)) {
       setBits.add(i);
     }

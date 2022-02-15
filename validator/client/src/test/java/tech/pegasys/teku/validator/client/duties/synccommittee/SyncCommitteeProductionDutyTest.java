@@ -24,6 +24,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -237,10 +239,10 @@ class SyncCommitteeProductionDutyTest {
   }
 
   private ValidatorAndCommitteeIndices committeeAssignment(
-      final Validator validator, final int validatorIndex, final Integer... committeeIndices) {
+      final Validator validator, final int validatorIndex, final int... committeeIndices) {
     final ValidatorAndCommitteeIndices assignment =
         new ValidatorAndCommitteeIndices(validator, validatorIndex);
-    assignment.addCommitteeIndices(asList(committeeIndices));
+    assignment.addCommitteeIndices(IntOpenHashSet.toSet(Arrays.stream(committeeIndices)));
     return assignment;
   }
 }

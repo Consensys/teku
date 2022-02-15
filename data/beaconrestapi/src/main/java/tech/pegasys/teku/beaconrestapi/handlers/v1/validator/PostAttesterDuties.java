@@ -34,10 +34,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
@@ -118,7 +118,9 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
 
       SafeFuture<Optional<PostAttesterDutiesResponse>> future =
           validatorDataProvider.getAttesterDuties(
-              epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
+              epoch,
+              IntArrayList.toList(
+                  Arrays.stream(indexes).map(UInt64::intValue).mapToInt(Integer::intValue)));
 
       handleOptionalResult(
           ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);

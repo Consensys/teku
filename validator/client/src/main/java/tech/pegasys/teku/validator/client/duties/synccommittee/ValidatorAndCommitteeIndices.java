@@ -13,16 +13,16 @@
 
 package tech.pegasys.teku.validator.client.duties.synccommittee;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.validator.client.Validator;
 
 class ValidatorAndCommitteeIndices {
 
   private final Validator validator;
   private final int validatorIndex;
-  private final Set<Integer> committeeIndices = new HashSet<>();
+  private final IntSet committeeIndices = new IntOpenHashSet();
 
   ValidatorAndCommitteeIndices(final Validator validator, final int validatorIndex) {
     this.validator = validator;
@@ -33,7 +33,7 @@ class ValidatorAndCommitteeIndices {
     committeeIndices.add(subcommitteeIndex);
   }
 
-  public void addCommitteeIndices(final Collection<Integer> subcommitteeIndex) {
+  public void addCommitteeIndices(final IntCollection subcommitteeIndex) {
     committeeIndices.addAll(subcommitteeIndex);
   }
 
@@ -45,7 +45,7 @@ class ValidatorAndCommitteeIndices {
     return validatorIndex;
   }
 
-  public Set<Integer> getCommitteeIndices() {
+  public IntSet getCommitteeIndices() {
     return committeeIndices;
   }
 }

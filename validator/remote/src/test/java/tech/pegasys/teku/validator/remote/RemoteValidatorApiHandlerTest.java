@@ -32,6 +32,7 @@ import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszDa
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -211,7 +212,7 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_WithEmptyPublicKeys_ReturnsEmpty() {
     SafeFuture<Optional<AttesterDuties>> future =
-        apiHandler.getAttestationDuties(UInt64.ONE, emptyList());
+        apiHandler.getAttestationDuties(UInt64.ONE, IntArrayList.of());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -225,7 +226,7 @@ class RemoteValidatorApiHandlerTest {
                     dataStructureUtil.randomBytes32(), Collections.emptyList())));
 
     SafeFuture<Optional<AttesterDuties>> future =
-        apiHandler.getAttestationDuties(UInt64.ONE, List.of(1234));
+        apiHandler.getAttestationDuties(UInt64.ONE, IntArrayList.of(1234));
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
   }
@@ -257,14 +258,14 @@ class RemoteValidatorApiHandlerTest {
             validatorCommitteeIndex,
             UInt64.ZERO);
 
-    when(apiClient.getAttestationDuties(UInt64.ONE, List.of(validatorIndex)))
+    when(apiClient.getAttestationDuties(UInt64.ONE, IntArrayList.of(validatorIndex)))
         .thenReturn(
             Optional.of(
                 new PostAttesterDutiesResponse(
                     dataStructureUtil.randomBytes32(), List.of(schemaValidatorDuties))));
 
     SafeFuture<Optional<AttesterDuties>> future =
-        apiHandler.getAttestationDuties(UInt64.ONE, List.of(validatorIndex));
+        apiHandler.getAttestationDuties(UInt64.ONE, IntArrayList.of(validatorIndex));
 
     AttesterDuties validatorDuties = unwrapToValue(future);
 

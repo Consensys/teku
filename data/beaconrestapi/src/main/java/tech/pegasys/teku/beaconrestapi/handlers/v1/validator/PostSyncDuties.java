@@ -34,8 +34,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Arrays;
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -101,7 +101,7 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final List<Integer> indexes = Arrays.asList(parseRequestBody(ctx.body(), Integer[].class));
+      final IntList indexes = IntArrayList.of(parseRequestBody(ctx.body(), int[].class));
 
       SafeFuture<Optional<PostSyncDutiesResponse>> future =
           validatorDataProvider.getSyncDuties(epoch, indexes);

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Collection;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,7 +48,7 @@ public class SyncCommitteeDutyLoader
 
   @Override
   protected SafeFuture<Optional<SyncCommitteeDuties>> requestDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     return validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices);
   }
 

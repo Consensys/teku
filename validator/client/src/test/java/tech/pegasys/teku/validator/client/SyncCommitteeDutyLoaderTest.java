@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +50,7 @@ class SyncCommitteeDutyLoaderTest {
       new Validator(dataStructureUtil.randomPublicKey(), mock(Signer.class), Optional::empty);
   private final int validator1Index = 19;
   private final int validator2Index = 23;
-  private final Set<Integer> validatorIndices = Set.of(validator1Index, validator2Index);
+  private final IntSet validatorIndices = IntSet.of(validator1Index, validator2Index);
   private final OwnedValidators validators =
       new OwnedValidators(
           Map.of(validator1.getPublicKey(), validator1, validator2.getPublicKey(), validator2));
@@ -88,9 +89,11 @@ class SyncCommitteeDutyLoaderTest {
                     new SyncCommitteeDuties(
                         List.of(
                             new SyncCommitteeDuty(
-                                validator1.getPublicKey(), validator1Index, Set.of(1, 6, 25)),
+                                validator1.getPublicKey(), validator1Index, IntSet.of(1, 6, 25)),
                             new SyncCommitteeDuty(
-                                validator2.getPublicKey(), validator2Index, Set.of(7, 50, 38)))))));
+                                validator2.getPublicKey(),
+                                validator2Index,
+                                IntSet.of(7, 50, 38)))))));
 
     final SyncCommitteeScheduledDuties duties = loadDuties(epoch);
     assertThat(duties.countDuties()).isEqualTo(2);
@@ -99,9 +102,9 @@ class SyncCommitteeDutyLoaderTest {
         .subscribeToSyncCommitteeSubnets(
             Set.of(
                 new SyncCommitteeSubnetSubscription(
-                    validator1Index, Set.of(1, 6, 25), untilEpoch.increment()),
+                    validator1Index, IntSet.of(1, 6, 25), untilEpoch.increment()),
                 new SyncCommitteeSubnetSubscription(
-                    validator2Index, Set.of(7, 50, 38), untilEpoch.increment())));
+                    validator2Index, IntSet.of(7, 50, 38), untilEpoch.increment())));
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {

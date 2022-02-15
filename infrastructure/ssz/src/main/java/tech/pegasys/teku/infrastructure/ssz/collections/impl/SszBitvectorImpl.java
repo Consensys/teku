@@ -15,8 +15,8 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveVector;
@@ -74,8 +74,8 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public List<Integer> getAllSetBits() {
-    return value.streamAllSetBits().boxed().collect(Collectors.toList());
+  public IntList getAllSetBits() {
+    return IntArrayList.toList(value.streamAllSetBits().boxed().mapToInt(Integer::intValue));
   }
 
   @Override

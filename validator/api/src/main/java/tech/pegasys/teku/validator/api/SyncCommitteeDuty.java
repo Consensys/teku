@@ -14,20 +14,20 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Objects;
-import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class SyncCommitteeDuty {
 
   private final BLSPublicKey publicKey;
   private final int validatorIndex;
-  private final Set<Integer> validatorSyncCommitteeIndices;
+  private final IntSet validatorSyncCommitteeIndices;
 
   public SyncCommitteeDuty(
       final BLSPublicKey publicKey,
       final int validatorIndex,
-      final Set<Integer> validatorSyncCommitteeIndices) {
+      final IntSet validatorSyncCommitteeIndices) {
     this.publicKey = publicKey;
     this.validatorIndex = validatorIndex;
     this.validatorSyncCommitteeIndices = validatorSyncCommitteeIndices;
@@ -41,7 +41,7 @@ public class SyncCommitteeDuty {
     return validatorIndex;
   }
 
-  public Set<Integer> getValidatorSyncCommitteeIndices() {
+  public IntSet getValidatorSyncCommitteeIndices() {
     return validatorSyncCommitteeIndices;
   }
 

@@ -18,8 +18,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,7 @@ public abstract class AbstractDutySchedulerTest {
   static final BLSPublicKey VALIDATOR1_KEY = BLSTestUtil.randomPublicKey(100);
   static final BLSPublicKey VALIDATOR2_KEY = BLSTestUtil.randomPublicKey(200);
   static final Collection<BLSPublicKey> VALIDATOR_KEYS = Set.of(VALIDATOR1_KEY, VALIDATOR2_KEY);
-  static final List<Integer> VALIDATOR_INDICES = List.of(123, 559);
+  static final IntList VALIDATOR_INDICES = IntArrayList.of(123, 559);
   final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   final Signer validator1Signer = mock(Signer.class);
   final Signer validator2Signer = mock(Signer.class);

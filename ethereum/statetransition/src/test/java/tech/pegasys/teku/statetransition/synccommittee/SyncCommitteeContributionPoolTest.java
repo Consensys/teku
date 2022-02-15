@@ -24,8 +24,8 @@ import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.al
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -202,17 +202,18 @@ class SyncCommitteeContributionPoolTest {
         config.getSyncCommitteeSize()
             / SYNC_COMMITTEE_SUBNET_COUNT
             * contribution.getSubcommitteeIndex().intValue();
-    final List<Integer> expectedParticipants =
-        contribution.getAggregationBits().getAllSetBits().stream()
-            .map(index -> subcommitteeIndexOffset + index)
-            .collect(Collectors.toList());
+    final IntList expectedParticipants =
+        IntArrayList.toList(
+            contribution.getAggregationBits().getAllSetBits().stream()
+                .map(index -> subcommitteeIndexOffset + index)
+                .mapToInt(Integer::intValue));
     assertThatSyncAggregate(result)
         .hasSyncCommitteeBits(expectedParticipants)
         .hasSignature(contribution.getSignature());
   }
 
   private SignedContributionAndProof withParticipationBits(
-      final SignedContributionAndProof proof, final Integer... participationBits) {
+      final SignedContributionAndProof proof, final int... participationBits) {
     final SyncCommitteeContribution contribution = proof.getMessage().getContribution();
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(altairSlot);
     final SyncCommitteeContribution newContribution =
@@ -220,7 +221,7 @@ class SyncCommitteeContributionPoolTest {
             contribution.getSlot(),
             contribution.getBeaconBlockRoot(),
             contribution.getSubcommitteeIndex(),
-            List.of(participationBits),
+            IntArrayList.of(participationBits),
             contribution.getSignature());
 
     return syncCommitteeUtil.createSignedContributionAndProof(

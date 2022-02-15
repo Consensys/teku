@@ -14,9 +14,10 @@
 package tech.pegasys.teku.validator.client;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.Sets;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
@@ -101,13 +102,14 @@ public class ValidatorIndexProvider {
     return Optional.ofNullable(validatorIndexesByPublicKey.get(publicKey));
   }
 
-  public SafeFuture<Collection<Integer>> getValidatorIndices() {
+  public SafeFuture<IntCollection> getValidatorIndices() {
     // Wait for at least one successful load of validator indices before attempting to read
     return firstSuccessfulRequest.thenApply(
         __ ->
-            ownedValidators.getActiveValidators().stream()
-                .flatMap(validator -> getValidatorIndex(validator.getPublicKey()).stream())
-                .collect(toList()));
+            IntArrayList.toList(
+                ownedValidators.getActiveValidators().stream()
+                    .flatMap(validator -> getValidatorIndex(validator.getPublicKey()).stream())
+                    .mapToInt(Integer::intValue)));
   }
 
   public SafeFuture<Map<BLSPublicKey, Optional<Integer>>> getValidatorIndexesByPublicKey() {

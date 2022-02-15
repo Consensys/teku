@@ -22,11 +22,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -161,14 +161,14 @@ class ValidatorIndexProviderTest {
     final SafeFuture<Map<BLSPublicKey, Integer>> requestResult = new SafeFuture<>();
     when(validatorApiChannel.getValidatorIndices(Set.of(key1))).thenReturn(requestResult);
 
-    final SafeFuture<Collection<Integer>> result = provider.getValidatorIndices();
+    final SafeFuture<IntCollection> result = provider.getValidatorIndices();
     assertThat(result).isNotDone();
 
     provider.lookupValidators();
     assertThat(result).isNotDone();
 
     requestResult.complete(Map.of(key1, 1));
-    assertThat(result).isCompletedWithValue(List.of(1));
+    assertThat(result).isCompletedWithValue(IntArrayList.of(1));
   }
 
   private OwnedValidators ownedValidatorsWithKeys(final BLSPublicKey... keys) {

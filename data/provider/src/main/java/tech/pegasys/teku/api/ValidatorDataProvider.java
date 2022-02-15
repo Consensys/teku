@@ -15,12 +15,14 @@ package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
+import it.unimi.dsi.fastutil.ints.IntIterable;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -268,15 +270,16 @@ public class ValidatorDataProvider {
                 subscription ->
                     new tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription(
                         subscription.validatorIndex.intValue(),
-                        subscription.syncCommitteeIndices.stream()
-                            .map(UInt64::intValue)
-                            .collect(toSet()),
+                        IntOpenHashSet.toSet(
+                            subscription.syncCommitteeIndices.stream()
+                                .map(UInt64::intValue)
+                                .mapToInt(Integer::intValue)),
                         subscription.untilEpoch))
             .collect(toList()));
   }
 
   public SafeFuture<Optional<PostAttesterDutiesResponse>> getAttesterDuties(
-      final UInt64 epoch, final List<Integer> indexes) {
+      final UInt64 epoch, final IntList indexes) {
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
         .thenApply(
             res ->
@@ -342,7 +345,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<PostSyncDutiesResponse>> getSyncDuties(
-      final UInt64 epoch, final List<Integer> indexes) {
+      final UInt64 epoch, final IntList indexes) {
     return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indexes))
         .thenApply(
             res ->
@@ -395,7 +398,7 @@ public class ValidatorDataProvider {
     final Bytes32 root = signedContributionAndProof.message.contribution.beaconBlockRoot;
     final UInt64 subcommitteeIndex =
         signedContributionAndProof.message.contribution.subcommitteeIndex;
-    final Iterable<Integer> indices =
+    final IntIterable indices =
         getAggregationBits(signedContributionAndProof.message.contribution.aggregationBits, slot);
 
     final tech.pegasys.teku.bls.BLSSignature signature =
@@ -416,7 +419,7 @@ public class ValidatorDataProvider {
             message, signedContributionAndProof.signature.asInternalBLSSignature());
   }
 
-  private Iterable<Integer> getAggregationBits(final Bytes aggregationBits, final UInt64 slot) {
+  private IntIterable getAggregationBits(final Bytes aggregationBits, final UInt64 slot) {
     final SchemaDefinitionsAltair altairDefinitions =
         SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
     final SyncCommitteeContributionSchema syncCommitteeContributionSchema =

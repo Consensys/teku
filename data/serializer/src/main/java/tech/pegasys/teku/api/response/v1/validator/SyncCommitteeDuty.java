@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,7 +56,7 @@ public class SyncCommitteeDuty {
   public SyncCommitteeDuty(
       @JsonProperty("pubkey") final BLSPubKey pubkey,
       @JsonProperty("validator_index") final UInt64 validatorIndex,
-      @JsonProperty("validator_sync_committee_indices") final Set<Integer> committeeIndices) {
+      @JsonProperty("validator_sync_committee_indices") final IntSet committeeIndices) {
     this.pubkey = pubkey;
     this.validatorIndex = validatorIndex;
     this.committeeIndices =

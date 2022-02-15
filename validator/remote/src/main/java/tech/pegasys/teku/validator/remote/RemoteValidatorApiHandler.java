@@ -19,6 +19,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
+import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -155,7 +157,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final IntCollection validatorIndexes) {
     return sendRequest(
         () ->
             apiClient
@@ -171,7 +173,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     return sendRequest(
         () ->
             apiClient
@@ -187,9 +189,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                     new SyncCommitteeDuty(
                         duty.pubkey.asBLSPublicKey(),
                         duty.validatorIndex.intValue(),
-                        duty.committeeIndices.stream()
-                            .map(UInt64::intValue)
-                            .collect(Collectors.toSet())))
+                        IntOpenHashSet.toSet(
+                            duty.committeeIndices.stream()
+                                .map(UInt64::intValue)
+                                .mapToInt(Integer::intValue))))
             .collect(toList()));
   }
 
