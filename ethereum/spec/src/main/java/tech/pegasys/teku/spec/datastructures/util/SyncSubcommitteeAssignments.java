@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
-
 import com.google.common.base.MoreObjects;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntSets;
 
 /**
  * Holds information about a validators assignment to a sync committee in a more efficiently queried
@@ -30,14 +28,14 @@ import java.util.Set;
 public class SyncSubcommitteeAssignments {
 
   public static final SyncSubcommitteeAssignments NONE =
-      new SyncSubcommitteeAssignments(emptyMap(), emptySet());
+      new SyncSubcommitteeAssignments(Int2ObjectMaps.emptyMap(), IntSets.emptySet());
 
-  private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices;
-  private final Set<Integer> committeeIndices;
+  private final Int2ObjectMap<IntSet> subcommitteeToParticipationIndices;
+  private final IntSet committeeIndices;
 
   private SyncSubcommitteeAssignments(
-      final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices,
-      final Set<Integer> committeeIndices) {
+      final Int2ObjectMap<IntSet> subcommitteeToParticipationIndices,
+      final IntSet committeeIndices) {
     this.subcommitteeToParticipationIndices = subcommitteeToParticipationIndices;
     this.committeeIndices = committeeIndices;
   }
@@ -46,17 +44,17 @@ public class SyncSubcommitteeAssignments {
     return new SyncSubcommitteeAssignments.Builder();
   }
 
-  public Set<Integer> getAssignedSubcommittees() {
-    return Collections.unmodifiableSet(subcommitteeToParticipationIndices.keySet());
+  public IntSet getAssignedSubcommittees() {
+    return IntSets.unmodifiable(subcommitteeToParticipationIndices.keySet());
   }
 
-  public Set<Integer> getCommitteeIndices() {
+  public IntSet getCommitteeIndices() {
     return committeeIndices;
   }
 
-  public Set<Integer> getParticipationBitIndices(final int subcommitteeIndex) {
-    return Collections.unmodifiableSet(
-        subcommitteeToParticipationIndices.getOrDefault(subcommitteeIndex, Collections.emptySet()));
+  public IntSet getParticipationBitIndices(final int subcommitteeIndex) {
+    return IntSets.unmodifiable(
+        subcommitteeToParticipationIndices.getOrDefault(subcommitteeIndex, IntSets.emptySet()));
   }
 
   public boolean isEmpty() {
@@ -71,18 +69,19 @@ public class SyncSubcommitteeAssignments {
   }
 
   public static class Builder {
-    private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices = new HashMap<>();
-    private final Set<Integer> committeeIndices = new HashSet<>();
+    private final Int2ObjectMap<IntSet> subcommitteeToParticipationIndices =
+        new Int2ObjectOpenHashMap<>();
+    private final IntSet committeeIndices = new IntOpenHashSet();
 
     public Builder addAssignment(
         final int subcommitteeIndex, final int subcommitteeParticipationIndex) {
       subcommitteeToParticipationIndices
-          .computeIfAbsent(subcommitteeIndex, __ -> new HashSet<>())
+          .computeIfAbsent(subcommitteeIndex, __ -> new IntOpenHashSet())
           .add(subcommitteeParticipationIndex);
       return this;
     }
 
-    public Builder addCommitteeIndex(final Integer index) {
+    public Builder addCommitteeIndex(final int index) {
       committeeIndices.add(index);
       return this;
     }

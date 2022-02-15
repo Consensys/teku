@@ -15,10 +15,11 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,8 +31,8 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Integer, UInt64> subnetIdToUnsubscribeSlot = new HashMap<>();
-  private final Set<Integer> persistentSubnetIdSet = new HashSet<>();
+  private final Int2ObjectMap<UInt64> subnetIdToUnsubscribeSlot = new Int2ObjectOpenHashMap<>();
+  private final IntSet persistentSubnetIdSet = new IntOpenHashSet();
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final Spec spec;
 
@@ -84,20 +85,20 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   public synchronized void onSlot(final UInt64 slot) {
     boolean shouldUpdateENR = false;
 
-    final Iterator<Map.Entry<Integer, UInt64>> iterator =
-        subnetIdToUnsubscribeSlot.entrySet().iterator();
+    final Iterator<Int2ObjectMap.Entry<UInt64>> iterator =
+        subnetIdToUnsubscribeSlot.int2ObjectEntrySet().iterator();
     while (iterator.hasNext()) {
-      final Map.Entry<Integer, UInt64> entry = iterator.next();
+      final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
-        iterator.remove();
-        int subnetId = entry.getKey();
+        int subnetId = entry.getIntKey();
         LOG.trace("Unsubscribing from subnet {}", subnetId);
         eth2P2PNetwork.unsubscribeFromAttestationSubnetId(subnetId);
-
         if (persistentSubnetIdSet.contains(subnetId)) {
           persistentSubnetIdSet.remove(subnetId);
           shouldUpdateENR = true;
         }
+
+        iterator.remove();
       }
     }
 

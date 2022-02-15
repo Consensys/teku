@@ -17,9 +17,9 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.List;
-import java.util.Map;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -39,7 +39,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
 
   private final BeaconStateAltair stateAltair;
-  private final Map<Integer, UInt64> baseRewardCache = new HashMap<>();
+  private final Int2ObjectMap<UInt64> baseRewardCache = new Int2ObjectOpenHashMap<>();
 
   public RewardsAndPenaltiesCalculatorAltair(
       final SpecConfigAltair specConfig,
