@@ -52,6 +52,12 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
           return SafeFuture.completedFuture(PayloadStatus.SYNCING);
         }
+
+        @Override
+        public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+            TransitionConfiguration transitionConfiguration) {
+          return SafeFuture.completedFuture(transitionConfiguration);
+        }
       };
 
   SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash);
@@ -64,6 +70,9 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot);
 
   SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload);
+
+  SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+      final TransitionConfiguration transitionConfiguration);
 
   enum Version {
     KINTSUGI,

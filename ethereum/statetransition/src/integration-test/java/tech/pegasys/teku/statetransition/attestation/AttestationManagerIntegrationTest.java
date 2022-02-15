@@ -36,7 +36,9 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationS
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -62,8 +64,15 @@ class AttestationManagerIntegrationTest {
 
   private final AggregatingAttestationPool attestationPool =
       new AggregatingAttestationPool(spec, new NoOpMetricsSystem());
+  private final MergeTransitionBlockValidator transitionBlockValidator =
+      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
   private final ForkChoice forkChoice =
-      new ForkChoice(spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
+      new ForkChoice(
+          spec,
+          new InlineEventThread(),
+          recentChainData,
+          new StubForkChoiceNotifier(),
+          transitionBlockValidator);
 
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations(spec);

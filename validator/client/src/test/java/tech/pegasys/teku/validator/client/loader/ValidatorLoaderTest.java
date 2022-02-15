@@ -347,7 +347,7 @@ class ValidatorLoaderTest {
             Optional.empty());
 
     final DeleteKeyResult result =
-        validatorLoader.deleteMutableValidator(dataStructureUtil.randomPublicKey());
+        validatorLoader.deleteLocalMutableValidator(dataStructureUtil.randomPublicKey());
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);
     assertThat(result.getMessage().orElse("")).contains("Unable to delete validator");
   }
@@ -398,12 +398,13 @@ class ValidatorLoaderTest {
         ValidatorLoader.create(
             List.of(validatorSource),
             Optional.of(validatorSource),
+            Optional.of(validatorSource),
             null,
             Optional.of(dataDirLayout),
             slashingProtectionLogger);
 
     when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
-    loader.deleteMutableValidator(publicKey);
+    loader.deleteLocalMutableValidator(publicKey);
     verify(validatorSource).deleteValidator(publicKey);
   }
 
@@ -669,7 +670,8 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final PostKeyResult result = validatorLoader.loadMutableValidator(null, "", Optional.empty());
+    final PostKeyResult result =
+        validatorLoader.loadLocalMutableValidator(null, "", Optional.empty());
     assertThat(result).isEqualTo(PostKeyResult.error("Not able to add validator"));
   }
 
@@ -693,7 +695,7 @@ class ValidatorLoaderTest {
     final String keystoreString =
         Resources.toString(Resources.getResource("pbkdf2TestVector.json"), StandardCharsets.UTF_8);
     PostKeyResult result =
-        validatorLoader.loadMutableValidator(
+        validatorLoader.loadLocalMutableValidator(
             KeyStoreLoader.loadFromString(keystoreString), "testpassword", Optional.empty());
     assertThat(result.getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
 

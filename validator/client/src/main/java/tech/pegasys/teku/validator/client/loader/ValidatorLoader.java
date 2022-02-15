@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,8 @@ public class ValidatorLoader {
 
   private static final Logger LOG = LogManager.getLogger();
   private final List<ValidatorSource> validatorSources;
-  private final Optional<ValidatorSource> mutableValidatorSource;
+  private final Optional<ValidatorSource> mutableLocalValidatorSource;
+  private final Optional<ValidatorSource> mutableExternalValidatorSource;
   private final OwnedValidators ownedValidators = new OwnedValidators();
   private final GraffitiProvider graffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
@@ -54,12 +56,14 @@ public class ValidatorLoader {
 
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
-      final Optional<ValidatorSource> mutableValidatorSource,
+      final Optional<ValidatorSource> mutableLocalValidatorSource,
+      final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger) {
     this.validatorSources = validatorSources;
-    this.mutableValidatorSource = mutableValidatorSource;
+    this.mutableLocalValidatorSource = mutableLocalValidatorSource;
+    this.mutableExternalValidatorSource = mutableExternalValidatorSource;
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
@@ -99,19 +103,19 @@ public class ValidatorLoader {
     slashingProtectionLogger.logSlashingProtection(ownedValidators.getActiveValidators());
   }
 
-  public DeleteKeyResult deleteMutableValidator(final BLSPublicKey publicKey) {
-    if (mutableValidatorSource.isEmpty()) {
+  public DeleteKeyResult deleteLocalMutableValidator(final BLSPublicKey publicKey) {
+    if (mutableLocalValidatorSource.isEmpty()) {
       return DeleteKeyResult.error(
           "Unable to delete validator, could not determine the storage location.");
     }
-    return mutableValidatorSource.get().deleteValidator(publicKey);
+    return mutableLocalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized PostKeyResult loadMutableValidator(
+  public synchronized PostKeyResult loadLocalMutableValidator(
       final KeyStoreData keyStoreData,
       final String password,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
-    if (!canAddValidator()) {
+    if (!canAddLocalValidator()) {
       return PostKeyResult.error("Not able to add validator");
     }
     final BLSPublicKey publicKey =
@@ -128,8 +132,27 @@ public class ValidatorLoader {
       return PostKeyResult.duplicate();
     }
 
-    final AddLocalValidatorResult validatorAddResult =
-        mutableValidatorSource.get().addValidator(keyStoreData, password, publicKey);
+    final AddValidatorResult validatorAddResult =
+        mutableLocalValidatorSource.get().addValidator(keyStoreData, password, publicKey);
+
+    if (validatorAddResult.getSigner().isEmpty()) {
+      return validatorAddResult.getResult();
+    }
+    addValidator(validatorAddResult.getSigner().get(), publicKey);
+    return PostKeyResult.success();
+  }
+
+  public synchronized PostKeyResult loadExternalMutableValidator(
+      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
+    if (!canAddExternalValidator()) {
+      return PostKeyResult.error("Not able to add validator");
+    }
+    if (ownedValidators.hasValidator(publicKey)) {
+      return PostKeyResult.duplicate();
+    }
+
+    final AddValidatorResult validatorAddResult =
+        mutableExternalValidatorSource.get().addValidator(publicKey, signerUrl);
 
     if (validatorAddResult.getSigner().isEmpty()) {
       return validatorAddResult.getResult();
@@ -145,10 +168,15 @@ public class ValidatorLoader {
     LOG.info("Added validator: {}", publicKey.toString());
   }
 
-  private boolean canAddValidator() {
-    return mutableValidatorSource.isPresent()
-        && mutableValidatorSource.get().canUpdateValidators()
+  private boolean canAddLocalValidator() {
+    return mutableLocalValidatorSource.isPresent()
+        && mutableLocalValidatorSource.get().canUpdateValidators()
         && maybeDataDirLayout.isPresent();
+  }
+
+  private boolean canAddExternalValidator() {
+    return mutableExternalValidatorSource.isPresent()
+        && mutableExternalValidatorSource.get().canUpdateValidators();
   }
 
   public OwnedValidators getOwnedValidators() {
@@ -183,6 +211,7 @@ public class ValidatorLoader {
     return new ValidatorLoader(
         validatorSourceList,
         validatorSources.getMutableLocalValidatorSource(),
+        validatorSources.getMutableExternalValidatorSource(),
         config.getGraffitiProvider(),
         maybeMutableDir,
         slashingProtectionLogger);
@@ -191,13 +220,15 @@ public class ValidatorLoader {
   @VisibleForTesting
   static ValidatorLoader create(
       final List<ValidatorSource> validatorSources,
-      final Optional<ValidatorSource> mutableValidatorSource,
+      final Optional<ValidatorSource> mutableLocalValidatorSource,
+      final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger) {
     return new ValidatorLoader(
         validatorSources,
-        mutableValidatorSource,
+        mutableLocalValidatorSource,
+        mutableExternalValidatorSource,
         graffitiProvider,
         maybeDataDirLayout,
         slashingProtectionLogger);
