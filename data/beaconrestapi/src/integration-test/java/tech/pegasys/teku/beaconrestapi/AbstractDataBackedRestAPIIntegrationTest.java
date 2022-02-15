@@ -56,12 +56,14 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
@@ -147,7 +149,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         useMockForkChoice
             ? mock(ForkChoice.class)
             : new ForkChoice(
-                spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
+                spec,
+                new InlineEventThread(),
+                recentChainData,
+                new StubForkChoiceNotifier(),
+                new MergeTransitionBlockValidator(
+                    spec, recentChainData, ExecutionEngineChannel.NOOP));
     beaconChainUtil =
         BeaconChainUtil.create(
             spec, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);

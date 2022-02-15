@@ -53,6 +53,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -105,9 +106,15 @@ public class EpochTransitionBenchmark {
     wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     recentChainData = MemoryOnlyRecentChainData.create(spec);
+    final MergeTransitionBlockValidator transitionBlockValidator =
+        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
     ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
+            spec,
+            new InlineEventThread(),
+            recentChainData,
+            new StubForkChoiceNotifier(),
+            transitionBlockValidator);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
