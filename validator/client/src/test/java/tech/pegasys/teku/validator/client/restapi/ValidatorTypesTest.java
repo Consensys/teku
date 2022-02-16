@@ -223,13 +223,11 @@ class ValidatorTypesTest {
   void externalValidatorStore_urlPresent() throws JsonProcessingException, MalformedURLException {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     ExternalValidator value =
-        new ExternalValidator(
-                publicKey, Optional.of(new URL("http://host.com")));
+        new ExternalValidator(publicKey, Optional.of(new URL("http://host.com")));
 
     String serializedValue = serialize(value, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
     assertThat(serializedValue)
-        .isEqualTo(
-            "{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
+        .isEqualTo("{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
 
     ExternalValidator deserializedResult =
         parse(serializedValue, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
@@ -239,16 +237,15 @@ class ValidatorTypesTest {
   @Test
   void externalValidatorStore_noUrlProvided() throws JsonProcessingException {
     ExternalValidator value =
-            new ExternalValidator(
-                    dataStructureUtil.randomPublicKey(), Optional.empty());
+        new ExternalValidator(dataStructureUtil.randomPublicKey(), Optional.empty());
 
     String serializedValue = serialize(value, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
     assertThat(serializedValue)
-            .isEqualTo(
-                    "{\"pubkey\":\"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\"}");
+        .isEqualTo(
+            "{\"pubkey\":\"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\"}");
 
     ExternalValidator deserializedResult =
-            parse(serializedValue, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+        parse(serializedValue, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
     assertThat(deserializedResult).isEqualTo(value);
   }
 }
