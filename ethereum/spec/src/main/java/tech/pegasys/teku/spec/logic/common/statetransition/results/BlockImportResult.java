@@ -31,8 +31,12 @@ public interface BlockImportResult {
       new FailedBlockImportResult(
           FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING, Optional.empty());
 
-  BlockImportResult FAILED_INVALID_BLOCK_DESCENDANT =
-      new FailedBlockImportResult(FailureReason.INVALID_BLOCK_DESCENDANT, Optional.empty());
+  BlockImportResult FAILED_DESCENDANT_OF_INVALID_BLOCK =
+      new FailedBlockImportResult(FailureReason.DESCENDANT_OF_INVALID_BLOCK, Optional.empty());
+
+  BlockImportResult FAILED_DESCENDANT_OF_FAILED_EXECUTION_PAYLOAD_BLOCK =
+      new FailedBlockImportResult(
+          FailureReason.DESCENDANT_OF_FAILED_EXECUTION_PAYLOAD_BLOCK, Optional.empty());
 
   static BlockImportResult failedExecutionPayloadExecution(final Throwable cause) {
     return new FailedBlockImportResult(
@@ -67,7 +71,8 @@ public interface BlockImportResult {
     FAILED_WEAK_SUBJECTIVITY_CHECKS,
     FAILED_EXECUTION_PAYLOAD_EXECUTION,
     FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
-    INVALID_BLOCK_DESCENDANT,
+    DESCENDANT_OF_INVALID_BLOCK,
+    DESCENDANT_OF_FAILED_EXECUTION_PAYLOAD_BLOCK,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
