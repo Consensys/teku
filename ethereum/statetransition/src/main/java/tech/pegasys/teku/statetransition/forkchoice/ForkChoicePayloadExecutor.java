@@ -32,7 +32,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private final ExecutionEngineChannel executionEngine;
   private final SignedBeaconBlock block;
   private final MergeTransitionBlockValidator transitionBlockValidator;
-  private Optional<SafeFuture<PayloadStatus>> result = Optional.empty();
+  private Optional<SafeFuture<PayloadValidationResult>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
       final SignedBeaconBlock block,
@@ -54,8 +54,9 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
         new MergeTransitionBlockValidator(spec, recentChainData, executionEngine));
   }
 
-  public SafeFuture<PayloadStatus> getExecutionResult() {
-    return result.orElse(SafeFuture.completedFuture(PayloadStatus.VALID));
+  public SafeFuture<PayloadValidationResult> getExecutionResult() {
+    return result.orElse(
+        SafeFuture.completedFuture(new PayloadValidationResult(PayloadStatus.VALID)));
   }
 
   @Override
@@ -79,13 +80,13 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                         return transitionBlockValidator.verifyTransitionBlock(
                             latestExecutionPayloadHeader, block);
                       } else {
-                        return SafeFuture.completedFuture(result);
+                        return SafeFuture.completedFuture(new PayloadValidationResult(result));
                       }
                     })
                 .exceptionally(
                     error -> {
                       LOG.error("Error while validating payload", error);
-                      return PayloadStatus.failedExecution(error);
+                      return new PayloadValidationResult(PayloadStatus.failedExecution(error));
                     }));
 
     return true;
