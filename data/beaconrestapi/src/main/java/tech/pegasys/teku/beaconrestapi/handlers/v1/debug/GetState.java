@@ -92,7 +92,7 @@ public class GetState extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+    if (getContentType(ACCEPT_ALL, maybeAcceptHeader).equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
       final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalSszResult(
