@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.services.executionengine;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -70,7 +69,7 @@ public class ExecutionEngineConfiguration {
     private Spec spec;
     private Optional<String> endpoint = Optional.empty();
     private Version version = Version.DEFAULT_VERSION;
-    private Optional<String> jwtSecretFile;
+    private Optional<String> jwtSecretFile = Optional.empty();
 
     private Builder() {}
 
@@ -95,8 +94,7 @@ public class ExecutionEngineConfiguration {
     }
 
     public Builder jwtSecretFile(final String jwtSecretFile) {
-      checkNotNull(jwtSecretFile);
-      this.jwtSecretFile = Optional.of(jwtSecretFile).filter(f -> !f.isBlank());
+      this.jwtSecretFile = Optional.ofNullable(jwtSecretFile).filter(StringUtils::isNotBlank);
       return this;
     }
   }

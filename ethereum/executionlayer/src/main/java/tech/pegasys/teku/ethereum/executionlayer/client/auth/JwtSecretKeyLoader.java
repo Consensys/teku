@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.crypto.MacProvider;
+import io.jsonwebtoken.security.Keys;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -39,7 +39,7 @@ public class JwtSecretKeyLoader {
 
   private Key generateNewSecret() {
     LOG.info("generating new execution engine JWT secret");
-    final Key key = MacProvider.generateKey(SignatureAlgorithm.HS256);
+    final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     final byte[] keyData = key.getEncoded();
     return new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
     // TODO: write secret to file

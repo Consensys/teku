@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.crypto.MacProvider;
+import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class TestHelper {
   public static SecretKeySpec generateJwtSecret() {
-    final Key key = MacProvider.generateKey(SignatureAlgorithm.HS256);
+    final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     final byte[] keyData = key.getEncoded();
     return new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
   }

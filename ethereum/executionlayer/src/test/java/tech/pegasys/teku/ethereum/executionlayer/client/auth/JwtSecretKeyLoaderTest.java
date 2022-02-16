@@ -19,10 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
-import java.util.Objects;
 import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,8 +42,7 @@ class JwtSecretKeyLoaderTest {
   void testGetSecretKey_KeyGeneration() {
     final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(Optional.empty());
     final Key loadedSecret = keyLoader.getSecretKey();
-    assertThat(Objects.isNull(loadedSecret)).isFalse();
-    assertThat(StringUtils.isNotEmpty(Bytes.wrap(loadedSecret.getEncoded()).toHexString()))
-        .isTrue();
+    assertThat(loadedSecret).isNotNull();
+    assertThat(Bytes.wrap(loadedSecret.getEncoded()).toHexString()).isNotBlank();
   }
 }

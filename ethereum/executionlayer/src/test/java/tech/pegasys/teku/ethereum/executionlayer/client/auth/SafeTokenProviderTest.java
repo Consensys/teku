@@ -20,7 +20,6 @@ import io.jsonwebtoken.Jwts;
 import java.security.Key;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,18 +39,13 @@ class SafeTokenProviderTest {
   void testGetToken_TokenUpdateOnExpiry() {
     UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
     final Optional<Token> originalToken = safeTokenProvider.token(timeInMillis);
-    assertThat(validateTokenAtInstant(originalToken, timeInMillis)).isTrue();
-    assertThat(
-            validateJwtTokenAtInstant(
-                jwtSecretKey, originalToken.get().getJwtToken(), timeInMillis))
-        .isTrue();
+    validateTokenAtInstant(originalToken, timeInMillis);
+    validateJwtTokenAtInstant(jwtSecretKey, originalToken, timeInMillis);
 
     timeInMillis = timeInMillis.plus(TimeUnit.SECONDS.toMillis(JwtConfig.EXPIRES_IN_SECONDS));
     final Optional<Token> updatedToken = safeTokenProvider.token(timeInMillis);
-    assertThat(validateTokenAtInstant(updatedToken, timeInMillis)).isTrue();
-    assertThat(
-            validateJwtTokenAtInstant(jwtSecretKey, updatedToken.get().getJwtToken(), timeInMillis))
-        .isTrue();
+    validateTokenAtInstant(updatedToken, timeInMillis);
+    validateJwtTokenAtInstant(jwtSecretKey, updatedToken, timeInMillis);
 
     assertThat(originalToken.equals(updatedToken)).isFalse();
   }
@@ -60,37 +54,33 @@ class SafeTokenProviderTest {
   void testGetToken_TokenPreExpiry() {
     UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
     final Optional<Token> originalToken = safeTokenProvider.token(timeInMillis);
-    assertThat(validateTokenAtInstant(originalToken, timeInMillis)).isTrue();
-    assertThat(
-            validateJwtTokenAtInstant(
-                jwtSecretKey, originalToken.get().getJwtToken(), timeInMillis))
-        .isTrue();
+    validateTokenAtInstant(originalToken, timeInMillis);
+    validateJwtTokenAtInstant(jwtSecretKey, originalToken, timeInMillis);
 
     timeInMillis = timeInMillis.plus(TimeUnit.SECONDS.toMillis(JwtConfig.EXPIRES_IN_SECONDS - 1));
     final Optional<Token> updatedToken = safeTokenProvider.token(timeInMillis);
-    assertThat(validateTokenAtInstant(updatedToken, timeInMillis)).isTrue();
-    assertThat(
-            validateJwtTokenAtInstant(jwtSecretKey, updatedToken.get().getJwtToken(), timeInMillis))
-        .isTrue();
+    validateTokenAtInstant(updatedToken, timeInMillis);
+    validateJwtTokenAtInstant(jwtSecretKey, updatedToken, timeInMillis);
 
     assertThat(originalToken.equals(updatedToken)).isTrue();
   }
 
-  public static boolean validateTokenAtInstant(
+  public static void validateTokenAtInstant(
       final Optional<Token> optionalToken, final UInt64 instantInMillis) {
-    return optionalToken.isPresent()
-        && (optionalToken.get().isAvailableAt(instantInMillis)
-            && StringUtils.isNotBlank(optionalToken.get().getJwtToken()));
+    assertThat(optionalToken.isPresent()).isTrue();
+    assertThat(optionalToken.get().isAvailableAt(instantInMillis)).isTrue();
+    assertThat(optionalToken.get().getJwtToken()).isNotBlank();
   }
 
-  public static boolean validateJwtTokenAtInstant(
-      final Key jwtSecretKey, final String jwtToken, final UInt64 instantInMillis) {
+  public static void validateJwtTokenAtInstant(
+      final Key jwtSecretKey, final Optional<Token> optionalToken, final UInt64 instantInMillis) {
+    assertThat(optionalToken.isPresent()).isTrue();
     final long issuedAtInSeconds =
         Jwts.parser()
             .setSigningKey(jwtSecretKey)
-            .parseClaimsJws(jwtToken)
+            .parseClaimsJws(optionalToken.get().getJwtToken())
             .getBody()
             .get(Claims.ISSUED_AT, Long.class);
-    return instantInMillis.isLessThan(TimeUnit.SECONDS.toMillis(issuedAtInSeconds));
+    assertThat(instantInMillis.isLessThan(TimeUnit.SECONDS.toMillis(issuedAtInSeconds))).isTrue();
   }
 }

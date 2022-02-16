@@ -26,10 +26,7 @@ public class SafeTokenProvider {
   }
 
   public synchronized Optional<Token> token(final UInt64 instantInMillis) {
-    if (token.isEmpty()) {
-      return refreshTokenFromSource(instantInMillis);
-    }
-    if (token.get().isAvailableAt(instantInMillis)) {
+    if (this.token.map(token -> token.isAvailableAt(instantInMillis)).orElse(false)) {
       return token;
     }
     return refreshTokenFromSource(instantInMillis);
