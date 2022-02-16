@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Serializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
@@ -143,6 +146,26 @@ public class Web3JExecutionEngineClientTest {
     assertThat(originalUInt256).isEqualTo(result);
   }
 
+  @TestTemplate
+  void shouldThrowDeserializingUIntQuantityNot0xPrefixed() {
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("123");
+          UInt256AsHexDeserializer deserializer = new UInt256AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("123");
+          UInt64AsHexDeserializer deserializer = new UInt64AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+  }
+
   private JsonParser prepareDeserializationContext(String serializedValue) throws IOException {
     String json = String.format("{\"value\":%s}", serializedValue);
     JsonParser parser = objectMapper.getFactory().createParser(json);
@@ -201,7 +224,7 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  void shouldDeserializeExecutionPayloadResultWithNulls() throws IOException {
+  void shouldDeserializePayloadStatusWithNulls() throws IOException {
     PayloadStatusV1 payloadStatusV1Expected =
         new PayloadStatusV1(ExecutionPayloadStatus.VALID, null, null);
     PayloadStatus internalPayloadStatusExpected = PayloadStatus.VALID;
@@ -216,7 +239,7 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  void shouldDeserializeExecutionPayloadResult() throws IOException {
+  void shouldDeserializePayloadStatus() throws IOException {
     Bytes32 lastValidHash = dataStructureUtil.randomBytes32();
     PayloadStatusV1 payloadStatusV1Expected =
         new PayloadStatusV1(ExecutionPayloadStatus.INVALID, lastValidHash, "test");
@@ -237,7 +260,7 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  void shouldThrowDeserializingInvalidExecutionPayloadResult() {
+  void shouldThrowDeserializingInvalidPayloadStatusV1() {
     assertThrows(
         InvalidFormatException.class,
         () -> {
@@ -372,6 +395,83 @@ public class Web3JExecutionEngineClientTest {
     String serialized = objectMapper.writeValueAsString(payloadAttributes);
 
     assertThat(serialized).isNotEmpty();
+  }
+
+  @TestTemplate
+  void shouldSerializeTransitionConfigurationV1() throws IOException {
+    final TransitionConfigurationV1 externalTransitionConfiguration =
+        new TransitionConfigurationV1(
+            dataStructureUtil.randomUInt256(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
+
+    String serialized = objectMapper.writeValueAsString(externalTransitionConfiguration);
+
+    assertThat(serialized).isNotEmpty();
+  }
+
+  @TestTemplate
+  void shouldDeserializeTransitionConfigurationV1() throws IOException {
+    final String json =
+        "{\"terminalTotalDifficulty\": \"0xF123657934589000000000000000001\", "
+            + "\"terminalBlockHash\": \"0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4\", "
+            + "\"terminalBlockNumber\": \"0xa79345890\" }";
+
+    final TransitionConfigurationV1 externalTransitionConfiguration =
+        objectMapper.readValue(json, TransitionConfigurationV1.class);
+
+    assertThat(externalTransitionConfiguration.terminalTotalDifficulty)
+        .isEqualTo(UInt256.fromHexString("0xF123657934589000000000000000001"));
+    assertThat(externalTransitionConfiguration.terminalBlockHash)
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4"));
+    assertThat(externalTransitionConfiguration.terminalBlockNumber)
+        .isEqualTo(
+            UInt64.valueOf(Bytes.fromHexStringLenient("0xa79345890").toUnsignedBigInteger()));
+  }
+
+  @TestTemplate
+  void shouldSerializeDeserializeTransitionConfigurationV1() throws IOException {
+    final TransitionConfigurationV1 externalTransitionConfiguration =
+        new TransitionConfigurationV1(
+            dataStructureUtil.randomUInt256(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
+
+    String serialized = objectMapper.writeValueAsString(externalTransitionConfiguration);
+
+    assertThat(serialized).isNotEmpty();
+
+    TransitionConfigurationV1 externalTransitionConfiguration2 =
+        objectMapper.readValue(serialized, TransitionConfigurationV1.class);
+
+    assertThat(externalTransitionConfiguration).isEqualTo(externalTransitionConfiguration2);
+  }
+
+  @TestTemplate
+  void shouldTransitionConfigurationRoundtrip() {
+    final TransitionConfigurationV1 externalTransitionConfiguration =
+        new TransitionConfigurationV1(
+            dataStructureUtil.randomUInt256(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
+
+    final TransitionConfiguration internalTransitionConfiguration =
+        externalTransitionConfiguration.asInternalTransitionConfiguration();
+
+    assertThat(internalTransitionConfiguration.getTerminalBlockHash())
+        .isEqualTo(externalTransitionConfiguration.terminalBlockHash);
+    assertThat(internalTransitionConfiguration.getTerminalBlockNumber())
+        .isEqualTo(externalTransitionConfiguration.terminalBlockNumber);
+    assertThat(internalTransitionConfiguration.getTerminalTotalDifficulty())
+        .isEqualTo(externalTransitionConfiguration.terminalTotalDifficulty);
+
+    final TransitionConfigurationV1 externalTransitionConfiguration2 =
+        TransitionConfigurationV1.fromInternalTransitionConfiguration(
+            internalTransitionConfiguration);
+
+    assertThat(externalTransitionConfiguration2).isEqualTo(externalTransitionConfiguration);
   }
 
   private ForkChoiceUpdatedResult createExternalForkChoiceUpdatedResult(

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.pow;
 
-import static java.util.stream.Collectors.toMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,12 +22,11 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
@@ -65,7 +63,7 @@ class Eth1BlockFetcherTest {
 
   @Test
   void shouldBackfillEth1BlocksWhenFirstInSyncUntilBlockBeforeCachePeriodReached() {
-    final Map<Integer, Block> blocks =
+    final Int2ObjectMap<Block> blocks =
         withBlocks(
             block(100, timeProvider.getTimeInSeconds()),
             block(99, timeProvider.getTimeInSeconds().minus(ONE)),
@@ -105,7 +103,7 @@ class Eth1BlockFetcherTest {
 
   @Test
   void shouldStopBackfillWhenGenesisReached() {
-    final Map<Integer, Block> blocks =
+    final Int2ObjectMap<Block> blocks =
         withBlocks(
             block(1, timeProvider.getTimeInSeconds()),
             block(0, timeProvider.getTimeInSeconds().minus(ONE)));
@@ -120,7 +118,7 @@ class Eth1BlockFetcherTest {
 
   @Test
   void shouldFetchBlocksFromStartToEndOfRangeInclusive() {
-    final Map<Integer, Block> blocks =
+    final Int2ObjectMap<Block> blocks =
         withBlocks(
             block(0, BEFORE_CACHE_PERIOD),
             block(3, IN_CACHE_PERIOD_1),
@@ -150,7 +148,7 @@ class Eth1BlockFetcherTest {
 
   @Test
   void shouldFetchSingleBlock() {
-    final Map<Integer, Block> blocks =
+    final Int2ObjectMap<Block> blocks =
         withBlocks(
             block(0, BEFORE_CACHE_PERIOD),
             block(3, IN_CACHE_PERIOD_1),
@@ -228,16 +226,17 @@ class Eth1BlockFetcherTest {
         .onEth1Block(Bytes32.fromHexString(block.getHash()), UInt64.valueOf(block.getTimestamp()));
   }
 
-  private Map<Integer, Block> withBlocks(final Block... blocks) {
+  private Int2ObjectMap<Block> withBlocks(final Block... blocks) {
+    Int2ObjectMap<Block> blockMap = new Int2ObjectOpenHashMap<>();
     for (Block block : blocks) {
       final UInt64 blockNumber = UInt64.valueOf(block.getNumber());
       when(eth1Provider.getEth1Block(blockNumber))
           .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
       when(eth1Provider.getGuaranteedEth1Block(blockNumber))
           .thenReturn(SafeFuture.completedFuture(block));
+      blockMap.put(block.getNumber().intValueExact(), block);
     }
-    return Arrays.stream(blocks)
-        .collect(toMap(block -> block.getNumber().intValueExact(), Function.identity()));
+    return blockMap;
   }
 
   private Block block(final int blockNumber, final UInt64 blockTimestamp) {

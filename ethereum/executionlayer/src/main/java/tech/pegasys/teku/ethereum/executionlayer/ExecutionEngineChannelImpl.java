@@ -29,6 +29,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdated
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
@@ -159,5 +161,25 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
             payloadStatus ->
                 LOG.trace("newPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
         .exceptionally(PayloadStatus::failedExecution);
+  }
+
+  @Override
+  public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+      TransitionConfiguration transitionConfiguration) {
+    LOG.trace(
+        "calling exchangeTransitionConfiguration(transitionConfiguration={})",
+        transitionConfiguration);
+
+    return executionEngineClient
+        .exchangeTransitionConfiguration(
+            TransitionConfigurationV1.fromInternalTransitionConfiguration(transitionConfiguration))
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(TransitionConfigurationV1::asInternalTransitionConfiguration)
+        .thenPeek(
+            remoteTransitionConfiguration ->
+                LOG.trace(
+                    "exchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
+                    transitionConfiguration,
+                    remoteTransitionConfiguration));
   }
 }
