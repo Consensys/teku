@@ -21,8 +21,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
@@ -83,7 +83,7 @@ public class GetSyncCommitteeContributionIntegrationTest
             Optional.of(
                 spec.getSyncCommitteeUtilRequired(ONE)
                     .createSyncCommitteeContribution(
-                        ONE, blockRoot, ONE, List.of(1), sig.asInternalBLSSignature())));
+                        ONE, blockRoot, ONE, IntList.of(1), sig.asInternalBLSSignature())));
 
     when(validatorApiChannel.createSyncCommitteeContribution(eq(ONE), eq(1), eq(blockRoot)))
         .thenReturn(future);
