@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class MergeTransitionBlockValidator {
 
@@ -91,14 +92,20 @@ public class MergeTransitionBlockValidator {
                 verifyTransitionPayload(
                     slotAndPayload.getSlot(), slotAndPayload.getExecutionPayload()))
         .orElse(SafeFuture.completedFuture(PayloadStatus.VALID))
-        .thenApply(
+        .thenCompose(
             status -> {
               if (status.hasInvalidStatus()) {
-                throw new FatalServiceFailureException(
-                    "fork choice",
-                    "Optimistic sync finalized an invalid transition block. Unable to recover.");
+                return SafeFuture.failedFuture(
+                    new FatalServiceFailureException(
+                        "fork choice",
+                        "Optimistic sync finalized an invalid transition block. Unable to recover."));
               }
-              return new PayloadValidationResult(status);
+              if (status.hasValidStatus()) {
+                final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                transaction.removeFinalizedOptimisticTransitionPayload();
+                return transaction.commit().thenApply(__ -> new PayloadValidationResult(status));
+              }
+              return SafeFuture.completedFuture(new PayloadValidationResult(status));
             });
   }
 
