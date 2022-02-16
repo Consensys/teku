@@ -134,7 +134,9 @@ public class ValidatorClientService extends Service {
           Optional.of(
               ValidatorRestApi.create(
                   validatorApiConfig,
-                  new ActiveKeyManager(validatorLoader),
+                  new ActiveKeyManager(
+                      validatorLoader,
+                      services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
                   services.getDataDirLayout()));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");

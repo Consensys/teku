@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
  # Copyright 2021 ConsenSys AG.
  #
@@ -26,14 +27,20 @@ trap cleanup EXIT
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 SIGNER_URL=${1:-http://localhost:19000}
+if [ ! -z "${2:-}" ]
+then
+  AUTHORIZATION_HEADER="-HAuthorization: Bearer $2"
+  echo $AUTHORIZATION_HEADER
+fi
 echo "Signer url: $SIGNER_URL"
 echo "Initialising payload.json..."
 echo "{ \"keystores\": [" > "${TEMP}/payload.json"
 
 echo "  - > writing keystores..."
+
 for FILE in `ls ${DIR}/keys/*.json`
 do
-  if [ ! -z "$D" ]
+  if [ ! -z "${D:-}" ]
   then
     echo "," >> "${TEMP}/payload.json"
   else
@@ -48,7 +55,7 @@ echo "  - > writing passwords..."
 
 for FILE in `ls ${DIR}/passwords/*.txt`
 do
-  if [ ! -z "$P" ]
+  if [ ! -z "${P:-}" ]
   then
     echo "," >> "${TEMP}/payload.json"
   else
@@ -62,7 +69,8 @@ echo "]
 
 echo "Sending payload.json to ${SIGNER_URL}/eth/v1/keystores..."
 
-curl -q -X POST ${SIGNER_URL}/eth/v1/keystores \
+curl --fail -q -X POST ${SIGNER_URL}/eth/v1/keystores \
+     "${AUTHORIZATION_HEADER:-}" \
      -H "Content-Type: application/json" \
      -d "@${TEMP}/payload.json" \
      -o "${TEMP}/result.json"
