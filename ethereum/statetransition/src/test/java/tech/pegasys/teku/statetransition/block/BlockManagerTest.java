@@ -63,7 +63,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 public class BlockManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
