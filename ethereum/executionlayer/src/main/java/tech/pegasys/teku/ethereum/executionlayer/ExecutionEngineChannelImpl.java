@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionEngineClient executionEngineClient;
@@ -57,20 +59,23 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final Spec spec,
       final TimeProvider timeProvider,
       final Version version,
-      final Optional<String> jwtSecretFile) {
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
     return new ExecutionEngineChannelImpl(
-        createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile), spec);
+        createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile, beaconDataDirectory),
+        spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
       final String eeEndpoint,
       final TimeProvider timeProvider,
       final Version version,
-      final Optional<String> jwtSecretFile) {
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
     LOG.info("Execution Engine version: {}", version);
-    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile);
+    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
     switch (version) {
       case KILN:
         return new Web3JExecutionEngineClient(

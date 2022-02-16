@@ -17,6 +17,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Key;
 import java.util.Optional;
@@ -26,26 +27,43 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 
 public class JwtSecretKeyLoader {
-  private static final Logger LOG = LogManager.getLogger();
-  private final Optional<String> jwtSecretFile;
 
-  public JwtSecretKeyLoader(final Optional<String> jwtSecretFile) {
+  private static final Logger LOG = LogManager.getLogger();
+
+  public static final String JWT_SECRET_FILE_NAME = "ee-jwt-secret.hex";
+  private final Optional<String> jwtSecretFile;
+  private final Path beaconDataDirectory;
+
+  public JwtSecretKeyLoader(final Optional<String> jwtSecretFile, final Path beaconDataDirectory) {
     this.jwtSecretFile = jwtSecretFile;
+    this.beaconDataDirectory = beaconDataDirectory;
   }
 
-  public Key getSecretKey() {
+  public SecretKeySpec getSecretKey() {
     return jwtSecretFile.map(this::loadSecretFromFile).orElseGet(this::generateNewSecret);
   }
 
-  private Key generateNewSecret() {
+  private SecretKeySpec generateNewSecret() {
     LOG.info("generating new execution engine JWT secret");
     final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     final byte[] keyData = key.getEncoded();
-    return new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
-    // TODO: write secret to file
+    final SecretKeySpec wrappedKey =
+        new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
+    writeGeneratedKeyToFile(wrappedKey);
+    return wrappedKey;
   }
 
-  private Key loadSecretFromFile(final String jwtSecretFile) {
+  private void writeGeneratedKeyToFile(final Key key) {
+    final Path generatedKeyFilePath = beaconDataDirectory.resolve(JWT_SECRET_FILE_NAME);
+    try {
+      Files.writeString(generatedKeyFilePath, Bytes.wrap(key.getEncoded()).toHexString());
+    } catch (IOException e) {
+      throw new RuntimeException(
+          "unable to write generated key to file  - " + generatedKeyFilePath);
+    }
+  }
+
+  private SecretKeySpec loadSecretFromFile(final String jwtSecretFile) {
     try {
       final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(Paths.get(jwtSecretFile)));
       return new SecretKeySpec(bytesFromHex.toArray(), SignatureAlgorithm.HS256.getJcaName());

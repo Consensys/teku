@@ -26,22 +26,30 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class JwtSecretKeyLoaderTest {
+
   @Test
-  void testGetSecretKey_FromProvidedFilePath(@TempDir final Path tempDir) throws IOException {
-    final String fileName = "jwt.hex";
-    final Path jwtSecretFile = tempDir.resolve(fileName);
+  void testGetSecretKey_ReadSecretFromProvidedFilePath(@TempDir final Path tempDir)
+      throws IOException {
+    final Path jwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.JWT_SECRET_FILE_NAME);
     final SecretKeySpec jwtSecret = TestHelper.generateJwtSecret();
     Files.writeString(jwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toHexString());
     final JwtSecretKeyLoader keyLoader =
-        new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()));
+        new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);
     final Key loadedSecret = keyLoader.getSecretKey();
     assertThat(TestHelper.secretEquals(jwtSecret, loadedSecret)).isTrue();
   }
 
   @Test
-  void testGetSecretKey_KeyGeneration() {
-    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(Optional.empty());
-    final Key loadedSecret = keyLoader.getSecretKey();
+  void testGetSecretKey_KeyGenerationWhenFileNotProvided(@TempDir final Path tempDir) {
+    final JwtSecretKeyLoader generatedKeyLoader = new JwtSecretKeyLoader(Optional.empty(), tempDir);
+    final Key generatedSecret = generatedKeyLoader.getSecretKey();
+    assertThat(generatedSecret).isNotNull();
+    assertThat(Bytes.wrap(generatedSecret.getEncoded()).toHexString()).isNotBlank();
+    final Path jwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.JWT_SECRET_FILE_NAME);
+
+    final JwtSecretKeyLoader fileKeyLoader =
+        new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);
+    final Key loadedSecret = fileKeyLoader.getSecretKey();
     assertThat(loadedSecret).isNotNull();
     assertThat(Bytes.wrap(loadedSecret.getEncoded()).toHexString()).isNotBlank();
   }

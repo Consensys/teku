@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.executionengine;
 
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
+import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -28,18 +29,21 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class ExecutionEngineService extends Service {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
   private final ExecutionEngineConfiguration config;
   private final MetricsSystem metricsSystem;
   private final TimeProvider timeProvider;
+  private final Path beaconDataDirectory;
 
   public ExecutionEngineService(
       final ServiceConfig serviceConfig, final ExecutionEngineConfiguration config) {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.timeProvider = serviceConfig.getTimeProvider();
+    this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.config = config;
   }
 
@@ -54,7 +58,8 @@ public class ExecutionEngineService extends Service {
                 config.getSpec(),
                 timeProvider,
                 config.getVersion(),
-                config.getJwtSecretFile()),
+                config.getJwtSecretFile(),
+                beaconDataDirectory),
             MAXIMUM_CONCURRENT_EE_REQUESTS,
             metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);
