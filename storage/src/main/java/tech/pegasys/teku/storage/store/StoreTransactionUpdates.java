@@ -39,6 +39,8 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Set<Bytes32> prunedHotBlockRoots;
+  private final boolean optimisticTransitionBlockRootSet;
+  private final Optional<Bytes32> optimisticTransitionBlockRoot;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -47,7 +49,9 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
-      final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
+      final Map<Bytes32, SlotAndBlockRoot> stateRoots,
+      final boolean optimisticTransitionBlockRootSet,
+      final Optional<Bytes32> optimisticTransitionBlockRoot) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -63,6 +67,8 @@ class StoreTransactionUpdates {
     this.hotStatesToPersist = hotStatesToPersist;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
+    this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
+    this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -75,7 +81,9 @@ class StoreTransactionUpdates {
         hotBlocks,
         hotStatesToPersist,
         prunedHotBlockRoots,
-        stateRoots);
+        stateRoots,
+        optimisticTransitionBlockRootSet,
+        optimisticTransitionBlockRoot);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
@@ -86,16 +94,14 @@ class StoreTransactionUpdates {
     tx.bestJustifiedCheckpoint.ifPresent(value -> store.bestJustifiedCheckpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    if (optimisticTransitionBlockRootSet) {
+      store.finalizedOptimisticTransitionPayload =
+          updateResult.getFinalizedOptimisticTransitionPayload();
+    }
 
     // Update finalized data
     finalizedChainData.ifPresent(
-        finalizedData -> {
-          store.finalizedAnchor = finalizedData.getLatestFinalized();
-          if (finalizedData.isOptimisticTransitionBlockRootSet()) {
-            store.finalizedOptimisticTransitionPayload =
-                updateResult.getFinalizedOptimisticTransitionPayload();
-          }
-        });
+        finalizedData -> store.finalizedAnchor = finalizedData.getLatestFinalized());
 
     // Prune blocks and states
     prunedHotBlockRoots.forEach(
