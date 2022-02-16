@@ -29,11 +29,13 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class ActiveKeyManager implements KeyManager {
@@ -41,9 +43,12 @@ public class ActiveKeyManager implements KeyManager {
       "{\"metadata\":{\"interchange_format_version\":\"5\"},\"data\":[]}";
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorLoader validatorLoader;
+  private final ValidatorTimingChannel validatorTimingChannel;
 
-  public ActiveKeyManager(final ValidatorLoader validatorLoader) {
+  public ActiveKeyManager(
+      final ValidatorLoader validatorLoader, final ValidatorTimingChannel validatorTimingChannel) {
     this.validatorLoader = validatorLoader;
+    this.validatorTimingChannel = validatorTimingChannel;
   }
 
   /**
@@ -174,10 +179,17 @@ public class ActiveKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
     final List<PostKeyResult> importResults = new ArrayList<>();
+    boolean reloadRequired = false;
     for (int i = 0; i < keystores.size(); i++) {
       importResults.add(
           importValidatorFromKeystore(
               keystores.get(i), passwords.get(i), slashingProtectionImporter));
+      if (importResults.get(i).getImportStatus() == ImportStatus.IMPORTED) {
+        reloadRequired = true;
+      }
+    }
+    if (reloadRequired) {
+      validatorTimingChannel.onValidatorsAdded();
     }
     return importResults;
   }
@@ -200,15 +212,22 @@ public class ActiveKeyManager implements KeyManager {
   @Override
   public List<PostKeyResult> importExternalValidators(final List<ExternalValidator> validators) {
     final List<PostKeyResult> importResults = new ArrayList<>();
+    boolean reloadRequired = false;
     for (ExternalValidator v : validators) {
       try {
         importResults.add(
             validatorLoader.loadExternalMutableValidator(v.getPublicKey(), v.getUrl()));
+        if (importResults.get(importResults.size() - 1).getImportStatus()
+            == ImportStatus.IMPORTED) {
+          reloadRequired = true;
+        }
       } catch (Exception e) {
         importResults.add(PostKeyResult.error(e.getMessage()));
       }
     }
-
+    if (reloadRequired) {
+      validatorTimingChannel.onValidatorsAdded();
+    }
     return importResults;
   }
 }
