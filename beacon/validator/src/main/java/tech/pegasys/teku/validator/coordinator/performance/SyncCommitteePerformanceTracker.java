@@ -202,11 +202,8 @@ public class SyncCommitteePerformanceTracker {
             slot);
         continue;
       }
-      for (int committeeIndex : committeeIndices) {
-        if (syncCommitteeBits.getBit(committeeIndex)) {
-          numberOfIncludedMessages++;
-        }
-      }
+      numberOfIncludedMessages +=
+          (int) committeeIndices.intStream().filter(syncCommitteeBits::getBit).count();
     }
     return numberOfIncludedMessages;
   }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
+import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
@@ -158,7 +159,9 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
     private final List<BLSSignature> signatures = new ArrayList<>();
 
     public void add(final IntSet participationIndices, final BLSSignature signature) {
-      for (int index : participationIndices) {
+      IntIterator iterator = participationIndices.iterator();
+      while (iterator.hasNext()) {
+        int index = iterator.nextInt();
         if (!this.participationIndices.add(index)) {
           throw new IllegalStateException("Already added " + index);
         }
