@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.eth2.gossip.forks;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -54,8 +56,8 @@ public class GossipForkManager {
   private final RecentChainData recentChainData;
   private final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch;
   private final Set<GossipForkSubscriptions> activeSubscriptions = new HashSet<>();
-  private final Set<Integer> currentAttestationSubnets = new HashSet<>();
-  private final Set<Integer> currentSyncCommitteeSubnets = new HashSet<>();
+  private final IntSet currentAttestationSubnets = new IntOpenHashSet();
+  private final IntSet currentSyncCommitteeSubnets = new IntOpenHashSet();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
 
