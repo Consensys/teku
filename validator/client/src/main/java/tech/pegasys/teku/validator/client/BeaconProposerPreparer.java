@@ -131,6 +131,9 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   public void onPossibleMissedEvents() {}
 
   @Override
+  public void onValidatorsAdded() {}
+
+  @Override
   public void onBlockProductionDue(UInt64 slot) {}
 
   @Override
