@@ -13,11 +13,177 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.Validator;
 
-public interface SlashingProtectionLogger {
-  SlashingProtectionLogger NOOP = validators -> {};
+public class SlashingProtectionLogger implements ValidatorTimingChannel {
+  private static final Logger LOG = LogManager.getLogger();
+  private static final UInt64 SAFE_PROTECTION_EPOCHS_DELTA = UInt64.valueOf(200);
+  private Optional<UInt64> currentSlot = Optional.empty();
+  private Optional<List<Validator>> activeValidators = Optional.empty();
 
-  void logSlashingProtection(List<Validator> validators);
+  private final SlashingProtector slashingProtector;
+  private final ValidatorLogger validatorLogger;
+  private final Spec spec;
+  private final AsyncRunner asyncRunner;
+
+  public SlashingProtectionLogger(
+      final SlashingProtector slashingProtector,
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final ValidatorLogger validatorLogger) {
+    this.slashingProtector = slashingProtector;
+    this.validatorLogger = validatorLogger;
+    this.asyncRunner = asyncRunner;
+    this.spec = spec;
+  }
+
+  public synchronized void protectionSummary(final List<Validator> validators) {
+    this.activeValidators = Optional.of(validators);
+    tryToLog();
+  }
+
+  private void tryToLog() {
+    if (currentSlot.isEmpty() || activeValidators.isEmpty()) {
+      return;
+    }
+    final List<Validator> validators = new ArrayList<>(this.activeValidators.get());
+    asyncRunner
+        .runAsync(() -> logSlashingProtection(validators, this.currentSlot.get()))
+        .finish(ex -> LOG.error("Failed to log validators slashing protection summary", ex));
+    this.activeValidators = Optional.empty();
+  }
+
+  private void logSlashingProtection(final List<Validator> validators, final UInt64 curSlot) {
+    final List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords =
+        getValidatorSigningRecords(validators);
+    final List<Pair<Validator, ValidatorSigningRecord>> protectedList =
+        validatorRecords.stream()
+            .filter(pair -> pair.getRight().isPresent())
+            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().get()))
+            .collect(Collectors.toList());
+    logProtectedValidators(protectedList);
+    filterAndLogUnProtectedValidators(validatorRecords);
+    Function<ValidatorSigningRecord, Boolean> outdatedSigningRecordClassifier =
+        createOutdatedSigningRecordClassifier(curSlot, SAFE_PROTECTION_EPOCHS_DELTA);
+    final List<Pair<Validator, ValidatorSigningRecord>> outdatedProtectionList =
+        protectedList.stream()
+            .filter(pair -> outdatedSigningRecordClassifier.apply(pair.getRight()))
+            .collect(Collectors.toList());
+    logOutdatedProtectedValidators(outdatedProtectionList);
+  }
+
+  private void logProtectedValidators(
+      List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
+    if (validatorRecords.isEmpty()) {
+      return;
+    }
+    validatorLogger.activatedSlashingProtection(
+        validatorRecords.stream()
+            .map(pair -> pair.getLeft().getPublicKey().toAbbreviatedString())
+            .collect(Collectors.toSet()));
+  }
+
+  private void logOutdatedProtectedValidators(
+      List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
+    if (validatorRecords.isEmpty()) {
+      return;
+    }
+    validatorLogger.outdatedSlashingProtection(
+        validatorRecords.stream()
+            .map(pair -> pair.getLeft().getPublicKey().toAbbreviatedString())
+            .collect(Collectors.toSet()),
+        SAFE_PROTECTION_EPOCHS_DELTA);
+  }
+
+  private void filterAndLogUnProtectedValidators(
+      List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords) {
+    Set<String> unprotectedValidatorSet =
+        validatorRecords.stream()
+            .filter(pair -> pair.getRight().isEmpty())
+            .map(pair -> pair.getLeft().getPublicKey().toAbbreviatedString())
+            .collect(Collectors.toSet());
+    if (!unprotectedValidatorSet.isEmpty()) {
+      validatorLogger.noLocalSlashingProtection(unprotectedValidatorSet);
+    }
+  }
+
+  private List<Pair<Validator, Optional<ValidatorSigningRecord>>> getValidatorSigningRecords(
+      final List<Validator> validators) {
+    List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords = new ArrayList<>();
+    for (Validator validator : validators) {
+      try {
+        Optional<ValidatorSigningRecord> validatorSigningRecord =
+            slashingProtector.getSigningRecord(validator.getPublicKey());
+        if (validatorSigningRecord.isEmpty()
+            && validator.getSigner().isLocalSlashingProtectionEnabled()) {
+          validatorSigningRecord = Optional.of(new ValidatorSigningRecord(Bytes32.ZERO));
+        }
+        validatorRecords.add(Pair.of(validator, validatorSigningRecord));
+      } catch (IOException e) {
+        LOG.error("Failed to retrieve all validators slashing protection data", e);
+        break;
+      }
+    }
+    return validatorRecords;
+  }
+
+  private Function<ValidatorSigningRecord, Boolean> createOutdatedSigningRecordClassifier(
+      final UInt64 curSlot, final UInt64 outdatedEpochsDelta) {
+    return signingRecord ->
+        spec.computeEpochAtSlot(curSlot)
+                .minusMinZero(spec.computeEpochAtSlot(signingRecord.getBlockSlot()))
+                .isGreaterThan(outdatedEpochsDelta)
+            || spec.computeEpochAtSlot(curSlot)
+                .minusMinZero(
+                    signingRecord.getAttestationTargetEpoch() == null
+                        ? UInt64.ZERO
+                        : signingRecord.getAttestationTargetEpoch())
+                .isGreaterThan(outdatedEpochsDelta);
+  }
+
+  @Override
+  public synchronized void onSlot(UInt64 slot) {
+    this.currentSlot = Optional.of(slot);
+    tryToLog();
+  }
+
+  @Override
+  public void onHeadUpdate(
+      UInt64 slot,
+      Bytes32 previousDutyDependentRoot,
+      Bytes32 currentDutyDependentRoot,
+      Bytes32 headBlockRoot) {}
+
+  @Override
+  public void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot) {}
+
+  @Override
+  public void onPossibleMissedEvents() {}
+
+  @Override
+  public void onBlockProductionDue(UInt64 slot) {}
+
+  @Override
+  public void onAttestationCreationDue(UInt64 slot) {}
+
+  @Override
+  public void onAttestationAggregationDue(UInt64 slot) {}
 }

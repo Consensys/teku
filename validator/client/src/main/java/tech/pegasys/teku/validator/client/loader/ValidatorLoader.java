@@ -100,7 +100,7 @@ public class ValidatorLoader {
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
         ownedValidators, validatorProviders, graffitiProvider);
-    slashingProtectionLogger.logSlashingProtection(ownedValidators.getActiveValidators());
+    slashingProtectionLogger.protectionSummary(ownedValidators.getActiveValidators());
   }
 
   public DeleteKeyResult deleteLocalMutableValidator(final BLSPublicKey publicKey) {
@@ -241,5 +241,9 @@ public class ValidatorLoader {
         .forEach(
             validatorProvider ->
                 validators.putIfAbsent(validatorProvider.getPublicKey(), validatorProvider));
+  }
+
+  public SlashingProtectionLogger getSlashingProtectionLogger() {
+    return slashingProtectionLogger;
   }
 }

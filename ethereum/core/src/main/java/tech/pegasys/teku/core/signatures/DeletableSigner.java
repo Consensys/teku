@@ -117,7 +117,7 @@ public class DeletableSigner implements Signer {
   }
 
   @Override
-  public boolean isSlashingProtectedLocally() {
-    return delegate.isSlashingProtectedLocally();
+  public boolean isLocalSlashingProtectionEnabled() {
+    return delegate.isLocalSlashingProtectionEnabled();
   }
 }

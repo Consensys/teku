@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.io.IOException;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
@@ -29,6 +31,6 @@ public interface SlashingProtector {
       final UInt64 sourceEpoch,
       final UInt64 targetEpoch);
 
-  SafeFuture<ValidatorSigningRecord> loadSigningRecord(
-      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot);
+  Optional<ValidatorSigningRecord> getSigningRecord(final BLSPublicKey validator)
+      throws IOException;
 }

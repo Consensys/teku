@@ -132,7 +132,6 @@ public final class DataStructureUtil {
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
-  private final Supplier<BLSKeyPair> keyPairGenerator = () -> BLSTestUtil.randomKeyPair(nextSeed());
 
   @Deprecated
   public DataStructureUtil() {
@@ -306,7 +305,7 @@ public final class DataStructureUtil {
   }
 
   public BLSKeyPair randomKeyPair() {
-    return keyPairGenerator.get();
+    return BLSTestUtil.randomKeyPair(nextSeed());
   }
 
   public BLSPublicKey randomPublicKey() {

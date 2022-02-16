@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -46,7 +47,6 @@ import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
-import tech.pegasys.teku.validator.client.loader.DefaultSlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
@@ -127,8 +127,7 @@ public class ValidatorClientService extends Service {
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
-    final ValidatorLoader validatorLoader =
-        createValidatorLoader(config, asyncRunner, services, forkProvider);
+    final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
 
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
@@ -164,14 +163,14 @@ public class ValidatorClientService extends Service {
   private static ValidatorLoader createValidatorLoader(
       final ValidatorClientConfiguration config,
       final AsyncRunner asyncRunner,
-      final ServiceConfig services,
-      final ForkProvider forkProvider) {
+      final ServiceConfig services) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(
             SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
     final SlashingProtectionLogger slashingProtectionLogger =
-        new DefaultSlashingProtectionLogger(slashingProtector, forkProvider);
+        new SlashingProtectionLogger(
+            slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
     return ValidatorLoader.create(
         config.getSpec(),
         config.getValidatorConfig(),
@@ -227,6 +226,7 @@ public class ValidatorClientService extends Service {
     validatorTimingChannels.add(
         new AttestationDutyScheduler(
             metricsSystem, attestationDutyLoader, useDependentRoots, spec));
+    validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final ChainHeadTracker chainHeadTracker = new ChainHeadTracker();

@@ -78,7 +78,7 @@ public class ValidatorLogger {
       final Throwable error) {
     final String errorString =
         String.format(
-            "%sFailed to produce %s  Slot: %s%s",
+            "%sFailed to produce %s  Slot: %s Validator: %s",
             PREFIX, producedType, slot, formatValidators(maybeKey));
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
@@ -87,7 +87,7 @@ public class ValidatorLogger {
       final String producedType, final UInt64 slot, final Set<String> maybeKey) {
     final String errorString =
         String.format(
-            "%sValidator removed, skipping previously scheduled %s production. Slot: %s%s",
+            "%sValidator removed, skipping previously scheduled %s production. Slot: %s Validator: %s",
             PREFIX, producedType, slot, formatValidators(maybeKey));
     log.info(ColorConsolePrinter.print(errorString, Color.YELLOW));
   }
@@ -97,9 +97,7 @@ public class ValidatorLogger {
       return "";
     }
     final String suffix = keys.size() > VALIDATOR_KEY_LIMIT ? "… (" + keys.size() + " total)" : "";
-    return keys.stream()
-        .limit(VALIDATOR_KEY_LIMIT)
-        .collect(Collectors.joining(", ", " Validator: ", suffix));
+    return keys.stream().limit(VALIDATOR_KEY_LIMIT).collect(Collectors.joining(", ", "", suffix));
   }
 
   private void logDuty(
@@ -185,5 +183,28 @@ public class ValidatorLogger {
                 + formatBlock(slot, root),
             Color.RED),
         error.orElse(null));
+  }
+
+  public void activatedSlashingProtection(final Set<String> maybeKey) {
+    final String infoString =
+        String.format(
+            "%sSlashing protection active for validators: %s", PREFIX, formatValidators(maybeKey));
+    log.info(ColorConsolePrinter.print(infoString, Color.GREEN));
+  }
+
+  public void noLocalSlashingProtection(final Set<String> maybeKey) {
+    final String infoString =
+        String.format(
+            "%sNo local slashing protection activated for validators: %s",
+            PREFIX, formatValidators(maybeKey));
+    log.warn(ColorConsolePrinter.print(infoString, Color.YELLOW));
+  }
+
+  public void outdatedSlashingProtection(final Set<String> maybeKey, final UInt64 deltaEpochs) {
+    final String infoString =
+        String.format(
+            "%sSlashing protection last updated more than %s epochs ago for validators: %s",
+            PREFIX, deltaEpochs, formatValidators(maybeKey));
+    log.warn(ColorConsolePrinter.print(infoString, Color.YELLOW));
   }
 }

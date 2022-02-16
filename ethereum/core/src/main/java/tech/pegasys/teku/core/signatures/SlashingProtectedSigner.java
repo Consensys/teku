@@ -152,7 +152,7 @@ public class SlashingProtectedSigner implements Signer {
   }
 
   @Override
-  public boolean isSlashingProtectedLocally() {
+  public boolean isLocalSlashingProtectionEnabled() {
     return true;
   }
 }

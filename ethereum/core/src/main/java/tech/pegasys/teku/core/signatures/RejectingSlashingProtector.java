@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
@@ -36,8 +37,7 @@ public class RejectingSlashingProtector implements SlashingProtector {
   }
 
   @Override
-  public SafeFuture<ValidatorSigningRecord> loadSigningRecord(
-      BLSPublicKey validator, Bytes32 genesisValidatorsRoot) {
-    return SafeFuture.of(() -> new ValidatorSigningRecord(genesisValidatorsRoot));
+  public Optional<ValidatorSigningRecord> getSigningRecord(BLSPublicKey validator) {
+    return Optional.empty();
   }
 }
