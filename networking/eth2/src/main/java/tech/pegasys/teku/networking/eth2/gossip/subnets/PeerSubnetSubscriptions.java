@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -138,18 +137,28 @@ public class PeerSubnetSubscriptions {
   }
 
   public int getSubscribersRequired() {
-    return getMinSubscriberCount().map(c -> Math.max(targetSubnetSubscriberCount - c, 0)).orElse(0);
+    OptionalInt count = getMinSubscriberCount();
+    if (count.isPresent()) {
+      return Math.max(targetSubnetSubscriberCount - count.getAsInt(), 0);
+    } else {
+      return 0;
+    }
   }
 
-  private Optional<Integer> getMinSubscriberCount() {
-    final Optional<Integer> minAttestationSubscribers =
+  private OptionalInt getMinSubscriberCount() {
+    final OptionalInt minAttestationSubscribers =
         attestationSubnetSubscriptions.getMinSubscriberCount();
-    final Optional<Integer> minSyncnetSubscribers =
+    final OptionalInt minSyncnetSubscribers =
         syncCommitteeSubnetSubscriptions.getMinSubscriberCount();
     if (minAttestationSubscribers.isPresent() && minSyncnetSubscribers.isPresent()) {
-      return Optional.of(Math.min(minAttestationSubscribers.get(), minSyncnetSubscribers.get()));
+      return OptionalInt.of(
+          Math.min(minAttestationSubscribers.getAsInt(), minSyncnetSubscribers.getAsInt()));
     } else {
-      return minAttestationSubscribers.or(() -> minSyncnetSubscribers);
+      if (minAttestationSubscribers.isPresent()) {
+        return minAttestationSubscribers;
+      } else {
+        return minSyncnetSubscribers;
+      }
     }
   }
 
@@ -167,14 +176,14 @@ public class PeerSubnetSubscriptions {
 
   public static class SubnetSubscriptions {
     private final SszBitvectorSchema<?> subscriptionSchema;
-    private final Set<Integer> relevantSubnets;
-    private final Map<Integer, Integer> subscriberCountBySubnetId;
+    private final IntSet relevantSubnets;
+    private final Int2IntMap subscriberCountBySubnetId;
     private final Map<NodeId, SszBitvector> subscriptionsByPeer;
 
     private SubnetSubscriptions(
         final SszBitvectorSchema<?> subscriptionSchema,
-        final Set<Integer> relevantSubnets,
-        final Map<Integer, Integer> subscriberCountBySubnetId,
+        final IntSet relevantSubnets,
+        final Int2IntMap subscriberCountBySubnetId,
         final Map<NodeId, SszBitvector> subscriptionsByPeer) {
       this.subscriptionSchema = subscriptionSchema;
       this.relevantSubnets = relevantSubnets;
@@ -190,16 +199,16 @@ public class PeerSubnetSubscriptions {
       return relevantSubnets.contains(subnetId);
     }
 
-    private Stream<Integer> streamRelevantSubnets() {
-      return relevantSubnets.stream();
+    private IntStream streamRelevantSubnets() {
+      return relevantSubnets.intStream();
     }
 
     /**
      * @return The minimum subscriber count across relevant subnets. Returns an empty value if is
      *     there are no relevant subnets.
      */
-    public Optional<Integer> getMinSubscriberCount() {
-      return streamRelevantSubnets().map(this::getSubscriberCountForSubnet).min(Integer::compare);
+    public OptionalInt getMinSubscriberCount() {
+      return streamRelevantSubnets().map(this::getSubscriberCountForSubnet).min();
     }
 
     public int getSubscriberCountForSubnet(final int subnetId) {
@@ -213,8 +222,8 @@ public class PeerSubnetSubscriptions {
     public static class Builder {
       private final SszBitvectorSchema<?> subscriptionSchema;
 
-      private final Set<Integer> relevantSubnets = new HashSet<>();
-      private final Map<Integer, Integer> subscriberCountBySubnetId = new HashMap<>();
+      private final IntSet relevantSubnets = new IntOpenHashSet();
+      private final Int2IntMap subscriberCountBySubnetId = new Int2IntOpenHashMap();
       private final Map<NodeId, SszBitvector> subscriptionsByPeer = new HashMap<>();
 
       private Builder(final SszBitvectorSchema<?> subscriptionSchema) {
@@ -264,8 +273,7 @@ public class PeerSubnetSubscriptions {
           targetSubnetSubscriberCount);
     }
 
-    public Builder targetSubnetSubscriberCount(final Integer targetSubnetSubscriberCount) {
-      checkNotNull(targetSubnetSubscriberCount);
+    public Builder targetSubnetSubscriberCount(final int targetSubnetSubscriberCount) {
       if (targetSubnetSubscriberCount < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
