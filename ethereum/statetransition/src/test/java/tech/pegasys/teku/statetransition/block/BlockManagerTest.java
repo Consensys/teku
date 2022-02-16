@@ -449,7 +449,6 @@ public class BlockManagerTest {
 
   private UInt64 incrementSlot() {
     currentSlot = currentSlot.plus(UInt64.ONE);
-    // localChain.setSlot(currentSlot);
     localChain.chainUpdater().setCurrentSlot(currentSlot);
     blockManager.onSlot(currentSlot);
     return currentSlot;
