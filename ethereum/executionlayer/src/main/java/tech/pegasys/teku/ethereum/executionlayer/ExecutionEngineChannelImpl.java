@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.KilnV1Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
@@ -65,8 +66,10 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final String eeEndpoint, final TimeProvider timeProvider, final Version version) {
     LOG.info("Execution Engine version: {}", version);
     switch (version) {
-      case KILN:
+      case KILNV2:
         return new Web3JExecutionEngineClient(eeEndpoint, timeProvider);
+      case KILN:
+        return new KilnV1Web3JExecutionEngineClient(eeEndpoint, timeProvider);
       case KINTSUGI:
       default:
         return new KintsugiWeb3JExecutionEngineClient(eeEndpoint, timeProvider);
