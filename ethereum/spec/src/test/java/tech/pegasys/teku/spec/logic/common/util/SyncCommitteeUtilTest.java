@@ -17,10 +17,10 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -127,7 +127,7 @@ class SyncCommitteeUtilTest {
   @Test
   void getCommitteeIndices() {
     final BeaconState state = createStateWithCurrentSyncCommittee(validatorPublicKeys);
-    final Set<Integer> indices =
+    final IntSet indices =
         syncCommitteeUtil.getCommitteeIndices(
             state, spec.computeEpochAtSlot(state.getSlot()), UInt64.valueOf(12));
     assertThat(indices).containsExactly(12);
