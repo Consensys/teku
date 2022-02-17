@@ -491,7 +491,7 @@ task uploadDocker {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      
+
       exec {
         workingDir dockerBuildDir
         executable "sh"

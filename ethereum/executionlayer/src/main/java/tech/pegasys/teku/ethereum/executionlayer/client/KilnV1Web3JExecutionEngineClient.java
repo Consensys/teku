@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -21,7 +22,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient {
 
   public KilnV1Web3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
-    super(eeEndpoint, timeProvider);
+    super(eeEndpoint, timeProvider, Optional.empty());
   }
 
   @Override
