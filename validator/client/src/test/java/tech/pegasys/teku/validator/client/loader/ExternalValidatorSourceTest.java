@@ -24,9 +24,12 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -34,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -55,7 +59,7 @@ public class ExternalValidatorSourceTest {
   public ExternalValidatorSourceTest() {}
 
   @BeforeEach
-  void setup() throws IOException, InterruptedException {
+  void setup(@TempDir Path tempDir) throws IOException, InterruptedException {
     config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(new URL("http://localhost:9000"))
@@ -78,7 +82,22 @@ public class ExternalValidatorSourceTest {
             publicKeyLoader,
             asyncRunner,
             true,
-            externalSignerTaskQueue);
+            externalSignerTaskQueue,
+            Optional.of(dataDirLayout(tempDir)));
+  }
+
+  public DataDirLayout dataDirLayout(final Path tempDir) {
+    return new DataDirLayout() {
+      @Override
+      public Path getBeaconDataDirectory() {
+        return tempDir;
+      }
+
+      @Override
+      public Path getValidatorDataDirectory() {
+        return tempDir;
+      }
+    };
   }
 
   @Test
