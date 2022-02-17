@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.DeletableSigner;
@@ -49,7 +50,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -281,8 +281,7 @@ class ValidatorLoaderTest {
             Bytes.fromHexString(
                 "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"));
 
-    final DataDirLayout dataDirLayout =
-        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
     writeMutableKeystore(dataDirLayout);
     final ValidatorConfig config =
@@ -348,8 +347,7 @@ class ValidatorLoaderTest {
   @Test
   void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
-    final DataDirLayout dataDirLayout =
-        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
     writeMutableKeystore(dataDirLayout);
     final ValidatorConfig config =
@@ -384,8 +382,7 @@ class ValidatorLoaderTest {
   void shouldCallMutableValidatorSourceToDelete(@TempDir final Path tempDir) {
     final ValidatorSource validatorSource = mock(ValidatorSource.class);
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    final DataDirLayout dataDirLayout =
-        new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
+    final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
     ValidatorLoader loader =
         ValidatorLoader.create(
             List.of(validatorSource),
@@ -402,8 +399,7 @@ class ValidatorLoaderTest {
   @Test
   void shouldNotInitializeMutableValidatorsWithoutDirectoryStructure(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
-    final DataDirLayout dataDirLayout =
-        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
 
     final ValidatorConfig config =
@@ -671,7 +667,7 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(getDataDirLayout(tempDir)));
+            Optional.of(new SimpleDataDirLayout(tempDir)));
     validatorLoader.loadValidators();
 
     final String keystoreString =
@@ -729,19 +725,5 @@ class ValidatorLoaderTest {
     assertThat(keystorePassword.toFile().mkdirs()).isTrue();
     Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
     Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
-  }
-
-  private DataDirLayout getDataDirLayout(final Path tempDir) {
-    return new DataDirLayout() {
-      @Override
-      public Path getBeaconDataDirectory() {
-        return tempDir;
-      }
-
-      @Override
-      public Path getValidatorDataDirectory() {
-        return tempDir;
-      }
-    };
   }
 }

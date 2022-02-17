@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -45,7 +46,6 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -255,20 +255,6 @@ class LocalValidatorSourceTest {
     assertThat(validatorSource.canUpdateValidators()).isFalse();
   }
 
-  public DataDirLayout dataDirLayout(final Path tempDir) {
-    return new DataDirLayout() {
-      @Override
-      public Path getBeaconDataDirectory() {
-        return tempDir;
-      }
-
-      @Override
-      public Path getValidatorDataDirectory() {
-        return tempDir;
-      }
-    };
-  }
-
   private AddValidatorResult getResultFromAddingValidator(
       final Path tempDir,
       final String resourceName,
@@ -283,7 +269,7 @@ class LocalValidatorSourceTest {
             keyStoreFilesLocator,
             asyncRunner,
             false,
-            Optional.of(dataDirLayout(tempDir)));
+            Optional.of(new SimpleDataDirLayout(tempDir)));
     final KeyStoreData keyStoreData =
         KeyStoreLoader.loadFromString(
             Resources.toString(Resources.getResource(resourceName), StandardCharsets.UTF_8));
