@@ -75,7 +75,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
 
   @Override
   public IntList getAllSetBits() {
-    return IntArrayList.toList(value.streamAllSetBits().boxed().mapToInt(Integer::intValue));
+    return IntArrayList.toList(value.streamAllSetBits());
   }
 
   @Override

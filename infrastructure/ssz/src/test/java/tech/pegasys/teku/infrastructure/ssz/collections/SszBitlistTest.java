@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatIntCollection;
 
 import java.util.OptionalInt;
 import java.util.Random;
@@ -99,7 +100,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     Bytes ssz1 = bitlist1.sszSerialize();
     SszBitlist bitlist2 = bitlist1.getSchema().sszDeserialize(ssz1);
 
-    assertThat(bitlist2.getAllSetBits().equals(bitlist1.getAllSetBits())).isTrue();
+    assertThatIntCollection(bitlist2.getAllSetBits()).isEqualTo(bitlist1.getAllSetBits());
     assertThat(bitlist2.size()).isEqualTo(bitlist1.size());
     for (int i = 0; i < bitlist1.size(); i++) {
       assertThat(bitlist2.getBit(i)).isEqualTo(bitlist1.getBit(i));
@@ -119,7 +120,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     TreeNode tree = bitlist1.getBackingNode();
     SszBitlist bitlist2 = bitlist1.getSchema().createFromBackingNode(tree);
 
-    assertThat(bitlist2.getAllSetBits().equals(bitlist1.getAllSetBits())).isTrue();
+    assertThatIntCollection(bitlist2.getAllSetBits()).isEqualTo(bitlist1.getAllSetBits());
     assertThat(bitlist2.size()).isEqualTo(bitlist1.size());
     for (int i = 0; i < bitlist1.size(); i++) {
       assertThat(bitlist2.getBit(i)).isEqualTo(bitlist1.getBit(i));
