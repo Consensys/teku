@@ -156,6 +156,17 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
+  void should_callPrepareBeaconProposerAfterOnPossibleMissedEvents() {
+    beaconProposerPreparer.onPossibleMissedEvents();
+    verify(validatorApiChannel).prepareBeaconProposer(any());
+  }
+
+  void should_callPrepareBeaconProposerAfterOnValidatorsAdded() {
+    beaconProposerPreparer.onValidatorsAdded();
+    verify(validatorApiChannel).prepareBeaconProposer(any());
+  }
+
+  @TestTemplate
   void should_catchApiExceptions() {
     doThrow(new RuntimeException("error")).when(validatorApiChannel).prepareBeaconProposer(any());
 
