@@ -20,9 +20,9 @@ import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -175,9 +175,9 @@ class SyncCommitteeMessageValidatorTest {
   void shouldAllowDuplicateMessagesForDistinctSubnets() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(message, 2, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 2, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -185,9 +185,9 @@ class SyncCommitteeMessageValidatorTest {
   void shouldIgnoreDuplicateMessagesForSameSubnet() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -195,9 +195,9 @@ class SyncCommitteeMessageValidatorTest {
   void shouldIgnoreDuplicateMessagesForLocalValidatorsInMultipleSubnets() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromValidatorSpy(message, Set.of(1, 2))))
+    assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromValidatorSpy(message, Set.of(2, 1))))
+    assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -205,11 +205,11 @@ class SyncCommitteeMessageValidatorTest {
   void shouldIgnoreDuplicateMessagesForLocalValidatorsWhenReceivedAgainFromAnySubnet() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromValidatorSpy(message, Set.of(1, 2))))
+    assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(2, 1))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(2, 1))))
         .isCompletedWithValue(IGNORE);
-    assertThat(validator.validate(fromNetworkSpy(message, 2, Set.of(2, 1))))
+    assertThat(validator.validate(fromNetworkSpy(message, 2, IntSet.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -284,23 +284,21 @@ class SyncCommitteeMessageValidatorTest {
   }
 
   private ValidateableSyncCommitteeMessage fromValidatorSpy(
-      SyncCommitteeMessage message, final Set<Integer> subcommitteeIds) {
+      SyncCommitteeMessage message, final IntSet subcommitteeIds) {
     final ValidateableSyncCommitteeMessage validateableMessage =
         ValidateableSyncCommitteeMessage.fromValidator(message);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
   private ValidateableSyncCommitteeMessage fromNetworkSpy(
-      SyncCommitteeMessage message,
-      final int receivedSubnetId,
-      final Set<Integer> subcommitteeIds) {
+      SyncCommitteeMessage message, final int receivedSubnetId, final IntSet subcommitteeIds) {
     final ValidateableSyncCommitteeMessage validateableMessage =
         ValidateableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
   private ValidateableSyncCommitteeMessage createSpy(
-      ValidateableSyncCommitteeMessage validateableMessage, final Set<Integer> subcommitteeIds) {
+      ValidateableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
     // Create spies
     final ValidateableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
     validateableMessage.calculateAssignments(

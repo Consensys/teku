@@ -24,11 +24,11 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -327,7 +327,7 @@ class SyncCommitteeMessagePoolTest {
       final int subnetId, final ValidateableSyncCommitteeMessage... messages) {
     checkArgument(messages.length > 0, "Must specify at least one message");
     final ValidateableSyncCommitteeMessage template = messages[0];
-    final Set<Integer> participantIds = new HashSet<>();
+    final IntSet participantIds = new IntOpenHashSet();
     final List<BLSSignature> blsSignatures = new ArrayList<>();
     for (ValidateableSyncCommitteeMessage message : messages) {
       participantIds.addAll(

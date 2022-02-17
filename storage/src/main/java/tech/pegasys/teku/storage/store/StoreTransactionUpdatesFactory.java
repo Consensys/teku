@@ -91,7 +91,12 @@ class StoreTransactionUpdatesFactory {
 
     return newFinalizedCheckpoint
         .map(this::buildFinalizedUpdates)
-        .orElseGet(() -> createStoreTransactionUpdates(Optional.empty()));
+        .orElseGet(
+            () ->
+                createStoreTransactionUpdates(
+                    Optional.empty(),
+                    tx.clearFinalizedOptimisticTransitionPayload,
+                    Optional.empty()));
   }
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
@@ -101,13 +106,21 @@ class StoreTransactionUpdatesFactory {
     Map<Bytes32, BeaconState> finalizedStates = collectFinalizedStates(tx, finalizedChildToParent);
 
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
-    if (!spec.isMergeTransitionComplete(baseStore.getLatestFinalized().getState())
+    final boolean optimisticTransitionBlockRootSet;
+    final Optional<Bytes32> optimisticTransitionBlockRoot;
+    if (tx.clearFinalizedOptimisticTransitionPayload) {
+      optimisticTransitionBlockRootSet = true;
+      optimisticTransitionBlockRoot = Optional.empty();
+    } else if (!spec.isMergeTransitionComplete(baseStore.getLatestFinalized().getState())
         && spec.isMergeTransitionComplete(latestFinalized.getState())) {
       // Transition block was finalized by this transaction
-      final Optional<Bytes32> optimisticTransitionBlockRoot =
+      optimisticTransitionBlockRootSet = true;
+      optimisticTransitionBlockRoot =
           baseStore.forkChoiceStrategy.getOptimisticallySyncedTransitionBlockRoot(
               latestFinalized.getRoot());
-      finalizedChainDataBuilder.optimisticTransitionBlockRoot(optimisticTransitionBlockRoot);
+    } else {
+      optimisticTransitionBlockRootSet = false;
+      optimisticTransitionBlockRoot = Optional.empty();
     }
 
     // Prune collections
@@ -124,7 +137,8 @@ class StoreTransactionUpdatesFactory {
                 .finalizedStates(finalizedStates)
                 .build());
 
-    return createStoreTransactionUpdates(finalizedChainData);
+    return createStoreTransactionUpdates(
+        finalizedChainData, optimisticTransitionBlockRootSet, optimisticTransitionBlockRoot);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -219,7 +233,9 @@ class StoreTransactionUpdatesFactory {
   }
 
   private StoreTransactionUpdates createStoreTransactionUpdates(
-      final Optional<FinalizedChainData> finalizedChainData) {
+      final Optional<FinalizedChainData> finalizedChainData,
+      final boolean optimisticTransitionBlockRootSet,
+      final Optional<Bytes32> optimisticTransitionBlockRoot) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -227,6 +243,8 @@ class StoreTransactionUpdatesFactory {
         hotBlockAndStates,
         getHotStatesToPersist(),
         prunedHotBlockRoots,
-        stateRoots);
+        stateRoots,
+        optimisticTransitionBlockRootSet,
+        optimisticTransitionBlockRoot);
   }
 }

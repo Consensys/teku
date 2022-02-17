@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Collection;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,7 +58,7 @@ public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implement
   }
 
   protected abstract SafeFuture<Optional<D>> requestDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices);
+      final UInt64 epoch, final IntCollection validatorIndices);
 
   protected abstract SafeFuture<S> scheduleAllDuties(UInt64 epoch, D duties);
 }

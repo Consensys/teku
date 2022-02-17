@@ -552,7 +552,7 @@ public class KvStoreDatabase implements Database {
             update.getFinalizedBlocks(),
             update.getFinalizedStates(),
             update.getDeletedHotBlocks(),
-            update.isFinalizedOptimisticBlockRootSet(),
+            update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
     LOG.trace("Applying hot updates");
     try (final HotUpdater updater = hotDao.hotUpdater()) {

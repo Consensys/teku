@@ -288,6 +288,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void removeFinalizedOptimisticTransitionPayload() {}
+
+  @Override
   public void removeProposerBoostRoot() {
     proposerBoostRoot = Optional.empty();
   }

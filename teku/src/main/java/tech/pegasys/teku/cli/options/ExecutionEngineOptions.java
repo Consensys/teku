@@ -31,13 +31,26 @@ public class ExecutionEngineOptions {
   @Option(
       names = {"--Xee-version"},
       paramLabel = "<EXECUTION_ENGINE_VERSION>",
-      description = "Execution Engine API version. Possible values are: kintsugi (default) or kiln",
+      description =
+          "Execution Engine API version. Possible values are: kintsugi (default), kiln or kilnV2",
       arity = "1",
       hidden = true)
   private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
+  @Option(
+      hidden = true,
+      names = {"--Xee-jwt-secret"},
+      paramLabel = "<FILENAME>",
+      description =
+          "Location of the file specifying the hex-encoded 256 bit secret key to be used for verifying/generating jwt tokens",
+      arity = "1")
+  private String jwtSecretFile = null;
+
   public void configure(final Builder builder) {
     builder.executionEngine(
-        b -> b.endpoint(executionEngineEndpoint).version(executionEngineVersion));
+        b ->
+            b.endpoint(executionEngineEndpoint)
+                .version(executionEngineVersion)
+                .jwtSecretFile(jwtSecretFile));
   }
 }

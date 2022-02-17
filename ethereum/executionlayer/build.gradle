@@ -2,6 +2,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
+  implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:time')
@@ -10,6 +11,10 @@ dependencies {
 
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.jsonwebtoken:jjwt-api'
+
+  runtimeOnly 'io.jsonwebtoken:jjwt-impl'
+  runtimeOnly 'io.jsonwebtoken:jjwt-jackson'
 
   testImplementation testFixtures(project(':ethereum:spec'))
 }

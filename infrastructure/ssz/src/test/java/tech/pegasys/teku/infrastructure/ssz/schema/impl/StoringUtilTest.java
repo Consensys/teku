@@ -25,11 +25,11 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.RIGHTMOST_G_INDEX;
 import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.SELF_G_INDEX;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -213,7 +213,7 @@ class StoringUtilTest {
     final List<TreeNode> children = createChildrenForDepth(depth);
     final TreeNode rootNode = TreeUtil.createTree(children, depth);
     final List<TreeNode> branchNodes = getNodesAtDepth(rootNode, maxBranchLevelsSkipped);
-    final Set<Integer> skippableBranchIndices = Set.of(0, 2);
+    final IntSet skippableBranchIndices = IntSet.of(0, 2);
     // Can skip intermediate branches 0 and 2, but should store the others
     skippableBranchIndices.forEach(
         index ->

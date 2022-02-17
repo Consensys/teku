@@ -62,27 +62,30 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
       firstCallDone = true;
 
-      SafeFuture<Optional<ProposerConfig>> proposerConfigFuture =
-          proposerConfigProvider.getProposerConfig();
-
-      validatorIndexProvider
-          .getValidatorIndexesByPublicKey()
-          .thenCompose(
-              publicKeyToIndex ->
-                  proposerConfigFuture
-                      .thenApply(
-                          proposerConfig ->
-                              buildBeaconPreparableProposerList(proposerConfig, publicKeyToIndex))
-                      .exceptionally(
-                          throwable -> {
-                            LOG.warn(
-                                "An error occurred while obtaining proposer config", throwable);
-                            return buildBeaconPreparableProposerList(
-                                Optional.empty(), publicKeyToIndex);
-                          }))
-          .thenAccept(validatorApiChannel::prepareBeaconProposer)
-          .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
+      sendPreparableProposerList();
     }
+  }
+
+  private void sendPreparableProposerList() {
+    SafeFuture<Optional<ProposerConfig>> proposerConfigFuture =
+        proposerConfigProvider.getProposerConfig();
+
+    validatorIndexProvider
+        .getValidatorIndexesByPublicKey()
+        .thenCompose(
+            publicKeyToIndex ->
+                proposerConfigFuture
+                    .thenApply(
+                        proposerConfig ->
+                            buildBeaconPreparableProposerList(proposerConfig, publicKeyToIndex))
+                    .exceptionally(
+                        throwable -> {
+                          LOG.warn("An error occurred while obtaining proposer config", throwable);
+                          return buildBeaconPreparableProposerList(
+                              Optional.empty(), publicKeyToIndex);
+                        }))
+        .thenAccept(validatorApiChannel::prepareBeaconProposer)
+        .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 
   private List<BeaconPreparableProposer> buildBeaconPreparableProposerList(
@@ -128,7 +131,14 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   public void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot) {}
 
   @Override
-  public void onPossibleMissedEvents() {}
+  public void onPossibleMissedEvents() {
+    sendPreparableProposerList();
+  }
+
+  @Override
+  public void onValidatorsAdded() {
+    sendPreparableProposerList();
+  }
 
   @Override
   public void onBlockProductionDue(UInt64 slot) {}

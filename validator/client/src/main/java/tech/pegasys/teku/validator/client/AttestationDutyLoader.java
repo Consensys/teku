@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Collection;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -65,7 +65,7 @@ public class AttestationDutyLoader
 
   @Override
   protected SafeFuture<Optional<AttesterDuties>> requestDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     if (validatorIndices.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }

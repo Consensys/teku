@@ -16,9 +16,10 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -155,7 +156,8 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     private ValidatorLogger validatorLogger = ValidatorLogger.VALIDATOR_LOGGER;
     private ValidatorApiChannel validatorApiChannel;
     private ForkProvider forkProvider;
-    private final Map<Integer, ValidatorAndCommitteeIndices> assignments = new HashMap<>();
+    private final Int2ObjectMap<ValidatorAndCommitteeIndices> assignments =
+        new Int2ObjectOpenHashMap<>();
     private Spec spec;
     private ChainHeadTracker chainHeadTracker;
     private UInt64 lastEpochInCommitteePeriod;
@@ -195,9 +197,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     }
 
     public Builder committeeAssignments(
-        final Validator validator,
-        final int validatorIndex,
-        final Collection<Integer> committeeIndices) {
+        final Validator validator, final int validatorIndex, final IntCollection committeeIndices) {
       assignments
           .computeIfAbsent(
               validatorIndex, __ -> new ValidatorAndCommitteeIndices(validator, validatorIndex))
