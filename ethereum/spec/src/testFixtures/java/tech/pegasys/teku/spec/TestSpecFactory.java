@@ -65,6 +65,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
+  public static Spec createMinimalBellatrix(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigBellatrix specConfig =
+        getBellatrixSpecConfig(Eth2Network.MINIMAL, configAdapter);
+    return create(specConfig, SpecMilestone.BELLATRIX);
+  }
+
   public static Spec createMinimalAltair() {
     final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.ALTAIR);
@@ -165,11 +171,23 @@ public class TestSpecFactory {
 
   private static SpecConfigBellatrix getBellatrixSpecConfig(
       final Eth2Network network, final UInt64 altairForkEpoch, UInt64 bellatrixForkEpoch) {
+    return getBellatrixSpecConfig(
+        network,
+        c ->
+            c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
+                .bellatrixBuilder(m -> m.bellatrixForkEpoch(bellatrixForkEpoch)));
+  }
+
+  private static SpecConfigBellatrix getBellatrixSpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
     return SpecConfigBellatrix.required(
         SpecConfigLoader.loadConfig(
             network.configName(),
-            c ->
-                c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
-                    .bellatrixBuilder(m -> m.bellatrixForkEpoch(bellatrixForkEpoch))));
+            builder -> {
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO));
+              configAdapter.accept(builder);
+            }));
   }
 }

@@ -161,7 +161,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         new BellatrixStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
-        new BellatrixTransitionHelpers(config);
+        new BellatrixTransitionHelpers(config, miscHelpers);
 
     final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
 
