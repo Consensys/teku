@@ -60,6 +60,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   boolean proposerBoostRootSet = false;
   Optional<UInt64> latestValidFinalizedSlot = Optional.empty();
+  boolean clearFinalizedOptimisticTransitionPayload = false;
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
@@ -141,6 +142,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void setLatestValidFinalizedSlot(UInt64 slot) {
     this.latestValidFinalizedSlot = Optional.of(slot);
+  }
+
+  @Override
+  public void removeFinalizedOptimisticTransitionPayload() {
+    this.clearFinalizedOptimisticTransitionPayload = true;
   }
 
   @CheckReturnValue

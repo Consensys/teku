@@ -32,12 +32,15 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthInterceptor;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -53,19 +56,24 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private final TimeProvider timeProvider;
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
 
-  public Web3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
-    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient());
+  public Web3JExecutionEngineClient(
+      final String eeEndpoint,
+      final TimeProvider timeProvider,
+      final Optional<JwtConfig> jwtConfig) {
+    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
     this.eth1Web3j = Web3j.build(eeWeb3jService);
     this.timeProvider = timeProvider;
   }
 
-  private static OkHttpClient createOkHttpClient() {
+  private static OkHttpClient createOkHttpClient(
+      final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
     final OkHttpClient.Builder builder = new OkHttpClient.Builder();
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);
       builder.addInterceptor(logging);
     }
+    jwtConfig.ifPresent(jwt -> builder.addInterceptor(new JwtAuthInterceptor(jwt, timeProvider)));
     return builder.build();
   }
 
@@ -128,6 +136,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return doRequest(web3jRequest);
   }
 
+  @Override
+  public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
+      TransitionConfigurationV1 transitionConfiguration) {
+    Request<?, ExchangeTransitionConfigurationWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_exchangeTransitionConfigurationV1",
+            Collections.singletonList(transitionConfiguration),
+            eeWeb3jService,
+            ExchangeTransitionConfigurationWeb3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
   private void handleError(Throwable error) {
     final long errorTime = lastError.get();
     if (errorTime == NO_ERROR_TIME
@@ -180,6 +200,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class ForkChoiceUpdatedWeb3jResponse
       extends org.web3j.protocol.core.Response<ForkChoiceUpdatedResult> {}
+
+  static class ExchangeTransitionConfigurationWeb3jResponse
+      extends org.web3j.protocol.core.Response<TransitionConfigurationV1> {}
 
   /**
    * Returns a list that supports null items.

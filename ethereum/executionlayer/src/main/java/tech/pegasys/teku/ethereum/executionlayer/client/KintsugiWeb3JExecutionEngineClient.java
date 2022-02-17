@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
-public class KintsugiWeb3JExecutionEngineClient extends Web3JExecutionEngineClient {
+public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngineClient {
 
   private final AtomicLong nextId = new AtomicLong(0);
 

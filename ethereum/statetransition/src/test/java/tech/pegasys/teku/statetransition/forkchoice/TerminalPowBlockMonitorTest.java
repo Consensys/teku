@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,8 +30,11 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -56,12 +61,14 @@ public class TerminalPowBlockMonitorTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
+  private final EventLogger eventLogger = Mockito.mock(EventLogger.class);
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
   private TerminalPowBlockMonitor terminalPowBlockMonitor;
+  private TransitionConfiguration localTransitionConfiguration;
 
   @BeforeAll
   public static void initSession() {
@@ -80,12 +87,23 @@ public class TerminalPowBlockMonitorTest {
                 .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
+
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new TransitionConfiguration(
+                    localTransitionConfiguration.getTerminalTotalDifficulty(),
+                    localTransitionConfiguration.getTerminalBlockHash(),
+                    dataStructureUtil.randomUInt64())));
   }
 
   private void setUpTTDConfig() {
     setUpCommon(
         bellatrixBuilder ->
             bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
+
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(localTransitionConfiguration));
   }
 
   private void setUpCommon(Consumer<BellatrixBuilder> bellatrixBuilder) {
@@ -102,9 +120,18 @@ public class TerminalPowBlockMonitorTest {
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
 
+    localTransitionConfiguration =
+        new TransitionConfiguration(
+            spec.getGenesisSpecConfig()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getTerminalTotalDifficulty(),
+            spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalBlockHash(),
+            UInt64.ZERO);
+
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
-            executionEngine, spec, recentChainData, forkChoiceNotifier, asyncRunner);
+            executionEngine, spec, recentChainData, forkChoiceNotifier, asyncRunner, eventLogger);
   }
 
   private void goToSlot(UInt64 slot) {
@@ -171,6 +198,8 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
+    // we call exchangeTransitionConfiguration even before bellatrix activates
+    verify(executionEngine, times(1)).exchangeTransitionConfiguration(localTransitionConfiguration);
     verify(executionEngine, times(0)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
@@ -205,6 +234,7 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
+    verify(eventLogger).terminalPowBlockDetected(headBlockHash);
     verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
     verify(executionEngine, times(2)).getPowChainHead();
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
@@ -213,6 +243,8 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(executionEngine, times(3)).getPowChainHead();
+    verify(executionEngine, atLeastOnce())
+        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
 
     // new different Terminal Block with wrong parent TTD - should not notify
@@ -248,6 +280,7 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
+    verify(eventLogger).terminalPowBlockDetected(headBlockHash);
     verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
     verify(executionEngine, times(5)).getPowChainHead();
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
@@ -260,7 +293,10 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
+    verify(executionEngine, atLeastOnce())
+        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
+    verifyNoMoreInteractions(eventLogger);
   }
 
   @Test
@@ -277,6 +313,8 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
+    // we call exchangeTransitionConfiguration even before bellatrix activates
+    verify(executionEngine, times(1)).exchangeTransitionConfiguration(localTransitionConfiguration);
     verify(executionEngine, times(0)).getPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
@@ -308,6 +346,7 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
+    verify(eventLogger).terminalPowBlockDetected(TERMINAL_BLOCK_HASH);
     verify(executionEngine, times(2)).getPowBlock(TERMINAL_BLOCK_HASH);
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(TERMINAL_BLOCK_HASH);
 
@@ -317,7 +356,10 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
+    verify(executionEngine, atLeastOnce())
+        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
+    verifyNoMoreInteractions(eventLogger);
   }
 
   @Test
@@ -331,5 +373,58 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
+  }
+
+  @Test
+  void shouldDetectTerminalConfigProblems() {
+    setUpTerminalBlockHashConfig();
+    final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
+    final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
+
+    TransitionConfiguration wrongRemoteConfig;
+
+    terminalPowBlockMonitor.start();
+
+    // wrong TTD
+    wrongRemoteConfig =
+        new TransitionConfiguration(
+            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger)
+        .transitionConfigurationTtdTbhMismatch(
+            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+
+    // wrong TBH
+    wrongRemoteConfig =
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger)
+        .transitionConfigurationTtdTbhMismatch(
+            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+
+    // remote TBH TBN inconsistency
+    wrongRemoteConfig =
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(),
+            localTransitionConfiguration.getTerminalBlockHash(),
+            UInt64.ZERO);
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger)
+        .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
+
+    verifyNoMoreInteractions(eventLogger);
   }
 }

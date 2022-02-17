@@ -16,19 +16,24 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.KilnV1Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -40,6 +45,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
@@ -52,19 +58,31 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final String eeEndpoint,
       final Spec spec,
       final TimeProvider timeProvider,
-      final Version version) {
+      final Version version,
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
     return new ExecutionEngineChannelImpl(
-        createEngineClient(eeEndpoint, timeProvider, version), spec);
+        createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile, beaconDataDirectory),
+        spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
-      final String eeEndpoint, final TimeProvider timeProvider, final Version version) {
+      final String eeEndpoint,
+      final TimeProvider timeProvider,
+      final Version version,
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
     LOG.info("Execution Engine version: {}", version);
     switch (version) {
+      case KILNV2:
+        final JwtSecretKeyLoader keyLoader =
+            new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
+        return new Web3JExecutionEngineClient(
+            eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
       case KILN:
-        return new Web3JExecutionEngineClient(eeEndpoint, timeProvider);
+        return new KilnV1Web3JExecutionEngineClient(eeEndpoint, timeProvider);
       case KINTSUGI:
       default:
         return new KintsugiWeb3JExecutionEngineClient(eeEndpoint, timeProvider);
@@ -159,5 +177,25 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
             payloadStatus ->
                 LOG.trace("newPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
         .exceptionally(PayloadStatus::failedExecution);
+  }
+
+  @Override
+  public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+      TransitionConfiguration transitionConfiguration) {
+    LOG.trace(
+        "calling exchangeTransitionConfiguration(transitionConfiguration={})",
+        transitionConfiguration);
+
+    return executionEngineClient
+        .exchangeTransitionConfiguration(
+            TransitionConfigurationV1.fromInternalTransitionConfiguration(transitionConfiguration))
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(TransitionConfigurationV1::asInternalTransitionConfiguration)
+        .thenPeek(
+            remoteTransitionConfiguration ->
+                LOG.trace(
+                    "exchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
+                    transitionConfiguration,
+                    remoteTransitionConfiguration));
   }
 }

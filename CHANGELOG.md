@@ -14,5 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 - Support for the Pyrmont testnet has been removed. The Prater testnet should be used instead.
 ### Additions and Improvements
+- Added support for exporting metrics to an external consumer with `--metrics-publish-endpoint`.
 
 ### Bug Fixes
+ - Improved handling of the http accept header used to determine whether to send SSZ data or json for states and blocks.
