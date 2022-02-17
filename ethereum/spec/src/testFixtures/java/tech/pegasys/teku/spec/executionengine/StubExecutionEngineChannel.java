@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec.executionengine;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,6 +37,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final LRUCache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
+  private Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
@@ -50,6 +53,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+    requestedPowBlocks.add(blockHash);
     return SafeFuture.completedFuture(Optional.ofNullable(knownBlocks.get(blockHash)));
   }
 
@@ -136,6 +140,10 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   public void setPayloadStatus(PayloadStatus payloadStatus) {
     this.payloadStatus = payloadStatus;
+  }
+
+  public Set<Bytes32> getRequestedPowBlocks() {
+    return requestedPowBlocks;
   }
 
   private static class HeadAndAttributes {

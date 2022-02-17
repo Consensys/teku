@@ -106,7 +106,7 @@ class ForkChoiceTest {
   @BeforeEach
   public void setup() {
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
-        .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
+        .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     reset(
@@ -116,7 +116,7 @@ class ForkChoiceTest {
     // by default everything is valid
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
-        .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
+        .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
 
     storageSystem
         .chainUpdater()
@@ -603,7 +603,9 @@ class ForkChoiceTest {
     final Bytes32 chainHeadRoot = recentChainData.getOptimisticHead().get().getHeadBlockRoot();
     when(transitionBlockValidator.verifyAncestorTransitionBlock(chainHeadRoot))
         .thenReturn(
-            SafeFuture.completedFuture(PayloadStatus.invalid(Optional.empty(), Optional.empty())));
+            SafeFuture.completedFuture(
+                new PayloadValidationResult(
+                    PayloadStatus.invalid(Optional.empty(), Optional.empty()))));
 
     assertThat(recentChainData.getStore().containsBlock(chainHeadRoot)).isTrue();
     assertThat(forkChoice.processHead(recentChainData.getHeadSlot())).isCompleted();

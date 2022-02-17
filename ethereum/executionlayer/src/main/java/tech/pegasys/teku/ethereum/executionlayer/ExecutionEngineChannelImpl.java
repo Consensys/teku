@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.KilnV1Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
@@ -48,7 +49,6 @@ import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
-
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionEngineClient executionEngineClient;
@@ -77,13 +77,14 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
     LOG.info("Execution Engine version: {}", version);
     final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
     switch (version) {
-      case KILN:
+      case KILNV2:
         return new Web3JExecutionEngineClient(
-            eeEndpoint, timeProvider, new JwtConfig(keyLoader.getSecretKey()));
+            eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
+      case KILN:
+        return new KilnV1Web3JExecutionEngineClient(eeEndpoint, timeProvider);
       case KINTSUGI:
       default:
-        return new KintsugiWeb3JExecutionEngineClient(
-            eeEndpoint, timeProvider, new JwtConfig(keyLoader.getSecretKey()));
+        return new KintsugiWeb3JExecutionEngineClient(eeEndpoint, timeProvider);
     }
   }
 

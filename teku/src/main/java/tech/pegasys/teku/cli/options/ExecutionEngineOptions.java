@@ -31,7 +31,8 @@ public class ExecutionEngineOptions {
   @Option(
       names = {"--Xee-version"},
       paramLabel = "<EXECUTION_ENGINE_VERSION>",
-      description = "Execution Engine API version. Possible values are: kintsugi (default) or kiln",
+      description =
+          "Execution Engine API version. Possible values are: kintsugi (default), kiln or kilnV2",
       arity = "1",
       hidden = true)
   private Version executionEngineVersion = Version.DEFAULT_VERSION;

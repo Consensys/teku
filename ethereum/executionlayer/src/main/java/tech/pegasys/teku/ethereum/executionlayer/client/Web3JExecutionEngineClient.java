@@ -57,21 +57,23 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
 
   public Web3JExecutionEngineClient(
-      String eeEndpoint, TimeProvider timeProvider, JwtConfig jwtConfig) {
+      final String eeEndpoint,
+      final TimeProvider timeProvider,
+      final Optional<JwtConfig> jwtConfig) {
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
     this.eth1Web3j = Web3j.build(eeWeb3jService);
     this.timeProvider = timeProvider;
   }
 
   private static OkHttpClient createOkHttpClient(
-      final JwtConfig jwtConfig, final TimeProvider timeProvider) {
+      final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
     final OkHttpClient.Builder builder = new OkHttpClient.Builder();
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);
       builder.addInterceptor(logging);
     }
-    builder.addInterceptor(new JwtAuthInterceptor(jwtConfig, timeProvider));
+    jwtConfig.ifPresent(jwt -> builder.addInterceptor(new JwtAuthInterceptor(jwt, timeProvider)));
     return builder.build();
   }
 

@@ -686,6 +686,37 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void shouldClearOptimisticTransitionExecutionPayload() {
+    // Record optimistic transition execution payload.
+    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
+            .collect(toList());
+    add(newBlocks);
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+    final Optional<SlotAndExecutionPayload> transitionPayload =
+        SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
+    assertThat(transitionPayload).isPresent();
+    assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
+        .isEqualTo(transitionPayload);
+
+    // Clear optimistic transition payload
+    final StoreTransaction clearTx = recentChainData.startStoreTransaction();
+    clearTx.removeFinalizedOptimisticTransitionPayload();
+    assertThat(clearTx.commit()).isCompleted();
+
+    assertThat(store.getFinalizedOptimisticTransitionPayload()).isEmpty();
+
+    restartStorage();
+    assertThat(store.getFinalizedOptimisticTransitionPayload()).isEmpty();
+  }
+
+  @Test
   public void shouldNotRemoveOptimisticFinalizedExceptionPayloadWhenFinalizedNextUpdated() {
     final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
     final List<SignedBlockAndState> newBlocks =

@@ -20,6 +20,7 @@ import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -175,9 +176,9 @@ class SyncCommitteeMessageValidatorTest {
   void shouldAllowDuplicateMessagesForDistinctSubnets() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(message, 2, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 2, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -185,9 +186,9 @@ class SyncCommitteeMessageValidatorTest {
   void shouldIgnoreDuplicateMessagesForSameSubnet() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -195,9 +196,9 @@ class SyncCommitteeMessageValidatorTest {
   void shouldIgnoreDuplicateMessagesForLocalValidatorsInMultipleSubnets() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromValidatorSpy(message, Set.of(1, 2))))
+    assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromValidatorSpy(message, Set.of(2, 1))))
+    assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -205,11 +206,11 @@ class SyncCommitteeMessageValidatorTest {
   void shouldIgnoreDuplicateMessagesForLocalValidatorsWhenReceivedAgainFromAnySubnet() {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromValidatorSpy(message, Set.of(1, 2))))
+    assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(2, 1))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(2, 1))))
         .isCompletedWithValue(IGNORE);
-    assertThat(validator.validate(fromNetworkSpy(message, 2, Set.of(2, 1))))
+    assertThat(validator.validate(fromNetworkSpy(message, 2, IntSet.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 

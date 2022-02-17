@@ -169,6 +169,12 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   @Override
+  public void onValidatorsAdded() {
+    currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
+    nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
+  }
+
+  @Override
   public void onBlockProductionDue(final UInt64 slot) {}
 
   private class SyncCommitteePeriod {
