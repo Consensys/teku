@@ -87,7 +87,7 @@ public class BlockManager extends Service
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
-    if (handleInvalidBlock(block).isPresent()) {
+    if (propagateInvalidity(block).isPresent()) {
       return SafeFuture.completedFuture(
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
@@ -214,11 +214,6 @@ public class BlockManager extends Service
                 }
               }
             });
-  }
-
-  private boolean blockIsInvalid(final SignedBeaconBlock block) {
-    return invalidBlockRoots.containsKey(block.getRoot())
-        || invalidBlockRoots.containsKey(block.getParentRoot());
   }
 
   private void dropInvalidBlock(
