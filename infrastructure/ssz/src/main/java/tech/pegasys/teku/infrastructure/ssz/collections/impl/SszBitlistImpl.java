@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -128,7 +128,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   @Override
-  public List<Integer> getAllSetBits() {
+  public IntList getAllSetBits() {
     return value.getAllSetBits();
   }
 

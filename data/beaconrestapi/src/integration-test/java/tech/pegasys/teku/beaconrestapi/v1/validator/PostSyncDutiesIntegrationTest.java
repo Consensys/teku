@@ -19,10 +19,11 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
 public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  final List<Integer> validators = List.of(1);
+  final IntList validators = IntList.of(1);
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
@@ -58,7 +59,7 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
                 new SyncCommitteeDuties(
                     List.of(
                         new SyncCommitteeDuty(
-                            VALIDATOR_KEYS.get(1).getPublicKey(), 1, Set.of(11))))));
+                            VALIDATOR_KEYS.get(1).getPublicKey(), 1, IntSet.of(11))))));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(validatorApiChannel.getSyncCommitteeDuties(ONE, validators)).thenReturn(out);
 
@@ -71,6 +72,6 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
     assertThat(dutiesResponse.data.get(0))
         .isEqualTo(
             new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
-                new BLSPubKey(VALIDATOR_KEYS.get(1).getPublicKey()), ONE, Set.of(11)));
+                new BLSPubKey(VALIDATOR_KEYS.get(1).getPublicKey()), ONE, IntSet.of(11)));
   }
 }

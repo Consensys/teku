@@ -23,7 +23,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -285,23 +284,21 @@ class SyncCommitteeMessageValidatorTest {
   }
 
   private ValidateableSyncCommitteeMessage fromValidatorSpy(
-      SyncCommitteeMessage message, final Set<Integer> subcommitteeIds) {
+      SyncCommitteeMessage message, final IntSet subcommitteeIds) {
     final ValidateableSyncCommitteeMessage validateableMessage =
         ValidateableSyncCommitteeMessage.fromValidator(message);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
   private ValidateableSyncCommitteeMessage fromNetworkSpy(
-      SyncCommitteeMessage message,
-      final int receivedSubnetId,
-      final Set<Integer> subcommitteeIds) {
+      SyncCommitteeMessage message, final int receivedSubnetId, final IntSet subcommitteeIds) {
     final ValidateableSyncCommitteeMessage validateableMessage =
         ValidateableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
   private ValidateableSyncCommitteeMessage createSpy(
-      ValidateableSyncCommitteeMessage validateableMessage, final Set<Integer> subcommitteeIds) {
+      ValidateableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
     // Create spies
     final ValidateableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
     validateableMessage.calculateAssignments(

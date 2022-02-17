@@ -15,12 +15,14 @@ package tech.pegasys.teku.core.synccomittee;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.IntFunction;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -47,7 +49,7 @@ public class SignedContributionAndProofTestBuilder {
   private Optional<BLSSignature> signedContributionAndProofSignature = Optional.empty();
   private Bytes32 beaconBlockRoot;
   private UInt64 slot;
-  private final List<Integer> subcommitteeParticipationIndices = new ArrayList<>();
+  private final IntList subcommitteeParticipationIndices = new IntArrayList();
   private final List<BLSSignature> syncSignatures = new ArrayList<>();
   private int subcommitteeIndex;
   private BeaconStateAltair state;
@@ -158,8 +160,7 @@ public class SignedContributionAndProofTestBuilder {
         subcommitteeIndex);
     final BLSSignature syncSignature =
         signer.signSyncCommitteeMessage(slot, beaconBlockRoot, state.getForkInfo()).join();
-    final Set<Integer> participationIndices =
-        assignments.getParticipationBitIndices(subcommitteeIndex);
+    final IntSet participationIndices = assignments.getParticipationBitIndices(subcommitteeIndex);
     // Have to add signature once for each time the validator appears in the subcommittee
     syncSignatures.addAll(Collections.nCopies(participationIndices.size(), syncSignature));
     subcommitteeParticipationIndices.addAll(participationIndices);

@@ -16,7 +16,9 @@ package tech.pegasys.teku.validator.coordinator.performance;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -227,7 +229,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     int correctTargetCount = 0;
     int correctHeadBlockCount = 0;
-    List<Integer> inclusionDistances = new ArrayList<>();
+    IntList inclusionDistances = new IntArrayList();
 
     // Pre-process attestations included on chain to group them by
     // data hash to inclusion slot to aggregation bitlist
@@ -347,7 +349,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @Override
   public void saveExpectedSyncCommitteeParticipant(
       final int validatorIndex,
-      final Set<Integer> syncCommitteeIndices,
+      final IntSet syncCommitteeIndices,
       final UInt64 subscribeUntilEpoch) {
     syncCommitteePerformanceTracker.saveExpectedSyncCommitteeParticipant(
         validatorIndex, syncCommitteeIndices, subscribeUntilEpoch);

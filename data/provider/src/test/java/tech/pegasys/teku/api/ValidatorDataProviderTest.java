@@ -32,6 +32,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -340,7 +341,7 @@ public class ValidatorDataProviderTest {
                     new tech.pegasys.teku.validator.api.AttesterDuties(
                         previousTargetRoot, emptyList()))));
     final SafeFuture<Optional<PostAttesterDutiesResponse>> future =
-        provider.getAttesterDuties(UInt64.ONE, List.of());
+        provider.getAttesterDuties(UInt64.ONE, IntList.of());
     assertThat(future).isCompleted();
     Optional<PostAttesterDutiesResponse> maybeData = future.join();
     assertThat(maybeData.isPresent()).isTrue();
@@ -358,7 +359,7 @@ public class ValidatorDataProviderTest {
                     new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(v1, v2)))));
 
     final SafeFuture<Optional<PostAttesterDutiesResponse>> future =
-        provider.getAttesterDuties(ONE, List.of(1, 11));
+        provider.getAttesterDuties(ONE, IntList.of(1, 11));
     assertThat(future).isCompleted();
     final Optional<PostAttesterDutiesResponse> maybeList = future.join();
     final PostAttesterDutiesResponse list = maybeList.orElseThrow();

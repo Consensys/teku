@@ -20,9 +20,11 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntSets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -182,7 +184,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final IntCollection validatorIndexes) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -208,7 +210,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -435,7 +437,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 unsubscribeSlot = spec.computeStartSlotAtEpoch(untilEpoch);
       final SyncCommitteeUtil syncCommitteeUtil =
           spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(untilEpoch));
-      final Set<Integer> syncCommitteeIndices = subscription.getSyncCommitteeIndices();
+      final IntSet syncCommitteeIndices = subscription.getSyncCommitteeIndices();
       performanceTracker.saveExpectedSyncCommitteeParticipant(
           subscription.getValidatorIndex(), syncCommitteeIndices, untilEpoch.decrement());
       syncCommitteeUtil
@@ -629,7 +631,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private AttesterDuties getAttesterDutiesFromIndexesAndState(
-      final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndexes) {
     final Bytes32 dependentRoot =
         epoch.isGreaterThan(spec.getCurrentEpoch(state))
             ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
@@ -704,7 +706,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SyncCommitteeDuties getSyncCommitteeDutiesFromIndexesAndState(
       final Optional<BeaconState> maybeState,
       final UInt64 epoch,
-      final Collection<Integer> validatorIndices) {
+      final IntCollection validatorIndices) {
     if (maybeState.isEmpty()) {
       return new SyncCommitteeDuties(List.of());
     }
@@ -716,13 +718,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private Optional<SyncCommitteeDuty> getSyncCommitteeDuty(
-      final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     final Optional<SyncCommitteeUtil> syncCommitteeUtil =
         spec.atEpoch(epoch).getSyncCommitteeUtil();
-    final Set<Integer> duties =
+    final IntSet duties =
         syncCommitteeUtil
             .map(util -> util.getCommitteeIndices(state, epoch, UInt64.valueOf(validatorIndex)))
-            .orElse(Collections.emptySet());
+            .orElse(IntSets.emptySet());
 
     if (duties.isEmpty()) {
       return Optional.empty();

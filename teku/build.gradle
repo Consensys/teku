@@ -65,6 +65,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:io'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':storage'))
+  testImplementation testFixtures(project(':infrastructure:serviceutils'))
 
   testImplementation project(':data:provider')
   testImplementation 'org.awaitility:awaitility'
