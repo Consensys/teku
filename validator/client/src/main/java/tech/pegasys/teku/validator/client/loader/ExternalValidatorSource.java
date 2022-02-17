@@ -114,7 +114,7 @@ public class ExternalValidatorSource implements ValidatorSource {
 
   @Override
   public boolean canUpdateValidators() {
-    return !readOnly;
+    return !readOnly && maybeDataDirLayout.isPresent();
   }
 
   @Override
@@ -138,8 +138,8 @@ public class ExternalValidatorSource implements ValidatorSource {
 
     final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
-    Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout).resolve(fileName + ".txt");
+    final Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout).resolve(fileName + ".json");
 
     try {
       ensureDirectoryExists(ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout));
