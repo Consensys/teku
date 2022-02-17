@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.beaconnode.metrics;
 
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -220,14 +221,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final IntCollection validatorIndexes) {
     return countDataRequest(
         delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     return countDataRequest(
         delegate.getSyncCommitteeDuties(epoch, validatorIndices),
         syncCommitteeDutiesRequestCounter);

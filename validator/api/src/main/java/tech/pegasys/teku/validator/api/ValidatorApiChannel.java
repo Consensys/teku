@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -49,10 +50,10 @@ public interface ValidatorApiChannel extends ChannelInterface {
       final Collection<BLSPublicKey> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices);
+      final UInt64 epoch, final IntCollection validatorIndices);
 
   SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices);
+      final UInt64 epoch, final IntCollection validatorIndices);
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
 

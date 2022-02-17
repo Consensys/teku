@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitlistImpl;
@@ -69,7 +69,7 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
   boolean isSuperSetOf(SszBitlist other);
 
   /** Returns indexes of all bits set in this {@link SszBitlist} */
-  List<Integer> getAllSetBits();
+  IntList getAllSetBits();
 
   /** Streams indexes of all bits set in this {@link SszBitlist} */
   default IntStream streamAllSetBits() {

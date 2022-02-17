@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,8 @@ import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.KilnV1Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
@@ -55,19 +58,29 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final String eeEndpoint,
       final Spec spec,
       final TimeProvider timeProvider,
-      final Version version) {
+      final Version version,
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
     return new ExecutionEngineChannelImpl(
-        createEngineClient(eeEndpoint, timeProvider, version), spec);
+        createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile, beaconDataDirectory),
+        spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
-      final String eeEndpoint, final TimeProvider timeProvider, final Version version) {
+      final String eeEndpoint,
+      final TimeProvider timeProvider,
+      final Version version,
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
     LOG.info("Execution Engine version: {}", version);
     switch (version) {
       case KILNV2:
-        return new Web3JExecutionEngineClient(eeEndpoint, timeProvider);
+        final JwtSecretKeyLoader keyLoader =
+            new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
+        return new Web3JExecutionEngineClient(
+            eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
       case KILN:
         return new KilnV1Web3JExecutionEngineClient(eeEndpoint, timeProvider);
       case KINTSUGI:

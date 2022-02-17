@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -203,16 +204,6 @@ public class DatabaseMigraterTest {
     assertThat(dbFolder.toFile().mkdir()).isTrue();
     assertThat(dbVersionFile.toFile().isFile()).isTrue();
 
-    return new DataDirLayout() {
-      @Override
-      public Path getBeaconDataDirectory() {
-        return beaconFolder;
-      }
-
-      @Override
-      public Path getValidatorDataDirectory() {
-        return null;
-      }
-    };
+    return new SimpleDataDirLayout(beaconFolder);
   }
 }

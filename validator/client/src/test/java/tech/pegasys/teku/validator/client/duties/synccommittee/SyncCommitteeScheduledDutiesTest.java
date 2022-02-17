@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -77,9 +78,9 @@ class SyncCommitteeScheduledDutiesTest {
         .subscribeToSyncCommitteeSubnets(
             Set.of(
                 new SyncCommitteeSubnetSubscription(
-                    50, Set.of(1, 2, 3), PERIOD_END_EPOCH.increment()),
+                    50, IntSet.of(1, 2, 3), PERIOD_END_EPOCH.increment()),
                 new SyncCommitteeSubnetSubscription(
-                    70, Set.of(2, 6), PERIOD_END_EPOCH.increment())));
+                    70, IntSet.of(2, 6), PERIOD_END_EPOCH.increment())));
   }
 
   @Test
