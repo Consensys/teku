@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtTestHelper.assertSecretEquals;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,12 +32,12 @@ class JwtSecretKeyLoaderTest {
   void testGetSecretKey_ReadSecretFromProvidedFilePath(@TempDir final Path tempDir)
       throws IOException {
     final Path jwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.JWT_SECRET_FILE_NAME);
-    final SecretKeySpec jwtSecret = TestHelper.generateJwtSecret();
+    final SecretKeySpec jwtSecret = JwtTestHelper.generateJwtSecret();
     Files.writeString(jwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toHexString());
     final JwtSecretKeyLoader keyLoader =
         new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);
     final Key loadedSecret = keyLoader.getSecretKey();
-    assertThat(TestHelper.secretEquals(jwtSecret, loadedSecret)).isTrue();
+    assertSecretEquals(jwtSecret, loadedSecret);
   }
 
   @Test

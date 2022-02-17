@@ -13,23 +13,23 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import javax.crypto.spec.SecretKeySpec;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes;
 
-public class TestHelper {
+public class JwtTestHelper {
   public static SecretKeySpec generateJwtSecret() {
     final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     final byte[] keyData = key.getEncoded();
     return new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
   }
 
-  public static boolean secretEquals(final Key expected, final Key actual) {
-    return StringUtils.equals(
-        Bytes.wrap(expected.getEncoded()).toHexString(),
-        Bytes.wrap(actual.getEncoded()).toHexString());
+  public static void assertSecretEquals(final Key expected, final Key actual) {
+    assertThat(Bytes.wrap(expected.getEncoded()).toHexString())
+        .isEqualTo(Bytes.wrap(actual.getEncoded()).toHexString());
   }
 }

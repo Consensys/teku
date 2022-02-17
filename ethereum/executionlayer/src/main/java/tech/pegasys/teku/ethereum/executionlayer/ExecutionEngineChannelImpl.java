@@ -75,9 +75,10 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
     LOG.info("Execution Engine version: {}", version);
-    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
     switch (version) {
       case KILNV2:
+        final JwtSecretKeyLoader keyLoader =
+            new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
         return new Web3JExecutionEngineClient(
             eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
       case KILN:

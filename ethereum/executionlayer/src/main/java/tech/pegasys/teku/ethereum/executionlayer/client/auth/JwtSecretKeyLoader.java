@@ -15,8 +15,11 @@ package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Key;
@@ -25,6 +28,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class JwtSecretKeyLoader {
 
@@ -44,7 +48,6 @@ public class JwtSecretKeyLoader {
   }
 
   private SecretKeySpec generateNewSecret() {
-    LOG.info("generating new execution engine JWT secret");
     final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     final byte[] keyData = key.getEncoded();
     final SecretKeySpec wrappedKey =
@@ -57,18 +60,25 @@ public class JwtSecretKeyLoader {
     final Path generatedKeyFilePath = beaconDataDirectory.resolve(JWT_SECRET_FILE_NAME);
     try {
       Files.writeString(generatedKeyFilePath, Bytes.wrap(key.getEncoded()).toHexString());
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "unable to write generated key to file  - " + generatedKeyFilePath);
+      LOG.info(
+          "New execution engine JWT secret generated in {}", generatedKeyFilePath.toAbsolutePath());
+    } catch (final IOException e) {
+      throw new UncheckedIOException(
+          "Unable to write generated key to file: " + generatedKeyFilePath, e);
     }
   }
 
   private SecretKeySpec loadSecretFromFile(final String jwtSecretFile) {
+    final Path filePath = Paths.get(jwtSecretFile);
     try {
-      final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(Paths.get(jwtSecretFile)));
+      final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(filePath));
       return new SecretKeySpec(bytesFromHex.toArray(), SignatureAlgorithm.HS256.getJcaName());
-    } catch (IOException e) {
-      throw new RuntimeException("unable to load execution engine JWT secret - " + jwtSecretFile);
+    } catch (final FileNotFoundException | NoSuchFileException e) {
+      throw new InvalidConfigurationException(
+          "Could not find execution engine JWT secret file: " + filePath.toAbsolutePath(), e);
+    } catch (final IOException e) {
+      throw new UncheckedIOException(
+          "Could not read execution engine JWT secret file: " + filePath.toAbsolutePath(), e);
     }
   }
 }

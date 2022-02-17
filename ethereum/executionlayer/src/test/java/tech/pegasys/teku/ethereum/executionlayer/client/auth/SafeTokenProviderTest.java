@@ -31,7 +31,7 @@ class SafeTokenProviderTest {
 
   @BeforeEach
   void setUp() {
-    jwtSecretKey = TestHelper.generateJwtSecret();
+    jwtSecretKey = JwtTestHelper.generateJwtSecret();
     safeTokenProvider = new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey)));
   }
 
@@ -62,25 +62,27 @@ class SafeTokenProviderTest {
     validateTokenAtInstant(updatedToken, timeInMillis);
     validateJwtTokenAtInstant(jwtSecretKey, updatedToken, timeInMillis);
 
-    assertThat(originalToken.equals(updatedToken)).isTrue();
+    assertThat(originalToken).isEqualTo(updatedToken);
   }
 
   public static void validateTokenAtInstant(
       final Optional<Token> optionalToken, final UInt64 instantInMillis) {
-    assertThat(optionalToken.isPresent()).isTrue();
+    assertThat(optionalToken).isPresent();
     assertThat(optionalToken.get().isAvailableAt(instantInMillis)).isTrue();
     assertThat(optionalToken.get().getJwtToken()).isNotBlank();
   }
 
   public static void validateJwtTokenAtInstant(
       final Key jwtSecretKey, final Optional<Token> optionalToken, final UInt64 instantInMillis) {
-    assertThat(optionalToken.isPresent()).isTrue();
+    assertThat(optionalToken).isPresent();
     final long issuedAtInSeconds =
-        Jwts.parser()
+        Jwts.parserBuilder()
             .setSigningKey(jwtSecretKey)
+            .build()
             .parseClaimsJws(optionalToken.get().getJwtToken())
             .getBody()
             .get(Claims.ISSUED_AT, Long.class);
-    assertThat(instantInMillis.isLessThan(TimeUnit.SECONDS.toMillis(issuedAtInSeconds))).isTrue();
+    assertThat(instantInMillis)
+        .isLessThan(UInt64.valueOf(TimeUnit.SECONDS.toMillis(issuedAtInSeconds)));
   }
 }
