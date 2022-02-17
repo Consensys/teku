@@ -353,12 +353,10 @@ public class BlockManagerTest {
         invalidBlockDescendants.get(0), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
-    // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream()
-        .forEach(
-            invalidBlockDescendant ->
-                assertImportBlockWithResult(
-                    invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
+    // If the last block is imported, it should be rejected
+    assertImportBlockWithResult(
+        invalidBlockDescendants.get(invalidChainDepth - 1),
+        BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
