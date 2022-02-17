@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import java.util.Set;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -31,7 +31,7 @@ public interface PerformanceTracker extends SlotEventsChannel {
   void reportBlockProductionAttempt(UInt64 epoch);
 
   void saveExpectedSyncCommitteeParticipant(
-      int validatorIndex, Set<Integer> syncCommitteeIndices, UInt64 periodEndEpoch);
+      int validatorIndex, IntSet syncCommitteeIndices, UInt64 periodEndEpoch);
 
   void saveProducedSyncCommitteeMessage(SyncCommitteeMessage message);
 }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -48,7 +48,7 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
   SszBitvector rightShift(int n);
 
   /** Returns indexes of all bits set in this {@link SszBitvector} */
-  List<Integer> getAllSetBits();
+  IntList getAllSetBits();
 
   /** Streams indexes of all bits set in this {@link SszBitvector} */
   default IntStream streamAllSetBits() {

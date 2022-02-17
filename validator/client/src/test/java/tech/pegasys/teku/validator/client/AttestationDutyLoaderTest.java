@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 class AttestationDutyLoaderTest {
 
-  private static final List<Integer> VALIDATOR_INDICES = List.of(1);
+  private static final IntList VALIDATOR_INDICES = IntList.of(1);
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
