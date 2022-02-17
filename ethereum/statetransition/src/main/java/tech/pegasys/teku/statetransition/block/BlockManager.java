@@ -18,14 +18,12 @@ import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -50,8 +48,10 @@ public class BlockManager extends Service
   private final BlockValidator validator;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
+  // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
+  // and will not require any further retry. Descendants of these blocks will be considered invalid
+  // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.create(500);
-  private final Set<Bytes32> executionFailedBlockRoots = LimitedSet.create(100);
   private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
@@ -87,7 +87,7 @@ public class BlockManager extends Service
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
-    if (blockIsInvalid(block)) {
+    if (handleInvalidBlock(block).isPresent()) {
       return SafeFuture.completedFuture(
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
@@ -122,7 +122,6 @@ public class BlockManager extends Service
     // Check if any pending blocks can now be imported
     final Bytes32 blockRoot = block.getRoot();
     pendingBlocks.remove(block);
-    executionFailedBlockRoots.remove(blockRoot);
     final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
     children.forEach(pendingBlocks::remove);
     children.forEach(this::importBlockIgnoringResult);
@@ -133,71 +132,17 @@ public class BlockManager extends Service
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(final SignedBeaconBlock block) {
+    return handleInvalidBlock(block)
+        .or(
+            () -> {
+              notifyReceivedBlockSubscribers(block);
+              return handleKnownBlock(block);
+            })
+        .orElseGet(() -> handleBlockImport(block));
+  }
+
+  private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
     final Optional<BlockImportResult> blockImportResult =
-        handleInvalidBlock(block)
-            .or(
-                () -> {
-                  notifyReceivedBlockSubscribers(block);
-                  return handleChildOfFailedExecutionPayloadBlock(block);
-                })
-            .or(() -> handleKnownBlock(block));
-    return blockImportResult
-        .map(SafeFuture::completedFuture)
-        .orElseGet(
-            () ->
-                blockImporter
-                    .importBlock(block)
-                    .thenPeek(
-                        result -> {
-                          if (result.isSuccessful()) {
-                            LOG.trace("Imported block: {}", block);
-                          } else {
-                            switch (result.getFailureReason()) {
-                              case UNKNOWN_PARENT:
-                                // Add to the pending pool so it is triggered once the parent is
-                                // imported
-                                pendingBlocks.add(block);
-                                // Check if the parent was imported while we were trying to import
-                                // this block and if so, remove from the pendingPool again
-                                // and process now We must add the block
-                                // to the pending pool before this check happens to avoid race
-                                // conditions between performing the check and the parent importing.
-                                if (recentChainData.containsBlock(block.getParentRoot())) {
-                                  pendingBlocks.remove(block);
-                                  importBlockIgnoringResult(block);
-                                }
-                                break;
-                              case BLOCK_IS_FROM_FUTURE:
-                                futureBlocks.add(block);
-                                break;
-                              case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
-                                LOG.warn(
-                                    "Unable to import block: Execution Client is still syncing");
-                                break;
-                              case FAILED_EXECUTION_PAYLOAD_EXECUTION:
-                                LOG.error(
-                                    "Unable to import block: Execution Client communication error.",
-                                    result.getFailureCause().orElse(null));
-                                executionFailedBlockRoots.add(block.getRoot());
-                                break;
-                              default:
-                                LOG.trace(
-                                    "Unable to import block for reason {}: {}",
-                                    result.getFailureReason(),
-                                    block);
-                                dropInvalidBlock(block, result);
-                            }
-                          }
-                        }));
-  }
-
-  private boolean blockIsInvalid(final SignedBeaconBlock block) {
-    return invalidBlockRoots.containsKey(block.getRoot())
-        || invalidBlockRoots.containsKey(block.getParentRoot());
-  }
-
-  private Optional<BlockImportResult> handleInvalidBlock(final SignedBeaconBlock block) {
-    Optional<BlockImportResult> blockImportResult =
         Optional.ofNullable(invalidBlockRoots.get(block.getRoot()))
             .or(
                 () -> {
@@ -212,23 +157,68 @@ public class BlockManager extends Service
     return blockImportResult;
   }
 
-  private Optional<BlockImportResult> handleChildOfFailedExecutionPayloadBlock(
+  private Optional<SafeFuture<BlockImportResult>> handleInvalidBlock(
       final SignedBeaconBlock block) {
-    if (executionFailedBlockRoots.contains(block.getParentRoot())) {
-      executionFailedBlockRoots.add(block.getRoot());
-      pendingBlocks.add(block);
-      return Optional.of(BlockImportResult.FAILED_DESCENDANT_OF_FAILED_EXECUTION_PAYLOAD_BLOCK);
+    return propagateInvalidity(block).map(SafeFuture::completedFuture);
+  }
+
+  private Optional<SafeFuture<BlockImportResult>> handleKnownBlock(final SignedBeaconBlock block) {
+    if (pendingBlocks.contains(block)
+        || futureBlocks.contains(block)
+        || recentChainData.containsBlock(block.getRoot())) {
+      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
     }
     return Optional.empty();
   }
 
-  private Optional<BlockImportResult> handleKnownBlock(final SignedBeaconBlock block) {
-    if (pendingBlocks.contains(block)
-        || futureBlocks.contains(block)
-        || recentChainData.containsBlock(block.getRoot())) {
-      return Optional.of(BlockImportResult.knownBlock(block));
-    }
-    return Optional.empty();
+  private SafeFuture<BlockImportResult> handleBlockImport(final SignedBeaconBlock block) {
+    return blockImporter
+        .importBlock(block)
+        .thenPeek(
+            result -> {
+              if (result.isSuccessful()) {
+                LOG.trace("Imported block: {}", block);
+              } else {
+                switch (result.getFailureReason()) {
+                  case UNKNOWN_PARENT:
+                    // Add to the pending pool so it is triggered once the parent is
+                    // imported
+                    pendingBlocks.add(block);
+                    // Check if the parent was imported while we were trying to import
+                    // this block and if so, remove from the pendingPool again
+                    // and process now We must add the block
+                    // to the pending pool before this check happens to avoid race
+                    // conditions between performing the check and the parent importing.
+                    if (recentChainData.containsBlock(block.getParentRoot())) {
+                      pendingBlocks.remove(block);
+                      importBlockIgnoringResult(block);
+                    }
+                    break;
+                  case BLOCK_IS_FROM_FUTURE:
+                    futureBlocks.add(block);
+                    break;
+                  case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
+                    LOG.warn("Unable to import block: Execution Client is still syncing");
+                    break;
+                  case FAILED_EXECUTION_PAYLOAD_EXECUTION:
+                    LOG.error(
+                        "Unable to import block: Execution Client communication error.",
+                        result.getFailureCause().orElse(null));
+                    break;
+                  default:
+                    LOG.trace(
+                        "Unable to import block for reason {}: {}",
+                        result.getFailureReason(),
+                        block);
+                    dropInvalidBlock(block, result);
+                }
+              }
+            });
+  }
+
+  private boolean blockIsInvalid(final SignedBeaconBlock block) {
+    return invalidBlockRoots.containsKey(block.getRoot())
+        || invalidBlockRoots.containsKey(block.getParentRoot());
   }
 
   private void dropInvalidBlock(

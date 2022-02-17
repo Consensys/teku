@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -87,6 +89,7 @@ public class BlockManagerTest {
           transitionBlockValidator);
 
   private final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
+  private final BlockValidator blockValidator = mock(BlockValidator.class);
 
   private final BlockImporter blockImporter =
       new BlockImporter(
@@ -98,11 +101,7 @@ public class BlockManagerTest {
           executionEngine);
   private final BlockManager blockManager =
       new BlockManager(
-          localRecentChainData,
-          blockImporter,
-          pendingBlocks,
-          futureBlocks,
-          mock(BlockValidator.class));
+          localRecentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
@@ -416,9 +415,7 @@ public class BlockManagerTest {
     // Gossip all remaining blocks
     blocks.subList(1, blockCount).stream()
         .forEach(
-            block ->
-                assertImportBlockWithResult(
-                    block, BlockImportResult.FAILED_DESCENDANT_OF_FAILED_EXECUTION_PAYLOAD_BLOCK));
+            block -> assertImportBlockWithResult(block, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import first block again (from gossip or ReexecutingExecutionPayloadBlockManagerTest)
@@ -426,6 +423,45 @@ public class BlockManagerTest {
     assertImportBlockSuccessfully(blocks.get(0));
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void onValidateAndImportBlock_shouldEarlyRejectInvalidBlocks() {
+    final int invalidChainDepth = 3;
+    final List<SignedBeaconBlock> invalidBlockDescendants = new ArrayList<>(invalidChainDepth);
+
+    final SignedBeaconBlock invalidBlock =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(incrementSlot(), BlockOptions.create().setWrongProposer(true))
+            .getBlock();
+    Bytes32 parentBlockRoot = invalidBlock.getMessage().hashTreeRoot();
+    for (int i = 0; i < invalidChainDepth; i++) {
+      final UInt64 nextSlot = incrementSlot();
+      final SignedBeaconBlock block =
+          dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
+      invalidBlockDescendants.add(block);
+      parentBlockRoot = block.getMessage().hashTreeRoot();
+    }
+
+    // import invalid block, which should fail to import and be marked invalid
+    assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+
+    // Gossip same invalid block, must reject with no actual validation
+    assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
+
+    // Gossip invalid block descendants, must reject with no actual validation
+    invalidBlockDescendants.stream()
+        .forEach(this::assertValidateAndImportBlockRejectWithoutValidation);
+
+    // If any invalid block is again imported, it should be ignored
+    invalidBlockDescendants.stream()
+        .forEach(
+            invalidBlockDescendant ->
+                assertImportBlockWithResult(
+                    invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
+
+    assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {
@@ -437,6 +473,12 @@ public class BlockManagerTest {
       SignedBeaconBlock block, BlockImportResult importResult) {
     assertThat(blockManager.importBlock(block))
         .isCompletedWithValueMatching(result -> result.equals(importResult));
+  }
+
+  private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
+    assertThat(blockManager.validateAndImportBlock(block))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+    verify(blockValidator, never()).validate(block);
   }
 
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {
