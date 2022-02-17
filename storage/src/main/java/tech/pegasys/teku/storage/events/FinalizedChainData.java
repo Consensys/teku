@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -31,22 +30,16 @@ public class FinalizedChainData {
   private final Map<Bytes32, Bytes32> finalizedChildToParentMap;
   private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks;
   private final Map<Bytes32, BeaconState> finalizedStates;
-  private final boolean optimisticTransitionBlockRootSet;
-  private final Optional<Bytes32> optimisticTransitionBlockRoot;
 
   private FinalizedChainData(
       final AnchorPoint latestFinalized,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, BeaconState> finalizedStates,
-      final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Map<Bytes32, BeaconState> finalizedStates) {
     this.latestFinalized = latestFinalized;
     this.finalizedChildToParentMap = finalizedChildToParentMap;
     this.finalizedBlocks = finalizedBlocks;
     this.finalizedStates = finalizedStates;
-    this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
-    this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
   }
 
   public static Builder builder() {
@@ -77,31 +70,16 @@ public class FinalizedChainData {
     return latestFinalized;
   }
 
-  public boolean isOptimisticTransitionBlockRootSet() {
-    return optimisticTransitionBlockRootSet;
-  }
-
-  public Optional<Bytes32> getOptimisticTransitionBlockRoot() {
-    return optimisticTransitionBlockRoot;
-  }
-
   public static class Builder {
     private AnchorPoint latestFinalized;
     private final Map<Bytes32, Bytes32> finalizedChildToParentMap = new HashMap<>();
     private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks = new HashMap<>();
     private final Map<Bytes32, BeaconState> finalizedStates = new HashMap<>();
-    private boolean optimisticTransitionBlockRootSet = false;
-    private Optional<Bytes32> optimisticTransitionBlockRoot = Optional.empty();
 
     public FinalizedChainData build() {
       assertValid();
       return new FinalizedChainData(
-          latestFinalized,
-          finalizedChildToParentMap,
-          finalizedBlocks,
-          finalizedStates,
-          optimisticTransitionBlockRootSet,
-          optimisticTransitionBlockRoot);
+          latestFinalized, finalizedChildToParentMap, finalizedBlocks, finalizedStates);
     }
 
     private void assertValid() {
@@ -161,14 +139,6 @@ public class FinalizedChainData {
       checkNotNull(child);
       checkNotNull(parent);
       this.finalizedChildToParentMap.put(child, parent);
-      return this;
-    }
-
-    public Builder optimisticTransitionBlockRoot(
-        final Optional<Bytes32> optimisticTransitionBlockRoot) {
-      checkNotNull(optimisticTransitionBlockRoot);
-      this.optimisticTransitionBlockRootSet = true;
-      this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
       return this;
     }
   }

@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -28,9 +29,13 @@ import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.NoOpKeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
@@ -147,6 +152,57 @@ public class DebugToolsCommand implements Runnable {
       return 1;
     }
 
+    return 0;
+  }
+
+  @Command(
+      name = "get-validator-assignment",
+      description = "Gets the committee assignment for a validator at a specific epoch.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int printCommittees(
+      @Option(
+              required = true,
+              names = {"--state", "-s"},
+              description = "Starting state to use. Must be in or before the specified epoch.")
+          final Path statePath,
+      @Option(
+              required = true,
+              names = {"--validator", "-v"},
+              description = "Validator index to get assignment for")
+          final int validatorIndex,
+      @Option(
+              required = true,
+              names = {"--epoch", "-e"},
+              description = "Epoch to get assignment for")
+          final long epoch,
+      @Option(
+              defaultValue = "mainnet",
+              names = {"--network", "-n"},
+              description = "Represents which network to use.")
+          final String network)
+      throws Exception {
+    final tech.pegasys.teku.spec.Spec spec = SpecFactory.create(network);
+    BeaconState state = spec.deserializeBeaconState(Bytes.wrap(Files.readAllBytes(statePath)));
+
+    if (spec.getCurrentEpoch(state).isLessThan(epoch)) {
+      state = spec.processSlots(state, spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch)));
+    }
+    final CommitteeAssignment assignment =
+        spec.getCommitteeAssignment(state, UInt64.valueOf(epoch), validatorIndex).orElseThrow();
+    System.out.printf(
+        "Validator %s assigned to attest at slot %s in committee index %s, position %s%n",
+        validatorIndex,
+        assignment.getSlot(),
+        assignment.getCommitteeIndex(),
+        assignment.getCommittee().indexOf(validatorIndex));
     return 0;
   }
 }

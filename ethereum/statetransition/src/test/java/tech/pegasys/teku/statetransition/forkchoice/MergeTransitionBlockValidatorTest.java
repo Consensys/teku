@@ -14,26 +14,26 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -44,7 +44,7 @@ class MergeTransitionBlockValidatorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  private final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   @BeforeAll
@@ -68,7 +68,6 @@ class MergeTransitionBlockValidatorTest {
   @BeforeEach
   void setUp() {
     storageSystem.chainUpdater().initializeGenesis(false);
-    when(executionEngine.getPowBlock(any())).thenReturn(new SafeFuture<>());
   }
 
   @Test
@@ -87,7 +86,7 @@ class MergeTransitionBlockValidatorTest {
                 .getOptimisticallySyncedTransitionBlockRoot(chainHead.getRoot()))
         .isEmpty();
 
-    final SafeFuture<PayloadStatus> result =
+    final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
             chainHead
                 .getState()
@@ -96,8 +95,9 @@ class MergeTransitionBlockValidatorTest {
                 .getLatestExecutionPayloadHeader(),
             blockToVerify.getBlock());
 
-    verifyNoInteractions(executionEngine);
-    assertThat(result).isCompletedWithValue(PayloadStatus.VALID);
+    // No need to request blocks and check TTD
+    assertThat(executionEngine.getRequestedPowBlocks()).isEmpty();
+    assertThat(result).isCompletedWithValue(new PayloadValidationResult(PayloadStatus.VALID));
   }
 
   @Test
@@ -105,6 +105,7 @@ class MergeTransitionBlockValidatorTest {
     final SignedBlockAndState transitionBlock = generateNonfinalizedTransition();
     final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
+    withValidTransitionBlock(transitionBlock);
 
     final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
 
@@ -116,7 +117,7 @@ class MergeTransitionBlockValidatorTest {
                 .getOptimisticallySyncedTransitionBlockRoot(chainHead.getRoot()))
         .isPresent();
 
-    final SafeFuture<PayloadStatus> result =
+    final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
             chainHead
                 .getState()
@@ -125,8 +126,46 @@ class MergeTransitionBlockValidatorTest {
                 .getLatestExecutionPayloadHeader(),
             blockToVerify.getBlock());
 
-    verify(executionEngine).getPowBlock(getExecutionPayload(transitionBlock).getParentHash());
-    assertThat(result).isNotCompleted();
+    assertThat(executionEngine.getRequestedPowBlocks())
+        .contains(getExecutionPayload(transitionBlock).getParentHash());
+    assertThat(result)
+        .isCompletedWithValue(
+            new PayloadValidationResult(transitionBlock.getRoot(), PayloadStatus.VALID));
+  }
+
+  @Test
+  void shouldReportRootForInvalidNonFinalizedAncestorTransitionBlock() {
+    final SignedBlockAndState transitionBlock = generateNonfinalizedTransition();
+    final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
+    final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
+    withInvalidTransitionBlock(transitionBlock);
+
+    final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
+
+    assertThat(
+            storageSystem
+                .recentChainData()
+                .getForkChoiceStrategy()
+                .orElseThrow()
+                .getOptimisticallySyncedTransitionBlockRoot(chainHead.getRoot()))
+        .isPresent();
+
+    final SafeFuture<PayloadValidationResult> result =
+        transitionVerifier.verifyTransitionBlock(
+            chainHead
+                .getState()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getLatestExecutionPayloadHeader(),
+            blockToVerify.getBlock());
+
+    assertThat(executionEngine.getRequestedPowBlocks())
+        .contains(getExecutionPayload(transitionBlock).getParentHash());
+    assertThat(result).isCompleted();
+    final PayloadValidationResult validationResult = result.join();
+    assertThat(validationResult.getInvalidTransitionBlockRoot())
+        .contains(transitionBlock.getRoot());
+    assertThat(validationResult.getStatus()).matches(PayloadStatus::hasInvalidStatus);
   }
 
   @Test
@@ -139,6 +178,7 @@ class MergeTransitionBlockValidatorTest {
             .getState()
             .toVersionBellatrix()
             .orElseThrow();
+    withValidTransitionBlock(transitionBlock);
 
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -147,12 +187,75 @@ class MergeTransitionBlockValidatorTest {
     assertThat(storageSystem.recentChainData().getStore().getFinalizedOptimisticTransitionPayload())
         .isPresent();
 
-    final SafeFuture<PayloadStatus> result =
+    final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
             chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
 
-    verify(executionEngine).getPowBlock(getExecutionPayload(transitionBlock).getParentHash());
-    assertThat(result).isNotCompleted();
+    assertThat(executionEngine.getRequestedPowBlocks())
+        .contains(getExecutionPayload(transitionBlock).getParentHash());
+    assertThat(result).isCompletedWithValue(new PayloadValidationResult(PayloadStatus.VALID));
+  }
+
+  /**
+   * We can't mark a finalized block as invalid or reorg to a valid fork, so if we discover we
+   * finalized an invalid transition we have to bail out with {@link
+   * tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException}
+   */
+  @Test
+  void shouldFailWithFatalServiceFailuresExceptionWhenFinalizedAncestorTransitionBlockIsInvalid() {
+    final SignedBlockAndState transitionBlock = generateFinalizedTransition();
+    final BeaconStateBellatrix chainHeadState =
+        storageSystem
+            .chainBuilder()
+            .getLatestBlockAndState()
+            .getState()
+            .toVersionBellatrix()
+            .orElseThrow();
+    withInvalidTransitionBlock(transitionBlock);
+
+    final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
+
+    final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
+
+    assertThat(storageSystem.recentChainData().getStore().getFinalizedOptimisticTransitionPayload())
+        .isPresent();
+
+    final SafeFuture<PayloadValidationResult> result =
+        transitionVerifier.verifyTransitionBlock(
+            chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
+
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(FatalServiceFailureException.class);
+  }
+
+  private void withValidTransitionBlock(final SignedBlockAndState transitionBlock) {
+    final UInt256 ttd =
+        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
+    final UInt256 terminalBlockDifficulty = ttd.plus(1);
+    final UInt256 ttdBlockParentDifficulty = ttd.subtract(1);
+    withPowBlockDifficulties(transitionBlock, terminalBlockDifficulty, ttdBlockParentDifficulty);
+  }
+
+  private void withInvalidTransitionBlock(final SignedBlockAndState transitionBlock) {
+    final UInt256 ttd =
+        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
+    final UInt256 terminalBlockDifficulty = ttd.subtract(1);
+    final UInt256 ttdBlockParentDifficulty = ttd.subtract(2);
+    withPowBlockDifficulties(transitionBlock, terminalBlockDifficulty, ttdBlockParentDifficulty);
+  }
+
+  private void withPowBlockDifficulties(
+      final SignedBlockAndState transitionBlock,
+      final UInt256 terminalBlockDifficulty,
+      final UInt256 ttdBlockParentDifficulty) {
+    final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
+    executionEngine.addPowBlock(
+        new PowBlock(
+            getExecutionPayload(transitionBlock).getParentHash(),
+            terminalBlockParentHash,
+            terminalBlockDifficulty));
+    executionEngine.addPowBlock(
+        new PowBlock(
+            terminalBlockParentHash, dataStructureUtil.randomBytes32(), ttdBlockParentDifficulty));
   }
 
   private SignedBlockAndState generateNonfinalizedTransition() {

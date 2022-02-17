@@ -29,6 +29,8 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -243,7 +245,8 @@ public class ForkChoice {
       final ForkChoiceUtil forkChoiceUtil,
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
-      final PayloadStatus payloadResult) {
+      final PayloadValidationResult payloadValidationResult) {
+    final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
       final BlockImportResult result =
           BlockImportResult.failedStateTransition(
@@ -251,6 +254,12 @@ public class ForkChoice {
                   "Invalid ExecutionPayload: "
                       + payloadResult.getValidationError().orElse("No reason provided")));
       reportInvalidBlock(block, result);
+      payloadValidationResult
+          .getInvalidTransitionBlockRoot()
+          .ifPresent(
+              invalidTransitionBlockRoot ->
+                  getForkChoiceStrategy()
+                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult));
       return result;
     }
 
@@ -323,15 +332,16 @@ public class ForkChoice {
       final Bytes32 blockRoot,
       final PayloadStatus payloadResult,
       final UInt64 latestFinalizedBlockSlot) {
-    final SafeFuture<PayloadStatus> transitionValidatedStatus;
+    final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
       transitionValidatedStatus = transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot);
     } else {
-      transitionValidatedStatus = SafeFuture.completedFuture(payloadResult);
+      transitionValidatedStatus =
+          SafeFuture.completedFuture(new PayloadValidationResult(payloadResult));
     }
     transitionValidatedStatus.finishAsync(
         result -> {
-          if (result.hasStatus(ExecutionPayloadStatus.VALID)) {
+          if (result.getStatus().hasStatus(ExecutionPayloadStatus.VALID)) {
             UInt64 latestValidFinalizedSlotInStore = recentChainData.getLatestValidFinalizedSlot();
 
             if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
@@ -341,9 +351,23 @@ public class ForkChoice {
             }
           }
 
-          getForkChoiceStrategy().onExecutionPayloadResult(blockRoot, result);
+          getForkChoiceStrategy()
+              .onExecutionPayloadResult(
+                  result.getInvalidTransitionBlockRoot().orElse(blockRoot), result.getStatus());
         },
-        error -> LOG.error("Failed to apply payload result for block {}", blockRoot, error),
+        error -> {
+          // Pass FatalServiceFailureException up to the uncaught exception handler.
+          // This will cause teku to exit because the error is unrecoverable.
+          // We specifically do this here because a FatalServiceFailureException will be thrown if
+          // a justified or finalized block is found to be invalid.
+          if (ExceptionUtil.getCause(error, FatalServiceFailureException.class).isPresent()) {
+            Thread.currentThread()
+                .getUncaughtExceptionHandler()
+                .uncaughtException(Thread.currentThread(), error);
+          } else {
+            LOG.error("Failed to apply payload result for block {}", blockRoot, error);
+          }
+        },
         forkChoiceExecutor);
   }
 

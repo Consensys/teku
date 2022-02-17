@@ -32,6 +32,8 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthInterceptor;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
@@ -54,19 +56,24 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private final TimeProvider timeProvider;
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
 
-  public Web3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
-    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient());
+  public Web3JExecutionEngineClient(
+      final String eeEndpoint,
+      final TimeProvider timeProvider,
+      final Optional<JwtConfig> jwtConfig) {
+    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
     this.eth1Web3j = Web3j.build(eeWeb3jService);
     this.timeProvider = timeProvider;
   }
 
-  private static OkHttpClient createOkHttpClient() {
+  private static OkHttpClient createOkHttpClient(
+      final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
     final OkHttpClient.Builder builder = new OkHttpClient.Builder();
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);
       builder.addInterceptor(logging);
     }
+    jwtConfig.ifPresent(jwt -> builder.addInterceptor(new JwtAuthInterceptor(jwt, timeProvider)));
     return builder.build();
   }
 
