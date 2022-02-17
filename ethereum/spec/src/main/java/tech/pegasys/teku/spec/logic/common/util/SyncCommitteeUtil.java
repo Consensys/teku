@@ -220,9 +220,7 @@ public class SyncCommitteeUtil {
   public IntSet getSyncSubcommittees(final IntSet committeeIndices) {
     final int subcommitteeSize = getSubcommitteeSize();
     return IntOpenHashSet.toSet(
-        committeeIndices.stream()
-            .map(index -> index / subcommitteeSize)
-            .mapToInt(Integer::intValue));
+        committeeIndices.intStream().map(index -> index / subcommitteeSize));
   }
 
   public Bytes32 getSyncCommitteeMessageSigningRoot(

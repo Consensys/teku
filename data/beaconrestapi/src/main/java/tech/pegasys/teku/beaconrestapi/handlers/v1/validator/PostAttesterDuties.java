@@ -118,9 +118,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
 
       SafeFuture<Optional<PostAttesterDutiesResponse>> future =
           validatorDataProvider.getAttesterDuties(
-              epoch,
-              IntArrayList.toList(
-                  Arrays.stream(indexes).map(UInt64::intValue).mapToInt(Integer::intValue)));
+              epoch, IntArrayList.toList(Arrays.stream(indexes).mapToInt(UInt64::intValue)));
 
       handleOptionalResult(
           ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);

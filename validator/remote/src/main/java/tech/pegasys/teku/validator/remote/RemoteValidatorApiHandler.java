@@ -190,9 +190,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                         duty.pubkey.asBLSPublicKey(),
                         duty.validatorIndex.intValue(),
                         IntOpenHashSet.toSet(
-                            duty.committeeIndices.stream()
-                                .map(UInt64::intValue)
-                                .mapToInt(Integer::intValue))))
+                            duty.committeeIndices.stream().mapToInt(UInt64::intValue))))
             .collect(toList()));
   }
 

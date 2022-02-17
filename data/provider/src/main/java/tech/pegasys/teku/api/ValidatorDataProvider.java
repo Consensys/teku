@@ -271,9 +271,7 @@ public class ValidatorDataProvider {
                     new tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription(
                         subscription.validatorIndex.intValue(),
                         IntOpenHashSet.toSet(
-                            subscription.syncCommitteeIndices.stream()
-                                .map(UInt64::intValue)
-                                .mapToInt(Integer::intValue)),
+                            subscription.syncCommitteeIndices.stream().mapToInt(UInt64::intValue)),
                         subscription.untilEpoch))
             .collect(toList()));
   }

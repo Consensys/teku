@@ -204,9 +204,11 @@ class SyncCommitteeContributionPoolTest {
             * contribution.getSubcommitteeIndex().intValue();
     final IntList expectedParticipants =
         IntArrayList.toList(
-            contribution.getAggregationBits().getAllSetBits().stream()
-                .map(index -> subcommitteeIndexOffset + index)
-                .mapToInt(Integer::intValue));
+            contribution
+                .getAggregationBits()
+                .getAllSetBits()
+                .intStream()
+                .map(index -> subcommitteeIndexOffset + index));
     assertThatSyncAggregate(result)
         .hasSyncCommitteeBits(expectedParticipants)
         .hasSignature(contribution.getSignature());
