@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -53,16 +51,13 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
-public class LocalValidatorSource implements ValidatorSource {
+public class LocalValidatorSource extends AbstractValidatorSource implements ValidatorSource {
 
-  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final boolean validatorKeystoreLockingEnabled;
   private final KeystoreLocker keystoreLocker;
   private final AsyncRunner asyncRunner;
   private final KeyStoreFilesLocator keyStoreFilesLocator;
-  private final boolean readOnly;
-  private final Optional<DataDirLayout> maybeDataDirLayout;
   private final Map<BLSPublicKey, ActiveLocalValidatorSource> localValidatorSourceMap =
       new ConcurrentHashMap<>();
 
@@ -74,24 +69,18 @@ public class LocalValidatorSource implements ValidatorSource {
       final AsyncRunner asyncRunner,
       final boolean readOnly,
       final Optional<DataDirLayout> maybeDataDirLayout) {
+    super(readOnly, maybeDataDirLayout);
     this.spec = spec;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.keystoreLocker = keystoreLocker;
     this.asyncRunner = asyncRunner;
     this.keyStoreFilesLocator = keyStoreFilesLocator;
-    this.readOnly = readOnly;
-    this.maybeDataDirLayout = maybeDataDirLayout;
   }
 
   @Override
   public List<ValidatorProvider> getAvailableValidators() {
     final List<Pair<Path, Path>> filePairs = keyStoreFilesLocator.parse();
     return filePairs.stream().map(this::createValidatorProvider).collect(toList());
-  }
-
-  @Override
-  public boolean canUpdateValidators() {
-    return !readOnly && maybeDataDirLayout.isPresent();
   }
 
   @Override
@@ -164,19 +153,6 @@ public class LocalValidatorSource implements ValidatorSource {
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
     return ValidatorClientService.getManagedLocalKeystorePasswordPath(dataDirLayout)
         .resolve(fileName + ".txt");
-  }
-
-  private void ensureDirectoryExists(final Path path) throws IOException {
-    if (!path.toFile().exists() && !path.toFile().mkdirs()) {
-      throw new IOException("Unable to create required path: " + path);
-    }
-  }
-
-  private void cleanupIncompleteSave(final Path path) {
-    LOG.debug("Cleanup " + path.toString());
-    if (path.toFile().exists() && path.toFile().isFile() && !path.toFile().delete()) {
-      LOG.warn("Failed to remove " + path);
-    }
   }
 
   private ValidatorProvider createValidatorProvider(

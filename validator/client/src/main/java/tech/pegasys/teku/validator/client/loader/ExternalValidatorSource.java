@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -49,17 +47,14 @@ import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
 
-public class ExternalValidatorSource implements ValidatorSource {
+public class ExternalValidatorSource extends AbstractValidatorSource implements ValidatorSource {
 
-  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final ValidatorConfig config;
   private final Supplier<HttpClient> externalSignerHttpClientFactory;
   private final PublicKeyLoader publicKeyLoader;
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
-  private final boolean readOnly;
-  private final Optional<DataDirLayout> maybeDataDirLayout;
   private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
   private ExternalValidatorSource(
@@ -71,14 +66,13 @@ public class ExternalValidatorSource implements ValidatorSource {
       final MetricsSystem metricsSystem,
       final boolean readOnly,
       final Optional<DataDirLayout> maybeDataDirLayout) {
+    super(readOnly, maybeDataDirLayout);
     this.spec = spec;
     this.config = config;
     this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
     this.publicKeyLoader = publicKeyLoader;
     this.externalSignerTaskQueue = externalSignerTaskQueue;
     this.metricsSystem = metricsSystem;
-    this.readOnly = readOnly;
-    this.maybeDataDirLayout = maybeDataDirLayout;
   }
 
   public static ExternalValidatorSource create(
@@ -110,11 +104,6 @@ public class ExternalValidatorSource implements ValidatorSource {
     return publicKeys.stream()
         .map(key -> new ExternalValidatorProvider(spec, key))
         .collect(toList());
-  }
-
-  @Override
-  public boolean canUpdateValidators() {
-    return !readOnly && maybeDataDirLayout.isPresent();
   }
 
   @Override
@@ -164,19 +153,6 @@ public class ExternalValidatorSource implements ValidatorSource {
     } catch (InvalidConfigurationException | IOException ex) {
       cleanupIncompleteSave(path);
       return new AddValidatorResult(PostKeyResult.error(ex.getMessage()), Optional.empty());
-    }
-  }
-
-  private void ensureDirectoryExists(final Path path) throws IOException {
-    if (!path.toFile().exists() && !path.toFile().mkdirs()) {
-      throw new IOException("Unable to create required path: " + path);
-    }
-  }
-
-  private void cleanupIncompleteSave(final Path path) {
-    LOG.debug("Cleanup " + path.toString());
-    if (path.toFile().exists() && path.toFile().isFile() && !path.toFile().delete()) {
-      LOG.warn("Failed to remove " + path);
     }
   }
 
