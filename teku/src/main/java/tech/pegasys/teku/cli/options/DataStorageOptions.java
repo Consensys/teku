@@ -31,12 +31,15 @@ public class DataStorageOptions {
       arity = "1")
   private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
 
+  // data-storage-archive-frequency is hidden, because it has been released
+  // and is likely used in nodes  rather than potentially cause issues, hiding the argument
   @CommandLine.Option(
       names = {"--data-storage-archive-frequency"},
       paramLabel = "<FREQUENCY>",
       description =
           "Sets the frequency, in slots, at which to store finalized states to disk. "
               + "This option is ignored if --data-storage-mode is set to PRUNE",
+      hidden = true,
       arity = "1")
   private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 

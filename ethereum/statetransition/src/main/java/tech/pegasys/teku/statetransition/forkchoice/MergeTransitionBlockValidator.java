@@ -143,7 +143,7 @@ public class MergeTransitionBlockValidator {
                     new IllegalStateException(
                         "Attempting to validate a bellatrix block when spec does not have bellatrix transition helpers"));
     return bellatrixTransitionHelpers
-        .validateMergeBlock(executionEngine, executionPayload)
+        .validateMergeBlock(executionEngine, executionPayload, slot)
         .exceptionally(
             error -> {
               LOG.error("Error while validating merge block", error);
