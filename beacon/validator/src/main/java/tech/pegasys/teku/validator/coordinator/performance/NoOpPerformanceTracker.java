@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import java.util.Set;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -35,9 +35,7 @@ public class NoOpPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void saveExpectedSyncCommitteeParticipant(
-      final int validatorIndex,
-      final Set<Integer> syncCommitteeIndices,
-      final UInt64 periodEndEpoch) {}
+      final int validatorIndex, final IntSet syncCommitteeIndices, final UInt64 periodEndEpoch) {}
 
   @Override
   public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {}

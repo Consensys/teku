@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import it.unimi.dsi.fastutil.ints.IntIterable;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.error.BasicErrorMessageFactory;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -34,11 +35,11 @@ public class SyncAggregateAssert extends AbstractAssert<SyncAggregateAssert, Syn
     return hasSyncCommitteeBits().hasInfiniteSignature();
   }
 
-  public SyncAggregateAssert hasSyncCommitteeBits(final Iterable<Integer> bits) {
+  public SyncAggregateAssert hasSyncCommitteeBits(final IntIterable bits) {
     final SszBitvector actualBits = actual.getSyncCommitteeBits();
-    assertThat(actualBits.getAllSetBits())
-        .describedAs("sync committee bits %s", actualBits)
-        .containsExactlyInAnyOrderElementsOf(bits);
+    for (int bit : bits) {
+      assertThat(actualBits.getAllSetBits().contains(bit)).isTrue();
+    }
     return this;
   }
 
