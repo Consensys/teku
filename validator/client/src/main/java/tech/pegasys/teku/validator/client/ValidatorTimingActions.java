@@ -84,6 +84,11 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   }
 
   @Override
+  public void onValidatorsAdded() {
+    delegates.forEach(ValidatorTimingChannel::onValidatorsAdded);
+  }
+
+  @Override
   public void onBlockProductionDue(final UInt64 slot) {
     delegates.forEach(delegate -> delegate.onBlockProductionDue(slot));
   }

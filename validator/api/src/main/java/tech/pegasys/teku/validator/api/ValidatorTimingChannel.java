@@ -30,6 +30,8 @@ public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
 
   void onPossibleMissedEvents();
 
+  void onValidatorsAdded();
+
   void onBlockProductionDue(UInt64 slot);
 
   void onAttestationCreationDue(UInt64 slot);

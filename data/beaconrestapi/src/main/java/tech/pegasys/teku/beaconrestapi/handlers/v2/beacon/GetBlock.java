@@ -85,7 +85,8 @@ public class GetBlock extends AbstractHandler implements Handler {
     final Map<String, String> pathParams = ctx.pathParamMap();
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final String blockIdentifier = pathParams.get(PARAM_BLOCK_ID);
-    if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+
+    if (getContentType(ACCEPT_ALL, maybeAcceptHeader).equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
       final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBlockSsz(blockIdentifier);
       handleOptionalSszResult(

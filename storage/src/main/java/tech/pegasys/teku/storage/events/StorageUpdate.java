@@ -36,6 +36,8 @@ public class StorageUpdate {
   private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Set<Bytes32> deletedHotBlocks;
+  private final boolean optimisticTransitionBlockRootSet;
+  private final Optional<Bytes32> optimisticTransitionBlockRoot;
 
   public StorageUpdate(
       final Optional<UInt64> genesisTime,
@@ -46,7 +48,9 @@ public class StorageUpdate {
       final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> deletedHotBlocks,
-      final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
+      final Map<Bytes32, SlotAndBlockRoot> stateRoots,
+      final boolean optimisticTransitionBlockRootSet,
+      final Optional<Bytes32> optimisticTransitionBlockRoot) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.lastValidFinalizedSlot = lastValidFinalizedSlot;
@@ -56,6 +60,8 @@ public class StorageUpdate {
     this.hotStates = hotStates;
     this.deletedHotBlocks = deletedHotBlocks;
     this.stateRoots = stateRoots;
+    this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
+    this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
   }
 
   public boolean isEmpty() {
@@ -118,14 +124,12 @@ public class StorageUpdate {
     return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
   }
 
-  public boolean isFinalizedOptimisticBlockRootSet() {
-    return finalizedChainData
-        .map(FinalizedChainData::isOptimisticTransitionBlockRootSet)
-        .orElse(false);
+  public boolean isFinalizedOptimisticTransitionBlockRootSet() {
+    return optimisticTransitionBlockRootSet;
   }
 
   public Optional<Bytes32> getOptimisticTransitionBlockRoot() {
-    return finalizedChainData.flatMap(FinalizedChainData::getOptimisticTransitionBlockRoot);
+    return optimisticTransitionBlockRoot;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {

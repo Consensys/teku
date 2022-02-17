@@ -17,13 +17,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 import static tech.pegasys.teku.core.signatures.NoOpRemoteSigner.NO_OP_REMOTE_SIGNER;
 
+import com.google.common.io.Resources;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -41,12 +48,14 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 class ActiveKeyManagerTest {
 
@@ -58,10 +67,11 @@ class ActiveKeyManagerTest {
   private final SlashingProtectionIncrementalExporter exporter =
       mock(SlashingProtectionIncrementalExporter.class);
   private final Signer signer = mock(Signer.class);
+  private final ValidatorTimingChannel channel = mock(ValidatorTimingChannel.class);
+  private final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader, channel);
 
   @Test
   void shouldReturnNotFoundIfSlashingProtectionNotFound() {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(false);
 
     final DeleteKeyResult result =
@@ -70,8 +80,27 @@ class ActiveKeyManagerTest {
   }
 
   @Test
+  void shouldCallValidatorsAddedOnSuccessfulImport() throws URISyntaxException, IOException {
+    final String data = getKeystore();
+
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
+        .thenReturn(PostKeyResult.success());
+    keyManager.importValidators(List.of(data), List.of("testpassword"), Optional.empty());
+    verify(channel, times(1)).onValidatorsAdded();
+  }
+
+  @Test
+  void shouldNotCallValidatorsAddedOnUnsuccessfulImport() throws URISyntaxException, IOException {
+    final String data = getKeystore();
+
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
+        .thenReturn(PostKeyResult.duplicate());
+    keyManager.importValidators(List.of(data), List.of("testpassword"), Optional.empty());
+    verify(channel, never()).onValidatorsAdded();
+  }
+
+  @Test
   void shouldReturnNotActiveIfSlashingProtectionFound() {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(true);
 
     final DeleteKeyResult result =
@@ -81,7 +110,6 @@ class ActiveKeyManagerTest {
 
   @Test
   void deleteValidator_shouldStopAndDeleteValidator() {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
@@ -96,6 +124,7 @@ class ActiveKeyManagerTest {
     verify(validatorLoader).deleteLocalMutableValidator(publicKey);
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.DELETED);
     assertThat(result.getMessage()).isEmpty();
+    verify(channel, never()).onValidatorsAdded();
   }
 
   @Test
@@ -105,7 +134,6 @@ class ActiveKeyManagerTest {
         tempDir.resolve(publicKey.toBytesCompressed().toUnprefixedHexString() + ".yml"));
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(tempDir);
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
@@ -119,11 +147,11 @@ class ActiveKeyManagerTest {
     verify(validatorLoader).deleteLocalMutableValidator(publicKey);
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);
     assertThat(result.getMessage().orElse("")).startsWith("Failed to read from file");
+    verify(channel, never()).onValidatorsAdded();
   }
 
   @Test
   void deleteValidators_shouldStopAndDeleteValidator(@TempDir final Path tempDir) {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
@@ -142,11 +170,11 @@ class ActiveKeyManagerTest {
     assertThat(response.getData().get(0).getStatus()).isEqualTo(DeletionStatus.DELETED);
     assertThat(response.getData()).hasSize(1);
     assertThat(response.getSlashingProtection()).isNotEmpty();
+    verify(channel, never()).onValidatorsAdded();
   }
 
   @Test
   void deleteValidators_shouldRejectRequestToDeleteReadOnlyValidator(@TempDir final Path tempDir) {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.isReadOnly()).thenReturn(true);
@@ -159,22 +187,22 @@ class ActiveKeyManagerTest {
     assertThat(response.getData().get(0).getStatus()).isEqualTo(DeletionStatus.ERROR);
     assertThat(response.getData().get(0).getMessage().orElse("")).contains("read-only");
     assertThat(response.getSlashingProtection()).isNotEmpty();
+    verify(channel, never()).onValidatorsAdded();
   }
 
   @Test
   void shouldReturnActiveValidatorsList() {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final List<Validator> validatorsList = generateActiveValidatorsList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     final List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
 
     assertThat(activeValidatorList).isEqualTo(validatorsList);
+    verify(channel, never()).onValidatorsAdded();
   }
 
   @Test
   void shouldReturnEmptyKeyList() {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -206,7 +234,6 @@ class ActiveKeyManagerTest {
         new Validator(keyPair3.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
     List<Validator> activeValidators = Arrays.asList(validator1, validator2, validator3);
 
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     when(ownedValidators.getActiveValidators()).thenReturn(activeValidators);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     final List<ExternalValidator> result = keyManager.getActiveRemoteValidatorKeys();
@@ -222,12 +249,17 @@ class ActiveKeyManagerTest {
 
   @Test
   void shouldReturnEmptyRemoteKeyList() {
-    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     final List<ExternalValidator> activeValidatorList = keyManager.getActiveRemoteValidatorKeys();
 
     assertThat(activeValidatorList).isEmpty();
+  }
+
+  private String getKeystore() throws IOException, URISyntaxException {
+    final URL resource = Resources.getResource("pbkdf2TestVector.json");
+    FileInputStream fis = new FileInputStream(new File(resource.toURI()));
+    return IOUtils.toString(fis, "UTF-8");
   }
 }
