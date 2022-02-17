@@ -62,11 +62,11 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
       firstCallDone = true;
 
-      calculateProposer();
+      sendPreparableProposerList();
     }
   }
 
-  private void calculateProposer() {
+  private void sendPreparableProposerList() {
     SafeFuture<Optional<ProposerConfig>> proposerConfigFuture =
         proposerConfigProvider.getProposerConfig();
 
@@ -132,12 +132,12 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   @Override
   public void onPossibleMissedEvents() {
-    calculateProposer();
+    sendPreparableProposerList();
   }
 
   @Override
   public void onValidatorsAdded() {
-    calculateProposer();
+    sendPreparableProposerList();
   }
 
   @Override
