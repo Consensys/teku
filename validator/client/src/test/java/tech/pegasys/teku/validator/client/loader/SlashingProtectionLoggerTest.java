@@ -79,56 +79,60 @@ public class SlashingProtectionLoggerTest {
   public void shouldLogNothingOnEmptyList() {
     slashingProtectionLogger.protectionSummary(new ArrayList<>());
     asyncRunner.executeQueuedActions();
-    verify(validatorLogger, never()).activatedSlashingProtection(any());
-    verify(validatorLogger, never()).noLocalSlashingProtection(any());
+    verify(validatorLogger, never()).loadedSlashingProtection(any());
+    verify(validatorLogger, never()).notLoadedSlashingProtection(any());
     verify(validatorLogger, never()).outdatedSlashingProtection(any(), any());
   }
 
   @Test
-  public void shouldLogNotProtectedValidator() {
+  public void shouldLogNotLoadedProtectionValidator() {
     Validator unProtectedValidator = createUnProtectedValidator(pubKey);
     List<Validator> unProtectedValidators = new ArrayList<>();
     unProtectedValidators.add(unProtectedValidator);
     slashingProtectionLogger.protectionSummary(unProtectedValidators);
     asyncRunner.executeQueuedActions();
-    verify(validatorLogger, never()).activatedSlashingProtection(any());
+    verify(validatorLogger, never()).loadedSlashingProtection(any());
     Set<String> unProtectedValidatorKeys = new HashSet<>();
     unProtectedValidatorKeys.add(unProtectedValidator.getPublicKey().toAbbreviatedString());
-    verify(validatorLogger, times(1)).noLocalSlashingProtection(unProtectedValidatorKeys);
+    verify(validatorLogger, times(1)).notLoadedSlashingProtection(unProtectedValidatorKeys);
     verify(validatorLogger, never()).outdatedSlashingProtection(any(), any());
   }
 
   @Test
-  public void shouldLogProtectedValidator() {
+  public void shouldLogLoadedProtectionValidator() throws Exception {
     Validator validator = createProtectedValidator(keyPair);
     List<Validator> protectedValidators = new ArrayList<>();
     protectedValidators.add(validator);
+    when(slashingProtector.getSigningRecord(validator.getPublicKey()))
+        .thenReturn(Optional.of(new ValidatorSigningRecord(Bytes32.ZERO, UInt64.ZERO, null, null)));
     slashingProtectionLogger.protectionSummary(protectedValidators);
     asyncRunner.executeQueuedActions();
     Set<String> protectedValidatorKeys = new HashSet<>();
     protectedValidatorKeys.add(validator.getPublicKey().toAbbreviatedString());
-    verify(validatorLogger, times(1)).activatedSlashingProtection(protectedValidatorKeys);
-    verify(validatorLogger, never()).noLocalSlashingProtection(any());
+    verify(validatorLogger, times(1)).loadedSlashingProtection(protectedValidatorKeys);
+    verify(validatorLogger, never()).notLoadedSlashingProtection(any());
     verify(validatorLogger, never()).outdatedSlashingProtection(any(), any());
   }
 
   @Test
-  public void shouldLogObsolescenceOfProtectedValidator() {
+  public void shouldLogLoadedButOutdatedProtectionValidator() throws Exception {
     Validator validator = createProtectedValidator(keyPair);
     List<Validator> protectedValidators = new ArrayList<>();
     protectedValidators.add(validator);
+    when(slashingProtector.getSigningRecord(validator.getPublicKey()))
+        .thenReturn(Optional.of(new ValidatorSigningRecord(Bytes32.ZERO, UInt64.ZERO, null, null)));
     slashingProtectionLogger.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(1000)));
     slashingProtectionLogger.protectionSummary(protectedValidators);
     asyncRunner.executeQueuedActions();
     Set<String> protectedValidatorKeys = new HashSet<>();
     protectedValidatorKeys.add(validator.getPublicKey().toAbbreviatedString());
-    verify(validatorLogger, times(1)).activatedSlashingProtection(protectedValidatorKeys);
-    verify(validatorLogger, never()).noLocalSlashingProtection(any());
+    verify(validatorLogger, times(1)).loadedSlashingProtection(protectedValidatorKeys);
+    verify(validatorLogger, never()).notLoadedSlashingProtection(any());
     verify(validatorLogger, times(1)).outdatedSlashingProtection(eq(protectedValidatorKeys), any());
   }
 
   @Test
-  public void shouldObsoleteProtectedValidatorBothBySlotAndAttestation() throws Exception {
+  public void shouldObsoleteProtectionOfValidatorBothBySlotAndAttestation() throws Exception {
     UInt64 recentSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(900));
     BLSKeyPair keyPair1 = dataStructureUtil.randomKeyPair();
     Validator validatorNoAttestationRecord = createProtectedValidator(keyPair1);
@@ -163,8 +167,8 @@ public class SlashingProtectionLoggerTest {
     Set<String> outdatedValidatorKeys = new HashSet<>();
     outdatedValidatorKeys.add(validatorNoAttestationRecord.getPublicKey().toAbbreviatedString());
     outdatedValidatorKeys.add(validatorNoBlockProposerRecord.getPublicKey().toAbbreviatedString());
-    verify(validatorLogger, times(1)).activatedSlashingProtection(protectedValidatorKeys);
-    verify(validatorLogger, never()).noLocalSlashingProtection(any());
+    verify(validatorLogger, times(1)).loadedSlashingProtection(protectedValidatorKeys);
+    verify(validatorLogger, never()).notLoadedSlashingProtection(any());
     verify(validatorLogger, times(1)).outdatedSlashingProtection(eq(outdatedValidatorKeys), any());
   }
 

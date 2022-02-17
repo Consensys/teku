@@ -58,8 +58,4 @@ public interface Signer {
   }
 
   Optional<URL> getSigningServiceUrl();
-
-  default boolean isLocalSlashingProtectionEnabled() {
-    return false;
-  }
 }

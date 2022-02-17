@@ -79,8 +79,8 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().get()))
             .collect(Collectors.toList());
-    logProtectedValidators(protectedList);
-    filterAndLogUnProtectedValidators(validatorRecords);
+    logLoadedProtectionValidators(protectedList);
+    filterAndLogNotLoadedProtectionValidators(validatorRecords);
     Function<ValidatorSigningRecord, Boolean> outdatedSigningRecordClassifier =
         createOutdatedSigningRecordClassifier(curSlot, SAFE_PROTECTION_EPOCHS_DELTA);
     final List<Pair<Validator, ValidatorSigningRecord>> outdatedProtectionList =
@@ -90,12 +90,12 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
     logOutdatedProtectedValidators(outdatedProtectionList);
   }
 
-  private void logProtectedValidators(
+  private void logLoadedProtectionValidators(
       List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
     if (validatorRecords.isEmpty()) {
       return;
     }
-    validatorLogger.activatedSlashingProtection(
+    validatorLogger.loadedSlashingProtection(
         validatorRecords.stream()
             .map(pair -> pair.getLeft().getPublicKey().toAbbreviatedString())
             .collect(Collectors.toSet()));
@@ -113,7 +113,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
         SAFE_PROTECTION_EPOCHS_DELTA);
   }
 
-  private void filterAndLogUnProtectedValidators(
+  private void filterAndLogNotLoadedProtectionValidators(
       List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords) {
     Set<String> unprotectedValidatorSet =
         validatorRecords.stream()
@@ -121,7 +121,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
             .map(pair -> pair.getLeft().getPublicKey().toAbbreviatedString())
             .collect(Collectors.toSet());
     if (!unprotectedValidatorSet.isEmpty()) {
-      validatorLogger.noLocalSlashingProtection(unprotectedValidatorSet);
+      validatorLogger.notLoadedSlashingProtection(unprotectedValidatorSet);
     }
   }
 
@@ -132,10 +132,6 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
       try {
         Optional<ValidatorSigningRecord> validatorSigningRecord =
             slashingProtector.getSigningRecord(validator.getPublicKey());
-        if (validatorSigningRecord.isEmpty()
-            && validator.getSigner().isLocalSlashingProtectionEnabled()) {
-          validatorSigningRecord = Optional.of(new ValidatorSigningRecord(Bytes32.ZERO));
-        }
         validatorRecords.add(Pair.of(validator, validatorSigningRecord));
       } catch (IOException e) {
         LOG.error("Failed to retrieve all validators slashing protection data", e);

@@ -185,17 +185,17 @@ public class ValidatorLogger {
         error.orElse(null));
   }
 
-  public void activatedSlashingProtection(final Set<String> maybeKey) {
+  public void loadedSlashingProtection(final Set<String> maybeKey) {
     final String infoString =
         String.format(
-            "%sSlashing protection active for validators: %s", PREFIX, formatValidators(maybeKey));
+            "%sSlashing protection loaded for validators: %s", PREFIX, formatValidators(maybeKey));
     log.info(ColorConsolePrinter.print(infoString, Color.GREEN));
   }
 
-  public void noLocalSlashingProtection(final Set<String> maybeKey) {
+  public void notLoadedSlashingProtection(final Set<String> maybeKey) {
     final String infoString =
         String.format(
-            "%sNo local slashing protection activated for validators: %s",
+            "%sSlashing protection not loaded for validators: %s",
             PREFIX, formatValidators(maybeKey));
     log.warn(ColorConsolePrinter.print(infoString, Color.YELLOW));
   }
