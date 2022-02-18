@@ -181,8 +181,7 @@ public class BlockManager extends Service
               } else {
                 switch (result.getFailureReason()) {
                   case UNKNOWN_PARENT:
-                    // Add to the pending pool so it is triggered once the parent is
-                    // imported
+                    // Add to the pending pool so it is triggered once the parent is imported
                     pendingBlocks.add(block);
                     // Check if the parent was imported while we were trying to import
                     // this block and if so, remove from the pendingPool again
