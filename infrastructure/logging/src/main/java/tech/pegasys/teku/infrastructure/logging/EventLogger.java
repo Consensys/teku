@@ -152,7 +152,7 @@ public class EventLogger {
       final UInt64 justifiedCheckpoint,
       final UInt64 finalizedCheckpoint,
       final int numPeers) {
-    String blockRoot = "   ... empty";
+    String blockRoot = "                                                       ... empty";
     if (nodeSlot.equals(headSlot)) {
       blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
     }
