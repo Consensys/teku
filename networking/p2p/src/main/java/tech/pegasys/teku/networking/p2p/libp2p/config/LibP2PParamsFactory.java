@@ -30,6 +30,9 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 
 public class LibP2PParamsFactory {
+
+  public static final int MAX_SUBSCIPTIONS_PER_MESSAGE = 200;
+
   public static GossipParams createGossipParams(final GossipConfig gossipConfig) {
     return GossipParams.builder()
         .D(gossipConfig.getD())
@@ -47,7 +50,7 @@ public class LibP2PParamsFactory {
         .seenTTL(gossipConfig.getSeenTTL())
         .maxPublishedMessages(1000)
         .maxTopicsPerPublishedMessage(1)
-        .maxSubscriptions(200)
+        .maxSubscriptions(MAX_SUBSCIPTIONS_PER_MESSAGE)
         .maxGraftMessages(200)
         .maxPruneMessages(200)
         .maxPeersPerPruneMessage(1000)

@@ -19,3 +19,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Improved handling of the http accept header used to determine whether to send SSZ data or json for states and blocks.
  - Updated discovery library with improved performance.
+ - Updated libp2p library to respect message list limits when sending messages.
+ - Fixed issue on custom testnets with two forks in sequential epochs where the maximum gossip topic subscription limits were exceeded.

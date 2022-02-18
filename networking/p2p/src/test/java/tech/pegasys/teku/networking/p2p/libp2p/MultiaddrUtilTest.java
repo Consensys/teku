@@ -17,11 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.multiformats.MultiaddrComponent;
 import io.libp2p.core.multiformats.Protocol;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.assertj.core.api.AbstractObjectAssert;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -52,9 +54,9 @@ class MultiaddrUtilTest {
         new InetSocketAddress(InetAddress.getByAddress(ipAddress), port);
     final Multiaddr result = MultiaddrUtil.fromInetSocketAddress(address);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/"));
-    assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
-    assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
-    assertThat(result.getComponent(Protocol.P2P)).isNull();
+    assertThatComponent(result, Protocol.IP4).isEqualTo(ipAddress);
+    assertThatComponent(result, Protocol.TCP).isEqualTo(Protocol.TCP.addressToBytes("5883"));
+    assertThat(result.getFirstComponent(Protocol.P2P)).isNull();
   }
 
   @Test
@@ -65,9 +67,9 @@ class MultiaddrUtilTest {
         new InetSocketAddress(InetAddress.getByAddress(ipAddress), port);
     final Multiaddr result = MultiaddrUtil.fromInetSocketAddress(address);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/"));
-    assertThat(result.getComponent(Protocol.IP6)).isEqualTo(ipAddress);
-    assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
-    assertThat(result.getComponent(Protocol.P2P)).isNull();
+    assertThatComponent(result, Protocol.IP6).isEqualTo(ipAddress);
+    assertThatComponent(result, Protocol.TCP).isEqualTo(Protocol.TCP.addressToBytes("5883"));
+    assertThat(result.getFirstComponent(Protocol.P2P)).isNull();
   }
 
   @Test
@@ -83,9 +85,9 @@ class MultiaddrUtilTest {
             SYNC_COMMITTEE_SUBNETS);
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
-    assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
-    assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
-    assertThat(result.getComponent(Protocol.P2P)).isEqualTo(NODE_ID.toBytes().toArrayUnsafe());
+    assertThatComponent(result, Protocol.IP4).isEqualTo(ipAddress);
+    assertThatComponent(result, Protocol.TCP).isEqualTo(Protocol.TCP.addressToBytes("5883"));
+    assertThatComponent(result, Protocol.P2P).isEqualTo(NODE_ID.toBytes().toArrayUnsafe());
   }
 
   @Test
@@ -102,9 +104,9 @@ class MultiaddrUtilTest {
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result)
         .isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/p2p/" + PEER_ID));
-    assertThat(result.getComponent(Protocol.IP6)).isEqualTo(ipAddress);
-    assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
-    assertThat(result.getComponent(Protocol.P2P)).isEqualTo(NODE_ID.toBytes().toArrayUnsafe());
+    assertThatComponent(result, Protocol.IP6).isEqualTo(ipAddress);
+    assertThatComponent(result, Protocol.TCP).isEqualTo(Protocol.TCP.addressToBytes("5883"));
+    assertThatComponent(result, Protocol.P2P).isEqualTo(NODE_ID.toBytes().toArrayUnsafe());
   }
 
   @Test
@@ -137,5 +139,10 @@ class MultiaddrUtilTest {
         Multiaddr.fromString(
             "/ip4/127.0.0.1/udp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
     assertThat(MultiaddrUtil.fromDiscoveryPeerAsUdp(peer)).isEqualTo(expectedMultiAddr);
+  }
+
+  private AbstractObjectAssert<?, byte[]> assertThatComponent(
+      final Multiaddr result, final Protocol p2p) {
+    return assertThat(result.getFirstComponent(p2p)).extracting(MultiaddrComponent::getValue);
   }
 }
