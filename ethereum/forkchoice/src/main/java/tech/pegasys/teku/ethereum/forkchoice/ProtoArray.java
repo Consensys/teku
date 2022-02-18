@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.ethereum.forkchoice.ProtoNodeValidationStatus.INVALID;
 import static tech.pegasys.teku.ethereum.forkchoice.ProtoNodeValidationStatus.OPTIMISTIC;
 import static tech.pegasys.teku.ethereum.forkchoice.ProtoNodeValidationStatus.VALID;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -313,7 +314,9 @@ public class ProtoArray {
       parentIndex = parentNode.getParentIndex();
     }
     // Couldn't find the last valid hash - so can't take advantage of it.
-    LOG.debug("Failed to find block for latestValidHash {}", latestValidHash);
+    // Alert this user as it may indicate that invalid payloads have been finalized
+    // (or the EL client is malfunctioning somehow).
+    STATUS_LOG.unknownLatestValidHash(latestValidHash);
     return Optional.empty();
   }
 

@@ -365,6 +365,15 @@ public class StatusLogger {
         error);
   }
 
+  public void unknownLatestValidHash(final Bytes32 latestValidHash) {
+    log.error(
+        print(
+            "Could not find latest valid execution payload hash ("
+                + latestValidHash
+                + ") in the non-finalized chain. Optimistic sync may have finalized an invalid transition block.",
+            Color.RED));
+  }
+
   private void logWithColorIfLevelGreaterThanInfo(
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;
