@@ -723,7 +723,7 @@ public class BeaconChainController extends Service
         new SlotProcessor(
             spec,
             recentChainData,
-            syncService.getForwardSync(),
+            syncService,
             forkChoiceTrigger,
             forkChoiceNotifier,
             p2pNetwork,
