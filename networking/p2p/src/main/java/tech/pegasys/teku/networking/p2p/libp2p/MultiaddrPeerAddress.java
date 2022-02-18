@@ -48,7 +48,7 @@ public class MultiaddrPeerAddress extends PeerAddress {
 
   private static MultiaddrPeerAddress fromMultiaddr(final Multiaddr multiaddr) {
     final MultiaddrComponent p2pComponent = multiaddr.getFirstComponent(Protocol.P2P);
-    if (p2pComponent == null || p2pComponent.getStringValue() != null) {
+    if (p2pComponent == null || p2pComponent.getStringValue() == null) {
       throw new IllegalArgumentException("No peer ID present in multiaddr: " + multiaddr);
     }
     final LibP2PNodeId nodeId = new LibP2PNodeId(PeerId.fromBase58(p2pComponent.getStringValue()));
