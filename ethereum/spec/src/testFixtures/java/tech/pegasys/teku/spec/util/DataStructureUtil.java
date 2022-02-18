@@ -304,6 +304,10 @@ public final class DataStructureUtil {
     return SszBitvectorSchema.create(n).ofBits(bits);
   }
 
+  public BLSKeyPair randomKeyPair() {
+    return BLSTestUtil.randomKeyPair(nextSeed());
+  }
+
   public BLSPublicKey randomPublicKey() {
     return pubKeyGenerator.get();
   }

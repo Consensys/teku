@@ -44,12 +44,14 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
+import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -221,12 +223,18 @@ public class VoluntaryExitCommand implements Runnable {
     }
     genesisRoot = maybeRoot.get();
 
+    final RejectingSlashingProtector slashingProtector = new RejectingSlashingProtector();
+    final SlashingProtectionLogger slashingProtectionLogger =
+        new SlashingProtectionLogger(
+            slashingProtector, spec, asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
+
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
             config.validatorClient().getValidatorConfig(),
             config.validatorClient().getInteropConfig(),
             new RejectingSlashingProtector(),
+            slashingProtectionLogger,
             new PublicKeyLoader(),
             asyncRunner,
             metricsSystem,

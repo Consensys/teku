@@ -44,7 +44,7 @@ public class LocalSlashingProtector implements SlashingProtector {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord =
-              loadSigningRecord(validator, genesisValidatorsRoot);
+              loadOrCreateSigningRecord(validator, genesisValidatorsRoot);
           return handleResult(validator, signingRecord.maySignBlock(genesisValidatorsRoot, slot));
         });
   }
@@ -58,7 +58,7 @@ public class LocalSlashingProtector implements SlashingProtector {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord =
-              loadSigningRecord(validator, genesisValidatorsRoot);
+              loadOrCreateSigningRecord(validator, genesisValidatorsRoot);
           return handleResult(
               validator,
               signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
@@ -75,19 +75,28 @@ public class LocalSlashingProtector implements SlashingProtector {
     return true;
   }
 
-  private ValidatorSigningRecord loadSigningRecord(
-      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
+  @Override
+  public Optional<ValidatorSigningRecord> getSigningRecord(final BLSPublicKey validator)
+      throws IOException {
     ValidatorSigningRecord record = signingRecords.get(validator);
     if (record != null) {
-      return record;
+      return Optional.of(record);
     }
-    record =
-        dataAccessor
-            .read(validatorRecordPath(validator))
-            .map(ValidatorSigningRecord::fromBytes)
-            .orElseGet(() -> new ValidatorSigningRecord(genesisValidatorsRoot));
-    signingRecords.put(validator, record);
-    return record;
+    Optional<ValidatorSigningRecord> loaded =
+        dataAccessor.read(validatorRecordPath(validator)).map(ValidatorSigningRecord::fromBytes);
+    loaded.ifPresent(signingRecord -> signingRecords.put(validator, signingRecord));
+    return loaded;
+  }
+
+  private ValidatorSigningRecord loadOrCreateSigningRecord(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
+    Optional<ValidatorSigningRecord> record = getSigningRecord(validator);
+    return record.orElseGet(
+        () -> {
+          ValidatorSigningRecord newRecord = new ValidatorSigningRecord(genesisValidatorsRoot);
+          signingRecords.put(validator, newRecord);
+          return newRecord;
+        });
   }
 
   private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
