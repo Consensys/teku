@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
+import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
@@ -168,11 +170,15 @@ public class ValidatorClientService extends Service {
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(
             SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
+    final SlashingProtectionLogger slashingProtectionLogger =
+        new SlashingProtectionLogger(
+            slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
     return ValidatorLoader.create(
         config.getSpec(),
         config.getValidatorConfig(),
         config.getInteropConfig(),
         slashingProtector,
+        slashingProtectionLogger,
         new PublicKeyLoader(),
         asyncRunner,
         services.getMetricsSystem(),
@@ -222,6 +228,7 @@ public class ValidatorClientService extends Service {
     validatorTimingChannels.add(
         new AttestationDutyScheduler(
             metricsSystem, attestationDutyLoader, useDependentRoots, spec));
+    validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final ChainHeadTracker chainHeadTracker = new ChainHeadTracker();
