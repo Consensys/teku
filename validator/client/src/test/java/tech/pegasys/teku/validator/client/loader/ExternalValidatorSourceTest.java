@@ -20,17 +20,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentMatchers;
+import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -40,15 +44,23 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
 public class ExternalValidatorSourceTest {
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
+
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = new StubAsyncRunner();
   private ThrottlingTaskQueue externalSignerTaskQueue;
+
+  private final Supplier<HttpClient> httpClientFactory = () -> httpClient;
 
   @SuppressWarnings("unchecked")
   private final HttpResponse<Void> httpResponse = mock(HttpResponse.class);
@@ -115,5 +127,84 @@ public class ExternalValidatorSourceTest {
   @Test
   void shouldSayFalseToAddValidators() {
     assertThat(validatorSource.canUpdateValidators()).isFalse();
+  }
+
+  @Test
+  void shouldAddValidator_getsConfigUrlWhenNotProvided(@TempDir Path tempDir) throws IOException {
+    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final AddValidatorResult result =
+        getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
+    assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+    assertThat(result.getSigner()).isNotEmpty();
+    assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
+    assertThat(result.getSigner().get().getSigningServiceUrl().get())
+        .isEqualTo(config.getValidatorExternalSignerUrl());
+
+    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
+    Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout(tempDir)).resolve(fileName);
+    assertThat(path.toFile()).exists();
+    assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
+        .isEqualTo("{\"pubkey\":\"" + publicKey + "\"}");
+  }
+
+  @Test
+  void shouldAddValidator_getsUrlWhenProvided(@TempDir Path tempDir) throws IOException {
+    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    URL url = new URL("http://host.com");
+    final AddValidatorResult result =
+        getResultFromAddingValidator(tempDir, publicKey, Optional.of(url));
+    assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+    assertThat(result.getSigner()).isNotEmpty();
+    assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
+    assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(url);
+
+    // Check contents of the file
+    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
+    Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout(tempDir)).resolve(fileName);
+    assertThat(path.toFile()).exists();
+    assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
+        .isEqualTo("{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
+  }
+
+  @Test
+  void shouldDetectDuplicatesOnAddValidator(@TempDir Path tempDir) throws IOException {
+    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final AddValidatorResult result1 =
+        getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
+    assertThat(result1.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+    assertThat(result1.getSigner()).isNotEmpty();
+    assertThat(result1.getSigner().get().getSigningServiceUrl()).isNotEmpty();
+    assertThat(result1.getSigner().get().getSigningServiceUrl().get())
+        .isEqualTo(config.getValidatorExternalSignerUrl());
+
+    final AddValidatorResult result2 =
+        getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
+    assertThat(result2.getResult().getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
+    assertThat(result2.getSigner()).isEmpty();
+
+    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
+    Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout(tempDir)).resolve(fileName);
+    assertThat(path.toFile()).exists();
+    assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
+        .isEqualTo("{\"pubkey\":\"" + publicKey + "\"}");
+  }
+
+  private AddValidatorResult getResultFromAddingValidator(
+      final Path tempDir, final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
+    final ExternalValidatorSource externalValidatorSource =
+        ExternalValidatorSource.create(
+            spec,
+            metricsSystem,
+            config,
+            httpClientFactory,
+            publicKeyLoader,
+            asyncRunner,
+            false,
+            externalSignerTaskQueue,
+            Optional.of(new SimpleDataDirLayout(tempDir)));
+    return externalValidatorSource.addValidator(publicKey, signerUrl);
   }
 }

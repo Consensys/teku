@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -95,6 +96,11 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
       // `SlashingProtectedSigner` instances with the same key
       return new SlashingProtectedSigner(
           getPublicKey(), slashingProtector, delegate.createSigner());
+    }
+
+    @Override
+    public Signer createSigner(URL url) {
+      throw new NotImplementedException();
     }
   }
 }

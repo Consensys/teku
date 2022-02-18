@@ -119,7 +119,8 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   }
 
   @Override
-  public AddValidatorResult addValidator(final BLSPublicKey publicKey, Optional<URL> signerUrl) {
+  public AddValidatorResult addValidator(
+      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     if (!canUpdateValidators()) {
       return new AddValidatorResult(
           PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
@@ -146,9 +147,11 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
       final ValidatorProvider provider =
           new ExternalValidatorSource.ExternalValidatorProvider(spec, publicKey);
-      externalValidatorSourceMap.put(
-          publicKey, signerUrl.orElse(config.getValidatorExternalSignerUrl()));
-      return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
+
+      URL url = signerUrl.orElse(config.getValidatorExternalSignerUrl());
+      externalValidatorSourceMap.put(publicKey, url);
+      return new AddValidatorResult(
+          PostKeyResult.success(), Optional.of(provider.createSigner(url)));
 
     } catch (InvalidConfigurationException | IOException ex) {
       cleanupIncompleteSave(path);
@@ -203,6 +206,18 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
           spec,
           externalSignerHttpClientFactory.get(),
           config.getValidatorExternalSignerUrl(),
+          publicKey,
+          config.getValidatorExternalSignerTimeout(),
+          externalSignerTaskQueue,
+          metricsSystem);
+    }
+
+    @Override
+    public Signer createSigner(URL url) {
+      return new ExternalSigner(
+          spec,
+          externalSignerHttpClientFactory.get(),
+          url,
           publicKey,
           config.getValidatorExternalSignerTimeout(),
           externalSignerTaskQueue,

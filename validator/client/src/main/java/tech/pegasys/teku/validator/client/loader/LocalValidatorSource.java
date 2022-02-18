@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -241,6 +242,11 @@ public class LocalValidatorSource extends AbstractValidatorSource implements Val
                 getPublicKey(), keyPair.getPublicKey()));
       }
       return new LocalSigner(spec, keyPair, asyncRunner);
+    }
+
+    @Override
+    public Signer createSigner(URL url) {
+      throw new NotImplementedException();
     }
 
     private Bytes32 loadBLSPrivateKey() {
