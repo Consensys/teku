@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -95,21 +94,7 @@ public class ExternalValidatorSourceTest {
             asyncRunner,
             true,
             externalSignerTaskQueue,
-            Optional.of(dataDirLayout(tempDir)));
-  }
-
-  public DataDirLayout dataDirLayout(final Path tempDir) {
-    return new DataDirLayout() {
-      @Override
-      public Path getBeaconDataDirectory() {
-        return tempDir;
-      }
-
-      @Override
-      public Path getValidatorDataDirectory() {
-        return tempDir;
-      }
-    };
+            Optional.of(new SimpleDataDirLayout(tempDir)));
   }
 
   @Test
@@ -142,7 +127,8 @@ public class ExternalValidatorSourceTest {
 
     String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
     Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout(tempDir)).resolve(fileName);
+        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
+            .resolve(fileName);
     assertThat(path.toFile()).exists();
     assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
         .isEqualTo("{\"pubkey\":\"" + publicKey + "\"}");
@@ -162,7 +148,8 @@ public class ExternalValidatorSourceTest {
     // Check contents of the file
     String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
     Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout(tempDir)).resolve(fileName);
+        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
+            .resolve(fileName);
     assertThat(path.toFile()).exists();
     assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
         .isEqualTo("{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
@@ -186,7 +173,8 @@ public class ExternalValidatorSourceTest {
 
     String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
     Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout(tempDir)).resolve(fileName);
+        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
+            .resolve(fileName);
     assertThat(path.toFile()).exists();
     assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
         .isEqualTo("{\"pubkey\":\"" + publicKey + "\"}");
