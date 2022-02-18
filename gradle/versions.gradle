@@ -41,7 +41,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.8-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.9-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.6-4'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
@@ -153,7 +153,7 @@ dependencyManagement {
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:22.1.1') {
+    dependency('tech.pegasys.discovery:discovery:22.2.0') {
       exclude 'org.apache.tuweni:bytes'
       exclude 'org.apache.tuweni:crypto'
       exclude 'org.apache.tuweni:units'

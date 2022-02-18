@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory.MAX_SUBSCIPTIONS_PER_MESSAGE;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.NULL_SEQNO_GENERATOR;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.STRICT_FIELDS_VALIDATOR;
 
@@ -49,6 +50,10 @@ import tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory;
  * might be changed in any version in backward incompatible way
  */
 public class LibP2PGossipNetworkBuilder {
+
+  // Enough to subscribe to three forks simultaneously so testnets can fork in subsequent epochs
+  public static final int MAX_SUBSCRIBED_TOPICS = 250;
+
   public static LibP2PGossipNetworkBuilder create() {
     return new LibP2PGossipNetworkBuilder();
   }
@@ -84,7 +89,10 @@ public class LibP2PGossipNetworkBuilder {
         LibP2PParamsFactory.createGossipScoreParams(gossipConfig.getScoringConfig());
 
     final TopicSubscriptionFilter subscriptionFilter =
-        new MaxCountTopicSubscriptionFilter(100, 200, gossipTopicFilter::isRelevantTopic);
+        new MaxCountTopicSubscriptionFilter(
+            MAX_SUBSCIPTIONS_PER_MESSAGE,
+            MAX_SUBSCRIBED_TOPICS,
+            gossipTopicFilter::isRelevantTopic);
     GossipRouter router =
         new GossipRouter(
             gossipParams, scoreParams, PubsubProtocol.Gossip_V_1_1, subscriptionFilter) {

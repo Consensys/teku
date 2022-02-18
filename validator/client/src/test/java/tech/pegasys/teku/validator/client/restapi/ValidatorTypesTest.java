@@ -218,4 +218,32 @@ class ValidatorTypesTest {
         new ExternalValidator(dataStructureUtil.randomPublicKey(), Optional.empty(), true);
     assertRoundTrip(externalValidator, ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE);
   }
+
+  @Test
+  void externalValidatorStore_urlPresent() throws JsonProcessingException, MalformedURLException {
+    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    checkExternalValidatorStoreRoundTrip(
+        publicKey,
+        Optional.of(new URL("http://host.com")),
+        "{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
+  }
+
+  @Test
+  void externalValidatorStore_noUrlProvided() throws JsonProcessingException {
+    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    checkExternalValidatorStoreRoundTrip(
+        publicKey, Optional.empty(), "{\"pubkey\":\"" + publicKey + "\"}");
+  }
+
+  private void checkExternalValidatorStoreRoundTrip(
+      BLSPublicKey publicKey, Optional<URL> url, String expected) throws JsonProcessingException {
+    ExternalValidator value = new ExternalValidator(publicKey, url);
+
+    String serializedValue = serialize(value, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+    assertThat(serializedValue).isEqualTo(expected);
+
+    ExternalValidator deserializedResult =
+        parse(serializedValue, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+    assertThat(deserializedResult).isEqualTo(value);
+  }
 }
