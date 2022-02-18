@@ -25,6 +25,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -41,6 +42,8 @@ class BellatrixTransitionHelpersTest {
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final UInt256 terminalDifficulty =
       spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
+
+  private UInt64 slot = dataStructureUtil.randomUInt64();
 
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
@@ -84,6 +87,68 @@ class BellatrixTransitionHelpersTest {
     assertThat(validateMergeBlock()).isCompletedWithValue(PayloadStatus.VALID);
   }
 
+  @Test
+  void shouldBeValidWhenTerminalBlockHashMatchesInActivationEpoch() {
+    final UInt64 activationEpoch = UInt64.valueOf(15);
+    final Spec spec = createSpec(payload.getParentHash(), activationEpoch);
+    final UInt64 blockSlot = spec.computeStartSlotAtEpoch(activationEpoch);
+    final SafeFuture<PayloadStatus> result =
+        spec.getGenesisSpec()
+            .getBellatrixTransitionHelpers()
+            .orElseThrow()
+            .validateMergeBlock(executionEngine, payload, blockSlot);
+    assertPayloadResultStatus(result, ExecutionPayloadStatus.VALID);
+  }
+
+  @Test
+  void shouldBeValidWhenTerminalBlockHashMatchesAfterActivationEpoch() {
+    final UInt64 activationEpoch = UInt64.valueOf(15);
+    final Spec spec = createSpec(payload.getParentHash(), activationEpoch);
+    final UInt64 blockSlot = spec.computeStartSlotAtEpoch(activationEpoch.plus(1));
+    final SafeFuture<PayloadStatus> result =
+        spec.getGenesisSpec()
+            .getBellatrixTransitionHelpers()
+            .orElseThrow()
+            .validateMergeBlock(executionEngine, payload, blockSlot);
+    assertPayloadResultStatus(result, ExecutionPayloadStatus.VALID);
+  }
+
+  @Test
+  void shouldBeInvalidWhenTerminalBlockHashDoesNotMatch() {
+    final UInt64 activationEpoch = UInt64.valueOf(15);
+    final Spec spec = createSpec(dataStructureUtil.randomBytes32(), activationEpoch);
+    final UInt64 blockSlot = spec.computeStartSlotAtEpoch(activationEpoch);
+    final SafeFuture<PayloadStatus> result =
+        spec.getGenesisSpec()
+            .getBellatrixTransitionHelpers()
+            .orElseThrow()
+            .validateMergeBlock(executionEngine, payload, blockSlot);
+    assertPayloadResultStatus(result, ExecutionPayloadStatus.INVALID);
+  }
+
+  @Test
+  void shouldBeInvalidWhenBeforeActivationEpoch() {
+    final UInt64 activationEpoch = UInt64.valueOf(15);
+    final Spec spec = createSpec(payload.getParentHash(), activationEpoch);
+    final UInt64 blockSlot = spec.computeStartSlotAtEpoch(activationEpoch).minus(1);
+    final SafeFuture<PayloadStatus> result =
+        spec.getGenesisSpec()
+            .getBellatrixTransitionHelpers()
+            .orElseThrow()
+            .validateMergeBlock(executionEngine, payload, blockSlot);
+    assertPayloadResultStatus(result, ExecutionPayloadStatus.INVALID);
+  }
+
+  private Spec createSpec(
+      final Bytes32 terminalBlockHash, final UInt64 terminalBlockHashActivationEpoch) {
+    return TestSpecFactory.createMinimalBellatrix(
+        c ->
+            c.bellatrixBuilder(
+                b ->
+                    b.terminalBlockHash(terminalBlockHash)
+                        .terminalBlockHashActivationEpoch(terminalBlockHashActivationEpoch)));
+  }
+
   private PowBlock withPowBlock(final Bytes32 hash, final UInt256 totalDifficulty) {
     final PowBlock powBlock =
         new PowBlock(hash, dataStructureUtil.randomBytes32(), totalDifficulty);
@@ -100,7 +165,7 @@ class BellatrixTransitionHelpersTest {
     return spec.getGenesisSpec()
         .getBellatrixTransitionHelpers()
         .orElseThrow()
-        .validateMergeBlock(executionEngine, payload);
+        .validateMergeBlock(executionEngine, payload, slot);
   }
 
   private void assertPayloadResultStatus(

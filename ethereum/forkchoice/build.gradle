@@ -4,6 +4,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:events')
     implementation project(':infrastructure:exceptions')
+    implementation project(':infrastructure:logging')
 
     testImplementation project(':infrastructure:crypto')
     testImplementation testFixtures(project(':ethereum:core'))

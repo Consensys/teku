@@ -163,7 +163,8 @@ public class ValidatorSourceFactory {
             publicKeyLoader,
             asyncRunner,
             false,
-            initializeExternalSignerTaskQueue());
+            initializeExternalSignerTaskQueue(),
+            maybeDataDir);
     mutableExternalValidatorSource = Optional.of(slashingProtected(externalValidatorSource));
     return mutableLocalValidatorSource;
   }
@@ -204,7 +205,8 @@ public class ValidatorSourceFactory {
             publicKeyLoader,
             asyncRunner,
             true,
-            initializeExternalSignerTaskQueue());
+            initializeExternalSignerTaskQueue(),
+            maybeDataDir);
     return Optional.of(
         config.isValidatorExternalSignerSlashingProtectionEnabled()
             ? slashingProtected(externalValidatorSource)

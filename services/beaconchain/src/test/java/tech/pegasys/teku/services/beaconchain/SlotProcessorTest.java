@@ -27,7 +27,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -61,7 +62,7 @@ public class SlotProcessorTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final ForwardSync syncService = mock(ForwardSync.class);
+  private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
@@ -71,7 +72,7 @@ public class SlotProcessorTest {
       new SlotProcessor(
           spec,
           recentChainData,
-          syncService,
+          syncStateProvider,
           forkChoiceTrigger,
           forkChoiceNotifier,
           p2pNetwork,
@@ -147,7 +148,7 @@ public class SlotProcessorTest {
   @Test
   public void onTick_shouldExitBeforeOtherProcessingIfSyncing() {
     ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesis_time());
@@ -156,14 +157,30 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(captor.capture());
     assertThat(captor.getValue()).isEqualTo(ZERO);
 
-    verify(syncService).isSyncActive();
+    verify(syncStateProvider).getCurrentSyncState();
+    verify(eventLogger).syncEvent(ZERO, ZERO, Optional.empty(), 1);
+  }
+
+  @Test
+  public void onTick_shouldExitBeforeOtherProcessingIfOptimisticSyncing() {
+    ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.OPTIMISTIC_SYNCING);
+    when(p2pNetwork.getPeerCount()).thenReturn(1);
+
+    slotProcessor.onTick(beaconState.getGenesis_time());
+    assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
+
+    verify(slotEventsChannel).onSlot(captor.capture());
+    assertThat(captor.getValue()).isEqualTo(ZERO);
+
+    verify(syncStateProvider).getCurrentSyncState();
     verify(eventLogger).syncEvent(ZERO, ZERO, Optional.empty(), 1);
   }
 
   @Test
   public void onTick_shouldRunStartSlotAtGenesis() {
     ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesis_time());
@@ -184,7 +201,7 @@ public class SlotProcessorTest {
     final UInt64 slot = UInt64.valueOf(secondsPerSlot * 100L);
     slotProcessor.setOnTickSlotAttestation(slot);
     ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     UInt64 slotProcessingTime = beaconState.getGenesis_time().plus(slot.times(secondsPerSlot));
@@ -216,7 +233,7 @@ public class SlotProcessorTest {
     // skip the slot start
     final UInt64 slot = slotProcessor.getNodeSlot().getValue();
     slotProcessor.setOnTickSlotStart(slot);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
@@ -238,7 +255,7 @@ public class SlotProcessorTest {
   void onTick_shouldExitIfUpToDate() {
     slotProcessor.setOnTickSlotStart(ZERO);
     slotProcessor.setOnTickSlotAttestation(ZERO);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     slotProcessor.onTick(beaconState.getGenesis_time());
 
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ZERO);
@@ -257,7 +274,7 @@ public class SlotProcessorTest {
 
   @Test
   void shouldProgressThroughMultipleSlots() {
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     // Slot 0 start
@@ -283,12 +300,13 @@ public class SlotProcessorTest {
     final Optional<SignedBeaconBlock> headBlock = storageSystem.recentChainData().getHeadBlock();
     when(recentChainData.getHeadBlock()).thenReturn(headBlock);
     when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final SlotProcessor slotProcessor =
         new SlotProcessor(
             spec,
             recentChainData,
-            syncService,
+            syncStateProvider,
             forkChoiceTrigger,
             forkChoiceNotifier,
             p2pNetwork,

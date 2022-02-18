@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
-import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
+import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -34,7 +34,7 @@ public class SlotProcessor {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final ForwardSync syncService;
+  private final SyncStateProvider syncStateProvider;
   private final ForkChoiceTrigger forkChoiceTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final Eth2P2PNetwork p2pNetwork;
@@ -51,7 +51,7 @@ public class SlotProcessor {
   SlotProcessor(
       final Spec spec,
       final RecentChainData recentChainData,
-      final ForwardSync syncService,
+      final SyncStateProvider syncStateProvider,
       final ForkChoiceTrigger forkChoiceTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
@@ -60,7 +60,7 @@ public class SlotProcessor {
       final EventLogger eventLogger) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.syncService = syncService;
+    this.syncStateProvider = syncStateProvider;
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.p2pNetwork = p2pNetwork;
@@ -72,7 +72,7 @@ public class SlotProcessor {
   public SlotProcessor(
       final Spec spec,
       final RecentChainData recentChainData,
-      final ForwardSync syncService,
+      final SyncStateProvider syncStateProvider,
       final ForkChoiceTrigger forkChoiceTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
@@ -81,7 +81,7 @@ public class SlotProcessor {
     this(
         spec,
         recentChainData,
-        syncService,
+        syncStateProvider,
         forkChoiceTrigger,
         forkChoiceNotifier,
         p2pNetwork,
@@ -104,7 +104,8 @@ public class SlotProcessor {
     if (currentTime.compareTo(genesisTime) < 0) {
       return;
     }
-    if (isNextSlotDue(currentTime, genesisTime) && syncService.isSyncActive()) {
+    if (isNextSlotDue(currentTime, genesisTime)
+        && !syncStateProvider.getCurrentSyncState().isInSync()) {
       processSlotWhileSyncing();
       nodeSlot.inc();
       return;
@@ -146,6 +147,11 @@ public class SlotProcessor {
         recentChainData.getOptimisticHeadSlot(),
         p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(slot);
+
+    final UInt64 nodeEpoch = spec.computeEpochAtSlot(slot);
+    if (slot.equals(spec.computeStartSlotAtEpoch(nodeEpoch))) {
+      p2pNetwork.onEpoch(nodeEpoch);
+    }
   }
 
   boolean isNextSlotDue(final UInt64 currentTime, final UInt64 genesisTime) {
