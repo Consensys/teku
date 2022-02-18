@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.loader;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -92,6 +93,8 @@ class ValidatorLoaderTest {
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final SlashingProtectionLogger slashingProtectionLogger =
+      mock(SlashingProtectionLogger.class);
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final PublicKeyLoader publicKeyLoader = new PublicKeyLoader();
@@ -128,6 +131,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -165,6 +169,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -172,6 +177,7 @@ class ValidatorLoaderTest {
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    verify(slashingProtectionLogger, times(1)).protectionSummary(validators.getActiveValidators());
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
     final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
@@ -207,6 +213,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -252,6 +259,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -296,6 +304,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -333,6 +342,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -362,6 +372,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -389,7 +400,8 @@ class ValidatorLoaderTest {
             Optional.of(validatorSource),
             Optional.of(validatorSource),
             null,
-            Optional.of(dataDirLayout));
+            Optional.of(dataDirLayout),
+            slashingProtectionLogger);
 
     when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
     loader.deleteLocalMutableValidator(publicKey);
@@ -414,6 +426,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -449,6 +462,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -483,6 +497,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -523,6 +538,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -559,6 +575,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -590,6 +607,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -624,6 +642,7 @@ class ValidatorLoaderTest {
             interopConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -644,6 +663,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -664,6 +684,7 @@ class ValidatorLoaderTest {
             disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
@@ -700,6 +721,7 @@ class ValidatorLoaderTest {
             interopConfig,
             httpClientFactory,
             slashingProtector,
+            slashingProtectionLogger,
             publicKeyLoader,
             asyncRunner,
             metricsSystem,

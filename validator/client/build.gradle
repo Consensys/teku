@@ -22,6 +22,7 @@ dependencies {
   implementation project(':data:serializer')
   implementation project(':data:provider')
   implementation project(':data:dataexchange')
+  implementation project(':data:signingrecord')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'commons-io:commons-io'
