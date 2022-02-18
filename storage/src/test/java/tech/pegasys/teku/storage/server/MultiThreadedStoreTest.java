@@ -62,7 +62,8 @@ public class MultiThreadedStoreTest {
     this.storageSystem =
         createStorageSystemInternal(storageMode, StoreConfig.createDefault(), true);
     this.recentChainData = storageSystem.recentChainData();
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
+    final SignedBlockAndState genesisBlockAndState =
+        chainBuilder.generateGenesis(genesisTime, true);
     this.recentChainData.initializeFromGenesis(genesisBlockAndState.getState(), UInt64.ZERO);
   }
 
