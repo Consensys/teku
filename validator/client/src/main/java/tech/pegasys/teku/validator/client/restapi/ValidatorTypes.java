@@ -117,6 +117,18 @@ public class ValidatorTypes {
               })
           .build();
 
+  public static DeserializableTypeDefinition<ExternalValidator> EXTERNAL_VALIDATOR_STORE =
+      DeserializableTypeDefinition.object(ExternalValidator.class)
+          .name("ExternalValidatorStore")
+          .initializer(ExternalValidator::new)
+          .withField(
+              "pubkey",
+              PUBKEY_TYPE,
+              ExternalValidator::getPublicKey,
+              ExternalValidator::setPublicKey)
+          .withOptionalField("url", URL_TYPE, ExternalValidator::getUrl, ExternalValidator::setUrl)
+          .build();
+
   public static DeserializableTypeDefinition<ExternalValidator> EXTERNAL_VALIDATOR_RESPONSE_TYPE =
       DeserializableTypeDefinition.object(ExternalValidator.class)
           .name("SignerDefinition")

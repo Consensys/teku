@@ -8,6 +8,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':infrastructure:collections'))
+  testImplementation testFixtures(project(':infrastructure:serviceutils'))
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
   testFixturesApi 'org.apache.tuweni:tuweni-units'
