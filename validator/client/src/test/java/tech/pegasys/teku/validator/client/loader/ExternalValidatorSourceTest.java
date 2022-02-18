@@ -119,11 +119,7 @@ public class ExternalValidatorSourceTest {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final AddValidatorResult result =
         getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
-    assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
-    assertThat(result.getSigner()).isNotEmpty();
-    assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
-    assertThat(result.getSigner().get().getSigningServiceUrl().get())
-        .isEqualTo(config.getValidatorExternalSignerUrl());
+    assertImportedSuccessfully(result, config.getValidatorExternalSignerUrl());
 
     assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
   }
@@ -134,10 +130,7 @@ public class ExternalValidatorSourceTest {
     URL url = new URL("http://host.com");
     final AddValidatorResult result =
         getResultFromAddingValidator(tempDir, publicKey, Optional.of(url));
-    assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
-    assertThat(result.getSigner()).isNotEmpty();
-    assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
-    assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(url);
+    assertImportedSuccessfully(result, url);
 
     assertFileContent(
         tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
@@ -148,11 +141,7 @@ public class ExternalValidatorSourceTest {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final AddValidatorResult result1 =
         getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
-    assertThat(result1.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
-    assertThat(result1.getSigner()).isNotEmpty();
-    assertThat(result1.getSigner().get().getSigningServiceUrl()).isNotEmpty();
-    assertThat(result1.getSigner().get().getSigningServiceUrl().get())
-        .isEqualTo(config.getValidatorExternalSignerUrl());
+    assertImportedSuccessfully(result1, config.getValidatorExternalSignerUrl());
 
     final AddValidatorResult result2 =
         getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
@@ -186,5 +175,12 @@ public class ExternalValidatorSourceTest {
             .resolve(fileName);
     assertThat(path.toFile()).exists();
     assertThat(Files.toString(path.toFile(), Charsets.UTF_8)).isEqualTo(expectedContent);
+  }
+
+  private void assertImportedSuccessfully(AddValidatorResult result, URL expectedUrl) {
+    assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+    assertThat(result.getSigner()).isNotEmpty();
+    assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
+    assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(expectedUrl);
   }
 }
