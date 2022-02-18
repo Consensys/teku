@@ -125,13 +125,7 @@ public class ExternalValidatorSourceTest {
     assertThat(result.getSigner().get().getSigningServiceUrl().get())
         .isEqualTo(config.getValidatorExternalSignerUrl());
 
-    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
-    Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
-            .resolve(fileName);
-    assertThat(path.toFile()).exists();
-    assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
-        .isEqualTo("{\"pubkey\":\"" + publicKey + "\"}");
+    assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
   }
 
   @Test
@@ -145,14 +139,8 @@ public class ExternalValidatorSourceTest {
     assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(url);
 
-    // Check contents of the file
-    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
-    Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
-            .resolve(fileName);
-    assertThat(path.toFile()).exists();
-    assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
-        .isEqualTo("{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
+    assertFileContent(
+        tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
   }
 
   @Test
@@ -171,13 +159,7 @@ public class ExternalValidatorSourceTest {
     assertThat(result2.getResult().getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
     assertThat(result2.getSigner()).isEmpty();
 
-    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
-    Path path =
-        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
-            .resolve(fileName);
-    assertThat(path.toFile()).exists();
-    assertThat(Files.toString(path.toFile(), Charsets.UTF_8))
-        .isEqualTo("{\"pubkey\":\"" + publicKey + "\"}");
+    assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
   }
 
   private AddValidatorResult getResultFromAddingValidator(
@@ -194,5 +176,15 @@ public class ExternalValidatorSourceTest {
             externalSignerTaskQueue,
             Optional.of(new SimpleDataDirLayout(tempDir)));
     return externalValidatorSource.addValidator(publicKey, signerUrl);
+  }
+
+  void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)
+      throws IOException {
+    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
+    Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
+            .resolve(fileName);
+    assertThat(path.toFile()).exists();
+    assertThat(Files.toString(path.toFile(), Charsets.UTF_8)).isEqualTo(expectedContent);
   }
 }
