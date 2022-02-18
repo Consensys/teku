@@ -394,7 +394,10 @@ public class ChainBuilder {
     final BeaconState preState = latestBlockAndState.getState();
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
-    final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
+    int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
+    if (options.getWrongProposer()) {
+      proposerIndex = (proposerIndex == 0 ? 1 : proposerIndex - 1);
+    }
     final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
     try {
@@ -527,6 +530,7 @@ public class ChainBuilder {
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
     private Optional<ExecutionPayload> executionPayload = Optional.empty();
     private boolean skipStateTransition = false;
+    private boolean wrongProposer = false;
 
     private BlockOptions() {}
 
@@ -564,6 +568,11 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setWrongProposer(boolean wrongProposer) {
+      this.wrongProposer = wrongProposer;
+      return this;
+    }
+
     private List<Attestation> getAttestations() {
       return attestations;
     }
@@ -586,6 +595,10 @@ public class ChainBuilder {
 
     public boolean getSkipStateTransition() {
       return skipStateTransition;
+    }
+
+    public boolean getWrongProposer() {
+      return wrongProposer;
     }
   }
 }
