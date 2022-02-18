@@ -115,7 +115,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldAddValidator_getsConfigUrlWhenNotProvided(@TempDir Path tempDir) throws IOException {
+  void addValidator_shouldGetConfigUrlWhenNotProvided(@TempDir Path tempDir) throws IOException {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final AddValidatorResult result =
         getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
@@ -129,7 +129,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldAddValidator_getsUrlWhenProvided(@TempDir Path tempDir) throws IOException {
+  void addValidator_shouldGetUrlIfProvided(@TempDir Path tempDir) throws IOException {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     URL url = new URL("http://host.com");
     final AddValidatorResult result =
@@ -144,7 +144,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldDetectDuplicatesOnAddValidator(@TempDir Path tempDir) throws IOException {
+  void addValidator_shouldDetectDuplicate(@TempDir Path tempDir) throws IOException {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final AddValidatorResult result1 =
         getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
