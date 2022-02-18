@@ -178,7 +178,7 @@ public class ExternalValidatorSourceTest {
     return externalValidatorSource.addValidator(publicKey, signerUrl);
   }
 
-  void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)
+  private void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)
       throws IOException {
     String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
     Path path =
