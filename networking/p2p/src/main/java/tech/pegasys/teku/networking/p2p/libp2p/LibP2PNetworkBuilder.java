@@ -168,8 +168,8 @@ public class LibP2PNetworkBuilder {
             .setProtocolVersion("ipfs/0.1.0")
             .setAgentVersion(VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
             .setPublicKey(ByteArrayExtKt.toProtobuf(nodePubKey.bytes()))
-            .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .setObservedAddr(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
+            .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.serialize()))
+            .setObservedAddr(ByteArrayExtKt.toProtobuf(advertisedAddr.serialize()))
             .addAllProtocols(ping.getProtocolDescriptor().getAnnounceProtocols())
             .addAllProtocols(
                 gossipNetwork.getGossip().getProtocolDescriptor().getAnnounceProtocols())
