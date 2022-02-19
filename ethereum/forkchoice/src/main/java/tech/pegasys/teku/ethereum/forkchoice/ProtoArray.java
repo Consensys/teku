@@ -414,7 +414,7 @@ public class ProtoArray {
     // Drop all the nodes prior to finalization.
     nodes.subList(0, finalizedIndex).clear();
 
-    indices.offsetIndexes(finalizedIndex);
+    indices.offsetIndices(finalizedIndex);
 
     // Iterate through all the existing nodes and adjust their indices to match the
     // new layout of nodes.

@@ -332,7 +332,7 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
-  public void getAttesterDuties_shouldHandleEmptyIndexesList() {
+  public void getAttesterDuties_shouldHandleEmptyIndicesList() {
     final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(

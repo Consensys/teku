@@ -58,7 +58,7 @@ class ValidatorsUtilTest {
 
   @Test
   public void getValidatorIndex_shouldReturnEmptyWhenValidatorInCacheButNotState() {
-    // The public key to index cache is shared between all states (because validator indexes are
+    // The public key to index cache is shared between all states (because validator indices are
     // effectively set by the eth1 chain so are consistent across forks).
     // However we need to ensure we don't return a value added to the cache by a later state with
     // more validators, if the validator isn't actually in the target state.

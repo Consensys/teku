@@ -18,7 +18,7 @@ public class IntRange {
     return new IntRange(startIndex, length);
   }
 
-  public static IntRange ofIndexes(int startIndex, int endIndex) {
+  public static IntRange ofIndices(int startIndex, int endIndex) {
     return new IntRange(startIndex, endIndex - startIndex);
   }
 

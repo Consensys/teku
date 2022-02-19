@@ -43,8 +43,8 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   }
 
   @Override
-  public SszBitvector ofBits(int... setBitIndexes) {
-    return SszBitvectorImpl.ofBits(this, setBitIndexes);
+  public SszBitvector ofBits(int... setBitIndices) {
+    return SszBitvectorImpl.ofBits(this, setBitIndices);
   }
 
   @Override

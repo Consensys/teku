@@ -42,7 +42,7 @@ public class ValidatorIndexProvider {
   private final OwnedValidators ownedValidators;
   private final ValidatorApiChannel validatorApiChannel;
   private final AsyncRunner asyncRunner;
-  private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
+  private final Map<BLSPublicKey, Integer> validatorIndicesByPublicKey = new ConcurrentHashMap<>();
 
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
   private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
@@ -71,20 +71,20 @@ public class ValidatorIndexProvider {
         .thenAccept(
             knownValidators -> {
               logNewValidatorIndices(knownValidators);
-              validatorIndexesByPublicKey.putAll(knownValidators);
+              validatorIndicesByPublicKey.putAll(knownValidators);
               firstSuccessfulRequest.complete(null);
             })
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
         .finish(
             error -> {
-              LOG.warn("Failed to load validator indexes. Retrying.", error);
+              LOG.warn("Failed to load validator indices. Retrying.", error);
               asyncRunner.runAfterDelay(this::lookupValidators, RETRY_DELAY).reportExceptions();
             });
   }
 
   private Collection<BLSPublicKey> getUnknownValidators() {
-    return Sets.difference(ownedValidators.getPublicKeys(), validatorIndexesByPublicKey.keySet());
+    return Sets.difference(ownedValidators.getPublicKeys(), validatorIndicesByPublicKey.keySet());
   }
 
   private void logNewValidatorIndices(final Map<BLSPublicKey, Integer> knownValidators) {
@@ -99,7 +99,7 @@ public class ValidatorIndexProvider {
   }
 
   public Optional<Integer> getValidatorIndex(final BLSPublicKey publicKey) {
-    return Optional.ofNullable(validatorIndexesByPublicKey.get(publicKey));
+    return Optional.ofNullable(validatorIndicesByPublicKey.get(publicKey));
   }
 
   public SafeFuture<IntCollection> getValidatorIndices() {
@@ -112,7 +112,7 @@ public class ValidatorIndexProvider {
                     .mapToInt(Integer::intValue)));
   }
 
-  public SafeFuture<Map<BLSPublicKey, Optional<Integer>>> getValidatorIndexesByPublicKey() {
+  public SafeFuture<Map<BLSPublicKey, Optional<Integer>>> getValidatorIndicesByPublicKey() {
     // Wait for at least one successful load of validator indices before attempting to read
     return firstSuccessfulRequest.thenApply(
         __ ->

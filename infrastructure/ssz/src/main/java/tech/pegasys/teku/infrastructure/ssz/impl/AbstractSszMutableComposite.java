@@ -195,7 +195,7 @@ public abstract class AbstractSszMutableComposite<
     return updatedTree;
   }
 
-  /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
+  /** Converts a set of changed view with their indices to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
       Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
     SszCompositeSchema<?> type = getSchema();

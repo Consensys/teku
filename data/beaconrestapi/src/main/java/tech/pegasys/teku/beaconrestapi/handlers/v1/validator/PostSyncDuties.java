@@ -100,10 +100,10 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final IntList indexes = IntList.of(parseRequestBody(ctx.body(), int[].class));
+      final IntList indices = IntList.of(parseRequestBody(ctx.body(), int[].class));
 
       SafeFuture<Optional<PostSyncDutiesResponse>> future =
-          validatorDataProvider.getSyncDuties(epoch, indexes);
+          validatorDataProvider.getSyncDuties(epoch, indices);
 
       handleOptionalResult(
           ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);

@@ -60,7 +60,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     return passWhenEmpty(sszMutableComposites().map(Arguments::of));
   }
 
-  default Stream<Arguments> sszMutableCompositeWithUpdateIndexesArguments() {
+  default Stream<Arguments> sszMutableCompositeWithUpdateIndicesArguments() {
     return passWhenEmpty(
         sszMutableComposites()
             .flatMap(
@@ -74,8 +74,8 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
                             IntStream.of(0, data.size() / 2, data.size() - 1),
                             IntStream.concat(IntStream.range(1, 32), IntStream.of(data.size() - 1)))
                         .map(
-                            indexes ->
-                                indexes
+                            indices ->
+                                indices
                                     .filter(i -> i >= 0 && i < data.size())
                                     .sorted()
                                     .distinct()
@@ -115,26 +115,26 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     }
   }
 
-  @MethodSource("sszMutableCompositeWithUpdateIndexesArguments")
+  @MethodSource("sszMutableCompositeWithUpdateIndicesArguments")
   @ParameterizedTest
-  default void set_shouldMatchGet(SszMutableComposite<SszData> data, List<Integer> updateIndexes) {
+  default void set_shouldMatchGet(SszMutableComposite<SszData> data, List<Integer> updateIndices) {
     SszComposite<SszData> origData = data.commitChanges();
 
     SszCompositeSchema<? extends SszComposite<?>> schema = data.getSchema();
 
     List<SszData> newChildrenValues =
-        updateIndexes.stream()
+        updateIndices.stream()
             .map(idx -> generator.randomData(schema.getChildSchema(idx)))
             .collect(Collectors.toList());
 
-    for (int i = 0; i < updateIndexes.size(); i++) {
-      Integer updateIndex = updateIndexes.get(i);
+    for (int i = 0; i < updateIndices.size(); i++) {
+      Integer updateIndex = updateIndices.get(i);
       SszData updateValue = newChildrenValues.get(i);
       data.set(updateIndex, updateValue);
     }
 
     for (int i = 0; i < data.size(); i++) {
-      int idx = updateIndexes.indexOf(i);
+      int idx = updateIndices.indexOf(i);
       if (idx < 0) {
         SszDataAssert.assertThatSszData(data.get(i)).isEqualByAllMeansTo(origData.get(i));
       } else {
@@ -146,7 +146,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     SszComposite<SszData> data1 = data.commitChanges();
 
     for (int i = 0; i < data.size(); i++) {
-      int idx = updateIndexes.indexOf(i);
+      int idx = updateIndices.indexOf(i);
       if (idx < 0) {
         SszDataAssert.assertThatSszData(data1.get(i)).isEqualByAllMeansTo(origData.get(i));
       } else {
@@ -158,7 +158,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     SszComposite<?> data2 = schema.createFromBackingNode(data1.getBackingNode());
 
     for (int i = 0; i < data.size(); i++) {
-      int idx = updateIndexes.indexOf(i);
+      int idx = updateIndices.indexOf(i);
       if (idx < 0) {
         SszDataAssert.assertThatSszData((SszData) data2.get(i))
             .isEqualByAllMeansTo(origData.get(i));
@@ -172,7 +172,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_shouldNotHaveSideEffects(SszMutableComposite<SszData> data) {
-    List<Integer> updatedIndexes =
+    List<Integer> updatedIndices =
         IntStream.concat(IntStream.range(0, 2), IntStream.of(data.size() - 1))
             .distinct()
             .filter(i -> i >= 0 && i < data.size())
@@ -183,13 +183,13 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
     SszCompositeSchema<?> schema = data.getSchema();
     List<SszData> newChildren =
-        updatedIndexes.stream()
+        updatedIndices.stream()
             .map(updatedIndex -> generator.randomData(schema.getChildSchema(updatedIndex)))
             .collect(Collectors.toList());
 
     List<SszComposite<SszData>> updatedData = new ArrayList<>();
-    for (int i = 0; i < updatedIndexes.size(); i++) {
-      Integer updateIndex = updatedIndexes.get(i);
+    for (int i = 0; i < updatedIndices.size(); i++) {
+      Integer updateIndex = updatedIndices.get(i);
       SszData oldValue = data.get(updateIndex);
       data.set(updateIndex, newChildren.get(i));
       SszComposite<SszData> data1 = data.commitChanges();
@@ -201,10 +201,10 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     SszDataAssert.assertThatSszData((SszComposite<SszData>) data).isEqualByGettersTo(origData);
     SszDataAssert.assertThatSszData(data1).isEqualByAllMeansTo(origData);
 
-    for (int i = 0; i < updatedIndexes.size(); i++) {
+    for (int i = 0; i < updatedIndices.size(); i++) {
       SszComposite<SszData> updated = updatedData.get(i);
       for (int i1 = 0; i1 < updated.size(); i1++) {
-        if (i1 != updatedIndexes.get(i)) {
+        if (i1 != updatedIndices.get(i)) {
           SszDataAssert.assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(origData.get(i1));
         } else {
           SszDataAssert.assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(newChildren.get(i));
