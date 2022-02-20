@@ -68,10 +68,10 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
    */
   boolean isSuperSetOf(SszBitlist other);
 
-  /** Returns indexes of all bits set in this {@link SszBitlist} */
+  /** Returns indices of all bits set in this {@link SszBitlist} */
   IntList getAllSetBits();
 
-  /** Streams indexes of all bits set in this {@link SszBitlist} */
+  /** Streams indices of all bits set in this {@link SszBitlist} */
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }

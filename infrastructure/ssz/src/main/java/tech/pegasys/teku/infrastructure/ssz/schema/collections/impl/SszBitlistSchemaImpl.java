@@ -45,9 +45,9 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
   }
 
   @Override
-  public SszBitlist ofBits(int size, int... setBitIndexes) {
+  public SszBitlist ofBits(int size, int... setBitIndices) {
     Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
-    return SszBitlistImpl.ofBits(this, size, setBitIndexes);
+    return SszBitlistImpl.ofBits(this, size, setBitIndices);
   }
 
   @Override

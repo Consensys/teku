@@ -36,8 +36,8 @@ public class SszTestUtils {
 
   public static SszBitlist not(SszBitlist bitlist) {
     List<Boolean> notList = bitlist.stream().map(b -> !b.get()).collect(Collectors.toList());
-    int[] notBitIndexes = IntStream.range(0, notList.size()).filter(notList::get).toArray();
-    return bitlist.getSchema().ofBits(bitlist.size(), notBitIndexes);
+    int[] notBitIndices = IntStream.range(0, notList.size()).filter(notList::get).toArray();
+    return bitlist.getSchema().ofBits(bitlist.size(), notBitIndices);
   }
 
   /** Dumps the tree to stdout */

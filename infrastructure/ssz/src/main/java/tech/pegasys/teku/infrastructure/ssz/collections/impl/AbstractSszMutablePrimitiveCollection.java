@@ -83,7 +83,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
       curNodeUpdate.addUpdate(childIndex % elementsPerChunk, entry.getValue());
     }
 
-    List<Long> gIndexes = new ArrayList<>();
+    List<Long> gIndices = new ArrayList<>();
     List<TreeNode> newValues = new ArrayList<>();
     SszPrimitiveSchema<ElementT, SszElementT> elementType = getPrimitiveElementSchema();
     for (NodeUpdate<ElementT, SszElementT> nodeUpdate : nodeUpdates) {
@@ -94,10 +94,10 @@ public abstract class AbstractSszMutablePrimitiveCollection<
               : LeafNode.EMPTY_LEAF;
       TreeNode newNode = elementType.updatePackedNode(originalNode, nodeUpdate.getUpdates());
       newValues.add(newNode);
-      gIndexes.add(gIndex);
+      gIndices.add(gIndex);
     }
 
-    return new TreeUpdates(gIndexes, newValues);
+    return new TreeUpdates(gIndices, newValues);
   }
 
   @Override

@@ -56,8 +56,8 @@ public class ShuffleBenchmark {
   @Warmup(iterations = 2)
   @Measurement(iterations = 5)
   public void shuffledListBench(Blackhole bh) {
-    int[] indexes = IntStream.range(0, indexCount).toArray();
-    miscHelpers.shuffleList(indexes, seed);
-    bh.consume(indexes);
+    int[] indices = IntStream.range(0, indexCount).toArray();
+    miscHelpers.shuffleList(indices, seed);
+    bh.consume(indices);
   }
 }

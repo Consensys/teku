@@ -64,13 +64,13 @@ class MiscHelpersTest {
     when(specConfig.getShuffleRoundCount()).thenReturn(10);
     Bytes32 seed = Bytes32.ZERO;
     int index_count = 3333;
-    int[] indexes = IntStream.range(0, index_count).toArray();
+    int[] indices = IntStream.range(0, index_count).toArray();
 
-    miscHelpers.shuffleList(indexes, seed);
-    assertThat(indexes)
+    miscHelpers.shuffleList(indices, seed);
+    assertThat(indices)
         .isEqualTo(
             IntStream.range(0, index_count)
-                .map(i -> miscHelpers.computeShuffledIndex(i, indexes.length, seed))
+                .map(i -> miscHelpers.computeShuffledIndex(i, indices.length, seed))
                 .toArray());
   }
 
@@ -83,14 +83,14 @@ class MiscHelpersTest {
     Bytes32 seed = Bytes32.ZERO;
     int index_count = 3333;
 
-    int[] indexes = IntStream.range(0, index_count).toArray();
-    miscHelpers.shuffleList(indexes, seed);
+    int[] indices = IntStream.range(0, index_count).toArray();
+    miscHelpers.shuffleList(indices, seed);
 
     IntList indexList = IntList.of(IntStream.range(0, index_count).toArray());
     final List<Integer> result = miscHelpers.shuffleList(indexList, seed);
 
     assertThat(result)
-        .containsExactlyElementsOf(Arrays.stream(indexes).boxed().collect(Collectors.toList()));
+        .containsExactlyElementsOf(Arrays.stream(indices).boxed().collect(Collectors.toList()));
   }
 
   @ParameterizedTest(name = "n={0}")
