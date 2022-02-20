@@ -23,10 +23,10 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -645,7 +645,7 @@ public class ProtoArray {
     }
   }
 
-  public Map<Bytes32, Integer> getRootIndices() {
+  public Object2IntMap<Bytes32> getRootIndices() {
     return indices.getRootIndices();
   }
 
