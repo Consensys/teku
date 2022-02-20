@@ -18,13 +18,11 @@ import static java.util.stream.Collectors.joining;
 import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMaps;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -44,8 +42,7 @@ public class ValidatorIndexProvider {
   private final OwnedValidators ownedValidators;
   private final ValidatorApiChannel validatorApiChannel;
   private final AsyncRunner asyncRunner;
-  private final Object2IntMap<BLSPublicKey> validatorIndexesByPublicKey =
-      Object2IntMaps.synchronize(new Object2IntOpenHashMap<>());
+  private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
 
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
   private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
@@ -102,7 +99,7 @@ public class ValidatorIndexProvider {
   }
 
   public Optional<Integer> getValidatorIndex(final BLSPublicKey publicKey) {
-    return Optional.ofNullable(validatorIndexesByPublicKey.getOrDefault(publicKey, null));
+    return Optional.ofNullable(validatorIndexesByPublicKey.get(publicKey));
   }
 
   public SafeFuture<IntCollection> getValidatorIndices() {
