@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.DockerVersion;
@@ -32,15 +31,13 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
   }
 
   @Test
-  @Disabled("Last release currently has incorrect REST API format")
   void shouldRunUpdatedValidatorAgainstLastReleaseBeaconNode() throws Exception {
     verifyCompatibility(DockerVersion.LAST_RELEASE, DockerVersion.LOCAL_BUILD);
   }
 
   @Test
-  @Disabled("Older validator doesn't ignore unknown config items")
   void shouldRunLastReleaseValidatorAgainstUpdatedBeaconNode() throws Exception {
-    verifyCompatibility(DockerVersion.LOCAL_BUILD, DockerVersion.V21_10_0);
+    verifyCompatibility(DockerVersion.LOCAL_BUILD, DockerVersion.LAST_RELEASE);
   }
 
   private void verifyCompatibility(
