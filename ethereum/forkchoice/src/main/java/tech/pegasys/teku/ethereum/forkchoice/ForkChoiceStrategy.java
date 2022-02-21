@@ -158,11 +158,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return getChainHeads(node -> true);
   }
 
-  @Override
-  public Map<Bytes32, UInt64> getOptimisticChainHeads() {
-    return getChainHeads(ProtoNode::isOptimistic);
-  }
-
   private Map<Bytes32, UInt64> getChainHeads(final Predicate<ProtoNode> filter) {
     protoArrayLock.readLock().lock();
     try {

@@ -846,11 +846,17 @@ public class BeaconChainController extends Service
             Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
             spec);
 
+    final SyncState currentSyncState = syncService.getCurrentSyncState();
+
+    // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
+
+    // forkChoiceNotifier subscription
     syncService.subscribeToSyncStateChanges(
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
-    forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
+    forkChoiceNotifier.onSyncingStatusChanged(currentSyncState.isInSync());
 
+    // forkChoice subscription
     forkChoice.subscribeToOptimisticHeadChanges(syncService.getOptimisticSyncSubscriber());
     forkChoice
         .getOptimisticSyncing()
@@ -858,11 +864,17 @@ public class BeaconChainController extends Service
             isOptimistic ->
                 syncService.getOptimisticSyncSubscriber().onOptimisticHeadChanged(isOptimistic));
 
-    // Subscribe to sync state changes so gossip can be enabled and disabled appropriately
+    // terminalPowBlockMonitor subscription
+    terminalPowBlockMonitor.ifPresent(
+        monitor -> {
+          syncService.subscribeToSyncStateChanges(
+              syncState -> monitor.onNodeSyncStateChanged(syncState.isInSync()));
+          monitor.onNodeSyncStateChanged(currentSyncState.isInSync());
+        });
+
+    // p2pNetwork subscription so gossip can be enabled and disabled appropriately
     syncService.subscribeToSyncStateChanges(
         state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
-    // Ensure the initial state is setup correctly
-    final SyncState currentSyncState = syncService.getCurrentSyncState();
     p2pNetwork.onSyncStateChanged(currentSyncState.isInSync(), currentSyncState.isOptimistic());
   }
 

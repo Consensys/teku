@@ -170,7 +170,7 @@ public class TreeUpdatesTest {
   }
 
   @Test
-  public void illegalIndexesTest() {
+  public void illegalIndicesTest() {
     int treeDepth = 3;
     int treeWidth = 1 << (treeDepth - 1);
     assertThatThrownBy(

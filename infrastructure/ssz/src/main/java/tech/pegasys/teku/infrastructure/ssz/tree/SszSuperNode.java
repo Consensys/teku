@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.SszNodeTemplate.Location;
  * then <code>ssz</code> bytes store only existing elements (what again matches SSZ representation
  * of a list)
  *
- * <p>To address individual nodes inside elements and resolve their internal generalized indexes the
+ * <p>To address individual nodes inside elements and resolve their internal generalized indices the
  * node uses {@link SszNodeTemplate} which represents element type tree structure
  *
  * <p>This node favors memory efficiency over update performance and thus is the best choice for

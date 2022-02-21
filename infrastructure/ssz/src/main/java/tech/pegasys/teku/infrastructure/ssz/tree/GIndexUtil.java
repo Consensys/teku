@@ -18,9 +18,9 @@ import static java.lang.Integer.min;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
- * Util methods for binary tree generalized indexes manipulations See
+ * Util methods for binary tree generalized indices manipulations See
  * https://github.com/ethereum/eth2.0-specs/blob/v1.0.0/ssz/merkle-proofs.md#generalized-merkle-tree-index
- * for more info on generalized indexes
+ * for more info on generalized indices
  *
  * <p>Here the general index is represented by <code>long</code> which is treated as unsigned uint64
  * Thus the only illegal generalized index value is <code>0</code>

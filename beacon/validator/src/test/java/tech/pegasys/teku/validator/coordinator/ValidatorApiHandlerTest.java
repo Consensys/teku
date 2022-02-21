@@ -227,7 +227,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndexesSpecified() {
+  public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndicesSpecified() {
     final BeaconState state = createStateWithActiveValidators();
     when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));

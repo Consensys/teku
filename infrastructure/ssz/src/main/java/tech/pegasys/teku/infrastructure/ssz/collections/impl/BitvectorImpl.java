@@ -73,7 +73,7 @@ class BitvectorImpl {
     this(size, Arrays.stream(indicesToSet).boxed().collect(toList()));
   }
 
-  public List<Integer> getSetBitIndexes() {
+  public List<Integer> getSetBitIndices() {
     return data.stream().boxed().collect(toList());
   }
 
