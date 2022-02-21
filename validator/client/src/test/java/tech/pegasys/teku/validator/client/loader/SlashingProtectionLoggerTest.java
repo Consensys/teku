@@ -30,13 +30,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.LocalSigner;
+import tech.pegasys.teku.core.signatures.NoOpLocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -58,8 +56,7 @@ public class SlashingProtectionLoggerTest {
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BLSKeyPair keyPair = dataStructureUtil.randomKeyPair();
-  private final BLSPublicKey pubKey = keyPair.getPublicKey();
+  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private StubAsyncRunner asyncRunner;
   private ValidatorLogger validatorLogger;
   private SlashingProtectionLogger slashingProtectionLogger;
@@ -86,7 +83,7 @@ public class SlashingProtectionLoggerTest {
 
   @Test
   public void shouldLogNotLoadedProtectionValidator() {
-    Validator unProtectedValidator = createUnProtectedValidator(pubKey);
+    Validator unProtectedValidator = createUnProtectedValidator(publicKey);
     List<Validator> unProtectedValidators = new ArrayList<>();
     unProtectedValidators.add(unProtectedValidator);
     slashingProtectionLogger.protectionSummary(unProtectedValidators);
@@ -100,7 +97,7 @@ public class SlashingProtectionLoggerTest {
 
   @Test
   public void shouldLogLoadedProtectionValidator() throws Exception {
-    Validator validator = createProtectedValidator(keyPair);
+    Validator validator = createProtectedValidator(publicKey);
     List<Validator> protectedValidators = new ArrayList<>();
     protectedValidators.add(validator);
     when(slashingProtector.getSigningRecord(validator.getPublicKey()))
@@ -116,7 +113,7 @@ public class SlashingProtectionLoggerTest {
 
   @Test
   public void shouldLogLoadedButOutdatedProtectionValidator() throws Exception {
-    Validator validator = createProtectedValidator(keyPair);
+    Validator validator = createProtectedValidator(publicKey);
     List<Validator> protectedValidators = new ArrayList<>();
     protectedValidators.add(validator);
     when(slashingProtector.getSigningRecord(validator.getPublicKey()))
@@ -132,51 +129,29 @@ public class SlashingProtectionLoggerTest {
   }
 
   @Test
-  public void shouldObsoleteProtectionOfValidatorBothBySlotAndAttestation() throws Exception {
-    UInt64 recentSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(900));
-    BLSKeyPair keyPair1 = dataStructureUtil.randomKeyPair();
-    Validator validatorNoAttestationRecord = createProtectedValidator(keyPair1);
-    when(slashingProtector.getSigningRecord(validatorNoAttestationRecord.getPublicKey()))
-        .thenReturn(Optional.of(new ValidatorSigningRecord(Bytes32.ZERO, recentSlot, null, null)));
-    BLSKeyPair keyPair2 = dataStructureUtil.randomKeyPair();
-    Validator validatorNoBlockProposerRecord = createProtectedValidator(keyPair2);
-    when(slashingProtector.getSigningRecord(validatorNoBlockProposerRecord.getPublicKey()))
+  public void shouldNotLogObsoleteProtectionForValidatorWithNoBlockRecord() throws Exception {
+    Validator validator = createProtectedValidator(publicKey);
+    when(slashingProtector.getSigningRecord(validator.getPublicKey()))
         .thenReturn(
             Optional.of(
                 new ValidatorSigningRecord(
                     Bytes32.ZERO, UInt64.ZERO, UInt64.valueOf(900), UInt64.valueOf(950))));
-    BLSKeyPair keyPair3 = dataStructureUtil.randomKeyPair();
-    Validator validatorGoodRecords = createProtectedValidator(keyPair3);
-    when(slashingProtector.getSigningRecord(validatorGoodRecords.getPublicKey()))
-        .thenReturn(
-            Optional.of(
-                new ValidatorSigningRecord(
-                    Bytes32.ZERO, recentSlot, UInt64.valueOf(900), UInt64.valueOf(950))));
 
-    List<Validator> validators = new ArrayList<>();
-    validators.add(validatorNoAttestationRecord);
-    validators.add(validatorNoBlockProposerRecord);
-    validators.add(validatorGoodRecords);
+    List<Validator> validators = List.of(validator);
     slashingProtectionLogger.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(1000)));
     slashingProtectionLogger.protectionSummary(validators);
     asyncRunner.executeQueuedActions();
-    Set<String> protectedValidatorKeys =
-        validators.stream()
-            .map(validator -> validator.getPublicKey().toAbbreviatedString())
-            .collect(Collectors.toSet());
-    Set<String> outdatedValidatorKeys = new HashSet<>();
-    outdatedValidatorKeys.add(validatorNoAttestationRecord.getPublicKey().toAbbreviatedString());
-    outdatedValidatorKeys.add(validatorNoBlockProposerRecord.getPublicKey().toAbbreviatedString());
+    Set<String> protectedValidatorKeys = Set.of(validator.getPublicKey().toAbbreviatedString());
     verify(validatorLogger, times(1)).loadedSlashingProtection(protectedValidatorKeys);
-    verify(validatorLogger, never()).notLoadedSlashingProtection(any());
-    verify(validatorLogger, times(1)).outdatedSlashingProtection(eq(outdatedValidatorKeys), any());
+    // We don't expect to produce blocks regularly so having old/no block signing record doesn't
+    // make the validator outdated, only when the attestation record is old.
+    verify(validatorLogger, never()).outdatedSlashingProtection(any(), any());
   }
 
-  private Validator createProtectedValidator(BLSKeyPair blsKeyPair) {
-    LocalSigner localSigner = new LocalSigner(spec, blsKeyPair, asyncRunner);
-    Signer signer =
-        new SlashingProtectedSigner(blsKeyPair.getPublicKey(), slashingProtector, localSigner);
-    return new Validator(blsKeyPair.getPublicKey(), signer, mock(GraffitiProvider.class));
+  private Validator createProtectedValidator(BLSPublicKey publicKey) {
+    Signer localSigner = new NoOpLocalSigner();
+    Signer signer = new SlashingProtectedSigner(publicKey, slashingProtector, localSigner);
+    return new Validator(publicKey, signer, mock(GraffitiProvider.class));
   }
 
   private Validator createUnProtectedValidator(BLSPublicKey publicKey) {

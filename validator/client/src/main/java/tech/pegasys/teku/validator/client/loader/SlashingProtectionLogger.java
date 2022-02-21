@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord.NEVER_SIGNED;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -71,7 +75,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
     this.activeValidators = Optional.empty();
   }
 
-  private void logSlashingProtection(final List<Validator> validators, final UInt64 curSlot) {
+  private void logSlashingProtection(final List<Validator> validators, final UInt64 currentSlot) {
     final List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords =
         getValidatorSigningRecords(validators);
     final List<Pair<Validator, ValidatorSigningRecord>> protectedList =
@@ -82,7 +86,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
     logLoadedProtectionValidators(protectedList);
     filterAndLogNotLoadedProtectionValidators(validatorRecords);
     Function<ValidatorSigningRecord, Boolean> outdatedSigningRecordClassifier =
-        createOutdatedSigningRecordClassifier(curSlot, SAFE_PROTECTION_EPOCHS_DELTA);
+        createOutdatedSigningRecordClassifier(currentSlot);
     final List<Pair<Validator, ValidatorSigningRecord>> outdatedProtectionList =
         protectedList.stream()
             .filter(pair -> outdatedSigningRecordClassifier.apply(pair.getRight()))
@@ -142,17 +146,16 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   }
 
   private Function<ValidatorSigningRecord, Boolean> createOutdatedSigningRecordClassifier(
-      final UInt64 curSlot, final UInt64 outdatedEpochsDelta) {
-    return signingRecord ->
-        spec.computeEpochAtSlot(curSlot)
-                .minusMinZero(spec.computeEpochAtSlot(signingRecord.getBlockSlot()))
-                .isGreaterThan(outdatedEpochsDelta)
-            || spec.computeEpochAtSlot(curSlot)
-                .minusMinZero(
-                    signingRecord.getAttestationTargetEpoch() == null
-                        ? UInt64.ZERO
-                        : signingRecord.getAttestationTargetEpoch())
-                .isGreaterThan(outdatedEpochsDelta);
+      final UInt64 currentSlot) {
+    return signingRecord -> {
+      final UInt64 attestationTargetEpoch = signingRecord.getAttestationTargetEpoch();
+      return spec.computeEpochAtSlot(currentSlot)
+          .minusMinZero(
+              Objects.equals(attestationTargetEpoch, NEVER_SIGNED)
+                  ? GENESIS_EPOCH
+                  : attestationTargetEpoch)
+          .isGreaterThan(SAFE_PROTECTION_EPOCHS_DELTA);
+    };
   }
 
   @Override
