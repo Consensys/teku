@@ -1,4 +1,3 @@
-
 # Changelog
 
 ## Upcoming Breaking Changes
