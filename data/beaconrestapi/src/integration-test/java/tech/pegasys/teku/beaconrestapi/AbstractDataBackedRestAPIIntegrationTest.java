@@ -35,7 +35,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -50,14 +49,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -126,7 +123,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
-  private BeaconChainUtil beaconChainUtil;
 
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
@@ -155,9 +151,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionEngineChannel.NOOP));
-    beaconChainUtil =
-        BeaconChainUtil.create(
-            spec, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {
@@ -231,35 +224,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       results.add(block);
     }
     return results;
-  }
-
-  // by using importBlocksAtSlots instead of createBlocksAtSlots, blocks are created
-  // via the blockImporter, and this will mean forkChoice has been processed.
-  // this is particularly useful if testing for missing state roots (states without blocks)
-  public ArrayList<BeaconBlockAndState> importBlocksAtSlots(UInt64... slots) throws Exception {
-    assertThat(beaconChainUtil).isNotNull();
-    final ArrayList<BeaconBlockAndState> results = new ArrayList<>();
-    for (UInt64 slot : slots) {
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
-          beaconChainUtil.createAndImportBlockAtSlot(slot.longValue());
-      results.add(
-          new BeaconBlockAndState(
-              signedBeaconBlock.getMessage(), recentChainData.getBestState().get()));
-    }
-    return results;
-  }
-
-  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(long... slots) {
-    final UInt64[] unsignedSlots =
-        Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
-    return createBlocksAtSlotsAndMapToApiResult(unsignedSlots);
-  }
-
-  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
-    return createBlocksAtSlots(slots).stream()
-        .map(SignedBlockAndState::getBlock)
-        .map(SignedBeaconBlock::create)
-        .collect(Collectors.toList());
   }
 
   public SignedBlockAndState finalizeChainAtEpoch(UInt64 epoch) {

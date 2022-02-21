@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -40,26 +41,30 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   }
 
   @Override
-  public InternalValidationResult validateFully(AttesterSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateFully(AttesterSlashing slashing) {
     if (!includesUnseenIndexToSlash(slashing.getIntersectingValidatorIndices())) {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
-      return InternalValidationResult.IGNORE;
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
-    BeaconState state = getState();
-    final Optional<OperationInvalidReason> invalidReason =
-        validateForStateTransition(state, slashing);
-    if (invalidReason.isPresent()) {
-      return InternalValidationResult.create(
-          ValidationResultCode.REJECT, invalidReason.get().describe());
-    }
+    return getState()
+        .thenApply(
+            state -> {
+              final Optional<OperationInvalidReason> invalidReason =
+                  validateForStateTransition(state, slashing);
+              if (invalidReason.isPresent()) {
+                return InternalValidationResult.create(
+                    ValidationResultCode.REJECT, invalidReason.get().describe());
+              }
 
-    if (seenIndices.addAll(slashing.getIntersectingValidatorIndices())) {
-      return InternalValidationResult.ACCEPT;
-    } else {
-      LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
-      return InternalValidationResult.IGNORE;
-    }
+              if (seenIndices.addAll(slashing.getIntersectingValidatorIndices())) {
+                return InternalValidationResult.ACCEPT;
+              } else {
+                LOG.trace(
+                    "AttesterSlashingValidator: Slashing is not the first one for any validator.");
+                return InternalValidationResult.IGNORE;
+              }
+            });
   }
 
   @Override
@@ -72,7 +77,7 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
     return !seenIndices.containsAll(intersectingIndices);
   }
 
-  private BeaconState getState() {
+  private SafeFuture<BeaconState> getState() {
     return recentChainData
         .getBestState()
         .orElseThrow(

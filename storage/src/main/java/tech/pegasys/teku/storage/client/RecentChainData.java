@@ -85,7 +85,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
   private final Counter reorgCounter;
-  private final boolean updateHeadForEmptySlots;
 
   private volatile UpdatableStore store;
   private volatile Optional<GenesisData> genesisData = Optional.empty();
@@ -115,7 +114,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
-    this.updateHeadForEmptySlots = storeConfig.updateHeadForEmptySlots();
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -293,9 +291,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       }
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext;
-      if (originalHead
-          .map(head -> hasReorgedFrom(head.getRoot(), getChainHeadSlot(head)))
-          .orElse(false)) {
+      if (originalHead.map(head -> hasReorgedFrom(head.getRoot(), head.getSlot())).orElse(false)) {
 
         final ChainHead previousChainHead = originalHead.get();
 
@@ -348,16 +344,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return optimisticHead.map(ForkChoiceState::getHeadBlockSlot);
   }
 
-  private UInt64 getChainHeadSlot(final ChainHead head) {
-    return updateHeadForEmptySlots ? head.getForkChoiceSlot() : head.getSlot();
-  }
-
   private boolean isNewHeadSameAsOld(final ChainHead originalHead, final ChainHead newChainHead) {
-    if (updateHeadForEmptySlots) {
-      return originalHead.equals(newChainHead);
-    } else {
-      return originalHead.getRoot().equals(newChainHead.getRoot());
-    }
+    return originalHead.getRoot().equals(newChainHead.getRoot());
   }
 
   private boolean hasReorgedFrom(
@@ -451,8 +439,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   /** Retrieves the state of the block chosen by fork choice to build and attest on */
-  public Optional<BeaconState> getBestState() {
-    return chainHead.map(StateAndBlockSummary::getState);
+  public Optional<SafeFuture<BeaconState>> getBestState() {
+    return chainHead.map(StateAndBlockSummary::getState).map(SafeFuture::completedFuture);
   }
 
   /** Retrieves the slot of the block chosen by fork choice to build and attest on */

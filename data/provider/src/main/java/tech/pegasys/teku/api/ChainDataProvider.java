@@ -249,23 +249,6 @@ public class ChainDataProvider {
         .orElse(Collections.emptyList());
   }
 
-  /**
-   * Convert a {validator_id} from a URL to a validator index
-   *
-   * @param validatorParameter numeric, or validator pubkey
-   * @return optional of the validator index
-   * @throws IllegalArgumentException if validator cannot be parsed or is out of bounds.
-   * @throws ChainDataUnavailableException if store is not able to process requests.
-   */
-  public Optional<Integer> validatorParameterToIndex(final String validatorParameter) {
-    if (!isStoreAvailable()) {
-      throw new ChainDataUnavailableException();
-    }
-    return recentChainData
-        .getBestState()
-        .flatMap(state -> validatorParameterToIndex(state, validatorParameter));
-  }
-
   private Optional<Integer> validatorParameterToIndex(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final String validatorParameter) {

@@ -25,11 +25,9 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -82,17 +80,12 @@ class EventSourceHandler implements EventHandler {
   }
 
   @Override
-  public void onMessage(final String event, final MessageEvent messageEvent) throws Exception {
+  public void onMessage(final String event, final MessageEvent messageEvent) {
     try {
-      switch (EventType.valueOf(event)) {
-        case head:
-          handleHeadEvent(messageEvent.getData());
-          return;
-        case chain_reorg:
-          handleChainReorgEvent(messageEvent);
-          return;
-        default:
-          LOG.warn("Received unexpected event type: " + event);
+      if (EventType.valueOf(event) == EventType.head) {
+        handleHeadEvent(messageEvent.getData());
+      } else {
+        LOG.warn("Received unexpected event type: " + event);
       }
     } catch (final IllegalArgumentException | JsonProcessingException e) {
       invalidEventCounter.inc();
@@ -114,20 +107,6 @@ class EventSourceHandler implements EventHandler {
     if (generateEarlyAttestations) {
       validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
     }
-  }
-
-  private void handleChainReorgEvent(final MessageEvent messageEvent)
-      throws JsonProcessingException {
-    final ChainReorgEvent reorgEvent =
-        jsonProvider.jsonToObject(messageEvent.getData(), ChainReorgEvent.class);
-    final UInt64 commonAncestorSlot;
-    if (reorgEvent.depth.isGreaterThan(reorgEvent.slot)) {
-      LOG.warn("Received reorg that is deeper than the current chain");
-      commonAncestorSlot = UInt64.ZERO;
-    } else {
-      commonAncestorSlot = reorgEvent.slot.minus(reorgEvent.depth);
-    }
-    validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
   }
 
   @Override

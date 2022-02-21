@@ -74,11 +74,6 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {
-    delegates.forEach(delegate -> delegate.onChainReorg(newSlot, commonAncestorSlot));
-  }
-
-  @Override
   public void onPossibleMissedEvents() {
     delegates.forEach(ValidatorTimingChannel::onPossibleMissedEvents);
   }

@@ -637,6 +637,10 @@ public class Spec {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
   }
 
+  public boolean isMergeTransitionComplete(final SignedBeaconBlock block) {
+    return atBlock(block).miscHelpers().isMergeTransitionComplete(block);
+  }
+
   // Private helpers
   private SpecVersion atState(final BeaconState state) {
     return atSlot(state.getSlot());
