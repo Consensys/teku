@@ -16,18 +16,25 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -54,6 +61,8 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
   private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private ExternalValidatorSource(
       final Spec spec,
@@ -97,6 +106,16 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
   @Override
   public List<ValidatorProvider> getAvailableValidators() {
+    if (readOnly) {
+      return getAvailableReadOnlyValidators();
+    }
+
+    // Load from files
+    List<File> files = getValidatorFiles();
+    return files.stream().map(this::getValidatorProvider).collect(toList());
+  }
+
+  private List<ValidatorProvider> getAvailableReadOnlyValidators() {
     final List<BLSPublicKey> publicKeys =
         publicKeyLoader.getPublicKeys(config.getValidatorExternalSignerPublicKeySources());
     return publicKeys.stream()
@@ -111,6 +130,38 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
                     externalSignerTaskQueue,
                     metricsSystem))
         .collect(toList());
+  }
+
+  private List<File> getValidatorFiles() {
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
+
+    List<File> files = new ArrayList<>();
+    try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*.json")) {
+      stream.forEach(entry -> files.add(entry.toFile()));
+    } catch (IOException e) {
+      LOG.debug("Failed to read file ", e);
+    }
+
+    return files;
+  }
+
+  private ValidatorProvider getValidatorProvider(File file) {
+    String content = file.toString();
+    try {
+      ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+      return new ExternalValidatorProvider(
+          spec,
+          externalSignerHttpClientFactory,
+          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl()),
+          externalValidator.getPublicKey(),
+          config.getValidatorExternalSignerTimeout(),
+          externalSignerTaskQueue,
+          metricsSystem);
+
+    } catch (JsonProcessingException e) {
+      throw new InvalidConfigurationException(e.getMessage(), e);
+    }
   }
 
   @Override
