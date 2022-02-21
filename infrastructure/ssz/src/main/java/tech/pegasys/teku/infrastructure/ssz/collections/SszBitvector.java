@@ -47,10 +47,10 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
   /** Returns new vector with bits shifted to the right by {@code n} positions */
   SszBitvector rightShift(int n);
 
-  /** Returns indexes of all bits set in this {@link SszBitvector} */
+  /** Returns indices of all bits set in this {@link SszBitvector} */
   IntList getAllSetBits();
 
-  /** Streams indexes of all bits set in this {@link SszBitvector} */
+  /** Streams indices of all bits set in this {@link SszBitvector} */
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }

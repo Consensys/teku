@@ -39,13 +39,13 @@ class BitlistImpl {
   private final int size;
   private final long maxSize;
 
-  public BitlistImpl(int size, long maxSize, int... bitIndexes) {
+  public BitlistImpl(int size, long maxSize, int... bitIndices) {
     checkArgument(size >= 0, "Negative size");
     checkArgument(maxSize >= size, "maxSize should be >= size");
     this.size = size;
     this.data = new BitSet(size);
     this.maxSize = maxSize;
-    for (int bitIndex : bitIndexes) {
+    for (int bitIndex : bitIndices) {
       checkElementIndex(bitIndex, size);
       data.set(bitIndex);
     }

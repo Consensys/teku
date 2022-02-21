@@ -26,15 +26,15 @@ public interface SszBitvectorSchema<SszBitvectorT extends SszBitvector>
     return new SszBitvectorSchemaImpl(length);
   }
 
-  SszBitvectorT ofBits(int... setBitIndexes);
+  SszBitvectorT ofBits(int... setBitIndices);
 
   default SszBitvectorT fromBytes(Bytes bivectorBytes) {
     return sszDeserialize(bivectorBytes);
   }
 
-  default SszBitvectorT ofBits(Iterable<Integer> setBitIndexes) {
-    int[] indexesArray =
-        StreamSupport.stream(setBitIndexes.spliterator(), false).mapToInt(i -> i).toArray();
-    return ofBits(indexesArray);
+  default SszBitvectorT ofBits(Iterable<Integer> setBitIndices) {
+    int[] indicesArray =
+        StreamSupport.stream(setBitIndices.spliterator(), false).mapToInt(i -> i).toArray();
+    return ofBits(indicesArray);
   }
 }

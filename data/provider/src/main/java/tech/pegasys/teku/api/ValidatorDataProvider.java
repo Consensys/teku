@@ -277,8 +277,8 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<PostAttesterDutiesResponse>> getAttesterDuties(
-      final UInt64 epoch, final IntList indexes) {
-    return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
+      final UInt64 epoch, final IntList indices) {
+    return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indices))
         .thenApply(
             res ->
                 res.map(
@@ -343,8 +343,8 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<PostSyncDutiesResponse>> getSyncDuties(
-      final UInt64 epoch, final IntList indexes) {
-    return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indexes))
+      final UInt64 epoch, final IntList indices) {
+    return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices))
         .thenApply(
             res ->
                 res.map(

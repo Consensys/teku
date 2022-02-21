@@ -308,10 +308,10 @@ public class SszListHintsTest {
               results.accept(r1_0);
               assertListElementsVariants(type, r1_0, elements);
 
-              IntStream changeIndexes =
+              IntStream changeIndices =
                   IntStream.of(0, 1, 2, 3, 4, 7, 8, size - 1, size - 2).filter(i -> i < size);
               SszMutableList<TElement> w1_1 = r1_0.createWritableCopy();
-              changeIndexes.forEach(
+              changeIndices.forEach(
                   chIdx -> {
                     TElement newElem = listElementsFactory.get();
                     elements.set(chIdx, newElem);

@@ -326,11 +326,11 @@ public class ChainDataProviderTest {
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    List<Integer> indexes =
+    List<Integer> indices =
         provider.getFilteredValidatorList(internalState, List.of("1", "33"), emptySet()).stream()
             .map(v -> v.index.intValue())
             .collect(toList());
-    assertThat(indexes).containsExactly(1, 33);
+    assertThat(indices).containsExactly(1, 33);
   }
 
   @Test

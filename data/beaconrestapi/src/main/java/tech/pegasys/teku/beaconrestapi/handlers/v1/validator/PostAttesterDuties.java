@@ -114,11 +114,11 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final UInt64[] indexes = parseRequestBody(ctx.body(), UInt64[].class);
+      final UInt64[] indices = parseRequestBody(ctx.body(), UInt64[].class);
 
       SafeFuture<Optional<PostAttesterDutiesResponse>> future =
           validatorDataProvider.getAttesterDuties(
-              epoch, IntArrayList.toList(Arrays.stream(indexes).mapToInt(UInt64::intValue)));
+              epoch, IntArrayList.toList(Arrays.stream(indices).mapToInt(UInt64::intValue)));
 
       handleOptionalResult(
           ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);

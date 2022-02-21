@@ -71,7 +71,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         proposerConfigProvider.getProposerConfig();
 
     validatorIndexProvider
-        .getValidatorIndexesByPublicKey()
+        .getValidatorIndicesByPublicKey()
         .thenCompose(
             publicKeyToIndex ->
                 proposerConfigFuture
