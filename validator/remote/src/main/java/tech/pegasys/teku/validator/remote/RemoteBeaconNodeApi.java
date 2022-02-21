@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import com.google.common.base.Preconditions;
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -36,6 +35,9 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingInter
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
+
+  /** Time until we timeout the event stream if no events are received. */
+  public static final Duration READ_TIMEOUT = Duration.ofSeconds(60);
 
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
@@ -52,12 +54,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
       final Spec spec,
-      final boolean useIndependentAttestationTiming,
       final boolean generateEarlyAttestations) {
 
-    final int readTimeoutInSeconds = getReadTimeoutInSeconds(spec, useIndependentAttestationTiming);
     final OkHttpClient.Builder httpClientBuilder =
-        new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS);
+        new OkHttpClient.Builder().readTimeout(READ_TIMEOUT);
     HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
     Preconditions.checkNotNull(
         apiEndpoint,
@@ -87,22 +87,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
                 serviceConfig.getTimeProvider(),
                 validatorTimingChannel,
-                useIndependentAttestationTiming,
                 spec),
             validatorTimingChannel,
             serviceConfig.getMetricsSystem(),
             generateEarlyAttestations);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
-  }
-
-  private static int getReadTimeoutInSeconds(
-      final Spec spec, final boolean useIndependentAttestationTiming) {
-    // We should get at least one event per slot so give the read timeout 2 slots to be safe
-    // but when using independent timing we only get head events on each new block so they may be
-    // much rarer
-    final int readTimeoutInSlots = useIndependentAttestationTiming ? 5 : 2;
-    return readTimeoutInSlots * spec.getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
   }
 
   @Override

@@ -160,9 +160,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {}
-
-  @Override
   public void onPossibleMissedEvents() {
     currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
     nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);

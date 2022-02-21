@@ -47,11 +47,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     final HttpUrl eventSourceUrl =
         baseEndpoint.resolve(
-            ValidatorApiMethod.EVENTS.getPath(emptyMap())
-                + "?topics="
-                + EventType.head
-                + ","
-                + EventType.chain_reorg);
+            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
     this.eventSource =
         new EventSource.Builder(
                 new EventSourceHandler(
