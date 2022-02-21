@@ -281,9 +281,7 @@ public class LevelDbInstance implements KvStoreAccessor {
     }
     openIteratorsSnapshot.forEach(this::closeIterator);
     openTransactionsSnapshot.forEach(LevelDbTransaction::close);
-    synchronized (this) {
-      db.close();
-    }
+    db.close();
   }
 
   private synchronized <T> T withIterator(final Function<DBIterator, T> action) {
