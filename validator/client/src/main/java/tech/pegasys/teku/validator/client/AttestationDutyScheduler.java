@@ -25,11 +25,8 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
-      final MetricsSystem metricsSystem,
-      final DutyLoader<?> dutyLoader,
-      final boolean useDependentRoots,
-      final Spec spec) {
-    super(metricsSystem, "attestation", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+      final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
+    super(metricsSystem, "attestation", dutyLoader, LOOKAHEAD_EPOCHS, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,

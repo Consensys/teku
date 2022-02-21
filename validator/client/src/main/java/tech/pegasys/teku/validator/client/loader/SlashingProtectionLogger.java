@@ -172,9 +172,6 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
       Bytes32 headBlockRoot) {}
 
   @Override
-  public void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot) {}
-
-  @Override
   public void onPossibleMissedEvents() {}
 
   @Override

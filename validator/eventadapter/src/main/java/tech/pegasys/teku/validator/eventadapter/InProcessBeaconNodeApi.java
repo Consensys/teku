@@ -43,7 +43,6 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
   public static BeaconNodeApi create(
       final ServiceConfig services,
       final AsyncRunner asyncRunner,
-      final boolean useIndependentAttestationTiming,
       final boolean generateEarlyAttestations,
       final Spec spec) {
     final MetricsSystem metricsSystem = services.getMetricsSystem();
@@ -59,7 +58,6 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
             new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
             services.getTimeProvider(),
             validatorTimingChannel,
-            useIndependentAttestationTiming,
             spec);
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new IndependentTimerEventChannelEventAdapter(
