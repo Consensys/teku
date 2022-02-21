@@ -66,7 +66,7 @@ public class ValidatorIndexCacheTest {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
     final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
     assertThat(index).isEmpty();
-    assertThat(validatorIndexCache.getValidatorIndexes().size())
+    assertThat(validatorIndexCache.getValidatorIndices().size())
         .isEqualTo(state.getValidators().size());
   }
 
@@ -79,7 +79,7 @@ public class ValidatorIndexCacheTest {
     final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, foundKey);
     assertThat(index.get()).isEqualTo(10);
     assertThat(validatorIndexCache.getLastIndex()).isEqualTo(10);
-    assertThat(validatorIndexCache.getValidatorIndexes().size()).isEqualTo(11);
+    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(11);
   }
 
   @Test
@@ -91,6 +91,6 @@ public class ValidatorIndexCacheTest {
     assertThat(index).isEmpty();
     // state didn't get scanned, because we had the index but it was out of bounds
     assertThat(validatorIndexCache.getLastIndex()).isEqualTo(-1);
-    assertThat(validatorIndexCache.getValidatorIndexes().size()).isEqualTo(1);
+    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(1);
   }
 }

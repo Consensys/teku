@@ -151,9 +151,9 @@ public class MiscHelpers {
   }
 
   IntList shuffleList(IntList input, Bytes32 seed) {
-    final int[] indexes = input.toIntArray();
-    shuffleList(indexes, seed);
-    return IntList.of(indexes);
+    final int[] indices = input.toIntArray();
+    shuffleList(indices, seed);
+    return IntList.of(indices);
   }
 
   public void shuffleList(int[] input, Bytes32 seed) {

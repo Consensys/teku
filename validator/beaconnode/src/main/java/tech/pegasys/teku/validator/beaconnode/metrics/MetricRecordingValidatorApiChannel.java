@@ -221,9 +221,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final IntCollection validatorIndexes) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     return countDataRequest(
-        delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
+        delegate.getAttestationDuties(epoch, validatorIndices), attestationDutiesRequestCounter);
   }
 
   @Override

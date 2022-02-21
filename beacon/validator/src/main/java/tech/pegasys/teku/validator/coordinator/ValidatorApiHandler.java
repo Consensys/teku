@@ -184,7 +184,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final IntCollection validatorIndexes) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -205,7 +205,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(
             optionalState ->
                 optionalState.map(
-                    state -> getAttesterDutiesFromIndexesAndState(state, epoch, validatorIndexes)));
+                    state -> getAttesterDutiesFromIndicesAndState(state, epoch, validatorIndices)));
   }
 
   @Override
@@ -220,7 +220,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(
             maybeState ->
                 Optional.of(
-                    getSyncCommitteeDutiesFromIndexesAndState(
+                    getSyncCommitteeDutiesFromIndicesAndState(
                         maybeState, epoch, validatorIndices)));
   }
 
@@ -241,7 +241,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
         .thenApply(
             optionalState ->
-                optionalState.map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
+                optionalState.map(state -> getProposerDutiesFromIndicesAndState(state, epoch)));
   }
 
   @Override
@@ -623,22 +623,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return !syncStateProvider.getCurrentSyncState().isInSync();
   }
 
-  private ProposerDuties getProposerDutiesFromIndexesAndState(
+  private ProposerDuties getProposerDutiesFromIndicesAndState(
       final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
     return new ProposerDuties(
         spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state), result);
   }
 
-  private AttesterDuties getAttesterDutiesFromIndexesAndState(
-      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndexes) {
+  private AttesterDuties getAttesterDutiesFromIndicesAndState(
+      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
     final Bytes32 dependentRoot =
         epoch.isGreaterThan(spec.getCurrentEpoch(state))
             ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         dependentRoot,
-        validatorIndexes.stream()
+        validatorIndices.stream()
             .map(index -> createAttesterDuties(state, epoch, index))
             .filter(Optional::isPresent)
             .map(Optional::get)
@@ -703,7 +703,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return combinedChainDataClient.getStateAtSlotExact(spec.computeStartSlotAtEpoch(requiredEpoch));
   }
 
-  private SyncCommitteeDuties getSyncCommitteeDutiesFromIndexesAndState(
+  private SyncCommitteeDuties getSyncCommitteeDutiesFromIndicesAndState(
       final Optional<BeaconState> maybeState,
       final UInt64 epoch,
       final IntCollection validatorIndices) {

@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -153,11 +152,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   @Override
   public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
     return AttestationWorthinessChecker.NOOP;
-  }
-
-  @Override
-  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
-    return Optional.empty();
   }
 
   @Override

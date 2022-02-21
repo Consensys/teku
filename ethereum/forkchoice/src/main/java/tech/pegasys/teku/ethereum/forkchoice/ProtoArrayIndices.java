@@ -39,7 +39,7 @@ public class ProtoArrayIndices {
     rootIndices.remove(root);
   }
 
-  public void offsetIndexes(final int finalizedIndex) {
+  public void offsetIndices(final int finalizedIndex) {
     rootIndices.replaceAll(
         (key, value) -> {
           int newIndex = value - finalizedIndex;

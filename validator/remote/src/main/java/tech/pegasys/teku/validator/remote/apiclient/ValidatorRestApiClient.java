@@ -48,7 +48,7 @@ public interface ValidatorRestApiClient {
   Optional<List<ValidatorResponse>> getValidators(List<String> validatorIds);
 
   Optional<PostAttesterDutiesResponse> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes);
+      final UInt64 epoch, final Collection<Integer> validatorIndices);
 
   Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 

@@ -316,12 +316,12 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
           /*100, 255, 256, */
           300, 1000, 1023
         }) {
-      int[] bitIndexes =
+      int[] bitIndices =
           IntStream.concat(IntStream.range(0, size).filter(i -> i % 2 == 0), IntStream.of(0))
               .toArray();
 
       SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(size);
-      SszList<SszBit> bitlist = schema.ofBits(size, bitIndexes);
+      SszList<SszBit> bitlist = schema.ofBits(size, bitIndices);
       SszBitlist bitlist1 = schema.sszDeserialize(bitlist.sszSerialize());
 
       assertThat(bitlist1).isEqualTo(bitlist);
