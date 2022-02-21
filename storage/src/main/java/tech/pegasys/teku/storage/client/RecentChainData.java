@@ -435,11 +435,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .map(validatorsRoot -> new ForkInfo(getFork(epoch), validatorsRoot));
   }
 
-  /**
-   * Retrieves the block chosen by fork choice to build and attest on
-   *
-   * @return
-   */
+  /** Retrieves the block chosen by fork choice to build and attest on */
   public Optional<Bytes32> getBestBlockRoot() {
     return chainHead.map(StateAndBlockSummary::getRoot);
   }
@@ -454,20 +450,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.flatMap(StateAndBlockSummary::getSignedBeaconBlock);
   }
 
-  /**
-   * Retrieves the state of the block chosen by fork choice to build and attest on
-   *
-   * @return
-   */
+  /** Retrieves the state of the block chosen by fork choice to build and attest on */
   public Optional<BeaconState> getBestState() {
     return chainHead.map(StateAndBlockSummary::getState);
   }
 
-  /**
-   * Retrieves the slot of the block chosen by fork choice to build and attest on
-   *
-   * @return
-   */
+  /** Retrieves the slot of the block chosen by fork choice to build and attest on */
   public UInt64 getHeadSlot() {
     return chainHead.map(StateAndBlockSummary::getSlot).orElse(UInt64.ZERO);
   }
@@ -594,12 +582,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public Map<Bytes32, UInt64> getChainHeads() {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
-        .orElse(Collections.emptyMap());
-  }
-
-  public Map<Bytes32, UInt64> getOptimisticChainHeads() {
-    return getForkChoiceStrategy()
-        .map(ReadOnlyForkChoiceStrategy::getOptimisticChainHeads)
         .orElse(Collections.emptyMap());
   }
 

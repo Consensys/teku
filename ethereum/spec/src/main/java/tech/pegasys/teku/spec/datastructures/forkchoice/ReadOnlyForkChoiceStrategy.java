@@ -35,8 +35,6 @@ public interface ReadOnlyForkChoiceStrategy {
   /** @return A map from blockRoot to blockSlot for current chain heads */
   Map<Bytes32, UInt64> getChainHeads();
 
-  Map<Bytes32, UInt64> getOptimisticChainHeads();
-
   Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(Bytes32 head);
 
   List<Map<String, Object>> getNodeData();
