@@ -62,7 +62,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldFetchDutiesForCurrentEpoch() {
-    createDutySchedulerWithRealDuties(false);
+    createDutySchedulerWithRealDuties();
     when(validatorApiChannel.getProposerDuties(any()))
         .thenReturn(
             completedFuture(
@@ -76,7 +76,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
-    createDutySchedulerWithRealDuties(false);
+    createDutySchedulerWithRealDuties();
     final UInt64 blockProposerSlot = UInt64.valueOf(5);
     final ProposerDuty validator1Duties = new ProposerDuty(VALIDATOR1_KEY, 5, blockProposerSlot);
     when(validatorApiChannel.getProposerDuties(eq(ZERO)))
@@ -110,7 +110,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldScheduleBlockProposalDuty() {
-    createDutySchedulerWithRealDuties(false);
+    createDutySchedulerWithRealDuties();
     final UInt64 blockProposerSlot = UInt64.valueOf(5);
     final ProposerDuty validator1Duties = new ProposerDuty(VALIDATOR1_KEY, 5, blockProposerSlot);
     when(validatorApiChannel.getProposerDuties(ZERO))
@@ -135,7 +135,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
-    createDutySchedulerWithRealDuties(false);
+    createDutySchedulerWithRealDuties();
     createDutySchedulerWithMockDuties();
     final SafeFuture<Optional<ProposerDuties>> epoch0Duties = new SafeFuture<>();
 
@@ -155,26 +155,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
-  public void shouldRefetchDutiesAfterReorg() {
-    createDutySchedulerWithRealDuties(false);
-    final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
-    final UInt64 commonAncestorEpoch = currentEpoch.minus(1);
-    final UInt64 commonAncestorSlot = spec.computeStartSlotAtEpoch(commonAncestorEpoch);
-    when(validatorApiChannel.getProposerDuties(any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(currentSlot);
-
-    verify(validatorApiChannel).getProposerDuties(currentEpoch);
-
-    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
-
-    verify(validatorApiChannel, times(2)).getProposerDuties(currentEpoch);
-    verifyNoMoreInteractions(validatorApiChannel);
-  }
-
-  @Test
   public void shouldRefetchDutiesWhenHeadUpdateHasDifferentCurrentDependentRoot() {
-    createDutySchedulerWithRealDuties(true);
+    createDutySchedulerWithRealDuties();
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
     final Bytes32 previousDependentRoot = dataStructureUtil.randomBytes32();
@@ -199,7 +181,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldNotRefetchDutiesWhenHeadUpdateHasSameCurrentDependentRoot() {
-    createDutySchedulerWithRealDuties(true);
+    createDutySchedulerWithRealDuties();
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
     final Bytes32 previousDependentRoot = dataStructureUtil.randomBytes32();
@@ -222,24 +204,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
-  public void shouldNotRefetchDutiesWhenCommonAncestorInCurrentEpoch() {
-    createDutySchedulerWithRealDuties(false);
-    final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
-    final UInt64 commonAncestorSlot = spec.computeStartSlotAtEpoch(currentEpoch);
-    when(validatorApiChannel.getProposerDuties(any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(currentSlot);
-
-    verify(validatorApiChannel).getProposerDuties(currentEpoch);
-
-    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
-
-    verifyNoMoreInteractions(validatorApiChannel);
-  }
-
-  @Test
   void shouldRefetchAllDutiesOnMissedEvents() {
-    createDutySchedulerWithRealDuties(false);
+    createDutySchedulerWithRealDuties();
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
     when(validatorApiChannel.getProposerDuties(any())).thenReturn(new SafeFuture<>());
@@ -256,7 +222,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   void shouldRefetchAllDutiesOnMissedEventsWithNoPreviousEpoch() {
-    createDutySchedulerWithRealDuties(false);
+    createDutySchedulerWithRealDuties();
     dutyScheduler.onPossibleMissedEvents();
 
     // Latest epoch is unknown so can't recalculate duties
@@ -301,7 +267,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   void shouldUseCurrentDependentRootWhenDutyFromCurrentEpoch() {
-    createDutySchedulerWithRealDuties(true);
+    createDutySchedulerWithRealDuties();
     final Bytes32 currentDutyDependentRoot = Bytes32.fromHexString("0x2222");
     final Bytes32 result =
         dutyScheduler.getExpectedDependentRoot(
@@ -316,7 +282,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   void shouldUseHeadRootWhenDutyIsFromNextEpoch() {
-    createDutySchedulerWithRealDuties(true);
+    createDutySchedulerWithRealDuties();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x3333");
     final Bytes32 result =
         dutyScheduler.getExpectedDependentRoot(
@@ -331,7 +297,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   void shouldUseHeadRootWhenDutyIsFromBeyondNextEpoch() {
-    createDutySchedulerWithRealDuties(true);
+    createDutySchedulerWithRealDuties();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x3333");
     final Bytes32 result =
         dutyScheduler.getExpectedDependentRoot(
@@ -344,7 +310,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     assertThat(result).isEqualTo(headBlockRoot);
   }
 
-  private void createDutySchedulerWithRealDuties(final boolean useDependentRoots) {
+  private void createDutySchedulerWithRealDuties() {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem,
@@ -357,7 +323,6 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
-            useDependentRoots,
             spec);
   }
 
@@ -373,7 +338,6 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
-            false,
             spec);
   }
 }

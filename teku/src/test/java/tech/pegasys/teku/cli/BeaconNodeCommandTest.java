@@ -423,7 +423,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .depositContract(address)
                     .eth1LogsMaxBlockRange(10_000)
                     .useTimeBasedHeadTracking(true))
-        .store(b -> b.hotStatePersistenceFrequencyInEpochs(2).updateHeadForEmptySlots(false))
+        .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
         .storageConfiguration(
             b ->
                 b.eth1DepositContract(address)
@@ -481,7 +481,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
                     .graffitiProvider(new FileBackedGraffitiProvider())
-                    .useDependentRoots(true)
                     .generateEarlyAttestations(true))
         .metrics(
             b ->
