@@ -225,7 +225,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // Get sent attestations in range
     Set<Attestation> producedAttestations =
         producedAttestationsByEpoch.getOrDefault(analyzedEpoch, Collections.emptySet());
-    BeaconState state = combinedChainDataClient.getBestState().orElseThrow();
+    // TODO: Not really happy with this but we do use join() in this class already
+    BeaconState state = combinedChainDataClient.getBestState().orElseThrow().join();
 
     int correctTargetCount = 0;
     int correctHeadBlockCount = 0;

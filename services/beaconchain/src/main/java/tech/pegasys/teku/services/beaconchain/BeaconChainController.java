@@ -775,12 +775,8 @@ public class BeaconChainController extends Service
                   eventAsyncRunner));
 
       if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
-        final Optional<BeaconState> maybeState = recentChainData.getBestState();
         final int initialValidatorsCount =
-            maybeState
-                .map(beaconState -> beaconState.getValidators().size())
-                .orElseGet(
-                    () -> spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount());
+            spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount();
         eventChannels.subscribe(
             ActiveValidatorChannel.class, new ActiveValidatorCache(spec, initialValidatorsCount));
       }

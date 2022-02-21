@@ -31,8 +31,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -125,9 +125,9 @@ public class TerminalPowBlockMonitor {
     }
 
     // beaconState must be available at this stage
-    BeaconState beaconState = recentChainData.getBestState().orElseThrow();
+    SignedBeaconBlock headBlock = recentChainData.getHeadBlock().orElseThrow();
 
-    if (spec.isMergeTransitionComplete(beaconState)) {
+    if (spec.isMergeTransitionComplete(headBlock)) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -148,13 +148,13 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    Optional<BeaconState> beaconState = recentChainData.getBestState();
-    if (beaconState.isEmpty()) {
+    Optional<SignedBeaconBlock> headBlock = recentChainData.getHeadBlock();
+    if (headBlock.isEmpty()) {
       LOG.trace("Beacon state not yet available");
       return;
     }
 
-    if (spec.isMergeTransitionComplete(beaconState.get())) {
+    if (spec.isMergeTransitionComplete(headBlock.get())) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;

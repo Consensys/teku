@@ -128,7 +128,8 @@ class RecentChainDataTest {
 
     assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(GENESIS_SLOT);
-    assertThat(recentChainData.getBestState()).hasValue(genesisState);
+    assertThat(recentChainData.getBestState()).isPresent();
+    assertThat(recentChainData.getBestState().get()).isCompletedWithValue(genesisState);
     assertThat(recentChainData.getStore()).isNotNull();
   }
 
