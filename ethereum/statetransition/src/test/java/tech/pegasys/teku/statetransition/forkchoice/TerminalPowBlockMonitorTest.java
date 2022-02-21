@@ -132,6 +132,8 @@ public class TerminalPowBlockMonitorTest {
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
             executionEngine, spec, recentChainData, forkChoiceNotifier, asyncRunner, eventLogger);
+
+    terminalPowBlockMonitor.onNodeSyncStateChanged(true);
   }
 
   private void goToSlot(UInt64 slot) {
@@ -373,6 +375,22 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
+  }
+
+  @Test
+  void shouldNotPerformCheckIfSyncing() {
+    setUpTTDConfig();
+
+    terminalPowBlockMonitor.start();
+
+    terminalPowBlockMonitor.onNodeSyncStateChanged(false);
+
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(executionEngine, atLeastOnce()).exchangeTransitionConfiguration(any());
+    verifyNoMoreInteractions(executionEngine);
   }
 
   @Test
