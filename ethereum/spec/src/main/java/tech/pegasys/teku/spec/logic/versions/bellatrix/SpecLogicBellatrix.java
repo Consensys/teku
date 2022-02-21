@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -46,7 +45,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
   private final SpecConfigBellatrix specConfig;
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
 
-  private final Optional<ExecutionPayloadUtil> executionPayloadUtil;
   private final Optional<BellatrixTransitionHelpers> bellatrixTransitionHelpers;
 
   private SpecLogicBellatrix(
@@ -67,7 +65,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BellatrixStateUpgrade stateUpgrade,
-      final ExecutionPayloadUtil executionPayloadUtil,
       final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
     super(
         predicates,
@@ -87,7 +84,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.specConfig = specConfig;
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
-    this.executionPayloadUtil = Optional.of(executionPayloadUtil);
     this.bellatrixTransitionHelpers = Optional.of(bellatrixTransitionHelpers);
   }
 
@@ -163,8 +159,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         new BellatrixTransitionHelpers(config, miscHelpers);
 
-    final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
-
     return new SpecLogicBellatrix(
         config,
         predicates,
@@ -183,7 +177,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         blockProposalUtil,
         syncCommitteeUtil,
         stateUpgrade,
-        executionPayloadUtil,
         bellatrixTransitionHelpers);
   }
 
@@ -207,11 +200,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         state.getSlot().minusMinZero(specConfig.getSquareRootSlotsPerEpoch());
     return new AttestationWorthinessCheckerAltair(
         expectedAttestationTarget, oldestWorthySlotForSourceReward);
-  }
-
-  @Override
-  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
-    return executionPayloadUtil;
   }
 
   @Override
