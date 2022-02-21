@@ -63,9 +63,6 @@ public class IndependentTimerEventChannelEventAdapter
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
-    optionalReorgContext.ifPresent(
-        reorgContext ->
-            validatorTimingChannel.onChainReorg(slot, reorgContext.getCommonAncestorSlot()));
     validatorTimingChannel.onHeadUpdate(
         slot, previousDutyDependentRoot, currentDutyDependentRoot, bestBlockRoot);
     if (generateEarlyAttestations) {

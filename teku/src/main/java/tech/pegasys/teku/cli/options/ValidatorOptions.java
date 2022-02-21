@@ -90,16 +90,6 @@ public class ValidatorOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-dependent-root-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description =
-          "Invalidate validator duties based on the dependent root information instead of chain re-org events",
-      hidden = true,
-      fallbackValue = "true",
-      arity = "0..1")
-  private boolean useDependentRoots = ValidatorConfig.DEFAULT_USE_DEPENDENT_ROOTS;
-
-  @Option(
       names = {"--validators-early-attestations-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -128,7 +118,6 @@ public class ValidatorOptions {
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .useDependentRoots(useDependentRoots)
                 .generateEarlyAttestations(generateEarlyAttestations));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);

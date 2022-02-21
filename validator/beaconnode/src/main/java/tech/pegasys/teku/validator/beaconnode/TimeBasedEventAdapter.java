@@ -30,7 +30,6 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   private final TimeProvider timeProvider;
   private final ValidatorTimingChannel validatorTimingChannel;
   private final Spec spec;
-  private final boolean useIndependentAttestationTiming;
   private UInt64 genesisTime;
 
   public TimeBasedEventAdapter(
@@ -38,13 +37,11 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
-      final boolean useIndependentAttestationTiming,
       final Spec spec) {
     this.genesisDataProvider = genesisDataProvider;
     this.taskScheduler = taskScheduler;
     this.timeProvider = timeProvider;
     this.validatorTimingChannel = validatorTimingChannel;
-    this.useIndependentAttestationTiming = useIndependentAttestationTiming;
     this.spec = spec;
   }
 
@@ -60,12 +57,10 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     final long oneThirdSlotSeconds = spec.getSecondsPerSlot(currentSlot) / 3;
     final long twoThirdSlotSeconds = oneThirdSlotSeconds * 2;
     taskScheduler.scheduleRepeatingEvent(nextSlotStartTime, secondsPerSlot, this::onStartSlot);
-    if (useIndependentAttestationTiming) {
-      taskScheduler.scheduleRepeatingEvent(
-          nextSlotStartTime.plus(oneThirdSlotSeconds),
-          secondsPerSlot,
-          this::onAttestationCreationDue);
-    }
+    taskScheduler.scheduleRepeatingEvent(
+        nextSlotStartTime.plus(oneThirdSlotSeconds),
+        secondsPerSlot,
+        this::onAttestationCreationDue);
     taskScheduler.scheduleRepeatingEvent(
         nextSlotStartTime.plus(twoThirdSlotSeconds), secondsPerSlot, this::onAggregationDue);
   }

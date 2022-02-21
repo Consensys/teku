@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import com.launchdarkly.eventsource.MessageEvent;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -68,27 +67,6 @@ class EventSourceHandlerTest {
         .onHeadUpdate(
             eq(slot), eq(previousDutyDependentRoot), eq(currentDutyDependentRoot), eq(blockRoot));
     verify(validatorTimingChannel).onAttestationCreationDue(slot);
-    verifyNoMoreInteractions(validatorTimingChannel);
-  }
-
-  @Test
-  void onMessage_shouldHandleChainReorgEvent() throws Exception {
-    final UInt64 slot = UInt64.valueOf(134);
-    final UInt64 reorgDepth = UInt64.valueOf(6);
-    final UInt64 commonAncestorSlot = UInt64.valueOf(128);
-    final ChainReorgEvent event =
-        new ChainReorgEvent(
-            slot,
-            reorgDepth,
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomEpoch());
-    handler.onMessage(
-        EventType.chain_reorg.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
-
-    verify(validatorTimingChannel).onChainReorg(event.slot, commonAncestorSlot);
     verifyNoMoreInteractions(validatorTimingChannel);
   }
 
