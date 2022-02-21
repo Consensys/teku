@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -69,8 +68,6 @@ public interface SpecLogic {
   OperationSignatureVerifier operationSignatureVerifier();
 
   AttestationWorthinessChecker createAttestationWorthinessChecker(BeaconState state);
-
-  Optional<ExecutionPayloadUtil> getExecutionPayloadUtil();
 
   Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers();
 }
