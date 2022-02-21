@@ -102,11 +102,11 @@ public class GenesisGenerator {
   }
 
   private void processActivation(final Deposit deposit) {
-    if (!keyCache.containsKey(deposit.getData().getPubkey())) {
+    final int index = keyCache.getOrDefault(deposit.getData().getPubkey(), -1);
+    if (index == -1) {
       // Could be absent if the deposit was invalid
       return;
     }
-    final int index = keyCache.get(deposit.getData().getPubkey());
     Validator validator = state.getValidators().get(index);
     if (validator.getActivation_epoch().equals(GENESIS_EPOCH)) {
       // Validator is already activated (and thus already has the max effective balance)
