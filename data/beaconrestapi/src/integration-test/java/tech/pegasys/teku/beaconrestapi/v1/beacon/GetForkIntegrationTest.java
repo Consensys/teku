@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.io.IOException;
 import okhttp3.Response;
@@ -41,7 +42,7 @@ public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegration
         jsonProvider.jsonToObject(response.body().string(), GetStateForkResponse.class);
     final Fork data = body.data;
 
-    final Fork expected = new Fork(recentChainData.getBestState().get().getFork());
+    final Fork expected = new Fork(safeJoin(recentChainData.getBestState().get()).getFork());
     assertThat(expected).isEqualTo(data);
   }
 

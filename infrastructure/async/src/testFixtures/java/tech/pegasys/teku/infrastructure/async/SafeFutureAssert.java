@@ -71,4 +71,13 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
     assertThat(result).isInstanceOf(Optional.class);
     assertThat(((Optional<T>) result)).contains((T) value);
   }
+
+  public T joinsImmediately() {
+    isCompleted();
+    return actual.join();
+  }
+
+  public static <X> X safeJoin(final SafeFuture<X> future) {
+    return assertThatSafeFuture(future).joinsImmediately();
+  }
 }
