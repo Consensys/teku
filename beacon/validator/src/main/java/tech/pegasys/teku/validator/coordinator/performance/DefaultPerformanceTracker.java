@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -117,23 +119,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       return;
     }
 
+    final List<SafeFuture<?>> reportingTasks = new ArrayList<>();
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
     if (currentEpoch.isGreaterThanOrEqualTo(
         nodeStartEpoch.get().plus(ATTESTATION_INCLUSION_RANGE))) {
-      UInt64 analyzedEpoch = currentEpoch.minus(ATTESTATION_INCLUSION_RANGE);
-      AttestationPerformance attestationPerformance =
-          getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
-
-      // suppress performance metric output when not relevant
-      if (mode.isLoggingEnabled() && attestationPerformance.numberOfExpectedAttestations > 0) {
-        statusLogger.performance(attestationPerformance.toString());
-      }
-
-      if (mode.isMetricsEnabled()) {
-        validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
-      }
-      producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
+      reportingTasks.add(reportAttestationPerformance(currentEpoch));
     }
 
     // Nothing to report until epoch 0 is complete
@@ -155,18 +146,48 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Nothing to report until epoch 0 is complete
     if (!currentEpoch.isZero()) {
-      final SyncCommitteePerformance syncCommitteePerformance =
-          syncCommitteePerformanceTracker.calculatePerformance(currentEpoch.minus(1)).join();
-      if (syncCommitteePerformance.getNumberOfExpectedMessages() > 0) {
-        if (mode.isLoggingEnabled()) {
-          statusLogger.performance(syncCommitteePerformance.toString());
-        }
-
-        if (mode.isMetricsEnabled()) {
-          validatorPerformanceMetrics.updateSyncCommitteePerformance(syncCommitteePerformance);
-        }
-      }
+      reportingTasks.add(reportSyncCommitteePerformance(currentEpoch));
     }
+
+    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).join();
+  }
+
+  private SafeFuture<?> reportSyncCommitteePerformance(final UInt64 currentEpoch) {
+    return syncCommitteePerformanceTracker
+        .calculatePerformance(currentEpoch.minus(1))
+        .thenAccept(
+            syncCommitteePerformance -> {
+              if (syncCommitteePerformance.getNumberOfExpectedMessages() > 0) {
+                if (mode.isLoggingEnabled()) {
+                  statusLogger.performance(syncCommitteePerformance.toString());
+                }
+
+                if (mode.isMetricsEnabled()) {
+                  validatorPerformanceMetrics.updateSyncCommitteePerformance(
+                      syncCommitteePerformance);
+                }
+              }
+            });
+  }
+
+  private SafeFuture<?> reportAttestationPerformance(final UInt64 currentEpoch) {
+    UInt64 analyzedEpoch = currentEpoch.minus(ATTESTATION_INCLUSION_RANGE);
+    return getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch)
+        .thenAccept(
+            attestationPerformance -> {
+
+              // suppress performance metric output when not relevant
+              if (mode.isLoggingEnabled()
+                  && attestationPerformance.numberOfExpectedAttestations > 0) {
+                statusLogger.performance(attestationPerformance.toString());
+              }
+
+              if (mode.isMetricsEnabled()) {
+                validatorPerformanceMetrics.updateAttestationPerformanceMetrics(
+                    attestationPerformance);
+              }
+              producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
+            });
   }
 
   private BlockPerformance getBlockPerformanceForEpoch(UInt64 currentEpoch) {
@@ -206,7 +227,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             .equals(producedBlock.getBlockRoot());
   }
 
-  private AttestationPerformance getAttestationPerformanceForEpoch(
+  private SafeFuture<AttestationPerformance> getAttestationPerformanceForEpoch(
       UInt64 currentEpoch, UInt64 analyzedEpoch) {
     checkArgument(
         analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE)),
@@ -225,73 +246,82 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // Get sent attestations in range
     Set<Attestation> producedAttestations =
         producedAttestationsByEpoch.getOrDefault(analyzedEpoch, Collections.emptySet());
-    // TODO: Not really happy with this but we do use join() in this class already
-    BeaconState state = combinedChainDataClient.getBestState().orElseThrow().join();
+    return combinedChainDataClient
+        .getBestState()
+        .orElseThrow()
+        .thenApply(
+            state -> {
+              int correctTargetCount = 0;
+              int correctHeadBlockCount = 0;
+              IntList inclusionDistances = new IntArrayList();
 
-    int correctTargetCount = 0;
-    int correctHeadBlockCount = 0;
-    IntList inclusionDistances = new IntArrayList();
+              // Pre-process attestations included on chain to group them by
+              // data hash to inclusion slot to aggregation bitlist
+              Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
+                  new HashMap<>();
+              for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
+                for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
+                  Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
+                  NavigableMap<UInt64, SszBitlist> slotToBitlists =
+                      slotAndBitlistsByAttestationDataHash.computeIfAbsent(
+                          attestationDataHash, __ -> new TreeMap<>());
+                  slotToBitlists.merge(
+                      slot, attestation.getAggregationBits(), SszBitlist::nullableOr);
+                }
+              }
 
-    // Pre-process attestations included on chain to group them by
-    // data hash to inclusion slot to aggregation bitlist
-    Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
-        new HashMap<>();
-    for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
-      for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
-        Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
-        NavigableMap<UInt64, SszBitlist> slotToBitlists =
-            slotAndBitlistsByAttestationDataHash.computeIfAbsent(
-                attestationDataHash, __ -> new TreeMap<>());
-        slotToBitlists.merge(slot, attestation.getAggregationBits(), SszBitlist::nullableOr);
-      }
-    }
+              for (Attestation sentAttestation : producedAttestations) {
+                Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
+                UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
+                if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
+                  continue;
+                }
+                NavigableMap<UInt64, SszBitlist> slotAndBitlists =
+                    slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
+                for (UInt64 slot : slotAndBitlists.keySet()) {
+                  if (slotAndBitlists
+                      .get(slot)
+                      .isSuperSetOf(sentAttestation.getAggregationBits())) {
+                    inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
+                    break;
+                  }
+                }
 
-    for (Attestation sentAttestation : producedAttestations) {
-      Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
-      UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
-      if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
-        continue;
-      }
-      NavigableMap<UInt64, SszBitlist> slotAndBitlists =
-          slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
-      for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBits())) {
-          inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
-          break;
-        }
-      }
+                // Check if the attestation had correct target
+                Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
+                if (attestationTargetRoot.equals(spec.getBlockRoot(state, analyzedEpoch))) {
+                  correctTargetCount++;
 
-      // Check if the attestation had correct target
-      Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
-      if (attestationTargetRoot.equals(spec.getBlockRoot(state, analyzedEpoch))) {
-        correctTargetCount++;
+                  // Check if the attestation had correct head block root
+                  Bytes32 attestationHeadBlockRoot =
+                      sentAttestation.getData().getBeacon_block_root();
+                  if (attestationHeadBlockRoot.equals(
+                      spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
+                    correctHeadBlockCount++;
+                  }
+                }
+              }
 
-        // Check if the attestation had correct head block root
-        Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeacon_block_root();
-        if (attestationHeadBlockRoot.equals(spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
-          correctHeadBlockCount++;
-        }
-      }
-    }
+              IntSummaryStatistics inclusionDistanceStatistics =
+                  inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
 
-    IntSummaryStatistics inclusionDistanceStatistics =
-        inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
-
-    // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list is empty.
-    int numberOfProducedAttestations = producedAttestations.size();
-    return producedAttestations.size() > 0
-        ? new AttestationPerformance(
-            analyzedEpoch,
-            validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
-            numberOfProducedAttestations,
-            (int) inclusionDistanceStatistics.getCount(),
-            inclusionDistanceStatistics.getMax(),
-            inclusionDistanceStatistics.getMin(),
-            inclusionDistanceStatistics.getAverage(),
-            correctTargetCount,
-            correctHeadBlockCount)
-        : AttestationPerformance.empty(
-            analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
+              // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
+              // is empty.
+              int numberOfProducedAttestations = producedAttestations.size();
+              return producedAttestations.size() > 0
+                  ? new AttestationPerformance(
+                      analyzedEpoch,
+                      validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
+                      numberOfProducedAttestations,
+                      (int) inclusionDistanceStatistics.getCount(),
+                      inclusionDistanceStatistics.getMax(),
+                      inclusionDistanceStatistics.getMin(),
+                      inclusionDistanceStatistics.getAverage(),
+                      correctTargetCount,
+                      correctHeadBlockCount)
+                  : AttestationPerformance.empty(
+                      analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
+            });
   }
 
   private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
