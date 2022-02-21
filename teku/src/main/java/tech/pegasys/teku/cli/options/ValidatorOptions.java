@@ -99,6 +99,16 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
+  @Option(
+      names = {"--Xvalidators-blinded-blocks-api-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Use blinded block api calls",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean blindedBlocksApiEnabled = false;
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -112,6 +122,7 @@ public class ValidatorOptions {
         config ->
             config
                 .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                .blindedBeaconBlocksApiEnabled(blindedBlocksApiEnabled)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .validatorExternalSignerSlashingProtectionEnabled(
                     validatorExternalSignerSlashingProtectionEnabled)
