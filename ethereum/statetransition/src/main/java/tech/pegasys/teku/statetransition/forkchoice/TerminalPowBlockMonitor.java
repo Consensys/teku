@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,12 +46,13 @@ public class TerminalPowBlockMonitor {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final AtomicBoolean isBellatrixActive = new AtomicBoolean(false);
 
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
   private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
   private SpecConfigBellatrix specConfigBellatrix;
   private TransitionConfiguration localTransitionConfiguration;
+  private boolean isBellatrixActive = false;
+  private boolean inSync = true;
 
   public TerminalPowBlockMonitor(
       final ExecutionEngineChannel executionEngine,
@@ -113,12 +113,16 @@ public class TerminalPowBlockMonitor {
     return timer.isPresent();
   }
 
+  public synchronized void onNodeSyncStateChanged(final boolean inSync) {
+    this.inSync = inSync;
+  }
+
   private synchronized void monitor() {
     verifyTransitionConfiguration();
 
-    if (!isBellatrixActive.get()) {
+    if (!isBellatrixActive) {
       initMergeState();
-      if (!isBellatrixActive.get()) {
+      if (!isBellatrixActive) {
         LOG.trace("Monitor is sill inactive. BELLATRIX fork not yet activated.");
         return;
       }
@@ -130,6 +134,11 @@ public class TerminalPowBlockMonitor {
     if (spec.isMergeTransitionComplete(headBlock)) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
+      return;
+    }
+
+    if (!inSync) {
+      LOG.info("Node is syncing, skipping check.");
       return;
     }
 
@@ -173,7 +182,7 @@ public class TerminalPowBlockMonitor {
           specConfigBellatrix.getTerminalBlockHashActivationEpoch());
     }
 
-    isBellatrixActive.set(true);
+    isBellatrixActive = true;
     LOG.info("Monitor is now active");
   }
 
@@ -234,8 +243,9 @@ public class TerminalPowBlockMonitor {
                                 "Total Difficulty of Terminal Block parent has been validated.");
                             onTerminalPowBlockFound(powBlock.getBlockHash());
                           } else {
-                            LOG.error(
-                                "Total Difficulty of Terminal Block parent is invalid! Must be lower than TTD!");
+                            LOG.warn(
+                                "A candidate Terminal Block has been found but its parent has a Total Difficulty greater than terminal total difficulty. "
+                                    + "It is likely the Terminal Block has been already chosen by the network and The Merge will complete shortly.");
                           }
                         });
               }

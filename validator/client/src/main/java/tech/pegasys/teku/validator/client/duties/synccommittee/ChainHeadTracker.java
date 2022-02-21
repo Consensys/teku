@@ -45,9 +45,6 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
   public void onSlot(final UInt64 slot) {}
 
   @Override
-  public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {}
-
-  @Override
   public void onPossibleMissedEvents() {}
 
   @Override

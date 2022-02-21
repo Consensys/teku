@@ -34,8 +34,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
@@ -78,27 +76,18 @@ class RecentChainDataTest {
   private RecentChainData recentChainData;
 
   private void initPreGenesis() {
-    initPreGenesis(true);
-  }
-
-  private void initPreGenesis(final boolean updateHeadForEmptySlots) {
     storageSystem =
         InMemoryStorageSystemBuilder.create()
             .specProvider(spec)
             .storageMode(StateStorageMode.PRUNE)
-            .storeConfig(
-                StoreConfig.builder().updateHeadForEmptySlots(updateHeadForEmptySlots).build())
+            .storeConfig(StoreConfig.builder().build())
             .build();
     chainBuilder = storageSystem.chainBuilder();
     recentChainData = storageSystem.recentChainData();
   }
 
   private void initPostGenesis() {
-    initPostGenesis(true);
-  }
-
-  private void initPostGenesis(final boolean updateHeadForEmptySlots) {
-    initPreGenesis(updateHeadForEmptySlots);
+    initPreGenesis();
 
     generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
@@ -214,14 +203,13 @@ class RecentChainDataTest {
     assertThat(recentChainData.getGenesisData()).isEmpty();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_validUpdate(final boolean updateHeadForEmptySlots) {
-    initPostGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_validUpdate() {
+    initPostGenesis();
 
     // Ensure the current and previous target root blocks are different
     chainBuilder.generateBlockAtSlot(genesisSpecConfig.getSlotsPerEpoch() - 1);
-    chainBuilder.generateBlockAtSlot(genesisSpecConfig.getSlotsPerEpoch() * 2 - 1);
+    chainBuilder.generateBlockAtSlot(genesisSpecConfig.getSlotsPerEpoch() * 2L - 1);
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
@@ -241,10 +229,9 @@ class RecentChainDataTest {
                     .getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_blockAndStateAreMissing(final boolean updateHeadForEmptySlots) {
-    initPostGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_blockAndStateAreMissing() {
+    initPostGenesis();
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
@@ -330,10 +317,9 @@ class RecentChainDataTest {
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_noReorgEventWhenBestBlockFirstSet(final boolean updateHeadForEmptySlots) {
-    initPreGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_noReorgEventWhenBestBlockFirstSet() {
+    initPreGenesis();
     generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
@@ -341,10 +327,9 @@ class RecentChainDataTest {
     assertThat(getReorgCountMetric(storageSystem)).isZero();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_noReorgEventWhenChainAdvances(final boolean updateHeadForEmptySlots) {
-    initPostGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_noReorgEventWhenChainAdvances() {
+    initPostGenesis();
     chainBuilder.generateBlocksUpToSlot(2);
     importBlocksAndStates(recentChainData, chainBuilder);
 
@@ -353,10 +338,9 @@ class RecentChainDataTest {
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_forkChoiceHeadNeverGoesDown(final boolean updateHeadForEmptySlots) {
-    initPostGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_forkChoiceHeadNeverGoesDown() {
+    initPostGenesis();
     chainBuilder.generateBlocksUpToSlot(3);
     importBlocksAndStates(recentChainData, chainBuilder);
 
@@ -369,27 +353,16 @@ class RecentChainDataTest {
 
     // Head updated to block2 but should preserve empty slots up to slot 11
     recentChainData.updateHead(block2.getRoot(), block2.getSlot());
-    if (updateHeadForEmptySlots) {
-      assertThat(storageSystem.reorgEventChannel().getReorgEvents()).hasSize(1);
-    } else {
-      assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
-    }
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     recentChainData.updateHead(block3.getRoot(), UInt64.valueOf(12));
-    if (updateHeadForEmptySlots) {
-      // Block 3 is imported and should still trigger a reorg because its filling an empty slot
-      assertThat(storageSystem.reorgEventChannel().getReorgEvents()).hasSize(2);
-    } else {
-      // We ignore the empty slots so no reorgs
-      assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
-    }
+    // We ignore the empty slots so no reorgs
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_reorgEventWhenBlockFillsEmptyHeadSlot(
-      final boolean updateHeadForEmptySlots) {
-    initPostGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_noReorgEventWhenBlockFillsEmptyHeadSlot() {
+    initPostGenesis();
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), UInt64.valueOf(2));
@@ -400,28 +373,14 @@ class RecentChainDataTest {
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot2Block.getRoot(), slot2Block.getSlot());
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
-    if (updateHeadForEmptySlots) {
-      assertThat(reorgEvents)
-          .containsExactly(
-              new ReorgEvent(
-                  slot2Block.getRoot(),
-                  slot2Block.getSlot(),
-                  slot2Block.getStateRoot(),
-                  slot1Block.getRoot(),
-                  slot1Block.getStateRoot(),
-                  slot1Block.getSlot()));
-      assertThat(getReorgCountMetric(storageSystem)).isEqualTo(1);
-    } else {
-      assertThat(reorgEvents).isEmpty();
-      assertThat(getReorgCountMetric(storageSystem)).isEqualTo(0);
-    }
+
+    assertThat(reorgEvents).isEmpty();
+    assertThat(getReorgCountMetric(storageSystem)).isEqualTo(0);
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_headUpdatesWhenUpdatingWithEmptySlot(
-      final boolean updateHeadForEmptySlots) {
-    initPostGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_headUpdatesWhenUpdatingWithEmptySlot() {
+    initPostGenesis();
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot());
@@ -429,18 +388,12 @@ class RecentChainDataTest {
     storageSystem.reorgEventChannel().getHeadEvents().clear();
 
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot().plus(1));
-    if (updateHeadForEmptySlots) {
-      assertThat(storageSystem.reorgEventChannel().getHeadEvents()).hasSize(1);
-    } else {
-      assertThat(storageSystem.reorgEventChannel().getHeadEvents()).isEmpty();
-    }
+    assertThat(storageSystem.reorgEventChannel().getHeadEvents()).isEmpty();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtSameSlot(
-      final boolean updateHeadForEmptySlots) {
-    initPreGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() {
+    initPreGenesis();
     final ChainBuilder chainBuilder =
         ChainBuilder.create(spec, BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -483,11 +436,9 @@ class RecentChainDataTest {
                 ONE));
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot(
-      final boolean updateHeadForEmptySlots) {
-    initPreGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot() {
+    initPreGenesis();
     final ChainBuilder chainBuilder =
         ChainBuilder.create(spec, BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -533,10 +484,9 @@ class RecentChainDataTest {
                 ONE));
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void updateHead_ignoreStaleUpdate(final boolean updateHeadForEmptySlots) {
-    initPreGenesis(updateHeadForEmptySlots);
+  @Test
+  public void updateHead_ignoreStaleUpdate() {
+    initPreGenesis();
     generateGenesisWithoutIniting();
     final UpdatableStore store = mock(UpdatableStore.class);
 
