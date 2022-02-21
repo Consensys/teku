@@ -244,7 +244,7 @@ public class TerminalPowBlockMonitor {
                             onTerminalPowBlockFound(powBlock.getBlockHash());
                           } else {
                             LOG.warn(
-                                "A candidate Terminal Block has been found but its parent has a Total Difficulty of higher than TTD. "
+                                "A candidate Terminal Block has been found but its parent has a Total Difficulty greater than terminal total difficulty. "
                                     + "It is likely the Terminal Block has been already chosen by the network and The Merge will complete shortly.");
                           }
                         });
