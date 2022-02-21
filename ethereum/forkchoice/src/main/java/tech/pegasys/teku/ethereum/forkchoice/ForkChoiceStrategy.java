@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.forkchoice;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -391,7 +392,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public void processAllInOrder(final NodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
-      final Map<Bytes32, Integer> indices = protoArray.getRootIndices();
+      final Object2IntMap<Bytes32> indices = protoArray.getRootIndices();
       protoArray.getNodes().stream()
           // Filter out nodes that could be pruned but are still in the protoarray
           .filter(node -> indices.containsKey(node.getBlockRoot()))

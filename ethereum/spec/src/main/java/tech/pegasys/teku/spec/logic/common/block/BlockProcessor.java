@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.block;
 
-import java.util.Map;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -106,7 +106,7 @@ public interface BlockProcessor {
   void processDepositWithoutCheckingMerkleProof(
       final MutableBeaconState state,
       final Deposit deposit,
-      final Map<BLSPublicKey, Integer> pubKeyToIndexMap);
+      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap);
 
   void processVoluntaryExits(
       MutableBeaconState state,

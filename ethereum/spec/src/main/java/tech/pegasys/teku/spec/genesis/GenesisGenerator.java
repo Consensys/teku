@@ -15,9 +15,9 @@ package tech.pegasys.teku.spec.genesis;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,7 +46,7 @@ public class GenesisGenerator {
   private final SpecConfig specConfig;
 
   private final MutableBeaconState state;
-  private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
+  private final Object2IntMap<BLSPublicKey> keyCache = new Object2IntOpenHashMap<>();
   private final SszMutableList<DepositData> depositDataList;
 
   private int activeValidatorCount = 0;
@@ -102,9 +102,9 @@ public class GenesisGenerator {
   }
 
   private void processActivation(final Deposit deposit) {
-    final Integer index = keyCache.get(deposit.getData().getPubkey());
-    if (index == null) {
-      // Could be null if the deposit was invalid
+    final int index = keyCache.getOrDefault(deposit.getData().getPubkey(), -1);
+    if (index == -1) {
+      // Could be absent if the deposit was invalid
       return;
     }
     Validator validator = state.getValidators().get(index);
