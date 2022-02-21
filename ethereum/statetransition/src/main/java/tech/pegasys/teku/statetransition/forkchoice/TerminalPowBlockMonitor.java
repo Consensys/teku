@@ -124,7 +124,7 @@ public class TerminalPowBlockMonitor {
       }
     }
 
-    // beaconState must be available at this stage
+    // Chain head must be available at this stage
     SignedBeaconBlock headBlock = recentChainData.getHeadBlock().orElseThrow();
 
     if (spec.isMergeTransitionComplete(headBlock)) {
