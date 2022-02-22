@@ -257,15 +257,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public void updateHead(Bytes32 root, UInt64 currentSlot) {
     final Optional<ChainHead> originalChainHead = chainHead;
 
-    // Never let the fork choice slot go backwards.
-    final UInt64 newForkChoiceSlot =
-        currentSlot.max(originalChainHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO));
     store
         .retrieveStateAndBlockSummary(root)
         .thenApply(
             headBlockAndState ->
                 headBlockAndState
-                    .map(head -> ChainHead.create(head, newForkChoiceSlot, spec))
+                    .map(ChainHead::create)
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
@@ -316,12 +313,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           originalHead
               .map(
                   previousChainHead ->
-                      previousChainHead
-                          .getForkChoiceEpoch()
-                          .isLessThan(newChainHead.getForkChoiceEpoch()))
+                      spec.computeEpochAtSlot(previousChainHead.getSlot())
+                          .isLessThan(spec.computeEpochAtSlot(newChainHead.getSlot())))
               .orElse(false);
       final BeaconStateUtil beaconStateUtil =
-          spec.atSlot(newChainHead.getForkChoiceSlot()).getBeaconStateUtil();
+          spec.atSlot(newChainHead.getSlot()).getBeaconStateUtil();
       chainHeadChannel.chainHeadUpdated(
           newChainHead.getSlot(),
           newChainHead.getStateRoot(),
