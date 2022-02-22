@@ -296,7 +296,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         final ChainHead previousChainHead = originalHead.get();
 
         final SlotAndBlockRoot commonAncestorSlotAndBlockRoot =
-            previousChainHead.findCommonAncestor(newChainHead);
+            store
+                .getForkChoiceStrategy()
+                .findCommonAncestor(previousChainHead.getRoot(), newChainHead.getRoot())
+                .orElseGet(() -> store.getFinalizedCheckpoint().toSlotAndBlockRoot(spec));
 
         reorgCounter.inc();
         optionalReorgContext =
