@@ -34,21 +34,10 @@ public class ChainHeadTest {
   @Test
   public void equals_shouldBeEqualToCopy() {
     final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
-    final UInt64 forkChoiceSlot = UInt64.valueOf(1L);
-    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, spec);
+    final ChainHead chainHead = ChainHead.create(block);
 
     final ChainHead otherChainHead = copy(chainHead);
     assertThat(chainHead).isEqualTo(otherChainHead);
-  }
-
-  @Test
-  public void equals_shouldBNotBeEqualWhenForkChoiceSlotDiffers() {
-    final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
-    final UInt64 forkChoiceSlot = UInt64.valueOf(1L);
-    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, spec);
-
-    final ChainHead otherChainHead = ChainHead.create(chainHead, forkChoiceSlot.plus(1), spec);
-    assertThat(chainHead).isNotEqualTo(otherChainHead);
   }
 
   @Test
@@ -56,10 +45,9 @@ public class ChainHeadTest {
     final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     final SignedBlockAndState otherBlock = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     assertThat(block).isNotEqualTo(otherBlock);
-    final UInt64 forkChoiceSlot = UInt64.valueOf(1L);
 
-    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, spec);
-    final ChainHead otherChainHead = ChainHead.create(otherBlock, forkChoiceSlot, spec);
+    final ChainHead chainHead = ChainHead.create(block);
+    final ChainHead otherChainHead = ChainHead.create(otherBlock);
 
     assertThat(chainHead).isNotEqualTo(otherChainHead);
   }
@@ -75,16 +63,11 @@ public class ChainHeadTest {
             SszSchema.as(
                 BeaconState.class, spec.getGenesisSchemaDefinitions().getBeaconStateSchema()));
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
-    final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
-    return ChainHead.create(blockAndStateCopy, forkChoiceCopy, spec);
+    return ChainHead.create(blockAndStateCopy);
   }
 
   private <T extends SszData> T copy(final T original, final SszSchema<T> objType) {
     final Bytes serialized = original.sszSerialize();
     return objType.sszDeserialize(serialized);
-  }
-
-  private UInt64 copy(final UInt64 value) {
-    return UInt64.valueOf(value.longValue());
   }
 }
