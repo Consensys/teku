@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -156,10 +155,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   @Override
   public Map<Bytes32, UInt64> getChainHeads() {
-    return getChainHeads(node -> true);
-  }
-
-  private Map<Bytes32, UInt64> getChainHeads(final Predicate<ProtoNode> filter) {
     protoArrayLock.readLock().lock();
     try {
       final Map<Bytes32, UInt64> chainHeads = new HashMap<>();
@@ -167,7 +162,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           .filter(
               protoNode ->
                   protoNode.getBestChildIndex().isEmpty()
-                      && filter.test(protoNode)
                       && protoArray.nodeIsViableForHead(protoNode))
           .forEach(protoNode -> chainHeads.put(protoNode.getBlockRoot(), protoNode.getBlockSlot()));
       return Collections.unmodifiableMap(chainHeads);
@@ -438,6 +432,38 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArray.maybePrune(finalizedCheckpoint.getRoot());
     } finally {
       protoArrayLock.writeLock().unlock();
+    }
+  }
+
+  @Override
+  public Optional<SlotAndBlockRoot> findCommonAncestor(final Bytes32 root1, final Bytes32 root2) {
+    protoArrayLock.readLock().lock();
+    try {
+      Optional<ProtoNode> chainHead1 = protoArray.getProtoNode(root1);
+      Optional<ProtoNode> chainHead2 = protoArray.getProtoNode(root2);
+      while (chainHead1.isPresent() && chainHead2.isPresent()) {
+        final ProtoNode node1 = chainHead1.get();
+        final ProtoNode node2 = chainHead2.get();
+        if (node1.getBlockSlot().isGreaterThan(node2.getBlockSlot())) {
+          // Chain 1 is longer than chain 2 so need to move further up chain 2
+          chainHead1 = node1.getParentIndex().map(protoArray::getNodeByIndex);
+        } else if (node2.getBlockSlot().isGreaterThan(node1.getBlockSlot())) {
+          // Chain 2 is longer than chain 1 so need to move further up chain 1
+          chainHead2 = node2.getParentIndex().map(protoArray::getNodeByIndex);
+        } else {
+          // At the same slot, check if this is the common ancestor
+          if (node1.getBlockRoot().equals(node2.getBlockRoot())) {
+            return Optional.of(new SlotAndBlockRoot(node1.getBlockSlot(), node1.getBlockRoot()));
+          }
+          // Nope, need to move further up both chains
+          chainHead1 = node1.getParentIndex().map(protoArray::getNodeByIndex);
+          chainHead2 = node2.getParentIndex().map(protoArray::getNodeByIndex);
+        }
+      }
+      // Reached the start of protoarray without finding a common ancestor
+      return Optional.empty();
+    } finally {
+      protoArrayLock.readLock().unlock();
     }
   }
 

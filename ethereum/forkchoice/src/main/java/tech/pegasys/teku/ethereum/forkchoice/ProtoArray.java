@@ -649,7 +649,7 @@ public class ProtoArray {
     return indices.getRootIndices();
   }
 
-  private ProtoNode getNodeByIndex(final int index) {
+  ProtoNode getNodeByIndex(final int index) {
     return checkNotNull(nodes.get(index), "Missing node %s", index);
   }
 
