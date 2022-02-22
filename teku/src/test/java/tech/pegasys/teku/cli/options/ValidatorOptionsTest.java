@@ -116,4 +116,20 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(
             Optional.of(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")));
   }
+
+  @Test
+  public void shouldEnableBlindedBeaconBlocks() {
+    final String[] args = {"--Xvalidators-blinded-blocks-api-enabled", "true"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksApiEnabled())
+        .isTrue();
+  }
+
+  @Test
+  public void shouldNotUseBlindedBeaconBlocksByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksApiEnabled())
+        .isFalse();
+  }
 }

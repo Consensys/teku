@@ -39,6 +39,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -58,6 +59,7 @@ public class ValidatorConfig {
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
+  private final boolean blindedBeaconBlocksApiEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -77,7 +79,8 @@ public class ValidatorConfig {
       final boolean generateEarlyAttestations,
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final Optional<String> proposerConfigSource,
-      final boolean refreshProposerConfigFromSource) {
+      final boolean refreshProposerConfigFromSource,
+      final boolean blindedBeaconBlocksApiEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -99,6 +102,7 @@ public class ValidatorConfig {
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
+    this.blindedBeaconBlocksApiEnabled = blindedBeaconBlocksApiEnabled;
   }
 
   public static Builder builder() {
@@ -172,6 +176,10 @@ public class ValidatorConfig {
     return refreshProposerConfigFromSource;
   }
 
+  public boolean isBlindedBeaconBlocksApiEnabled() {
+    return blindedBeaconBlocksApiEnabled;
+  }
+
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && proposerConfigSource.isEmpty()
@@ -205,6 +213,7 @@ public class ValidatorConfig {
     private Optional<String> proposerConfigSource = Optional.empty();
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
+    private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
     private Builder() {}
 
@@ -330,6 +339,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder blindedBeaconBlocksApiEnabled(final boolean blindedBeaconBlockEnabled) {
+      this.blindedBlocksApiEnabled = blindedBeaconBlockEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -353,7 +367,8 @@ public class ValidatorConfig {
           generateEarlyAttestations,
           proposerDefaultFeeRecipient,
           proposerConfigSource,
-          refreshProposerConfigFromSource);
+          refreshProposerConfigFromSource,
+          blindedBlocksApiEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
