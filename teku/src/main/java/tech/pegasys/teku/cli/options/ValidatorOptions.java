@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
+
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -107,7 +109,7 @@ public class ValidatorOptions {
       fallbackValue = "true",
       hidden = true,
       arity = "0..1")
-  private boolean blindedBlocksApiEnabled = false;
+  private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {

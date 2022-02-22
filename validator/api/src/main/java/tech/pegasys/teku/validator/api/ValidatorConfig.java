@@ -39,6 +39,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -212,7 +213,7 @@ public class ValidatorConfig {
     private Optional<String> proposerConfigSource = Optional.empty();
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
-    private boolean blindedBlocksApiEnabled = false;
+    private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
     private Builder() {}
 
