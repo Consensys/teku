@@ -15,7 +15,12 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 
 public class ExecutionEngineOptions {
@@ -38,6 +43,15 @@ public class ExecutionEngineOptions {
   private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
   @Option(
+      names = {"--Xee-payload-builders"},
+      paramLabel = "<MEV_BUILDER_URL>",
+      description = "List of MEV boost api compatible endpoints to get execution payloads",
+      arity = "1..*",
+      split = ",",
+      hidden = true)
+  private List<String> mevUrls = new ArrayList<>();
+
+  @Option(
       hidden = true,
       names = {"--Xee-jwt-secret"},
       paramLabel = "<FILENAME>",
@@ -51,6 +65,24 @@ public class ExecutionEngineOptions {
         b ->
             b.endpoint(executionEngineEndpoint)
                 .version(executionEngineVersion)
-                .jwtSecretFile(jwtSecretFile));
+                .jwtSecretFile(jwtSecretFile)
+                .mevBoostUrls(parseMevBoostUrls()));
+  }
+
+  private List<URL> parseMevBoostUrls() {
+    if (mevUrls.isEmpty()) {
+      return List.of();
+    }
+
+    try {
+      final List<URL> result = new ArrayList<>();
+      for (String mevUrl : mevUrls) {
+        result.add(new URL(mevUrl));
+      }
+      return result;
+    } catch (MalformedURLException e) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. MEV boost URL did not appear to be a valid URL.", e);
+    }
   }
 }

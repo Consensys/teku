@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -30,6 +31,13 @@ public class MiscHelpersBellatrix extends MiscHelpersAltair {
   public boolean isMergeTransitionComplete(final BeaconState genericState) {
     final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
     return !state.getLatestExecutionPayloadHeader().isDefault();
+  }
+
+  @Override
+  public boolean isMergeTransitionComplete(final SignedBeaconBlock block) {
+    return !BeaconBlockBodyBellatrix.required(block.getMessage().getBody())
+        .getExecutionPayload()
+        .isDefault();
   }
 
   public boolean isMergeTransitionBlock(final BeaconState genericState, final BeaconBlock block) {

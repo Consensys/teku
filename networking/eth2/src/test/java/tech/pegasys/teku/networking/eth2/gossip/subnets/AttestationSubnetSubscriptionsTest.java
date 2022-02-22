@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.Optional;
@@ -148,6 +149,6 @@ public class AttestationSubnetSubscriptionsTest {
 
   private int computeSubnetId(final Attestation attestation) {
     return spec.computeSubnetForAttestation(
-        recentChainData.getBestState().orElseThrow(), attestation);
+        safeJoin(recentChainData.getBestState().orElseThrow()), attestation);
   }
 }

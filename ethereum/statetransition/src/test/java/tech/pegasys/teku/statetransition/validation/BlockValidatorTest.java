@@ -137,7 +137,9 @@ public class BlockValidatorTest {
         storageSystem
             .chainBuilder()
             .getSigner(proposerIndex.intValue())
-            .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
+            .signBlock(
+                block,
+                storageSystem.chainBuilder().getLatestBlockAndState().getState().getForkInfo())
             .join();
     final SignedBeaconBlock blockWithNoParent =
         SignedBeaconBlock.create(spec, block, blockSignature);
@@ -185,7 +187,9 @@ public class BlockValidatorTest {
         storageSystem
             .chainBuilder()
             .getSigner(invalidProposerIndex.intValue())
-            .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
+            .signBlock(
+                block,
+                storageSystem.chainBuilder().getLatestBlockAndState().getState().getForkInfo())
             .join();
     final SignedBeaconBlock invalidProposerSignedBlock =
         SignedBeaconBlock.create(spec, block, blockSignature);

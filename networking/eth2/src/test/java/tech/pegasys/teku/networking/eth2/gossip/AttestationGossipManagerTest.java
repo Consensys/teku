@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -188,7 +189,7 @@ public class AttestationGossipManagerTest {
 
   private Integer computeSubnetId(final Attestation attestation) {
     return spec.computeSubnetForAttestation(
-        recentChainData.getBestState().orElseThrow(), attestation);
+        safeJoin(recentChainData.getBestState().orElseThrow()), attestation);
   }
 
   private String getSubnetTopic(final int subnetId) {

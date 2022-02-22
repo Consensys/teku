@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
@@ -161,7 +162,7 @@ public class PeerStatusIntegrationTest {
 
   private void assertStatusMatchesStorage(
       final RecentChainData storageClient, final PeerStatus status) {
-    final BeaconState state = storageClient.getBestState().orElseThrow();
+    final BeaconState state = safeJoin(storageClient.getBestState().orElseThrow());
     assertStatus(
         status,
         storageClient.getCurrentForkInfo().orElseThrow().getForkDigest(spec),
