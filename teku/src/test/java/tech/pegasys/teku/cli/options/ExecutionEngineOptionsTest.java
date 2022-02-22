@@ -16,6 +16,8 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -71,5 +73,13 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThatThrownBy(config.executionEngine()::getEndpoint)
         .isInstanceOf(InvalidConfigurationException.class);
+  }
+
+  @Test
+  void shouldAllowMultipleMevBoostUrls() throws MalformedURLException {
+    final String[] args = {"--Xee-payload-builders", "http://a.com,http://b.com"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.executionEngine().getMevBoostUrls())
+        .containsOnly(new URL("http://a.com"), new URL("http://b.com"));
   }
 }
