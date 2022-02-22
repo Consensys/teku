@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -53,8 +55,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
 
   @Test
   public void handleMessage_validExit() {
-    final SignedVoluntaryExit exit =
-        exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
+    final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), 3, 3);
     when(processor.process(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(exit);
@@ -66,8 +67,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
 
   @Test
   public void handleMessage_ignoredExit() {
-    final SignedVoluntaryExit exit =
-        exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
+    final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), 3, 3);
     when(processor.process(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(exit);
@@ -100,5 +100,9 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             SignedVoluntaryExit.SSZ_SCHEMA,
             GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
+  }
+
+  private BeaconState getBestState() {
+    return safeJoin(recentChainData.getBestState().orElseThrow());
   }
 }

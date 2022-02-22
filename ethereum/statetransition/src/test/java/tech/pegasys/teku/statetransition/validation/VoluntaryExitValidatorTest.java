@@ -28,10 +28,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -63,12 +65,10 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(mockSpec.validateVoluntaryExit(recentChainData.getBestState().orElseThrow(), exit))
-        .thenReturn(Optional.empty());
-    when(mockSpec.verifyVoluntaryExitSignature(
-            recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
+    when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
+    when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(voluntaryExitValidator.validateFully(exit).code()).isEqualTo(ACCEPT);
+    assertValidationResult(exit, ACCEPT);
   }
 
   @Test
@@ -80,22 +80,14 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit2 = new SignedVoluntaryExit(exit1.getMessage(), exit1.getSignature());
     SignedVoluntaryExit exit3 = new SignedVoluntaryExit(exit2.getMessage(), exit2.getSignature());
 
-    when(mockSpec.validateVoluntaryExit(eq(recentChainData.getBestState().orElseThrow()), any()))
-        .thenReturn(Optional.empty());
+    when(mockSpec.validateVoluntaryExit(eq(getBestState()), any())).thenReturn(Optional.empty());
     when(mockSpec.verifyVoluntaryExitSignature(
-            eq(recentChainData.getBestState().orElseThrow()),
-            any(),
-            eq(BLSSignatureVerifier.SIMPLE)))
+            eq(getBestState()), any(), eq(BLSSignatureVerifier.SIMPLE)))
         .thenReturn(true);
 
-    assertThat(voluntaryExitValidator.validateFully(exit1).code()).isEqualTo(ACCEPT);
-    final InternalValidationResult exit2Validation = voluntaryExitValidator.validateFully(exit2);
-    assertThat(exit2Validation.code()).isEqualTo(IGNORE);
-    assertThat(exit2Validation.getDescription().orElse("")).contains("Exit is not the first one");
-
-    final InternalValidationResult exit3Validation = voluntaryExitValidator.validateFully(exit3);
-    assertThat(exit3Validation.code()).isEqualTo(IGNORE);
-    assertThat(exit3Validation.getDescription().orElse("")).contains("Exit is not the first one");
+    assertValidationResult(exit1, ACCEPT);
+    assertValidationResult(exit2, IGNORE, "Exit is not the first one");
+    assertValidationResult(exit3, IGNORE, "Exit is not the first one");
   }
 
   @Test
@@ -103,16 +95,12 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(mockSpec.validateVoluntaryExit(recentChainData.getBestState().orElseThrow(), exit))
+    when(mockSpec.validateVoluntaryExit(getBestState(), exit))
         .thenReturn(Optional.of(ExitInvalidReason.EXIT_INITIATED));
-    when(mockSpec.verifyVoluntaryExitSignature(
-            recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
+    when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
 
-    final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);
-    assertThat(exitValidation.code()).isEqualTo(REJECT);
-    assertThat(exitValidation.getDescription().orElse(""))
-        .contains("Validator has already initiated exit");
+    assertValidationResult(exit, REJECT, "Validator has already initiated exit");
   }
 
   @Test
@@ -120,13 +108,33 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(mockSpec.validateVoluntaryExit(recentChainData.getBestState().orElseThrow(), exit))
-        .thenReturn(Optional.empty());
-    when(mockSpec.verifyVoluntaryExitSignature(
-            recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
+    when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
+    when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
-    final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);
-    assertThat(exitValidation.code()).isEqualTo(REJECT);
-    assertThat(exitValidation.getDescription().orElse("")).contains("Signature is invalid");
+
+    assertValidationResult(exit, REJECT, "Signature is invalid");
+  }
+
+  private void assertValidationResult(
+      final SignedVoluntaryExit exit, final ValidationResultCode expectedResultCode) {
+    assertThat(voluntaryExitValidator.validateFully(exit))
+        .isCompletedWithValueMatching(result -> result.code() == expectedResultCode);
+  }
+
+  private void assertValidationResult(
+      final SignedVoluntaryExit exit,
+      final ValidationResultCode expectedCode,
+      final String description) {
+    assertThat(voluntaryExitValidator.validateFully(exit))
+        .isCompletedWithValueMatching(
+            result ->
+                result.code() == expectedCode
+                    && result.getDescription().orElse("").contains(description));
+  }
+
+  private BeaconState getBestState() {
+    final SafeFuture<BeaconState> stateFuture = recentChainData.getBestState().orElseThrow();
+    assertThat(stateFuture).isCompleted();
+    return stateFuture.join();
   }
 }

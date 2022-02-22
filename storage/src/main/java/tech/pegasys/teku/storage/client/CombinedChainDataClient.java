@@ -332,7 +332,7 @@ public class CombinedChainDataClient {
     }
   }
 
-  public Optional<BeaconState> getBestState() {
+  public Optional<SafeFuture<BeaconState>> getBestState() {
     return recentChainData.getBestState();
   }
 

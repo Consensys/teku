@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.io.IOException;
 import okhttp3.Response;
@@ -37,7 +38,10 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
     createBlocksAtSlots(10, 11, 12);
     setCurrentSlot(13);
     final Bytes32 chainHeadStateRoot =
-        recentChainData.getBestState().map(state -> state.hashTreeRoot()).orElse(Bytes32.ZERO);
+        recentChainData
+            .getBestState()
+            .map(state -> safeJoin(state).hashTreeRoot())
+            .orElse(Bytes32.ZERO);
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateRootResponse body =

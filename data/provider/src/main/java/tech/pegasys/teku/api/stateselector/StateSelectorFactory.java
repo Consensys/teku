@@ -15,10 +15,12 @@ package tech.pegasys.teku.api.stateselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class StateSelectorFactory {
@@ -69,7 +71,13 @@ public class StateSelectorFactory {
   }
 
   public StateSelector headSelector() {
-    return () -> SafeFuture.completedFuture(client.getBestState());
+    return () -> {
+      final Optional<SafeFuture<BeaconState>> maybeFuture = client.getBestState();
+      if (maybeFuture.isEmpty()) {
+        return SafeFuture.completedFuture(Optional.empty());
+      }
+      return maybeFuture.get().thenApply(Optional::of);
+    };
   }
 
   public StateSelector finalizedSelector() {

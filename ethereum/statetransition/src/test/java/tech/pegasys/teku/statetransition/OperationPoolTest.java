@@ -20,6 +20,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -83,7 +87,7 @@ public class OperationPoolTest {
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
@@ -103,7 +107,7 @@ public class OperationPoolTest {
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     when(filter.test(any())).thenReturn(false);
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 10; i++) {
@@ -124,7 +128,7 @@ public class OperationPoolTest {
     OperationPool<AttesterSlashing> pool =
         new OperationPool<>(
             "AttesterSlashingPool", metricsSystem, __ -> attesterSlashingsSchema, validator);
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     SszList<AttesterSlashing> attesterSlashings =
         Stream.generate(() -> dataStructureUtil.randomAttesterSlashing())
@@ -147,7 +151,7 @@ public class OperationPoolTest {
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
 
     pool.add(slashing1);
     pool.add(slashing2);
@@ -179,10 +183,11 @@ public class OperationPoolTest {
     ProposerSlashing slashing3 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing4 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(slashing1)).thenReturn(InternalValidationResult.ACCEPT);
-    when(validator.validateFully(slashing2)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
-    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.reject("Nah"));
-    when(validator.validateFully(slashing4)).thenReturn(InternalValidationResult.IGNORE);
+    when(validator.validateFully(slashing1)).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateFully(slashing2)).thenReturn(completedFuture(SAVE_FOR_FUTURE));
+    when(validator.validateFully(slashing3))
+        .thenReturn(completedFuture(InternalValidationResult.reject("Nah")));
+    when(validator.validateFully(slashing4)).thenReturn(completedFuture(IGNORE));
 
     pool.add(slashing1);
     pool.add(slashing2);

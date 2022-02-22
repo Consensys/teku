@@ -18,9 +18,9 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
@@ -630,7 +630,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   public void processDepositWithoutCheckingMerkleProof(
       final MutableBeaconState state,
       final Deposit deposit,
-      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap) {
     final BLSPublicKey pubkey = deposit.getData().getPubkey();
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UInt64.ONE));
@@ -638,9 +638,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // Find the validator index associated with this deposit, if it exists
     OptionalInt existingIndex;
     if (pubKeyToIndexMap != null) {
-      final Integer cachedIndex =
-          pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
-      existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
+      if (pubKeyToIndexMap.containsKey(pubkey)) {
+        existingIndex = OptionalInt.of(pubKeyToIndexMap.get(pubkey));
+      } else {
+        pubKeyToIndexMap.put(pubkey, state.getValidators().size());
+        existingIndex = OptionalInt.empty();
+      }
     } else {
       Function<Integer, BLSPublicKey> validatorPubkey =
           index ->
@@ -670,7 +673,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   private void handleInvalidDeposit(
       final Deposit deposit,
       BLSPublicKey pubkey,
-      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap) {
     if (deposit instanceof DepositWithIndex) {
       LOG.debug(
           "Skipping invalid deposit with index {} and pubkey {}",

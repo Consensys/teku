@@ -439,8 +439,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   /** Retrieves the state of the block chosen by fork choice to build and attest on */
-  public Optional<BeaconState> getBestState() {
-    return chainHead.map(StateAndBlockSummary::getState);
+  public Optional<SafeFuture<BeaconState>> getBestState() {
+    return chainHead.map(StateAndBlockSummary::getState).map(SafeFuture::completedFuture);
   }
 
   /** Retrieves the slot of the block chosen by fork choice to build and attest on */

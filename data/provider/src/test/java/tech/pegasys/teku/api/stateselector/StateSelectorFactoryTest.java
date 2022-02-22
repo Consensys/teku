@@ -44,7 +44,7 @@ public class StateSelectorFactoryTest {
 
   @Test
   public void headSelector_shouldGetBestState() throws ExecutionException, InterruptedException {
-    when(client.getBestState()).thenReturn(Optional.of(state));
+    when(client.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     Optional<BeaconState> result = factory.headSelector().getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getBestState();

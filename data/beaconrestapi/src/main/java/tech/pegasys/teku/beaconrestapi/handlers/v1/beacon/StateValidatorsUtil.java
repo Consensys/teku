@@ -13,15 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 
-import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
@@ -40,15 +37,5 @@ public class StateValidatorsUtil {
     } catch (IllegalArgumentException ex) {
       throw new BadRequestException("Invalid validator state requested: " + ex.getMessage());
     }
-  }
-
-  public List<Integer> parseValidatorsParam(final ChainDataProvider provider, final Context ctx) {
-    if (!ctx.queryParamMap().containsKey(PARAM_ID)) {
-      return List.of();
-    }
-    return ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID).stream()
-        .flatMap(
-            validatorParameter -> provider.validatorParameterToIndex(validatorParameter).stream())
-        .collect(Collectors.toList());
   }
 }
