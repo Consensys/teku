@@ -55,15 +55,26 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Override
-  protected BlockMetadataStore createBlockMetadataStore(final ChainBuilder chainBuilder) {
+  protected BlockMetadataStore createBlockMetadataStore(
+      final ChainBuilder chainBuilder, final ChainBuilder... additionalBuilders) {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
         ProtoArray.builder()
             .finalizedCheckpoint(latestState.getFinalized_checkpoint())
             .justifiedCheckpoint(latestState.getCurrent_justified_checkpoint())
             .build();
+    addBlocksFromBuilder(chainBuilder, protoArray);
+
+    for (ChainBuilder builder : additionalBuilders) {
+      addBlocksFromBuilder(builder, protoArray);
+    }
+    return ForkChoiceStrategy.initialize(spec, protoArray);
+  }
+
+  private void addBlocksFromBuilder(final ChainBuilder chainBuilder, final ProtoArray protoArray) {
     chainBuilder
         .streamBlocksAndStates()
+        .filter(block -> !protoArray.contains(block.getRoot()))
         .forEach(
             blockAndState ->
                 protoArray.onBlock(
@@ -75,7 +86,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getState().getFinalized_checkpoint().getEpoch(),
                     blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
-    return ForkChoiceStrategy.initialize(spec, protoArray);
   }
 
   @Test
