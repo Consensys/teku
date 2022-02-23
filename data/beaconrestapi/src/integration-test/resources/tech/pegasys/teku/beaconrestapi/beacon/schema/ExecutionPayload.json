@@ -29,7 +29,7 @@
       "type" : "string",
       "format" : "byte"
     },
-    "random" : {
+    "prevRandao" : {
       "pattern" : "^0x[a-fA-F0-9]{64}$",
       "type" : "string",
       "description" : "Bytes32 hexadecimal",

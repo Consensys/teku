@@ -71,7 +71,7 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public final Bytes32 random;
+  public final Bytes32 prevRandao;
 
   @JsonProperty("block_number")
   @Schema(type = "string", format = "uint64")
@@ -110,7 +110,7 @@ public abstract class ExecutionPayloadCommon {
       @JsonProperty("state_root") Bytes32 stateRoot,
       @JsonProperty("receipts_root") Bytes32 receiptsRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
-      @JsonProperty("random") Bytes32 random,
+      @JsonProperty("prev_randao") Bytes32 prevRandao,
       @JsonProperty("block_number") UInt64 blockNumber,
       @JsonProperty("gas_limit") UInt64 gasLimit,
       @JsonProperty("gas_used") UInt64 gasUsed,
@@ -123,7 +123,7 @@ public abstract class ExecutionPayloadCommon {
     this.stateRoot = stateRoot;
     this.receiptsRoot = receiptsRoot;
     this.logsBloom = logsBloom;
-    this.random = random;
+    this.prevRandao = prevRandao;
     this.blockNumber = blockNumber;
     this.gasLimit = gasLimit;
     this.gasUsed = gasUsed;
@@ -140,7 +140,7 @@ public abstract class ExecutionPayloadCommon {
     this.stateRoot = executionPayload.getStateRoot();
     this.receiptsRoot = executionPayload.getReceiptsRoot();
     this.logsBloom = executionPayload.getLogsBloom();
-    this.random = executionPayload.getRandom();
+    this.prevRandao = executionPayload.getPrevRandao();
     this.blockNumber = executionPayload.getBlockNumber();
     this.gasLimit = executionPayload.getGasLimit();
     this.gasUsed = executionPayload.getGasUsed();
@@ -164,7 +164,7 @@ public abstract class ExecutionPayloadCommon {
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(receiptsRoot, that.receiptsRoot)
         && Objects.equals(logsBloom, that.logsBloom)
-        && Objects.equals(random, that.random)
+        && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(blockNumber, that.blockNumber)
         && Objects.equals(gasLimit, that.gasLimit)
         && Objects.equals(gasUsed, that.gasUsed)
@@ -182,7 +182,7 @@ public abstract class ExecutionPayloadCommon {
         stateRoot,
         receiptsRoot,
         logsBloom,
-        random,
+        prevRandao,
         blockNumber,
         gasLimit,
         gasUsed,
@@ -200,7 +200,7 @@ public abstract class ExecutionPayloadCommon {
         .add("stateRoot", stateRoot)
         .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
-        .add("random", random)
+        .add("prevRandao", prevRandao)
         .add("blockNumber", blockNumber)
         .add("gasLimit", gasLimit)
         .add("gasUsed", gasUsed)
