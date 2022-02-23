@@ -59,7 +59,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
  */
 public class LibP2PNetworkBuilder {
 
-
   public static LibP2PNetworkBuilder create() {
     return new LibP2PNetworkBuilder();
   }
