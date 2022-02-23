@@ -672,12 +672,13 @@ public class BeaconChainController extends Service
     }
 
     DiscoveryConfig discoveryConfig = beaconConfig.p2pConfig().getDiscoveryConfig();
-    final Optional<Integer> maybeUdpPort = discoveryConfig.isDiscoveryEnabled() ?
-        Optional.of(discoveryConfig.getListenUdpPort()) : Optional.empty();
+    final Optional<Integer> maybeUdpPort =
+        discoveryConfig.isDiscoveryEnabled()
+            ? Optional.of(discoveryConfig.getListenUdpPort())
+            : Optional.empty();
 
     PortAvailability.checkPortsAvailable(
-        beaconConfig.p2pConfig().getNetworkConfig().getListenPort(),
-        maybeUdpPort);
+        beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
 
     final KeyValueStore<String, Bytes> keyValueStore =
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
