@@ -164,6 +164,11 @@ jobs:
           name: Assemble
           command: |
             ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava assemble
+      - run:
+          name: Prep Artifacts
+          command: |
+            mkdir /tmp/teku-distributions
+            cp build/distributions/*.tar.gz
       - notify
       - save_cache:
           name: Caching gradle dependencies
@@ -177,7 +182,7 @@ jobs:
             - ./
       - store_artifacts:
           name: Distribution artifacts
-          path:  build/distributions
+          path:  /tmp/teku-distributions
           destination: distributions
           when: always
 
