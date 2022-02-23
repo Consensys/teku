@@ -168,7 +168,7 @@ jobs:
           name: Prep Artifacts
           command: |
             mkdir /tmp/teku-distributions
-            cp build/distributions/*.tar.gz
+            cp build/distributions/*.tar.gz /tmp/teku-distributions/
       - notify
       - save_cache:
           name: Caching gradle dependencies
