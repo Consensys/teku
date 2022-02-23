@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -133,6 +134,34 @@ public class ChainUpdater {
     return blockAndState;
   }
 
+  public SignedBlockAndState finalizeCurrentChain() {
+    final UInt64 chainHeadSlot = recentChainData.getHeadSlot();
+    final UInt64 finalizeEpoch = spec.computeEpochAtSlot(chainHeadSlot).max(2);
+    final UInt64 finalHeadEpoch = finalizeEpoch.plus(3);
+    final UInt64 finalHeadSlot = spec.computeStartSlotAtEpoch(finalHeadEpoch);
+
+    SignedBlockAndState newChainHead = null;
+    for (UInt64 slot = chainHeadSlot.plus(1);
+        slot.isLessThan(finalHeadSlot);
+        slot = slot.increment()) {
+      final BlockOptions blockOptions = BlockOptions.create();
+      chainBuilder
+          .streamValidAttestationsForBlockAtSlot(slot)
+          .forEach(blockOptions::addAttestation);
+      newChainHead = chainBuilder.generateBlockAtSlot(slot, blockOptions);
+      saveBlock(newChainHead);
+      updateBestBlock(newChainHead);
+    }
+    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalized_checkpoint();
+    assertThat(finalizedCheckpoint.getEpoch())
+        .describedAs("Failed to finalize epoch %s", finalizeEpoch)
+        .isEqualTo(finalizeEpoch);
+    assertThat(finalizedCheckpoint.getRoot())
+        .describedAs("Failed to finalize epoch %s", finalizeEpoch)
+        .isNotEqualTo(Bytes32.ZERO);
+    return newChainHead;
+  }
+
   public SignedBlockAndState justifyEpoch(final long epoch) {
     return justifyEpoch(UInt64.valueOf(epoch));
   }
@@ -150,10 +179,28 @@ public class ChainUpdater {
     return blockAndState;
   }
 
+  public void syncWith(final ChainBuilder otherChain) {
+    otherChain.streamBlocksAndStates().forEach(this::saveBlock);
+    updateBestBlock(otherChain.getLatestBlockAndState());
+  }
+
   public void updateBestBlock(final SignedBlockAndState bestBlock) {
     saveBlock(bestBlock);
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    final Checkpoint justifiedCheckpoint = bestBlock.getState().getCurrent_justified_checkpoint();
+    if (justifiedCheckpoint
+        .getEpoch()
+        .isGreaterThan(recentChainData.getJustifiedCheckpoint().orElseThrow().getEpoch())) {
+      tx.setJustifiedCheckpoint(justifiedCheckpoint);
+      tx.setBestJustifiedCheckpoint(justifiedCheckpoint);
+    }
+    final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalized_checkpoint();
+    if (finalizedCheckpoint.getEpoch().isGreaterThan(recentChainData.getFinalizedEpoch())) {
+      tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    }
+    assertThat(tx.commit()).isCompleted();
   }
 
   public SignedBlockAndState advanceChain() {
