@@ -66,6 +66,7 @@ public abstract class ExecutionPayloadCommon {
   @Schema(type = "string", format = "byte")
   public final Bytes logsBloom;
 
+  @JsonProperty("prev_randao")
   @Schema(
       type = "string",
       format = "byte",
