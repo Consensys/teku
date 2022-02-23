@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState.Mutat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
@@ -101,7 +100,7 @@ class BeaconChainMetricsTest {
                 });
     chainHead = dataStructureUtil.randomSignedBlockAndState(state);
 
-    when(recentChainData.getChainHead()).thenAnswer(__ -> Optional.of(ChainHead.create(chainHead)));
+    when(recentChainData.getChainHead()).thenAnswer(__ -> Optional.of(chainHead));
   }
 
   private <E extends RuntimeException> void updateState(
@@ -421,7 +420,7 @@ class BeaconChainMetricsTest {
 
     // Make sure we don't try to get the block root for the state's own slot from block roots array
     // Otherwise this will fail.
-    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
+    beaconChainMetrics.onSlot(UInt64.valueOf(20));
   }
 
   @Test
