@@ -418,7 +418,8 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void prepareBeaconProposer(
-      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+      final Collection<BeaconPreparableProposer> beaconPreparableProposers,
+      final boolean fromRemote) {
     sendRequest(
             () ->
                 apiClient.prepareBeaconProposer(

@@ -382,7 +382,7 @@ public class ValidatorDataProvider {
                 .map(BeaconPreparableProposer::asInternalBeaconPreparableProposer)
                 .collect(Collectors.toUnmodifiableList());
 
-    validatorApiChannel.prepareBeaconProposer(internalBeaconPreparableProposer);
+    validatorApiChannel.prepareBeaconProposer(internalBeaconPreparableProposer, true);
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {

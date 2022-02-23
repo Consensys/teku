@@ -324,9 +324,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public void prepareBeaconProposer(
-      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+      final Collection<BeaconPreparableProposer> beaconPreparableProposers,
+      final boolean fromRemote) {
     prepareBeaconProposerCounter.inc();
-    delegate.prepareBeaconProposer(beaconPreparableProposers);
+    delegate.prepareBeaconProposer(beaconPreparableProposers, fromRemote);
   }
 
   private <T> SafeFuture<List<T>> countSendRequest(

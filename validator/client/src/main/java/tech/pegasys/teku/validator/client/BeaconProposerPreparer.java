@@ -84,7 +84,9 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
                           return buildBeaconPreparableProposerList(
                               Optional.empty(), publicKeyToIndex);
                         }))
-        .thenAccept(validatorApiChannel::prepareBeaconProposer)
+        .thenAccept(
+            beaconPreparableProposers ->
+                validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers, false))
         .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 

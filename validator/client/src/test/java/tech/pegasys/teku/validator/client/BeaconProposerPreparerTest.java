@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -149,7 +150,7 @@ public class BeaconProposerPreparerTest {
   @TestTemplate
   void should_notCallPrepareBeaconProposerAfterFirstSlotOfEpoch() {
     beaconProposerPreparer.onSlot(UInt64.ZERO);
-    verify(validatorApiChannel).prepareBeaconProposer(any());
+    verify(validatorApiChannel).prepareBeaconProposer(any(), anyBoolean());
 
     beaconProposerPreparer.onSlot(UInt64.ONE);
     verifyNoMoreInteractions(validatorApiChannel);
@@ -158,20 +159,23 @@ public class BeaconProposerPreparerTest {
   @TestTemplate
   void should_callPrepareBeaconProposerAfterOnPossibleMissedEvents() {
     beaconProposerPreparer.onPossibleMissedEvents();
-    verify(validatorApiChannel).prepareBeaconProposer(any());
+    verify(validatorApiChannel).prepareBeaconProposer(any(), anyBoolean());
   }
 
+  @TestTemplate
   void should_callPrepareBeaconProposerAfterOnValidatorsAdded() {
     beaconProposerPreparer.onValidatorsAdded();
-    verify(validatorApiChannel).prepareBeaconProposer(any());
+    verify(validatorApiChannel).prepareBeaconProposer(any(), anyBoolean());
   }
 
   @TestTemplate
   void should_catchApiExceptions() {
-    doThrow(new RuntimeException("error")).when(validatorApiChannel).prepareBeaconProposer(any());
+    doThrow(new RuntimeException("error"))
+        .when(validatorApiChannel)
+        .prepareBeaconProposer(any(), anyBoolean());
 
     beaconProposerPreparer.onSlot(UInt64.ZERO);
-    verify(validatorApiChannel, times(1)).prepareBeaconProposer(any());
+    verify(validatorApiChannel, times(1)).prepareBeaconProposer(any(), anyBoolean());
   }
 
   private ArgumentCaptor<Collection<BeaconPreparableProposer>> doCall() {
@@ -180,7 +184,7 @@ public class BeaconProposerPreparerTest {
     @SuppressWarnings("unchecked")
     final ArgumentCaptor<Collection<BeaconPreparableProposer>> captor =
         ArgumentCaptor.forClass(Collection.class);
-    verify(validatorApiChannel).prepareBeaconProposer(captor.capture());
+    verify(validatorApiChannel).prepareBeaconProposer(captor.capture(), anyBoolean());
 
     return captor;
   }

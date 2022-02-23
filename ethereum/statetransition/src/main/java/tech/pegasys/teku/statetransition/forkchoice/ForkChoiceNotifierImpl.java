@@ -80,8 +80,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public void onUpdatePreparableProposers(final Collection<BeaconPreparableProposer> proposers) {
-    eventThread.execute(() -> internalUpdatePreparableProposers(proposers));
+  public void onUpdatePreparableProposers(
+      final Collection<BeaconPreparableProposer> proposers, final boolean fromRemote) {
+    eventThread.execute(() -> internalUpdatePreparableProposers(proposers, fromRemote));
   }
 
   @Override
@@ -189,12 +190,12 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   private void internalUpdatePreparableProposers(
-      final Collection<BeaconPreparableProposer> proposers) {
+      final Collection<BeaconPreparableProposer> proposers, final boolean fromRemote) {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalUpdatePreparableProposers proposers {}", proposers);
 
-    if (!payloadAttributesCalculator.isProposerDefaultFeeRecipientDefined()) {
+    if (!payloadAttributesCalculator.isProposerDefaultFeeRecipientDefined() && fromRemote) {
       STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
     }
 

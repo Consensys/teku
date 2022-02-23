@@ -184,7 +184,8 @@ class ForkChoiceNotifierTest {
     notifier.onUpdatePreparableProposers(
         List.of(
             new BeaconPreparableProposer(
-                UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomBytes20())));
+                UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomBytes20())),
+        false);
 
     assertThat(notifier.onForkChoiceUpdated(forkChoiceState)).isCompleted();
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
@@ -680,7 +681,8 @@ class ForkChoiceNotifierTest {
       notifier.onUpdatePreparableProposers(
           List.of(
               new BeaconPreparableProposer(
-                  UInt64.valueOf(block2Proposer), payloadAttributes.getFeeRecipient())));
+                  UInt64.valueOf(block2Proposer), payloadAttributes.getFeeRecipient())),
+          false);
     }
     return payloadAttributes;
   }
@@ -703,7 +705,8 @@ class ForkChoiceNotifierTest {
             new BeaconPreparableProposer(
                 UInt64.valueOf(block2Proposer1), payloadAttributes1.getFeeRecipient()),
             new BeaconPreparableProposer(
-                UInt64.valueOf(block2Proposer2), payloadAttributes2.getFeeRecipient())));
+                UInt64.valueOf(block2Proposer2), payloadAttributes2.getFeeRecipient())),
+        false);
     return List.of(payloadAttributes1, payloadAttributes2);
   }
 
