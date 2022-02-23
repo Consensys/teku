@@ -639,8 +639,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         dependentRoot,
-        validatorIndices.stream()
-            .map(index -> createAttesterDuties(state, epoch, index))
+        validatorIndices
+            .intStream()
+            .mapToObj(index -> createAttesterDuties(state, epoch, index))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(toList()));
