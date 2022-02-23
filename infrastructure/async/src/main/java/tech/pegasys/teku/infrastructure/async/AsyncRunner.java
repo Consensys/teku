@@ -63,6 +63,31 @@ public interface AsyncRunner {
   }
 
   /**
+   * Schedules the recurrent task which will be repeatedly executed with the specified delay.
+   *
+   * <p>The recurrent task may perform actions async and the delay between executions will only
+   * begin when the returned future is completed.
+   *
+   * <p>The returned instance can be used to cancel the task. Note that {@link Cancellable#cancel()}
+   * doesn't interrupt already running task.
+   *
+   * <p>Whenever the {@code runnable} throws exception it is notified to the {@code
+   * exceptionHandler} and the task recurring executions are not interrupted
+   */
+  default <T> Cancellable runWithFixedDelay(
+      final ExceptionThrowingFutureSupplier<T> runnable,
+      final Duration initialDelay,
+      final Duration delay,
+      final Consumer<Throwable> exceptionHandler) {
+    Preconditions.checkNotNull(exceptionHandler);
+
+    Cancellable cancellable = FutureUtil.createCancellable();
+    FutureUtil.runWithFixedDelay(
+        this, runnable, cancellable, initialDelay, delay, exceptionHandler);
+    return cancellable;
+  }
+
+  /**
    * Execute the future supplier until it completes normally up to some maximum number of retries.
    *
    * @param action The action to run
