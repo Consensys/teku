@@ -56,7 +56,7 @@ public class ExecutionPayloadHeaderSchema
         namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("receipts_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("logs_bloom", SszByteVectorSchema.create(specConfig.getBytesPerLogsBloom())),
-        namedSchema("random", SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema("prev_randao", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("block_number", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
