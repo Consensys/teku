@@ -103,12 +103,18 @@ public class LibP2PNetworkBuilder {
             new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort()), nodeId);
 
     return new LibP2PNetwork(
-        host.getPrivKey(), nodeId, host, peerManager, advertisedAddr, gossipNetwork,
+        host.getPrivKey(),
+        nodeId,
+        host,
+        peerManager,
+        advertisedAddr,
+        gossipNetwork,
         config.getListenPort());
   }
 
   protected List<RpcHandler<?, ?, ?>> createRpcHandlers() {
-    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m))
+    return rpcMethods.stream()
+        .map(m -> new RpcHandler<>(asyncRunner, m))
         .collect(Collectors.toList());
   }
 
@@ -123,7 +129,7 @@ public class LibP2PNetworkBuilder {
   }
 
   protected PeerManager createPeerManager() {
-    return  new PeerManager(
+    return new PeerManager(
         metricsSystem,
         reputationManager,
         peerHandlers,
