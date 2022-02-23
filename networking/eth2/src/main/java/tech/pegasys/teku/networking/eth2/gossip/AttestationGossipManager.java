@@ -63,7 +63,7 @@ public class AttestationGossipManager implements GossipManager {
             },
             error -> {
               LOG.log(
-                  error instanceof NoPeersForOutboundMessageException ? Level.DEBUG : Level.WARN,
+                  error instanceof NoPeersForOutboundMessageException ? Level.DEBUG : Level.ERROR,
                   "Failed to publish attestation for slot {}",
                   attestation.getData().getSlot(),
                   error);
