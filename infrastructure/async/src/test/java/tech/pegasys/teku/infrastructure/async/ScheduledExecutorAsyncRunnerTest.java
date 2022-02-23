@@ -14,7 +14,9 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -34,6 +36,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -184,6 +187,91 @@ class ScheduledExecutorAsyncRunnerTest {
     assertThat(scheduledActions).hasSize(3);
     scheduledActions.get(2).run();
     assertThat(exception.get()).hasMessageContaining("Ups");
+  }
+
+  @Test
+  void shouldRunAsyncRepeatingTaskUntilCancelled() {
+    final int initialDelay = 10;
+    final int repeatDelay = 100;
+    final List<Pair<Runnable, Long>> delayedTasks = new ArrayList<>();
+    when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.MILLISECONDS)))
+        .thenAnswer(
+            invocation -> {
+              delayedTasks.add(Pair.of(invocation.getArgument(0), invocation.getArgument(1)));
+              return mock(ScheduledFuture.class);
+            });
+
+    final List<SafeFuture<Void>> taskFutures = new ArrayList<>();
+    AtomicInteger counter = new AtomicInteger();
+    Cancellable task =
+        asyncRunner.runWithFixedDelay(
+            () -> {
+              final SafeFuture<Void> future = new SafeFuture<>();
+              taskFutures.add(future);
+              return future.thenRun(counter::incrementAndGet);
+            },
+            Duration.ofMillis(initialDelay),
+            Duration.ofMillis(repeatDelay),
+            t -> {});
+
+    assertThat(delayedTasks).hasSize(1);
+    final Pair<Runnable, Long> initialExecution = delayedTasks.get(0);
+    assertThat(initialExecution.getRight()).isEqualTo(initialDelay);
+
+    // Start task running
+    initialExecution.getLeft().run();
+    assertThat(taskFutures).hasSize(1);
+    // Next execution is not scheduled yet because the future has not completed
+    assertThat(delayedTasks).hasSize(1);
+
+    // Task completes and next task is scheduled after repeat delay
+    taskFutures.get(0).complete(null);
+    assertThat(counter.get()).isEqualTo(1);
+    assertThat(delayedTasks).hasSize(2);
+    assertThat(delayedTasks.get(1).getRight()).isEqualTo(repeatDelay);
+
+    // Start second repeat running
+    delayedTasks.get(1).getLeft().run();
+    assertThat(taskFutures).hasSize(2);
+    // Next execution is not scheduled yet because the future has not completed
+    assertThat(delayedTasks).hasSize(2);
+
+    // Second repeat completes and next execution is scheduled
+    taskFutures.get(1).complete(null);
+    assertThat(delayedTasks).hasSize(3);
+    assertThat(delayedTasks.get(2).getRight()).isEqualTo(repeatDelay);
+
+    // Task is cancelled so next execution doesn't actually run
+    task.cancel();
+    delayedTasks.get(2).getLeft().run();
+    assertThat(taskFutures).hasSize(2);
+  }
+
+  @Test
+  void shouldReportExceptionsFromAsyncRepeatingTaskToExceptionHandler() {
+    final List<Runnable> scheduledActions = new ArrayList<>();
+    when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.MILLISECONDS)))
+        .thenAnswer(
+            invocation -> {
+              scheduledActions.add(invocation.getArgument(0));
+              return mock(ScheduledFuture.class);
+            });
+
+    final AtomicReference<Throwable> error = new AtomicReference<>();
+    final StackOverflowError expectedError = new StackOverflowError("Whoopsy!");
+    asyncRunner.runWithFixedDelay(
+        () -> {
+          throw expectedError;
+        },
+        Duration.ofMillis(10),
+        Duration.ofMillis(100),
+        error::set);
+
+    assertThat(error).hasValue(null);
+    assertThat(scheduledActions).hasSize(1);
+
+    assertThatCode(scheduledActions.get(0)::run).doesNotThrowAnyException();
+    assertThat(error).hasValue(expectedError);
   }
 
   @Test

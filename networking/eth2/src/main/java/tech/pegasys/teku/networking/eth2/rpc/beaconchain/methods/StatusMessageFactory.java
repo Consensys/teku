@@ -14,7 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -34,14 +35,17 @@ public class StatusMessageFactory {
       return Optional.empty();
     }
 
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
+    final BeaconBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
-    final Checkpoint finalizedCheckpoint = chainHead.getState().getFinalized_checkpoint();
 
     return Optional.of(
         new StatusMessage(
             forkInfo.getForkDigest(recentChainData.getSpec()),
-            finalizedCheckpoint.getRoot(),
+            // Genesis finalized root is always ZERO because it's taken from the state and the
+            // genesis block is calculated from the state so the state can't contain the actual
+            // block root
+            finalizedCheckpoint.getEpoch().isZero() ? Bytes32.ZERO : finalizedCheckpoint.getRoot(),
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),
             chainHead.getSlot()));
