@@ -18,9 +18,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
@@ -32,7 +29,8 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
   private final Optional<PrivateKeySource> privateKeySource;
 
   public LibP2PPrivateKeyLoader(
-      final KeyValueStore<String, Bytes> keyValueStore, final Optional<PrivateKeySource> privateKeySource) {
+      final KeyValueStore<String, Bytes> keyValueStore,
+      final Optional<PrivateKeySource> privateKeySource) {
     this.keyValueStore = keyValueStore;
     this.privateKeySource = privateKeySource;
   }
@@ -40,7 +38,8 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
   @Override
   public PrivKey get() {
     final Bytes privKeyBytes =
-        privateKeySource.map(PrivateKeySource::getPrivateKeyBytes)
+        privateKeySource
+            .map(PrivateKeySource::getPrivateKeyBytes)
             .orElseGet(this::generateNewPrivateKey);
     return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
   }

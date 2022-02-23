@@ -17,13 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;

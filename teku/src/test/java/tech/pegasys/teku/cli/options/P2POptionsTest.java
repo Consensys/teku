@@ -218,8 +218,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file");
     assertThat(tekuConfiguration.network().getPrivateKeySource())
         .containsInstanceOf(FilePrivateKeySource.class);
-    assertThat(((FilePrivateKeySource) tekuConfiguration.network().getPrivateKeySource().get())
-        .getFileName())
+    assertThat(
+        ((FilePrivateKeySource) tekuConfiguration.network().getPrivateKeySource().get())
+            .getFileName())
         .isEqualTo("/some/file");
     assertThat(createConfigBuilder().network(b -> b.privateKeyFile("/some/file")).build())
         .usingRecursiveComparison()
