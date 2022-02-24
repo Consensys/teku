@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -81,14 +81,24 @@ public class SyncCommitteeMetrics implements SlotEventsChannel, ChainHeadChannel
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getChainHead().ifPresent(head -> updateSlotBasedMetrics(slot, head));
+    recentChainData
+        .getChainHead()
+        .ifPresent(
+            head ->
+                head.getState()
+                    .finish(
+                        state -> updateSlotBasedMetrics(slot, state),
+                        error ->
+                            LOG.error(
+                                "Unable to update sync committee metrics because chain head state was unavailable.",
+                                error)));
   }
 
-  public void updateSlotBasedMetrics(final UInt64 slot, final StateAndBlockSummary chainHead) {
+  public void updateSlotBasedMetrics(final UInt64 slot, final BeaconState chainHead) {
     final UInt64 previousEpoch = spec.computeEpochAtSlot(slot).minusMinZero(1);
     final UInt64 previousEpochStartSlot = spec.computeStartSlotAtEpoch(previousEpoch);
     if ((lastProcessedEpoch != null && previousEpoch.isLessThanOrEqualTo(lastProcessedEpoch))
-        || chainHead.getState().toVersionAltair().isEmpty()) {
+        || chainHead.toVersionAltair().isEmpty()) {
       return;
     }
 
@@ -111,8 +121,8 @@ public class SyncCommitteeMetrics implements SlotEventsChannel, ChainHeadChannel
   }
 
   private SafeFuture<Optional<BeaconBlock>> getBlockAtSlotExact(
-      final StateAndBlockSummary chainHead, final UInt64 slot) {
-    final Bytes32 blockRoot = spec.getBlockRootAtSlot(chainHead.getState(), slot);
+      final BeaconState chainHead, final UInt64 slot) {
+    final Bytes32 blockRoot = spec.getBlockRootAtSlot(chainHead, slot);
     final Optional<UInt64> blockSlot = recentChainData.getSlotForBlockRoot(blockRoot);
     if (blockSlot.isPresent() && blockSlot.get().equals(slot)) {
       return recentChainData.retrieveBlockByRoot(blockRoot);

@@ -28,7 +28,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -56,7 +55,7 @@ public class ActiveEth2P2PNetworkTest {
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   // Stubs and mocks
-  private final AsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final DiscoveryNetwork<?> discoveryNetwork = mock(DiscoveryNetwork.class);
   private final Eth2PeerManager peerManager = mock(Eth2PeerManager.class);
   private final GossipForkManager gossipForkManager = mock(GossipForkManager.class);
@@ -111,6 +110,7 @@ public class ActiveEth2P2PNetworkTest {
 
     // Process epoch 1 - we shouldn't update fork info here
     network.onEpoch(UInt64.ONE);
+    asyncRunner.executeDueActions();
     verify(discoveryNetwork).updateGossipTopicScoring(any());
     verifyNoMoreInteractions(discoveryNetwork);
 

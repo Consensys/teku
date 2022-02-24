@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class BeaconBlocksByRangeMessageHandlerTest {
@@ -478,6 +479,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   private void withCanonicalHeadBlock(final StateAndBlockSummary chainHead) {
-    when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(combinedChainDataClient.getChainHead())
+        .thenReturn(Optional.of(ChainHead.create(chainHead)));
   }
 }

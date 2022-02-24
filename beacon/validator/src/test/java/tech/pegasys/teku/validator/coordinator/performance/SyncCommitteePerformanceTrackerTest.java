@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class SyncCommitteePerformanceTrackerTest {
@@ -100,7 +100,7 @@ class SyncCommitteePerformanceTrackerTest {
     final Bytes32 wrongBlockRoot = dataStructureUtil.randomBytes32();
     final SignedBlockAndState chainHead = dataStructureUtil.randomSignedBlockAndState(3);
     when(combinedChainDataClient.getChainHead())
-        .thenReturn(Optional.of(StateAndBlockSummary.create(chainHead)));
+        .thenReturn(Optional.of(ChainHead.create(chainHead)));
     doReturn(dataStructureUtil.randomBytes32())
         .when(specSpy)
         .getBlockRootAtSlot(eq(chainHead.getState()), any());

@@ -344,7 +344,7 @@ public class CombinedChainDataClient {
     return recentChainData.getHeadBlock();
   }
 
-  public Optional<StateAndBlockSummary> getChainHead() {
+  public Optional<ChainHead> getChainHead() {
     return recentChainData.getChainHead();
   }
 

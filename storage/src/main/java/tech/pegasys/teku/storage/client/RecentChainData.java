@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -445,8 +444,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   /** @return The head of the chain. */
-  public Optional<StateAndBlockSummary> getChainHead() {
-    return chainHead.map(a -> a);
+  public Optional<ChainHead> getChainHead() {
+    return chainHead;
   }
 
   /** @return The block at the head of the chain. */
@@ -456,7 +455,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   /** Retrieves the state of the block chosen by fork choice to build and attest on */
   public Optional<SafeFuture<BeaconState>> getBestState() {
-    return chainHead.map(StateAndBlockSummary::getState).map(SafeFuture::completedFuture);
+    return chainHead.map(ChainHead::getState);
   }
 
   /** Retrieves the slot of the block chosen by fork choice to build and attest on */
