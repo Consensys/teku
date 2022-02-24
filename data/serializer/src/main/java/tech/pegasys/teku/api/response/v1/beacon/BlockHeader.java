@@ -54,7 +54,7 @@ public class BlockHeader {
                 signedBeaconBlock.getMessage().getProposerIndex(),
                 signedBeaconBlock.getParentRoot(),
                 signedBeaconBlock.getStateRoot(),
-                signedBeaconBlock.getRoot()),
+                signedBeaconBlock.getBodyRoot()),
             new BLSSignature(signedBeaconBlock.getSignature()));
   }
 
