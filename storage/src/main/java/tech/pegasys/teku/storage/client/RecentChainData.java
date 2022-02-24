@@ -329,19 +329,23 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           // duty dependent root isn't available from protoarray it must be the parent of the
           // finalized block and the current duty dependent root must be available.
           // See comments on beaconStateUtil.getPreviousDutyDependentRoot for reasoning.
+          // The exception is when we have just started from an initial state and block history
+          // isn't available, in which case the dependentRoot can safely be set to the finalized
+          // block and will remain consistent.
           beaconStateUtil
               .getPreviousDutyDependentRoot(forkChoiceStrategy, newChainHead)
-              .orElseGet(() -> getFinalizedBlockParentRoot(forkChoiceStrategy)),
+              .orElseGet(this::getFinalizedBlockParentRoot),
           beaconStateUtil
               .getCurrentDutyDependentRoot(forkChoiceStrategy, newChainHead)
-              .orElseThrow(),
+              .orElseGet(this::getFinalizedBlockParentRoot),
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);
   }
 
-  private Bytes32 getFinalizedBlockParentRoot(final ForkChoiceStrategy forkChoiceStrategy) {
-    return forkChoiceStrategy
+  private Bytes32 getFinalizedBlockParentRoot() {
+    return getForkChoiceStrategy()
+        .orElseThrow()
         .blockParentRoot(store.getFinalizedCheckpoint().getRoot())
         .orElseThrow(() -> new IllegalStateException("Finalized block is unknown"));
   }
