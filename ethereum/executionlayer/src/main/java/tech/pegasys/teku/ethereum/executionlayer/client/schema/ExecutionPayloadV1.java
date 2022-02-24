@@ -64,7 +64,7 @@ public class ExecutionPayloadV1 {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 random;
+  public final Bytes32 prevRandao;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
@@ -104,7 +104,7 @@ public class ExecutionPayloadV1 {
       @JsonProperty("stateRoot") Bytes32 stateRoot,
       @JsonProperty("receiptsRoot") Bytes32 receiptsRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
-      @JsonProperty("random") Bytes32 random,
+      @JsonProperty("prevRandao") Bytes32 prevRandao,
       @JsonProperty("blockNumber") UInt64 blockNumber,
       @JsonProperty("gasLimit") UInt64 gasLimit,
       @JsonProperty("gasUsed") UInt64 gasUsed,
@@ -118,7 +118,7 @@ public class ExecutionPayloadV1 {
     checkNotNull(stateRoot, "stateRoot");
     checkNotNull(receiptsRoot, "receiptsRoot");
     checkNotNull(logsBloom, "logsBloom");
-    checkNotNull(random, "random");
+    checkNotNull(prevRandao, "prevRandao");
     checkNotNull(blockNumber, "blockNumber");
     checkNotNull(gasLimit, "gasLimit");
     checkNotNull(gasUsed, "gasUsed");
@@ -131,7 +131,7 @@ public class ExecutionPayloadV1 {
     this.stateRoot = stateRoot;
     this.receiptsRoot = receiptsRoot;
     this.logsBloom = logsBloom;
-    this.random = random;
+    this.prevRandao = prevRandao;
     this.blockNumber = blockNumber;
     this.gasLimit = gasLimit;
     this.gasUsed = gasUsed;
@@ -150,7 +150,7 @@ public class ExecutionPayloadV1 {
         stateRoot,
         receiptsRoot,
         logsBloom,
-        random,
+        prevRandao,
         blockNumber,
         gasLimit,
         gasUsed,
@@ -168,7 +168,7 @@ public class ExecutionPayloadV1 {
         executionPayload.getStateRoot(),
         executionPayload.getReceiptsRoot(),
         executionPayload.getLogsBloom(),
-        executionPayload.getRandom(),
+        executionPayload.getPrevRandao(),
         executionPayload.getBlockNumber(),
         executionPayload.getGasLimit(),
         executionPayload.getGasUsed(),
@@ -195,7 +195,7 @@ public class ExecutionPayloadV1 {
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(receiptsRoot, that.receiptsRoot)
         && Objects.equals(logsBloom, that.logsBloom)
-        && Objects.equals(random, that.random)
+        && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(blockNumber, that.blockNumber)
         && Objects.equals(gasLimit, that.gasLimit)
         && Objects.equals(gasUsed, that.gasUsed)
@@ -214,7 +214,7 @@ public class ExecutionPayloadV1 {
         stateRoot,
         receiptsRoot,
         logsBloom,
-        random,
+        prevRandao,
         blockNumber,
         gasLimit,
         gasUsed,
@@ -233,7 +233,7 @@ public class ExecutionPayloadV1 {
         .add("stateRoot", stateRoot)
         .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
-        .add("random", random)
+        .add("prevRandao", prevRandao)
         .add("blockNumber", blockNumber)
         .add("gasLimit", gasLimit)
         .add("gasUsed", gasUsed)

@@ -34,7 +34,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -848,36 +847,25 @@ public class BeaconChainController extends Service
             Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
             spec);
 
-    final SyncState currentSyncState = syncService.getCurrentSyncState();
-
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
 
     // forkChoiceNotifier subscription
-    syncService.subscribeToSyncStateChanges(
+    syncService.subscribeToSyncStateChangesAndUpdate(
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
-    forkChoiceNotifier.onSyncingStatusChanged(currentSyncState.isInSync());
 
     // forkChoice subscription
-    forkChoice.subscribeToOptimisticHeadChanges(syncService.getOptimisticSyncSubscriber());
-    forkChoice
-        .getOptimisticSyncing()
-        .ifPresent(
-            isOptimistic ->
-                syncService.getOptimisticSyncSubscriber().onOptimisticHeadChanged(isOptimistic));
+    forkChoice.subscribeToOptimisticHeadChangesAndUpdate(syncService.getOptimisticSyncSubscriber());
 
     // terminalPowBlockMonitor subscription
     terminalPowBlockMonitor.ifPresent(
-        monitor -> {
-          syncService.subscribeToSyncStateChanges(
-              syncState -> monitor.onNodeSyncStateChanged(syncState.isInSync()));
-          monitor.onNodeSyncStateChanged(currentSyncState.isInSync());
-        });
+        monitor ->
+            syncService.subscribeToSyncStateChangesAndUpdate(
+                syncState -> monitor.onNodeSyncStateChanged(syncState.isInSync())));
 
     // p2pNetwork subscription so gossip can be enabled and disabled appropriately
-    syncService.subscribeToSyncStateChanges(
+    syncService.subscribeToSyncStateChangesAndUpdate(
         state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
-    p2pNetwork.onSyncStateChanged(currentSyncState.isInSync(), currentSyncState.isOptimistic());
   }
 
   protected void initOperationsReOrgManager() {

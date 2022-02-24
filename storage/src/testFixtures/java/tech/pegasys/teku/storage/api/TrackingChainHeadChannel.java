@@ -86,6 +86,10 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
       this.currentDutyDependentRoot = currentDutyDependentRoot;
     }
 
+    public UInt64 getSlot() {
+      return slot;
+    }
+
     public Bytes32 getPreviousDutyDependentRoot() {
       return previousDutyDependentRoot;
     }
