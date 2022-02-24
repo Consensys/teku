@@ -97,6 +97,13 @@ public class SyncStateTracker extends Service
   }
 
   @Override
+  public long subscribeToSyncStateChangesAndUpdate(final SyncStateSubscriber subscriber) {
+    final long subscriptionId = subscribeToSyncStateChanges(subscriber);
+    subscriber.onSyncStateChange(getCurrentSyncState());
+    return subscriptionId;
+  }
+
+  @Override
   public boolean unsubscribeFromSyncStateChanges(long subscriberId) {
     return subscribers.unsubscribe(subscriberId);
   }
