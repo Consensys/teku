@@ -70,7 +70,7 @@ public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient
                 KilnV1ExecutionPayloadV1.fromExecutionPayloadV1(executionPayload)),
             eeWeb3jService,
             NewPayloadWeb3jResponse.class);
-    return doRequest(web3jRequest);
+    return getWeb3JClient().doRequest(web3jRequest);
   }
 
   @Override
@@ -81,7 +81,7 @@ public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient
             Collections.singletonList(payloadId.toHexString()),
             eeWeb3jService,
             KilnV1GetPayloadWeb3jResponse.class);
-    return doRequest(web3jRequest).thenApply(this::fromKilnV1GetPayloadResponse);
+    return getWeb3JClient().doRequest(web3jRequest).thenApply(this::fromKilnV1GetPayloadResponse);
   }
 
   private Response<ExecutionPayloadV1> fromKilnV1GetPayloadResponse(
@@ -106,7 +106,7 @@ public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient
                     .orElse(null)),
             eeWeb3jService,
             ForkChoiceUpdatedWeb3jResponse.class);
-    return doRequest(web3jRequest);
+    return getWeb3JClient().doRequest(web3jRequest);
   }
 
   public static class KilnV1ExecutionPayloadV1 {
