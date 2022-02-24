@@ -13,11 +13,33 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import java.util.Optional;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3jService;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthHttpInterceptor;
+import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3jHttpClient extends Web3JClient {
+  private static final Logger LOG = LogManager.getLogger();
+
   public Web3jHttpClient(TimeProvider timeProvider, Web3jService eeWeb3jService) {
     super(timeProvider, eeWeb3jService);
+  }
+
+  protected static OkHttpClient createOkHttpClient(
+      final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
+    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    if (LOG.isTraceEnabled()) {
+      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
+      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+      builder.addInterceptor(logging);
+    }
+    jwtConfig.ifPresent(
+        config -> builder.addInterceptor(new JwtAuthHttpInterceptor(config, timeProvider)));
+    return builder.build();
   }
 }

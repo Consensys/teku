@@ -19,20 +19,15 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.websocket.WebSocketClient;
 import org.web3j.protocol.websocket.WebSocketService;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthHttpInterceptor;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3jClientBuilder {
-  private static final Logger LOG = LogManager.getLogger();
   private TimeProvider timeProvider;
   private URI endpoint;
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
@@ -63,24 +58,13 @@ public class Web3jClientBuilder {
     return this;
   }
 
-  private OkHttpClient createOkHttpClient() {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
-    if (LOG.isTraceEnabled()) {
-      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
-      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-      builder.addInterceptor(logging);
-    }
-    jwtConfigOpt.ifPresent(
-        config -> builder.addInterceptor(new JwtAuthHttpInterceptor(config, timeProvider)));
-    return builder.build();
-  }
-
   public Web3JClient build() {
     checkNotNull(timeProvider);
     checkNotNull(endpoint);
     switch (endpoint.getScheme()) {
       case "http":
-        final OkHttpClient okHttpClient = createOkHttpClient();
+        final OkHttpClient okHttpClient =
+            Web3jHttpClient.createOkHttpClient(jwtConfigOpt, timeProvider);
         Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
         return new Web3jHttpClient(timeProvider, httpService);
       case "ws":
