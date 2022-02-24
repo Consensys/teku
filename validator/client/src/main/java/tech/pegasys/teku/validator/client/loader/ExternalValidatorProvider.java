@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -74,5 +75,10 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
         externalSignerTimeout,
         externalSignerTaskQueue,
         metricsSystem);
+  }
+
+  @VisibleForTesting
+  public URL getExternalSignerUrl() {
+    return externalSignerUrl;
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static java.nio.file.Files.createTempFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,9 +27,12 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -149,6 +154,60 @@ public class ExternalValidatorSourceTest {
     assertThat(result2.getSigner()).isEmpty();
 
     assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
+  }
+
+  @Test
+  void shouldLoadExternalValidators(@TempDir Path tempDir) throws IOException {
+    DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
+    final ExternalValidatorSource externalValidatorSource =
+        ExternalValidatorSource.create(
+            spec,
+            metricsSystem,
+            config,
+            httpClientFactory,
+            publicKeyLoader,
+            asyncRunner,
+            false,
+            externalSignerTaskQueue,
+            Optional.of(dataDirLayout));
+
+    final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+    createRemoteKeyFile(dataDirLayout, publicKey1, Optional.of(new URL("http://host.com")));
+
+    final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+    createRemoteKeyFile(dataDirLayout, publicKey2, Optional.empty());
+
+    List<ValidatorSource.ValidatorProvider> validators =
+        externalValidatorSource.getAvailableValidators();
+
+    validators.forEach(
+        provider -> assertThat(provider).isInstanceOf(ExternalValidatorProvider.class));
+
+    List<BLSPublicKey> validatorKeys =
+        validators.stream()
+            .map(ValidatorSource.ValidatorProvider::getPublicKey)
+            .collect(Collectors.toList());
+    assertThat(validatorKeys).containsExactlyInAnyOrder(publicKey1, publicKey2);
+
+    List<URL> validatorUrls =
+        validators.stream()
+            .map(provider -> ((ExternalValidatorProvider) provider).getExternalSignerUrl())
+            .collect(Collectors.toList());
+    assertThat(validatorUrls)
+        .containsExactlyInAnyOrder(new URL("http://host.com"), new URL("http://localhost:9000"));
+  }
+
+  private void createRemoteKeyFile(
+      DataDirLayout dataDirLayout, BLSPublicKey publicKey, Optional<URL> url) throws IOException {
+    final String urlContent = url.map(value -> ",\"url\":\"" + value + "\"").orElse("");
+    final String CONTENT = "{\"pubkey\":\"" + publicKey + "\"" + urlContent + "}";
+
+    final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
+    directory.toFile().mkdirs();
+
+    Path tempFile =
+        createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
+    Files.write(CONTENT.getBytes(StandardCharsets.UTF_8), tempFile.toFile());
   }
 
   private AddValidatorResult getResultFromAddingValidator(
