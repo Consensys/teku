@@ -263,7 +263,7 @@ public class Eth2P2PNetworkBuilder {
             .metricsSystem(metricsSystem)
             .config(networkConfig)
             .privateKeyProvider(
-                new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()))
+                new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeySource()))
             .reputationManager(reputationManager)
             .rpcMethods(rpcMethods)
             .peerHandlers(peerHandlers)
