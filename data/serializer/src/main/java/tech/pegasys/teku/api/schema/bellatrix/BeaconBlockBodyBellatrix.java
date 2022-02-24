@@ -91,7 +91,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
                         executionPayload.stateRoot,
                         executionPayload.receiptsRoot,
                         executionPayload.logsBloom,
-                        executionPayload.random,
+                        executionPayload.prevRandao,
                         executionPayload.blockNumber,
                         executionPayload.gasLimit,
                         executionPayload.gasUsed,

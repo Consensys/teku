@@ -181,7 +181,7 @@ public class ChainDataProviderTest {
             block.getMessage().getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
-            block.getRoot());
+            block.getBodyRoot());
     final BlockHeader expected =
         new BlockHeader(
             block.getRoot(),

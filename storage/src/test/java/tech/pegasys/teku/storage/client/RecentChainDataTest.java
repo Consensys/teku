@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -219,7 +220,7 @@ class RecentChainDataTest {
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     assertThat(recentChainData.getChainHead().map(BeaconBlockSummary::getRoot))
         .contains(bestBlock.getRoot());
-    assertThat(this.storageSystem.reorgEventChannel().getHeadEvents())
+    assertThat(this.storageSystem.chainHeadChannel().getHeadEvents())
         .contains(
             new HeadEvent(
                 bestBlock.getSlot(),
@@ -326,7 +327,7 @@ class RecentChainDataTest {
     generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(storageSystem)).isZero();
   }
 
@@ -338,7 +339,60 @@ class RecentChainDataTest {
 
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
     recentChainData.updateHead(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
+  }
+
+  @Test
+  public void updateHead_calculateDependentRootCorrectly() {
+    initPostGenesis();
+    recentChainData.getStore().getForkChoiceStrategy().setPruneThreshold(0);
+    storageSystem.chainUpdater().finalizeCurrentChain();
+    final List<HeadEvent> headEvents = storageSystem.chainHeadChannel().getHeadEvents();
+    assertThat(headEvents).isNotEmpty();
+    headEvents.forEach(this::verifyDependentRoots);
+    headEvents.clear();
+    assertProtoArrayHasNoFinalizedBlocks();
+
+    final SignedBlockAndState latestBlockAndState = storageSystem.chainUpdater().advanceChain();
+    recentChainData.updateHead(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    assertThat(headEvents).hasSize(1);
+    verifyDependentRoots(headEvents.get(0));
+
+    // Head reverts to the justified checkpoint (really is possible though quirky)
+    final SignedBeaconBlock justifiedBlock =
+        chainBuilder
+            .getBlock(recentChainData.getJustifiedCheckpoint().orElseThrow().getRoot())
+            .orElseThrow();
+    recentChainData.updateHead(justifiedBlock.getRoot(), justifiedBlock.getSlot());
+    assertThat(headEvents).hasSize(2);
+    verifyDependentRoots(headEvents.get(1));
+  }
+
+  /**
+   * Checks that the protoarray was fully pruned and the block prior to the finalized block is not
+   * available.
+   */
+  private void assertProtoArrayHasNoFinalizedBlocks() {
+    final Bytes32 finalizedBlock = recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot();
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    final Bytes32 finalizedParent =
+        forkChoiceStrategy.blockParentRoot(finalizedBlock).orElseThrow();
+    assertThat(finalizedParent.isZero()).isFalse();
+    assertThat(forkChoiceStrategy.blockSlot(finalizedParent)).isEmpty();
+  }
+
+  private void verifyDependentRoots(final HeadEvent headEvent) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(headEvent.getSlot());
+    final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
+    final UInt64 currentDependentRootSlot =
+        spec.computeStartSlotAtEpoch(currentEpoch).minusMinZero(1);
+    final UInt64 previousDependentRootSlot =
+        spec.computeStartSlotAtEpoch(previousEpoch).minusMinZero(1);
+    assertThat(headEvent.getCurrentDutyDependentRoot())
+        .isEqualTo(chainBuilder.getBlockAtSlot(currentDependentRootSlot).getRoot());
+    assertThat(headEvent.getPreviousDutyDependentRoot())
+        .isEqualTo(chainBuilder.getBlockAtSlot(previousDependentRootSlot).getRoot());
   }
 
   @Test
@@ -352,15 +406,15 @@ class RecentChainDataTest {
     final SignedBlockAndState block3 = chainBuilder.getBlockAndStateAtSlot(3);
     // Head updated to block1 followed by empty slots up to slot 11
     recentChainData.updateHead(block1.getRoot(), UInt64.valueOf(11));
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     // Head updated to block2 but should preserve empty slots up to slot 11
     recentChainData.updateHead(block2.getRoot(), block2.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     recentChainData.updateHead(block3.getRoot(), UInt64.valueOf(12));
     // We ignore the empty slots so no reorgs
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
   }
 
   @Test
@@ -369,13 +423,13 @@ class RecentChainDataTest {
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), UInt64.valueOf(2));
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(storageSystem)).isZero();
 
     final SignedBlockAndState slot2Block = chainBuilder.generateBlockAtSlot(2);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot2Block.getRoot(), slot2Block.getSlot());
-    final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
+    final List<ReorgEvent> reorgEvents = storageSystem.chainHeadChannel().getReorgEvents();
 
     assertThat(reorgEvents).isEmpty();
     assertThat(getReorgCountMetric(storageSystem)).isEqualTo(0);
@@ -388,10 +442,10 @@ class RecentChainDataTest {
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot());
     // Clear head updates from setup
-    storageSystem.reorgEventChannel().getHeadEvents().clear();
+    storageSystem.chainHeadChannel().getHeadEvents().clear();
 
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot().plus(1));
-    assertThat(storageSystem.reorgEventChannel().getHeadEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getHeadEvents()).isEmpty();
   }
 
   @Test
@@ -401,7 +455,7 @@ class RecentChainDataTest {
         ChainBuilder.create(spec, BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -422,13 +476,13 @@ class RecentChainDataTest {
 
     // Update to head block of original chain.
     recentChainData.updateHead(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
     recentChainData.updateHead(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents())
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents())
         .containsExactly(
             new ReorgEvent(
                 latestForkBlockAndState.getRoot(),
@@ -446,7 +500,7 @@ class RecentChainDataTest {
         ChainBuilder.create(spec, BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -470,13 +524,13 @@ class RecentChainDataTest {
 
     // Update to head block of original chain.
     recentChainData.updateHead(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
     recentChainData.updateHead(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents())
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents())
         .containsExactly(
             new ReorgEvent(
                 latestForkBlockAndState.getRoot(),

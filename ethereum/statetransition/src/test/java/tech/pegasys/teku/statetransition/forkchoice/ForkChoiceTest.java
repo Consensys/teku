@@ -138,7 +138,7 @@ class ForkChoiceTest {
     processHead(ONE);
     assertThat(recentChainData.getBestBlockRoot()).contains(slot1Block.getRoot());
 
-    final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
+    final List<ReorgEvent> reorgEvents = storageSystem.chainHeadChannel().getReorgEvents();
     assertThat(reorgEvents).isEmpty();
   }
 
@@ -166,7 +166,7 @@ class ForkChoiceTest {
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
   }
 
   @Test
