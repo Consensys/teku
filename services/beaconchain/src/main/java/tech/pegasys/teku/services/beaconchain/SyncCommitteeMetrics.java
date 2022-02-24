@@ -71,12 +71,16 @@ public class SyncCommitteeMetrics implements SlotEventsChannel, ChainHeadChannel
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
     recentChainData
-        .getHeadBlock()
-        .flatMap(block -> block.getMessage().getBody().toVersionAltair())
-        .ifPresent(
-            body ->
-                headLiveSyncCommittee.set(
-                    body.getSyncAggregate().getSyncCommitteeBits().getBitCount()));
+        .retrieveBlockByRoot(bestBlockRoot)
+        .thenAccept(
+            maybeBlock ->
+                maybeBlock
+                    .flatMap(block -> block.getBody().toVersionAltair())
+                    .ifPresent(
+                        body ->
+                            headLiveSyncCommittee.set(
+                                body.getSyncAggregate().getSyncCommitteeBits().getBitCount())))
+        .reportExceptions();
   }
 
   @Override

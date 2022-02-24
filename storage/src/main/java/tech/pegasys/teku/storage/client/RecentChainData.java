@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -403,7 +403,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /** @return The number of slots between our chainhead and the current slot by time */
   public Optional<UInt64> getChainHeadSlotsBehind() {
     return chainHead
-        .map(BeaconBlockSummary::getSlot)
+        .map(MinimalBeaconBlockSummary::getSlot)
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
@@ -440,7 +440,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   /** Retrieves the block chosen by fork choice to build and attest on */
   public Optional<Bytes32> getBestBlockRoot() {
-    return chainHead.map(BeaconBlockSummary::getRoot);
+    return chainHead.map(MinimalBeaconBlockSummary::getRoot);
   }
 
   /** @return The head of the chain. */
@@ -449,8 +449,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   /** @return The block at the head of the chain. */
-  public Optional<SignedBeaconBlock> getHeadBlock() {
-    return chainHead.flatMap(BeaconBlockSummary::getSignedBeaconBlock);
+  public Optional<MinimalBeaconBlockSummary> getHeadBlock() {
+    return chainHead.map(a -> a);
   }
 
   /** Retrieves the state of the block chosen by fork choice to build and attest on */
@@ -460,7 +460,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   /** Retrieves the slot of the block chosen by fork choice to build and attest on */
   public UInt64 getHeadSlot() {
-    return chainHead.map(BeaconBlockSummary::getSlot).orElse(UInt64.ZERO);
+    return chainHead.map(MinimalBeaconBlockSummary::getSlot).orElse(UInt64.ZERO);
   }
 
   public boolean containsBlock(final Bytes32 root) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,22 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-/** An overarching interface for accessing summary fields (header fields) of a beacon block */
-public interface BeaconBlockSummary extends MinimalBeaconBlockSummary {
+public interface MinimalBeaconBlockSummary {
 
-  UInt64 getProposerIndex();
+  UInt64 getSlot();
 
-  Bytes32 getBodyRoot();
+  Bytes32 getParentRoot();
 
-  default Optional<BeaconBlock> getBeaconBlock() {
-    return Optional.empty();
-  }
+  Bytes32 getStateRoot();
 
-  default Optional<SignedBeaconBlock> getSignedBeaconBlock() {
-    return Optional.empty();
-  }
+  /** @return the hash tree root of the block */
+  Bytes32 getRoot();
 }

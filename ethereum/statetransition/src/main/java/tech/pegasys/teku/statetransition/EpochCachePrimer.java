@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -53,11 +53,12 @@ public class EpochCachePrimer {
   }
 
   private boolean isWithinOneEpochOfHeadBlock(
-      final UInt64 firstSlot, final SignedBeaconBlock block) {
+      final UInt64 firstSlot, final MinimalBeaconBlockSummary block) {
     return block.getSlot().plus(spec.getSlotsPerEpoch(firstSlot)).isGreaterThanOrEqualTo(firstSlot);
   }
 
-  private boolean isAfterHeadBlockEpoch(final UInt64 epoch, final SignedBeaconBlock headBlock) {
+  private boolean isAfterHeadBlockEpoch(
+      final UInt64 epoch, final MinimalBeaconBlockSummary headBlock) {
     return spec.computeEpochAtSlot(headBlock.getSlot()).isLessThan(epoch);
   }
 

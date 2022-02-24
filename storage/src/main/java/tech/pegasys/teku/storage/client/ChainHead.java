@@ -18,83 +18,82 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class ChainHead implements BeaconBlockSummary {
+public class ChainHead implements MinimalBeaconBlockSummary {
 
-  private final BeaconBlockSummary block;
-  private final SafeFuture<BeaconState> state;
+  private final MinimalBeaconBlockSummary blockData;
+  private final Bytes32 executionPayloadBlockHash;
+  private final SafeFuture<StateAndBlockSummary> stateAndBlockSummaryFuture;
 
-  private ChainHead(final BeaconBlockSummary block, final SafeFuture<BeaconState> state) {
-    this.block = block;
-    this.state = state;
+  private ChainHead(
+      final MinimalBeaconBlockSummary blockData,
+      final Bytes32 executionPayloadBlockHash,
+      final SafeFuture<StateAndBlockSummary> stateAndBlockSummaryFuture) {
+    this.blockData = blockData;
+    this.executionPayloadBlockHash = executionPayloadBlockHash;
+    this.stateAndBlockSummaryFuture = stateAndBlockSummaryFuture;
   }
 
   public static ChainHead create(ChainHead chainHead) {
-    return new ChainHead(chainHead.block, chainHead.getState());
+    return new ChainHead(
+        chainHead.blockData,
+        chainHead.executionPayloadBlockHash,
+        chainHead.stateAndBlockSummaryFuture);
   }
 
   public static ChainHead create(StateAndBlockSummary blockAndState) {
     return new ChainHead(
-        blockAndState.getBlockSummary(), SafeFuture.completedFuture(blockAndState.getState()));
+        blockAndState.getBlockSummary(),
+        blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+        SafeFuture.completedFuture(blockAndState));
   }
 
   public static ChainHead create(SignedBlockAndState blockAndState) {
     return new ChainHead(
-        blockAndState.getBlockSummary(), SafeFuture.completedFuture(blockAndState.getState()));
+        blockAndState.getBlockSummary(),
+        blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+        SafeFuture.completedFuture(blockAndState));
   }
 
   public SafeFuture<BeaconState> getState() {
-    return state;
+    return stateAndBlockSummaryFuture.thenApply(StateAndBlockSummary::getState);
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlock() {
+    return stateAndBlockSummaryFuture.thenApply(StateAndBlockSummary::getSignedBeaconBlock);
   }
 
   public SafeFuture<StateAndBlockSummary> asStateAndBlockSummary() {
-    return state.thenApply(state -> StateAndBlockSummary.create(block, state));
+    return stateAndBlockSummaryFuture;
   }
 
   @Override
   public UInt64 getSlot() {
-    return block.getSlot();
-  }
-
-  @Override
-  public UInt64 getProposerIndex() {
-    return block.getProposerIndex();
+    return blockData.getSlot();
   }
 
   @Override
   public Bytes32 getParentRoot() {
-    return block.getParentRoot();
+    return blockData.getParentRoot();
   }
 
   @Override
   public Bytes32 getStateRoot() {
-    return block.getStateRoot();
-  }
-
-  @Override
-  public Bytes32 getBodyRoot() {
-    return block.getBodyRoot();
+    return blockData.getStateRoot();
   }
 
   @Override
   public Bytes32 getRoot() {
-    return block.getRoot();
+    return blockData.getRoot();
   }
 
-  @Override
-  public Optional<BeaconBlock> getBeaconBlock() {
-    return block.getBeaconBlock();
-  }
-
-  @Override
-  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
-    return block.getSignedBeaconBlock();
+  public Bytes32 getExecutionBlockHash() {
+    return executionPayloadBlockHash;
   }
 
   @Override
@@ -106,11 +105,11 @@ public class ChainHead implements BeaconBlockSummary {
       return false;
     }
     final ChainHead chainHead = (ChainHead) o;
-    return Objects.equals(block, chainHead.block);
+    return Objects.equals(blockData, chainHead.blockData);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(block);
+    return Objects.hash(blockData);
   }
 }

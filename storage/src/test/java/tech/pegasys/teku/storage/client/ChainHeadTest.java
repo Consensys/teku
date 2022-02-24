@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ public class ChainHeadTest {
     final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     final ChainHead chainHead = ChainHead.create(block);
 
-    final ChainHead otherChainHead = copy(chainHead);
+    final ChainHead otherChainHead = copy(block);
     assertThat(chainHead).isEqualTo(otherChainHead);
   }
 
@@ -54,13 +53,13 @@ public class ChainHeadTest {
   }
 
   @SuppressWarnings("unchecked")
-  private ChainHead copy(ChainHead original) {
+  private ChainHead copy(SignedBlockAndState original) {
     final SignedBeaconBlock originalBlock = original.getSignedBeaconBlock().orElseThrow();
     final SignedBeaconBlock blockCopy =
         copy(originalBlock, (SszSchema<SignedBeaconBlock>) originalBlock.getSchema());
     final BeaconState stateCopy =
         copy(
-            safeJoin(original.getState()),
+            original.getState(),
             SszSchema.as(
                 BeaconState.class, spec.getGenesisSchemaDefinitions().getBeaconStateSchema()));
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);

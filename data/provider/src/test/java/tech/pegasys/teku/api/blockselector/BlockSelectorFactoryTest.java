@@ -28,7 +28,9 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlockSelectorFactoryTest {
@@ -40,10 +42,11 @@ public class BlockSelectorFactoryTest {
 
   @Test
   public void headSelector_shouldGetBestBlock() throws ExecutionException, InterruptedException {
-    when(client.getBestBlock()).thenReturn(Optional.of(block));
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
+    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
     List<SignedBeaconBlock> blockList = blockSelectorFactory.headSelector().getBlock().get();
-    verify(client).getBestBlock();
-    assertThat(blockList).containsExactly(block);
+    verify(client).getChainHead();
+    assertThat(blockList).containsExactly(blockAndState.getBlock());
   }
 
   @Test

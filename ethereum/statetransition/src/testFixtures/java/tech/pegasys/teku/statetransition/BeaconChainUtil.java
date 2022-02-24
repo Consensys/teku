@@ -340,8 +340,7 @@ public class BeaconChainUtil {
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       ChainHead head = recentChainData.getChainHead().orElseThrow();
-      final StateAndBlockSummary headStateAndBlockSummary =
-          StateAndBlockSummary.create(head, safeJoin(head.getState()));
+      final StateAndBlockSummary headStateAndBlockSummary = safeJoin(head.asStateAndBlockSummary());
       UInt64 slot = recentChainData.getHeadSlot();
       SszList<Attestation> currentSlotAssignments =
           beaconBlockBodySchema
