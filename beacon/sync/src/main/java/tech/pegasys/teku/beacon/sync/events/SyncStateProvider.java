@@ -19,6 +19,8 @@ public interface SyncStateProvider {
 
   long subscribeToSyncStateChanges(SyncStateSubscriber subscriber);
 
+  long subscribeToSyncStateChangesAndUpdate(SyncStateSubscriber subscriber);
+
   boolean unsubscribeFromSyncStateChanges(long subscriberId);
 
   interface SyncStateSubscriber {

@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Updated discovery library with improved performance.
  - Updated libp2p library to respect message list limits when sending messages.
  - Fixed issue on custom testnets with two forks in sequential epochs where the maximum gossip topic subscription limits were exceeded.
+ - Fixed issue where `/eth/v1/beacon/headers` and `/eth/v1/beacon/headers/:block_id` would incorrectly return the block root in the `body_root` field.

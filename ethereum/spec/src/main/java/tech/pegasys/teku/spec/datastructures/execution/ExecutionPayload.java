@@ -127,7 +127,7 @@ public class ExecutionPayload
     return getField4().getBytes();
   }
 
-  public Bytes32 getRandom() {
+  public Bytes32 getPrevRandao() {
     return getField5().get();
   }
 

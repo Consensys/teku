@@ -21,12 +21,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PayloadAttributes {
   private final UInt64 timestamp;
-  private final Bytes32 random;
+  private final Bytes32 prevRandao;
   private final Bytes20 feeRecipient;
 
-  public PayloadAttributes(UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient) {
+  public PayloadAttributes(UInt64 timestamp, Bytes32 prevRandao, Bytes20 feeRecipient) {
     this.timestamp = timestamp;
-    this.random = random;
+    this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
   }
 
@@ -34,8 +34,8 @@ public class PayloadAttributes {
     return timestamp;
   }
 
-  public Bytes32 getRandom() {
-    return random;
+  public Bytes32 getPrevRandao() {
+    return prevRandao;
   }
 
   public Bytes20 getFeeRecipient() {
@@ -52,20 +52,20 @@ public class PayloadAttributes {
     }
     final PayloadAttributes that = (PayloadAttributes) o;
     return Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(random, that.random)
+        && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timestamp, random, feeRecipient);
+    return Objects.hash(timestamp, prevRandao, feeRecipient);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("timestamp", timestamp)
-        .add("random", random)
+        .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)
         .toString();
   }

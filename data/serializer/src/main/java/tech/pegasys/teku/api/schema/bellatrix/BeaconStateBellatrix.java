@@ -137,7 +137,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
                       latestExecutionPayloadHeader.stateRoot,
                       latestExecutionPayloadHeader.receiptsRoot,
                       latestExecutionPayloadHeader.logsBloom,
-                      latestExecutionPayloadHeader.random,
+                      latestExecutionPayloadHeader.prevRandao,
                       latestExecutionPayloadHeader.blockNumber,
                       latestExecutionPayloadHeader.gasLimit,
                       latestExecutionPayloadHeader.gasUsed,
