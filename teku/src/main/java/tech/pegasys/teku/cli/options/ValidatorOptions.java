@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
+
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -90,16 +92,6 @@ public class ValidatorOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-dependent-root-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description =
-          "Invalidate validator duties based on the dependent root information instead of chain re-org events",
-      hidden = true,
-      fallbackValue = "true",
-      arity = "0..1")
-  private boolean useDependentRoots = ValidatorConfig.DEFAULT_USE_DEPENDENT_ROOTS;
-
-  @Option(
       names = {"--validators-early-attestations-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -108,6 +100,16 @@ public class ValidatorOptions {
       fallbackValue = "true",
       arity = "0..1")
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
+
+  @Option(
+      names = {"--Xvalidators-blinded-blocks-api-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Use blinded block api calls",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
@@ -122,13 +124,13 @@ public class ValidatorOptions {
         config ->
             config
                 .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                .blindedBeaconBlocksApiEnabled(blindedBlocksApiEnabled)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .validatorExternalSignerSlashingProtectionEnabled(
                     validatorExternalSignerSlashingProtectionEnabled)
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .useDependentRoots(useDependentRoots)
                 .generateEarlyAttestations(generateEarlyAttestations));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);

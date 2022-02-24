@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorIndexCache {
-  private final Cache<BLSPublicKey, Integer> validatorIndexes;
+  private final Cache<BLSPublicKey, Integer> validatorIndices;
   private final AtomicInteger lastIndex;
 
   private static final int INDEX_NONE = -1;
@@ -33,13 +33,13 @@ public class ValidatorIndexCache {
       new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE);
 
   @VisibleForTesting
-  ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndexes, final int lastIndex) {
-    this.validatorIndexes = validatorIndexes;
+  ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndices, final int lastIndex) {
+    this.validatorIndices = validatorIndices;
     this.lastIndex = new AtomicInteger(lastIndex);
   }
 
   public ValidatorIndexCache() {
-    this.validatorIndexes = LRUCache.create(Integer.MAX_VALUE - 1);
+    this.validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
     this.lastIndex = new AtomicInteger(INDEX_NONE);
   }
 
@@ -50,7 +50,7 @@ public class ValidatorIndexCache {
     // when we scan for more keys through the state later.
     final int lastIndexSnapshot = lastIndex.get();
 
-    final Optional<Integer> validatorIndex = validatorIndexes.getCached(publicKey);
+    final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
     if (validatorIndex.isPresent()) {
       return validatorIndex.filter(index -> index < state.getValidators().size());
     }
@@ -64,7 +64,7 @@ public class ValidatorIndexCache {
       final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
       BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      validatorIndexes.invalidateWithNewValue(pubKey, i);
+      validatorIndices.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
         updateLastIndex(i);
         return Optional.of(i);
@@ -80,7 +80,7 @@ public class ValidatorIndexCache {
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    validatorIndexes.invalidateWithNewValue(pubKey, updatedIndex);
+    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
   @VisibleForTesting
@@ -89,7 +89,7 @@ public class ValidatorIndexCache {
   }
 
   @VisibleForTesting
-  Cache<BLSPublicKey, Integer> getValidatorIndexes() {
-    return validatorIndexes;
+  Cache<BLSPublicKey, Integer> getValidatorIndices() {
+    return validatorIndices;
   }
 }

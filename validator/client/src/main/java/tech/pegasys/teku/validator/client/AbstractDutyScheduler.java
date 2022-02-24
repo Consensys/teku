@@ -30,7 +30,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final MetricsSystem metricsSystem;
   private final String dutyType;
   private final Spec spec;
-  private final boolean useDependentRoots;
   private final DutyLoader<?> epochDutiesScheduler;
   private final int lookAheadEpochs;
 
@@ -44,13 +43,11 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final String dutyType,
       final DutyLoader<?> epochDutiesScheduler,
       final int lookAheadEpochs,
-      final boolean useDependentRoots,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dutyType = dutyType;
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
-    this.useDependentRoots = useDependentRoots;
     this.spec = spec;
   }
 
@@ -76,9 +73,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Bytes32 headBlockRoot) {
-    if (!useDependentRoots) {
-      return;
-    }
     final UInt64 headEpoch = spec.computeEpochAtSlot(slot);
     dutiesByEpoch
         .tailMap(headEpoch, true)
@@ -99,23 +93,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       Bytes32 currentDutyDependentRoot,
       UInt64 headEpoch,
       UInt64 dutyEpoch);
-
-  @Override
-  public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {
-    if (useDependentRoots) {
-      return;
-    }
-    final UInt64 changedEpoch = spec.computeEpochAtSlot(commonAncestorSlot);
-    // Because duties for an epoch can be calculated from the very start of that epoch, the epoch
-    // containing the common ancestor is not affected by the reorg.
-    // Similarly epochs within the look-ahead distance of the common ancestor must not be affected
-    final UInt64 lastUnaffectedEpoch = changedEpoch.plus(lookAheadEpochs);
-    LOG.debug(
-        "Chain reorganisation detected. Invalidating validator duties after epoch {}",
-        lastUnaffectedEpoch);
-    invalidateEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
-    calculateDuties(spec.computeEpochAtSlot(newSlot));
-  }
 
   @Override
   public void onPossibleMissedEvents() {

@@ -46,12 +46,7 @@ class TimeBasedEventAdapterTest {
 
   private final TimeBasedEventAdapter eventAdapter =
       new TimeBasedEventAdapter(
-          genesisDataProvider,
-          repeatingTaskScheduler,
-          timeProvider,
-          validatorTimingChannel,
-          true,
-          spec);
+          genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
 
   @Test
   void shouldScheduleEventsOnceGenesisIsKnown() {

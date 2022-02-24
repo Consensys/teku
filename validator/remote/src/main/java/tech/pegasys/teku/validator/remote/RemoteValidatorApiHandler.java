@@ -157,11 +157,11 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final IntCollection validatorIndexes) {
+      final UInt64 epoch, final IntCollection validatorIndices) {
     return sendRequest(
         () ->
             apiClient
-                .getAttestationDuties(epoch, validatorIndexes)
+                .getAttestationDuties(epoch, validatorIndices)
                 .map(
                     response ->
                         new AttesterDuties(

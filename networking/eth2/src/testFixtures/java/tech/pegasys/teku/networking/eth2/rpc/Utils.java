@@ -130,7 +130,7 @@ public class Utils {
     return Streams.zip(
             IntStream.concat(IntStream.of(0), Arrays.stream(pos1)).boxed(),
             IntStream.concat(Arrays.stream(pos1), IntStream.of(src.readableBytes())).boxed(),
-            IntRange::ofIndexes)
+            IntRange::ofIndices)
         .map(il -> src.slice(il.getStartIndex(), il.getLength()).copy())
         // check that buffer with non-zero offset works well
         .map(bb -> Unpooled.wrappedBuffer(Unpooled.wrappedBuffer(new byte[4]), bb).readerIndex(4))

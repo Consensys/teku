@@ -37,7 +37,7 @@ public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, 
   SszDataT createFromPackedNode(TreeNode node, int internalIndex);
 
   /**
-   * For packed primitive values. Packs the values to the existing node at 'internal indexes' For
+   * For packed primitive values. Packs the values to the existing node at 'internal indices' For
    * example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and
    * it's 'internal index' in this node would be `45`
    */

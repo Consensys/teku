@@ -19,10 +19,10 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
@@ -30,12 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
@@ -49,7 +45,6 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
-import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -173,81 +168,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void validatorParameterToIndex_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, null, mockCombinedChainDataClient);
-    assertThrows(
-        ChainDataUnavailableException.class, () -> provider.validatorParameterToIndex("1"));
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldAcceptValidatorRoot() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    Validator validator =
-        new Validator(recentChainData.getBestState().orElseThrow().getValidators().get(1));
-
-    assertThat(provider.validatorParameterToIndex(validator.pubkey.toHexString()))
-        .isEqualTo(Optional.of(1));
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldAcceptValidatorId() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    assertThat(provider.validatorParameterToIndex("2")).isEqualTo(Optional.of(2));
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldThrowException() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("2a"));
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldDetectAboveMaxInt() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    assertThrows(
-        BadRequestException.class,
-        () ->
-            provider.validatorParameterToIndex(
-                UInt64.valueOf(Integer.MAX_VALUE).increment().toString()));
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ValueSource(
-      strings = {
-        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd",
-        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdefaa",
-      })
-  public void validatorParameterToIndex_shouldThrowExceptionWithInvalidLengthPublicKey(
-      final String parameterId) {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    assertThatThrownBy(() -> provider.validatorParameterToIndex(parameterId))
-        .hasMessageContaining("but got length " + parameterId.length());
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldThrowExceptionWithIllegalCharacter() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    assertThatThrownBy(
-            () ->
-                provider.validatorParameterToIndex(
-                    "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdeG"))
-        .hasMessageContaining("Illegal character 'G'");
-  }
-
-  @Test
   public void getBlockHeaderByBlockId_shouldGetHeadBlock()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
@@ -261,7 +181,7 @@ public class ChainDataProviderTest {
             block.getMessage().getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
-            block.getRoot());
+            block.getBodyRoot());
     final BlockHeader expected =
         new BlockHeader(
             block.getRoot(),
@@ -326,11 +246,11 @@ public class ChainDataProviderTest {
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    List<Integer> indexes =
+    List<Integer> indices =
         provider.getFilteredValidatorList(internalState, List.of("1", "33"), emptySet()).stream()
             .map(v -> v.index.intValue())
             .collect(toList());
-    assertThat(indexes).containsExactly(1, 33);
+    assertThat(indices).containsExactly(1, 33);
   }
 
   @Test
@@ -348,28 +268,6 @@ public class ChainDataProviderTest {
             .map(v -> v.validator.pubkey.toHexString())
             .collect(toList());
     assertThat(pubkeys).containsExactly(key);
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldThrowBadRequestExceptionWhenIndexInvalid() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("a"));
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldReturnEmptyIfIndexOutOfBounds() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    assertThat(provider.validatorParameterToIndex("1024000")).isEmpty();
-  }
-
-  @Test
-  public void validatorParameterToIndex_shouldReturnEmptyWhenHexStringNotFound() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    assertThat(provider.validatorParameterToIndex(Bytes48.fromHexString("0x00").toHexString()))
-        .isEmpty();
   }
 
   @Test
@@ -467,7 +365,8 @@ public class ChainDataProviderTest {
                 internalState.getCurrent_justified_checkpoint()),
             new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalized_checkpoint()));
 
-    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+    when(mockCombinedChainDataClient.getBestState())
+        .thenReturn(Optional.of(completedFuture(internalState)));
     assertThat(provider.getStateFinalityCheckpoints("head").get().orElseThrow())
         .isEqualTo(expected);
     verify(mockCombinedChainDataClient).getBestState();
@@ -494,7 +393,8 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
         data.randomBeaconState();
-    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+    when(mockCombinedChainDataClient.getBestState())
+        .thenReturn(Optional.of(completedFuture(internalState)));
 
     final SafeFuture<Optional<StateSyncCommittees>> future =
         provider.getStateSyncCommittees("head", Optional.empty());
@@ -608,7 +508,8 @@ public class ChainDataProviderTest {
             .validators(validators)
             .currentSyncCommittee(currentSyncCommittee)
             .build();
-    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+    when(mockCombinedChainDataClient.getBestState())
+        .thenReturn(Optional.of(completedFuture(internalState)));
     return provider;
   }
 }

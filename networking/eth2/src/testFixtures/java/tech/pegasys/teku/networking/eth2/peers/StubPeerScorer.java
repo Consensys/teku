@@ -13,15 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import java.util.HashMap;
-import java.util.Map;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class StubPeerScorer implements PeerScorer {
-  private final Map<NodeId, Integer> peerScores = new HashMap<>();
-  private final Map<Pair<SszBitvector, SszBitvector>, Integer> candidateScores = new HashMap<>();
+  private final Object2IntMap<NodeId> peerScores = new Object2IntOpenHashMap<>();
+  private final Object2IntMap<Pair<SszBitvector, SszBitvector>> candidateScores =
+      new Object2IntOpenHashMap<>();
 
   public void setScore(final NodeId peerId, final int score) {
     peerScores.put(peerId, score);

@@ -78,41 +78,66 @@ public class LibP2PNetworkBuilder {
       new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
 
   protected LibP2PGossipNetwork gossipNetwork;
-  protected PeerManager peerManager;
 
   protected Defaults hostBuilderDefaults = Defaults.None;
   protected Host host;
 
+  protected List<RpcHandler<?, ?, ?>> rpcHandlers;
+  protected PeerManager peerManager;
+
   protected LibP2PNetworkBuilder() {}
 
   public P2PNetwork<Peer> build() {
-    if (gossipNetwork == null) {
-      // Setup gossip
-      gossipNetwork =
-          createLibP2PGossipNetworkBuilder()
-              .metricsSystem(metricsSystem)
-              .gossipConfig(config.getGossipConfig())
-              .defaultMessageFactory(preparedGossipMessageFactory)
-              .gossipTopicFilter(gossipTopicFilter)
-              .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
-              .build();
-    }
 
+    gossipNetwork = createGossipNetwork();
     // Setup rpc methods
-    final List<RpcHandler<?, ?, ?>> rpcHandlers =
-        rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).collect(Collectors.toList());
+    rpcHandlers = createRpcHandlers();
+    // Setup peers
+    peerManager = createPeerManager();
 
-    if (peerManager == null) {
-      // Setup peers
-      peerManager =
-          new PeerManager(
-              metricsSystem,
-              reputationManager,
-              peerHandlers,
-              rpcHandlers,
-              (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
-    }
+    host = createHost();
 
+    NodeId nodeId = new LibP2PNodeId(host.getPeerId());
+    Multiaddr advertisedAddr =
+        MultiaddrUtil.fromInetSocketAddress(
+            new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort()), nodeId);
+
+    return new LibP2PNetwork(
+        host.getPrivKey(),
+        nodeId,
+        host,
+        peerManager,
+        advertisedAddr,
+        gossipNetwork,
+        config.getListenPort());
+  }
+
+  protected List<RpcHandler<?, ?, ?>> createRpcHandlers() {
+    return rpcMethods.stream()
+        .map(m -> new RpcHandler<>(asyncRunner, m))
+        .collect(Collectors.toList());
+  }
+
+  protected LibP2PGossipNetwork createGossipNetwork() {
+    return createLibP2PGossipNetworkBuilder()
+        .metricsSystem(metricsSystem)
+        .gossipConfig(config.getGossipConfig())
+        .defaultMessageFactory(preparedGossipMessageFactory)
+        .gossipTopicFilter(gossipTopicFilter)
+        .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
+        .build();
+  }
+
+  protected PeerManager createPeerManager() {
+    return new PeerManager(
+        metricsSystem,
+        reputationManager,
+        peerHandlers,
+        rpcHandlers,
+        (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
+  }
+
+  protected Host createHost() {
     PrivKey privKey = privateKeyProvider.get();
     NodeId nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
@@ -123,41 +148,36 @@ public class LibP2PNetworkBuilder {
         MultiaddrUtil.fromInetSocketAddress(
             new InetSocketAddress(config.getNetworkInterface(), config.getListenPort()));
 
-    if (host == null) {
-      host =
-          BuilderJKt.hostJ(
-              hostBuilderDefaults,
-              b -> {
-                b.getIdentity().setFactory(() -> privKey);
-                b.getTransports().add(TcpTransport::new);
-                b.getSecureChannels().add(NoiseXXSecureChannel::new);
-                b.getMuxers().add(StreamMuxerProtocol.getMplex());
+    return BuilderJKt.hostJ(
+        hostBuilderDefaults,
+        b -> {
+          b.getIdentity().setFactory(() -> privKey);
+          b.getTransports().add(TcpTransport::new);
+          b.getSecureChannels().add(NoiseXXSecureChannel::new);
+          b.getMuxers().add(StreamMuxerProtocol.getMplex());
 
-                b.getNetwork().listen(listenAddr.toString());
+          b.getNetwork().listen(listenAddr.toString());
 
-                b.getProtocols().addAll(getDefaultProtocols(privKey.publicKey(), advertisedAddr));
-                b.getProtocols().addAll(rpcHandlers);
+          b.getProtocols().addAll(getDefaultProtocols(privKey.publicKey(), advertisedAddr));
+          b.getProtocols().add(gossipNetwork.getGossip());
+          b.getProtocols().addAll(rpcHandlers);
 
-                if (config.getWireLogsConfig().isLogWireCipher()) {
-                  b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
-                }
-                b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
+          if (config.getWireLogsConfig().isLogWireCipher()) {
+            b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
+          }
+          b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
 
-                if (config.getWireLogsConfig().isLogWirePlain()) {
-                  b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
-                }
-                if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                  b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
-                }
+          if (config.getWireLogsConfig().isLogWirePlain()) {
+            b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
+          }
+          if (config.getWireLogsConfig().isLogWireMuxFrames()) {
+            b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
+          }
 
-                b.getConnectionHandlers().add(peerManager);
+          b.getConnectionHandlers().add(peerManager);
 
-                b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
-              });
-    }
-
-    return new LibP2PNetwork(
-        privKey, nodeId, host, peerManager, advertisedAddr, gossipNetwork, config.getListenPort());
+          b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
+        });
   }
 
   protected List<ProtocolBinding<?>> getDefaultProtocols(
@@ -174,7 +194,7 @@ public class LibP2PNetworkBuilder {
             .addAllProtocols(
                 gossipNetwork.getGossip().getProtocolDescriptor().getAnnounceProtocols())
             .build();
-    return List.of(ping, new Identify(identifyMsg), gossipNetwork.getGossip());
+    return List.of(ping, new Identify(identifyMsg));
   }
 
   protected LibP2PGossipNetworkBuilder createLibP2PGossipNetworkBuilder() {
@@ -227,23 +247,8 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder gossipNetwork(LibP2PGossipNetwork gossipNetwork) {
-    this.gossipNetwork = gossipNetwork;
-    return this;
-  }
-
-  public LibP2PNetworkBuilder peerManager(PeerManager peerManager) {
-    this.peerManager = peerManager;
-    return this;
-  }
-
   public LibP2PNetworkBuilder hostBuilderDefaults(Defaults hostBuilderDefaults) {
     this.hostBuilderDefaults = hostBuilderDefaults;
-    return this;
-  }
-
-  public LibP2PNetworkBuilder host(Host host) {
-    this.host = host;
     return this;
   }
 

@@ -129,15 +129,19 @@ public class OperationPool<T extends SszData> {
   }
 
   public SafeFuture<InternalValidationResult> add(final T item) {
-    final InternalValidationResult result = operationValidator.validateFully(item);
-    validationReasonCounter.labels(result.code().toString()).inc();
-    if (result.code().equals(ValidationResultCode.ACCEPT)
-        || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-      operations.add(item);
-      subscribers.forEach(s -> s.onOperationAdded(item, result));
-    }
+    return operationValidator
+        .validateFully(item)
+        .thenApply(
+            result -> {
+              validationReasonCounter.labels(result.code().toString()).inc();
+              if (result.code().equals(ValidationResultCode.ACCEPT)
+                  || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
+                operations.add(item);
+                subscribers.forEach(s -> s.onOperationAdded(item, result));
+              }
 
-    return SafeFuture.completedFuture(result);
+              return result;
+            });
   }
 
   public void addAll(final SszCollection<T> items) {

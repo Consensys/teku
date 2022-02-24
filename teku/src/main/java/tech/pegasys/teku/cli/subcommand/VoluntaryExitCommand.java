@@ -16,13 +16,13 @@ package tech.pegasys.teku.cli.subcommand;
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
 import com.google.common.base.Throwables;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.net.ConnectException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -143,8 +143,9 @@ public class VoluntaryExitCommand implements Runnable {
         .collect(Collectors.joining(", "));
   }
 
-  private Map<BLSPublicKey, Integer> getValidatorIndices(OwnedValidators blsPublicKeyValidatorMap) {
-    Map<BLSPublicKey, Integer> validatorIndices = new HashMap<>();
+  private Object2IntMap<BLSPublicKey> getValidatorIndices(
+      OwnedValidators blsPublicKeyValidatorMap) {
+    Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         blsPublicKeyValidatorMap.getPublicKeys().stream()
             .map(BLSPublicKey::toString)
@@ -165,7 +166,7 @@ public class VoluntaryExitCommand implements Runnable {
     return validatorIndices;
   }
 
-  private void submitExitForValidator(final BLSPublicKey publicKey, final Integer validatorIndex) {
+  private void submitExitForValidator(final BLSPublicKey publicKey, final int validatorIndex) {
     try {
       final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
       final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));

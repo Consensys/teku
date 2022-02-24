@@ -97,7 +97,6 @@ public class ValidatorClientService extends Service {
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
-    final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
     final boolean generateEarlyAttestations =
         config.getValidatorConfig().generateEarlyAttestations();
     final BeaconNodeApi beaconNodeApi =
@@ -111,16 +110,11 @@ public class ValidatorClientService extends Service {
                         asyncRunner,
                         endpoint,
                         config.getSpec(),
-                        useDependentRoots,
                         generateEarlyAttestations))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(
-                        services,
-                        asyncRunner,
-                        useDependentRoots,
-                        generateEarlyAttestations,
-                        config.getSpec()));
+                        services, asyncRunner, generateEarlyAttestations, config.getSpec()));
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
@@ -222,12 +216,9 @@ public class ValidatorClientService extends Service {
                 dependentRoot -> new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider));
-    final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
+    validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
     validatorTimingChannels.add(
-        new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots, spec));
-    validatorTimingChannels.add(
-        new AttestationDutyScheduler(
-            metricsSystem, attestationDutyLoader, useDependentRoots, spec));
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, spec));
     validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {

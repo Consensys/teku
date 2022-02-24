@@ -72,7 +72,7 @@ public class BeaconProposerPreparerTest {
             mock(Signer.class),
             Optional::empty);
 
-    Map<BLSPublicKey, Optional<Integer>> validatorIndexesByPublicKey =
+    Map<BLSPublicKey, Optional<Integer>> validatorIndicesByPublicKey =
         Map.of(
             validator1.getPublicKey(),
             Optional.of(validator1Index),
@@ -102,8 +102,8 @@ public class BeaconProposerPreparerTest {
 
     slotsPerEpoch = specContext.getSpec().getSlotsPerEpoch(UInt64.ZERO);
 
-    when(validatorIndexProvider.getValidatorIndexesByPublicKey())
-        .thenReturn(SafeFuture.completedFuture(validatorIndexesByPublicKey));
+    when(validatorIndexProvider.getValidatorIndicesByPublicKey())
+        .thenReturn(SafeFuture.completedFuture(validatorIndicesByPublicKey));
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
   }

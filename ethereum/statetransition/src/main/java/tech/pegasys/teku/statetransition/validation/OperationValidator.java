@@ -14,11 +14,12 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 
 public interface OperationValidator<T> {
-  InternalValidationResult validateFully(T operation);
+  SafeFuture<InternalValidationResult> validateFully(T operation);
 
   Optional<OperationInvalidReason> validateForStateTransition(BeaconState state, T operation);
 }

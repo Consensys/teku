@@ -227,7 +227,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndexesSpecified() {
+  public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndicesSpecified() {
     final BeaconState state = createStateWithActiveValidators();
     when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
@@ -359,7 +359,7 @@ class ValidatorApiHandlerTest {
   void getSyncCommitteeDuties_shouldFailForEpochTooFarAhead() {
     final BeaconState state = dataStructureUtil.stateBuilderAltair().slot(EPOCH_START_SLOT).build();
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
-    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     final int epochsPerSyncCommitteePeriod =
         SpecConfigAltair.required(spec.getSpecConfig(EPOCH)).getEpochsPerSyncCommitteePeriod();
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(EPOCH_START_SLOT);
@@ -401,7 +401,7 @@ class ValidatorApiHandlerTest {
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(PREVIOUS_EPOCH_START_SLOT.minus(1)).build();
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
-    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     when(chainDataClient.getStateAtSlotExact(any())).thenReturn(new SafeFuture<>());
 
     final SafeFuture<Optional<SyncCommitteeDuties>> result =
@@ -822,7 +822,7 @@ class ValidatorApiHandlerTest {
     final BLSPublicKey validator0 =
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(0).getPubkeyBytes());
     final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
-    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
 
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(validator0, unknownValidator)))

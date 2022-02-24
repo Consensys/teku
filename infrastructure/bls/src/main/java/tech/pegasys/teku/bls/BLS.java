@@ -341,7 +341,7 @@ public class BLS {
    * collected and then at some point verified with a final {@link #completeBatchVerify(List)} call
    *
    * @param index index of the signature in a batch. Used for minor optimization. -1 may be passed
-   *     if no indexes are available
+   *     if no indices are available
    * @param publicKeys The list of public keys, not null
    * @param message The message data to verify, not null
    * @param signature The aggregate signature, not null

@@ -44,7 +44,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
       @JsonProperty("state_root") Bytes32 stateRoot,
       @JsonProperty("receipts_root") Bytes32 receiptsRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
-      @JsonProperty("random") Bytes32 random,
+      @JsonProperty("prev_randao") Bytes32 prevRandao,
       @JsonProperty("block_number") UInt64 blockNumber,
       @JsonProperty("gas_limit") UInt64 gasLimit,
       @JsonProperty("gas_used") UInt64 gasUsed,
@@ -59,7 +59,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         stateRoot,
         receiptsRoot,
         logsBloom,
-        random,
+        prevRandao,
         blockNumber,
         gasLimit,
         gasUsed,
@@ -78,7 +78,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         executionPayload.getStateRoot(),
         executionPayload.getReceiptsRoot(),
         executionPayload.getLogsBloom(),
-        executionPayload.getRandom(),
+        executionPayload.getPrevRandao(),
         executionPayload.getBlockNumber(),
         executionPayload.getGasLimit(),
         executionPayload.getGasUsed(),
@@ -114,7 +114,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
                     stateRoot,
                     receiptsRoot,
                     logsBloom,
-                    random,
+                    prevRandao,
                     blockNumber,
                     gasLimit,
                     gasUsed,
@@ -153,7 +153,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         .add("stateRoot", stateRoot)
         .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
-        .add("random", random)
+        .add("prevRandao", prevRandao)
         .add("blockNumber", blockNumber)
         .add("gasLimit", gasLimit)
         .add("gasUsed", gasUsed)

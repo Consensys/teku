@@ -15,13 +15,13 @@ package tech.pegasys.teku.ethereum.forkchoice;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.HashMap;
-import java.util.Map;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ProtoArrayIndices {
-  private final Map<Bytes32, Integer> rootIndices = new HashMap<>();
+  private final Object2IntMap<Bytes32> rootIndices = new Object2IntOpenHashMap<>();
 
   public boolean contains(final Bytes32 root) {
     return rootIndices.containsKey(root);
@@ -32,14 +32,14 @@ public class ProtoArrayIndices {
   }
 
   public Optional<Integer> get(final Bytes32 root) {
-    return Optional.ofNullable(rootIndices.get(root));
+    return Optional.ofNullable(rootIndices.getOrDefault(root, null));
   }
 
   public void remove(final Bytes32 root) {
     rootIndices.remove(root);
   }
 
-  public void offsetIndexes(final int finalizedIndex) {
+  public void offsetIndices(final int finalizedIndex) {
     rootIndices.replaceAll(
         (key, value) -> {
           int newIndex = value - finalizedIndex;
@@ -48,7 +48,7 @@ public class ProtoArrayIndices {
         });
   }
 
-  public Map<Bytes32, Integer> getRootIndices() {
+  public Object2IntMap<Bytes32> getRootIndices() {
     return rootIndices;
   }
 }

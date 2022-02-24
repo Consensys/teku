@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.forkchoice;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -56,15 +55,26 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Override
-  protected BlockMetadataStore createBlockMetadataStore(final ChainBuilder chainBuilder) {
+  protected BlockMetadataStore createBlockMetadataStore(
+      final ChainBuilder chainBuilder, final ChainBuilder... additionalBuilders) {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
         ProtoArray.builder()
             .finalizedCheckpoint(latestState.getFinalized_checkpoint())
             .justifiedCheckpoint(latestState.getCurrent_justified_checkpoint())
             .build();
+    addBlocksFromBuilder(chainBuilder, protoArray);
+
+    for (ChainBuilder builder : additionalBuilders) {
+      addBlocksFromBuilder(builder, protoArray);
+    }
+    return ForkChoiceStrategy.initialize(spec, protoArray);
+  }
+
+  private void addBlocksFromBuilder(final ChainBuilder chainBuilder, final ProtoArray protoArray) {
     chainBuilder
         .streamBlocksAndStates()
+        .filter(block -> !protoArray.contains(block.getRoot()))
         .forEach(
             blockAndState ->
                 protoArray.onBlock(
@@ -76,7 +86,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getState().getFinalized_checkpoint().getEpoch(),
                     blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
-    return ForkChoiceStrategy.initialize(spec, protoArray);
   }
 
   @Test
@@ -188,28 +197,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy protoArrayStrategy = getProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getChainHeads())
         .isEqualTo(Map.of(head.getBlock().getRoot(), head.getBlock().getSlot()));
-  }
-
-  @Test
-  void getOptimisticChainHeads_shouldOnlyReturnOptimisticNodes() {
-    final StorageSystem storageSystem = initStorageSystem();
-    final SignedBlockAndState commonAncestor = storageSystem.chainUpdater().advanceChain(5);
-    final ChainBuilder optimisticFork = storageSystem.chainBuilder().fork();
-    final SignedBlockAndState optimisticHead =
-        optimisticFork.generateBlockAtSlot(commonAncestor.getSlot().plus(1));
-    storageSystem.chainUpdater().saveOptimisticBlock(optimisticHead);
-
-    // Add a fully validated fork head that shouldn't be returned
-    final SignedBlockAndState validHead = storageSystem.chainUpdater().advanceChain(7);
-
-    final ForkChoiceStrategy protoArrayStrategy = getProtoArray(storageSystem);
-
-    assertThat(protoArrayStrategy.getOptimisticChainHeads())
-        .containsOnly(entry(optimisticHead.getRoot(), optimisticHead.getSlot()));
-    assertThat(protoArrayStrategy.getChainHeads())
-        .containsOnly(
-            entry(optimisticHead.getRoot(), optimisticHead.getSlot()),
-            entry(validHead.getRoot(), validHead.getSlot()));
   }
 
   @Test

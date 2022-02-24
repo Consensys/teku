@@ -85,6 +85,13 @@ public class DefaultSyncService extends Service implements SyncService {
   }
 
   @Override
+  public long subscribeToSyncStateChangesAndUpdate(final SyncStateSubscriber subscriber) {
+    final long subscriptionId = subscribeToSyncStateChanges(subscriber);
+    subscriber.onSyncStateChange(getCurrentSyncState());
+    return subscriptionId;
+  }
+
+  @Override
   public boolean unsubscribeFromSyncStateChanges(final long subscriberId) {
     return syncStateTracker.unsubscribeFromSyncStateChanges(subscriberId);
   }

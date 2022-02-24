@@ -28,5 +28,5 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
     return ofBits(0);
   }
 
-  SszBitlistT ofBits(int size, int... setBitIndexes);
+  SszBitlistT ofBits(int size, int... setBitIndices);
 }

@@ -71,7 +71,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         proposerConfigProvider.getProposerConfig();
 
     validatorIndexProvider
-        .getValidatorIndexesByPublicKey()
+        .getValidatorIndicesByPublicKey()
         .thenCompose(
             publicKeyToIndex ->
                 proposerConfigFuture
@@ -111,7 +111,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   private Bytes20 getDefaultFeeRecipient(Optional<ProposerConfig> maybeProposerConfig) {
     return maybeProposerConfig
-        .flatMap(proposerConfig -> proposerConfig.getDefaultConfig())
+        .flatMap(ProposerConfig::getDefaultConfig)
         .map(Config::getFeeRecipient)
         .or(() -> defaultFeeRecipient)
         .orElseThrow(
@@ -126,9 +126,6 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
       Bytes32 previousDutyDependentRoot,
       Bytes32 currentDutyDependentRoot,
       Bytes32 headBlockRoot) {}
-
-  @Override
-  public void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot) {}
 
   @Override
   public void onPossibleMissedEvents() {

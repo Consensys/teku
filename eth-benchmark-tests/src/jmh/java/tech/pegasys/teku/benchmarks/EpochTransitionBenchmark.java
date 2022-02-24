@@ -14,6 +14,7 @@
 package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Iterator;
 import java.util.List;
@@ -135,7 +136,7 @@ public class EpochTransitionBenchmark {
       lastResult = blockImporter.importBlock(block).join();
     }
 
-    preEpochTransitionState = recentChainData.getBestState().get();
+    preEpochTransitionState = safeJoin(recentChainData.getBestState().orElseThrow());
 
     validatorStatuses =
         spec.getGenesisSpec()

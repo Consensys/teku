@@ -23,10 +23,10 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -414,7 +414,7 @@ public class ProtoArray {
     // Drop all the nodes prior to finalization.
     nodes.subList(0, finalizedIndex).clear();
 
-    indices.offsetIndexes(finalizedIndex);
+    indices.offsetIndices(finalizedIndex);
 
     // Iterate through all the existing nodes and adjust their indices to match the
     // new layout of nodes.
@@ -645,11 +645,11 @@ public class ProtoArray {
     }
   }
 
-  public Map<Bytes32, Integer> getRootIndices() {
+  public Object2IntMap<Bytes32> getRootIndices() {
     return indices.getRootIndices();
   }
 
-  private ProtoNode getNodeByIndex(final int index) {
+  ProtoNode getNodeByIndex(final int index) {
     return checkNotNull(nodes.get(index), "Missing node %s", index);
   }
 

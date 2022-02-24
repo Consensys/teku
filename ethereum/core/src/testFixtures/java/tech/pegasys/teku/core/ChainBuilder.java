@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
@@ -371,9 +372,8 @@ public class ChainBuilder {
    * @return a stream of valid attestations voting for the specified block
    */
   public Stream<Attestation> streamValidAttestationsWithTargetBlock(
-      final SignedBlockAndState attestedHead) {
-    return attestationGenerator.streamAttestations(
-        attestedHead.toUnsigned(), attestedHead.getSlot());
+      final StateAndBlockSummary attestedHead) {
+    return attestationGenerator.streamAttestations(attestedHead, attestedHead.getSlot());
   }
 
   private void assertChainIsNotEmpty() {
