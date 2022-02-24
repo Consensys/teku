@@ -63,6 +63,11 @@ public class NoopSyncService
   }
 
   @Override
+  public long subscribeToSyncStateChangesAndUpdate(SyncStateSubscriber subscriber) {
+    return 0;
+  }
+
+  @Override
   public void unsubscribeFromSyncChanges(final long subscriberId) {}
 
   @Override
