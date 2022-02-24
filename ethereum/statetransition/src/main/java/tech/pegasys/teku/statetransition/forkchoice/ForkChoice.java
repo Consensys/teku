@@ -564,8 +564,11 @@ public class ForkChoice {
     return optimisticSyncing;
   }
 
-  public long subscribeToOptimisticHeadChanges(OptimisticHeadSubscriber subscriber) {
-    return optimisticSyncSubscribers.subscribe(subscriber);
+  public long subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
+    final long subscriptionId = optimisticSyncSubscribers.subscribe(subscriber);
+    getOptimisticSyncing()
+        .ifPresent(isOptimistic -> subscriber.onOptimisticHeadChanged(isOptimistic));
+    return subscriptionId;
   }
 
   public void unsubscribeFromOptimisticHeadChanges(long subscriberId) {

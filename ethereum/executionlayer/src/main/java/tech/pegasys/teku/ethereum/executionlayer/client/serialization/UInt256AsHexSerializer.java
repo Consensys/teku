@@ -23,6 +23,6 @@ public class UInt256AsHexSerializer extends JsonSerializer<UInt256> {
   @Override
   public void serialize(UInt256 value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.toMinimalBytes().toShortHexString());
+    gen.writeString(value.toMinimalBytes().toQuantityHexString());
   }
 }
