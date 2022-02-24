@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -297,7 +297,8 @@ public class SlotProcessorTest {
   void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch() {
     final RecentChainData recentChainData = mock(RecentChainData.class);
     when(recentChainData.getGenesisTime()).thenReturn(genesisTime);
-    final Optional<SignedBeaconBlock> headBlock = storageSystem.recentChainData().getHeadBlock();
+    final Optional<MinimalBeaconBlockSummary> headBlock =
+        storageSystem.recentChainData().getHeadBlock();
     when(recentChainData.getHeadBlock()).thenReturn(headBlock);
     when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);

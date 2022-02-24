@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
@@ -216,8 +217,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary bestBlockAndState =
-        node1.storageClient().getChainHead().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState = getChainHead(node1);
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
         s -> s.accept(ValidateableAttestation.from(spec, validAttestation)));
@@ -267,8 +267,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary bestBlockAndState =
-        node1.storageClient().getChainHead().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState = getChainHead(node1);
     ValidateableAttestation validAttestation =
         ValidateableAttestation.from(
             spec, attestationGenerator.validAttestation(bestBlockAndState));
@@ -334,8 +333,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary bestBlockAndState =
-        node1.storageClient().getChainHead().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState = getChainHead(node1);
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     final int subnetId =
@@ -392,5 +390,9 @@ public class GossipMessageHandlerIntegrationTest {
 
   private void waitForMessageToBeDelivered() throws Exception {
     Thread.sleep(1000);
+  }
+
+  private StateAndBlockSummary getChainHead(final NodeManager node1) {
+    return safeJoin(node1.storageClient().getChainHead().orElseThrow().asStateAndBlockSummary());
   }
 }

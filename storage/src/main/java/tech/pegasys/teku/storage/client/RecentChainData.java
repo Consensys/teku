@@ -39,10 +39,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -330,19 +329,23 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           // duty dependent root isn't available from protoarray it must be the parent of the
           // finalized block and the current duty dependent root must be available.
           // See comments on beaconStateUtil.getPreviousDutyDependentRoot for reasoning.
+          // The exception is when we have just started from an initial state and block history
+          // isn't available, in which case the dependentRoot can safely be set to the finalized
+          // block and will remain consistent.
           beaconStateUtil
               .getPreviousDutyDependentRoot(forkChoiceStrategy, newChainHead)
-              .orElseGet(() -> getFinalizedBlockParentRoot(forkChoiceStrategy)),
+              .orElseGet(this::getFinalizedBlockParentRoot),
           beaconStateUtil
               .getCurrentDutyDependentRoot(forkChoiceStrategy, newChainHead)
-              .orElseThrow(),
+              .orElseGet(this::getFinalizedBlockParentRoot),
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);
   }
 
-  private Bytes32 getFinalizedBlockParentRoot(final ForkChoiceStrategy forkChoiceStrategy) {
-    return forkChoiceStrategy
+  private Bytes32 getFinalizedBlockParentRoot() {
+    return getForkChoiceStrategy()
+        .orElseThrow()
         .blockParentRoot(store.getFinalizedCheckpoint().getRoot())
         .orElseThrow(() -> new IllegalStateException("Finalized block is unknown"));
   }
@@ -404,7 +407,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /** @return The number of slots between our chainhead and the current slot by time */
   public Optional<UInt64> getChainHeadSlotsBehind() {
     return chainHead
-        .map(BeaconBlockSummary::getSlot)
+        .map(MinimalBeaconBlockSummary::getSlot)
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
@@ -441,27 +444,27 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   /** Retrieves the block chosen by fork choice to build and attest on */
   public Optional<Bytes32> getBestBlockRoot() {
-    return chainHead.map(BeaconBlockSummary::getRoot);
+    return chainHead.map(MinimalBeaconBlockSummary::getRoot);
   }
 
   /** @return The head of the chain. */
-  public Optional<StateAndBlockSummary> getChainHead() {
-    return chainHead.map(a -> a);
+  public Optional<ChainHead> getChainHead() {
+    return chainHead;
   }
 
   /** @return The block at the head of the chain. */
-  public Optional<SignedBeaconBlock> getHeadBlock() {
-    return chainHead.flatMap(BeaconBlockSummary::getSignedBeaconBlock);
+  public Optional<MinimalBeaconBlockSummary> getHeadBlock() {
+    return chainHead.map(a -> a);
   }
 
   /** Retrieves the state of the block chosen by fork choice to build and attest on */
   public Optional<SafeFuture<BeaconState>> getBestState() {
-    return chainHead.map(StateAndBlockSummary::getState).map(SafeFuture::completedFuture);
+    return chainHead.map(ChainHead::getState);
   }
 
   /** Retrieves the slot of the block chosen by fork choice to build and attest on */
   public UInt64 getHeadSlot() {
-    return chainHead.map(BeaconBlockSummary::getSlot).orElse(UInt64.ZERO);
+    return chainHead.map(MinimalBeaconBlockSummary::getSlot).orElse(UInt64.ZERO);
   }
 
   public boolean containsBlock(final Bytes32 root) {

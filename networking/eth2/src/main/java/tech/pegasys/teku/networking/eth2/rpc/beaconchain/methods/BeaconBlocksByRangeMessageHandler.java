@@ -37,7 +37,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.InvalidRpcMethodV
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -146,7 +146,7 @@ public class BeaconBlocksByRangeMessageHandler
               final UInt64 headBlockSlot =
                   combinedChainDataClient
                       .getChainHead()
-                      .map(BeaconBlockSummary::getSlot)
+                      .map(MinimalBeaconBlockSummary::getSlot)
                       .orElse(ZERO);
               final NavigableMap<UInt64, Bytes32> hotRoots;
               if (combinedChainDataClient.isFinalized(endSlot)) {

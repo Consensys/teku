@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -36,7 +36,7 @@ public class StatusMessageFactory {
     }
 
     final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
-    final BeaconBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final MinimalBeaconBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
 
     return Optional.of(
