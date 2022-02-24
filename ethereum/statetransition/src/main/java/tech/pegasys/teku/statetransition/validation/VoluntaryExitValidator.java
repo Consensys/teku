@@ -21,6 +21,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -43,37 +44,41 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   }
 
   @Override
-  public InternalValidationResult validateFully(SignedVoluntaryExit exit) {
+  public SafeFuture<InternalValidationResult> validateFully(SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
           exit.getMessage().getValidatorIndex());
-      return InternalValidationResult.create(
-          IGNORE,
-          String.format(
-              "Exit is not the first one for validator %s.",
-              exit.getMessage().getValidatorIndex()));
+      return SafeFuture.completedFuture(
+          InternalValidationResult.create(
+              IGNORE,
+              String.format(
+                  "Exit is not the first one for validator %s.",
+                  exit.getMessage().getValidatorIndex())));
     }
 
-    final Optional<OperationInvalidReason> failureReason = getFailureReason(exit);
-    if (failureReason.isPresent()) {
-      return InternalValidationResult.reject(
-          "Exit for validator %s is invalid: %s",
-          exit.getMessage().getValidatorIndex(), failureReason.get().describe());
-    }
+    return getFailureReason(exit)
+        .thenApply(
+            failureReason -> {
+              if (failureReason.isPresent()) {
+                return InternalValidationResult.reject(
+                    "Exit for validator %s is invalid: %s",
+                    exit.getMessage().getValidatorIndex(), failureReason.get().describe());
+              }
 
-    if (receivedValidExitSet.add(exit.getMessage().getValidatorIndex())) {
-      return InternalValidationResult.ACCEPT;
-    } else {
-      LOG.trace(
-          "VoluntaryExitValidator: Exit is not the first one for validator {}.",
-          exit.getMessage().getValidatorIndex());
-      return InternalValidationResult.create(
-          IGNORE,
-          String.format(
-              "Exit is not the first one for validator %s.",
-              exit.getMessage().getValidatorIndex()));
-    }
+              if (receivedValidExitSet.add(exit.getMessage().getValidatorIndex())) {
+                return InternalValidationResult.ACCEPT;
+              } else {
+                LOG.trace(
+                    "VoluntaryExitValidator: Exit is not the first one for validator {}.",
+                    exit.getMessage().getValidatorIndex());
+                return InternalValidationResult.create(
+                    IGNORE,
+                    String.format(
+                        "Exit is not the first one for validator %s.",
+                        exit.getMessage().getValidatorIndex()));
+              }
+            });
   }
 
   @Override
@@ -82,9 +87,8 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     return getFailureReason(state, exit, false);
   }
 
-  private Optional<OperationInvalidReason> getFailureReason(SignedVoluntaryExit exit) {
-    final BeaconState state = getState();
-    return getFailureReason(state, exit, true);
+  private SafeFuture<Optional<OperationInvalidReason>> getFailureReason(SignedVoluntaryExit exit) {
+    return getState().thenApply(state -> getFailureReason(state, exit, true));
   }
 
   private Optional<OperationInvalidReason> getFailureReason(
@@ -105,7 +109,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     return !receivedValidExitSet.contains(exit.getMessage().getValidatorIndex());
   }
 
-  private BeaconState getState() {
+  private SafeFuture<BeaconState> getState() {
     return recentChainData
         .getBestState()
         .orElseThrow(

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services.executionengine;
 
+import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -26,16 +28,19 @@ public class ExecutionEngineConfiguration {
   private final Optional<String> endpoint;
   private final Version version;
   private final Optional<String> jwtSecretFile;
+  private final List<URL> mevBoostUrls;
 
   private ExecutionEngineConfiguration(
       final Spec spec,
       final Optional<String> endpoint,
       final Version version,
-      final Optional<String> jwtSecretFile) {
+      final Optional<String> jwtSecretFile,
+      final List<URL> mevBoostUrls) {
     this.spec = spec;
     this.endpoint = endpoint;
     this.version = version;
     this.jwtSecretFile = jwtSecretFile;
+    this.mevBoostUrls = mevBoostUrls;
   }
 
   public static Builder builder() {
@@ -65,17 +70,22 @@ public class ExecutionEngineConfiguration {
     return version;
   }
 
+  public List<URL> getMevBoostUrls() {
+    return mevBoostUrls;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> endpoint = Optional.empty();
     private Version version = Version.DEFAULT_VERSION;
     private Optional<String> jwtSecretFile = Optional.empty();
+    private List<URL> mevBoostUrls = List.of();
 
     private Builder() {}
 
     public ExecutionEngineConfiguration build() {
 
-      return new ExecutionEngineConfiguration(spec, endpoint, version, jwtSecretFile);
+      return new ExecutionEngineConfiguration(spec, endpoint, version, jwtSecretFile, mevBoostUrls);
     }
 
     public Builder endpoint(final String endpoint) {
@@ -95,6 +105,11 @@ public class ExecutionEngineConfiguration {
 
     public Builder jwtSecretFile(final String jwtSecretFile) {
       this.jwtSecretFile = Optional.ofNullable(jwtSecretFile).filter(StringUtils::isNotBlank);
+      return this;
+    }
+
+    public Builder mevBoostUrls(final List<URL> mevBoostUrls) {
+      this.mevBoostUrls = mevBoostUrls;
       return this;
     }
   }

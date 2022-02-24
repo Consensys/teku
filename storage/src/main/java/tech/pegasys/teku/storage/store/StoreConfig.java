@@ -31,19 +31,16 @@ public class StoreConfig {
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
-  private final boolean updateHeadForEmptySlots;
 
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
-      final int hotStatePersistenceFrequencyInEpochs,
-      final boolean updateHeadForEmptySlots) {
+      final int hotStatePersistenceFrequencyInEpochs) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
-    this.updateHeadForEmptySlots = updateHeadForEmptySlots;
   }
 
   public static Builder builder() {
@@ -70,10 +67,6 @@ public class StoreConfig {
     return hotStatePersistenceFrequencyInEpochs;
   }
 
-  public boolean updateHeadForEmptySlots() {
-    return updateHeadForEmptySlots;
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -86,8 +79,7 @@ public class StoreConfig {
     return stateCacheSize == that.stateCacheSize
         && blockCacheSize == that.blockCacheSize
         && checkpointStateCacheSize == that.checkpointStateCacheSize
-        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs
-        && updateHeadForEmptySlots == that.updateHeadForEmptySlots;
+        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs;
   }
 
   @Override
@@ -96,8 +88,7 @@ public class StoreConfig {
         stateCacheSize,
         blockCacheSize,
         checkpointStateCacheSize,
-        hotStatePersistenceFrequencyInEpochs,
-        updateHeadForEmptySlots);
+        hotStatePersistenceFrequencyInEpochs);
   }
 
   public static class Builder {
@@ -106,25 +97,15 @@ public class StoreConfig {
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
-    private Boolean updateHeadForEmptySlots;
 
     private Builder() {}
 
     public StoreConfig build() {
-      initMissedDefaults();
-
       return new StoreConfig(
           stateCacheSize,
           blockCacheSize,
           checkpointStateCacheSize,
-          hotStatePersistenceFrequencyInEpochs,
-          updateHeadForEmptySlots);
-    }
-
-    private void initMissedDefaults() {
-      if (updateHeadForEmptySlots == null) {
-        updateHeadForEmptySlots = true;
-      }
+          hotStatePersistenceFrequencyInEpochs);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -154,18 +135,6 @@ public class StoreConfig {
                 hotStatePersistenceFrequencyInEpochs));
       }
       this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
-      return this;
-    }
-
-    public Builder updateHeadForEmptySlots(final boolean updateHeadForEmptySlots) {
-      this.updateHeadForEmptySlots = updateHeadForEmptySlots;
-      return this;
-    }
-
-    public Builder updateHeadForEmptySlotsDefault(final boolean updateHeadForEmptySlots) {
-      if (this.updateHeadForEmptySlots == null) {
-        this.updateHeadForEmptySlots = updateHeadForEmptySlots;
-      }
       return this;
     }
 

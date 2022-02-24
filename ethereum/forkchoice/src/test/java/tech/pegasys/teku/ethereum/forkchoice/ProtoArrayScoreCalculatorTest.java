@@ -19,11 +19,11 @@ import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.createSto
 import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.getHash;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 public class ProtoArrayScoreCalculatorTest {
 
-  private Map<Bytes32, Integer> indices = new HashMap<>();
+  private Object2IntMap<Bytes32> indices = new Object2IntOpenHashMap<>();
   private List<UInt64> oldBalances = new ArrayList<>();
   private List<UInt64> newBalances = new ArrayList<>();
   private Optional<Bytes32> oldProposerBoostRoot = Optional.empty();

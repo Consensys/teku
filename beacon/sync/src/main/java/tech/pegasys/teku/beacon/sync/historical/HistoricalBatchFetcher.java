@@ -230,7 +230,14 @@ public class HistoricalBatchFetcher {
   SafeFuture<Void> batchVerifyHistoricalBlockSignatures(
       final Collection<SignedBeaconBlock> blocks) {
 
-    BeaconState bestState = chainDataClient.getBestState().orElseThrow();
+    return chainDataClient
+        .getBestState()
+        .orElseThrow()
+        .thenCompose(bestState -> batchVerifyHistoricalBlockSignature(blocks, bestState));
+  }
+
+  private SafeFuture<Void> batchVerifyHistoricalBlockSignature(
+      final Collection<SignedBeaconBlock> blocks, final BeaconState bestState) {
     List<BLSSignature> signatures = new ArrayList<>();
     List<Bytes> signingRoots = new ArrayList<>();
     List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();

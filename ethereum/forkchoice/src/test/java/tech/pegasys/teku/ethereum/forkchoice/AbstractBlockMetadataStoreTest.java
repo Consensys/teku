@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -227,6 +229,80 @@ abstract class AbstractBlockMetadataStoreTest {
     assertThat(seenBlocks).containsExactlyInAnyOrderElementsOf(expectedSeenRoots);
   }
 
+  @Test
+  void findCommonAncestor_atGenesisBlock() {
+    final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
+    assertCommonAncestorFound(
+        genesis.getRoot(), block2.getRoot(), new SlotAndBlockRoot(UInt64.ZERO, genesis.getRoot()));
+  }
+
+  @Test
+  void findCommonAncestor_headBlockEmptyVsFull() {
+    final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
+
+    assertCommonAncestorFound(
+        block1.getRoot(), block2.getRoot(), new SlotAndBlockRoot(UInt64.ONE, block1.getRoot()));
+  }
+
+  @Test
+  void findCommonAncestor_differingChains() {
+    chainBuilder.generateBlockAtSlot(2);
+    final ChainBuilder fork = chainBuilder.fork();
+    chainBuilder.generateBlocksUpToSlot(4);
+    final SignedBlockAndState chainHead = chainBuilder.generateBlockAtSlot(5);
+
+    // Fork skips slot 3 so the chains are different
+    fork.generateBlockAtSlot(4);
+    fork.generateBlocksUpToSlot(6);
+    final SignedBlockAndState forkHead = fork.generateBlockAtSlot(7);
+    final SignedBeaconBlock commonBlock = chainBuilder.getBlockAtSlot(UInt64.valueOf(2));
+
+    assertCommonAncestorFound(
+        chainHead.getRoot(),
+        forkHead.getRoot(),
+        new SlotAndBlockRoot(commonBlock.getSlot(), commonBlock.getRoot()),
+        fork);
+  }
+
+  @Test
+  void findCommonAncestor_commonAncestorNotInProtoArray() {
+    final ChainBuilder fork = chainBuilder.fork();
+
+    final SignedBlockAndState chainHead =
+        chainBuilder.generateBlockAtSlot(spec.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
+
+    // Fork skips slot 1 so the chains are different
+    fork.generateBlockAtSlot(1);
+    final SignedBlockAndState forkHead =
+        fork.generateBlockAtSlot(spec.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
+
+    // We don't add the fork to protoarray, much like it was invalidated by the finalized checkpoint
+    assertCommonAncestorFound(chainHead.getRoot(), forkHead.getRoot(), Optional.empty());
+  }
+
+  private void assertCommonAncestorFound(
+      final Bytes32 root1,
+      final Bytes32 root2,
+      final SlotAndBlockRoot expectedCommonAncestor,
+      final ChainBuilder... forks) {
+    assertCommonAncestorFound(root1, root2, Optional.of(expectedCommonAncestor), forks);
+  }
+
+  private void assertCommonAncestorFound(
+      final Bytes32 root1,
+      final Bytes32 root2,
+      final Optional<SlotAndBlockRoot> expectedCommonAncestor,
+      final ChainBuilder... forks) {
+    final BlockMetadataStore store = createBlockMetadataStore(chainBuilder, forks);
+    final Optional<SlotAndBlockRoot> slotAndBlockRootChainA =
+        store.findCommonAncestor(root1, root2);
+    final Optional<SlotAndBlockRoot> slotAndBlockRootChainB =
+        store.findCommonAncestor(root2, root1);
+    assertThat(slotAndBlockRootChainA).isEqualTo(expectedCommonAncestor);
+    assertThat(slotAndBlockRootChainB).isEqualTo(expectedCommonAncestor);
+  }
+
   private void verifyHashesInChain(
       final BlockMetadataStore store,
       final ChainBuilder chain,
@@ -255,5 +331,6 @@ abstract class AbstractBlockMetadataStoreTest {
     assertThat(seenBlocks).containsExactlyInAnyOrderElementsOf(expectedSeenRoots);
   }
 
-  protected abstract BlockMetadataStore createBlockMetadataStore(final ChainBuilder chainBuilder);
+  protected abstract BlockMetadataStore createBlockMetadataStore(
+      ChainBuilder chainBuilder, ChainBuilder... additionalBuilders);
 }

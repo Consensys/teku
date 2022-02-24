@@ -219,8 +219,6 @@ public class TekuConfiguration {
 
       DataConfig dataConfig = dataConfigBuilder.build();
       ValidatorConfig validatorConfig = validatorConfigBuilder.build();
-      // We don't need to update head for empty slots when using dependent roots
-      storeConfigBuilder.updateHeadForEmptySlotsDefault(!validatorConfig.useDependentRoots());
 
       P2PConfig p2PConfig = p2pConfigBuilder.build();
       syncConfig.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());

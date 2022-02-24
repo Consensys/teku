@@ -54,7 +54,8 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
     Request<?, NewPayloadWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_executePayloadV1",
-            Collections.singletonList(executionPayload),
+            Collections.singletonList(
+                KilnV1ExecutionPayloadV1.fromExecutionPayloadV1(executionPayload)),
             eeWeb3jService,
             NewPayloadWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
@@ -66,7 +67,11 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
     Request<?, KintsugiForkChoiceUpdatedWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV1",
-            list(forkChoiceState, payloadAttributes.orElse(null)),
+            list(
+                forkChoiceState,
+                payloadAttributes
+                    .map(KilnV1PayloadAttributesV1::fromPayloadAttributesV1)
+                    .orElse(null)),
             eeWeb3jService,
             KintsugiForkChoiceUpdatedWeb3jResponse.class);
     return getWeb3JClient()

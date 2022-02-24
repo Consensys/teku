@@ -36,11 +36,10 @@ public class ValidatorConfig {
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
-  public static final boolean DEFAULT_USE_DEPENDENT_ROOTS = true;
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
-  public static final boolean DEFAULT_SEND_ATTESTATIONS_AS_BATCH = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -56,11 +55,11 @@ public class ValidatorConfig {
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
   private final int validatorExternalSignerConcurrentRequestLimit;
-  private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
+  private final boolean blindedBeaconBlocksApiEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -77,11 +76,11 @@ public class ValidatorConfig {
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
       final int validatorExternalSignerConcurrentRequestLimit,
-      final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final Optional<String> proposerConfigSource,
-      final boolean refreshProposerConfigFromSource) {
+      final boolean refreshProposerConfigFromSource,
+      final boolean blindedBeaconBlocksApiEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -99,11 +98,11 @@ public class ValidatorConfig {
         validatorExternalSignerSlashingProtectionEnabled;
     this.validatorExternalSignerConcurrentRequestLimit =
         validatorExternalSignerConcurrentRequestLimit;
-    this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
+    this.blindedBeaconBlocksApiEnabled = blindedBeaconBlocksApiEnabled;
   }
 
   public static Builder builder() {
@@ -163,10 +162,6 @@ public class ValidatorConfig {
     return generateEarlyAttestations;
   }
 
-  public boolean useDependentRoots() {
-    return useDependentRoots;
-  }
-
   public Optional<Eth1Address> getProposerDefaultFeeRecipient() {
     validateProposerDefaultFeeRecipientOrProposerConfigSource();
     return proposerDefaultFeeRecipient;
@@ -179,6 +174,10 @@ public class ValidatorConfig {
 
   public boolean getRefreshProposerConfigFromSource() {
     return refreshProposerConfigFromSource;
+  }
+
+  public boolean isBlindedBeaconBlocksApiEnabled() {
+    return blindedBeaconBlocksApiEnabled;
   }
 
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
@@ -209,12 +208,12 @@ public class ValidatorConfig {
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
-    private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
     private Optional<Eth1Address> proposerDefaultFeeRecipient = Optional.empty();
     private Optional<String> proposerConfigSource = Optional.empty();
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
+    private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
     private Builder() {}
 
@@ -310,11 +309,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder useDependentRoots(final boolean useDependentRoots) {
-      this.useDependentRoots = useDependentRoots;
-      return this;
-    }
-
     public Builder generateEarlyAttestations(final boolean generateEarlyAttestations) {
       this.generateEarlyAttestations = generateEarlyAttestations;
       return this;
@@ -345,6 +339,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder blindedBeaconBlocksApiEnabled(final boolean blindedBeaconBlockEnabled) {
+      this.blindedBlocksApiEnabled = blindedBeaconBlockEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -365,11 +364,11 @@ public class ValidatorConfig {
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
           validatorExternalSignerConcurrentRequestLimit,
-          useDependentRoots,
           generateEarlyAttestations,
           proposerDefaultFeeRecipient,
           proposerConfigSource,
-          refreshProposerConfigFromSource);
+          refreshProposerConfigFromSource,
+          blindedBlocksApiEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

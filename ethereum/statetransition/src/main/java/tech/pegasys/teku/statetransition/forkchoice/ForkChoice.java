@@ -394,8 +394,8 @@ public class ForkChoice {
     // child of our current chain head, must be the new chain head. If we'd had any other
     // child of the current chain head we'd have already selected it as head.
     if (recentChainData
-        .getChainHead()
-        .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
+        .getBestBlockRoot()
+        .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
         .orElse(false)) {
       return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
     }

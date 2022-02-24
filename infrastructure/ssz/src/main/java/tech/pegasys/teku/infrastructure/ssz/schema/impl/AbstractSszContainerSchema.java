@@ -16,11 +16,11 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Suppliers;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.function.Supplier;
@@ -72,7 +72,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       Suppliers.memoize(this::computeSszLengthBounds);
   private final String containerName;
   private final List<String> childrenNames = new ArrayList<>();
-  private final Map<String, Integer> childrenNamesToFieldIndex = new HashMap<>();
+  private final Object2IntMap<String> childrenNamesToFieldIndex = new Object2IntOpenHashMap<>();
   private final List<SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
   private final long treeWidth;
@@ -82,10 +82,11 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.containerName = name;
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final NamedSchema<?> childSchema = childrenSchemas.get(i);
-      if (childrenNamesToFieldIndex.put(childSchema.getName(), i) != null) {
+      if (childrenNamesToFieldIndex.containsKey(childSchema.getName())) {
         throw new IllegalArgumentException(
             "Duplicate field name detected for field " + childSchema.getName() + " at index " + i);
       }
+      childrenNamesToFieldIndex.put(childSchema.getName(), i);
       childrenNames.add(childSchema.getName());
     }
     this.childrenSchemas =
@@ -151,8 +152,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
    */
   @Override
   public int getFieldIndex(String fieldName) {
-    final Integer index = childrenNamesToFieldIndex.get(fieldName);
-    return index == null ? -1 : index;
+    return childrenNamesToFieldIndex.getOrDefault(fieldName, -1);
   }
 
   @Override

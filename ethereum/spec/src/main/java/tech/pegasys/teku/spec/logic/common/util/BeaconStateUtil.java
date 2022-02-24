@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -86,6 +89,53 @@ public class BeaconStateUtil {
 
   public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     return getDutyDependentRoot(state, beaconStateAccessors.getCurrentEpoch(state));
+  }
+
+  /**
+   * Returns the current duty dependent root for the specified block if it is available from
+   * ReadOnlyForkChoiceStrategy.
+   *
+   * <p>If the specified block is or descends from the current justified block, the previous
+   * dependent root is either available or is the parent root of the current finalized block
+   * because:
+   *
+   * <ul>
+   *   <li>The previous dependent root is the block root from the last slot of the epoch prior to
+   *       the previous one
+   *   <li>The justified block can be at most the first block of the current epoch
+   *   <li>The finalized block must be at least one epoch older than the justified block
+   *   <li>ForkChoiceStrategy has all blocks from the finalized block onwards
+   * </ul>
+   *
+   * Thus, the worst case is that finalized block is the first slot of the previous epoch, and it's
+   * parent must then be the block in effect in the previous slot.
+   */
+  public Optional<Bytes32> getPreviousDutyDependentRoot(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final BeaconBlockSummary block) {
+    return getDutyDependentRoot(
+        forkChoiceStrategy,
+        block.getRoot(),
+        miscHelpers.computeEpochAtSlot(block.getSlot()).minusMinZero(1));
+  }
+
+  /**
+   * Returns the current duty dependent root for the specified block if it is available from
+   * ReadOnlyForkChoiceStrategy.
+   *
+   * <p>The current dependent root is always available if the specified block is or descends from
+   * the current justified block because:
+   *
+   * <ul>
+   *   <li>The current dependent root is the block root from the last slot of the previous epoch
+   *   <li>The justified block can be at most the first block of the current epoch
+   *   <li>The finalized block must be at least one epoch older than the justified block
+   *   <li>ForkChoiceStrategy has all blocks from the finalized block onwardss
+   * </ul>
+   */
+  public Optional<Bytes32> getCurrentDutyDependentRoot(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final BeaconBlockSummary block) {
+    return getDutyDependentRoot(
+        forkChoiceStrategy, block.getRoot(), miscHelpers.computeEpochAtSlot(block.getSlot()));
   }
 
   public List<UInt64> getEffectiveBalances(final BeaconState state) {
@@ -160,11 +210,23 @@ public class BeaconStateUtil {
             state, miscHelpers.computeEpochAtSlot(attestationSlot)));
   }
 
+  private Optional<Bytes32> getDutyDependentRoot(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 chainHead,
+      final UInt64 epoch) {
+    final UInt64 slot = getDutyDependentRootSlot(epoch);
+    return forkChoiceStrategy.getAncestor(chainHead, slot);
+  }
+
   private Bytes32 getDutyDependentRoot(final BeaconState state, final UInt64 epoch) {
-    final UInt64 slot = miscHelpers.computeStartSlotAtEpoch(epoch).minusMinZero(1);
+    final UInt64 slot = getDutyDependentRootSlot(epoch);
     return slot.equals(state.getSlot())
         // No previous block, use algorithm for calculating the genesis block root
         ? BeaconBlock.fromGenesisState(schemaDefinitions, state).getRoot()
         : beaconStateAccessors.getBlockRootAtSlot(state, slot);
+  }
+
+  private UInt64 getDutyDependentRootSlot(final UInt64 epoch) {
+    return miscHelpers.computeStartSlotAtEpoch(epoch).minusMinZero(1);
   }
 }

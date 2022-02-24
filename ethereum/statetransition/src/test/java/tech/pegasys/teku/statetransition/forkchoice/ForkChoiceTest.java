@@ -126,7 +126,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void shouldTriggerReorgWhenEmptyHeadSlotFilled() {
+  void shouldNotTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
     processHead(ONE);
     assertThat(recentChainData.getBestBlockRoot()).contains(genesis.getRoot());
@@ -136,10 +136,8 @@ class ForkChoiceTest {
     processHead(ONE);
     assertThat(recentChainData.getBestBlockRoot()).contains(slot1Block.getRoot());
 
-    final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
-    assertThat(reorgEvents).hasSize(1);
-    assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(ONE);
-    assertThat(reorgEvents.get(0).getNewBestBlockRoot()).isEqualTo(slot1Block.getRoot());
+    final List<ReorgEvent> reorgEvents = storageSystem.chainHeadChannel().getReorgEvents();
+    assertThat(reorgEvents).isEmpty();
   }
 
   @Test
@@ -154,7 +152,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
+  void onBlock_shouldNotTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
     processHead(nodeSlot);
@@ -166,15 +164,7 @@ class ForkChoiceTest {
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents())
-        .contains(
-            new ReorgEvent(
-                blockAndState.getRoot(),
-                UInt64.valueOf(1),
-                blockAndState.getStateRoot(),
-                genesis.getRoot(),
-                genesis.getStateRoot(),
-                blockAndState.getSlot().minus(1)));
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
   }
 
   @Test

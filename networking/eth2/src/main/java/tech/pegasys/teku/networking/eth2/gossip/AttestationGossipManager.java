@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import io.libp2p.pubsub.NoPeersForOutboundMessageException;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -60,7 +62,8 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              LOG.trace(
+              LOG.log(
+                  error instanceof NoPeersForOutboundMessageException ? Level.DEBUG : Level.WARN,
                   "Failed to publish attestation for slot {}",
                   attestation.getData().getSlot(),
                   error);

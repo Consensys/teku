@@ -20,6 +20,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -43,28 +44,30 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   }
 
   @Override
-  public InternalValidationResult validateFully(ProposerSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateFully(ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
-      return InternalValidationResult.IGNORE;
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
-    final Optional<OperationInvalidReason> invalidReason =
-        passesProcessProposerSlashingConditions(slashing);
-    if (invalidReason.isPresent()) {
-      return InternalValidationResult.create(
-          ValidationResultCode.REJECT, invalidReason.get().describe());
-    }
+    return passesProcessProposerSlashingConditions(slashing)
+        .thenApply(
+            invalidReason -> {
+              if (invalidReason.isPresent()) {
+                return InternalValidationResult.create(
+                    ValidationResultCode.REJECT, invalidReason.get().describe());
+              }
 
-    if (receivedValidSlashingForProposerSet.add(
-        slashing.getHeader_1().getMessage().getProposerIndex())) {
-      return InternalValidationResult.ACCEPT;
-    } else {
-      LOG.trace(
-          "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
-      return InternalValidationResult.IGNORE;
-    }
+              if (receivedValidSlashingForProposerSet.add(
+                  slashing.getHeader_1().getMessage().getProposerIndex())) {
+                return InternalValidationResult.ACCEPT;
+              } else {
+                LOG.trace(
+                    "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
+                return InternalValidationResult.IGNORE;
+              }
+            });
   }
 
   @Override
@@ -73,19 +76,23 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     return spec.validateProposerSlashing(state, slashing);
   }
 
-  private Optional<OperationInvalidReason> passesProcessProposerSlashingConditions(
+  private SafeFuture<Optional<OperationInvalidReason>> passesProcessProposerSlashingConditions(
       ProposerSlashing slashing) {
-    final BeaconState state = getState();
-    final Optional<OperationInvalidReason> invalidReason =
-        validateForStateTransition(state, slashing);
-    if (invalidReason.isPresent()) {
-      return invalidReason;
-    }
+    return getState()
+        .thenApply(
+            state -> {
+              final Optional<OperationInvalidReason> invalidReason =
+                  validateForStateTransition(state, slashing);
+              if (invalidReason.isPresent()) {
+                return invalidReason;
+              }
 
-    if (!spec.verifyProposerSlashingSignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
-      return Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE);
-    }
-    return Optional.empty();
+              if (!spec.verifyProposerSlashingSignature(
+                  state, slashing, BLSSignatureVerifier.SIMPLE)) {
+                return Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE);
+              }
+              return Optional.empty();
+            });
   }
 
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
@@ -93,7 +100,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
         slashing.getHeader_1().getMessage().getProposerIndex());
   }
 
-  private BeaconState getState() {
+  private SafeFuture<BeaconState> getState() {
     return recentChainData
         .getBestState()
         .orElseThrow(

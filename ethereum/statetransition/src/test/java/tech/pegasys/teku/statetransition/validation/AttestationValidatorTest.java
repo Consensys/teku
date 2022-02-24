@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
@@ -381,7 +382,8 @@ class AttestationValidatorTest {
   }
 
   private InternalValidationResult validate(final Attestation attestation) {
-    final BeaconState state = recentChainData.getBestState().orElseThrow();
+    final BeaconState state = safeJoin(recentChainData.getBestState().orElseThrow());
+
     return validator
         .validate(
             ValidateableAttestation.fromNetwork(

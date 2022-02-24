@@ -166,20 +166,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
       final Collection<BLSPublicKey> publicKeys) {
-    return SafeFuture.of(
-        () ->
-            combinedChainDataClient
-                .getBestState()
-                .map(
-                    state -> {
-                      final Map<BLSPublicKey, Integer> results = new HashMap<>();
-                      publicKeys.forEach(
-                          publicKey ->
-                              spec.getValidatorIndex(state, publicKey)
-                                  .ifPresent(index -> results.put(publicKey, index)));
-                      return results;
-                    })
-                .orElseThrow(() -> new IllegalStateException("Head state is not yet available")));
+    return combinedChainDataClient
+        .getBestState()
+        .orElseGet(
+            () ->
+                SafeFuture.failedFuture(
+                    new IllegalStateException("Head state is not yet available")))
+        .thenApply(
+            state -> {
+              final Map<BLSPublicKey, Integer> results = new HashMap<>();
+              publicKeys.forEach(
+                  publicKey ->
+                      spec.getValidatorIndex(state, publicKey)
+                          .ifPresent(index -> results.put(publicKey, index)));
+              return results;
+            });
   }
 
   @Override
@@ -638,8 +639,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         dependentRoot,
-        validatorIndices.stream()
-            .map(index -> createAttesterDuties(state, epoch, index))
+        validatorIndices
+            .intStream()
+            .mapToObj(index -> createAttesterDuties(state, epoch, index))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(toList()));
@@ -671,36 +673,42 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
-    final Optional<BeaconState> maybeBestState = combinedChainDataClient.getBestState();
+    final Optional<SafeFuture<BeaconState>> maybeBestState = combinedChainDataClient.getBestState();
     if (maybeBestState.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final BeaconState bestState = maybeBestState.get();
-    if (syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(bestState, epoch)) {
-      return SafeFuture.completedFuture(maybeBestState);
-    }
+    return maybeBestState
+        .get()
+        .thenCompose(
+            bestState -> {
+              if (syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(bestState, epoch)) {
+                return SafeFuture.completedFuture(Optional.of(bestState));
+              }
 
-    final UInt64 lastQueryableEpoch =
-        syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(
-            combinedChainDataClient.getCurrentEpoch());
-    if (lastQueryableEpoch.isLessThan(epoch)) {
-      return SafeFuture.failedFuture(
-          new IllegalArgumentException(
-              "Cannot calculate sync committee duties for epoch "
-                  + epoch
-                  + " because it is not within the current or next sync committee periods"));
-    }
+              final UInt64 lastQueryableEpoch =
+                  syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(
+                      combinedChainDataClient.getCurrentEpoch());
+              if (lastQueryableEpoch.isLessThan(epoch)) {
+                return SafeFuture.failedFuture(
+                    new IllegalArgumentException(
+                        "Cannot calculate sync committee duties for epoch "
+                            + epoch
+                            + " because it is not within the current or next sync committee periods"));
+              }
 
-    final UInt64 requiredEpoch;
-    final UInt64 stateEpoch = spec.getCurrentEpoch(bestState);
-    if (epoch.isGreaterThan(stateEpoch)) {
-      // Use the earliest possible epoch since we'll need to process empty slots
-      requiredEpoch = syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch);
-    } else {
-      // Use the latest possible epoch since it's most likely to still be in memory
-      requiredEpoch = syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(epoch);
-    }
-    return combinedChainDataClient.getStateAtSlotExact(spec.computeStartSlotAtEpoch(requiredEpoch));
+              final UInt64 requiredEpoch;
+              final UInt64 stateEpoch = spec.getCurrentEpoch(bestState);
+              if (epoch.isGreaterThan(stateEpoch)) {
+                // Use the earliest possible epoch since we'll need to process empty slots
+                requiredEpoch = syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch);
+              } else {
+                // Use the latest possible epoch since it's most likely to still be in memory
+                requiredEpoch =
+                    syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(epoch);
+              }
+              return combinedChainDataClient.getStateAtSlotExact(
+                  spec.computeStartSlotAtEpoch(requiredEpoch));
+            });
   }
 
   private SyncCommitteeDuties getSyncCommitteeDutiesFromIndicesAndState(

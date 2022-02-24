@@ -37,7 +37,7 @@ public class StorageSystem implements AutoCloseable {
   private final ChainUpdater chainUpdater;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
-  private final TrackingChainHeadChannel reorgEventChannel;
+  private final TrackingChainHeadChannel chainHeadChannel;
   private final StubMetricsSystem metricsSystem;
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
@@ -48,7 +48,7 @@ public class StorageSystem implements AutoCloseable {
 
   private StorageSystem(
       final StubMetricsSystem metricsSystem,
-      final TrackingChainHeadChannel reorgEventChannel,
+      final TrackingChainHeadChannel chainHeadChannel,
       final StateStorageMode storageMode,
       final ChainStorage chainStorage,
       final Database database,
@@ -60,7 +60,7 @@ public class StorageSystem implements AutoCloseable {
     this.metricsSystem = metricsSystem;
     this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
-    this.reorgEventChannel = reorgEventChannel;
+    this.chainHeadChannel = chainHeadChannel;
     this.storageMode = storageMode;
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -85,7 +85,7 @@ public class StorageSystem implements AutoCloseable {
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
-    final TrackingChainHeadChannel reorgEventChannel = new TrackingChainHeadChannel();
+    final TrackingChainHeadChannel chainHeadChannel = new TrackingChainHeadChannel();
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
             SYNC_RUNNER,
@@ -95,7 +95,7 @@ public class StorageSystem implements AutoCloseable {
             chainStorageServer,
             chainStorageServer,
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             spec);
 
     // Create combined client
@@ -105,7 +105,7 @@ public class StorageSystem implements AutoCloseable {
     // Return storage system
     return new StorageSystem(
         metricsSystem,
-        reorgEventChannel,
+        chainHeadChannel,
         storageMode,
         chainStorageServer,
         database,
@@ -161,8 +161,8 @@ public class StorageSystem implements AutoCloseable {
     return combinedChainDataClient;
   }
 
-  public TrackingChainHeadChannel reorgEventChannel() {
-    return reorgEventChannel;
+  public TrackingChainHeadChannel chainHeadChannel() {
+    return chainHeadChannel;
   }
 
   public TrackingEth1EventsChannel eth1EventsChannel() {

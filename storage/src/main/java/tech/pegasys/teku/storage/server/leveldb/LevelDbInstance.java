@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -268,12 +269,18 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public synchronized void close() throws Exception {
+  public void close() throws Exception {
     if (!closed.compareAndSet(false, true)) {
       return;
     }
-    new ArrayList<>(openIterators).forEach(this::closeIterator);
-    new ArrayList<>(openTransactions).forEach(LevelDbTransaction::close);
+    List<DBIterator> openIteratorsSnapshot;
+    List<LevelDbTransaction> openTransactionsSnapshot;
+    synchronized (this) {
+      openIteratorsSnapshot = new ArrayList<>(openIterators);
+      openTransactionsSnapshot = new ArrayList<>(openTransactions);
+    }
+    openIteratorsSnapshot.forEach(this::closeIterator);
+    openTransactionsSnapshot.forEach(LevelDbTransaction::close);
     db.close();
   }
 
