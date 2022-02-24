@@ -33,6 +33,7 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
   private final Duration externalSignerTimeout;
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
+  private final boolean readOnly;
 
   ExternalValidatorProvider(
       final Spec spec,
@@ -41,7 +42,8 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
       final BLSPublicKey publicKey,
       final Duration externalSignerTimeout,
       final ThrottlingTaskQueue externalSignerTaskQueue,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final boolean readOnly) {
     this.spec = spec;
     this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
     this.externalSignerUrl = externalSignerUrl;
@@ -49,6 +51,7 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
     this.externalSignerTimeout = externalSignerTimeout;
     this.externalSignerTaskQueue = externalSignerTaskQueue;
     this.metricsSystem = metricsSystem;
+    this.readOnly = readOnly;
   }
 
   @Override
@@ -58,7 +61,7 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
 
   @Override
   public boolean isReadOnly() {
-    return true;
+    return readOnly;
   }
 
   @Override

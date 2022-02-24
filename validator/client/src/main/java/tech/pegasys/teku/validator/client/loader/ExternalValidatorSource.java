@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -128,11 +127,16 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
                     key,
                     config.getValidatorExternalSignerTimeout(),
                     externalSignerTaskQueue,
-                    metricsSystem))
+                    metricsSystem,
+                    readOnly))
         .collect(toList());
   }
 
   private List<File> getValidatorFiles() {
+    if (maybeDataDirLayout.isEmpty()) {
+      return List.of();
+    }
+
     final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
     final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
 
@@ -147,8 +151,8 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   }
 
   private ValidatorProvider getValidatorProvider(File file) {
-    String content = file.toString();
     try {
+      String content = Files.readString(file.toPath());
       ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
       return new ExternalValidatorProvider(
           spec,
@@ -157,9 +161,10 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
           externalValidator.getPublicKey(),
           config.getValidatorExternalSignerTimeout(),
           externalSignerTaskQueue,
-          metricsSystem);
+          metricsSystem,
+          readOnly);
 
-    } catch (JsonProcessingException e) {
+    } catch (IOException e) {
       throw new InvalidConfigurationException(e.getMessage(), e);
     }
   }
@@ -212,7 +217,8 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
               publicKey,
               config.getValidatorExternalSignerTimeout(),
               externalSignerTaskQueue,
-              metricsSystem);
+              metricsSystem,
+              readOnly);
 
       externalValidatorSourceMap.put(publicKey, url);
       return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
