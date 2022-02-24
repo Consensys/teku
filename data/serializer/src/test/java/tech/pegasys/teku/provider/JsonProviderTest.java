@@ -45,6 +45,15 @@ class JsonProviderTest {
   }
 
   @Test
+  public void minUInt256ShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final UInt256 data = UInt256.ZERO;
+    final String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, Q + "0x0" + Q);
+    final UInt256 data2 = jsonProvider.jsonToObject(serialized, UInt256.class);
+    assertEquals(data2, data);
+  }
+
+  @Test
   public void UInt64ShouldSerializeAndDeserialize() throws JsonProcessingException {
     final UInt64 data = dataStructureUtil.randomUInt64();
     final String serialized = jsonProvider.objectToJSON(data);

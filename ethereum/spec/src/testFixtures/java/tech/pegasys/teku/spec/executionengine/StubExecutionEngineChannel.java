@@ -111,7 +111,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
                 Bytes32.ZERO,
                 Bytes32.ZERO,
                 Bytes.EMPTY,
-                payloadAttributes.getRandom(),
+                payloadAttributes.getPrevRandao(),
                 UInt64.valueOf(payloadIdCounter.get()),
                 UInt64.ONE,
                 UInt64.ZERO,

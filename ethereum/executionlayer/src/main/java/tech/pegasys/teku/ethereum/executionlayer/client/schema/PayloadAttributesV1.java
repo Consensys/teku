@@ -35,25 +35,25 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 public class PayloadAttributesV1 {
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  private final UInt64 timestamp;
+  public final UInt64 timestamp;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  private final Bytes32 random;
+  public final Bytes32 prevRandao;
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
-  private final Bytes20 suggestedFeeRecipient;
+  public final Bytes20 suggestedFeeRecipient;
 
   public PayloadAttributesV1(
       @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("random") Bytes32 random,
+      @JsonProperty("prevRandao") Bytes32 prevRandao,
       @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient) {
     checkNotNull(timestamp, "timestamp");
-    checkNotNull(random, "random");
+    checkNotNull(prevRandao, "prevRandao");
     checkNotNull(suggestedFeeRecipient, "suggestedFeeRecipient");
     this.timestamp = timestamp;
-    this.random = random;
+    this.prevRandao = prevRandao;
     this.suggestedFeeRecipient = suggestedFeeRecipient;
   }
 
@@ -63,7 +63,7 @@ public class PayloadAttributesV1 {
         (payloadAttributes) ->
             new PayloadAttributesV1(
                 payloadAttributes.getTimestamp(),
-                payloadAttributes.getRandom(),
+                payloadAttributes.getPrevRandao(),
                 payloadAttributes.getFeeRecipient()));
   }
 
@@ -73,20 +73,20 @@ public class PayloadAttributesV1 {
     if (o == null || getClass() != o.getClass()) return false;
     final PayloadAttributesV1 that = (PayloadAttributesV1) o;
     return Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(random, that.random)
+        && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(suggestedFeeRecipient, that.suggestedFeeRecipient);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timestamp, random, suggestedFeeRecipient);
+    return Objects.hash(timestamp, prevRandao, suggestedFeeRecipient);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("timestamp", timestamp)
-        .add("random", random)
+        .add("prevRandao", prevRandao)
         .add("suggestedFeeRecipient", suggestedFeeRecipient)
         .toString();
   }
