@@ -41,6 +41,12 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
   public KintsugiWeb3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
     super(eeEndpoint, timeProvider);
+    getWeb3JClient()
+        .addRequestAdapter(
+            request -> {
+              request.setId(nextId.getAndIncrement());
+              return request;
+            });
   }
 
   @Override
@@ -51,7 +57,7 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
             Collections.singletonList(executionPayload),
             eeWeb3jService,
             NewPayloadWeb3jResponse.class);
-    return doRequest(web3jRequest);
+    return getWeb3JClient().doRequest(web3jRequest);
   }
 
   @Override
@@ -63,7 +69,9 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
             list(forkChoiceState, payloadAttributes.orElse(null)),
             eeWeb3jService,
             KintsugiForkChoiceUpdatedWeb3jResponse.class);
-    return doRequest(web3jRequest).thenApply(this::fromKintsugiForkChoiceUpdatedResultResponse);
+    return getWeb3JClient()
+        .doRequest(web3jRequest)
+        .thenApply(this::fromKintsugiForkChoiceUpdatedResultResponse);
   }
 
   private Response<ForkChoiceUpdatedResult> fromKintsugiForkChoiceUpdatedResultResponse(
@@ -90,13 +98,6 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
         new ForkChoiceUpdatedResult(
             new PayloadStatusV1(payloadStatus, null, null),
             kintsugiResponse.getPayload().payloadId));
-  }
-
-  @Override
-  protected <T> SafeFuture<Response<T>> doRequest(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
-    web3jRequest.setId(nextId.getAndIncrement());
-    return super.doRequest(web3jRequest);
   }
 
   public static class KintsugiForkChoiceUpdatedResult {
