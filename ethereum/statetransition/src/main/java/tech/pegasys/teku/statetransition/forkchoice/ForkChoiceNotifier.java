@@ -24,8 +24,7 @@ import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 
 public interface ForkChoiceNotifier {
-  void onUpdatePreparableProposers(
-      Collection<BeaconPreparableProposer> proposers, boolean fromRemote);
+  void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);
 
   SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
       ForkChoiceState forkChoiceState);

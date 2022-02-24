@@ -194,4 +194,8 @@ public class NodeDataProvider {
   public List<Map<String, Object>> getPreparedBeaconProposers() {
     return payloadAttributesCalculator.getData();
   }
+
+  public boolean isProposerDefaultFeeRecipientDefined() {
+    return payloadAttributesCalculator.isProposerDefaultFeeRecipientDefined();
+  }
 }

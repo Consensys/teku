@@ -26,8 +26,7 @@ import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
-  public void onUpdatePreparableProposers(
-      Collection<BeaconPreparableProposer> proposers, boolean fromRemote) {}
+  public void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers) {}
 
   @Override
   public SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(

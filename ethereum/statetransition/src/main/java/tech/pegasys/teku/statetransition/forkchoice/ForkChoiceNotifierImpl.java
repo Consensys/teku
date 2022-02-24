@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -80,9 +78,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public void onUpdatePreparableProposers(
-      final Collection<BeaconPreparableProposer> proposers, final boolean fromRemote) {
-    eventThread.execute(() -> internalUpdatePreparableProposers(proposers, fromRemote));
+  public void onUpdatePreparableProposers(final Collection<BeaconPreparableProposer> proposers) {
+    eventThread.execute(() -> internalUpdatePreparableProposers(proposers));
   }
 
   @Override
@@ -190,14 +187,10 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   private void internalUpdatePreparableProposers(
-      final Collection<BeaconPreparableProposer> proposers, final boolean fromRemote) {
+      final Collection<BeaconPreparableProposer> proposers) {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalUpdatePreparableProposers proposers {}", proposers);
-
-    if (!payloadAttributesCalculator.isProposerDefaultFeeRecipientDefined() && fromRemote) {
-      STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
-    }
 
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
