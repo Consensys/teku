@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -77,27 +76,11 @@ public class EventLogger {
     info(driftEventLog, Color.WHITE);
   }
 
-  public void syncEvent(
-      final UInt64 nodeSlot,
-      final UInt64 headSlot,
-      final Optional<UInt64> optimisticHeadSlot,
-      final int numPeers) {
-    final String syncEventLog;
-    if (optimisticHeadSlot.isPresent()) {
-      syncEventLog =
-          String.format(
-              "Syncing     *** Target slot: %s, Head slot: %s, Validated slot: %s, Remaining slots: %s, Connected peers: %s",
-              nodeSlot,
-              optimisticHeadSlot.get(),
-              headSlot,
-              nodeSlot.minusMinZero(headSlot),
-              numPeers);
-    } else {
-      syncEventLog =
-          String.format(
-              "Syncing     *** Target slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
-              nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
-    }
+  public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
+    final String syncEventLog =
+        String.format(
+            "Syncing     *** Target slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
+            nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
     info(syncEventLog, Color.WHITE);
   }
 

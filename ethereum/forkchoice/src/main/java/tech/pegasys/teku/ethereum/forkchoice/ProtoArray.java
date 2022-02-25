@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -146,19 +145,7 @@ public class ProtoArray {
   }
 
   /**
-   * Follows the best-descendant links to find the best-block (i.e., head-block). This excludes any
-   * optimistic nodes.
-   *
-   * @param justifiedRoot the root of the justified checkpoint
-   * @return the best node according to fork choice
-   */
-  public Optional<ProtoNode> findHead(
-      Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch, ProtoNode::isFullyValidated);
-  }
-
-  /**
-   * Follows the best-descendant links to find the best-block (i.e., head-block), including any
+   * Follows the best-descendant links to find the best-block (i.e. head-block), including any
    * optimistic nodes which have not yet been fully validated.
    *
    * @param justifiedRoot the root of the justified checkpoint
@@ -166,7 +153,7 @@ public class ProtoArray {
    */
   public ProtoNode findOptimisticHead(
       Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch, node -> !node.isInvalid())
+    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch)
         .orElseThrow(fatalException("Finalized block was found to be invalid."));
   }
 
@@ -199,10 +186,7 @@ public class ProtoArray {
   }
 
   private Optional<ProtoNode> findHead(
-      final Bytes32 justifiedRoot,
-      final UInt64 justifiedEpoch,
-      final UInt64 finalizedEpoch,
-      final Predicate<ProtoNode> hasSuitableValidationState) {
+      final Bytes32 justifiedRoot, final UInt64 justifiedEpoch, final UInt64 finalizedEpoch) {
     if (!this.justifiedEpoch.equals(justifiedEpoch)
         || !this.finalizedEpoch.equals(finalizedEpoch)) {
       this.justifiedEpoch = justifiedEpoch;
@@ -217,7 +201,7 @@ public class ProtoArray {
 
     ProtoNode justifiedNode = getNodeByIndex(justifiedIndex);
 
-    if (!hasSuitableValidationState.test(justifiedNode)) {
+    if (justifiedNode.isInvalid()) {
       return Optional.empty();
     }
 
@@ -228,14 +212,13 @@ public class ProtoArray {
     // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
     // change back up and everything works, but we run findHead to determine if the new block should
     // become the best head so need to follow down the chain.
-    while (bestNode.getBestDescendantIndex().isPresent()
-        && hasSuitableValidationState.test(bestNode)) {
+    while (bestNode.getBestDescendantIndex().isPresent() && !bestNode.isInvalid()) {
       bestDescendantIndex = bestNode.getBestDescendantIndex().get();
       bestNode = getNodeByIndex(bestDescendantIndex);
     }
 
-    // Walk backwards to find the last fully validated node in the chain
-    while (!hasSuitableValidationState.test(bestNode)) {
+    // Walk backwards to find the last valid node in the chain
+    while (bestNode.isInvalid()) {
       final Optional<Integer> maybeParentIndex = bestNode.getParentIndex();
       if (maybeParentIndex.isEmpty()) {
         // No node on this chain with sufficient validity.

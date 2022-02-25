@@ -158,7 +158,7 @@ public class SlotProcessorTest {
     assertThat(captor.getValue()).isEqualTo(ZERO);
 
     verify(syncStateProvider).getCurrentSyncState();
-    verify(eventLogger).syncEvent(ZERO, ZERO, Optional.empty(), 1);
+    verify(eventLogger).syncEvent(ZERO, ZERO, 1);
   }
 
   @Test
@@ -174,7 +174,7 @@ public class SlotProcessorTest {
     assertThat(captor.getValue()).isEqualTo(ZERO);
 
     verify(syncStateProvider).getCurrentSyncState();
-    verify(eventLogger).syncEvent(ZERO, ZERO, Optional.empty(), 1);
+    verify(eventLogger).syncEvent(ZERO, ZERO, 1);
   }
 
   @Test

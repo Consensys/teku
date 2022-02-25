@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -52,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -92,7 +92,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
   private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
-  private volatile Optional<ForkChoiceState> optimisticHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
   RecentChainData(
@@ -264,15 +263,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
-      final Optional<MinimalBeaconBlockSummary> maybeBlockData =
-          forkChoiceStrategy.getMinimalBlockSummary(root);
+      final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
       if (maybeBlockData.isEmpty()) {
         LOG.error(
             "Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
         return;
       }
-      final ChainHead newChainHead =
-          createNewChainHead(root, currentSlot, forkChoiceStrategy, maybeBlockData.get());
+      final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext =
           computeReorgContext(forkChoiceStrategy, originalChainHead, newChainHead);
@@ -340,13 +337,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   private ChainHead createNewChainHead(
-      final Bytes32 root,
-      final UInt64 currentSlot,
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
-      final MinimalBeaconBlockSummary blockData) {
-    final Bytes32 executionBlockHash =
-        forkChoiceStrategy.executionBlockHash(root).orElse(Bytes32.ZERO);
-
+      final Bytes32 root, final UInt64 currentSlot, final ProtoNodeData blockData) {
     final SafeFuture<StateAndBlockSummary> chainHeadStateFuture =
         store
             .retrieveStateAndBlockSummary(root)
@@ -358,7 +349,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                                 String.format(
                                     "Unable to update head block as of slot %s.  Block is unavailable: %s.",
                                     currentSlot, root))));
-    return ChainHead.create(blockData, executionBlockHash, chainHeadStateFuture);
+    return ChainHead.create(blockData, chainHeadStateFuture);
   }
 
   private Bytes32 getFinalizedBlockParentRoot() {
@@ -366,19 +357,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElseThrow()
         .blockParentRoot(store.getFinalizedCheckpoint().getRoot())
         .orElseThrow(() -> new IllegalStateException("Finalized block is unknown"));
-  }
-
-  public void onForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
-    optimisticHead =
-        forkChoiceState.isHeadOptimistic() ? Optional.of(forkChoiceState) : Optional.empty();
-  }
-
-  public Optional<ForkChoiceState> getOptimisticHead() {
-    return optimisticHead;
-  }
-
-  public Optional<UInt64> getOptimisticHeadSlot() {
-    return optimisticHead.map(ForkChoiceState::getHeadBlockSlot);
   }
 
   private boolean hasReorgedFrom(
@@ -464,6 +442,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /** @return The head of the chain. */
   public Optional<ChainHead> getChainHead() {
     return chainHead;
+  }
+
+  public boolean isChainHeadOptimistic() {
+    return chainHead.map(ChainHead::isOptimistic).orElse(false);
   }
 
   /** @return The block at the head of the chain. */

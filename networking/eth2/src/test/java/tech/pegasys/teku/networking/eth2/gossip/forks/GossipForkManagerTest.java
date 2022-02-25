@@ -494,8 +494,7 @@ class GossipForkManagerTest {
 
   @Test
   void shouldStartSubscriptionsInOptimisticSyncMode() {
-    when(recentChainData.getOptimisticHead())
-        .thenReturn(Optional.of(dataStructureUtil.randomForkChoiceState(true)));
+    when(recentChainData.isChainHeadOptimistic()).thenReturn(true);
 
     final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
     final GossipForkManager manager = managerForForks(subscriptions);

@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -485,7 +486,7 @@ class ForkChoiceTest {
     importBlock(epoch6BlockPlus1);
 
     assertForkChoiceUpdateNotification(epoch6BlockPlus1, false);
-    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+    assertThat(recentChainData.isChainHeadOptimistic()).isFalse();
 
     // latest valid finalized should have advanced to 32
     assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(32));
@@ -554,7 +555,7 @@ class ForkChoiceTest {
   void applyHead_shouldSendForkChoiceUpdatedNotificationWhenOptimistic() {
     doMerge();
     finalizeEpoch(2);
-    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+    assertThat(recentChainData.isChainHeadOptimistic()).isFalse();
 
     final UInt64 nextBlockSlot = storageSystem.chainBuilder().getLatestSlot().plus(1);
     storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot);
@@ -592,10 +593,10 @@ class ForkChoiceTest {
 
     doMerge(true);
 
-    assertThat(recentChainData.getOptimisticHead()).isPresent();
+    assertThat(recentChainData.isChainHeadOptimistic()).isTrue();
 
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
-    final Bytes32 chainHeadRoot = recentChainData.getOptimisticHead().get().getHeadBlockRoot();
+    final Bytes32 chainHeadRoot = recentChainData.getChainHead().orElseThrow().getRoot();
     when(transitionBlockValidator.verifyAncestorTransitionBlock(chainHeadRoot))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -623,7 +624,7 @@ class ForkChoiceTest {
   void onBlock_shouldUseLatestValidHashFromForkChoiceUpdated() {
     doMerge();
     finalizeEpoch(2);
-    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+    assertThat(recentChainData.isChainHeadOptimistic()).isFalse();
 
     final UInt64 nextBlockSlot = storageSystem.chainBuilder().getLatestSlot().plus(1);
     storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot);
@@ -680,15 +681,15 @@ class ForkChoiceTest {
   }
 
   private void assertHeadIsOptimistic(final SignedBlockAndState blockAndState) {
-    assertThat(recentChainData.getOptimisticHead()).isPresent();
-    final ForkChoiceState optimisticHead = recentChainData.getOptimisticHead().orElseThrow();
-    assertThat(optimisticHead.isHeadOptimistic()).isTrue();
-    assertThat(optimisticHead.getHeadBlockSlot()).isEqualTo(blockAndState.getSlot());
-    assertThat(optimisticHead.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+    final ChainHead optimisticHead = recentChainData.getChainHead().orElseThrow();
+    assertThat(optimisticHead.getSlot()).isEqualTo(blockAndState.getSlot());
+    assertThat(optimisticHead.getRoot()).isEqualTo(blockAndState.getRoot());
+    assertThat(optimisticHead.isOptimistic()).isTrue();
+    assertThat(recentChainData.isChainHeadOptimistic()).isTrue();
   }
 
   private void assertHeadIsFullyValidated(final SignedBlockAndState blockAndState) {
-    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+    assertThat(recentChainData.isChainHeadOptimistic()).isFalse();
     assertThat(recentChainData.getChainHead().orElseThrow().getSlot())
         .isEqualTo(blockAndState.getSlot());
     assertThat(recentChainData.getChainHead().orElseThrow().getRoot())
@@ -810,17 +811,10 @@ class ForkChoiceTest {
 
     if (optimistic) {
       storageSystem.chainUpdater().saveOptimisticBlock(epoch4Block);
-      recentChainData.onForkChoiceUpdated(
-          new ForkChoiceState(
-              epoch4Block.getRoot(),
-              epoch4Block.getSlot(),
-              terminalBlockHash,
-              terminalBlockHash,
-              Bytes32.ZERO,
-              true));
     } else {
-      storageSystem.chainUpdater().updateBestBlock(epoch4Block);
+      storageSystem.chainUpdater().saveBlock(epoch4Block);
     }
+    storageSystem.chainUpdater().updateBestBlock(epoch4Block);
   }
 
   @Test
