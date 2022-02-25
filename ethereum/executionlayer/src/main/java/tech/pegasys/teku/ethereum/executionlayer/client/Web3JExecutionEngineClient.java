@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -38,8 +36,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
-  private final Web3j eth1Web3j;
-  protected final Web3jService eeWeb3jService;
   private final Web3JClient web3JClient;
 
   public Web3JExecutionEngineClient(
@@ -53,14 +49,16 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .build();
-    this.eeWeb3jService = web3JClient.getWeb3jService();
-    this.eth1Web3j = Web3j.build(eeWeb3jService);
   }
 
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
     return getWeb3JClient()
-        .doWeb3JRequest(eth1Web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
+        .doWeb3JRequest(
+            getWeb3JClient()
+                .getEth1Web3j()
+                .ethGetBlockByHash(blockHash.toHexString(), false)
+                .sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock)
         .thenApply(Optional::ofNullable);
@@ -70,7 +68,10 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<PowBlock> getPowChainHead() {
     return getWeb3JClient()
         .doWeb3JRequest(
-            eth1Web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
+            getWeb3JClient()
+                .getEth1Web3j()
+                .ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
+                .sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
@@ -90,7 +91,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_getPayloadV1",
             Collections.singletonList(payloadId.toHexString()),
-            eeWeb3jService,
+            getWeb3JClient().getWeb3jService(),
             GetPayloadWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }
@@ -101,7 +102,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_newPayloadV1",
             Collections.singletonList(executionPayload),
-            eeWeb3jService,
+            getWeb3JClient().getWeb3jService(),
             NewPayloadWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }
@@ -113,7 +114,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_forkchoiceUpdatedV1",
             list(forkChoiceState, payloadAttributes.orElse(null)),
-            eeWeb3jService,
+            getWeb3JClient().getWeb3jService(),
             ForkChoiceUpdatedWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }
@@ -125,7 +126,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_exchangeTransitionConfigurationV1",
             Collections.singletonList(transitionConfiguration),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             ExchangeTransitionConfigurationWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }

@@ -19,10 +19,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -30,25 +32,31 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.VoidResponse;
-import org.web3j.protocol.websocket.WebSocketClient;
 import org.web3j.protocol.websocket.WebSocketService;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3JClientTest {
   private static final TimeProvider timeProvider = mock(TimeProvider.class);
   private static final Web3jService web3jService = mock(Web3jService.class);
-  private static final Web3JClient web3JClient = new Web3JClientImpl(timeProvider, web3jService);
+  private static final Web3JClient web3JClient = new Web3JClientImpl(timeProvider);
+  private static final URI endpoint = URI.create("");
   private static final Web3jHttpClient web3jHttpClient =
-      new Web3jHttpClient(timeProvider, web3jService);
-  private static final WebSocketClient webSocketClient = mock(WebSocketClient.class);
+      new Web3jHttpClient(endpoint, timeProvider, Optional.empty());
   private static final WebSocketService webSocketService = mock(WebSocketService.class);
   private static final Web3jWebsocketClient web3jWebsocketClient =
-      new Web3jWebsocketClient(timeProvider, webSocketClient, webSocketService, Optional.empty());
+      new Web3jWebsocketClient(endpoint, timeProvider, Optional.empty());
 
   static class Web3JClientImpl extends Web3JClient {
-    protected Web3JClientImpl(TimeProvider timeProvider, Web3jService web3jService) {
-      super(timeProvider, web3jService);
+    protected Web3JClientImpl(TimeProvider timeProvider) {
+      super(timeProvider);
+      initWeb3jService(web3jService);
     }
+  }
+
+  @BeforeAll
+  static void setup() {
+    web3jHttpClient.initWeb3jService(web3jService);
+    web3jWebsocketClient.initWeb3jService(webSocketService);
   }
 
   @Test
@@ -59,7 +67,7 @@ public class Web3JClientTest {
           return request;
         });
     Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<Void>(), web3jService, VoidResponse.class);
+        new Request<>("test", new ArrayList<>(), web3jService, VoidResponse.class);
     request.setId(1);
     Request<?, ?> actualRequest = web3JClient.applyRequestAdapters(request);
     assertThat(actualRequest.getId()).isEqualTo(123);

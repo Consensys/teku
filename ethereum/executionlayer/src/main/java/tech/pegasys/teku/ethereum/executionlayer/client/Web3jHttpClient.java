@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import java.net.URI;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3jService;
+import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthHttpInterceptor;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -26,11 +28,15 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 public class Web3jHttpClient extends Web3JClient {
   private static final Logger LOG = LogManager.getLogger();
 
-  public Web3jHttpClient(TimeProvider timeProvider, Web3jService eeWeb3jService) {
-    super(timeProvider, eeWeb3jService);
+  public Web3jHttpClient(
+      final URI endpoint, final TimeProvider timeProvider, final Optional<JwtConfig> jwtConfig) {
+    super(timeProvider);
+    final OkHttpClient okHttpClient = createOkHttpClient(jwtConfig, timeProvider);
+    Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
+    initWeb3jService(httpService);
   }
 
-  protected static OkHttpClient createOkHttpClient(
+  private OkHttpClient createOkHttpClient(
       final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
     final OkHttpClient.Builder builder = new OkHttpClient.Builder();
     if (LOG.isTraceEnabled()) {

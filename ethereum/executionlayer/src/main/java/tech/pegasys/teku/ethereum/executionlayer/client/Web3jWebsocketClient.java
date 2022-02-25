@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import java.net.ConnectException;
+import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,19 +29,22 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3jWebsocketClient extends Web3JClient {
   private final AtomicBoolean connected = new AtomicBoolean(false);
-  private final WebSocketService webSocketService;
-  private final WebSocketClient webSocketClient;
+  private final URI endpoint;
+  private WebSocketClient webSocketClient;
   private Optional<JwtAuthWebsocketHelper> jwtAuth = Optional.empty();
 
   public Web3jWebsocketClient(
-      final TimeProvider timeProvider,
-      final WebSocketClient webSocketClient,
-      final WebSocketService webSocketService,
-      final Optional<JwtConfig> jwtConfig) {
-    super(timeProvider, webSocketService);
-    this.webSocketService = webSocketService;
-    this.webSocketClient = webSocketClient;
+      final URI endpoint, final TimeProvider timeProvider, final Optional<JwtConfig> jwtConfig) {
+    super(timeProvider);
+    this.endpoint = endpoint;
+    initService();
     setupJwtAuth(jwtConfig, timeProvider);
+  }
+
+  private synchronized void initService() {
+    this.webSocketClient = new WebSocketClient(endpoint);
+    WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
+    initWeb3jService(webSocketService);
   }
 
   private void setupJwtAuth(final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
@@ -51,30 +55,43 @@ public class Web3jWebsocketClient extends Web3JClient {
     }
   }
 
-  private void tryToConnect() {
+  private Optional<Exception> tryToConnect() {
     if (connected.get()) {
-      return;
+      return Optional.empty();
     }
     try {
       jwtAuth.ifPresent(jwtHelper -> jwtHelper.setAuth(webSocketClient));
-      webSocketService.connect(message -> {}, this::handleError, () -> connected.set(false));
+      ((WebSocketService) getWeb3jService())
+          .connect(
+              message -> {},
+              this::handleError,
+              () -> {
+                connected.set(false);
+                initService();
+              });
       connected.set(true);
+      return Optional.empty();
     } catch (ConnectException ex) {
       connected.set(false);
+      initService();
       handleError(ex);
+      return Optional.of(ex);
     }
   }
 
   @Override
   protected <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
-    tryToConnect();
-    return super.doWeb3JRequest(web3Request);
+    return tryToConnect()
+        .<SafeFuture<T>>map(SafeFuture::failedFuture)
+        .orElseGet(() -> super.doWeb3JRequest(web3Request));
   }
 
   @Override
   protected <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
-    tryToConnect();
-    return super.doRequest(web3jRequest);
+    return tryToConnect()
+        .<SafeFuture<Response<T>>>map(
+            exception -> SafeFuture.completedFuture(new Response<>(exception.getMessage())))
+        .orElseGet(() -> super.doRequest(web3jRequest));
   }
 }

@@ -18,11 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
-import okhttp3.OkHttpClient;
-import org.web3j.protocol.Web3jService;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.protocol.websocket.WebSocketClient;
-import org.web3j.protocol.websocket.WebSocketService;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -63,15 +58,9 @@ public class Web3jClientBuilder {
     checkNotNull(endpoint);
     switch (endpoint.getScheme()) {
       case "http":
-        final OkHttpClient okHttpClient =
-            Web3jHttpClient.createOkHttpClient(jwtConfigOpt, timeProvider);
-        Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
-        return new Web3jHttpClient(timeProvider, httpService);
+        return new Web3jHttpClient(endpoint, timeProvider, jwtConfigOpt);
       case "ws":
-        WebSocketClient webSocketClient = new WebSocketClient(endpoint);
-        WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
-        return new Web3jWebsocketClient(
-            timeProvider, webSocketClient, webSocketService, jwtConfigOpt);
+        return new Web3jWebsocketClient(endpoint, timeProvider, jwtConfigOpt);
       default:
         throw new InvalidConfigurationException(
             String.format(

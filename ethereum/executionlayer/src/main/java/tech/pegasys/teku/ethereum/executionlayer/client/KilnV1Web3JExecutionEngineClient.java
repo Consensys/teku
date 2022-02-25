@@ -68,7 +68,7 @@ public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient
             "engine_newPayloadV1",
             Collections.singletonList(
                 KilnV1ExecutionPayloadV1.fromExecutionPayloadV1(executionPayload)),
-            eeWeb3jService,
+            getWeb3JClient().getWeb3jService(),
             NewPayloadWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }
@@ -79,7 +79,7 @@ public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient
         new Request<>(
             "engine_getPayloadV1",
             Collections.singletonList(payloadId.toHexString()),
-            eeWeb3jService,
+            getWeb3JClient().getWeb3jService(),
             KilnV1GetPayloadWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest).thenApply(this::fromKilnV1GetPayloadResponse);
   }
@@ -104,7 +104,7 @@ public class KilnV1Web3JExecutionEngineClient extends Web3JExecutionEngineClient
                 payloadAttributes
                     .map(KilnV1PayloadAttributesV1::fromPayloadAttributesV1)
                     .orElse(null)),
-            eeWeb3jService,
+            getWeb3JClient().getWeb3jService(),
             ForkChoiceUpdatedWeb3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }
