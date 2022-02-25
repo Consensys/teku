@@ -43,13 +43,13 @@ public class ThrottlerTest {
     assertThat(resource.get()).isEqualTo(1);
 
     // Repeatedly invoke at initial time
-    for (int i = 0; i < throttingPeriod.times(2).longValue(); i++) {
+    for (int i = 0; i < throttingPeriod.times(2).intValue(); i++) {
       throttler.invoke(initialTime, AtomicInteger::incrementAndGet);
       assertThat(resource.get()).isEqualTo(1);
     }
 
     // Increment time and invoke up to limit
-    for (int i = 0; i < throttingPeriod.longValue(); i++) {
+    for (int i = 0; i < throttingPeriod.intValue(); i++) {
       throttler.invoke(initialTime.plus(i), AtomicInteger::incrementAndGet);
     }
     assertThat(resource.get()).isEqualTo(1);
