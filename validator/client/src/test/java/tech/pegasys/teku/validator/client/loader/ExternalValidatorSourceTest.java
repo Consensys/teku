@@ -30,8 +30,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -179,8 +181,21 @@ public class ExternalValidatorSourceTest {
     List<ValidatorSource.ValidatorProvider> validators =
         externalValidatorSource.getAvailableValidators();
 
-    checkExternalValidatorProvider(validators.get(0), publicKey2, new URL("http://localhost:9000"));
-    checkExternalValidatorProvider(validators.get(1), publicKey1, new URL("http://host.com"));
+    List<ValidatorProviderInfo> result =
+        validators.stream()
+            .map(
+                v -> {
+                  assertThat(v).isInstanceOf(ExternalValidatorProvider.class);
+                  ExternalValidatorProvider provider = (ExternalValidatorProvider) v;
+                  return new ValidatorProviderInfo(
+                      provider.getPublicKey(), provider.getExternalSignerUrl());
+                })
+            .collect(Collectors.toList());
+
+    assertThat(result)
+        .containsExactlyInAnyOrder(
+            new ValidatorProviderInfo(publicKey1, new URL("http://host.com")),
+            new ValidatorProviderInfo(publicKey2, new URL("http://localhost:9000")));
   }
 
   private void createRemoteKeyFile(
@@ -194,15 +209,6 @@ public class ExternalValidatorSourceTest {
     Path tempFile =
         createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
     Files.write(CONTENT.getBytes(StandardCharsets.UTF_8), tempFile.toFile());
-  }
-
-  private void checkExternalValidatorProvider(
-      ValidatorSource.ValidatorProvider provider, BLSPublicKey publicKey, URL url) {
-    assertThat(provider).isInstanceOf(ExternalValidatorProvider.class);
-
-    ExternalValidatorProvider externalValidatorProvider = (ExternalValidatorProvider) provider;
-    assertThat(externalValidatorProvider.getPublicKey()).isEqualTo(publicKey);
-    assertThat(externalValidatorProvider.getExternalSignerUrl()).isEqualTo(url);
   }
 
   private AddValidatorResult getResultFromAddingValidator(
@@ -236,5 +242,28 @@ public class ExternalValidatorSourceTest {
     assertThat(result.getSigner()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(expectedUrl);
+  }
+
+  static class ValidatorProviderInfo {
+    private final BLSPublicKey publicKey;
+    private final URL url;
+
+    ValidatorProviderInfo(BLSPublicKey publicKey, URL url) {
+      this.publicKey = publicKey;
+      this.url = url;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ValidatorProviderInfo that = (ValidatorProviderInfo) o;
+      return Objects.equals(publicKey, that.publicKey) && Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(publicKey, url);
+    }
   }
 }
