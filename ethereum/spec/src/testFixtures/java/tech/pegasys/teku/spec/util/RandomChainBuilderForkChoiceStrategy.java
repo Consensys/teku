@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -73,6 +74,12 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
       return Optional.empty();
     }
     return getBlock(slot).map(SignedBeaconBlock::getRoot);
+  }
+
+  @Override
+  public Optional<SlotAndBlockRoot> findCommonAncestor(
+      final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
+    return Optional.empty();
   }
 
   @Override
