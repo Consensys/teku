@@ -490,7 +490,14 @@ public final class DataStructureUtil {
   }
 
   private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {
-    final int index = new Random(nextSeed()).nextInt(validators.size());
+    final Random random = new Random(nextSeed());
+    int rand = random.nextInt();
+    while (rand < 0) {
+      // Can't just use -1 * or Math.abs because -1 * Integer.MIN_VALUE == Integer.MIN_VALUE
+      // And nextInt(validators.size()) is really not very random because of the way we use the seed
+      rand = random.nextInt();
+    }
+    final int index = rand % validators.size();
     return validators.get(index).getPublicKey();
   }
 
