@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -257,20 +258,30 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public void updateHead(Bytes32 root, UInt64 currentSlot) {
     final Optional<ChainHead> originalChainHead = chainHead;
 
-    store
-        .retrieveStateAndBlockSummary(root)
-        .thenApply(
-            headBlockAndState ->
-                headBlockAndState
-                    .map(ChainHead::create)
-                    .orElseThrow(
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+    final Optional<MinimalBeaconBlockSummary> maybeBlockData =
+        forkChoiceStrategy.getMinimalBlockSummary(root);
+    if (maybeBlockData.isEmpty()) {
+      LOG.error("Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
+      return;
+    }
+    final Bytes32 executionBlockHash =
+        forkChoiceStrategy.executionBlockHash(root).orElse(Bytes32.ZERO);
+    final MinimalBeaconBlockSummary blockData = maybeBlockData.get();
+
+    final SafeFuture<StateAndBlockSummary> chainHeadStateFuture =
+        store
+            .retrieveStateAndBlockSummary(root)
+            .thenApply(
+                maybeHead ->
+                    maybeHead.orElseThrow(
                         () ->
                             new IllegalStateException(
                                 String.format(
                                     "Unable to update head block as of slot %s.  Block is unavailable: %s.",
-                                    currentSlot, root))))
-        .thenAccept(newChainHead -> updateChainHead(originalChainHead, newChainHead))
-        .reportExceptions();
+                                    currentSlot, root))));
+    updateChainHead(
+        originalChainHead, ChainHead.create(blockData, executionBlockHash, chainHeadStateFuture));
   }
 
   private void updateChainHead(

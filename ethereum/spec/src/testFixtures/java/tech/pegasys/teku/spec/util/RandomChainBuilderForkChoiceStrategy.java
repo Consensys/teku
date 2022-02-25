@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
@@ -116,6 +117,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   @Override
   public boolean isFullyValidated(Bytes32 blockRoot) {
     return true;
+  }
+
+  @Override
+  public Optional<MinimalBeaconBlockSummary> getMinimalBlockSummary(final Bytes32 blockRoot) {
+    return getBlock(blockRoot).map(a -> a);
   }
 
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {

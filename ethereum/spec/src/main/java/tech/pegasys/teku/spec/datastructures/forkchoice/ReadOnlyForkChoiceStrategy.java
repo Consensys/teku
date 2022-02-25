@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 
 public interface ReadOnlyForkChoiceStrategy {
 
@@ -44,4 +45,6 @@ public interface ReadOnlyForkChoiceStrategy {
   boolean isOptimistic(Bytes32 blockRoot);
 
   boolean isFullyValidated(final Bytes32 blockRoot);
+
+  Optional<MinimalBeaconBlockSummary> getMinimalBlockSummary(Bytes32 blockRoot);
 }
