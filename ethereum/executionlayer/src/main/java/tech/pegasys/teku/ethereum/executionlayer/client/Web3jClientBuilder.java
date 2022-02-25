@@ -58,13 +58,14 @@ public class Web3jClientBuilder {
     checkNotNull(endpoint);
     switch (endpoint.getScheme()) {
       case "http":
+      case "https":
         return new Web3jHttpClient(endpoint, timeProvider, jwtConfigOpt);
       case "ws":
+      case "wss":
         return new Web3jWebsocketClient(endpoint, timeProvider, jwtConfigOpt);
       default:
         throw new InvalidConfigurationException(
-            String.format(
-                "Endpoint \"%s\" scheme is not supported. http://, ws:// are supported", endpoint));
+            String.format("Endpoint \"%s\" scheme is not supported", endpoint));
     }
   }
 }
