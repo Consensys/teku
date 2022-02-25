@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static java.nio.file.Files.createTempFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,9 +27,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +46,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -151,6 +157,60 @@ public class ExternalValidatorSourceTest {
     assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
   }
 
+  @Test
+  void shouldLoadExternalValidators(@TempDir Path tempDir) throws IOException {
+    final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
+    final ExternalValidatorSource externalValidatorSource =
+        ExternalValidatorSource.create(
+            spec,
+            metricsSystem,
+            config,
+            httpClientFactory,
+            publicKeyLoader,
+            asyncRunner,
+            false,
+            externalSignerTaskQueue,
+            Optional.of(dataDirLayout));
+
+    final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+    createRemoteKeyFile(dataDirLayout, publicKey1, Optional.of(new URL("http://host.com")));
+
+    final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+    createRemoteKeyFile(dataDirLayout, publicKey2, Optional.empty());
+
+    final List<ValidatorSource.ValidatorProvider> validators =
+        externalValidatorSource.getAvailableValidators();
+
+    final List<ValidatorProviderInfo> result =
+        validators.stream()
+            .map(
+                v -> {
+                  assertThat(v).isInstanceOf(ExternalValidatorProvider.class);
+                  ExternalValidatorProvider provider = (ExternalValidatorProvider) v;
+                  return new ValidatorProviderInfo(
+                      provider.getPublicKey(), provider.getExternalSignerUrl());
+                })
+            .collect(Collectors.toList());
+
+    assertThat(result)
+        .containsExactlyInAnyOrder(
+            new ValidatorProviderInfo(publicKey1, new URL("http://host.com")),
+            new ValidatorProviderInfo(publicKey2, new URL("http://localhost:9000")));
+  }
+
+  private void createRemoteKeyFile(
+      DataDirLayout dataDirLayout, BLSPublicKey publicKey, Optional<URL> url) throws IOException {
+    final String urlContent = url.map(value -> ",\"url\":\"" + value + "\"").orElse("");
+    final String CONTENT = "{\"pubkey\":\"" + publicKey + "\"" + urlContent + "}";
+
+    final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
+    directory.toFile().mkdirs();
+
+    Path tempFile =
+        createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
+    Files.write(CONTENT.getBytes(StandardCharsets.UTF_8), tempFile.toFile());
+  }
+
   private AddValidatorResult getResultFromAddingValidator(
       final Path tempDir, final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     final ExternalValidatorSource externalValidatorSource =
@@ -182,5 +242,28 @@ public class ExternalValidatorSourceTest {
     assertThat(result.getSigner()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(expectedUrl);
+  }
+
+  static class ValidatorProviderInfo {
+    private final BLSPublicKey publicKey;
+    private final URL url;
+
+    ValidatorProviderInfo(BLSPublicKey publicKey, URL url) {
+      this.publicKey = publicKey;
+      this.url = url;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ValidatorProviderInfo that = (ValidatorProviderInfo) o;
+      return Objects.equals(publicKey, that.publicKey) && Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(publicKey, url);
+    }
   }
 }

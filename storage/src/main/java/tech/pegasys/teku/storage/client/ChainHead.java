@@ -60,6 +60,13 @@ public class ChainHead implements MinimalBeaconBlockSummary {
         SafeFuture.completedFuture(blockAndState));
   }
 
+  public static ChainHead create(
+      final MinimalBeaconBlockSummary blockData,
+      final Bytes32 executionPayloadBlockHash,
+      final SafeFuture<StateAndBlockSummary> stateAndBlockSummaryFuture) {
+    return new ChainHead(blockData, executionPayloadBlockHash, stateAndBlockSummaryFuture);
+  }
+
   public SafeFuture<BeaconState> getState() {
     return stateAndBlockSummaryFuture.thenApply(StateAndBlockSummary::getState);
   }
