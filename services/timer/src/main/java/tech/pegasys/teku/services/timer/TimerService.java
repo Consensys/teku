@@ -31,7 +31,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 public class TimerService extends Service {
 
-  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
+  public static final double TIME_TICKER_REFRESH_RATE = 2; // per second
   public static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
 
   private static final AtomicInteger TIMER_ID_GENERATOR = new AtomicInteger();
