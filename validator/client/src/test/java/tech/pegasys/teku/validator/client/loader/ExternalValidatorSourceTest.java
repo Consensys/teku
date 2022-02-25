@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,7 +157,7 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void shouldLoadExternalValidators(@TempDir Path tempDir) throws IOException {
-    DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
+    final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
     final ExternalValidatorSource externalValidatorSource =
         ExternalValidatorSource.create(
             spec,
@@ -180,21 +179,8 @@ public class ExternalValidatorSourceTest {
     List<ValidatorSource.ValidatorProvider> validators =
         externalValidatorSource.getAvailableValidators();
 
-    validators.forEach(
-        provider -> assertThat(provider).isInstanceOf(ExternalValidatorProvider.class));
-
-    List<BLSPublicKey> validatorKeys =
-        validators.stream()
-            .map(ValidatorSource.ValidatorProvider::getPublicKey)
-            .collect(Collectors.toList());
-    assertThat(validatorKeys).containsExactlyInAnyOrder(publicKey1, publicKey2);
-
-    List<URL> validatorUrls =
-        validators.stream()
-            .map(provider -> ((ExternalValidatorProvider) provider).getExternalSignerUrl())
-            .collect(Collectors.toList());
-    assertThat(validatorUrls)
-        .containsExactlyInAnyOrder(new URL("http://host.com"), new URL("http://localhost:9000"));
+    checkExternalValidatorProvider(validators.get(0), publicKey2, new URL("http://localhost:9000"));
+    checkExternalValidatorProvider(validators.get(1), publicKey1, new URL("http://host.com"));
   }
 
   private void createRemoteKeyFile(
@@ -208,6 +194,15 @@ public class ExternalValidatorSourceTest {
     Path tempFile =
         createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
     Files.write(CONTENT.getBytes(StandardCharsets.UTF_8), tempFile.toFile());
+  }
+
+  private void checkExternalValidatorProvider(
+      ValidatorSource.ValidatorProvider provider, BLSPublicKey publicKey, URL url) {
+    assertThat(provider).isInstanceOf(ExternalValidatorProvider.class);
+
+    ExternalValidatorProvider externalValidatorProvider = (ExternalValidatorProvider) provider;
+    assertThat(externalValidatorProvider.getPublicKey()).isEqualTo(publicKey);
+    assertThat(externalValidatorProvider.getExternalSignerUrl()).isEqualTo(url);
   }
 
   private AddValidatorResult getResultFromAddingValidator(
