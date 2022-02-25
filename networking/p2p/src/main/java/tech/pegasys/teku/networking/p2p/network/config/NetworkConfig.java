@@ -16,18 +16,27 @@ package tech.pegasys.teku.networking.p2p.network.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 
 public class NetworkConfig {
+
+  public interface PrivateKeySource {
+    Bytes getPrivateKeyBytes();
+  }
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -38,7 +47,7 @@ public class NetworkConfig {
   private final WireLogsConfig wireLogsConfig;
 
   private final boolean isEnabled;
-  private final Optional<String> privateKeyFile;
+  private final Optional<PrivateKeySource> privateKeySource;
   private final String networkInterface;
   private final Optional<String> advertisedIp;
   private final int listenPort;
@@ -48,13 +57,13 @@ public class NetworkConfig {
       final boolean isEnabled,
       final GossipConfig gossipConfig,
       final WireLogsConfig wireLogsConfig,
-      final Optional<String> privateKeyFile,
+      final Optional<PrivateKeySource> privateKeySource,
       final String networkInterface,
       final Optional<String> advertisedIp,
       final int listenPort,
       final OptionalInt advertisedPort) {
 
-    this.privateKeyFile = privateKeyFile;
+    this.privateKeySource = privateKeySource;
     this.networkInterface = networkInterface;
 
     this.advertisedIp = advertisedIp.filter(ip -> !ip.isBlank());
@@ -79,8 +88,8 @@ public class NetworkConfig {
     return isEnabled;
   }
 
-  public Optional<String> getPrivateKeyFile() {
-    return privateKeyFile;
+  public Optional<PrivateKeySource> getPrivateKeySource() {
+    return privateKeySource;
   }
 
   public String getNetworkInterface() {
@@ -133,6 +142,7 @@ public class NetworkConfig {
 
     private Boolean isEnabled = true;
     private Optional<String> privateKeyFile = Optional.empty();
+    private Optional<PrivateKeySource> privateKeySource = Optional.empty();
     private String networkInterface = DEFAULT_P2P_INTERFACE;
     private Optional<String> advertisedIp = Optional.empty();
     private int listenPort = DEFAULT_P2P_PORT;
@@ -145,11 +155,15 @@ public class NetworkConfig {
           isEnabled,
           gossipConfigBuilder.build(),
           wireLogsConfig.build(),
-          privateKeyFile,
+          privateKeySource.or(this::createFileKeySource),
           networkInterface,
           advertisedIp,
           listenPort,
           advertisedPort);
+    }
+
+    private Optional<PrivateKeySource> createFileKeySource() {
+      return privateKeyFile.map(FilePrivateKeySource::new);
     }
 
     public Builder isEnabled(final Boolean enabled) {
@@ -171,6 +185,12 @@ public class NetworkConfig {
     public Builder privateKeyFile(final String privateKeyFile) {
       checkNotNull(privateKeyFile);
       this.privateKeyFile = Optional.of(privateKeyFile).filter(f -> !f.isBlank());
+      return this;
+    }
+
+    public Builder setPrivateKeySource(PrivateKeySource privateKeySource) {
+      checkNotNull(privateKeySource);
+      this.privateKeySource = Optional.of(privateKeySource);
       return this;
     }
 
@@ -205,6 +225,28 @@ public class NetworkConfig {
       }
       this.advertisedPort = advertisedPort;
       return this;
+    }
+  }
+
+  @VisibleForTesting
+  public static class FilePrivateKeySource implements PrivateKeySource {
+    private final String fileName;
+
+    public FilePrivateKeySource(String fileName) {
+      this.fileName = fileName;
+    }
+
+    @Override
+    public Bytes getPrivateKeyBytes() {
+      try {
+        return Bytes.fromHexString(Files.readString(Paths.get(fileName)));
+      } catch (IOException e) {
+        throw new RuntimeException("p2p private key file not found - " + fileName);
+      }
+    }
+
+    public String getFileName() {
+      return fileName;
     }
   }
 }

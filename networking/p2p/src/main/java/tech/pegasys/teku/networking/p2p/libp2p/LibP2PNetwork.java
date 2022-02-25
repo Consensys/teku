@@ -31,10 +31,10 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
-import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -53,7 +53,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final Host host;
   private final PeerManager peerManager;
   private final Multiaddr advertisedAddr;
-  private final LibP2PGossipNetwork gossipNetwork;
+  private final GossipNetwork gossipNetwork;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final int listenPort;
@@ -64,7 +64,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       Host host,
       PeerManager peerManager,
       Multiaddr advertisedAddr,
-      LibP2PGossipNetwork gossipNetwork,
+      GossipNetwork gossipNetwork,
       int listenPort) {
     this.privKey = privKey;
     this.nodeId = nodeId;

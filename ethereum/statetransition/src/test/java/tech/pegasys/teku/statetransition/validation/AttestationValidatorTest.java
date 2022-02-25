@@ -88,7 +88,7 @@ class AttestationValidatorTest {
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
-  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final ChainUpdater chainUpdater =
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
   private final AttestationGenerator attestationGenerator =
@@ -117,13 +117,13 @@ class AttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAttestation() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
   @Test
   public void shouldReturnValidForValidAttestation_whenManyBlocksHaveBeenSkipped() {
-    final StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary head = storageSystem.getChainHead();
     final UInt64 currentSlot = head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3L);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
@@ -136,7 +136,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
     final SszBitlist validAggregationBits = attestation.getAggregationBits();
     SszBitlist invalidAggregationBits =
         validAggregationBits
@@ -152,7 +152,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationFromBeforeAttestationPropagationSlotRange() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
 
     // In the first slot after
     final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
@@ -166,7 +166,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldAcceptAttestationWithinClockDisparityOfEarliestPropagationSlot() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
 
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
@@ -179,7 +179,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldDeferAttestationFromAfterThePropagationSlotRange() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow(), ONE);
+        attestationGenerator.validAttestation(storageSystem.getChainHead(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
     chainUpdater.setCurrentSlot(ZERO);
@@ -190,7 +190,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldAcceptAttestationWithinClockDisparityOfLatestPropagationSlot() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow(), ONE);
+        attestationGenerator.validAttestation(storageSystem.getChainHead(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
     // Ideally we'd rewind the time by a few milliseconds but our Store only keeps time to second
@@ -204,8 +204,7 @@ class AttestationValidatorTest {
   public void shouldRejectAggregatedAttestation() {
     final Attestation attestation =
         AttestationGenerator.groupAndAggregateAttestations(
-                attestationGenerator.getAttestationsForSlot(
-                    recentChainData.getChainHead().orElseThrow()))
+                attestationGenerator.getAttestationsForSlot(storageSystem.getChainHead()))
             .get(0);
 
     assertThat(validate(attestation).code()).isEqualTo(REJECT);
@@ -213,7 +212,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() {
-    final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary genesis = storageSystem.getChainHead();
     final SignedBeaconBlock nextEpochBlock =
         chainUpdater
             .advanceChain(UInt64.valueOf(spec.getSlotsPerEpoch(genesis.getSlot()) + 1))
@@ -225,8 +224,7 @@ class AttestationValidatorTest {
     // Slot 1 attestation from the same validator
     final Attestation attestation2 =
         attestationGenerator
-            .streamAttestations(
-                recentChainData.getChainHead().orElseThrow(), nextEpochBlock.getSlot())
+            .streamAttestations(storageSystem.getChainHead(), nextEpochBlock.getSlot())
             .filter(attestation -> hasSameValidators(attestation1, attestation))
             .findFirst()
             .orElseThrow();
@@ -242,7 +240,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldAcceptAttestationForSameSlotButDifferentValidator() {
-    final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary genesis = storageSystem.getChainHead();
 
     // Slot 0 attestation from one validator
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis, ZERO);
@@ -266,8 +264,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationWithInvalidSignature() {
     final Attestation attestation =
-        attestationGenerator.attestationWithInvalidSignature(
-            recentChainData.getChainHead().orElseThrow());
+        attestationGenerator.attestationWithInvalidSignature(storageSystem.getChainHead());
 
     assertThat(validate(attestation).code()).isEqualTo(REJECT);
   }
@@ -284,7 +281,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId =
         spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
@@ -300,7 +297,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsWithCommitteeIndexNotInTheExpectedRange() {
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AttestationData data = attestation.getData();
     final int expectedSubnetId =
@@ -325,7 +322,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsThatHaveNonMatchingTargetEpochAndSlot() {
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AttestationData data = attestation.getData();
     final int expectedSubnetId =
@@ -353,7 +350,7 @@ class AttestationValidatorTest {
     when(spec.getAncestor(any(), any(), any())).thenReturn(Optional.of(Bytes32.ZERO));
     final AttestationValidator validator =
         new AttestationValidator(spec, recentChainData, signatureVerifier);
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId =
         spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
@@ -368,7 +365,7 @@ class AttestationValidatorTest {
     Spec spec = mock(Spec.class);
     final AttestationValidator validator =
         new AttestationValidator(spec, recentChainData, signatureVerifier);
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(spec.getAncestor(any(), any(), any()))
         .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))

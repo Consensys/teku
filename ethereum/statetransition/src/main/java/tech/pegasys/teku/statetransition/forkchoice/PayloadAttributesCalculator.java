@@ -29,10 +29,10 @@ import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PayloadAttributesCalculator {
@@ -133,13 +133,13 @@ public class PayloadAttributesCalculator {
   }
 
   private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
-    final Optional<StateAndBlockSummary> chainHead = recentChainData.getChainHead();
+    final Optional<ChainHead> chainHead = recentChainData.getChainHead();
     if (chainHead.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final StateAndBlockSummary head = chainHead.get();
+    final ChainHead head = chainHead.get();
     if (spec.computeEpochAtSlot(head.getSlot()).equals(requiredEpoch)) {
-      return SafeFuture.completedFuture(Optional.of(head.getState()));
+      return head.getState().thenApply(Optional::of);
     } else {
       return recentChainData.retrieveStateAtSlot(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));

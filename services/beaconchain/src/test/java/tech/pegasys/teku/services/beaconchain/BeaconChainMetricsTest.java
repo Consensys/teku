@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState.Mutat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
@@ -100,7 +101,7 @@ class BeaconChainMetricsTest {
                 });
     chainHead = dataStructureUtil.randomSignedBlockAndState(state);
 
-    when(recentChainData.getChainHead()).thenAnswer(__ -> Optional.of(chainHead));
+    when(recentChainData.getChainHead()).thenAnswer(__ -> Optional.of(ChainHead.create(chainHead)));
   }
 
   private <E extends RuntimeException> void updateState(
@@ -160,7 +161,7 @@ class BeaconChainMetricsTest {
   @Test
   void getFinalizedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
     when(recentChainData.isPreGenesis()).thenReturn(false);
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "finalized_epoch").getValue())
         .isEqualTo(chainHead.getState().getFinalized_checkpoint().getEpoch().longValue());
   }
@@ -195,7 +196,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
 
     assertThat(metricsSystem.getGauge(BEACON, "finalized_root").getValue())
         .isEqualTo(
@@ -212,7 +213,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
 
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_epoch").getValue())
         .isEqualTo(chainHead.getState().getPrevious_justified_checkpoint().getEpoch().longValue());
@@ -227,7 +228,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
 
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_root").getValue())
         .isEqualTo(
@@ -244,7 +245,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_justified_root").getValue())
         .isEqualTo(
             BeaconChainMetrics.getLongFromRoot(
@@ -260,7 +261,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedEpochValue_shouldReturnValueWhenStoreIsPresent() {
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_justified_epoch").getValue())
         .isEqualTo(chainHead.getState().getCurrent_justified_checkpoint().getEpoch().longValue());
   }
@@ -274,7 +275,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void onSlot_shouldUpdateEth1DataMetrics() {
-    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     verify(eth1DataCache).updateMetrics(chainHead.getState());
   }
 
@@ -290,7 +291,7 @@ class BeaconChainMetricsTest {
 
     withSlotCurrentEpochAttestationsAndValidators(slotNumber, Collections.emptyList(), validators);
 
-    beaconChainMetrics.onSlot(slotNumber);
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_active_validators").getValue()).isEqualTo(2);
     assertThat(metricsSystem.getGauge(BEACON, "previous_active_validators").getValue())
         .isEqualTo(1);
@@ -304,7 +305,7 @@ class BeaconChainMetricsTest {
             .collect(toList());
     withCurrentEpochAttestations(attestations);
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(100));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_live_validators").getValue()).isEqualTo(8);
   }
 
@@ -316,7 +317,7 @@ class BeaconChainMetricsTest {
             .collect(toList());
     withCurrentEpochAttestations(attestations);
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(100));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_live_validators").getValue()).isEqualTo(8);
   }
 
@@ -326,7 +327,7 @@ class BeaconChainMetricsTest {
     final SszBitlist bitlist2 = bitlistOf(1, 2, 3, 4);
     withCurrentEpochAttestations(createAttestations(13, 1, bitlist1, bitlist2).collect(toList()));
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(100));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_live_validators").getValue()).isEqualTo(6);
   }
 
@@ -338,7 +339,7 @@ class BeaconChainMetricsTest {
             .collect(toList());
     withPreviousEpochAttestations(100, attestations);
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(100));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "previous_live_validators").getValue()).isEqualTo(8);
   }
 
@@ -350,7 +351,7 @@ class BeaconChainMetricsTest {
             .collect(toList());
     withPreviousEpochAttestations(100, attestations);
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(100));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "previous_live_validators").getValue()).isEqualTo(8);
   }
 
@@ -361,7 +362,7 @@ class BeaconChainMetricsTest {
     withPreviousEpochAttestations(
         100, createAttestations(13, 1, bitlist1, bitlist2).collect(toList()));
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(100));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "previous_live_validators").getValue()).isEqualTo(6);
   }
 
@@ -389,7 +390,7 @@ class BeaconChainMetricsTest {
 
     withCurrentEpochAttestations(allAttestations, UInt64.valueOf(15));
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(20));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_correct_validators").getValue())
         .isEqualTo(4);
   }
@@ -420,7 +421,7 @@ class BeaconChainMetricsTest {
 
     // Make sure we don't try to get the block root for the state's own slot from block roots array
     // Otherwise this will fail.
-    beaconChainMetrics.onSlot(UInt64.valueOf(20));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
   }
 
   @Test
@@ -449,7 +450,7 @@ class BeaconChainMetricsTest {
     final int slotInNextEpoch = spec.computeStartSlotAtEpoch(UInt64.ONE).plus(13).intValue();
     withPreviousEpochAttestations(slotInNextEpoch, allAttestations);
 
-    beaconChainMetrics.onSlot(UInt64.valueOf(20));
+    assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "previous_correct_validators").getValue())
         .isEqualTo(4);
   }

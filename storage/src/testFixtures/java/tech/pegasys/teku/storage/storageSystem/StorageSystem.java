@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.storage.storageSystem;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -114,6 +116,10 @@ public class StorageSystem implements AutoCloseable {
         restartedSupplier,
         chainBuilder,
         spec);
+  }
+
+  public StateAndBlockSummary getChainHead() {
+    return safeJoin(recentChainData.getChainHead().orElseThrow().asStateAndBlockSummary());
   }
 
   public StubMetricsSystem getMetricsSystem() {

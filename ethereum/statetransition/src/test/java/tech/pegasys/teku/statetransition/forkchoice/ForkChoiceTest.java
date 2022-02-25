@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -149,7 +150,8 @@ class ForkChoiceTest {
         forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
-    assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
+    assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
+        .contains(blockAndState.getRoot());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
   }
 
@@ -164,7 +166,8 @@ class ForkChoiceTest {
         forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
-    assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
+    assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
+        .contains(blockAndState.getRoot());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
     assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
   }

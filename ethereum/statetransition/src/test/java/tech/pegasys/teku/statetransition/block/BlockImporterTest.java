@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -336,7 +337,8 @@ public class BlockImporterTest {
 
     // Now create a new block that is not descendant from the finalized block
     AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary blockAndState = otherStorage.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState =
+        safeJoin(otherStorage.getChainHead().orElseThrow().asStateAndBlockSummary());
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));

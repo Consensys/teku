@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -218,7 +218,7 @@ class RecentChainDataTest {
         .forEach(blockAndState -> saveBlock(recentChainData, blockAndState));
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
-    assertThat(recentChainData.getChainHead().map(BeaconBlockSummary::getRoot))
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
         .contains(bestBlock.getRoot());
     assertThat(this.storageSystem.chainHeadChannel().getHeadEvents())
         .contains(
@@ -239,7 +239,7 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
-    assertThat(recentChainData.getChainHead().map(BeaconBlockSummary::getRoot))
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
         .contains(genesis.getRoot());
   }
 

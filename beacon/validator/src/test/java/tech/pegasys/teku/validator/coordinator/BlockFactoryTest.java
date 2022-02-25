@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -168,8 +167,7 @@ class BlockFactoryTest {
     beaconChainUtil.initializeStorage();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final StateAndBlockSummary bestBlockAndState = recentChainData.getChainHead().orElseThrow();
-    final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
+    final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState blockSlotState =
         recentChainData
             .retrieveStateAtSlot(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))

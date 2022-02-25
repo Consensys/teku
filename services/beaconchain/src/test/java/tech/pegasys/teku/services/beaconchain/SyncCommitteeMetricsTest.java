@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -48,7 +48,6 @@ class SyncCommitteeMetricsTest {
 
   private final SyncCommitteeMetrics syncCommitteeMetrics =
       new SyncCommitteeMetrics(spec, recentChainData, metricsSystem);
-  private BeaconBlockAndState altairChainHead;
   private BeaconStateAltair state;
 
   @BeforeEach
@@ -63,14 +62,13 @@ class SyncCommitteeMetricsTest {
             .blockRoots(roots)
             .slot(spec.computeStartSlotAtEpoch(UInt64.valueOf(1)))
             .build();
-    altairChainHead = dataStructureUtil.randomBlockAndState(state);
   }
 
   @Test
   void shouldNotUpdateWhenChainHeadIsNotInAltair() {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final BeaconBlockAndState chainHead = dataStructureUtil.randomBlockAndState(50);
+    final BeaconState chainHead = dataStructureUtil.randomBeaconState(50);
     syncCommitteeMetrics.updateSlotBasedMetrics(chainHead.getSlot(), chainHead);
 
     verifyNoInteractions(recentChainData);
@@ -80,7 +78,7 @@ class SyncCommitteeMetricsTest {
   void shouldUpdatePreviousLiveSyncCommittee() {
     fillBlocks();
 
-    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), state);
 
     final int expected = 3 * slotsPerEpoch;
     assertPreviousLiveSyncCommitteeMetric(expected);
@@ -94,7 +92,7 @@ class SyncCommitteeMetricsTest {
     final Bytes32 slot5Root = spec.getBlockRootAtSlot(state, UInt64.valueOf(5));
     when(recentChainData.getSlotForBlockRoot(slot5Root)).thenReturn(Optional.of(UInt64.valueOf(4)));
 
-    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), state);
 
     verify(recentChainData, never()).retrieveBlockByRoot(slot5Root);
     assertPreviousLiveSyncCommitteeMetric(3 * (slotsPerEpoch - 1));
@@ -103,12 +101,11 @@ class SyncCommitteeMetricsTest {
   @Test
   void shouldSetPreviousLiveToZeroWhenChainHeadIsBeforePreviousEpoch() {
     fillBlocks();
-    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), state);
     assertPreviousLiveSyncCommitteeMetric(3 * slotsPerEpoch);
 
     // Time progresses but with no update to chain head
-    syncCommitteeMetrics.updateSlotBasedMetrics(
-        state.getSlot().plus(slotsPerEpoch * 3L), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot().plus(slotsPerEpoch * 3L), state);
     assertPreviousLiveSyncCommitteeMetric(0);
   }
 
