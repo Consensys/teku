@@ -254,7 +254,7 @@ public class GossipForkManager {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
           recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
-          recentChainData.getOptimisticHead().isPresent());
+          recentChainData.isChainHeadOptimistic());
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
     }

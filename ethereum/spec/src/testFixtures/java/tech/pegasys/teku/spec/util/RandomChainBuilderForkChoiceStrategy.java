@@ -21,11 +21,12 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
@@ -127,8 +128,22 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public Optional<MinimalBeaconBlockSummary> getMinimalBlockSummary(final Bytes32 blockRoot) {
-    return getBlock(blockRoot).map(a -> a);
+  public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
+    return getBlock(blockRoot)
+        .map(
+            block ->
+                new ProtoNodeData(
+                    block.getSlot(),
+                    block.getRoot(),
+                    block.getParentRoot(),
+                    block.getStateRoot(),
+                    block
+                        .getMessage()
+                        .getBody()
+                        .getOptionalExecutionPayload()
+                        .map(ExecutionPayload::getBlockHash)
+                        .orElse(Bytes32.ZERO),
+                    false));
   }
 
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {

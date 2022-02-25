@@ -33,8 +33,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -78,13 +78,12 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   private SlotAndBlockRoot findHeadImpl(
       final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
-    return protoArray
-        .findHead(
+    final ProtoNode bestNode =
+        protoArray.findOptimisticHead(
             justifiedCheckpoint.getRoot(),
             justifiedCheckpoint.getEpoch(),
-            finalizedCheckpoint.getEpoch())
-        .map(bestNode -> new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot()))
-        .orElse(justifiedCheckpoint.toSlotAndBlockRoot(spec));
+            finalizedCheckpoint.getEpoch());
+    return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
   }
 
   /**
@@ -289,10 +288,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Optional<MinimalBeaconBlockSummary> getMinimalBlockSummary(final Bytes32 blockRoot) {
+  public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(blockRoot).map(ProtoNode::toMinimalBlockSummary);
+      return getProtoNode(blockRoot).map(ProtoNode::getBlockData);
     } finally {
       protoArrayLock.readLock().unlock();
     }
