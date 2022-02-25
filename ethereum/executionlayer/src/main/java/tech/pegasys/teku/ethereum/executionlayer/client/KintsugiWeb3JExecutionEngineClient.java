@@ -85,7 +85,7 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
             Collections.singletonList(payloadId.toHexString()),
             getWeb3JClient().getWeb3jService(),
             KilnV1GetPayloadWeb3jResponse.class);
-    return doRequest(web3jRequest).thenApply(this::fromKilnV1GetPayloadResponse);
+    return getWeb3JClient().doRequest(web3jRequest).thenApply(this::fromKilnV1GetPayloadResponse);
   }
 
   private Response<ExecutionPayloadV1> fromKilnV1GetPayloadResponse(
@@ -110,7 +110,9 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
                     .orElse(null)),
             getWeb3JClient().getWeb3jService(),
             KintsugiForkChoiceUpdatedWeb3jResponse.class);
-    return getWeb3JClient().doRequest(web3jRequest).thenApply(this::fromKintsugiForkChoiceUpdatedResultResponse);
+    return getWeb3JClient()
+        .doRequest(web3jRequest)
+        .thenApply(this::fromKintsugiForkChoiceUpdatedResultResponse);
   }
 
   private Response<ForkChoiceUpdatedResult> fromKintsugiForkChoiceUpdatedResultResponse(
