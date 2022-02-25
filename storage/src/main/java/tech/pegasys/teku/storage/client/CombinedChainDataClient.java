@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -340,11 +341,11 @@ public class CombinedChainDataClient {
     return recentChainData.getBestBlockRoot();
   }
 
-  public Optional<SignedBeaconBlock> getBestBlock() {
+  public Optional<MinimalBeaconBlockSummary> getBestBlock() {
     return recentChainData.getHeadBlock();
   }
 
-  public Optional<StateAndBlockSummary> getChainHead() {
+  public Optional<ChainHead> getChainHead() {
     return recentChainData.getChainHead();
   }
 

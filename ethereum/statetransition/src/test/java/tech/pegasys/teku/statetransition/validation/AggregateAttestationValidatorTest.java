@@ -149,7 +149,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldReturnValidForValidAggregate() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
     whenAttestationIsValid(aggregate);
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
@@ -158,7 +158,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldReturnValidForValidAggregate_whenManyBlocksHaveBeenSkipped() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final UInt64 currentSlot =
         chainHead.getSlot().plus(spec.getSlotsPerEpoch(chainHead.getSlot()) * 3L);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
@@ -173,7 +173,7 @@ class AggregateAttestationValidatorTest {
   @Test
   public void shouldRejectWhenAttestationValidatorRejects() {
     final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+        generator.validAggregateAndProof(storageSystem.getChainHead());
     ValidateableAttestation attestation =
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
@@ -186,7 +186,7 @@ class AggregateAttestationValidatorTest {
   @Test
   public void shouldIgnoreWhenAttestationValidatorIgnores() {
     final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+        generator.validAggregateAndProof(storageSystem.getChainHead());
     ValidateableAttestation attestation =
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
@@ -200,7 +200,7 @@ class AggregateAttestationValidatorTest {
   @Test
   public void shouldSaveForFutureWhenAttestationValidatorSavesForFuture() {
     final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+        generator.validAggregateAndProof(storageSystem.getChainHead());
     ValidateableAttestation attestation =
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
@@ -230,7 +230,7 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator
             .generator()
-            .blockAndState(recentChainData.getChainHead().orElseThrow())
+            .blockAndState(storageSystem.getChainHead())
             .aggregatorIndex(ONE)
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
@@ -280,7 +280,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldAcceptAggregateWithSameHashTreeRoot() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
@@ -313,7 +313,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldOnlyAcceptFirstAggregateWithSameHashTreeRootWhenPassedSeenAggregates() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
     final SignedAggregateAndProof aggregateAndProof2 =
@@ -343,7 +343,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldAcceptAggregateWithSameSlotAndDifferentAggregatorIndex() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final List<Attestation> aggregatesForSlot =
@@ -415,7 +415,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldRejectAggregateWhenSelectionProofDoesNotSelectAsAggregator() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     int aggregatorIndex = 3;
     final CommitteeAssignment committeeAssignment =
         getCommitteeAssignment(chainHead, aggregatorIndex, ZERO);
@@ -444,7 +444,7 @@ class AggregateAttestationValidatorTest {
 
   @Test
   public void shouldRejectIfAggregatorIndexIsNotWithinTheCommittee() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final int aggregatorIndex = 60;
     final SignedAggregateAndProof aggregate =
         generator
@@ -472,7 +472,7 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator
             .generator()
-            .blockAndState(recentChainData.getChainHead().orElseThrow())
+            .blockAndState(storageSystem.getChainHead())
             .aggregatorIndex(ONE)
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
@@ -485,7 +485,7 @@ class AggregateAttestationValidatorTest {
   @Test
   public void shouldRejectIfAggregateAndProofSignatureIsNotValid() {
     final SignedAggregateAndProof validAggregate =
-        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+        generator.validAggregateAndProof(storageSystem.getChainHead());
     final SignedAggregateAndProof invalidAggregate =
         signedAggregateAndProofSchema.create(
             validAggregate.getMessage(), dataStructureUtil.randomSignature());

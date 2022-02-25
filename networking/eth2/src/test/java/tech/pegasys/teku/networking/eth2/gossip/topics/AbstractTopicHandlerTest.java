@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -53,5 +55,9 @@ public abstract class AbstractTopicHandlerTest<T> {
 
   protected BeaconChainUtil createBeaconChainUtil() {
     return BeaconChainUtil.create(spec, 2, recentChainData);
+  }
+
+  protected StateAndBlockSummary getChainHead() {
+    return safeJoin(recentChainData.getChainHead().orElseThrow().asStateAndBlockSummary());
   }
 }

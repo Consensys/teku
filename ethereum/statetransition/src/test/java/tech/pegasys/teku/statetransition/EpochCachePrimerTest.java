@@ -23,13 +23,13 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -145,10 +145,10 @@ class EpochCachePrimerTest {
   }
 
   private BeaconState getStateForEpoch(final UInt64 epoch) {
-    final SignedBeaconBlock headBlock = recentChainData.getHeadBlock().orElseThrow();
+    final Bytes32 headBlock = recentChainData.getBestBlockRoot().orElseThrow();
     final SafeFuture<Optional<BeaconState>> stateFuture =
         recentChainData.retrieveStateAtSlot(
-            new SlotAndBlockRoot(realSpec.computeStartSlotAtEpoch(epoch), headBlock.getRoot()));
+            new SlotAndBlockRoot(realSpec.computeStartSlotAtEpoch(epoch), headBlock));
     assertThatSafeFuture(stateFuture).isCompletedWithNonEmptyOptional();
     return stateFuture.getNow(null).orElseThrow();
   }

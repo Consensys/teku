@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -115,6 +116,27 @@ public class SyncCommitteePerformanceTracker {
       final UInt64 epoch,
       final Map<UInt64, IntSet> assignedSubcommitteeIndicesByValidatorIndex,
       final Map<UInt64, Map<Bytes32, Set<UInt64>>> producingValidatorsBySlotAndBlock) {
+    if (assignedSubcommitteeIndicesByValidatorIndex.isEmpty()) {
+      return SafeFuture.completedFuture(new SyncCommitteePerformance(epoch, 0, 0, 0, 0));
+    }
+    return combinedChainDataClient
+        .getChainHead()
+        .map(head -> head.asStateAndBlockSummary().thenApply(Optional::of))
+        .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()))
+        .thenCompose(
+            chainHead ->
+                calculateSyncCommitteePerformance(
+                    epoch,
+                    assignedSubcommitteeIndicesByValidatorIndex,
+                    producingValidatorsBySlotAndBlock,
+                    chainHead));
+  }
+
+  private SafeFuture<SyncCommitteePerformance> calculateSyncCommitteePerformance(
+      final UInt64 epoch,
+      final Map<UInt64, IntSet> assignedSubcommitteeIndicesByValidatorIndex,
+      final Map<UInt64, Map<Bytes32, Set<UInt64>>> producingValidatorsBySlotAndBlock,
+      final Optional<StateAndBlockSummary> chainHead) {
 
     final int numberOfExpectedMessages =
         assignedSubcommitteeIndicesByValidatorIndex.values().stream().mapToInt(Set::size).sum()
@@ -129,16 +151,14 @@ public class SyncCommitteePerformanceTracker {
       final Map<Bytes32, Set<UInt64>> producingValidatorsByBlock = entry.getValue();
 
       final Optional<Bytes32> correctBlockRoot =
-          combinedChainDataClient
-              .getChainHead()
-              .map(
-                  head -> {
-                    if (slot.isGreaterThanOrEqualTo(head.getSlot())) {
-                      return head.getRoot();
-                    } else {
-                      return spec.getBlockRootAtSlot(head.getState(), slot);
-                    }
-                  });
+          chainHead.map(
+              head -> {
+                if (slot.isGreaterThanOrEqualTo(head.getSlot())) {
+                  return head.getRoot();
+                } else {
+                  return spec.getBlockRootAtSlot(head.getState(), slot);
+                }
+              });
 
       for (Entry<Bytes32, Set<UInt64>> blockEntry : producingValidatorsByBlock.entrySet()) {
         final Bytes32 blockRoot = blockEntry.getKey();

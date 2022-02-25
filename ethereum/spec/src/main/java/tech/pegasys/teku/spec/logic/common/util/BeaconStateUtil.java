@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -111,7 +111,7 @@ public class BeaconStateUtil {
    * parent must then be the block in effect in the previous slot.
    */
   public Optional<Bytes32> getPreviousDutyDependentRoot(
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final BeaconBlockSummary block) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final MinimalBeaconBlockSummary block) {
     return getDutyDependentRoot(
         forkChoiceStrategy,
         block.getRoot(),
@@ -133,7 +133,7 @@ public class BeaconStateUtil {
    * </ul>
    */
   public Optional<Bytes32> getCurrentDutyDependentRoot(
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final BeaconBlockSummary block) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final MinimalBeaconBlockSummary block) {
     return getDutyDependentRoot(
         forkChoiceStrategy, block.getRoot(), miscHelpers.computeEpochAtSlot(block.getSlot()));
   }

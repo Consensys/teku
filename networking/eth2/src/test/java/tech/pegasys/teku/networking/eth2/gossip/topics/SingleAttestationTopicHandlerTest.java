@@ -55,7 +55,7 @@ public class SingleAttestationTopicHandlerTest
   @Test
   public void handleMessage_valid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = getChainHead();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
@@ -72,7 +72,7 @@ public class SingleAttestationTopicHandlerTest
   @Test
   public void handleMessage_ignored() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = getChainHead();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
@@ -89,7 +89,7 @@ public class SingleAttestationTopicHandlerTest
   @Test
   public void handleMessage_saveForFuture() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = getChainHead();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
@@ -106,7 +106,7 @@ public class SingleAttestationTopicHandlerTest
   @Test
   public void handleMessage_invalid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
+    final StateAndBlockSummary blockAndState = getChainHead();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);

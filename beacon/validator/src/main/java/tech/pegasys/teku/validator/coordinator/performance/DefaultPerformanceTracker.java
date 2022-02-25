@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -129,19 +128,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Nothing to report until epoch 0 is complete
     if (!currentEpoch.isZero()) {
-      final UInt64 blockProductionEpoch = currentEpoch.minus(1);
-      BlockPerformance blockPerformance = getBlockPerformanceForEpoch(blockProductionEpoch);
-      if (blockPerformance.numberOfExpectedBlocks > 0) {
-        if (mode.isLoggingEnabled()) {
-          statusLogger.performance(blockPerformance.toString());
-        }
-
-        if (mode.isMetricsEnabled()) {
-          validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
-        }
-      }
-      producedBlocksByEpoch.headMap(blockProductionEpoch, true).clear();
-      blockProductionAttemptsByEpoch.headMap(blockProductionEpoch, true).clear();
+      reportingTasks.add(reportBlockPerformance(currentEpoch));
     }
 
     // Nothing to report until epoch 0 is complete
@@ -150,6 +137,25 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).join();
+  }
+
+  private SafeFuture<?> reportBlockPerformance(final UInt64 currentEpoch) {
+    final UInt64 blockProductionEpoch = currentEpoch.minus(1);
+    return getBlockPerformanceForEpoch(blockProductionEpoch)
+        .thenAccept(
+            blockPerformance -> {
+              if (blockPerformance.numberOfExpectedBlocks > 0) {
+                if (mode.isLoggingEnabled()) {
+                  statusLogger.performance(blockPerformance.toString());
+                }
+
+                if (mode.isMetricsEnabled()) {
+                  validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+                }
+              }
+              producedBlocksByEpoch.headMap(blockProductionEpoch, true).clear();
+              blockProductionAttemptsByEpoch.headMap(blockProductionEpoch, true).clear();
+            });
   }
 
   private SafeFuture<?> reportSyncCommitteePerformance(final UInt64 currentEpoch) {
@@ -190,34 +196,40 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             });
   }
 
-  private BlockPerformance getBlockPerformanceForEpoch(UInt64 currentEpoch) {
-    int numberOfBlockProductionAttempts = 0;
-    AtomicInteger blocksAtEpoch = blockProductionAttemptsByEpoch.get(currentEpoch);
-    if (blocksAtEpoch != null) {
-      numberOfBlockProductionAttempts = blocksAtEpoch.get();
-    }
+  private SafeFuture<BlockPerformance> getBlockPerformanceForEpoch(UInt64 currentEpoch) {
+    return combinedChainDataClient
+        .getChainHead()
+        .orElseThrow()
+        .asStateAndBlockSummary()
+        .thenApply(
+            chainHead -> {
+              int numberOfBlockProductionAttempts = 0;
+              AtomicInteger blocksAtEpoch = blockProductionAttemptsByEpoch.get(currentEpoch);
+              if (blocksAtEpoch != null) {
+                numberOfBlockProductionAttempts = blocksAtEpoch.get();
+              }
 
-    Collection<SlotAndBlockRoot> producedBlocks = Collections.emptyList();
-    if (producedBlocksByEpoch.get(currentEpoch) != null) {
-      producedBlocks = producedBlocksByEpoch.get(currentEpoch);
-    }
-    final StateAndBlockSummary chainHead = combinedChainDataClient.getChainHead().orElseThrow();
-    final BeaconState state = chainHead.getState();
-    final long numberOfIncludedBlocks =
-        producedBlocks.stream()
-            .filter(
-                producedBlock ->
-                    // Chain head root itself isn't available in state history
-                    producedBlock.getBlockRoot().equals(chainHead.getRoot())
-                        || isInHistoricBlockRoots(state, producedBlock))
-            .count();
+              Collection<SlotAndBlockRoot> producedBlocks = Collections.emptyList();
+              if (producedBlocksByEpoch.get(currentEpoch) != null) {
+                producedBlocks = producedBlocksByEpoch.get(currentEpoch);
+              }
+              final BeaconState state = chainHead.getState();
+              final long numberOfIncludedBlocks =
+                  producedBlocks.stream()
+                      .filter(
+                          producedBlock ->
+                              // Chain head root itself isn't available in state history
+                              producedBlock.getBlockRoot().equals(chainHead.getRoot())
+                                  || isInHistoricBlockRoots(state, producedBlock))
+                      .count();
 
-    int numberOfProducedBlocks = producedBlocks.size();
-    return new BlockPerformance(
-        currentEpoch,
-        numberOfBlockProductionAttempts,
-        (int) numberOfIncludedBlocks,
-        numberOfProducedBlocks);
+              int numberOfProducedBlocks = producedBlocks.size();
+              return new BlockPerformance(
+                  currentEpoch,
+                  numberOfBlockProductionAttempts,
+                  (int) numberOfIncludedBlocks,
+                  numberOfProducedBlocks);
+            });
   }
 
   private boolean isInHistoricBlockRoots(

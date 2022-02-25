@@ -173,7 +173,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
-        combinedChainDataClient.getBestBlock().orElseThrow();
+        storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockHeader result = provider.getBlockHeader("head").get().orElseThrow();
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
@@ -210,7 +210,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
-        combinedChainDataClient.getBestBlock().orElseThrow();
+        storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.empty()).get();
     assertThat(results.get(0).root).isEqualTo(block.getRoot());
   }

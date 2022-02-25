@@ -13,13 +13,17 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteOrder;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,10 +36,13 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats.CorrectAndLiveValidators;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 public class BeaconChainMetrics implements SlotEventsChannel {
+  private static final Logger LOG = LogManager.getLogger();
+
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
@@ -198,7 +205,24 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getChainHead().ifPresent(this::updateMetrics);
+    updateMetrics()
+        .finish(
+            error ->
+                LOG.error(
+                    "Failed to update block performance metrics because chain head state was unavailable",
+                    error));
+  }
+
+  @VisibleForTesting
+  SafeFuture<?> updateMetrics() {
+    return recentChainData
+        .getChainHead()
+        .map(this::updateMetrics)
+        .orElseGet(() -> SafeFuture.completedFuture(null));
+  }
+
+  private SafeFuture<?> updateMetrics(final ChainHead head) {
+    return head.asStateAndBlockSummary().thenAccept(this::updateMetrics);
   }
 
   private void updateMetrics(final StateAndBlockSummary head) {
