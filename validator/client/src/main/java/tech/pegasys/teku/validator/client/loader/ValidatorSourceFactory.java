@@ -166,7 +166,7 @@ public class ValidatorSourceFactory {
             initializeExternalSignerTaskQueue(),
             maybeDataDir);
     mutableExternalValidatorSource = Optional.of(slashingProtected(externalValidatorSource));
-    return mutableLocalValidatorSource;
+    return mutableExternalValidatorSource;
   }
 
   private boolean ensurePathExists(final Path directory) {
