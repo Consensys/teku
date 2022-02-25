@@ -39,10 +39,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -52,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -92,7 +92,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
   private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
-  private volatile Optional<ForkChoiceState> optimisticHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
   RecentChainData(
@@ -256,62 +255,26 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
   public void updateHead(Bytes32 root, UInt64 currentSlot) {
-    final Optional<ChainHead> originalChainHead = chainHead;
-
-    store
-        .retrieveStateAndBlockSummary(root)
-        .thenApply(
-            headBlockAndState ->
-                headBlockAndState
-                    .map(ChainHead::create)
-                    .orElseThrow(
-                        () ->
-                            new IllegalStateException(
-                                String.format(
-                                    "Unable to update head block as of slot %s.  Block is unavailable: %s.",
-                                    currentSlot, root))))
-        .thenAccept(newChainHead -> updateChainHead(originalChainHead, newChainHead))
-        .reportExceptions();
-  }
-
-  private void updateChainHead(
-      final Optional<ChainHead> originalHead, final ChainHead newChainHead) {
     synchronized (this) {
-      if (!chainHead.equals(originalHead)) {
-        // The chain head has been updated while we were waiting for the newChainHead
-        // Skip this update to avoid accidentally regressing the chain head
-        LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
-        return;
-      }
-      if (originalHead.isPresent() && isNewHeadSameAsOld(originalHead.get(), newChainHead)) {
+      if (chainHead.map(head -> head.getRoot().equals(root)).orElse(false)) {
         LOG.trace("Skipping head update because new head is same as previous head");
         return;
       }
-      this.chainHead = Optional.of(newChainHead);
-      final Optional<ReorgContext> optionalReorgContext;
-      final ForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
-      if (originalHead.map(head -> hasReorgedFrom(head.getRoot(), head.getSlot())).orElse(false)) {
+      final Optional<ChainHead> originalChainHead = chainHead;
 
-        final ChainHead previousChainHead = originalHead.get();
-
-        final SlotAndBlockRoot commonAncestorSlotAndBlockRoot =
-            forkChoiceStrategy
-                .findCommonAncestor(previousChainHead.getRoot(), newChainHead.getRoot())
-                .orElseGet(() -> store.getFinalizedCheckpoint().toSlotAndBlockRoot(spec));
-
-        reorgCounter.inc();
-        optionalReorgContext =
-            ReorgContext.of(
-                previousChainHead.getRoot(),
-                previousChainHead.getSlot(),
-                previousChainHead.getStateRoot(),
-                commonAncestorSlotAndBlockRoot.getSlot(),
-                commonAncestorSlotAndBlockRoot.getBlockRoot());
-      } else {
-        optionalReorgContext = ReorgContext.empty();
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+      final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
+      if (maybeBlockData.isEmpty()) {
+        LOG.error(
+            "Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
+        return;
       }
+      final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
+      this.chainHead = Optional.of(newChainHead);
+      final Optional<ReorgContext> optionalReorgContext =
+          computeReorgContext(forkChoiceStrategy, originalChainHead, newChainHead);
       final boolean epochTransition =
-          originalHead
+          originalChainHead
               .map(
                   previousChainHead ->
                       spec.computeEpochAtSlot(previousChainHead.getSlot())
@@ -330,38 +293,70 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           // duty dependent root isn't available from protoarray it must be the parent of the
           // finalized block and the current duty dependent root must be available.
           // See comments on beaconStateUtil.getPreviousDutyDependentRoot for reasoning.
+          // The exception is when we have just started from an initial state and block history
+          // isn't available, in which case the dependentRoot can safely be set to the finalized
+          // block and will remain consistent.
           beaconStateUtil
               .getPreviousDutyDependentRoot(forkChoiceStrategy, newChainHead)
-              .orElseGet(() -> getFinalizedBlockParentRoot(forkChoiceStrategy)),
+              .orElseGet(this::getFinalizedBlockParentRoot),
           beaconStateUtil
               .getCurrentDutyDependentRoot(forkChoiceStrategy, newChainHead)
-              .orElseThrow(),
+              .orElseGet(this::getFinalizedBlockParentRoot),
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);
   }
 
-  private Bytes32 getFinalizedBlockParentRoot(final ForkChoiceStrategy forkChoiceStrategy) {
-    return forkChoiceStrategy
+  private Optional<ReorgContext> computeReorgContext(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Optional<ChainHead> originalChainHead,
+      final ChainHead newChainHead) {
+    final Optional<ReorgContext> optionalReorgContext;
+    if (originalChainHead
+        .map(head -> hasReorgedFrom(head.getRoot(), head.getSlot()))
+        .orElse(false)) {
+      final ChainHead previousChainHead = originalChainHead.get();
+
+      final SlotAndBlockRoot commonAncestorSlotAndBlockRoot =
+          forkChoiceStrategy
+              .findCommonAncestor(previousChainHead.getRoot(), newChainHead.getRoot())
+              .orElseGet(() -> store.getFinalizedCheckpoint().toSlotAndBlockRoot(spec));
+
+      reorgCounter.inc();
+      optionalReorgContext =
+          ReorgContext.of(
+              previousChainHead.getRoot(),
+              previousChainHead.getSlot(),
+              previousChainHead.getStateRoot(),
+              commonAncestorSlotAndBlockRoot.getSlot(),
+              commonAncestorSlotAndBlockRoot.getBlockRoot());
+    } else {
+      optionalReorgContext = ReorgContext.empty();
+    }
+    return optionalReorgContext;
+  }
+
+  private ChainHead createNewChainHead(
+      final Bytes32 root, final UInt64 currentSlot, final ProtoNodeData blockData) {
+    final SafeFuture<StateAndBlockSummary> chainHeadStateFuture =
+        store
+            .retrieveStateAndBlockSummary(root)
+            .thenApply(
+                maybeHead ->
+                    maybeHead.orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to update head block as of slot %s.  Block is unavailable: %s.",
+                                    currentSlot, root))));
+    return ChainHead.create(blockData, chainHeadStateFuture);
+  }
+
+  private Bytes32 getFinalizedBlockParentRoot() {
+    return getForkChoiceStrategy()
+        .orElseThrow()
         .blockParentRoot(store.getFinalizedCheckpoint().getRoot())
         .orElseThrow(() -> new IllegalStateException("Finalized block is unknown"));
-  }
-
-  public void onForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
-    optimisticHead =
-        forkChoiceState.isHeadOptimistic() ? Optional.of(forkChoiceState) : Optional.empty();
-  }
-
-  public Optional<ForkChoiceState> getOptimisticHead() {
-    return optimisticHead;
-  }
-
-  public Optional<UInt64> getOptimisticHeadSlot() {
-    return optimisticHead.map(ForkChoiceState::getHeadBlockSlot);
-  }
-
-  private boolean isNewHeadSameAsOld(final ChainHead originalHead, final ChainHead newChainHead) {
-    return originalHead.getRoot().equals(newChainHead.getRoot());
   }
 
   private boolean hasReorgedFrom(
@@ -404,7 +399,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /** @return The number of slots between our chainhead and the current slot by time */
   public Optional<UInt64> getChainHeadSlotsBehind() {
     return chainHead
-        .map(BeaconBlockSummary::getSlot)
+        .map(MinimalBeaconBlockSummary::getSlot)
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
@@ -441,27 +436,31 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   /** Retrieves the block chosen by fork choice to build and attest on */
   public Optional<Bytes32> getBestBlockRoot() {
-    return chainHead.map(BeaconBlockSummary::getRoot);
+    return chainHead.map(MinimalBeaconBlockSummary::getRoot);
   }
 
   /** @return The head of the chain. */
-  public Optional<StateAndBlockSummary> getChainHead() {
-    return chainHead.map(a -> a);
+  public Optional<ChainHead> getChainHead() {
+    return chainHead;
+  }
+
+  public boolean isChainHeadOptimistic() {
+    return chainHead.map(ChainHead::isOptimistic).orElse(false);
   }
 
   /** @return The block at the head of the chain. */
-  public Optional<SignedBeaconBlock> getHeadBlock() {
-    return chainHead.flatMap(BeaconBlockSummary::getSignedBeaconBlock);
+  public Optional<MinimalBeaconBlockSummary> getHeadBlock() {
+    return chainHead.map(a -> a);
   }
 
   /** Retrieves the state of the block chosen by fork choice to build and attest on */
   public Optional<SafeFuture<BeaconState>> getBestState() {
-    return chainHead.map(StateAndBlockSummary::getState).map(SafeFuture::completedFuture);
+    return chainHead.map(ChainHead::getState);
   }
 
   /** Retrieves the slot of the block chosen by fork choice to build and attest on */
   public UInt64 getHeadSlot() {
-    return chainHead.map(BeaconBlockSummary::getSlot).orElse(UInt64.ZERO);
+    return chainHead.map(MinimalBeaconBlockSummary::getSlot).orElse(UInt64.ZERO);
   }
 
   public boolean containsBlock(final Bytes32 root) {

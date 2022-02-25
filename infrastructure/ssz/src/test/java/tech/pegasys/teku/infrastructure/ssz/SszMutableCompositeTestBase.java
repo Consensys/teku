@@ -250,17 +250,15 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_shouldThrowWhenAppendingAboveMaxLen(SszMutableComposite<SszData> data) {
-    long maxLength = data.getSchema().getMaxLength();
-    if (maxLength <= 1024) {
+    long maxLengthLong = data.getSchema().getMaxLength();
+    if (maxLengthLong <= 1024) {
+      final int maxLength = (int) maxLengthLong;
       // don't want to waste too much time appending
       for (int i = data.size(); i < maxLength; i++) {
         data.set(i, data.getSchema().getChildSchema(i).getDefault());
       }
       assertThatThrownBy(
-              () ->
-                  data.set(
-                      (int) maxLength,
-                      data.getSchema().getChildSchema((int) maxLength).getDefault()))
+              () -> data.set(maxLength, data.getSchema().getChildSchema(maxLength).getDefault()))
           .isInstanceOf(IndexOutOfBoundsException.class);
     }
   }

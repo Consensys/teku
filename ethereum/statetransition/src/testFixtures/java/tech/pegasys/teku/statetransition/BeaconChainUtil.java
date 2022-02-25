@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.List;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -299,9 +301,9 @@ public class BeaconChainUtil {
     checkState(
         withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
-    final StateAndBlockSummary bestBlockAndState = recentChainData.getChainHead().orElseThrow();
+    final ChainHead bestBlockAndState = recentChainData.getChainHead().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
-    final BeaconState preState = bestBlockAndState.getState();
+    final BeaconState preState = safeJoin(bestBlockAndState.getState());
     checkArgument(bestBlockAndState.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
@@ -337,12 +339,14 @@ public class BeaconChainUtil {
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
-      StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
+      ChainHead head = recentChainData.getChainHead().orElseThrow();
+      final StateAndBlockSummary headStateAndBlockSummary = safeJoin(head.asStateAndBlockSummary());
       UInt64 slot = recentChainData.getHeadSlot();
       SszList<Attestation> currentSlotAssignments =
           beaconBlockBodySchema
               .getAttestationsSchema()
-              .createFromElements(attestationGenerator.getAttestationsForSlot(head, slot));
+              .createFromElements(
+                  attestationGenerator.getAttestationsForSlot(headStateAndBlockSummary, slot));
       createAndImportBlockAtSlot(
           recentChainData.getHeadSlot().plus(UInt64.ONE),
           Optional.of(currentSlotAssignments),

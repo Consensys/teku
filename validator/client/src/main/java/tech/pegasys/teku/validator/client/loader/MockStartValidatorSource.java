@@ -18,7 +18,6 @@ import static java.util.stream.Collectors.toList;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,11 +97,6 @@ public class MockStartValidatorSource implements ValidatorSource {
     @Override
     public Signer createSigner() {
       return new LocalSigner(spec, keyPair, asyncRunner);
-    }
-
-    @Override
-    public Signer createSigner(URL url) {
-      throw new NotImplementedException();
     }
   }
 }

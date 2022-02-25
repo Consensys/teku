@@ -30,10 +30,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
@@ -128,10 +128,7 @@ public class TerminalPowBlockMonitor {
       }
     }
 
-    // Chain head must be available at this stage
-    SignedBeaconBlock headBlock = recentChainData.getHeadBlock().orElseThrow();
-
-    if (spec.isMergeTransitionComplete(headBlock)) {
+    if (isMergeTransitionComplete(recentChainData.getChainHead())) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -146,6 +143,10 @@ public class TerminalPowBlockMonitor {
         this::checkTerminalBlockByBlockHash, this::checkTerminalBlockByTTD);
   }
 
+  private Boolean isMergeTransitionComplete(final Optional<ChainHead> chainHead) {
+    return chainHead.map(head -> !head.getExecutionBlockHash().isZero()).orElse(false);
+  }
+
   private void initMergeState() {
     Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();
     if (maybeEpoch.isEmpty()) {
@@ -157,13 +158,13 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    Optional<SignedBeaconBlock> headBlock = recentChainData.getHeadBlock();
-    if (headBlock.isEmpty()) {
+    final Optional<ChainHead> chainHead = recentChainData.getChainHead();
+    if (chainHead.isEmpty()) {
       LOG.trace("Beacon state not yet available");
       return;
     }
 
-    if (spec.isMergeTransitionComplete(headBlock.get())) {
+    if (isMergeTransitionComplete(chainHead)) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;

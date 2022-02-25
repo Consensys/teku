@@ -22,8 +22,11 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
@@ -75,6 +78,12 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Optional<SlotAndBlockRoot> findCommonAncestor(
+      final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
+    return Optional.empty();
+  }
+
+  @Override
   public Set<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
     final Optional<Bytes32> maybeRoot = getBlock(slot).map(SignedBeaconBlock::getRoot);
     if (maybeRoot.isEmpty()) {
@@ -116,6 +125,25 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   @Override
   public boolean isFullyValidated(Bytes32 blockRoot) {
     return true;
+  }
+
+  @Override
+  public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
+    return getBlock(blockRoot)
+        .map(
+            block ->
+                new ProtoNodeData(
+                    block.getSlot(),
+                    block.getRoot(),
+                    block.getParentRoot(),
+                    block.getStateRoot(),
+                    block
+                        .getMessage()
+                        .getBody()
+                        .getOptionalExecutionPayload()
+                        .map(ExecutionPayload::getBlockHash)
+                        .orElse(Bytes32.ZERO),
+                    false));
   }
 
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {

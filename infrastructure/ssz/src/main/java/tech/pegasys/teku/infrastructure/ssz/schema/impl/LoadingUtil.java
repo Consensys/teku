@@ -116,7 +116,7 @@ public class LoadingUtil {
     }
 
     // Add default nodes for any remaining children, again using branch nodes one level up
-    final long totalChildCount = 1L << branchDepth;
+    final int totalChildCount = Math.toIntExact(1L << branchDepth);
     while (childIndex < totalChildCount) {
       children.add(
           defaultTree.get(

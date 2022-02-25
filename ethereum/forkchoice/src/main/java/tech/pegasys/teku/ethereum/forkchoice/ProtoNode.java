@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 
 public class ProtoNode {
 
@@ -174,6 +175,16 @@ public class ProtoNode {
         this.validationStatus,
         validationStatus);
     this.validationStatus = validationStatus;
+  }
+
+  public ProtoNodeData getBlockData() {
+    return new ProtoNodeData(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        executionBlockHash,
+        validationStatus == ProtoNodeValidationStatus.OPTIMISTIC);
   }
 
   public Map<String, Object> getData() {

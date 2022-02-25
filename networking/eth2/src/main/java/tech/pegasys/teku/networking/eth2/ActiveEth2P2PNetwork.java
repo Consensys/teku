@@ -37,12 +37,10 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -51,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> implements Eth2P2PNetwork {
@@ -173,43 +172,46 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   private void setTopicScoringParams() {
-    final GossipTopicsScoringConfig topicConfig =
-        gossipConfigurator.configureAllTopics(getEth2Context());
-    discoveryNetwork.updateGossipTopicScoring(topicConfig);
-
     gossipUpdateTask =
         asyncRunner.runWithFixedDelay(
             this::updateDynamicTopicScoring,
+            Duration.ZERO,
             Duration.ofMinutes(1),
             (err) ->
                 LOG.error(
                     "Encountered error while attempting to updating gossip topic scoring", err));
   }
 
-  private void updateDynamicTopicScoring() {
+  private SafeFuture<?> updateDynamicTopicScoring() {
     LOG.trace("Update dynamic topic scoring");
-    final GossipTopicsScoringConfig topicConfig =
-        gossipConfigurator.configureDynamicTopics(getEth2Context());
-    discoveryNetwork.updateGossipTopicScoring(topicConfig);
+    return getEth2Context()
+        .thenApply(gossipConfigurator::configureDynamicTopics)
+        .thenAccept(discoveryNetwork::updateGossipTopicScoring);
   }
 
-  private Eth2Context getEth2Context() {
-    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
-    final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest(spec);
+  private SafeFuture<Eth2Context> getEth2Context() {
+    final ChainHead chainHead = recentChainData.getChainHead().orElseThrow();
+    final Bytes4 forkDigest =
+        recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest(spec);
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
-    final UInt64 activeValidatorsEpoch =
-        spec.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
-    final int activeValidators =
-        spec.countActiveValidators(chainHead.getState(), activeValidatorsEpoch);
+    return chainHead
+        .getState()
+        .thenApply(
+            chainHeadState -> {
+              final UInt64 activeValidatorsEpoch =
+                  spec.getMaxLookaheadEpoch(chainHeadState).min(currentEpoch);
+              final int activeValidators =
+                  spec.countActiveValidators(chainHeadState, activeValidatorsEpoch);
 
-    return Eth2Context.builder()
-        .currentSlot(currentSlot)
-        .activeValidatorCount(activeValidators)
-        .forkDigest(forkDigest)
-        .gossipEncoding(gossipEncoding)
-        .build();
+              return Eth2Context.builder()
+                  .currentSlot(currentSlot)
+                  .activeValidatorCount(activeValidators)
+                  .forkDigest(forkDigest)
+                  .gossipEncoding(gossipEncoding)
+                  .build();
+            });
   }
 
   @Override

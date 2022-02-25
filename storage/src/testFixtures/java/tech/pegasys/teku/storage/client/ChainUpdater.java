@@ -185,7 +185,9 @@ public class ChainUpdater {
   }
 
   public void updateBestBlock(final SignedBlockAndState bestBlock) {
-    saveBlock(bestBlock);
+    if (!recentChainData.containsBlock(bestBlock.getRoot())) {
+      saveBlock(bestBlock);
+    }
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     final StoreTransaction tx = recentChainData.startStoreTransaction();

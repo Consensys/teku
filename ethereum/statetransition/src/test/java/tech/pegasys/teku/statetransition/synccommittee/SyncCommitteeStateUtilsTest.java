@@ -19,6 +19,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class SyncCommitteeStateUtilsTest {
@@ -118,7 +120,7 @@ class SyncCommitteeStateUtilsTest {
                     Bytes32.ZERO,
                     dataStructureUtil.randomBytes32()))
             .build();
-    final StateAndBlockSummary chainHead = StateAndBlockSummary.create(headState);
+    final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(headState));
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
 
     final BeaconStateAltair generatedState =
@@ -148,12 +150,12 @@ class SyncCommitteeStateUtilsTest {
   }
 
   private void assertRetrievedStateIsSuitable(final UInt64 slot, final BeaconState state) {
-    final StateAndBlockSummary chainHead = StateAndBlockSummary.create(state);
+    final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(state));
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
 
     final SafeFuture<Optional<BeaconStateAltair>> result =
         stateUtils.getStateForSyncCommittee(slot);
 
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(chainHead.getState());
+    assertThatSafeFuture(result).isCompletedWithOptionalContaining(safeJoin(chainHead.getState()));
   }
 }

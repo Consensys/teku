@@ -36,7 +36,7 @@ public class ChainHeadTest {
     final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     final ChainHead chainHead = ChainHead.create(block);
 
-    final ChainHead otherChainHead = copy(chainHead);
+    final ChainHead otherChainHead = copy(block);
     assertThat(chainHead).isEqualTo(otherChainHead);
   }
 
@@ -53,7 +53,7 @@ public class ChainHeadTest {
   }
 
   @SuppressWarnings("unchecked")
-  private ChainHead copy(ChainHead original) {
+  private ChainHead copy(SignedBlockAndState original) {
     final SignedBeaconBlock originalBlock = original.getSignedBeaconBlock().orElseThrow();
     final SignedBeaconBlock blockCopy =
         copy(originalBlock, (SszSchema<SignedBeaconBlock>) originalBlock.getSchema());

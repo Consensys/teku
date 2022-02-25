@@ -324,7 +324,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public void prepareBeaconProposer(
-      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+      final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     prepareBeaconProposerCounter.inc();
     delegate.prepareBeaconProposer(beaconPreparableProposers);
   }

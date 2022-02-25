@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlockSelectorFactory {
@@ -66,7 +67,12 @@ public class BlockSelectorFactory {
   }
 
   public BlockSelector headSelector() {
-    return () -> optionalToList(SafeFuture.completedFuture(client.getBestBlock()));
+    return () ->
+        optionalToList(
+            client
+                .getChainHead()
+                .map(ChainHead::getBlock)
+                .orElse(SafeFuture.completedFuture(Optional.empty())));
   }
 
   public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {

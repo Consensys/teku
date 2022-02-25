@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
-import io.libp2p.core.multiformats.MultiaddrComponent;
-import io.libp2p.core.multiformats.Protocol;
 import java.util.Objects;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -26,7 +24,7 @@ public class MultiaddrPeerAddress extends PeerAddress {
 
   private final Multiaddr multiaddr;
 
-  MultiaddrPeerAddress(final NodeId nodeId, final Multiaddr multiaddr) {
+  protected MultiaddrPeerAddress(final NodeId nodeId, final Multiaddr multiaddr) {
     super(nodeId);
     this.multiaddr = multiaddr;
   }
@@ -47,11 +45,11 @@ public class MultiaddrPeerAddress extends PeerAddress {
   }
 
   private static MultiaddrPeerAddress fromMultiaddr(final Multiaddr multiaddr) {
-    final MultiaddrComponent p2pComponent = multiaddr.getFirstComponent(Protocol.P2P);
-    if (p2pComponent == null || p2pComponent.getStringValue() == null) {
+    final PeerId peerId = multiaddr.getPeerId();
+    if (peerId == null) {
       throw new IllegalArgumentException("No peer ID present in multiaddr: " + multiaddr);
     }
-    final LibP2PNodeId nodeId = new LibP2PNodeId(PeerId.fromBase58(p2pComponent.getStringValue()));
+    final LibP2PNodeId nodeId = new LibP2PNodeId(peerId);
     return new MultiaddrPeerAddress(nodeId, multiaddr);
   }
 

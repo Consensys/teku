@@ -20,10 +20,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncCommitteeStateUtils {
@@ -37,7 +37,7 @@ public class SyncCommitteeStateUtils {
   }
 
   public SafeFuture<Optional<BeaconStateAltair>> getStateForSyncCommittee(final UInt64 slot) {
-    final Optional<StateAndBlockSummary> chainHead = recentChainData.getChainHead();
+    final Optional<ChainHead> chainHead = recentChainData.getChainHead();
     if (chainHead.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
@@ -45,7 +45,7 @@ public class SyncCommitteeStateUtils {
   }
 
   private SafeFuture<Optional<BeaconStateAltair>> getStateForBlockAtSlot(
-      final UInt64 slot, final StateAndBlockSummary chainHead) {
+      final UInt64 slot, final ChainHead chainHead) {
     final UInt64 chainHeadSlot = chainHead.getSlot();
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final UInt64 requiredEpoch =
@@ -54,7 +54,7 @@ public class SyncCommitteeStateUtils {
     final UInt64 requiredSlot = spec.computeStartSlotAtEpoch(requiredEpoch);
 
     if (chainHeadSlot.isGreaterThanOrEqualTo(requiredSlot)) {
-      return SafeFuture.completedFuture(chainHead.getState().toVersionAltair());
+      return chainHead.getState().thenApply(BeaconState::toVersionAltair);
     }
     if (chainHeadSlot.plus(spec.getSlotsPerEpoch(chainHeadSlot)).isLessThan(requiredSlot)) {
       LOG.warn(

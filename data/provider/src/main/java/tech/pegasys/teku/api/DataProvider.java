@@ -15,6 +15,7 @@ package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -98,7 +99,7 @@ public class DataProvider {
     private OperationPool<ProposerSlashing> proposerSlashingPool;
     private OperationPool<SignedVoluntaryExit> voluntaryExitPool;
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
-    private PayloadAttributesCalculator payloadAttributesCalculator;
+    private Optional<PayloadAttributesCalculator> payloadAttributesCalculator = Optional.empty();
 
     private boolean isLivenessTrackingEnabled = true;
 
@@ -176,7 +177,7 @@ public class DataProvider {
     }
 
     public Builder payloadAttributesCalculator(
-        final PayloadAttributesCalculator payloadAttributesCalculator) {
+        final Optional<PayloadAttributesCalculator> payloadAttributesCalculator) {
       this.payloadAttributesCalculator = payloadAttributesCalculator;
       return this;
     }
