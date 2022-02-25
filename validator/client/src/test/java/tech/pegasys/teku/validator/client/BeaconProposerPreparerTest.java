@@ -161,6 +161,7 @@ public class BeaconProposerPreparerTest {
     verify(validatorApiChannel).prepareBeaconProposer(any());
   }
 
+  @TestTemplate
   void should_callPrepareBeaconProposerAfterOnValidatorsAdded() {
     beaconProposerPreparer.onValidatorsAdded();
     verify(validatorApiChannel).prepareBeaconProposer(any());
