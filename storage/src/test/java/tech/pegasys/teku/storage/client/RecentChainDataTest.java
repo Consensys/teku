@@ -15,13 +15,9 @@ package tech.pegasys.teku.storage.client;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
-import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
-import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -61,7 +56,6 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class RecentChainDataTest {
@@ -539,41 +533,6 @@ class RecentChainDataTest {
                 latestBlockAndState.getRoot(),
                 latestBlockAndState.getStateRoot(),
                 ONE));
-  }
-
-  @Test
-  public void updateHead_ignoreStaleUpdate() {
-    initPreGenesis();
-    generateGenesisWithoutIniting();
-    final UpdatableStore store = mock(UpdatableStore.class);
-
-    // Set up mock store with genesis data and a small chain
-    List<SignedBlockAndState> chain = chainBuilder.generateBlocksUpToSlot(3);
-    mockGenesis(spec, store, genesis);
-    mockChainData(store, chain);
-
-    // Set store and update best block to genesis
-    assertThat(recentChainData.getChainHead()).isEmpty();
-    recentChainData.setStore(store);
-    recentChainData.updateHead(genesis.getRoot(), genesis.getSlot());
-    assertThat(recentChainData.getBestBlockRoot()).contains(genesis.getRoot());
-
-    // Update best block, but delay the resolution of the future
-    final SignedBlockAndState chainHeadA = chain.get(0);
-    final SafeFuture<Optional<StateAndBlockSummary>> chainHeadAFuture = new SafeFuture<>();
-    when(store.retrieveStateAndBlockSummary(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
-    recentChainData.updateHead(chainHeadA.getRoot(), chainHeadA.getSlot());
-    // We should still be at genesis while we wait on the future to resolve
-    assertThat(recentChainData.getBestBlockRoot()).contains(genesis.getRoot());
-
-    // Now start another update
-    final SignedBlockAndState chainHeadB = chain.get(1);
-    recentChainData.updateHead(chainHeadB.getRoot(), chainHeadB.getSlot());
-    assertThat(recentChainData.getBestBlockRoot()).contains(chainHeadB.getRoot());
-
-    // Resolve the earlier update - which should be ignored since we've already moved on
-    chainHeadAFuture.complete(Optional.of(chainHeadA));
-    assertThat(recentChainData.getBestBlockRoot()).contains(chainHeadB.getRoot());
   }
 
   @Test

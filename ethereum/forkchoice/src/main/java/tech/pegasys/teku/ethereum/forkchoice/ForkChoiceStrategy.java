@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -282,6 +283,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::isFullyValidated).orElse(false);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public Optional<MinimalBeaconBlockSummary> getMinimalBlockSummary(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot).map(ProtoNode::toMinimalBlockSummary);
     } finally {
       protoArrayLock.readLock().unlock();
     }
