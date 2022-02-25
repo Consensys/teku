@@ -490,8 +490,7 @@ public final class DataStructureUtil {
   }
 
   private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {
-    final int rand = new Random(nextSeed()).nextInt();
-    final int index = rand > 0 ? rand % validators.size() : (-1 * rand) % validators.size();
+    final int index = new Random(nextSeed()).nextInt(validators.size());
     return validators.get(index).getPublicKey();
   }
 
