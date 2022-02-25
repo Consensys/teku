@@ -16,13 +16,16 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,7 +34,6 @@ import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -43,7 +45,6 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
-import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
 
@@ -99,11 +100,63 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
   @Override
   public List<ValidatorProvider> getAvailableValidators() {
+    if (readOnly) {
+      return getAvailableReadOnlyValidators();
+    }
+
+    // Load from files
+    final List<File> files = getValidatorFiles();
+    return files.stream().map(this::getValidatorProvider).collect(toList());
+  }
+
+  private List<ValidatorProvider> getAvailableReadOnlyValidators() {
     final List<BLSPublicKey> publicKeys =
         publicKeyLoader.getPublicKeys(config.getValidatorExternalSignerPublicKeySources());
     return publicKeys.stream()
-        .map(key -> new ExternalValidatorProvider(spec, key))
+        .map(
+            key ->
+                new ExternalValidatorProvider(
+                    spec,
+                    externalSignerHttpClientFactory,
+                    config.getValidatorExternalSignerUrl(),
+                    key,
+                    config.getValidatorExternalSignerTimeout(),
+                    externalSignerTaskQueue,
+                    metricsSystem,
+                    readOnly))
         .collect(toList());
+  }
+
+  private List<File> getValidatorFiles() {
+    if (maybeDataDirLayout.isEmpty()) {
+      return List.of();
+    }
+
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
+
+    final File[] files =
+        directory.toFile().listFiles((dir, name) -> name.toLowerCase().endsWith("json"));
+    return files == null ? List.of() : Arrays.asList(files);
+  }
+
+  private ValidatorProvider getValidatorProvider(File file) {
+    try {
+      String content = Files.readString(file.toPath());
+      ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+      return new ExternalValidatorProvider(
+          spec,
+          externalSignerHttpClientFactory,
+          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl()),
+          externalValidator.getPublicKey(),
+          config.getValidatorExternalSignerTimeout(),
+          externalSignerTaskQueue,
+          metricsSystem,
+          readOnly);
+
+    } catch (IOException e) {
+      throw new InvalidConfigurationException(e.getMessage(), e);
+    }
   }
 
   @Override
@@ -145,13 +198,20 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
                   ValidatorTypes.EXTERNAL_VALIDATOR_STORE)
               .getBytes(UTF_8));
 
+      final URL url = signerUrl.orElse(config.getValidatorExternalSignerUrl());
       final ValidatorProvider provider =
-          new ExternalValidatorSource.ExternalValidatorProvider(spec, publicKey);
+          new ExternalValidatorProvider(
+              spec,
+              externalSignerHttpClientFactory,
+              url,
+              publicKey,
+              config.getValidatorExternalSignerTimeout(),
+              externalSignerTaskQueue,
+              metricsSystem,
+              readOnly);
 
-      URL url = signerUrl.orElse(config.getValidatorExternalSignerUrl());
       externalValidatorSourceMap.put(publicKey, url);
-      return new AddValidatorResult(
-          PostKeyResult.success(), Optional.of(provider.createSigner(url)));
+      return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
 
     } catch (InvalidConfigurationException | IOException ex) {
       cleanupIncompleteSave(path);
@@ -178,50 +238,5 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     externalSignerStatusLogger.log();
     // recurring status log
     externalSignerStatusLogger.logWithFixedDelay();
-  }
-
-  private class ExternalValidatorProvider implements ValidatorProvider {
-
-    private final Spec spec;
-    private final BLSPublicKey publicKey;
-
-    private ExternalValidatorProvider(final Spec spec, final BLSPublicKey publicKey) {
-      this.spec = spec;
-      this.publicKey = publicKey;
-    }
-
-    @Override
-    public BLSPublicKey getPublicKey() {
-      return publicKey;
-    }
-
-    @Override
-    public boolean isReadOnly() {
-      return true;
-    }
-
-    @Override
-    public Signer createSigner() {
-      return new ExternalSigner(
-          spec,
-          externalSignerHttpClientFactory.get(),
-          config.getValidatorExternalSignerUrl(),
-          publicKey,
-          config.getValidatorExternalSignerTimeout(),
-          externalSignerTaskQueue,
-          metricsSystem);
-    }
-
-    @Override
-    public Signer createSigner(URL url) {
-      return new ExternalSigner(
-          spec,
-          externalSignerHttpClientFactory.get(),
-          url,
-          publicKey,
-          config.getValidatorExternalSignerTimeout(),
-          externalSignerTaskQueue,
-          metricsSystem);
-    }
   }
 }
