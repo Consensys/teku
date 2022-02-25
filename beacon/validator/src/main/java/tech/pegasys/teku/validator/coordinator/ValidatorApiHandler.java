@@ -604,7 +604,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void prepareBeaconProposer(
-      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+      final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     forkChoiceNotifier.onUpdatePreparableProposers(beaconPreparableProposers);
   }
 

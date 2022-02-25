@@ -83,8 +83,8 @@ public class StatusLogger {
   public void warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled() {
     log.warn(
         print(
-            "Validator Client detected and no default proposer fee recipient configured! "
-                + "it is strongly recommended to configure it to avoid possible block production failures",
+            "Remote Validator Client detected and no default proposer fee recipient configured! "
+                + "It is strongly recommended to configure fee recipient to avoid possible block production failures.",
             Color.RED));
   }
 

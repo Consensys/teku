@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -41,15 +42,22 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
 
   private final ValidatorDataProvider validatorDataProvider;
+  private final boolean isProposerDefaultFeeRecipientDefined;
 
   public PostPrepareBeaconProposer(final DataProvider provider, final JsonProvider jsonProvider) {
-    this(provider.getValidatorDataProvider(), jsonProvider);
+    this(
+        provider.getValidatorDataProvider(),
+        provider.getNodeDataProvider().isProposerDefaultFeeRecipientDefined(),
+        jsonProvider);
   }
 
   public PostPrepareBeaconProposer(
-      final ValidatorDataProvider validatorDataProvider, final JsonProvider jsonProvider) {
+      final ValidatorDataProvider validatorDataProvider,
+      final boolean isProposerDefaultFeeRecipientDefined,
+      final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = validatorDataProvider;
+    this.isProposerDefaultFeeRecipientDefined = isProposerDefaultFeeRecipientDefined;
   }
 
   @OpenApi(
@@ -75,6 +83,10 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
     try {
       final BeaconPreparableProposer[] request =
           parseRequestBody(ctx.body(), BeaconPreparableProposer[].class);
+
+      if (!isProposerDefaultFeeRecipientDefined) {
+        STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
+      }
 
       validatorDataProvider.prepareBeaconProposer(List.of(request));
 

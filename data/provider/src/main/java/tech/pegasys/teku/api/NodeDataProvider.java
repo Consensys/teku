@@ -59,7 +59,7 @@ public class NodeDataProvider {
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
   private final boolean isLivenessTrackingEnabled;
-  private final PayloadAttributesCalculator payloadAttributesCalculator;
+  private final Optional<PayloadAttributesCalculator> payloadAttributesCalculator;
 
   public NodeDataProvider(
       final Spec spec,
@@ -75,7 +75,7 @@ public class NodeDataProvider {
       final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
-      final PayloadAttributesCalculator payloadAttributesCalculator) {
+      final Optional<PayloadAttributesCalculator> payloadAttributesCalculator) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -192,6 +192,12 @@ public class NodeDataProvider {
   }
 
   public List<Map<String, Object>> getPreparedBeaconProposers() {
-    return payloadAttributesCalculator.getData();
+    return payloadAttributesCalculator.map(PayloadAttributesCalculator::getData).orElse(List.of());
+  }
+
+  public boolean isProposerDefaultFeeRecipientDefined() {
+    return payloadAttributesCalculator
+        .map(PayloadAttributesCalculator::isProposerDefaultFeeRecipientDefined)
+        .orElse(false);
   }
 }
