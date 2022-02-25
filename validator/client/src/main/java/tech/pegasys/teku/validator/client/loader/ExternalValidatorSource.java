@@ -110,7 +110,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     }
 
     // Load from files
-    List<File> files = getValidatorFiles();
+    final List<File> files = getValidatorFiles();
     return files.stream().map(this::getValidatorProvider).collect(toList());
   }
 
@@ -208,7 +208,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
                   ValidatorTypes.EXTERNAL_VALIDATOR_STORE)
               .getBytes(UTF_8));
 
-      URL url = signerUrl.orElse(config.getValidatorExternalSignerUrl());
+      final URL url = signerUrl.orElse(config.getValidatorExternalSignerUrl());
       final ValidatorProvider provider =
           new ExternalValidatorProvider(
               spec,
