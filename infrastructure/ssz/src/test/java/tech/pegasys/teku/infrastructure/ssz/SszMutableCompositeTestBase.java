@@ -257,10 +257,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
         data.set(i, data.getSchema().getChildSchema(i).getDefault());
       }
       assertThatThrownBy(
-              () ->
-                  data.set(
-                      (int) maxLength,
-                      data.getSchema().getChildSchema((int) maxLength).getDefault()))
+              () -> data.set(maxLength, data.getSchema().getChildSchema(maxLength).getDefault()))
           .isInstanceOf(IndexOutOfBoundsException.class);
     }
   }

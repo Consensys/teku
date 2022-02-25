@@ -141,7 +141,8 @@ abstract class AbstractBeaconStateBuilder<
     eth1DataVotes =
         dataStructureUtil.randomSszList(
             dataStructureUtil.getBeaconStateSchema().getEth1DataVotesSchema(),
-            dataStructureUtil.getEpochsPerEth1VotingPeriod() * dataStructureUtil.getSlotsPerEpoch(),
+            dataStructureUtil.getEpochsPerEth1VotingPeriod()
+                * (long) dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomEth1Data);
     eth1DepositIndex = dataStructureUtil.randomUInt64();
     validators =

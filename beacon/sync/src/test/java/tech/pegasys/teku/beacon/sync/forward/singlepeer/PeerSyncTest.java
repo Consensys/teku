@@ -547,7 +547,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   }
 
   private void withPeerFinalizedEpoch(final UInt64 finalizedEpoch) {
-    final UInt64 headSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(2 * slotsPerEpoch);
+    final UInt64 headSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(2L * slotsPerEpoch);
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
