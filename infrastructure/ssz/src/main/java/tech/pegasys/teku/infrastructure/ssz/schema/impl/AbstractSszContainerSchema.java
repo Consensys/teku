@@ -242,7 +242,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         variableChildOffset += childSize;
       }
     }
-    for (int i = 0; i < getMaxLength(); i++) {
+    for (int i = 0; i < childrenSchemas.size(); i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
