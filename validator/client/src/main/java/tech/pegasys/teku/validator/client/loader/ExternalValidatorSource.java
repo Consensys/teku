@@ -23,17 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -60,8 +57,6 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
   private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private ExternalValidatorSource(
       final Spec spec,
@@ -140,14 +135,9 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
     final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
 
-    List<File> files = new ArrayList<>();
-    try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*.json")) {
-      stream.forEach(entry -> files.add(entry.toFile()));
-    } catch (IOException e) {
-      LOG.debug("Failed to read file ", e);
-    }
-
-    return files;
+    final File[] files =
+        directory.toFile().listFiles((dir, name) -> name.toLowerCase().endsWith("json"));
+    return files == null ? List.of() : Arrays.asList(files);
   }
 
   private ValidatorProvider getValidatorProvider(File file) {
