@@ -63,9 +63,14 @@ public class Web3jClientBuilder {
       case "ws":
       case "wss":
         return new Web3jWebsocketClient(endpoint, timeProvider, jwtConfigOpt);
+      case "file":
+        return new Web3jIpcClient(endpoint, timeProvider, jwtConfigOpt);
       default:
         throw new InvalidConfigurationException(
-            String.format("Endpoint \"%s\" scheme is not supported", endpoint));
+            String.format(
+                "Endpoint \"%s\" scheme is not supported. Use "
+                    + "http://, https://, ws://, wss:// or file: for IPC file path",
+                endpoint));
     }
   }
 }
