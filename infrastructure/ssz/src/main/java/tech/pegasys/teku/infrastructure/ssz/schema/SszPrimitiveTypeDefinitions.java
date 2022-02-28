@@ -19,9 +19,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.types.BooleanTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -62,6 +65,16 @@ public interface SszPrimitiveTypeDefinitions {
 
   DeserializableTypeDefinition<SszUInt256> SSZ_UINT256_TYPE_DEFINITION =
       new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.UINT256_SCHEMA, CoreTypes.UINT256_TYPE);
+
+  static <T extends SszData> DeserializableTypeDefinition<T> sszSerializedType(
+      final SszSchema<T> schema, final String description) {
+    return new StringTypeBuilder<T>()
+        .formatter(value -> value.sszSerialize().toHexString())
+        .parser(value -> schema.sszDeserialize(Bytes.fromHexString(value)))
+        .format("bytes")
+        .description(description)
+        .build();
+  }
 
   class SszTypeDefintionWrapper<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
       implements DeserializableTypeDefinition<SszDataT> {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -23,6 +25,11 @@ public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
 
   private SszPublicKeySchema() {
     super(BLS_COMPRESSED_PUBLIC_KEY_SIZE);
+  }
+
+  @Override
+  protected DeserializableTypeDefinition<SszPublicKey> createTypeDefinition() {
+    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "Bytes48 hexadecimal");
   }
 
   @Override

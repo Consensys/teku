@@ -32,7 +32,7 @@ public interface BeaconStateBellatrix extends BeaconStateAltair {
 
   default ExecutionPayloadHeader getLatestExecutionPayloadHeader() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name());
+        getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.getFieldName());
     return getAny(fieldIndex);
   }
 

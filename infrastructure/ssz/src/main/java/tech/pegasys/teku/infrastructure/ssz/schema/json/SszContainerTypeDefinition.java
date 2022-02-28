@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.json;
 
-import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -55,19 +54,19 @@ public class SszContainerTypeDefinition {
 
   private static class ContainerBuilder<DataT extends SszContainer> {
     private final SszContainerSchema<DataT> schema;
-    private final List<SszData> values;
+    private final SszData[] values;
 
     public ContainerBuilder(final SszContainerSchema<DataT> schema) {
       this.schema = schema;
-      this.values = new ArrayList<>(schema.getFieldsCount());
+      this.values = new SszData[schema.getFieldsCount()];
     }
 
     public void setValue(int childIndex, final SszData value) {
-      values.set(childIndex, value);
+      values[childIndex] = value;
     }
 
     public DataT build() {
-      return schema.createFromFieldValues(values);
+      return schema.createFromFieldValues(List.of(values));
     }
   }
 }

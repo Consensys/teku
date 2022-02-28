@@ -16,7 +16,9 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
+import com.google.common.base.Suppliers;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,7 +52,8 @@ public abstract class AbstractSszVectorSchema<
   private final int fixedPartSize;
   private SszLengthBounds sszLengthBounds;
 
-  private final DeserializableTypeDefinition<SszVectorT> jsonTypeDefinition;
+  private final Supplier<DeserializableTypeDefinition<SszVectorT>> jsonTypeDefinition =
+      Suppliers.memoize(this::createTypeDefinition);
 
   protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
@@ -70,9 +73,11 @@ public abstract class AbstractSszVectorSchema<
     this.isListBacking = isListBacking;
     this.fixedPartSize = calcSszFixedPartSize();
     this.sszLengthBounds = computeSszLengthBounds(elementSchema, vectorLength);
-    this.jsonTypeDefinition =
-        new DeserializableArrayTypeDefinition<>(
-            getElementSchema().getJsonTypeDefinition(), this::createFromElements);
+  }
+
+  protected DeserializableTypeDefinition<SszVectorT> createTypeDefinition() {
+    return new DeserializableArrayTypeDefinition<>(
+        getElementSchema().getJsonTypeDefinition(), this::createFromElements);
   }
 
   @Override
@@ -217,7 +222,7 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public DeserializableTypeDefinition<SszVectorT> getJsonTypeDefinition() {
-    return jsonTypeDefinition;
+    return jsonTypeDefinition.get();
   }
 
   @Override
