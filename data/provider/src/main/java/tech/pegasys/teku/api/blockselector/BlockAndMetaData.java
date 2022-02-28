@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.api.blockselector;
 
-import java.util.List;
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.api.ObjectAndMetaData;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface BlockSelector {
-  SafeFuture<List<BlockAndMetaData>> getBlock();
+public class BlockAndMetaData extends ObjectAndMetaData<SignedBeaconBlock> {
 
-  default SafeFuture<Optional<BlockAndMetaData>> getSingleBlock() {
-    return getBlock().thenApply(blockList -> blockList.stream().findFirst());
+  public BlockAndMetaData(
+      final SignedBeaconBlock data,
+      final SpecMilestone milestone,
+      final boolean executionOptimistic) {
+    super(data, milestone, executionOptimistic);
   }
 }
