@@ -14,8 +14,8 @@ ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
-RUN apt-get -y update
-RUN apt-get -y install curl
+RUN apt-get -y update && apt-get -y upgrade
+RUN apt-get -y update && apt-get -y install curl
 RUN rm -rf /var/lib/api/lists/*
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku
