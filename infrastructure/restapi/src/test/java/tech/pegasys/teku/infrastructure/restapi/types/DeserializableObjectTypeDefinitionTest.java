@@ -19,8 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequiredFieldException;
-import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 class DeserializableObjectTypeDefinitionTest {
 

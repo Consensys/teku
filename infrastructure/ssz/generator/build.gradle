@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:ssz')
 }
 

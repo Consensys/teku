@@ -14,16 +14,20 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszUnion;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszUnionImpl;
@@ -80,6 +84,50 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
     this.childrenSchemas = childrenSchemas;
     defaultTree =
         createUnionNode(childrenSchemas.get(DEFAULT_SELECTOR).getDefaultTree(), DEFAULT_SELECTOR);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public DeserializableTypeDefinition<SszUnionT> getJsonTypeDefinition() {
+    final DeserializableObjectTypeDefinitionBuilder<SszUnionT, UnionBuilder<SszUnionT>> builder =
+        DeserializableTypeDefinition.object();
+    builder.initializer(() -> new UnionBuilder<>(this)).finisher(UnionBuilder::build);
+    for (int i = 0; i < childrenSchemas.size(); i++) {
+      final int selector = i;
+      builder.withOptionalField(
+          Integer.toString(i),
+          (DeserializableTypeDefinition<Object>) childrenSchemas.get(i).getJsonTypeDefinition(),
+          value ->
+              Optional.<Object>ofNullable(value.getValue())
+                  .filter(v -> value.getSelector() == selector),
+          (unionBuilder, maybeValue) -> unionBuilder.set(selector, maybeValue));
+    }
+    return builder.build();
+  }
+
+  private static class UnionBuilder<SszUnionT extends SszUnion> {
+    private final SszUnionSchema<SszUnionT> schema;
+
+    private Integer selector;
+    private SszData value;
+
+    private UnionBuilder(final SszUnionSchema<SszUnionT> schema) {
+      this.schema = schema;
+    }
+
+    public void set(final int selector, final Optional<?> maybeValue) {
+      maybeValue.ifPresent(
+          value -> {
+            checkNotNull(value, "Cannot set two values for SszUnion");
+            checkArgument(value instanceof SszData, "Got invalid value for SszUnion");
+            this.selector = selector;
+            this.value = (SszData) value;
+          });
+    }
+
+    public SszUnionT build() {
+      return schema.createFromValue(selector, value);
+    }
   }
 
   @Override

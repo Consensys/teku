@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
@@ -40,9 +40,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
-import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class RestApiBuilder {

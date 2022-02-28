@@ -25,7 +25,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
+import tech.pegasys.teku.infrastructure.json.OpenApiTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;

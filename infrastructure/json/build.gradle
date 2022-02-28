@@ -1,0 +1,13 @@
+dependencies {
+  implementation project(':infrastructure:bytes')
+  implementation project(':infrastructure:exceptions')
+  implementation project(':infrastructure:http')
+  implementation project(':infrastructure:logging')
+
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'org.apache.tuweni:tuweni-units'
+
+  testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
+  testFixturesImplementation 'commons-io:commons-io'
+  testFixturesImplementation 'com.google.guava:guava'
+}

@@ -1,4 +1,5 @@
 dependencies {
+    api project(':infrastructure:bytes')
     api 'it.unimi.dsi:fastutil'
     api 'org.apache.tuweni:tuweni-bytes'
 

@@ -15,9 +15,9 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.parse;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import java.io.File;
 import java.io.IOException;

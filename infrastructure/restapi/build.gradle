@@ -8,8 +8,10 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:http')
+  implementation project(':infrastructure:json')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:serviceutils')
+  implementation project(':infrastructure:ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
@@ -17,7 +19,9 @@ dependencies {
   implementation 'it.unimi.dsi:fastutil'
 
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:json'))
 
+  testFixturesImplementation testFixtures(project(':infrastructure:json'))
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
   testFixturesImplementation 'commons-io:commons-io'
   testFixturesImplementation 'com.google.guava:guava'

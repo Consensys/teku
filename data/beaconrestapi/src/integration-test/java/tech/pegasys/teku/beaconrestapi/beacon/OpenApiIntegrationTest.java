@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
+import tech.pegasys.teku.infrastructure.json.OpenApiTestUtil;
 
 public class OpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private JsonNode currentJsonNodes;

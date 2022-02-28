@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
@@ -55,6 +56,14 @@ public class SszCompositeListTest {
         @Override
         public boolean isPrimitive() {
           return false;
+        }
+
+        @Override
+        public DeserializableTypeDefinition<TestView> getJsonTypeDefinition() {
+          return DeserializableTypeDefinition.string(TestView.class)
+              .parser(value -> null)
+              .formatter(value -> "")
+              .build();
         }
 
         @Override

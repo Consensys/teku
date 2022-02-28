@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
@@ -52,6 +53,11 @@ public class UInt16PrimitiveSchema extends AbstractSszPrimitiveSchema<Integer, S
   @Override
   public TreeNode getDefaultTree() {
     return LeafNode.ZERO_LEAVES[16];
+  }
+
+  @Override
+  public DeserializableTypeDefinition<SszUInt16> getJsonTypeDefinition() {
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
