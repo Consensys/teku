@@ -28,7 +28,12 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
-import tech.pegasys.teku.validator.client.restapi.apis.*;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 
 public class ValidatorRestApi {
   public static RestApi create(
