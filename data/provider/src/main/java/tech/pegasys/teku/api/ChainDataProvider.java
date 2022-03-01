@@ -151,12 +151,13 @@ public class ChainDataProvider {
                             spec.atSlot(block.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(blockData -> blockData.map(block -> new Root(block.getRoot()))));
   }
 
   public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {

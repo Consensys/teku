@@ -15,6 +15,7 @@ package tech.pegasys.teku.api;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.function.Function;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class ObjectAndMetaData<T> {
@@ -22,12 +23,22 @@ public class ObjectAndMetaData<T> {
   protected final T data;
   private final SpecMilestone milestone;
   private final boolean executionOptimistic;
+  private final boolean bellatrixEnabled;
 
   public ObjectAndMetaData(
-      final T data, final SpecMilestone milestone, final boolean executionOptimistic) {
+      final T data,
+      final SpecMilestone milestone,
+      final boolean executionOptimistic,
+      final boolean bellatrixEnabled) {
     this.data = data;
     this.milestone = milestone;
     this.executionOptimistic = executionOptimistic;
+    this.bellatrixEnabled = bellatrixEnabled;
+  }
+
+  public <X> ObjectAndMetaData<X> map(final Function<T, X> mapper) {
+    return new ObjectAndMetaData<>(
+        mapper.apply(data), milestone, executionOptimistic, bellatrixEnabled);
   }
 
   public T getData() {
@@ -40,6 +51,15 @@ public class ObjectAndMetaData<T> {
 
   public boolean isExecutionOptimistic() {
     return executionOptimistic;
+  }
+
+  /**
+   * Returns the execution optimistic status suitable for use in the rest api.
+   *
+   * @return {@code null} if bellatrix is not enabled, otherwise the exeuction optimistic status
+   */
+  public Boolean isExecutionOptimisticForApi() {
+    return bellatrixEnabled ? executionOptimistic : null;
   }
 
   @Override

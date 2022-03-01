@@ -102,6 +102,7 @@ public class BlockSelectorFactoryTest {
   }
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {
-    return new BlockAndMetaData(block, milestone, false);
+    return new BlockAndMetaData(
+        block, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
   }
 }
