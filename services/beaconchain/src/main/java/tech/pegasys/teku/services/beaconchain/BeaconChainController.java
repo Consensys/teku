@@ -766,7 +766,8 @@ public class BeaconChainController extends Service
             .proposerSlashingPool(proposerSlashingPool)
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
-            .payloadAttributesCalculator(forkChoiceNotifier.getPayloadAttributesCalculator())
+            .payloadAttributesCalculator(
+                Optional.of(forkChoiceNotifier.getPayloadAttributesCalculator()))
             .build();
 
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {

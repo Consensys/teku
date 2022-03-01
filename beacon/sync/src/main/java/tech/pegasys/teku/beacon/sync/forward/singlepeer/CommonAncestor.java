@@ -38,8 +38,7 @@ public class CommonAncestor {
 
   public SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
-    final UInt64 ourHeadSlot =
-        storageClient.getOptimisticHeadSlot().orElse(storageClient.getHeadSlot());
+    final UInt64 ourHeadSlot = storageClient.getHeadSlot();
     final UInt64 lowestHeadSlot = ourHeadSlot.min(peerHeadSlot);
     if (lowestHeadSlot.isLessThan(firstNonFinalSlot.plus(OPTIMISTIC_HISTORY_LENGTH))) {
       return SafeFuture.completedFuture(firstNonFinalSlot);

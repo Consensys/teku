@@ -320,10 +320,10 @@ public class ForkChoice {
     final BlockImportResult result;
     if (payloadResult.hasValidStatus()) {
       result = BlockImportResult.successful(block);
-      updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
+    updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
     return result;
   }
@@ -440,7 +440,6 @@ public class ForkChoice {
                             forkChoiceUpdatedResult.getPayloadStatus(),
                             latestFinalizedBlockSlot)))
         .reportExceptions();
-    recentChainData.onForkChoiceUpdated(forkChoiceState);
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
         .orElse(true)) {
@@ -564,15 +563,9 @@ public class ForkChoice {
     return optimisticSyncing;
   }
 
-  public long subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
-    final long subscriptionId = optimisticSyncSubscribers.subscribe(subscriber);
-    getOptimisticSyncing()
-        .ifPresent(isOptimistic -> subscriber.onOptimisticHeadChanged(isOptimistic));
-    return subscriptionId;
-  }
-
-  public void unsubscribeFromOptimisticHeadChanges(long subscriberId) {
-    optimisticSyncSubscribers.unsubscribe(subscriberId);
+  public void subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
+    optimisticSyncSubscribers.subscribe(subscriber);
+    getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
   }
 
   public interface OptimisticHeadSubscriber {

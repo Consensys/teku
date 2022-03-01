@@ -35,7 +35,7 @@ class PostPrepareBeaconProposerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   private final PostPrepareBeaconProposer handler =
-      new PostPrepareBeaconProposer(provider, jsonProvider);
+      new PostPrepareBeaconProposer(provider, true, jsonProvider);
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {

@@ -38,8 +38,6 @@ public interface ValidatorSource {
 
     Signer createSigner();
 
-    Signer createSigner(URL url);
-
     boolean isReadOnly();
   }
 }
