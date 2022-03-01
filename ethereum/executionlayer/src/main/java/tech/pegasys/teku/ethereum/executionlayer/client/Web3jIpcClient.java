@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
-import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Optional;

@@ -45,6 +45,8 @@ public class Web3JClientTest {
   private static final WebSocketService webSocketService = mock(WebSocketService.class);
   private static final Web3jWebsocketClient web3jWebsocketClient =
       new Web3jWebsocketClient(endpoint, timeProvider, Optional.empty());
+  private static final Web3jIpcClient web3jIpcClient =
+      new Web3jIpcClient(URI.create("file:/a"), timeProvider, Optional.empty());
 
   static class Web3JClientImpl extends Web3JClient {
     protected Web3JClientImpl(TimeProvider timeProvider) {
@@ -75,7 +77,8 @@ public class Web3JClientTest {
 
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
-    return Stream.of(web3JClient, web3jHttpClient, web3jWebsocketClient).map(Arguments::of);
+    return Stream.of(web3JClient, web3jHttpClient, web3jWebsocketClient, web3jIpcClient)
+        .map(Arguments::of);
   }
 
   @ParameterizedTest
