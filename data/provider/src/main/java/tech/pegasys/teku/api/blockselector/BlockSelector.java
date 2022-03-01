@@ -16,12 +16,11 @@ package tech.pegasys.teku.api.blockselector;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public interface BlockSelector {
-  SafeFuture<List<SignedBeaconBlock>> getBlock();
+  SafeFuture<List<BlockAndMetaData>> getBlock();
 
-  default SafeFuture<Optional<SignedBeaconBlock>> getSingleBlock() {
+  default SafeFuture<Optional<BlockAndMetaData>> getSingleBlock() {
     return getBlock().thenApply(blockList -> blockList.stream().findFirst());
   }
 }

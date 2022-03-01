@@ -36,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.api.blockselector.BlockAndMetaData;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.SszResponse;
@@ -88,7 +89,7 @@ public class ChainDataProvider {
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
-    this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
+    this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
     this.defaultStateSelectorFactory = new StateSelectorFactory(combinedChainDataClient);
   }
 
@@ -115,6 +116,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
+        .thenApply(this::discardBlockMetaData)
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
@@ -122,6 +124,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
+        .thenApply(this::discardBlockMetaData)
         .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
   }
 
@@ -129,6 +132,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
+        .thenApply(this::discardBlockMetaData)
         .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
   }
 
@@ -136,6 +140,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
+        .thenApply(this::discardBlockMetaData)
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(
@@ -146,17 +151,20 @@ public class ChainDataProvider {
                             spec.atSlot(block.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(blockData -> blockData.map(block -> new Root(block.getRoot()))));
   }
 
   public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
+        .thenApply(this::discardBlockMetaData)
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(
@@ -218,6 +226,7 @@ public class ChainDataProvider {
               blockList -> {
                 final Set<SignedBeaconBlockWithRoot> blocks =
                     blockList.stream()
+                        .map(this::discardBlockMetaData)
                         .map(SignedBeaconBlockWithRoot::new)
                         .collect(Collectors.toSet());
 
@@ -344,7 +353,10 @@ public class ChainDataProvider {
         .getBlock()
         .thenApply(
             blockList ->
-                blockList.stream().map(block -> new BlockHeader(block, true)).collect(toList()));
+                blockList.stream()
+                    .map(this::discardBlockMetaData)
+                    .map(block -> new BlockHeader(block, true))
+                    .collect(toList()));
   }
 
   public SafeFuture<Optional<List<ValidatorResponse>>> getStateValidators(
@@ -536,5 +548,23 @@ public class ChainDataProvider {
 
   public Version getVersionAtSlot(final UInt64 slot) {
     return Version.fromMilestone(spec.atSlot(slot).getMilestone());
+  }
+
+  /**
+   * @deprecated We need to move to using the return metadata instead of recreating it in handlers
+   */
+  @Deprecated
+  private Optional<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock>
+      discardBlockMetaData(final Optional<BlockAndMetaData> maybeBlockAndData) {
+    return maybeBlockAndData.map(BlockAndMetaData::getData);
+  }
+
+  /**
+   * @deprecated We need to move to using the return metadata instead of recreating it in handlers
+   */
+  @Deprecated
+  private tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock discardBlockMetaData(
+      final BlockAndMetaData blockAndMetaData) {
+    return blockAndMetaData.getData();
   }
 }

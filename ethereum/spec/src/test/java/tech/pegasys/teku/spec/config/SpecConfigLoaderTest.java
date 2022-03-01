@@ -137,7 +137,7 @@ public class SpecConfigLoaderTest {
 
   @Test
   public void shouldBeAbleToOverridePresetValues() {
-    final URL configUrl = getClass().getResource("standard/with-overrides.yaml");
+    final URL configUrl = SpecConfigLoaderTest.class.getResource("standard/with-overrides.yaml");
     final SpecConfig config = SpecConfigLoader.loadConfig(configUrl.toString(), false, __ -> {});
     assertThat(config).isNotNull();
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.

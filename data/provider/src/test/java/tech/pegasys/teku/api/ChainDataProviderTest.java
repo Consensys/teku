@@ -49,8 +49,8 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -440,9 +440,9 @@ public class ChainDataProviderTest {
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final Optional<Root> response = provider.getBlockRoot("head").get();
+    final Optional<ObjectAndMetaData<Root>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get()).isEqualTo(new Root(bestBlock.getRoot()));
+    assertThat(response.get().getData()).isEqualTo(new Root(bestBlock.getRoot()));
   }
 
   @Test

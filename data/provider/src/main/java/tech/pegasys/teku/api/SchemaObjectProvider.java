@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 /**
  * Takes objects from Internal layers and converts to an appropriate schema object.
@@ -50,8 +51,13 @@ public class SchemaObjectProvider {
 
   public BeaconBlock getBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block) {
-    final UInt64 slot = block.getSlot();
-    switch (spec.atSlot(slot).getMilestone()) {
+    return getBeaconBlock(block, spec.atSlot(block.getSlot()).getMilestone());
+  }
+
+  public BeaconBlock getBeaconBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block,
+      final SpecMilestone milestone) {
+    switch (milestone) {
       case PHASE0:
         return new BeaconBlockPhase0(
             block.getSlot(),
@@ -74,7 +80,7 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyBellatrix(block.getBody()));
       default:
-        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
+        throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
   }
 

@@ -27,6 +27,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -35,36 +38,38 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlockSelectorFactoryTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
-  private final DataStructureUtil data = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil data = new DataStructureUtil(spec);
+  private final SpecMilestone milestone = spec.getGenesisSpec().getMilestone();
   final SignedBeaconBlock block = data.randomSignedBeaconBlock(100);
 
-  private final BlockSelectorFactory blockSelectorFactory = new BlockSelectorFactory(client);
+  private final BlockSelectorFactory blockSelectorFactory = new BlockSelectorFactory(spec, client);
 
   @Test
   public void headSelector_shouldGetBestBlock() throws ExecutionException, InterruptedException {
     final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
     when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
-    List<SignedBeaconBlock> blockList = blockSelectorFactory.headSelector().getBlock().get();
+    List<BlockAndMetaData> blockList = blockSelectorFactory.headSelector().getBlock().get();
     verify(client).getChainHead();
-    assertThat(blockList).containsExactly(blockAndState.getBlock());
+    assertThat(blockList).containsExactly(withMetaData(blockAndState.getBlock()));
   }
 
   @Test
   public void finalizedSelector_shouldGetFinalizedBlock()
       throws ExecutionException, InterruptedException {
     when(client.getFinalizedBlock()).thenReturn(Optional.of(block));
-    List<SignedBeaconBlock> blockList = blockSelectorFactory.finalizedSelector().getBlock().get();
+    List<BlockAndMetaData> blockList = blockSelectorFactory.finalizedSelector().getBlock().get();
     verify(client).getFinalizedBlock();
-    assertThat(blockList).containsExactly(block);
+    assertThat(blockList).containsExactly(withMetaData(block));
   }
 
   @Test
   public void genesisSelector_shouldGetSlotZero() throws ExecutionException, InterruptedException {
     when(client.getBlockAtSlotExact(UInt64.ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    List<SignedBeaconBlock> blockList = blockSelectorFactory.genesisSelector().getBlock().get();
+    List<BlockAndMetaData> blockList = blockSelectorFactory.genesisSelector().getBlock().get();
     verify(client).getBlockAtSlotExact(UInt64.ZERO);
-    assertThat(blockList).containsExactly(block);
+    assertThat(blockList).containsExactly(withMetaData(block));
   }
 
   @Test
@@ -72,25 +77,32 @@ public class BlockSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    List<SignedBeaconBlock> blockList =
+    List<BlockAndMetaData> blockList =
         blockSelectorFactory.forBlockRoot(block.getRoot()).getBlock().get();
     verify(client).getBlockByBlockRoot(block.getRoot());
-    assertThat(blockList).containsExactly(block);
+    assertThat(blockList).containsExactly(withMetaData(block));
   }
 
   @Test
   public void slotSelector_shouldGetBlockAtSlotExact()
       throws ExecutionException, InterruptedException {
-    when(client.getBlockAtSlotExact(block.getSlot()))
+    final SignedBlockAndState head = data.randomSignedBlockAndState(100);
+    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(head)));
+    when(client.getBlockAtSlotExact(block.getSlot(), head.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    List<SignedBeaconBlock> blockList =
+    List<BlockAndMetaData> blockList =
         blockSelectorFactory.forSlot(block.getSlot()).getBlock().get();
-    verify(client).getBlockAtSlotExact(block.getSlot());
-    assertThat(blockList).containsExactly(block);
+    verify(client).getBlockAtSlotExact(block.getSlot(), head.getRoot());
+    assertThat(blockList).containsExactly(withMetaData(block));
   }
 
   @Test
   public void defaultBlockSelector_shouldThrowBadRequestException() {
     assertThrows(BadRequestException.class, () -> blockSelectorFactory.defaultBlockSelector("a"));
+  }
+
+  private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {
+    return new BlockAndMetaData(
+        block, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
   }
 }
