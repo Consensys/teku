@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ProposerInfo {
