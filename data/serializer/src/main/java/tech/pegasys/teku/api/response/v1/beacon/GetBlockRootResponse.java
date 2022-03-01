@@ -17,12 +17,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.Root;
 
 public class GetBlockRootResponse {
 
   @JsonProperty("execution_optimistic")
   @JsonInclude(Include.NON_NULL)
+  @Schema(hidden = true)
   public final Boolean execution_optimistic;
 
   @JsonProperty("data")
