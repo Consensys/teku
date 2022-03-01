@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import java.time.Duration;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;

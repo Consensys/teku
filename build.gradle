@@ -64,13 +64,14 @@ def userHome = System.getProperty("user.home")
 def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
 def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
 
-var baseInfrastructureProjects = [
-    ':infrastructure:unsigned',
-    ':infrastructure:exceptions',
-    ':infrastructure:collections',
-    ':infrastructure:subscribers'
-]
 
+var baseInfrastructureProjects = [
+    ':infrastructure:bytes',
+    ':infrastructure:collections',
+    ':infrastructure:exceptions',
+    ':infrastructure:subscribers',
+    ':infrastructure:unsigned',
+]
 dependencyRules {
   rules {
     baseInfrastructureProjects.each { register(it) { allowed = [] }}

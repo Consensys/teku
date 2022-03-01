@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.ssz.primitive;
 
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 
 public class SszBytes4 extends AbstractSszPrimitive<Bytes4, SszBytes4> {
 
