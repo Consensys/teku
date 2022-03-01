@@ -113,7 +113,8 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
+      final String slotParameter) {
     return fromBlock(slotParameter, block -> new BlockHeader(block, true));
   }
 
