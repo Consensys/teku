@@ -86,7 +86,6 @@ public class BlockSelectorFactory {
   }
 
   public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {
-    // TODO: Probably incorrect - need to handle case of the block being finalized
     return () ->
         client.GetAllBlocksAtSlot(slot)
             .thenApply(

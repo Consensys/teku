@@ -118,8 +118,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public boolean isOptimistic(final Bytes32 blockRoot) {
-    return false;
+  public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
+    return Optional.of(false);
   }
 
   @Override
