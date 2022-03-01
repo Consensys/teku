@@ -22,12 +22,12 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -208,7 +208,7 @@ public class ExternalValidatorSourceTest {
 
     Path tempFile =
         createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
-    Files.write(CONTENT.getBytes(StandardCharsets.UTF_8), tempFile.toFile());
+    Files.writeString(tempFile, CONTENT, StandardCharsets.UTF_8);
   }
 
   private AddValidatorResult getResultFromAddingValidator(
@@ -234,7 +234,7 @@ public class ExternalValidatorSourceTest {
         ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
             .resolve(fileName);
     assertThat(path.toFile()).exists();
-    assertThat(Files.toString(path.toFile(), Charsets.UTF_8)).isEqualTo(expectedContent);
+    assertThat(Files.readString(path, Charsets.UTF_8)).isEqualTo(expectedContent);
   }
 
   private void assertImportedSuccessfully(AddValidatorResult result, URL expectedUrl) {
