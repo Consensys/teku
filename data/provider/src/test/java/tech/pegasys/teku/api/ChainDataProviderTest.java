@@ -440,9 +440,9 @@ public class ChainDataProviderTest {
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final Optional<Root> response = provider.getBlockRoot("head").get();
+    final Optional<ObjectAndMetaData<Root>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get()).isEqualTo(new Root(bestBlock.getRoot()));
+    assertThat(response.get().getData()).isEqualTo(new Root(bestBlock.getRoot()));
   }
 
   @Test
