@@ -36,12 +36,12 @@ public class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
     }
     byte[] data = new byte[node.size()];
     for (int i = 0; i < node.size(); i++) {
-      final Integer current = node.get(i).asInt(-1);
+      final int current = node.get(i).asInt(-1);
       checkArgument(
           current >= 0 && current <= 255,
           "Expected %s to be a byte value between 0 and 255 inclusive",
           node.get(i));
-      data[i] = current.byteValue();
+      data[i] = (byte) current;
     }
     return data;
   }

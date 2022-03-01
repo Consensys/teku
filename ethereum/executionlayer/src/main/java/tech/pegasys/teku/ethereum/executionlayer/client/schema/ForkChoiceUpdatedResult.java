@@ -21,7 +21,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes8Deserializer;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 
 public class ForkChoiceUpdatedResult {
   private final PayloadStatusV1 payloadStatus;

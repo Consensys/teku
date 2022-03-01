@@ -15,13 +15,13 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.2.0'
-  id 'com.github.ben-manes.versions' version '0.41.0'
+  id 'com.diffplug.spotless' version '6.3.0'
+  id 'com.github.ben-manes.versions' version '0.42.0'
   id 'com.github.jk1.dependency-license-report' version '2.1'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'net.ltgt.errorprone' version '2.0.2' apply false
   id 'de.undercouch.download' version '5.0.1'
-  id 'org.ajoberstar.grgit' version '4.1.1'
+  id 'org.ajoberstar.grgit' version '5.0.0'
 }
 
 rootProject.version = calculatePublishVersion()
@@ -64,13 +64,14 @@ def userHome = System.getProperty("user.home")
 def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
 def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
 
-var baseInfrastructureProjects = [
-    ':infrastructure:unsigned',
-    ':infrastructure:exceptions',
-    ':infrastructure:collections',
-    ':infrastructure:subscribers'
-]
 
+var baseInfrastructureProjects = [
+    ':infrastructure:bytes',
+    ':infrastructure:collections',
+    ':infrastructure:exceptions',
+    ':infrastructure:subscribers',
+    ':infrastructure:unsigned',
+]
 dependencyRules {
   rules {
     baseInfrastructureProjects.each { register(it) { allowed = [] }}
