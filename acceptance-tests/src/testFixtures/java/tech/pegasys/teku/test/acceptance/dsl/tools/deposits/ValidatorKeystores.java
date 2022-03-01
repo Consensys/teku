@@ -15,7 +15,6 @@ package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +27,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -168,7 +166,7 @@ public class ValidatorKeystores {
         tarEntry.setSize(currentFile.length());
 
         tarArchiveOutputStream.putArchiveEntry(tarEntry);
-        tarArchiveOutputStream.write(IOUtils.toByteArray(new FileInputStream(currentFile)));
+        tarArchiveOutputStream.write(Files.readAllBytes(currentFile.toPath()));
         tarArchiveOutputStream.closeArchiveEntry();
       }
     }

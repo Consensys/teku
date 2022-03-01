@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.eth1;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 
 public class Eth1Address extends Bytes20 {
   public static final Eth1Address ZERO = new Eth1Address(Bytes.wrap(new byte[SIZE]));
