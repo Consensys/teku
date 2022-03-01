@@ -24,10 +24,10 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
   // Constants
-  private final Bytes blsWithdrawalPrefix = Bytes.fromHexString("0x00");
-  private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
-  private final int depositContractTreeDepth = 32;
-  private final int justificationBitsLength = 4;
+  private static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+  private static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
+  private static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
+  private static final int JUSTIFICATION_BITS_LENGTH = 4;
 
   // Misc
   private final UInt64 eth1FollowDistance;
@@ -210,17 +210,17 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   @Override
   public UInt64 getBaseRewardsPerEpoch() {
-    return baseRewardsPerEpoch;
+    return BASE_REWARDS_PER_EPOCH;
   }
 
   @Override
   public int getDepositContractTreeDepth() {
-    return depositContractTreeDepth;
+    return DEPOSIT_CONTRACT_TREE_DEPTH;
   }
 
   @Override
   public int getJustificationBitsLength() {
-    return justificationBitsLength;
+    return JUSTIFICATION_BITS_LENGTH;
   }
 
   @Override
@@ -315,7 +315,7 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   @Override
   public Bytes getBlsWithdrawalPrefix() {
-    return blsWithdrawalPrefix;
+    return BLS_WITHDRAWAL_PREFIX;
   }
 
   @Override
@@ -483,9 +483,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final SpecConfigPhase0 that = (SpecConfigPhase0) o;
-    return depositContractTreeDepth == that.depositContractTreeDepth
-        && justificationBitsLength == that.justificationBitsLength
-        && maxCommitteesPerSlot == that.maxCommitteesPerSlot
+    return maxCommitteesPerSlot == that.maxCommitteesPerSlot
         && targetCommitteeSize == that.targetCommitteeSize
         && maxValidatorsPerCommittee == that.maxValidatorsPerCommittee
         && minPerEpochChurnLimit == that.minPerEpochChurnLimit
@@ -517,7 +515,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
-        && Objects.equals(baseRewardsPerEpoch, that.baseRewardsPerEpoch)
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -528,7 +525,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(ejectionBalance, that.ejectionBalance)
         && Objects.equals(effectiveBalanceIncrement, that.effectiveBalanceIncrement)
         && Objects.equals(genesisForkVersion, that.genesisForkVersion)
-        && Objects.equals(blsWithdrawalPrefix, that.blsWithdrawalPrefix)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -541,9 +537,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int hashCode() {
     return Objects.hash(
-        baseRewardsPerEpoch,
-        depositContractTreeDepth,
-        justificationBitsLength,
         eth1FollowDistance,
         maxCommitteesPerSlot,
         targetCommitteeSize,
@@ -562,7 +555,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         ejectionBalance,
         effectiveBalanceIncrement,
         genesisForkVersion,
-        blsWithdrawalPrefix,
         genesisDelay,
         secondsPerSlot,
         minAttestationInclusionDelay,

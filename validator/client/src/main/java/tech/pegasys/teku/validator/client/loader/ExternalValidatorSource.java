@@ -27,9 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
@@ -56,7 +54,6 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   private final PublicKeyLoader publicKeyLoader;
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
-  private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
   private ExternalValidatorSource(
       final Spec spec,
@@ -210,7 +207,6 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
               metricsSystem,
               readOnly);
 
-      externalValidatorSourceMap.put(publicKey, url);
       return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
 
     } catch (InvalidConfigurationException | IOException ex) {
