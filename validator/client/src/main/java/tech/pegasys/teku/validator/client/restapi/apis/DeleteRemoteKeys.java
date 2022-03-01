@@ -16,12 +16,12 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 
 public class DeleteRemoteKeys extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/remotekeys";
@@ -46,6 +46,7 @@ public class DeleteRemoteKeys extends RestApiEndpoint {
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException();
+    DeleteKeysRequest deleteRequest = request.getRequestBody();
+    request.respondOk(keyManager.deleteExternalValidators(deleteRequest.getPublicKeys()));
   }
 }

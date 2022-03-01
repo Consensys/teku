@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
 public class ExternalValidatorSourceTest {
@@ -110,9 +111,11 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenDeleteValidator() {
-    assertThatThrownBy(() -> validatorSource.deleteValidator(BLSPublicKey.empty()))
-        .isInstanceOf(UnsupportedOperationException.class);
+  void shouldReturnErrorWhenDeleteReadOnlyValidator() {
+    assertThat(validatorSource.deleteValidator(BLSPublicKey.empty()))
+        .isEqualTo(
+            DeleteKeyResult.error(
+                "Cannot delete validator from read-only local validator source."));
   }
 
   @Test

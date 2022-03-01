@@ -33,6 +33,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
@@ -130,6 +131,29 @@ public class ActiveKeyManager implements KeyManager {
     return new DeleteKeysResponse(deletionResults, exportedData);
   }
 
+  @Override
+  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
+    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
+    for (final BLSPublicKey publicKey : validators) {
+      Optional<Validator> maybeValidator =
+          validatorLoader.getOwnedValidators().getValidator(publicKey);
+
+      // read-only check in a non-destructive manner
+      if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
+        deletionResults.add(DeleteKeyResult.error("Cannot remove read-only validator"));
+        continue;
+      }
+      // delete validator from owned validators list
+      maybeValidator = validatorLoader.getOwnedValidators().removeValidator(publicKey);
+      if (maybeValidator.isPresent()) {
+        deletionResults.add(deleteExternalValidator(maybeValidator.get()));
+      } else {
+        deletionResults.add(DeleteKeyResult.notFound());
+      }
+    }
+    return new DeleteRemoteKeysResponse(deletionResults);
+  }
+
   @VisibleForTesting
   DeleteKeyResult attemptToGetSlashingDataForInactiveValidator(
       final BLSPublicKey publicKey, final SlashingProtectionIncrementalExporter exporter) {
@@ -157,6 +181,13 @@ public class ActiveKeyManager implements KeyManager {
       }
     }
     return deleteKeyResult;
+  }
+
+  DeleteKeyResult deleteExternalValidator(final Validator activeValidator) {
+    final Signer signer = activeValidator.getSigner();
+    signer.delete();
+    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
+    return validatorLoader.deleteExternalMutableValidator(activeValidator.getPublicKey());
   }
 
   /**

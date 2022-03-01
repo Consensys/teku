@@ -161,8 +161,31 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
   @Override
   public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
-    throw new UnsupportedOperationException(
-        "Cannot delete validator from external validator source.");
+    if (!canUpdateValidators()) {
+      return DeleteKeyResult.error(
+          "Cannot delete validator from read-only local validator source.");
+    }
+
+    final URL source = externalValidatorSourceMap.remove(publicKey);
+    if (source == null) {
+      return DeleteKeyResult.error(
+          "Could not find " + publicKey.toBytesCompressed().toShortHexString() + " to delete");
+    }
+    return delete(publicKey);
+  }
+
+  private DeleteKeyResult delete(BLSPublicKey publicKey) {
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
+    final Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout).resolve(fileName + ".json");
+    try {
+      ensureDirectoryExists(ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout));
+      Files.delete(path);
+      return DeleteKeyResult.success();
+    } catch (IOException e) {
+      return DeleteKeyResult.error(e.getMessage());
+    }
   }
 
   @Override
