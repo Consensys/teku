@@ -3,6 +3,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:exceptions')
