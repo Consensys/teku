@@ -298,10 +298,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public boolean isOptimistic(final Bytes32 blockRoot) {
+  public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(blockRoot).map(ProtoNode::isOptimistic).orElse(false);
+      return getProtoNode(blockRoot).map(ProtoNode::isOptimistic);
     } finally {
       protoArrayLock.readLock().unlock();
     }
