@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
-import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition.enumOf;
-import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.enumOf;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,9 +25,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
