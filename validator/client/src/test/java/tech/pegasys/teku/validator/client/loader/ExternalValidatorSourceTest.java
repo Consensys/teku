@@ -158,7 +158,7 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void addValidator_shouldGetConfigUrlWhenNotProvided(@TempDir Path tempDir) throws IOException {
-    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
     final AddValidatorResult result =
@@ -170,8 +170,8 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void addValidator_shouldGetUrlIfProvided(@TempDir Path tempDir) throws IOException {
-    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    URL url = new URL("http://host.com");
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final URL url = new URL("http://host.com");
 
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -185,7 +185,7 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void addValidator_shouldDetectDuplicate(@TempDir Path tempDir) throws IOException {
-    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
 
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -241,15 +241,15 @@ public class ExternalValidatorSourceTest {
     final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
     directory.toFile().mkdirs();
 
-    Path tempFile =
+    final Path tempFile =
         createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
     Files.writeString(tempFile, CONTENT, StandardCharsets.UTF_8);
   }
 
   private void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)
       throws IOException {
-    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
-    Path path =
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
+    final Path path =
         ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
             .resolve(fileName);
     assertThat(path.toFile()).exists();
