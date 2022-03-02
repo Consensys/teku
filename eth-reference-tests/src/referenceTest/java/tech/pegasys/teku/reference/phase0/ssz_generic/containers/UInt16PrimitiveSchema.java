@@ -17,6 +17,7 @@ import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
@@ -57,7 +58,7 @@ public class UInt16PrimitiveSchema extends AbstractSszPrimitiveSchema<Integer, S
 
   @Override
   public DeserializableTypeDefinition<SszUInt16> getJsonTypeDefinition() {
-    throw new UnsupportedOperationException("Not implemented");
+    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "hex encoding");
   }
 
   @Override
