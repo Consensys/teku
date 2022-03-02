@@ -36,7 +36,6 @@ public class Web3SignerNode extends Node {
             "--logging=DEBUG",
             "--http-host-allowlist=*",
             "--http-listen-host=0.0.0.0",
-            "--idle-connection-timeout-seconds=10",
             "eth2",
             "--slashing-protection-enabled=false",
             "--key-manager-api-enabled=true",
