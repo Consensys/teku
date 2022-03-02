@@ -58,7 +58,9 @@ public class ActiveKeyManager implements KeyManager {
    */
   @Override
   public List<Validator> getActiveValidatorKeys() {
-    return validatorLoader.getOwnedValidators().getActiveValidators();
+    return validatorLoader.getOwnedValidators().getActiveValidators().stream()
+        .filter(validator -> validator.getSigner().isLocal())
+        .collect(Collectors.toList());
   }
 
   @Override

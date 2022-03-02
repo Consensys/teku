@@ -175,6 +175,12 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+
+    public TekuValidatorNode.Config withExternalSignerUrl(final String externalSignerUrl) {
+      configMap.put("validators-external-signer-url", externalSignerUrl);
+      return this;
+    }
+
     public TekuValidatorNode.Config withBeaconNode(final TekuNode beaconNode) {
       configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
       return this;

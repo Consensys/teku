@@ -71,6 +71,7 @@ public class SimpleHttpClient {
     final Request.Builder builder =
         new Request.Builder().url(baseUrl.resolve(path).toURL()).post(requestBody);
     headers.forEach(builder::header);
+    LOG.debug("POST {}{}, body {}", baseUrl,path, jsonBody);
 
     final Response response = httpClient.newCall(builder.build()).execute();
     assertThat(response.isSuccessful()).isTrue();
