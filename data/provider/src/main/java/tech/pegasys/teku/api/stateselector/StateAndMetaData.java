@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,9 +13,17 @@
 
 package tech.pegasys.teku.api.stateselector;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.api.ObjectAndMetaData;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface StateSelector {
-  SafeFuture<Optional<StateAndMetaData>> getState();
+public class StateAndMetaData extends ObjectAndMetaData<BeaconState> {
+
+  public StateAndMetaData(
+      final BeaconState data,
+      final SpecMilestone milestone,
+      final boolean executionOptimistic,
+      final boolean bellatrixEnabled) {
+    super(data, milestone, executionOptimistic, bellatrixEnabled);
+  }
 }
