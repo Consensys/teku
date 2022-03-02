@@ -130,13 +130,14 @@ public class ChainDataProvider {
         .getSingleBlock()
         .thenApply(
             maybeBlock ->
-                maybeBlock.map(
-                    blockData ->
-                        new SszResponse(
-                            new ByteArrayInputStream(
-                                blockData.getData().sszSerialize().toArrayUnsafe()),
-                            blockData.getData().hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(blockData.getData().getSlot()).getMilestone())));
+                maybeBlock
+                    .map(BlockAndMetaData::getData)
+                    .map(
+                        blockData ->
+                            new SszResponse(
+                                new ByteArrayInputStream(blockData.sszSerialize().toArrayUnsafe()),
+                                blockData.hashTreeRoot().toUnprefixedHexString(),
+                                spec.atSlot(blockData.getSlot()).getMilestone())));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
