@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -23,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -130,33 +131,29 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(
-                    block ->
+                    blockData ->
                         new SszResponse(
-                            new ByteArrayInputStream(block.sszSerialize().toArrayUnsafe()),
-                            block.hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(block.getSlot()).getMilestone())));
+                            new ByteArrayInputStream(
+                                blockData.getData().sszSerialize().toArrayUnsafe()),
+                            blockData.getData().hashTreeRoot().toUnprefixedHexString(),
+                            spec.atSlot(blockData.getData().getSlot()).getMilestone())));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
     return fromBlock(slotParameter, block -> new Root(block.getRoot()));
   }
 
-  public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
-        .thenApply(
-            maybeBlock ->
-                maybeBlock.map(
-                    block ->
-                        block.getMessage().getBody().getAttestations().stream()
-                            .map(Attestation::new)
-                            .collect(toList())));
+  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
+      final String slotParameter) {
+    return fromBlock(
+        slotParameter,
+        block ->
+            block.getMessage().getBody().getAttestations().stream()
+                .map(Attestation::new)
+                .collect(toList()));
   }
 
   public boolean isStoreAvailable() {
@@ -211,7 +208,7 @@ public class ChainDataProvider {
               blockList -> {
                 final Set<SignedBeaconBlockWithRoot> blocks =
                     blockList.stream()
-                        .map(this::discardBlockMetaData)
+                        .map(ObjectAndMetaData::getData)
                         .map(SignedBeaconBlockWithRoot::new)
                         .collect(Collectors.toSet());
 
@@ -240,7 +237,7 @@ public class ChainDataProvider {
     return recentChainData
         .getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getNodeData)
-        .orElse(Collections.emptyList());
+        .orElse(emptyList());
   }
 
   private Optional<Integer> validatorParameterToIndex(
@@ -324,24 +321,30 @@ public class ChainDataProvider {
         .map(Merkleizable::hashTreeRoot);
   }
 
-  public SafeFuture<List<BlockHeader>> getBlockHeaders(
+  public SafeFuture<GetBlockHeadersResponse> getBlockHeaders(
       final Optional<Bytes32> parentRoot, final Optional<UInt64> slot) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
+    final boolean bellatrixEnabled = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     if (parentRoot.isPresent()) {
-      return SafeFuture.completedFuture(List.of());
+      return SafeFuture.completedFuture(
+          new GetBlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
     }
 
     return defaultBlockSelectorFactory
         .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
         .getBlock()
         .thenApply(
-            blockList ->
-                blockList.stream()
-                    .map(this::discardBlockMetaData)
-                    .map(block -> new BlockHeader(block, true))
-                    .collect(toList()));
+            blockAndMetaDataList -> {
+              final boolean executionOptimistic =
+                  blockAndMetaDataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
+              return new GetBlockHeadersResponse(
+                  bellatrixEnabled ? executionOptimistic : null,
+                  blockAndMetaDataList.stream()
+                      .map(blockData -> new BlockHeader(blockData.getData(), true))
+                      .collect(toList()));
+            });
   }
 
   public SafeFuture<Optional<List<ValidatorResponse>>> getStateValidators(
@@ -543,15 +546,6 @@ public class ChainDataProvider {
   private Optional<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock>
       discardBlockMetaData(final Optional<BlockAndMetaData> maybeBlockAndData) {
     return maybeBlockAndData.map(BlockAndMetaData::getData);
-  }
-
-  /**
-   * @deprecated We need to move to using the return metadata instead of recreating it in handlers
-   */
-  @Deprecated
-  private tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock discardBlockMetaData(
-      final BlockAndMetaData blockAndMetaData) {
-    return blockAndMetaData.getData();
   }
 
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
