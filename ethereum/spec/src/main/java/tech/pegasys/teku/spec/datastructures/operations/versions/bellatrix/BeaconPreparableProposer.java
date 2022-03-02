@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconPreparableProposer {

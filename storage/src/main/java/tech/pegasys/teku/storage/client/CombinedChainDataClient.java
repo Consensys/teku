@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -519,7 +520,23 @@ public class CombinedChainDataClient {
   public boolean isOptimisticBlock(final Bytes32 blockRoot) {
     return recentChainData
         .getForkChoiceStrategy()
-        .map(forkChoice -> forkChoice.isOptimistic(blockRoot))
+        .map(forkChoice -> isOptimistic(blockRoot, forkChoice))
+        // Can't be optimistically imported if we don't have a Store yet.
         .orElse(false);
+  }
+
+  private boolean isOptimistic(
+      final Bytes32 blockRoot, final ReadOnlyForkChoiceStrategy forkChoice) {
+    return forkChoice
+        .isOptimistic(blockRoot)
+        // If the block root is unknown, use the optimistic state of the finalized checkpoint
+        // As the block is either canonical and finalized or may have been rejected because it
+        // didn't descend from the finalized root. In either case, if the finalized checkpoint is
+        // optimistic the status of the block is affected by the optimistic sync
+        .orElseGet(
+            () ->
+                forkChoice
+                    .isOptimistic(recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot())
+                    .orElseThrow());
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.Objects;
+
 public class Eth1Vote implements Comparable<Eth1Vote> {
 
   private int vote = 0;
@@ -38,12 +40,25 @@ public class Eth1Vote implements Comparable<Eth1Vote> {
       return 1;
     } else if (this.vote < eth1Vote.vote) {
       return -1;
-    } else if (this.index < eth1Vote.index) {
-      return 1;
-    } else if (this.index > eth1Vote.index) {
-      return -1;
     } else {
-      return 0;
+      return Integer.compare(eth1Vote.index, this.index);
     }
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final Eth1Vote eth1Vote = (Eth1Vote) o;
+    return vote == eth1Vote.vote && index == eth1Vote.index;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(vote, index);
   }
 }

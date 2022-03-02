@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz.type;
+package tech.pegasys.teku.infrastructure.bytes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -24,7 +24,7 @@ public class Bytes20 {
   public static final int SIZE = 20;
   public static final Bytes20 ZERO = new Bytes20(Bytes.wrap(new byte[SIZE]));
 
-  private Bytes bytes;
+  private final Bytes bytes;
 
   public Bytes20(Bytes bytes) {
     checkArgument(

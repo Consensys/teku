@@ -36,6 +36,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -77,15 +78,16 @@ public class GetBlock extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<SignedBeaconBlock>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> future =
         chainDataProvider.getBlock(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final SignedBeaconBlock response)
+  private Optional<String> handleResult(
+      final Context ctx, final ObjectAndMetaData<SignedBeaconBlock> response)
       throws JsonProcessingException {
     if (!chainDataProvider
-        .getMilestoneAtSlot(response.getMessage().slot)
+        .getMilestoneAtSlot(response.getData().getMessage().slot)
         .equals(SpecMilestone.PHASE0)) {
       ctx.status(SC_BAD_REQUEST);
       return Optional.of(
@@ -93,8 +95,8 @@ public class GetBlock extends AbstractHandler implements Handler {
               jsonProvider,
               String.format(
                   "Slot %s is not a phase0 slot, please fetch via /eth/v2/beacon/blocks",
-                  response.getMessage().slot)));
+                  response.getData().getMessage().slot)));
     }
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponse(response)));
+    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponse(response.getData())));
   }
 }

@@ -49,12 +49,14 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -174,7 +176,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
-    BlockHeader result = provider.getBlockHeader("head").get().orElseThrow();
+    ObjectAndMetaData<BlockHeader> result = provider.getBlockHeader("head").get().orElseThrow();
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
@@ -188,7 +190,16 @@ public class ChainDataProviderTest {
             true,
             new SignedBeaconBlockHeader(beaconBlockHeader, new BLSSignature(block.getSignature())));
 
-    assertThat(result).isEqualTo(expected);
+    assertThat(result).isEqualTo(addMetaData(block, expected));
+  }
+
+  private ObjectAndMetaData<BlockHeader> addMetaData(
+      final SignedBeaconBlock block, final BlockHeader expected) {
+    return new ObjectAndMetaData<>(
+        expected,
+        spec.atSlot(block.getSlot()).getMilestone(),
+        false,
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
   }
 
   @Test
@@ -440,9 +451,9 @@ public class ChainDataProviderTest {
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final Optional<Root> response = provider.getBlockRoot("head").get();
+    final Optional<ObjectAndMetaData<Root>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get()).isEqualTo(new Root(bestBlock.getRoot()));
+    assertThat(response.get().getData()).isEqualTo(new Root(bestBlock.getRoot()));
   }
 
   @Test
