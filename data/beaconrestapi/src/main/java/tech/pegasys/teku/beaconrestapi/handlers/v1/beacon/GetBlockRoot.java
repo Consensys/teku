@@ -35,6 +35,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -73,13 +74,15 @@ public class GetBlockRoot extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<Root>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<Root>>> future =
         chainDataProvider.getBlockRoot(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final Root response)
+  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Root> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockRootResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetBlockRootResponse(response.getData(), response.isExecutionOptimisticForApi())));
   }
 }
