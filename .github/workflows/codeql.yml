@@ -72,7 +72,7 @@ jobs:
       #    uses a compiled language
 
       - run: |
-         ./gradlew --no-daemon --parallel compileJava compileTestJava
+         ./gradlew --no-daemon --parallel compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
