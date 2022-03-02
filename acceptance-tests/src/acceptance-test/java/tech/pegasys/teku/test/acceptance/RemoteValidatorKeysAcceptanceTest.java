@@ -33,8 +33,6 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
-    final ValidatorKeystores extraKeys =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
 
     final TekuNode beaconNode =
         createTekuNode(
