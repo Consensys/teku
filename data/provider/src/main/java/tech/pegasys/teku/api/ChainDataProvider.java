@@ -536,15 +536,6 @@ public class ChainDataProvider {
     return Version.fromMilestone(spec.atSlot(slot).getMilestone());
   }
 
-  /**
-   * @deprecated We need to move to using the return metadata instead of recreating it in handlers
-   */
-  @Deprecated
-  private Optional<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock>
-      discardBlockMetaData(final Optional<BlockAndMetaData> maybeBlockAndData) {
-    return maybeBlockAndData.map(BlockAndMetaData::getData);
-  }
-
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
       final String slotParameter,
       final Function<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock, T> mapper) {
