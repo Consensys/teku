@@ -168,8 +168,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
     final URL source = externalValidatorSourceMap.remove(publicKey);
     if (source == null) {
-      return DeleteKeyResult.error(
-          "Could not find " + publicKey.toBytesCompressed().toShortHexString() + " to delete");
+      return DeleteKeyResult.notFound();
     }
     return delete(publicKey);
   }

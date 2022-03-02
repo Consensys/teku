@@ -137,13 +137,8 @@ public class ExternalValidatorSourceTest {
         newExternalValidatorSource(tempDir, false);
 
     final DeleteKeyResult result = externalValidatorSource.deleteValidator(publicKey);
-    assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);
-    assertThat(result.getMessage())
-        .isEqualTo(
-            Optional.of(
-                "Could not find "
-                    + publicKey.toBytesCompressed().toShortHexString()
-                    + " to delete"));
+    assertThat(result.getStatus()).isEqualTo(DeletionStatus.NOT_FOUND);
+    assertThat(result.getMessage()).isEqualTo(Optional.empty());
 
     final Path path =
         ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
