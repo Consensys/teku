@@ -106,7 +106,7 @@ public class ExternalValidatorSourceTest {
     assertThat(validatorSource.deleteValidator(BLSPublicKey.empty()))
         .isEqualTo(
             DeleteKeyResult.error(
-                "Cannot delete validator from read-only local validator source."));
+                "Cannot delete validator from read-only external validator source."));
   }
 
   @Test

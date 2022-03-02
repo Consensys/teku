@@ -163,7 +163,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
     if (!canUpdateValidators()) {
       return DeleteKeyResult.error(
-          "Cannot delete validator from read-only local validator source.");
+          "Cannot delete validator from read-only external validator source.");
     }
 
     final URL source = externalValidatorSourceMap.remove(publicKey);
