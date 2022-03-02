@@ -113,12 +113,9 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
+      final String slotParameter) {
+    return fromBlock(slotParameter, block -> new BlockHeader(block, true));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
