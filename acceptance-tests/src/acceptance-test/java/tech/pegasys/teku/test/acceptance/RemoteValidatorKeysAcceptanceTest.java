@@ -70,7 +70,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     validatorNodeApi.assertRemoteValidatorListing(Collections.emptyList());
 
     validatorNodeApi.addRemoteValidatorsAndExpect(
-        validatorKeystores.getPublicKeys(), signerApi.getValidatorUri().toString(), "imported");
+        validatorKeystores.getPublicKeys(), web3SignerNode.getValidatorRestApiUrl(), "imported");
 
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorNodeApi.assertLocalValidatorListing(Collections.emptyList());
@@ -79,10 +79,9 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     // second add attempt would be duplicates (local add should see as duplicate too)
     validatorNodeApi.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
     validatorNodeApi.addRemoteValidatorsAndExpect(
-        validatorKeystores.getPublicKeys(), signerApi.getValidatorUri().toString(), "duplicate");
+        validatorKeystores.getPublicKeys(), web3SignerNode.getValidatorRestApiUrl(), "duplicate");
     beaconNode.waitForEpoch(1);
-    // TODO getting connect exceptions, so don't see any blocks created
-    // validatorClient.waitForLogMessageContaining("Published block");
+    validatorClient.waitForLogMessageContaining("Published block");
 
     validatorClient.stop();
     web3SignerNode.stop();

@@ -36,6 +36,7 @@ public class Web3SignerNode extends Node {
             "--logging=DEBUG",
             "--http-host-allowlist=*",
             "--http-listen-host=0.0.0.0",
+            "--idle-connection-timeout-seconds=10",
             "eth2",
             "--slashing-protection-enabled=false",
             "--key-manager-api-enabled=true",
@@ -44,7 +45,7 @@ public class Web3SignerNode extends Node {
 
   public String getValidatorRestApiUrl() {
     final String url = "http://" + nodeAlias + ":" + HTTP_API_PORT;
-    LOG.debug("Node REST url: " + url);
+    LOG.debug("Signer REST url: " + url);
     return url;
   }
 
@@ -58,10 +59,6 @@ public class Web3SignerNode extends Node {
 
   public void start() {
     container.start();
-  }
-
-  public void stop() {
-    container.stop();
   }
 
   private URI getSignerUrl() {
