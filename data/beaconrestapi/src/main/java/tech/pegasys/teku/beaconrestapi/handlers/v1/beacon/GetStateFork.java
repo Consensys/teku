@@ -36,6 +36,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -77,13 +78,15 @@ public class GetStateFork extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    final SafeFuture<Optional<Fork>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<Fork>>> future =
         chainDataProvider.getStateFork(pathParamMap.get(PARAM_STATE_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final Fork response)
+  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Fork> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateForkResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateForkResponse(response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

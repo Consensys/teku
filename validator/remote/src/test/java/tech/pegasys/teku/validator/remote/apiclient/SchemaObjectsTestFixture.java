@@ -18,14 +18,12 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -44,10 +42,6 @@ public class SchemaObjectsTestFixture {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  public GetStateForkResponse getStateForkResponse() {
-    return new GetStateForkResponse(new Fork(dataStructureUtil.randomFork()));
-  }
-
   public GetGenesisResponse getGenesisResponse() {
     return new GetGenesisResponse(
         new GenesisData(
@@ -60,11 +54,7 @@ public class SchemaObjectsTestFixture {
     return new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
   }
 
-  public BLSPubKey BLSPubKey() {
-    return new BLSPubKey(dataStructureUtil.randomPublicKey());
-  }
-
-  public BLSSignature BLSSignature() {
+  public BLSSignature blsSignature() {
     return new BLSSignature(dataStructureUtil.randomSignature());
   }
 

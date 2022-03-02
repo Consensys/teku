@@ -14,9 +14,12 @@
 package tech.pegasys.teku.api.response.v2.debug;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
@@ -24,7 +27,13 @@ import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 public class GetStateResponseV2 {
+
   public final Version version;
+
+  @JsonProperty("execution_optimistic")
+  @JsonInclude(Include.NON_NULL)
+  @Schema(hidden = true)
+  public final Boolean execution_optimistic;
 
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME,
@@ -39,8 +48,11 @@ public class GetStateResponseV2 {
 
   @JsonCreator
   public GetStateResponseV2(
-      @JsonProperty("version") final Version version, @JsonProperty("data") final State data) {
+      @JsonProperty("version") final Version version,
+      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("data") final State data) {
     this.version = version;
+    this.execution_optimistic = executionOptimistic;
     this.data = data;
   }
 }
