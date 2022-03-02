@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -112,28 +113,14 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
+      final String slotParameter) {
+    return fromBlock(slotParameter, block -> new BlockHeader(block, true));
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
-        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
-  }
-
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockV2(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(this::discardBlockMetaData)
-        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
+      final String slotParameter) {
+    return fromBlock(slotParameter, schemaObjectProvider::getSignedBeaconBlock);
   }
 
   public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
@@ -152,12 +139,7 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(
-            maybeBlock ->
-                maybeBlock.map(blockData -> blockData.map(block -> new Root(block.getRoot()))));
+    return fromBlock(slotParameter, block -> new Root(block.getRoot()));
   }
 
   public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
@@ -492,6 +474,7 @@ public class ChainDataProvider {
   //  - if Altair milestone is not supported,
   //  - if a slot is specified and that slot is a phase 0 slot
   // otherwise true will be returned
+
   public boolean stateParameterMaySupportAltair(final String epochParam) {
     if (!spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       return false;
@@ -566,5 +549,14 @@ public class ChainDataProvider {
   private tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock discardBlockMetaData(
       final BlockAndMetaData blockAndMetaData) {
     return blockAndMetaData.getData();
+  }
+
+  private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
+      final String slotParameter,
+      final Function<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock, T> mapper) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlockData -> maybeBlockData.map(blockData -> blockData.map(mapper)));
   }
 }

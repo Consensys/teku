@@ -35,6 +35,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -74,13 +75,16 @@ public class GetBlockHeader extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<BlockHeader>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> future =
         chainDataProvider.getBlockHeader(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final BlockHeader response)
+  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<BlockHeader> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockHeaderResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetBlockHeaderResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }
