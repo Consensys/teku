@@ -175,7 +175,6 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-
     public TekuValidatorNode.Config withExternalSignerUrl(final String externalSignerUrl) {
       configMap.put("validators-external-signer-url", externalSignerUrl);
       return this;

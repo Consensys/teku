@@ -83,7 +83,6 @@ public class AcceptanceTestBase {
     return new Web3SignerNode(network, networkType);
   }
 
-
   protected TekuDepositSender createTekuDepositSender(final String networkName) {
     final Spec spec = SpecFactory.create(networkName);
     return addNode(new TekuDepositSender(network, spec));

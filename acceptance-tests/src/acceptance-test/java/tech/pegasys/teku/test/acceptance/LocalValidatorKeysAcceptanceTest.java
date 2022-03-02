@@ -41,12 +41,12 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-                config ->
-                    config
-                        .withNetwork(networkName)
-                        .withValidatorApiEnabled()
-                        .withInteropModeDisabled()
-                        .withBeaconNode(beaconNode));
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withValidatorApiEnabled()
+                    .withInteropModeDisabled()
+                    .withBeaconNode(beaconNode));
     final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
 
     beaconNode.start();
