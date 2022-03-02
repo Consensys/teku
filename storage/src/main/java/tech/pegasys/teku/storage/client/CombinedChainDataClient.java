@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -170,6 +171,26 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
+      final UInt64 slot, final Bytes32 chainHead) {
+    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot, chainHead);
+    if (recentBlockRoot.isPresent()) {
+      return getStore()
+          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .thenCompose(
+              maybeState ->
+                  maybeState.isPresent()
+                      ? SafeFuture.completedFuture(maybeState)
+                      // Check if we can get it from historical state
+                      : regenerateStateAndSlotExact(slot));
+    }
+    if (isFinalized(slot)) {
+      return regenerateStateAndSlotExact(slot);
+    } else {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+  }
+
   private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {
     return getBlockAndStateInEffectAtSlot(slot)
         .thenApplyChecked(
@@ -272,6 +293,7 @@ public class CombinedChainDataClient {
       LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
       return STATE_NOT_AVAILABLE;
     }
+
     return historicalChainData
         .getSlotAndBlockRootByStateRoot(stateRoot)
         .thenCompose(
@@ -440,16 +462,6 @@ public class CombinedChainDataClient {
     return slot.compareTo(finalizedSlot) >= 0;
   }
 
-  public SafeFuture<Optional<UInt64>> getSlotByStateRoot(final Bytes32 stateRoot) {
-    return getStateByStateRoot(stateRoot)
-        .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
-  }
-
-  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(final Bytes32 blockRoot) {
-    return getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
-  }
-
   public Optional<SignedBeaconBlock> getFinalizedBlock() {
     if (recentChainData.isPreGenesis()) {
       return Optional.empty();
@@ -458,12 +470,8 @@ public class CombinedChainDataClient {
     return getStore().getLatestFinalized().getSignedBeaconBlock();
   }
 
-  public Optional<BeaconState> getFinalizedState() {
-    if (recentChainData.isPreGenesis()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(getStore().getLatestFinalized().getState());
+  public Optional<AnchorPoint> getLatestFinalized() {
+    return Optional.ofNullable(getStore()).map(ReadOnlyStore::getLatestFinalized);
   }
 
   public SafeFuture<Optional<BeaconState>> getJustifiedState() {
@@ -471,6 +479,11 @@ public class CombinedChainDataClient {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return getStore().retrieveCheckpointState(getStore().getJustifiedCheckpoint());
+  }
+
+  public Optional<Checkpoint> getJustifiedCheckpoint() {
+    return Optional.ofNullable(recentChainData.getStore())
+        .map(ReadOnlyStore::getJustifiedCheckpoint);
   }
 
   public Optional<GenesisData> getGenesisData() {

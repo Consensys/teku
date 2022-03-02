@@ -20,13 +20,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class StateSelectorFactory {
+
+  private final Spec spec;
   private final CombinedChainDataClient client;
 
-  public StateSelectorFactory(final CombinedChainDataClient client) {
+  public StateSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+    this.spec = spec;
     this.client = client;
   }
 
@@ -72,35 +79,98 @@ public class StateSelectorFactory {
 
   public StateSelector headSelector() {
     return () -> {
-      final Optional<SafeFuture<BeaconState>> maybeFuture = client.getBestState();
-      if (maybeFuture.isEmpty()) {
+      final Optional<ChainHead> maybeChainHead = client.getChainHead();
+      if (maybeChainHead.isEmpty()) {
         return SafeFuture.completedFuture(Optional.empty());
       }
-      return maybeFuture.get().thenApply(Optional::of);
+      final ChainHead chainHead = maybeChainHead.get();
+      return chainHead
+          .getState()
+          .thenApply(state -> Optional.of(addMetaData(state, chainHead.isOptimistic())));
     };
   }
 
   public StateSelector finalizedSelector() {
-    return () -> SafeFuture.completedFuture(client.getFinalizedState());
+    // TODO: May need to check if chain head is optimistic as well
+    return () ->
+        SafeFuture.completedFuture(
+            client
+                .getLatestFinalized()
+                .map(
+                    finalized ->
+                        addMetaData(
+                            finalized.getState(),
+                            isCheckpointOptimistic(finalized.getCheckpoint().getRoot()))));
   }
 
   public StateSelector justifiedSelector() {
-    return client::getJustifiedState;
+    return () ->
+        client
+            .getJustifiedState()
+            .thenApply(
+                maybeState ->
+                    maybeState.map(
+                        state ->
+                            addMetaData(
+                                state,
+                                isCheckpointOptimistic(
+                                    BeaconBlockHeader.fromState(state).getRoot()))));
   }
 
   public StateSelector genesisSelector() {
-    return () -> client.getStateAtSlotExact(GENESIS_SLOT);
+    return () ->
+        client
+            .getStateAtSlotExact(GENESIS_SLOT)
+            .thenApply(maybeState -> maybeState.map(state -> addMetaData(state, false)));
   }
 
   public StateSelector forSlot(final UInt64 slot) {
-    return () -> client.getStateAtSlotExact(slot);
+    return () ->
+        client
+            .getChainHead()
+            .map(
+                head ->
+                    client
+                        .getStateAtSlotExact(slot, head.getRoot())
+                        .thenApply(
+                            maybeState ->
+                                maybeState.map(state -> addMetaData(state, head.isOptimistic()))))
+            .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
   public StateSelector forStateRoot(final Bytes32 stateRoot) {
-    return () -> client.getStateByStateRoot(stateRoot);
+    return () ->
+        client
+            .getStateByStateRoot(stateRoot)
+            .thenApply(
+                maybeState ->
+                    maybeState.map(
+                        state ->
+                            addMetaData(
+                                state,
+                                client.isOptimisticBlock(
+                                    BeaconBlockHeader.fromState(state).getRoot()))));
   }
 
   public StateSelector forBlockRoot(final Bytes32 blockRoot) {
-    return () -> client.getStateByBlockRoot(blockRoot);
+    return () ->
+        client
+            .getStateByBlockRoot(blockRoot)
+            .thenApply(
+                maybeState ->
+                    maybeState.map(
+                        state -> addMetaData(state, client.isOptimisticBlock(blockRoot))));
+  }
+
+  private StateAndMetaData addMetaData(final BeaconState state, final boolean executionOptimistic) {
+    return new StateAndMetaData(
+        state,
+        spec.atSlot(state.getSlot()).getMilestone(),
+        executionOptimistic,
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+  }
+
+  private boolean isCheckpointOptimistic(final Bytes32 root) {
+    return client.isOptimisticBlock(root);
   }
 }
