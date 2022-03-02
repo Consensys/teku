@@ -58,6 +58,7 @@ import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.api.stateselector.StateAndMetaData;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -91,7 +92,7 @@ public class ChainDataProvider {
     this.recentChainData = recentChainData;
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
-    this.defaultStateSelectorFactory = new StateSelectorFactory(combinedChainDataClient);
+    this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
   }
 
   public UInt64 getGenesisTime() {
@@ -165,6 +166,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
   }
 
@@ -172,6 +174,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(maybeState -> maybeState.map(state -> new Root(state.hashTreeRoot())));
   }
 
@@ -179,6 +182,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(maybeState -> maybeState.map(schemaObjectProvider::getBeaconState));
   }
 
@@ -186,6 +190,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
                 maybeState.map(
@@ -223,6 +228,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .byBlockRootStateSelector(blockRootParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
                 maybeState.map(
@@ -291,6 +297,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
   }
 
@@ -299,6 +306,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
                 maybeState.map(state -> getValidatorBalancesFromState(state, validators)));
@@ -348,6 +356,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
                 maybeState.map(state -> getFilteredValidatorList(state, validators, statusFilter)));
@@ -371,6 +380,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(maybeState -> getValidatorFromState(maybeState, validatorIdParam));
   }
 
@@ -398,6 +408,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParameter)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
                 maybeState.map(
@@ -493,6 +504,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
+        .thenApply(this::discardStateMetadata)
         .thenApply(maybeState -> maybeState.map(state -> getSyncCommitteesFromState(state, epoch)));
   }
 
@@ -558,5 +570,11 @@ public class ChainDataProvider {
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
         .thenApply(maybeBlockData -> maybeBlockData.map(blockData -> blockData.map(mapper)));
+  }
+
+  @Deprecated
+  private Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
+      discardStateMetadata(final Optional<StateAndMetaData> stateAndMetaData) {
+    return stateAndMetaData.map(ObjectAndMetaData::getData);
   }
 }
