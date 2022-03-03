@@ -58,6 +58,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()
+                    .withAltairEpoch(UInt64.MAX_VALUE)
                     .withBeaconNode(beaconNode));
 
     beaconNode.start();
