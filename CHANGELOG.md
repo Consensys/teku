@@ -12,7 +12,12 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
+
+### Breaking Changes
 - Support for the Pyrmont testnet has been removed. The Prater testnet should be used instead.
+- `block` events are now published on the beacon rest API after the block is imported, instead of after it had passed gossip validation rules.
+     Blocks that pass the gossip validation rules but fail state transition will no longer emit a `block` event.
+
 ### Additions and Improvements
 - Added support for exporting metrics to an external consumer with `--metrics-publish-endpoint`.
 
