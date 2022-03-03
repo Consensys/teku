@@ -14,15 +14,26 @@
 package tech.pegasys.teku.api.response.v1.beacon;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public class GetBlockHeadersResponse {
+  @JsonProperty("execution_optimistic")
+  @JsonInclude(Include.NON_NULL)
+  @Schema(hidden = true)
+  public final Boolean execution_optimistic;
+
   @JsonProperty("data")
   public final List<BlockHeader> data;
 
   @JsonCreator
-  public GetBlockHeadersResponse(@JsonProperty("data") final List<BlockHeader> data) {
+  public GetBlockHeadersResponse(
+      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("data") final List<BlockHeader> data) {
+    this.execution_optimistic = executionOptimistic;
     this.data = data;
   }
 }

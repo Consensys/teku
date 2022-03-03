@@ -108,6 +108,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
@@ -132,6 +133,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             bestBlockRoot,
             stateRoot,
             epochTransition,
+            provider.isBellatrixEnabled() ? executionOptimistic : null,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
