@@ -35,6 +35,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -77,14 +78,17 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    final SafeFuture<Optional<FinalityCheckpointsResponse>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<FinalityCheckpointsResponse>>> future =
         chainDataProvider.getStateFinalityCheckpoints(pathParamMap.get(PARAM_STATE_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final FinalityCheckpointsResponse response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<FinalityCheckpointsResponse> response)
       throws JsonProcessingException {
     return Optional.of(
-        jsonProvider.objectToJSON(new GetStateFinalityCheckpointsResponse(response)));
+        jsonProvider.objectToJSON(
+            new GetStateFinalityCheckpointsResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

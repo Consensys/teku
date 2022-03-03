@@ -23,7 +23,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
+public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
@@ -41,28 +41,27 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-                config ->
-                    config
-                        .withNetwork(networkName)
-                        .withValidatorApiEnabled()
-                        .withInteropModeDisabled()
-                        .withBeaconNode(beaconNode))
-            .withValidatorApiEnabled();
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withValidatorApiEnabled()
+                    .withInteropModeDisabled()
+                    .withBeaconNode(beaconNode));
     final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
 
     beaconNode.start();
     validatorClient.start();
 
-    api.assertValidatorListing(Collections.emptyList());
+    api.assertLocalValidatorListing(Collections.emptyList());
 
-    api.addValidatorsAndExpect(validatorKeystores, "imported");
+    api.addLocalValidatorsAndExpect(validatorKeystores, "imported");
 
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorClient.waitForLogMessageContaining("Published block");
-    api.assertValidatorListing(validatorKeystores.getPublicKeys());
+    api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
 
     // second add attempt would be duplicates
-    api.addValidatorsAndExpect(validatorKeystores, "duplicate");
+    api.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
 
     // a random key won't be found, remove should give not_found
     api.removeValidatorAndCheckStatus(extraKeys.getPublicKeys().get(0), "not_found");
@@ -75,7 +74,7 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     // should only be 7 validators left
     validatorClient.waitForLogMessageContaining("Removed validator");
     validatorClient.waitForLogMessageContaining("Published block");
-    api.assertValidatorListing(validatorKeystores.getPublicKeys().subList(1, 7));
+    api.assertLocalValidatorListing(validatorKeystores.getPublicKeys().subList(1, 7));
 
     // remove the same validator again
     api.removeValidatorAndCheckStatus(removedPubkey, "not_active");

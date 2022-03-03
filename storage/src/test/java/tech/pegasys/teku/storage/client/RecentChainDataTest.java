@@ -221,6 +221,7 @@ class RecentChainDataTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getRoot(),
                 true,
+                true,
                 spec.getBeaconStateUtil(bestBlock.getSlot())
                     .getPreviousDutyDependentRoot(bestBlock.getState()),
                 spec.getBeaconStateUtil(bestBlock.getSlot())

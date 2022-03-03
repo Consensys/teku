@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateForkTest extends AbstractBeaconHandlerTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   final Fork fork = new Fork(dataStructureUtil.randomFork());
 
   @Test
@@ -34,7 +34,7 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
     final GetStateFork handler = new GetStateFork(chainDataProvider, jsonProvider);
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.getStateFork("head"))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(fork)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(withMetaData(fork))));
 
     handler.handle(context);
 

@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final GetStateValidators handler =
       new GetStateValidators(chainDataProvider, jsonProvider);
   private final Validator validator = new Validator(dataStructureUtil.randomValidator());
@@ -61,7 +61,8 @@ public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
     when(chainDataProvider.getStateValidators("head", List.of("1", "2", "3", "4"), emptySet()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorResponse))));
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(withMetaData(List.of(validatorResponse)))));
     handler.handle(context);
     GetStateValidatorsResponse response = getResponseFromFuture(GetStateValidatorsResponse.class);
     assertThat(response.data).containsExactly(validatorResponse);
