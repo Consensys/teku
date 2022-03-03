@@ -133,14 +133,15 @@ public class Web3SignerNode extends Node {
       configFile.deleteOnExit();
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
-      if (networkConfigUrl.isPresent()) {
-        final File networkFile = File.createTempFile("network", ".yaml");
-        networkFile.deleteOnExit();
-        try (FileOutputStream f = new FileOutputStream(networkFile)) {
-          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
-        }
-        configFileMap.put(networkFile, NETWORK_FILE_PATH);
-      }
+// TODO will need to write file to container once it's being referenced
+//      if (networkConfigUrl.isPresent()) {
+//        final File networkFile = File.createTempFile("network", ".yaml");
+//        networkFile.deleteOnExit();
+//        try (FileOutputStream f = new FileOutputStream(networkFile)) {
+//          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+//        }
+//        configFileMap.put(networkFile, NETWORK_FILE_PATH);
+//      }
     }
 
     private void writeConfigFileTo(final File configFile) throws Exception {
