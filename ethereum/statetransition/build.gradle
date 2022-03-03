@@ -8,7 +8,6 @@ dependencies {
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
-  implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:logging')
