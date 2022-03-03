@@ -25,8 +25,10 @@ import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -551,6 +553,8 @@ public class TekuNode extends Node {
   public static class Config {
     public static String DEFAULT_NETWORK_NAME = "swift";
 
+    private Optional<URL> networkConfigUrl = Optional.empty();
+
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
@@ -648,6 +652,13 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withNetwork(final URL url, final String networkName) {
+      this.networkConfigUrl = Optional.of(url);
+      this.networkName = networkName;
+      configMap.put("network", NETWORK_FILE_PATH);
+      return this;
+    }
+
     public Config withAltairEpoch(final UInt64 altairSlot) {
       configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
       return this;
@@ -681,6 +692,15 @@ public class TekuNode extends Node {
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
+
+      if (networkConfigUrl.isPresent()) {
+        final File networkFile = File.createTempFile("network", ".yaml");
+        networkFile.deleteOnExit();
+        try (FileOutputStream f = new FileOutputStream(networkFile)) {
+          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+        }
+        configFiles.put(networkFile, NETWORK_FILE_PATH);
+      }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");
       privateKeyFile.deleteOnExit();

@@ -79,8 +79,9 @@ public class AcceptanceTestBase {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 
-  protected Web3SignerNode createWeb3SignerNode(final String networkType) {
-    return new Web3SignerNode(network, networkType);
+  protected Web3SignerNode createWeb3SignerNode(
+      final Consumer<Web3SignerNode.Config> configOptions) {
+    return Web3SignerNode.create(network, configOptions);
   }
 
   protected TekuDepositSender createTekuDepositSender(final String networkName) {

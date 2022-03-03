@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import com.google.common.io.Resources;
+import java.net.URL;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,6 +32,8 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "less-swift";
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
+    final URL resource =
+        Resources.getResource("tech/pegasys/teku/spec/config/standard/less-swift.yaml");
 
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
@@ -38,10 +42,11 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 config
-                    .withNetwork(networkName)
+                    .withNetwork(resource, networkName)
                     .withDepositsFrom(eth1Node)
                     .withAltairEpoch(UInt64.MAX_VALUE));
-    final Web3SignerNode web3SignerNode = createWeb3SignerNode(networkName);
+    final Web3SignerNode web3SignerNode =
+        createWeb3SignerNode(config -> config.withNetwork(resource));
     web3SignerNode.start();
     final ValidatorKeysApi signerApi = web3SignerNode.getValidatorKeysApi();
 
@@ -49,8 +54,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
         createValidatorNode(
             config ->
                 config
-                    .withNetwork(networkName)
-                    .withAltairEpoch(UInt64.MAX_VALUE)
+                    .withNetwork(resource)
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()

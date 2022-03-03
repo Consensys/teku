@@ -22,9 +22,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -140,6 +143,7 @@ public class TekuValidatorNode extends Node {
     private Map<String, Object> configMap = new HashMap<>();
     private boolean keyfilesGenerated = false;
     private final Map<File, String> configFileMap = new HashMap<>();
+    private Optional<URL> networkConfigUrl = Optional.empty();
 
     public Config() {
       configMap.put("validators-keystore-locking-enabled", false);
@@ -190,6 +194,12 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+    public TekuValidatorNode.Config withNetwork(final URL url) {
+      this.networkConfigUrl = Optional.of(url);
+      configMap.put("network", NETWORK_FILE_PATH);
+      return this;
+    }
+
     public TekuValidatorNode.Config withInteropValidators(
         final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
@@ -202,6 +212,14 @@ public class TekuValidatorNode extends Node {
       configFile.deleteOnExit();
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
+      if (networkConfigUrl.isPresent()) {
+        final File networkFile = File.createTempFile("network", ".yaml");
+        networkFile.deleteOnExit();
+        try (FileOutputStream f = new FileOutputStream(networkFile)) {
+          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+        }
+        configFileMap.put(networkFile, NETWORK_FILE_PATH);
+      }
     }
 
     public TekuValidatorNode.Config withAltairEpoch(final UInt64 altairSlot) {

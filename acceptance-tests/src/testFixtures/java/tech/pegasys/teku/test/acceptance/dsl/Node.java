@@ -51,6 +51,7 @@ public abstract class Node {
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;
   protected static final String CONFIG_FILE_PATH = "/config.yaml";
+  protected static final String NETWORK_FILE_PATH = "/network.yaml";
   protected static final String PRIVATE_KEY_FILE_PATH = "/private-key.txt";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
   protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";

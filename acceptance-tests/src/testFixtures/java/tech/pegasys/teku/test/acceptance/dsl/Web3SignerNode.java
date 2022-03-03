@@ -13,33 +13,52 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 
 public class Web3SignerNode extends Node {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final int HTTP_API_PORT = 9000;
+  private final Web3SignerNode.Config config;
+  private boolean started = false;
   private final ValidatorKeysApi validatorKeysApi =
       new ValidatorKeysApi(new SimpleHttpClient(), this::getSignerUrl, this::getApiPassword);
+  private Set<File> configFiles;
 
-  public Web3SignerNode(final Network network, final String networkType) {
+  private Web3SignerNode(final Network network, final Web3SignerNode.Config config) {
     super(network, "consensys/web3signer:develop", LOG);
     container
         .withExposedPorts(HTTP_API_PORT)
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
         .waitingFor(new HttpWaitStrategy().forPort(HTTP_API_PORT).forPath("/upcheck"))
-        .withCommand(
-            "--logging=DEBUG",
-            "--http-host-allowlist=*",
-            "--http-listen-host=0.0.0.0",
-            "eth2",
-            "--slashing-protection-enabled=false",
-            "--key-manager-api-enabled=true",
-            "--network=" + networkType);
+        .withCommand("--config-file=" + CONFIG_FILE_PATH, "eth2");
+    this.config = config;
+  }
+
+  public static Web3SignerNode create(
+      final Network network, Consumer<Web3SignerNode.Config> configOptions) {
+
+    final Web3SignerNode.Config config = new Web3SignerNode.Config();
+    configOptions.accept(config);
+
+    return new Web3SignerNode(network, config);
   }
 
   public String getValidatorRestApiUrl() {
@@ -56,11 +75,80 @@ public class Web3SignerNode extends Node {
     return "";
   }
 
-  public void start() {
+  public void start() throws Exception {
+    assertThat(started).isFalse();
+    LOG.debug("Start web3signer node {}", nodeAlias);
+    started = true;
+    config.writeConfigFile();
+    final Map<File, String> configFileMap = config.getConfigFileMap();
+    this.configFiles = configFileMap.keySet();
+    configFileMap.forEach(
+        (localFile, targetPath) ->
+            container.withCopyFileToContainer(
+                MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
     container.start();
+  }
+
+  @Override
+  public void stop() {
+    if (!started) {
+      return;
+    }
+    LOG.debug("Shutting down web3signer");
+    configFiles.forEach(
+        configFile -> {
+          if (!configFile.delete() && configFile.exists()) {
+            throw new RuntimeException("Failed to delete config file: " + configFile);
+          }
+        });
+    container.stop();
   }
 
   private URI getSignerUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(HTTP_API_PORT));
+  }
+
+  public static class Config {
+    private Map<String, Object> configMap = new HashMap<>();
+    private final Map<File, String> configFileMap = new HashMap<>();
+    private Optional<URL> networkConfigUrl = Optional.empty();
+
+    public Config() {
+      configMap.put("logging", "debug");
+      configMap.put("http-host-allowlist", "*");
+      configMap.put("http-listen-host", "0.0.0.0");
+      configMap.put("eth2.slashing-protection-enabled", false);
+      configMap.put("eth2.key-manager-api-enabled", true);
+    }
+
+    public Web3SignerNode.Config withNetwork(final URL url) {
+      this.networkConfigUrl = Optional.of(url);
+      // TODO just specify less-swift rather than NETWORK_FILE_PATH
+      configMap.put("eth2.network", "less-swift");
+      return this;
+    }
+
+    public void writeConfigFile() throws Exception {
+      final File configFile = File.createTempFile("config", ".yaml");
+      configFile.deleteOnExit();
+      writeConfigFileTo(configFile);
+      configFileMap.put(configFile, CONFIG_FILE_PATH);
+      if (networkConfigUrl.isPresent()) {
+        final File networkFile = File.createTempFile("network", ".yaml");
+        networkFile.deleteOnExit();
+        try (FileOutputStream f = new FileOutputStream(networkFile)) {
+          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+        }
+        configFileMap.put(networkFile, NETWORK_FILE_PATH);
+      }
+    }
+
+    private void writeConfigFileTo(final File configFile) throws Exception {
+      YAML_MAPPER.writeValue(configFile, configMap);
+    }
+
+    public Map<File, String> getConfigFileMap() {
+      return configFileMap;
+    }
   }
 }
