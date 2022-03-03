@@ -259,7 +259,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 (maybeList) ->
                     maybeList.map(
                         list ->
-                            list.stream()
+                            list.getData().stream()
                                 .collect(
                                     toMap(
                                         ValidatorResponse::getPublicKey,

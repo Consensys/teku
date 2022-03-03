@@ -29,6 +29,7 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
    * @param stateRoot the state root of the state containing the new chain head
    * @param bestBlockRoot the block root of the new chain head
    * @param epochTransition if a new epoch has begun
+   * @param executionOptimistic if the block was optimistically imported
    * @param previousDutyDependentRoot the duty dependent root from the previous epoch
    * @param currentDutyDependentRoot the duty dependent root from the current epoch
    * @param optionalReorgContext Roots and common ancestor if a re-org occured
@@ -38,6 +39,7 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       Optional<ReorgContext> optionalReorgContext);

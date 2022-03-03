@@ -42,6 +42,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -97,7 +98,7 @@ public class GetState extends AbstractHandler implements Handler {
     } else {
       // accept header is not octet, could be anything else, or even not set - our default return is
       // json.
-      final SafeFuture<Optional<BeaconState>> future =
+      final SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
           chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
@@ -113,10 +114,13 @@ public class GetState extends AbstractHandler implements Handler {
     return Optional.of(response.byteStream);
   }
 
-  private Optional<String> handleJsonResult(Context ctx, final BeaconState response)
-      throws JsonProcessingException {
-    final Version version = chainDataProvider.getVersionAtSlot(response.slot);
+  private Optional<String> handleJsonResult(
+      Context ctx, final ObjectAndMetaData<BeaconState> response) throws JsonProcessingException {
+    final Version version = Version.fromMilestone(response.getMilestone());
     ctx.header(HEADER_CONSENSUS_VERSION, version.name());
-    return Optional.of(jsonProvider.objectToJSON(new GetStateResponseV2(version, response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateResponseV2(
+                version, response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

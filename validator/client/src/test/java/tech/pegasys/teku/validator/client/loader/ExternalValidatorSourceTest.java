@@ -52,6 +52,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
 public class ExternalValidatorSourceTest {
@@ -90,17 +92,7 @@ public class ExternalValidatorSourceTest {
     when(httpResponse.statusCode()).thenReturn(SC_OK);
     when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
         .thenReturn(httpResponse);
-    validatorSource =
-        ExternalValidatorSource.create(
-            spec,
-            metricsSystem,
-            config,
-            () -> httpClient,
-            publicKeyLoader,
-            asyncRunner,
-            true,
-            externalSignerTaskQueue,
-            Optional.of(new SimpleDataDirLayout(tempDir)));
+    validatorSource = newExternalValidatorSource(tempDir, true);
   }
 
   @Test
@@ -110,9 +102,48 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenDeleteValidator() {
-    assertThatThrownBy(() -> validatorSource.deleteValidator(BLSPublicKey.empty()))
-        .isInstanceOf(UnsupportedOperationException.class);
+  void shouldReturnErrorWhenDeleteReadOnlyValidator() {
+    assertThat(validatorSource.deleteValidator(BLSPublicKey.empty()))
+        .isEqualTo(
+            DeleteKeyResult.error(
+                "Cannot delete validator from read-only external validator source."));
+  }
+
+  @Test
+  void shouldDeleteValidator(@TempDir Path tempDir) throws IOException {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final ExternalValidatorSource externalValidatorSource =
+        newExternalValidatorSource(tempDir, false);
+
+    final AddValidatorResult addValidatorResult =
+        externalValidatorSource.addValidator(publicKey, Optional.empty());
+    assertImportedSuccessfully(addValidatorResult, new URL("http://localhost:9000"));
+    assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
+
+    final DeleteKeyResult result = externalValidatorSource.deleteValidator(publicKey);
+    assertThat(result.getStatus()).isEqualTo(DeletionStatus.DELETED);
+    assertThat(result.getMessage()).isEqualTo(Optional.empty());
+
+    final Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
+            .resolve(publicKey.toBytesCompressed().toUnprefixedHexString() + ".json");
+    assertThat(path.toFile()).doesNotExist();
+  }
+
+  @Test
+  void shouldReturnErrorWhenDeleteNonExistentValidator(@TempDir Path tempDir) {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final ExternalValidatorSource externalValidatorSource =
+        newExternalValidatorSource(tempDir, false);
+
+    final DeleteKeyResult result = externalValidatorSource.deleteValidator(publicKey);
+    assertThat(result.getStatus()).isEqualTo(DeletionStatus.NOT_FOUND);
+    assertThat(result.getMessage()).isEqualTo(Optional.empty());
+
+    final Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
+            .resolve(publicKey.toBytesCompressed().toUnprefixedHexString() + ".json");
+    assertThat(path.toFile()).doesNotExist();
   }
 
   @Test
@@ -122,9 +153,11 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void addValidator_shouldGetConfigUrlWhenNotProvided(@TempDir Path tempDir) throws IOException {
-    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final ExternalValidatorSource externalValidatorSource =
+        newExternalValidatorSource(tempDir, false);
     final AddValidatorResult result =
-        getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
+        externalValidatorSource.addValidator(publicKey, Optional.empty());
     assertImportedSuccessfully(result, config.getValidatorExternalSignerUrl());
 
     assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
@@ -132,10 +165,13 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void addValidator_shouldGetUrlIfProvided(@TempDir Path tempDir) throws IOException {
-    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    URL url = new URL("http://host.com");
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final URL url = new URL("http://host.com");
+
+    final ExternalValidatorSource externalValidatorSource =
+        newExternalValidatorSource(tempDir, false);
     final AddValidatorResult result =
-        getResultFromAddingValidator(tempDir, publicKey, Optional.of(url));
+        externalValidatorSource.addValidator(publicKey, Optional.of(url));
     assertImportedSuccessfully(result, url);
 
     assertFileContent(
@@ -144,13 +180,16 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void addValidator_shouldDetectDuplicate(@TempDir Path tempDir) throws IOException {
-    BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+
+    final ExternalValidatorSource externalValidatorSource =
+        newExternalValidatorSource(tempDir, false);
     final AddValidatorResult result1 =
-        getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
+        externalValidatorSource.addValidator(publicKey, Optional.empty());
     assertImportedSuccessfully(result1, config.getValidatorExternalSignerUrl());
 
     final AddValidatorResult result2 =
-        getResultFromAddingValidator(tempDir, publicKey, Optional.empty());
+        externalValidatorSource.addValidator(publicKey, Optional.empty());
     assertThat(result2.getResult().getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
     assertThat(result2.getSigner()).isEmpty();
 
@@ -161,16 +200,7 @@ public class ExternalValidatorSourceTest {
   void shouldLoadExternalValidators(@TempDir Path tempDir) throws IOException {
     final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
     final ExternalValidatorSource externalValidatorSource =
-        ExternalValidatorSource.create(
-            spec,
-            metricsSystem,
-            config,
-            httpClientFactory,
-            publicKeyLoader,
-            asyncRunner,
-            false,
-            externalSignerTaskQueue,
-            Optional.of(dataDirLayout));
+        newExternalValidatorSource(tempDir, false);
 
     final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
     createRemoteKeyFile(dataDirLayout, publicKey1, Optional.of(new URL("http://host.com")));
@@ -206,31 +236,15 @@ public class ExternalValidatorSourceTest {
     final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
     directory.toFile().mkdirs();
 
-    Path tempFile =
+    final Path tempFile =
         createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
     Files.writeString(tempFile, CONTENT, StandardCharsets.UTF_8);
   }
 
-  private AddValidatorResult getResultFromAddingValidator(
-      final Path tempDir, final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
-    final ExternalValidatorSource externalValidatorSource =
-        ExternalValidatorSource.create(
-            spec,
-            metricsSystem,
-            config,
-            httpClientFactory,
-            publicKeyLoader,
-            asyncRunner,
-            false,
-            externalSignerTaskQueue,
-            Optional.of(new SimpleDataDirLayout(tempDir)));
-    return externalValidatorSource.addValidator(publicKey, signerUrl);
-  }
-
   private void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)
       throws IOException {
-    String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
-    Path path =
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
+    final Path path =
         ValidatorClientService.getManagedRemoteKeyPath(new SimpleDataDirLayout(tempDir))
             .resolve(fileName);
     assertThat(path.toFile()).exists();
@@ -242,6 +256,20 @@ public class ExternalValidatorSourceTest {
     assertThat(result.getSigner()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl().get()).isEqualTo(expectedUrl);
+  }
+
+  private ExternalValidatorSource newExternalValidatorSource(
+      final Path tempDir, final boolean readOnly) {
+    return ExternalValidatorSource.create(
+        spec,
+        metricsSystem,
+        config,
+        httpClientFactory,
+        publicKeyLoader,
+        asyncRunner,
+        readOnly,
+        externalSignerTaskQueue,
+        Optional.of(new SimpleDataDirLayout(tempDir)));
   }
 
   static class ValidatorProviderInfo {
