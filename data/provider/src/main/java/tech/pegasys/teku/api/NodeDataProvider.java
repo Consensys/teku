@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -127,7 +127,7 @@ public class NodeDataProvider {
     return proposerSlashingPool.add(slashing.asInternalProposerSlashing());
   }
 
-  public void subscribeToReceivedBlocks(ReceivedBlockListener listener) {
+  public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 
