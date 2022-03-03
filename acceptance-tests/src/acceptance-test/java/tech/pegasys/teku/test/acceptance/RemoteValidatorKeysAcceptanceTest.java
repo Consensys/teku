@@ -96,11 +96,12 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     validatorNodeApi.assertLocalValidatorListing(Collections.emptyList());
     validatorNodeApi.assertRemoteValidatorListing(validatorKeystores.getPublicKeys());
 
-    // second add attempt would be duplicates (local add should see as duplicate too)
+    // add Local should see duplicates, as they're already loaded
     validatorNodeApi.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
+    // second remote add should also see as duplicates
     validatorNodeApi.addRemoteValidatorsAndExpect(
         validatorKeystores.getPublicKeys(), web3SignerNode.getValidatorRestApiUrl(), "duplicate");
-    //    beaconNode.waitForEpoch(1);
+
     validatorClient.waitForLogMessageContaining("Published block");
 
     validatorClient.stop();
