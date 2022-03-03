@@ -16,10 +16,8 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -133,15 +131,15 @@ public class Web3SignerNode extends Node {
       configFile.deleteOnExit();
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
-// TODO will need to write file to container once it's being referenced
-//      if (networkConfigUrl.isPresent()) {
-//        final File networkFile = File.createTempFile("network", ".yaml");
-//        networkFile.deleteOnExit();
-//        try (FileOutputStream f = new FileOutputStream(networkFile)) {
-//          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
-//        }
-//        configFileMap.put(networkFile, NETWORK_FILE_PATH);
-//      }
+      // TODO will need to write file to container once it's being referenced
+      // if (networkConfigUrl.isPresent()) {
+      //   final File networkFile = File.createTempFile("network", ".yaml");
+      //   networkFile.deleteOnExit();
+      //   try (FileOutputStream f = new FileOutputStream(networkFile)) {
+      //     Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+      //   }
+      //   configFileMap.put(networkFile, NETWORK_FILE_PATH);
+      // }
     }
 
     private void writeConfigFileTo(final File configFile) throws Exception {
