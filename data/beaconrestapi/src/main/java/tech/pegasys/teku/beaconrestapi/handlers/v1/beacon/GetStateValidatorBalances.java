@@ -39,6 +39,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
@@ -93,13 +94,17 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
         queryParameters.containsKey(PARAM_ID)
             ? ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID)
             : Collections.emptyList();
-    final SafeFuture<Optional<List<ValidatorBalanceResponse>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<List<ValidatorBalanceResponse>>>> future =
         chainDataProvider.getStateValidatorBalances(pathParamMap.get(PARAM_STATE_ID), validators);
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<ValidatorBalanceResponse> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<ValidatorBalanceResponse>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorBalancesResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateValidatorBalancesResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

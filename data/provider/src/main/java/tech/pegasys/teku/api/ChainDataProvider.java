@@ -163,44 +163,34 @@ public class ChainDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpoints(
+  public SafeFuture<Optional<ObjectAndMetaData<FinalityCheckpointsResponse>>>
+      getStateFinalityCheckpoints(final String stateIdParam) {
+    return fromState(stateIdParam, FinalityCheckpointsResponse::fromState);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getStateRoot(final String stateIdParam) {
+    return fromState(stateIdParam, state -> new Root(state.hashTreeRoot()));
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getBeaconState(
       final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
-  }
-
-  public SafeFuture<Optional<Root>> getStateRoot(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(maybeState -> maybeState.map(state -> new Root(state.hashTreeRoot())));
-  }
-
-  public SafeFuture<Optional<BeaconState>> getBeaconState(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(maybeState -> maybeState.map(schemaObjectProvider::getBeaconState));
+    return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
   }
 
   public SafeFuture<Optional<SszResponse>> getBeaconStateSsz(final String stateIdParam) {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
-        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
-                maybeState.map(
-                    state ->
-                        new SszResponse(
-                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                            state.hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(state.getSlot()).getMilestone())));
+                maybeState
+                    .map(ObjectAndMetaData::getData)
+                    .map(
+                        state ->
+                            new SszResponse(
+                                new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                                state.hashTreeRoot().toUnprefixedHexString(),
+                                spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public SafeFuture<GetAllBlocksAtSlotResponse> getAllBlocksAtSlot(final String slot) {
@@ -230,15 +220,16 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .byBlockRootStateSelector(blockRootParam)
         .getState()
-        .thenApply(this::discardStateMetadata)
         .thenApply(
             maybeState ->
-                maybeState.map(
-                    state ->
-                        new SszResponse(
-                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                            state.hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(state.getSlot()).getMilestone())));
+                maybeState
+                    .map(ObjectAndMetaData::getData)
+                    .map(
+                        state ->
+                            new SszResponse(
+                                new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                                state.hashTreeRoot().toUnprefixedHexString(),
+                                spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public List<Map<String, Object>> getProtoArrayData() {
@@ -295,23 +286,13 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<Fork>> getStateFork(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
+  public SafeFuture<Optional<ObjectAndMetaData<Fork>>> getStateFork(final String stateIdParam) {
+    return fromState(stateIdParam, state -> new Fork(state.getFork()));
   }
 
-  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getStateValidatorBalances(
-      final String stateIdParam, final List<String> validators) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(
-            maybeState ->
-                maybeState.map(state -> getValidatorBalancesFromState(state, validators)));
+  public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorBalanceResponse>>>>
+      getStateValidatorBalances(final String stateIdParam, final List<String> validators) {
+    return fromState(stateIdParam, state -> getValidatorBalancesFromState(state, validators));
   }
 
   @VisibleForTesting
@@ -357,17 +338,12 @@ public class ChainDataProvider {
             });
   }
 
-  public SafeFuture<Optional<List<ValidatorResponse>>> getStateValidators(
+  public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorResponse>>>> getStateValidators(
       final String stateIdParam,
       final List<String> validators,
       final Set<ValidatorStatus> statusFilter) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(
-            maybeState ->
-                maybeState.map(state -> getFilteredValidatorList(state, validators, statusFilter)));
+    return fromState(
+        stateIdParam, state -> getFilteredValidatorList(state, validators, statusFilter));
   }
 
   @VisibleForTesting
@@ -383,44 +359,38 @@ public class ChainDataProvider {
         .collect(toList());
   }
 
-  public SafeFuture<Optional<ValidatorResponse>> getStateValidator(
+  public SafeFuture<Optional<ObjectAndMetaData<ValidatorResponse>>> getStateValidator(
       final String stateIdParam, final String validatorIdParam) {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(maybeState -> getValidatorFromState(maybeState, validatorIdParam));
+        .thenApply(maybeStateData -> getValidatorFromState(maybeStateData, validatorIdParam));
   }
 
-  private Optional<ValidatorResponse> getValidatorFromState(
-      final Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
-          maybeState,
-      final String validatorIdParam) {
+  private Optional<ObjectAndMetaData<ValidatorResponse>> getValidatorFromState(
+      final Optional<StateAndMetaData> maybeState, final String validatorIdParam) {
     if (maybeState.isEmpty()) {
       return Optional.empty();
     }
+    final StateAndMetaData stateData = maybeState.get();
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        maybeState.get();
+        stateData.getData();
     final UInt64 epoch = spec.getCurrentEpoch(state);
-    return getValidatorSelector(state, List.of(validatorIdParam))
-        .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
-        .flatMap(Optional::stream)
-        .findFirst();
+    final Optional<ValidatorResponse> maybeValidator =
+        getValidatorSelector(state, List.of(validatorIdParam))
+            .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
+            .flatMap(Optional::stream)
+            .findFirst();
+    return maybeValidator.map(validatorResponse -> stateData.map(__ -> validatorResponse));
   }
 
-  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getStateCommittees(
+  public SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> getStateCommittees(
       final String stateIdParameter,
       final Optional<UInt64> epoch,
       final Optional<UInt64> committeeIndex,
       final Optional<UInt64> slot) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParameter)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(
-            maybeState ->
-                maybeState.map(
-                    state -> getCommitteesFromState(state, epoch, committeeIndex, slot)));
+    return fromState(
+        stateIdParameter, state -> getCommitteesFromState(state, epoch, committeeIndex, slot));
   }
 
   public Optional<UInt64> getCurrentEpoch() {
@@ -507,13 +477,9 @@ public class ChainDataProvider {
     return true;
   }
 
-  public SafeFuture<Optional<StateSyncCommittees>> getStateSyncCommittees(
+  public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> getStateSyncCommittees(
       final String stateIdParam, final Optional<UInt64> epoch) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(this::discardStateMetadata)
-        .thenApply(maybeState -> maybeState.map(state -> getSyncCommitteesFromState(state, epoch)));
+    return fromState(stateIdParam, state -> getSyncCommitteesFromState(state, epoch));
   }
 
   private StateSyncCommittees getSyncCommitteesFromState(
@@ -562,9 +528,13 @@ public class ChainDataProvider {
         .thenApply(maybeBlockData -> maybeBlockData.map(blockData -> blockData.map(mapper)));
   }
 
-  @Deprecated
-  private Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
-      discardStateMetadata(final Optional<StateAndMetaData> stateAndMetaData) {
-    return stateAndMetaData.map(ObjectAndMetaData::getData);
+  private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromState(
+      final String stateIdParam,
+      final Function<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState, T>
+          mapper) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(maybeStateData -> maybeStateData.map(blockData -> blockData.map(mapper)));
   }
 }

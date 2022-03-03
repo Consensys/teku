@@ -159,7 +159,7 @@ class OkHttpValidatorRestApiClientTest {
   public void getValidators_WhenSuccess_ReturnsResponse() {
     final List<ValidatorResponse> expected =
         List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
-    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(expected);
+    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(false, expected);
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
 
@@ -172,7 +172,7 @@ class OkHttpValidatorRestApiClientTest {
   @Test
   public void createUnsignedBlock_MakesExpectedRequest() throws Exception {
     final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
@@ -193,7 +193,7 @@ class OkHttpValidatorRestApiClientTest {
   @Test
   public void createUnsignedBlock_WhenNoContent_ReturnsEmpty() {
     final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
@@ -204,7 +204,7 @@ class OkHttpValidatorRestApiClientTest {
   @Test
   public void createUnsignedBlock_WhenBadRequest_ThrowsIllegalArgumentException() {
     final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
@@ -216,7 +216,7 @@ class OkHttpValidatorRestApiClientTest {
   @Test
   public void createUnsignedBlock_WhenSuccess_ReturnsBeaconBlock() {
     final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
     final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlock();
 
@@ -234,7 +234,7 @@ class OkHttpValidatorRestApiClientTest {
   @Test
   public void createUnsignedBlock_Altair_ReturnsBeaconBlock() {
     final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
     final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlockAltair();
 

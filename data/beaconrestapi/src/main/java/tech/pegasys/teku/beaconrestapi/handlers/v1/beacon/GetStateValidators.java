@@ -42,6 +42,7 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -115,15 +116,19 @@ public class GetStateValidators extends AbstractHandler {
 
     final Set<ValidatorStatus> statusFilter = stateValidatorsUtil.parseStatusFilter(queryParamMap);
 
-    SafeFuture<Optional<List<ValidatorResponse>>> future =
+    SafeFuture<Optional<ObjectAndMetaData<List<ValidatorResponse>>>> future =
         chainDataProvider.getStateValidators(
             pathParamMap.getOrDefault(PARAM_STATE_ID, "head"), validators, statusFilter);
 
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<ValidatorResponse> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<ValidatorResponse>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorsResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateValidatorsResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

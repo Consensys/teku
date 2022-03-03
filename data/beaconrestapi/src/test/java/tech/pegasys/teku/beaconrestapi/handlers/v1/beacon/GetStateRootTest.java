@@ -26,15 +26,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateRootTest extends AbstractBeaconHandlerTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  final Root root = new Root(dataStructureUtil.randomBytes32());
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final Root root = new Root(dataStructureUtil.randomBytes32());
 
   @Test
   public void shouldReturnRootInfo() throws Exception {
     final GetStateRoot handler = new GetStateRoot(chainDataProvider, jsonProvider);
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.getStateRoot("head"))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(root)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(withMetaData(root))));
 
     handler.handle(context);
 

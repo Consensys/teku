@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -83,14 +84,18 @@ public class GetStateValidator extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    SafeFuture<Optional<ValidatorResponse>> future =
+    SafeFuture<Optional<ObjectAndMetaData<ValidatorResponse>>> future =
         chainDataProvider.getStateValidator(
             pathParamMap.get(PARAM_STATE_ID), pathParamMap.get(PARAM_VALIDATOR_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final ValidatorResponse response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<ValidatorResponse> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateValidatorResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

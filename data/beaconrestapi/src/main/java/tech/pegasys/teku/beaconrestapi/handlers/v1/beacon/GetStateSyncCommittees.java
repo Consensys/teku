@@ -43,6 +43,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateSyncCommitteesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
@@ -98,7 +99,7 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
         ctx.json(jsonProvider.objectToJSON(List.of()));
       }
 
-      final SafeFuture<Optional<StateSyncCommittees>> future =
+      final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> future =
           chainDataProvider.getStateSyncCommittees(pathParams.get(PARAM_STATE_ID), epoch);
 
       handleOptionalResult(
@@ -120,8 +121,12 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(final Context context, final StateSyncCommittees response)
+  private Optional<String> handleResult(
+      final Context context, final ObjectAndMetaData<StateSyncCommittees> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateSyncCommitteesResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateSyncCommitteesResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }
