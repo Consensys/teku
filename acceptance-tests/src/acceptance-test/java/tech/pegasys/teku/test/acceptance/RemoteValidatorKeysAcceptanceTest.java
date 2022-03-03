@@ -14,8 +14,11 @@
 package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -27,6 +30,8 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
+  private static final Logger LOG = LogManager.getLogger();
+
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
     final String networkName = "less-swift";
@@ -40,26 +45,43 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final TekuNode beaconNode =
         createTekuNode(
-            config ->
+            config -> {
+              try {
                 config
-                    .withNetwork(resource, networkName)
+                    .withNetwork(resource.openStream(), networkName)
                     .withDepositsFrom(eth1Node)
-                    .withAltairEpoch(UInt64.MAX_VALUE));
+                    .withAltairEpoch(UInt64.MAX_VALUE);
+              } catch (IOException e) {
+                LOG.error("BN configuration failed", e);
+              }
+            });
     final Web3SignerNode web3SignerNode =
-        createWeb3SignerNode(config -> config.withNetwork(resource));
+        createWeb3SignerNode(
+            config -> {
+              try {
+                config.withNetwork(resource.openStream());
+              } catch (IOException e) {
+                LOG.error("Signer configuration failed", e);
+              }
+            });
     web3SignerNode.start();
     final ValidatorKeysApi signerApi = web3SignerNode.getValidatorKeysApi();
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config ->
+            config -> {
+              try {
                 config
-                    .withNetwork(resource)
+                    .withNetwork(resource.openStream())
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()
                     .withAltairEpoch(UInt64.MAX_VALUE)
-                    .withBeaconNode(beaconNode));
+                    .withBeaconNode(beaconNode);
+              } catch (IOException e) {
+                LOG.error("VC configuration failed", e);
+              }
+            });
 
     beaconNode.start();
     validatorClient.start();

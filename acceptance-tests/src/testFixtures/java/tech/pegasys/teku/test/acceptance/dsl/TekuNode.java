@@ -27,8 +27,8 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -52,6 +52,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -553,7 +554,7 @@ public class TekuNode extends Node {
   public static class Config {
     public static String DEFAULT_NETWORK_NAME = "swift";
 
-    private Optional<URL> networkConfigUrl = Optional.empty();
+    private Optional<InputStream> maybeNetworkYaml = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -652,8 +653,8 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withNetwork(final URL url, final String networkName) {
-      this.networkConfigUrl = Optional.of(url);
+    public Config withNetwork(final InputStream stream, final String networkName) {
+      this.maybeNetworkYaml = Optional.of(stream);
       this.networkName = networkName;
       configMap.put("network", NETWORK_FILE_PATH);
       return this;
@@ -693,11 +694,17 @@ public class TekuNode extends Node {
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
 
-      if (networkConfigUrl.isPresent()) {
+      if (maybeNetworkYaml.isPresent()) {
         final File networkFile = File.createTempFile("network", ".yaml");
         networkFile.deleteOnExit();
-        try (FileOutputStream f = new FileOutputStream(networkFile)) {
-          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+        try (FileOutputStream out = new FileOutputStream(networkFile)) {
+          IOUtils.copy(maybeNetworkYaml.get(), out);
+        } catch (Exception ex) {
+          LOG.error("Failed to write network yaml", ex);
+        } finally {
+          if (maybeNetworkYaml.isPresent()) {
+            maybeNetworkYaml.get().close();
+          }
         }
         configFiles.put(networkFile, NETWORK_FILE_PATH);
       }

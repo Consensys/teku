@@ -19,12 +19,11 @@ import com.google.common.io.Resources;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -143,7 +142,7 @@ public class TekuValidatorNode extends Node {
     private Map<String, Object> configMap = new HashMap<>();
     private boolean keyfilesGenerated = false;
     private final Map<File, String> configFileMap = new HashMap<>();
-    private Optional<URL> networkConfigUrl = Optional.empty();
+    private Optional<InputStream> maybeNetworkYaml = Optional.empty();
 
     public Config() {
       configMap.put("validators-keystore-locking-enabled", false);
@@ -194,8 +193,8 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public TekuValidatorNode.Config withNetwork(final URL url) {
-      this.networkConfigUrl = Optional.of(url);
+    public TekuValidatorNode.Config withNetwork(final InputStream stream) {
+      this.maybeNetworkYaml = Optional.of(stream);
       configMap.put("network", NETWORK_FILE_PATH);
       return this;
     }
@@ -212,11 +211,15 @@ public class TekuValidatorNode extends Node {
       configFile.deleteOnExit();
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
-      if (networkConfigUrl.isPresent()) {
+      if (maybeNetworkYaml.isPresent()) {
         final File networkFile = File.createTempFile("network", ".yaml");
         networkFile.deleteOnExit();
-        try (FileOutputStream f = new FileOutputStream(networkFile)) {
-          Files.copy(new File(networkConfigUrl.get().toURI()).toPath(), f);
+        try (FileOutputStream out = new FileOutputStream(networkFile)) {
+          IOUtils.copy(maybeNetworkYaml.get(), out);
+        } finally {
+          if (maybeNetworkYaml.isPresent()) {
+            maybeNetworkYaml.get().close();
+          }
         }
         configFileMap.put(networkFile, NETWORK_FILE_PATH);
       }
