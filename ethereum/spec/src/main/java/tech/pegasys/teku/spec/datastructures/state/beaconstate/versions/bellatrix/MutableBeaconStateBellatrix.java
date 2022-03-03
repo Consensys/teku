@@ -33,7 +33,7 @@ public interface MutableBeaconStateBellatrix
 
   default void setLatestExecutionPayloadHeader(ExecutionPayloadHeader executionPayloadHeader) {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name());
+        getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.getFieldName());
     set(fieldIndex, executionPayloadHeader);
   }
 
