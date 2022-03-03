@@ -190,7 +190,7 @@ public class ActiveKeyManager implements KeyManager {
   DeleteKeyResult deleteExternalValidator(final Validator activeValidator) {
     final Signer signer = activeValidator.getSigner();
     signer.delete();
-    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
+    LOG.info("Removed remote validator: {}", activeValidator.getPublicKey().toString());
     return validatorLoader.deleteExternalMutableValidator(activeValidator.getPublicKey());
   }
 

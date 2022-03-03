@@ -145,7 +145,7 @@ public class ValidatorLoader {
   public DeleteKeyResult deleteExternalMutableValidator(final BLSPublicKey publicKey) {
     if (mutableExternalValidatorSource.isEmpty()) {
       return DeleteKeyResult.error(
-          "Unable to delete validator, could not determine the storage location.");
+          "Unable to delete external validator, could not determine the storage location.");
     }
     return mutableExternalValidatorSource.get().deleteValidator(publicKey);
   }
