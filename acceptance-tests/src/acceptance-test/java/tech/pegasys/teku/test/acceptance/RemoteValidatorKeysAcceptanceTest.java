@@ -20,7 +20,6 @@ import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -47,10 +46,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config -> {
               try {
-                config
-                    .withNetwork(resource.openStream(), networkName)
-                    .withDepositsFrom(eth1Node)
-                    .withAltairEpoch(UInt64.MAX_VALUE);
+                config.withNetwork(resource.openStream(), networkName).withDepositsFrom(eth1Node);
               } catch (IOException e) {
                 LOG.error("BN configuration failed", e);
               }
@@ -76,7 +72,6 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()
-                    .withAltairEpoch(UInt64.MAX_VALUE)
                     .withBeaconNode(beaconNode);
               } catch (IOException e) {
                 LOG.error("VC configuration failed", e);
@@ -105,7 +100,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     validatorNodeApi.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
     validatorNodeApi.addRemoteValidatorsAndExpect(
         validatorKeystores.getPublicKeys(), web3SignerNode.getValidatorRestApiUrl(), "duplicate");
-    beaconNode.waitForEpoch(1);
+    //    beaconNode.waitForEpoch(1);
     validatorClient.waitForLogMessageContaining("Published block");
 
     validatorClient.stop();

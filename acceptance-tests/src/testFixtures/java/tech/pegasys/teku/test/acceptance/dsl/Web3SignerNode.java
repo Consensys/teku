@@ -31,6 +31,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 
 public class Web3SignerNode extends Node {
@@ -84,9 +85,12 @@ public class Web3SignerNode extends Node {
     final Map<File, String> configFileMap = config.getConfigFileMap();
     this.configFiles = configFileMap.keySet();
     configFileMap.forEach(
-        (localFile, targetPath) ->
-            container.withCopyFileToContainer(
-                MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
+        (localFile, targetPath) -> {
+          LOG.debug("Copying {} into container at {}", localFile.getAbsoluteFile(), targetPath);
+          container.withCopyFileToContainer(
+              MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath);
+        });
+    Thread.sleep(100);
     container.start();
   }
 
@@ -125,7 +129,12 @@ public class Web3SignerNode extends Node {
     public Web3SignerNode.Config withNetwork(final InputStream stream) {
       // TODO just specify less-swift rather than NETWORK_FILE_PATH
       this.maybeNetworkYaml = Optional.of(stream);
-      configMap.put("eth2.network", "less-swift");
+      configMap.put("eth2.network", NETWORK_FILE_PATH);
+      return this;
+    }
+
+    public Web3SignerNode.Config withAltairEpoch(final UInt64 altairSlot) {
+      configMap.put("eth2.Xnetwork-altair-fork-epoch", altairSlot.toString());
       return this;
     }
 
