@@ -59,6 +59,7 @@ class EventSourceHandlerTest {
             blockRoot,
             dataStructureUtil.randomBytes32(),
             false,
+            false,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     handler.onMessage(EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
@@ -78,6 +79,7 @@ class EventSourceHandlerTest {
             slot,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32(),
+            false,
             false,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32());
@@ -109,6 +111,7 @@ class EventSourceHandlerTest {
             slot,
             blockRoot,
             dataStructureUtil.randomBytes32(),
+            false,
             false,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
