@@ -42,6 +42,7 @@ class HeadEventTest {
                     "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e"),
                 true,
                 null,
+                null,
                 null));
   }
 
@@ -53,6 +54,7 @@ class HeadEventTest {
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32(),
             true,
+            false,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32());
     final String json = jsonProvider.objectToJSON(input);

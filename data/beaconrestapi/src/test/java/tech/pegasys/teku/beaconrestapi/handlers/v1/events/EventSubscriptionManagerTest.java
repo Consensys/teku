@@ -86,6 +86,7 @@ public class EventSubscriptionManagerTest {
           data.randomBytes32(),
           data.randomBytes32(),
           false,
+          true,
           data.randomBytes32(),
           data.randomBytes32());
   private final SignedContributionAndProof contributionAndProof =
@@ -356,6 +357,7 @@ public class EventSubscriptionManagerTest {
         chainReorgEvent.newHeadState,
         chainReorgEvent.newHeadBlock,
         chainReorgEvent.slot.mod(specConfig.getSlotsPerEpoch()).equals(UInt64.ZERO),
+        false,
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         Optional.of(
@@ -373,6 +375,7 @@ public class EventSubscriptionManagerTest {
         headEvent.slot,
         headEvent.state,
         headEvent.block,
+        false,
         false,
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
