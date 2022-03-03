@@ -144,9 +144,13 @@ public class ActiveKeyManager implements KeyManager {
         continue;
       }
       // delete validator from owned validators list
-      maybeValidator = validatorLoader.getOwnedValidators().removeValidator(publicKey);
+      maybeValidator = validatorLoader.getOwnedValidators().getValidator(publicKey);
       if (maybeValidator.isPresent()) {
-        deletionResults.add(deleteExternalValidator(maybeValidator.get()));
+        DeleteKeyResult result = deleteExternalValidator(maybeValidator.get());
+        deletionResults.add(result);
+        if (result.equals(DeleteKeyResult.success())) {
+          validatorLoader.getOwnedValidators().removeValidator(publicKey);
+        }
       } else {
         deletionResults.add(DeleteKeyResult.notFound());
       }

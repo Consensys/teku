@@ -144,10 +144,14 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     try {
       String content = Files.readString(file.toPath());
       ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+      URL externalSignerUrl =
+          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl());
+
+      externalValidatorSourceMap.put(externalValidator.getPublicKey(), externalSignerUrl);
       return new ExternalValidatorProvider(
           spec,
           externalSignerHttpClientFactory,
-          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl()),
+          externalSignerUrl,
           externalValidator.getPublicKey(),
           config.getValidatorExternalSignerTimeout(),
           externalSignerTaskQueue,
@@ -166,10 +170,10 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
           "Cannot delete validator from read-only external validator source.");
     }
 
-    final URL source = externalValidatorSourceMap.remove(publicKey);
-    if (source == null) {
+    if (!externalValidatorSourceMap.containsKey(publicKey)) {
       return DeleteKeyResult.notFound();
     }
+
     return delete(publicKey);
   }
 
@@ -181,9 +185,11 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     try {
       ensureDirectoryExists(ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout));
       Files.delete(path);
+      externalValidatorSourceMap.remove(publicKey);
       return DeleteKeyResult.success();
+
     } catch (IOException e) {
-      return DeleteKeyResult.error(e.getMessage());
+      return DeleteKeyResult.error(e.toString());
     }
   }
 
