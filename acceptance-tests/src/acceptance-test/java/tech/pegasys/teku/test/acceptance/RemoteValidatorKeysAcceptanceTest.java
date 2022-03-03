@@ -33,7 +33,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
     final URL resource =
-        Resources.getResource("tech/pegasys/teku/spec/config/standard/less-swift.yaml");
+        Resources.getResource("tech/pegasys/teku/spec/config/configs/less-swift.yaml");
 
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
