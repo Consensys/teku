@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -109,7 +108,7 @@ public class Web3SignerNode extends Node {
   public static class Config {
     private Map<String, Object> configMap = new HashMap<>();
     private final Map<File, String> configFileMap = new HashMap<>();
-    private Optional<URL> networkConfigUrl = Optional.empty();
+    //    private Optional<URL> networkConfigUrl = Optional.empty();
 
     public Config() {
       configMap.put("logging", "debug");
@@ -120,8 +119,8 @@ public class Web3SignerNode extends Node {
     }
 
     public Web3SignerNode.Config withNetwork(final URL url) {
-      this.networkConfigUrl = Optional.of(url);
       // TODO just specify less-swift rather than NETWORK_FILE_PATH
+      //      this.networkConfigUrl = Optional.of(url);
       configMap.put("eth2.network", "less-swift");
       return this;
     }
