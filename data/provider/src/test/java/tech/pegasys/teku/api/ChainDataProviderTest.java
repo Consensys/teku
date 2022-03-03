@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.debug.ChainHead;
@@ -216,24 +218,24 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getBlockHeaders_shouldGetHeadBlockIfNoParameters()
-      throws ExecutionException, InterruptedException {
+  public void getBlockHeaders_shouldGetHeadBlockIfNoParameters() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
-    List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.empty()).get();
-    assertThat(results.get(0).root).isEqualTo(block.getRoot());
+    GetBlockHeadersResponse results =
+        safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.empty()));
+    assertThat(results.data.get(0).root).isEqualTo(block.getRoot());
   }
 
   @Test
-  public void getBlockHeaders_shouldGetBlockGivenSlot()
-      throws ExecutionException, InterruptedException {
+  public void getBlockHeaders_shouldGetBlockGivenSlot() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final UInt64 slot = combinedChainDataClient.getCurrentSlot();
-    List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.of(slot)).get();
-    assertThat(results.get(0).header.message.slot).isEqualTo(slot);
+    GetBlockHeadersResponse results =
+        safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.of(slot)));
+    assertThat(results.data.get(0).header.message.slot).isEqualTo(slot);
   }
 
   @Test
@@ -244,9 +246,9 @@ public class ChainDataProviderTest {
     final UInt64 headSlot = recentChainData.getHeadSlot();
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
 
-    final SafeFuture<List<BlockHeader>> future =
+    final SafeFuture<GetBlockHeadersResponse> future =
         provider.getBlockHeaders(Optional.empty(), Optional.empty());
-    final BlockHeader header = future.join().get(0);
+    final BlockHeader header = safeJoin(future).data.get(0);
     assertThat(header.header.message.slot).isEqualTo(headSlot);
   }
 
@@ -479,9 +481,10 @@ public class ChainDataProviderTest {
     storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
-    final Optional<List<Attestation>> response = provider.getBlockAttestations("head").get();
+    final Optional<ObjectAndMetaData<List<Attestation>>> response =
+        provider.getBlockAttestations("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get())
+    assertThat(response.get().getData())
         .containsExactly(new Attestation(attestation1), new Attestation(attestation2));
   }
 
