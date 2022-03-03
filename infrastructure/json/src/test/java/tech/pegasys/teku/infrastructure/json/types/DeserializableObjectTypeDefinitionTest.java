@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.types;
+package tech.pegasys.teku.infrastructure.json.types;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,8 +21,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 class DeserializableObjectTypeDefinitionTest {
 

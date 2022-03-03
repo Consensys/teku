@@ -36,6 +36,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockAttestationsResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -76,13 +77,17 @@ public class GetBlockAttestations extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
 
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<List<Attestation>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> future =
         chainDataProvider.getBlockAttestations(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<Attestation> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<Attestation>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockAttestationsResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetBlockAttestationsResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

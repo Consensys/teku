@@ -20,9 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.debug.ChainHead;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -216,24 +218,24 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getBlockHeaders_shouldGetHeadBlockIfNoParameters()
-      throws ExecutionException, InterruptedException {
+  public void getBlockHeaders_shouldGetHeadBlockIfNoParameters() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
-    List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.empty()).get();
-    assertThat(results.get(0).root).isEqualTo(block.getRoot());
+    GetBlockHeadersResponse results =
+        safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.empty()));
+    assertThat(results.data.get(0).root).isEqualTo(block.getRoot());
   }
 
   @Test
-  public void getBlockHeaders_shouldGetBlockGivenSlot()
-      throws ExecutionException, InterruptedException {
+  public void getBlockHeaders_shouldGetBlockGivenSlot() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final UInt64 slot = combinedChainDataClient.getCurrentSlot();
-    List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.of(slot)).get();
-    assertThat(results.get(0).header.message.slot).isEqualTo(slot);
+    GetBlockHeadersResponse results =
+        safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.of(slot)));
+    assertThat(results.data.get(0).header.message.slot).isEqualTo(slot);
   }
 
   @Test
@@ -244,9 +246,9 @@ public class ChainDataProviderTest {
     final UInt64 headSlot = recentChainData.getHeadSlot();
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
 
-    final SafeFuture<List<BlockHeader>> future =
+    final SafeFuture<GetBlockHeadersResponse> future =
         provider.getBlockHeaders(Optional.empty(), Optional.empty());
-    final BlockHeader header = future.join().get(0);
+    final BlockHeader header = safeJoin(future).data.get(0);
     assertThat(header.header.message.slot).isEqualTo(headSlot);
   }
 
@@ -366,8 +368,9 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(UInt64.valueOf(42));
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(UInt64.valueOf(42));
+        blockAndState.getState();
     final FinalityCheckpointsResponse expected =
         new FinalityCheckpointsResponse(
             new tech.pegasys.teku.api.schema.Checkpoint(
@@ -376,11 +379,10 @@ public class ChainDataProviderTest {
                 internalState.getCurrent_justified_checkpoint()),
             new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalized_checkpoint()));
 
-    when(mockCombinedChainDataClient.getBestState())
-        .thenReturn(Optional.of(completedFuture(internalState)));
+    when(mockCombinedChainDataClient.getChainHead())
+        .thenReturn(Optional.of(tech.pegasys.teku.storage.client.ChainHead.create(blockAndState)));
     assertThat(provider.getStateFinalityCheckpoints("head").get().orElseThrow())
         .isEqualTo(expected);
-    verify(mockCombinedChainDataClient).getBestState();
   }
 
   @Test
@@ -479,9 +481,10 @@ public class ChainDataProviderTest {
     storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
-    final Optional<List<Attestation>> response = provider.getBlockAttestations("head").get();
+    final Optional<ObjectAndMetaData<List<Attestation>>> response =
+        provider.getBlockAttestations("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get())
+    assertThat(response.get().getData())
         .containsExactly(new Attestation(attestation1), new Attestation(attestation2));
   }
 
@@ -519,8 +522,10 @@ public class ChainDataProviderTest {
             .validators(validators)
             .currentSyncCommittee(currentSyncCommittee)
             .build();
-    when(mockCombinedChainDataClient.getBestState())
-        .thenReturn(Optional.of(completedFuture(internalState)));
+    final tech.pegasys.teku.storage.client.ChainHead chainHead =
+        tech.pegasys.teku.storage.client.ChainHead.create(
+            StateAndBlockSummary.create(internalState));
+    when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
     return provider;
   }
 }

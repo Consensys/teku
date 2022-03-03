@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.json;
+package tech.pegasys.teku.infrastructure.restapi;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -23,7 +23,6 @@ import java.net.BindException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.restapi.RestApi;
 
 class RestApiTest {
   private final Javalin app = mock(Javalin.class);
