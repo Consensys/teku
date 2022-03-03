@@ -96,6 +96,10 @@ public class ChainDataProvider {
     this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
   }
 
+  public boolean isBellatrixEnabled() {
+    return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
+  }
+
   public UInt64 getGenesisTime() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();

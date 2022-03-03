@@ -288,6 +288,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           newChainHead.getStateRoot(),
           newChainHead.getRoot(),
           epochTransition,
+          newChainHead.isOptimistic(),
 
           // Chain head must be or descend from the justified checkpoint so we know if the previous
           // duty dependent root isn't available from protoarray it must be the parent of the

@@ -311,8 +311,11 @@ public class ExternalSigner implements Signer {
       final Throwable throwable,
       final Supplier<String> slashableMessage) {
     if (throwable != null) {
+      final String url =
+          getSigningServiceUrl().isEmpty() ? "UNKNOWN" : getSigningServiceUrl().get().toString();
       throw new ExternalSignerException(
-          "External signer failed to sign due to " + throwable.getMessage(), throwable);
+          "External signer (" + url + ") failed to sign due to " + throwable.getMessage(),
+          throwable);
     }
 
     if (response.statusCode() == SC_PRECONDITION_FAILED) {

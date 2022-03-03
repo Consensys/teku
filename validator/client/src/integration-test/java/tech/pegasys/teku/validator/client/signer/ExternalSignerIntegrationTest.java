@@ -124,7 +124,7 @@ public class ExternalSignerIntegrationTest {
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
-            "External signer failed to sign due to java.net.http.HttpTimeoutException: request timed out");
+            "failed to sign due to java.net.http.HttpTimeoutException: request timed out");
 
     validateMetrics(metricsSystem, 0, 0, 1);
   }
