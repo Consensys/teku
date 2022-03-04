@@ -29,7 +29,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     super(type, backingNode);
   }
 
-  private SignedBeaconBlock(
+  SignedBeaconBlock(
       final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
     super(type, message, new SszSignature(signature));
   }
@@ -40,6 +40,11 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
         spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
         message,
         signature);
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSchema() {
+    return (SignedBeaconBlockSchema) super.getSchema();
   }
 
   public BeaconBlock getMessage() {

@@ -12,6 +12,11 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
+
+### Breaking Changes
+- `block` events are now published on the beacon rest API after the block is imported, instead of after it had passed gossip validation rules.
+     Blocks that pass the gossip validation rules but fail state transition will no longer emit a `block` event.
+
 ### Additions and Improvements
 
 ### Bug Fixes
