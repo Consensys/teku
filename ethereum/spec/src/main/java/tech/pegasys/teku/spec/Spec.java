@@ -400,7 +400,7 @@ public class Spec {
 
   public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(slot))
+    return forGetAncestor(forkChoiceStrategy, root, slot)
         .getForkChoiceUtil()
         .getAncestor(forkChoiceStrategy, root, slot);
   }
@@ -411,16 +411,23 @@ public class Spec {
       UInt64 startSlot,
       UInt64 step,
       UInt64 count) {
-    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot))
+    return forGetAncestor(forkChoiceStrategy, root, startSlot)
         .getForkChoiceUtil()
         .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
-    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot))
+    return forGetAncestor(forkChoiceStrategy, root, startSlot)
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
+  }
+
+  private SpecVersion forGetAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 startSlot) {
+    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
   public void onTick(MutableStore store, UInt64 time) {
