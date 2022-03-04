@@ -54,7 +54,7 @@ public class BeaconStateSchemaPhase0
     final SszField previousEpochAttestationsField =
         new SszField(
             15,
-            BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.getFieldName(),
+            BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS,
             () ->
                 SszListSchema.create(
                     pendingAttestationSchema,
@@ -62,7 +62,7 @@ public class BeaconStateSchemaPhase0
     final SszField currentEpochAttestationsField =
         new SszField(
             16,
-            BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.getFieldName(),
+            BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS,
             () ->
                 SszListSchema.create(
                     pendingAttestationSchema,
@@ -74,13 +74,13 @@ public class BeaconStateSchemaPhase0
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingAttestation, ?> getPreviousEpochAttestationsSchema() {
     return (SszListSchema<PendingAttestation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS));
   }
 
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingAttestation, ?> getCurrentEpochAttestationsSchema() {
     return (SszListSchema<PendingAttestation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS));
   }
 
   public PendingAttestationSchema getPendingAttestationSchema() {

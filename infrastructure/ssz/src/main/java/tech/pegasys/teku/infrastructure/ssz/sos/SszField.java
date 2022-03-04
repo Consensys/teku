@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.sos;
 
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public class SszField {
@@ -29,8 +30,16 @@ public class SszField {
     this(index, "field-" + index, viewType);
   }
 
+  public SszField(int index, SszFieldName name, SszSchema<?> sszSchema) {
+    this(index, name.getSszFieldName(), sszSchema);
+  }
+
   public SszField(int index, String name, SszSchema<?> sszSchema) {
     this(index, name, () -> sszSchema);
+  }
+
+  public SszField(int index, SszFieldName name, Supplier<SszSchema<?>> viewType) {
+    this(index, name.getSszFieldName(), viewType);
   }
 
   public SszField(int index, String name, Supplier<SszSchema<?>> viewType) {

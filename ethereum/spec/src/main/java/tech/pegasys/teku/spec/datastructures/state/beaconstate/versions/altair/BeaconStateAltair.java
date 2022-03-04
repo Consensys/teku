@@ -35,31 +35,27 @@ public interface BeaconStateAltair extends BeaconState {
   // Participation
   default SszList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.getFieldName());
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION);
     return getAny(fieldIndex);
   }
 
   default SszList<SszByte> getCurrentEpochParticipation() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.getFieldName());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION);
     return getAny(fieldIndex);
   }
 
   default SszUInt64List getInactivityScores() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.getFieldName());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES);
     return getAny(fieldIndex);
   }
 
   default SyncCommittee getCurrentSyncCommittee() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.getFieldName());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE);
     return getAny(fieldIndex);
   }
 
   default SyncCommittee getNextSyncCommittee() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.getFieldName());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE);
     return getAny(fieldIndex);
   }
 

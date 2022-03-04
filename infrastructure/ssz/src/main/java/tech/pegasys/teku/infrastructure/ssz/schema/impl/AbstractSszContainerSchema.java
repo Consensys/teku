@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszContainerTypeDefinition;
@@ -63,6 +64,11 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     public SszSchema<T> getSchema() {
       return schema;
     }
+  }
+
+  protected static <T extends SszData> NamedSchema<T> namedSchema(
+      SszFieldName fieldName, SszSchema<T> schema) {
+    return namedSchema(fieldName.getSszFieldName(), schema);
   }
 
   protected static <T extends SszData> NamedSchema<T> namedSchema(
