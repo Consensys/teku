@@ -170,7 +170,6 @@ public class BlockManager extends Service
     if (pendingBlocks.contains(block)
         || futureBlocks.contains(block)
         || recentChainData.containsBlock(block.getRoot())) {
-      // TODO: Need to make sure the result sets optimistic flag correctly
       return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
     }
     return Optional.empty();
