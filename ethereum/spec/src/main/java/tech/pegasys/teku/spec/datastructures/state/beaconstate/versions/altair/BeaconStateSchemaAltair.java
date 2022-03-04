@@ -53,14 +53,14 @@ public class BeaconStateSchemaAltair
     final SszField previousEpochAttestationsField =
         new SszField(
             PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
-            BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.getFieldName(),
+            BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getValidatorRegistryLimit()));
     final SszField currentEpochAttestationsField =
         new SszField(
             CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
-            BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.getFieldName(),
+            BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getValidatorRegistryLimit()));
@@ -68,17 +68,17 @@ public class BeaconStateSchemaAltair
     final SszField inactivityScores =
         new SszField(
             INACTIVITY_SCORES_FIELD_INDEX,
-            BeaconStateFields.INACTIVITY_SCORES.getFieldName(),
+            BeaconStateFields.INACTIVITY_SCORES,
             SszUInt64ListSchema.create(specConfig.getValidatorRegistryLimit()));
     final SszField currentSyncCommitteeField =
         new SszField(
             CURRENT_SYNC_COMMITTEE_FIELD_INDEX,
-            BeaconStateFields.CURRENT_SYNC_COMMITTEE.getFieldName(),
+            BeaconStateFields.CURRENT_SYNC_COMMITTEE,
             () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
     final SszField nextSyncCommitteeField =
         new SszField(
             NEXT_SYNC_COMMITTEE_FIELD_INDEX,
-            BeaconStateFields.NEXT_SYNC_COMMITTEE.getFieldName(),
+            BeaconStateFields.NEXT_SYNC_COMMITTEE,
             () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
     return List.of(
         previousEpochAttestationsField,
@@ -99,29 +99,28 @@ public class BeaconStateSchemaAltair
   @SuppressWarnings("unchecked")
   public SszPrimitiveListSchema<Byte, SszByte, ?> getPreviousEpochParticipationSchema() {
     return (SszPrimitiveListSchema<Byte, SszByte, ?>)
-        getChildSchema(
-            getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION));
   }
 
   @SuppressWarnings("unchecked")
   public SszPrimitiveListSchema<Byte, SszByte, ?> getCurrentEpochParticipationSchema() {
     return (SszPrimitiveListSchema<Byte, SszByte, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION));
   }
 
   public SszUInt64ListSchema<?> getInactivityScoresSchema() {
     return (SszUInt64ListSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
   public SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
     return (SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
   }
 
   public SyncCommitteeSchema getNextSyncCommitteeSchema() {
     return (SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.getFieldName()));
+        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
   }
 
   @Override
