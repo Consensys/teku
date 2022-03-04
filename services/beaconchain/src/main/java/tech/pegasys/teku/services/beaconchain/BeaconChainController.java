@@ -237,7 +237,8 @@ public class BeaconChainController extends Service
                     .importBlock(block)
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (block) -> syncService.getRecentBlockFetcher().cancelRecentBlockRequest(block.getRoot()));
+        (block, executionOptimistic) ->
+            syncService.getRecentBlockFetcher().cancelRecentBlockRequest(block.getRoot()));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
