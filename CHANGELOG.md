@@ -18,5 +18,6 @@ For information on changes in released versions of Teku, see the [releases page]
      Blocks that pass the gossip validation rules but fail state transition will no longer emit a `block` event.
 
 ### Additions and Improvements
+- Reduced CPU usage when finding ancestor block roots.
 
 ### Bug Fixes
