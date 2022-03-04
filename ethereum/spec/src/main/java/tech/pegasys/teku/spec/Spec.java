@@ -123,14 +123,6 @@ public class Spec {
     return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
   }
 
-  private SpecVersion specVersionFromForkChoice(ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
-    final UInt64 latestSlot =
-        forkChoiceStrategy.getChainHeads().values().stream()
-            .max(UInt64::compareTo)
-            .orElse(UInt64.MAX_VALUE);
-    return atSlot(latestSlot);
-  }
-
   public SpecConfig getSpecConfig(final UInt64 epoch) {
     return atEpoch(epoch).getConfig();
   }
@@ -408,7 +400,7 @@ public class Spec {
 
   public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    return specVersionFromForkChoice(forkChoiceStrategy)
+    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(slot))
         .getForkChoiceUtil()
         .getAncestor(forkChoiceStrategy, root, slot);
   }
@@ -419,14 +411,14 @@ public class Spec {
       UInt64 startSlot,
       UInt64 step,
       UInt64 count) {
-    return specVersionFromForkChoice(forkChoiceStrategy)
+    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot))
         .getForkChoiceUtil()
         .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
-    return specVersionFromForkChoice(forkChoiceStrategy)
+    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot))
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
   }
@@ -635,10 +627,6 @@ public class Spec {
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
-  }
-
-  public boolean isMergeTransitionComplete(final SignedBeaconBlock block) {
-    return atBlock(block).miscHelpers().isMergeTransitionComplete(block);
   }
 
   // Private helpers
