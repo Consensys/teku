@@ -13,5 +13,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 ### Additions and Improvements
+ - Updated gossip validation rules to match consensus spec v1.1.0.
 
 ### Bug Fixes
