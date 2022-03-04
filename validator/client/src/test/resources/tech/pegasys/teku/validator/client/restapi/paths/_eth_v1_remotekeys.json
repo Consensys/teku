@@ -126,5 +126,74 @@
         }
       }
     }
+  },
+  "delete" : {
+    "operationId" : "DeleteRemoteKeys",
+    "summary" : "Delete Remote Keys",
+    "description" : "DELETE must delete all keys from `request.pubkeys` that are known to the validator client and exist in its persistent storage.<br>DELETE should never return a 404 response, even if all pubkeys from request.pubkeys have no existing keystores.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/DeleteKeysRequest"
+          }
+        }
+      }
+    },
+    "security" : [ {
+      "bearerAuth" : [ ]
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Success response",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/DeleteRemoteKeysResponse"
+            }
+          }
+        }
+      },
+      "401" : {
+        "description" : "Unauthorized, no token is found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "403" : {
+        "description" : "Forbidden, a token is found but is invalid",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }

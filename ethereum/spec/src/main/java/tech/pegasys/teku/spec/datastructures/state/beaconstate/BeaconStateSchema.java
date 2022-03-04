@@ -40,51 +40,51 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
 
   default SszBytes32VectorSchema<?> getBlockRootsSchema() {
     return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.BLOCK_ROOTS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.BLOCK_ROOTS.getFieldName()));
   }
 
   default SszBytes32VectorSchema<?> getStateRootsSchema() {
     return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.STATE_ROOTS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.STATE_ROOTS.getFieldName()));
   }
 
   @SuppressWarnings("unchecked")
   default SszPrimitiveListSchema<Bytes32, SszBytes32, ?> getHistoricalRootsSchema() {
     return (SszPrimitiveListSchema<Bytes32, SszBytes32, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS.getFieldName()));
   }
 
   @SuppressWarnings("unchecked")
   default SszListSchema<Eth1Data, ?> getEth1DataVotesSchema() {
     return (SszListSchema<Eth1Data, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES.getFieldName()));
   }
 
   @SuppressWarnings("unchecked")
   default SszListSchema<Validator, ?> getValidatorsSchema() {
     return (SszListSchema<Validator, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.VALIDATORS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.VALIDATORS.getFieldName()));
   }
 
   default SszUInt64ListSchema<?> getBalancesSchema() {
     return (SszUInt64ListSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.BALANCES.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.BALANCES.getFieldName()));
   }
 
   default SszBytes32VectorSchema<?> getRandaoMixesSchema() {
     return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.RANDAO_MIXES.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.RANDAO_MIXES.getFieldName()));
   }
 
   @SuppressWarnings("unchecked")
   default SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> getSlashingsSchema() {
     return (SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.SLASHINGS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.SLASHINGS.getFieldName()));
   }
 
   default SszBitvectorSchema<?> getJustificationBitsSchema() {
     return (SszBitvectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.getFieldName()));
   }
 
   default SyncCommitteeSchema getCurrentSyncCommitteeSchemaOrThrow() {
@@ -96,7 +96,7 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
   }
 
   private SszSchema<?> getSchemaOrThrow(final BeaconStateFields field) {
-    final String fieldName = field.name();
+    final String fieldName = field.getFieldName();
     final int fieldIndex = getFieldIndex(fieldName);
     checkArgument(
         fieldIndex >= 0,

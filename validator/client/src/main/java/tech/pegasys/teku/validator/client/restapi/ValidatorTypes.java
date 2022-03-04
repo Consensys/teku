@@ -32,6 +32,7 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
@@ -199,4 +200,11 @@ public class ValidatorTypes {
               DeleteKeysRequest::getPublicKeys,
               DeleteKeysRequest::setPublicKeys)
           .build();
+
+  public static SerializableTypeDefinition<DeleteRemoteKeysResponse>
+      DELETE_REMOTE_KEYS_RESPONSE_TYPE =
+          SerializableTypeDefinition.object(DeleteRemoteKeysResponse.class)
+              .name("DeleteRemoteKeysResponse")
+              .withField("data", listOf(DELETE_KEY_RESULT), DeleteRemoteKeysResponse::getData)
+              .build();
 }

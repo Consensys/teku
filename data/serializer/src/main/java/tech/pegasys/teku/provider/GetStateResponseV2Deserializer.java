@@ -39,6 +39,9 @@ public class GetStateResponseV2Deserializer extends JsonDeserializer<GetStateRes
     JsonNode node = jp.getCodec().readTree(jp);
     final Version version =
         Version.valueOf(node.findValue("version").asText().toLowerCase(Locale.ROOT));
+    final JsonNode executionOptimisticNode = node.findValue("execution_optimistic");
+    final Boolean executionOptimistic =
+        executionOptimisticNode != null ? executionOptimisticNode.asBoolean() : null;
     final BeaconState state;
     switch (version) {
       case altair:
@@ -50,6 +53,6 @@ public class GetStateResponseV2Deserializer extends JsonDeserializer<GetStateRes
       default:
         throw new IOException("Milestone was not able to be decoded");
     }
-    return new GetStateResponseV2(version, state);
+    return new GetStateResponseV2(version, executionOptimistic, state);
   }
 }

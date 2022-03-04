@@ -42,6 +42,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
 import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
@@ -97,15 +98,19 @@ public class GetStateCommittees extends AbstractHandler implements Handler {
     final Optional<UInt64> slot =
         SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
 
-    SafeFuture<Optional<List<EpochCommitteeResponse>>> future =
+    SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> future =
         chainDataProvider.getStateCommittees(
             pathParams.get(PARAM_STATE_ID), epoch, committeeIndex, slot);
 
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<EpochCommitteeResponse> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<EpochCommitteeResponse>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateCommitteesResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateCommitteesResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

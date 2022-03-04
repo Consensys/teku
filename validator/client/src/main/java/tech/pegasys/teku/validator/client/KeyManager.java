@@ -19,6 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
@@ -29,6 +30,8 @@ public interface KeyManager {
 
   DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath);
+
+  DeleteRemoteKeysResponse deleteExternalValidators(final List<BLSPublicKey> validators);
 
   List<PostKeyResult> importValidators(
       final List<String> keystores,
