@@ -162,7 +162,7 @@ public class BlockManagerTest {
     incrementSlot();
 
     safeJoin(blockManager.importBlock(nextBlock));
-    verify(subscriber).onBlockImported(nextBlock);
+    verify(subscriber).onBlockImported(nextBlock, false);
   }
 
   @Test
@@ -175,11 +175,11 @@ public class BlockManagerTest {
     incrementSlot();
 
     safeJoin(blockManager.importBlock(nextBlock));
-    verify(subscriber).onBlockImported(nextBlock);
+    verify(subscriber).onBlockImported(nextBlock, false);
 
     assertThatSafeFuture(blockManager.importBlock(nextBlock))
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock));
-    verify(subscriber, times(2)).onBlockImported(nextBlock);
+    verify(subscriber, times(2)).onBlockImported(nextBlock, false);
   }
 
   @Test

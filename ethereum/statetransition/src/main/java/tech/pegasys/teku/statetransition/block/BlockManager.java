@@ -113,8 +113,10 @@ public class BlockManager extends Service
     receivedBlockSubscribers.subscribe(importedBlockListener);
   }
 
-  private void notifyReceivedBlockSubscribers(SignedBeaconBlock signedBeaconBlock) {
-    receivedBlockSubscribers.forEach(s -> s.onBlockImported(signedBeaconBlock));
+  private void notifyReceivedBlockSubscribers(
+      final SignedBeaconBlock signedBeaconBlock, final boolean executionOptimistic) {
+    receivedBlockSubscribers.forEach(
+        s -> s.onBlockImported(signedBeaconBlock, executionOptimistic));
   }
 
   @Override
@@ -138,7 +140,7 @@ public class BlockManager extends Service
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
-                notifyReceivedBlockSubscribers(block);
+                notifyReceivedBlockSubscribers(block, result.isImportedOptimistically());
               }
             });
   }
