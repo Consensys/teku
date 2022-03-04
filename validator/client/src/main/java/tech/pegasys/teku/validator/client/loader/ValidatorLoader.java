@@ -115,7 +115,7 @@ public class ValidatorLoader {
       final KeyStoreData keyStoreData,
       final String password,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
-    if (!canAddLocalValidator()) {
+    if (!canAddValidator(mutableLocalValidatorSource)) {
       return PostKeyResult.error("Not able to add validator");
     }
     final BLSPublicKey publicKey =
@@ -142,9 +142,17 @@ public class ValidatorLoader {
     return PostKeyResult.success();
   }
 
+  public DeleteKeyResult deleteExternalMutableValidator(final BLSPublicKey publicKey) {
+    if (mutableExternalValidatorSource.isEmpty()) {
+      return DeleteKeyResult.error(
+          "Unable to delete external validator, could not determine the storage location.");
+    }
+    return mutableExternalValidatorSource.get().deleteValidator(publicKey);
+  }
+
   public synchronized PostKeyResult loadExternalMutableValidator(
       final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
-    if (!canAddExternalValidator()) {
+    if (!canAddValidator(mutableExternalValidatorSource)) {
       return PostKeyResult.error("Not able to add validator");
     }
     if (ownedValidators.hasValidator(publicKey)) {
@@ -168,15 +176,10 @@ public class ValidatorLoader {
     LOG.info("Added validator: {}", publicKey.toString());
   }
 
-  private boolean canAddLocalValidator() {
-    return mutableLocalValidatorSource.isPresent()
-        && mutableLocalValidatorSource.get().canUpdateValidators()
+  private boolean canAddValidator(Optional<ValidatorSource> validatorSource) {
+    return validatorSource.isPresent()
+        && validatorSource.get().canUpdateValidators()
         && maybeDataDirLayout.isPresent();
-  }
-
-  private boolean canAddExternalValidator() {
-    return mutableExternalValidatorSource.isPresent()
-        && mutableExternalValidatorSource.get().canUpdateValidators();
   }
 
   public OwnedValidators getOwnedValidators() {

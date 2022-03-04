@@ -29,6 +29,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
@@ -73,6 +74,7 @@ public class ValidatorRestApi {
         .endpoint(new PostKeys(keyManager, slashingProtectionPath))
         .endpoint(new GetRemoteKeys(keyManager))
         .endpoint(new PostRemoteKeys(keyManager))
+        .endpoint(new DeleteRemoteKeys(keyManager))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

@@ -35,6 +35,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -75,13 +76,15 @@ public class GetStateRoot extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    final SafeFuture<Optional<Root>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<Root>>> future =
         chainDataProvider.getStateRoot(pathParamMap.get(PARAM_STATE_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final Root response)
+  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Root> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateRootResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateRootResponse(response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

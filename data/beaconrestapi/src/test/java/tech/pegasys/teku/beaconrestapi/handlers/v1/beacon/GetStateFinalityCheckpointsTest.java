@@ -19,17 +19,19 @@ import static org.mockito.Mockito.when;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  final BeaconState state = dataStructureUtil.randomBeaconState();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final BeaconState state = dataStructureUtil.randomBeaconState();
 
   @Test
   public void shouldReturnFinalityCheckpointsInfo() throws Exception {
@@ -38,7 +40,13 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.getStateFinalityCheckpoints("head"))
         .thenReturn(
-            SafeFuture.completedFuture(Optional.of(FinalityCheckpointsResponse.fromState(state))));
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ObjectAndMetaData<>(
+                        FinalityCheckpointsResponse.fromState(state),
+                        spec.getGenesisSpec().getMilestone(),
+                        false,
+                        spec.isMilestoneSupported(SpecMilestone.BELLATRIX)))));
 
     handler.handle(context);
 

@@ -38,7 +38,9 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
     when(chainDataProvider.getStateValidatorBalances("head", List.of("1", "2", "3", "4")))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorBalanceResponse))));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(withMetaData(List.of(validatorBalanceResponse)))));
     handler.handle(context);
     GetStateValidatorBalancesResponse response =
         getResponseFromFuture(GetStateValidatorBalancesResponse.class);
