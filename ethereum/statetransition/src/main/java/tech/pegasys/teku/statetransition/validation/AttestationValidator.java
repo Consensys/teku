@@ -189,8 +189,8 @@ public class AttestationValidator {
                                 ancestorOfLMDVote ->
                                     ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
                             .orElse(false)) {
-                          return InternalValidationResult.reject(
-                              "Attestation block root does not descent from finalized checkpoint");
+                          return InternalValidationResult.ignore(
+                              "Attestation block root does not descend from finalized checkpoint");
                         }
 
                         // Save committee shuffling seed since the state is available and
