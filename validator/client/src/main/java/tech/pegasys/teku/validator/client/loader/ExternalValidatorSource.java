@@ -27,7 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
@@ -54,6 +56,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   private final PublicKeyLoader publicKeyLoader;
   private final ThrottlingTaskQueue externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
+  private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
   private ExternalValidatorSource(
       final Spec spec,
@@ -141,10 +144,14 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     try {
       String content = Files.readString(file.toPath());
       ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+      URL externalSignerUrl =
+          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl());
+
+      externalValidatorSourceMap.put(externalValidator.getPublicKey(), externalSignerUrl);
       return new ExternalValidatorProvider(
           spec,
           externalSignerHttpClientFactory,
-          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl()),
+          externalSignerUrl,
           externalValidator.getPublicKey(),
           config.getValidatorExternalSignerTimeout(),
           externalSignerTaskQueue,
@@ -158,8 +165,32 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
   @Override
   public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
-    throw new UnsupportedOperationException(
-        "Cannot delete validator from external validator source.");
+    if (!canUpdateValidators()) {
+      return DeleteKeyResult.error(
+          "Cannot delete validator from read-only external validator source.");
+    }
+
+    if (!externalValidatorSourceMap.containsKey(publicKey)) {
+      return DeleteKeyResult.notFound();
+    }
+
+    return delete(publicKey);
+  }
+
+  private DeleteKeyResult delete(BLSPublicKey publicKey) {
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
+    final Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout).resolve(fileName + ".json");
+    try {
+      ensureDirectoryExists(ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout));
+      Files.delete(path);
+      externalValidatorSourceMap.remove(publicKey);
+      return DeleteKeyResult.success();
+
+    } catch (IOException e) {
+      return DeleteKeyResult.error(e.toString());
+    }
   }
 
   @Override
@@ -207,6 +238,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
               metricsSystem,
               readOnly);
 
+      externalValidatorSourceMap.put(publicKey, url);
       return new AddValidatorResult(PostKeyResult.success(), Optional.of(provider.createSigner()));
 
     } catch (InvalidConfigurationException | IOException ex) {
