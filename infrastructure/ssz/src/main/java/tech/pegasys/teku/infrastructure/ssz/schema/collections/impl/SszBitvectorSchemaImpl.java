@@ -14,7 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.sszSerializedType;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.sszSerializedType;
 
 import java.util.List;
 import java.util.stream.IntStream;

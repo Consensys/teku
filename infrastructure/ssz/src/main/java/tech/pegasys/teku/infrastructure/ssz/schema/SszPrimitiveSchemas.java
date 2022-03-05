@@ -14,12 +14,12 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.SSZ_BIT_TYPE_DEFINTION;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.SSZ_BYTES32_TYPE_DEFINITION;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.SSZ_BYTES4_TYPE_DEFINITION;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.SSZ_NONE_TYPE_DEFINITION;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.SSZ_UINT256_TYPE_DEFINITION;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions.SSZ_UINT64_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BIT_TYPE_DEFINTION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES32_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES4_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_NONE_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_UINT256_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_UINT64_TYPE_DEFINITION;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
@@ -162,7 +163,7 @@ public interface SszPrimitiveSchemas {
 
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
-          return SszPrimitiveTypeDefinitions.SSZ_BYTE_TYPE_DEFINITION;
+          return SszPrimitiveTypeDefinitions.sszSerializedType(this, "Hexadecimal byte");
         }
 
         @Override

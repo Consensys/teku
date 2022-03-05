@@ -11,13 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz.schema;
+package tech.pegasys.teku.infrastructure.ssz.schema.json;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import java.io.IOException;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.types.BooleanTypeDefinition;
@@ -25,14 +22,14 @@ import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public interface SszPrimitiveTypeDefinitions {
   DeserializableTypeDefinition<SszNone> SSZ_NONE_TYPE_DEFINITION =
@@ -49,22 +46,19 @@ public interface SszPrimitiveTypeDefinitions {
           .build();
 
   DeserializableTypeDefinition<SszBit> SSZ_BIT_TYPE_DEFINTION =
-      new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.BIT_SCHEMA, new BooleanTypeDefinition());
-
-  DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINITION =
-      new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.BYTE_SCHEMA, CoreTypes.BYTE_TYPE);
+      new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BIT_SCHEMA, new BooleanTypeDefinition());
 
   DeserializableTypeDefinition<SszBytes32> SSZ_BYTES32_TYPE_DEFINITION =
-      new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.BYTES32_SCHEMA, CoreTypes.BYTES32_TYPE);
+      new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTES32_SCHEMA, CoreTypes.BYTES32_TYPE);
 
   DeserializableTypeDefinition<SszBytes4> SSZ_BYTES4_TYPE_DEFINITION =
-      new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.BYTES4_SCHEMA, CoreTypes.BYTES4_TYPE);
+      new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTES4_SCHEMA, CoreTypes.BYTES4_TYPE);
 
   DeserializableTypeDefinition<SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
-      new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.UINT64_SCHEMA, CoreTypes.UINT64_TYPE);
+      new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT64_SCHEMA, CoreTypes.UINT64_TYPE);
 
   DeserializableTypeDefinition<SszUInt256> SSZ_UINT256_TYPE_DEFINITION =
-      new SszTypeDefintionWrapper<>(SszPrimitiveSchemas.UINT256_SCHEMA, CoreTypes.UINT256_TYPE);
+      new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT256_SCHEMA, CoreTypes.UINT256_TYPE);
 
   static <T extends SszData> DeserializableTypeDefinition<T> sszSerializedType(
       final SszSchema<T> schema, final String description) {
@@ -74,33 +68,5 @@ public interface SszPrimitiveTypeDefinitions {
         .format("bytes")
         .description(description)
         .build();
-  }
-
-  class SszTypeDefintionWrapper<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
-      implements DeserializableTypeDefinition<SszDataT> {
-    private final SszPrimitiveSchema<DataT, SszDataT> schema;
-    private final DeserializableTypeDefinition<DataT> primitiveTypeDefinition;
-
-    public SszTypeDefintionWrapper(
-        final SszPrimitiveSchema<DataT, SszDataT> schema,
-        final DeserializableTypeDefinition<DataT> primitiveTypeDefinition) {
-      this.schema = schema;
-      this.primitiveTypeDefinition = primitiveTypeDefinition;
-    }
-
-    @Override
-    public SszDataT deserialize(final JsonParser parser) throws IOException {
-      return schema.boxed(primitiveTypeDefinition.deserialize(parser));
-    }
-
-    @Override
-    public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-      primitiveTypeDefinition.serializeOpenApiType(gen);
-    }
-
-    @Override
-    public void serialize(final SszDataT value, final JsonGenerator gen) throws IOException {
-      primitiveTypeDefinition.serialize(value.get(), gen);
-    }
   }
 }

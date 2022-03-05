@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.math.BigInteger;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -30,23 +27,6 @@ public class CoreTypes {
 
   public static final DeserializableTypeDefinition<Boolean> BOOLEAN_TYPE =
       new BooleanTypeDefinition();
-
-  public static final DeserializableTypeDefinition<Byte> BYTE_TYPE =
-      DeserializableTypeDefinition.string(Byte.class)
-          .formatter(value -> Bytes.of(value).toHexString())
-          .parser(
-              value -> {
-                final byte[] bytes = Bytes.fromHexString(value).toArrayUnsafe();
-                checkArgument(
-                    bytes.length == 1,
-                    "Invalid byte value, expected 1 byte but got %s",
-                    bytes.length);
-                return bytes[0];
-              })
-          .example("0xcf")
-          .description("Hexadecimal byte")
-          .format("byte")
-          .build();
 
   public static final DeserializableTypeDefinition<Bytes32> BYTES32_TYPE =
       DeserializableTypeDefinition.string(Bytes32.class)
