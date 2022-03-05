@@ -11,7 +11,6 @@ dependencies {
   implementation project(':infrastructure:json')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:serviceutils')
-  implementation project(':infrastructure:ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'

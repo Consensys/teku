@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Objects;
@@ -118,7 +117,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
     public void set(final int selector, final Optional<?> maybeValue) {
       maybeValue.ifPresent(
           value -> {
-            checkNotNull(value, "Cannot set two values for SszUnion");
+            checkArgument(this.value == null, "Cannot set two values for SszUnion");
             checkArgument(value instanceof SszData, "Got invalid value for SszUnion");
             this.selector = selector;
             this.value = (SszData) value;
