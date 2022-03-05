@@ -20,10 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitlistImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
@@ -37,6 +39,11 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
 
   public SszBitlistSchemaImpl(long maxLength) {
     super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
+  }
+
+  @Override
+  public DeserializableTypeDefinition<SszBitlist> getJsonTypeDefinition() {
+    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ hexadecimal");
   }
 
   @Override
