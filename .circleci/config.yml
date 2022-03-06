@@ -294,7 +294,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 4
+    parallelism: 5
     executor: machine_executor_amd64
     steps:
       - prepare
