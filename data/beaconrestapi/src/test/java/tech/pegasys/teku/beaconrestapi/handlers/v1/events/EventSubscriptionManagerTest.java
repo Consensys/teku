@@ -78,7 +78,8 @@ public class EventSubscriptionManagerTest {
           data.randomBytes32(),
           data.randomBytes32(),
           data.randomBytes32(),
-          epoch);
+          epoch,
+          null);
 
   private final HeadEvent headEvent =
       new HeadEvent(
@@ -237,7 +238,8 @@ public class EventSubscriptionManagerTest {
             eventString.substring(eventString.indexOf("{")), BlockEvent.class);
 
     assertThat(event)
-        .isEqualTo(BlockEvent.fromSignedBeaconBlock(sampleBlock.asInternalSignedBeaconBlock(spec)));
+        .isEqualTo(
+            BlockEvent.fromSignedBeaconBlock(sampleBlock.asInternalSignedBeaconBlock(spec), null));
   }
 
   @Test
@@ -336,7 +338,7 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerBlockEvent() {
-    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec));
+    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec), false);
     asyncRunner.executeQueuedActions();
   }
 

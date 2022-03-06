@@ -145,7 +145,7 @@ public abstract class AbstractBeaconStateSchemaTest<
                 createSchema(
                     List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD, randomField)))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Expected invariant field 'SLOT' at index 2, but got 'random'");
+        .hasMessageContaining("Expected invariant field 'slot' at index 2, but got 'random'");
   }
 
   private BeaconStateSchema<BeaconState, MutableBeaconState> createSchema(
