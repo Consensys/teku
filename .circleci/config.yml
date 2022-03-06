@@ -294,7 +294,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 3
+    parallelism: 4
     executor: machine_executor_amd64
     steps:
       - prepare
@@ -302,6 +302,7 @@ jobs:
           at: ~/project
       - run:
           name: AcceptanceTests
+          no_output_timeout: 20m
           command: |
             CLASSNAMES=$(circleci tests glob "**/src/acceptance-test/java/**/*.java" \
               | sed 's@.*/src/acceptance-test/java/@@' \
