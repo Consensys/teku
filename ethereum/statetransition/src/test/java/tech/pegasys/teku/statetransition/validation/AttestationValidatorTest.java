@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -27,7 +28,11 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +43,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -80,6 +86,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
  * <p>The signature of attestation is valid.
  */
 class AttestationValidatorTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -288,7 +295,8 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId + 1)))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .matches(rejected("Attestation received on incorrect subnet"), "Rejected incorrect subnet");
+
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
@@ -317,7 +325,7 @@ class AttestationValidatorTest {
                             data.getTarget()),
                         attestation.getAggregateSignature()),
                     expectedSubnetId)))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .matches(rejected("Committee index 2 is out of range"), "Rejected committee out of range");
   }
 
   @Test
@@ -341,41 +349,57 @@ class AttestationValidatorTest {
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
                         attestation.getAggregateSignature()),
                     expectedSubnetId)))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .matches(rejected("is not from target epoch"), "Rejected with is not from target epoch");
   }
 
   @Test
   public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithTargetRoot() {
-    Spec spec = mock(Spec.class);
-    when(spec.getAncestor(any(), any(), any())).thenReturn(Optional.of(Bytes32.ZERO));
-    final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier);
     final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
+    final AttestationValidator validator =
+        new AttestationValidator(spec, recentChainData, signatureVerifier);
+    final AttestationData data = attestation.getData();
+    final Checkpoint checkpoint =
+        new Checkpoint(
+            data.getTarget().getEpoch().minusMinZero(1),
+            blockAndState.getBeaconBlock().orElseThrow().getParentRoot());
     final int expectedSubnetId =
         spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
+
+    // the signature would be invalid, but it's actually not the point of the test case.
+    when(signatureVerifier.verify(anyList(), any(Bytes.class), any()))
+        .thenReturn(SafeFuture.completedFuture(true));
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+                ValidateableAttestation.fromNetwork(
+                    spec,
+                    attestationSchema.create(
+                        attestation.getAggregationBits(),
+                        new AttestationData(
+                            data.getSlot(),
+                            data.getIndex(),
+                            data.getBeacon_block_root(),
+                            data.getSource(),
+                            checkpoint),
+                        attestation.getAggregateSignature()),
+                    expectedSubnetId)))
+        .matches(
+            rejected("descend from target block"), "Rejected does not descend from target block");
   }
 
-  @Test
-  public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithFinalizedCheckpointRoot() {
-    Spec spec = mock(Spec.class);
-    final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier);
-    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
-    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(spec.getAncestor(any(), any(), any()))
-        .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
-        .thenReturn(Optional.of(Bytes32.ZERO));
-    final int expectedSubnetId =
-        spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
-    assertThat(
-            validator.validate(
-                ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+  private Predicate<? super CompletableFuture<InternalValidationResult>> rejected(
+      final String messageContents) {
+    return result -> {
+      try {
+        InternalValidationResult internalValidationResult = result.get();
+        return internalValidationResult.isReject()
+            && internalValidationResult.getDescription().orElseThrow().contains(messageContents);
+      } catch (Exception e) {
+        LOG.error("failed to evaluate rejected predicate", e);
+        return false;
+      }
+    };
   }
 
   private InternalValidationResult validate(final Attestation attestation) {
