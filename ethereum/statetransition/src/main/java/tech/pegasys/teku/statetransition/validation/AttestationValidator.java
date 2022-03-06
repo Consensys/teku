@@ -179,19 +179,8 @@ public class AttestationValidator {
 
                         // The current finalized_checkpoint is an ancestor of the block defined by
                         // aggregate.data.beacon_block_root
-                        Checkpoint finalizedCheckpoint =
-                            recentChainData.getFinalizedCheckpoint().orElseThrow();
-                        if (!spec.getAncestor(
-                                recentChainData.getForkChoiceStrategy().orElseThrow(),
-                                data.getBeacon_block_root(),
-                                spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch()))
-                            .map(
-                                ancestorOfLMDVote ->
-                                    ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
-                            .orElse(false)) {
-                          return InternalValidationResult.reject(
-                              "Attestation block root does not descent from finalized checkpoint");
-                        }
+                        // Because all nodes in the proto-array descend from the finalized block,
+                        // no further validation is needed to satisfy this rule.
 
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
