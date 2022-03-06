@@ -113,6 +113,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
 
+    final Boolean executionOptimisticForApi = getExecutionOptimisticForApi(executionOptimistic);
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -123,7 +124,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   bestBlockRoot,
                   context.getOldBestStateRoot(),
                   stateRoot,
-                  configProvider.computeEpochAtSlot(slot));
+                  configProvider.computeEpochAtSlot(slot),
+                  executionOptimisticForApi);
           notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
@@ -133,7 +135,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             bestBlockRoot,
             stateRoot,
             epochTransition,
-            provider.isBellatrixEnabled() ? executionOptimistic : null,
+            executionOptimisticForApi,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
@@ -164,8 +166,10 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   protected void onNewBlock(
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block) {
-    final BlockEvent blockEvent = BlockEvent.fromSignedBeaconBlock(block);
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block,
+      final boolean executionOptimistic) {
+    final BlockEvent blockEvent =
+        BlockEvent.fromSignedBeaconBlock(block, getExecutionOptimisticForApi(executionOptimistic));
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
@@ -191,6 +195,10 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     } catch (final JsonProcessingException e) {
       LOG.error("Failed to serialize event", e);
     }
+  }
+
+  private Boolean getExecutionOptimisticForApi(final boolean executionOptimistic) {
+    return provider.isBellatrixEnabled() ? executionOptimistic : null;
   }
 
   public static class EventSource {

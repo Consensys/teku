@@ -51,7 +51,7 @@ public class BeaconStateSchemaBellatrix
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name(),
+            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
             () -> new ExecutionPayloadHeaderSchema(SpecConfigBellatrix.required(specConfig)));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
@@ -70,33 +70,33 @@ public class BeaconStateSchemaBellatrix
   @SuppressWarnings("unchecked")
   public SszPrimitiveListSchema<Byte, SszByte, ?> getPreviousEpochParticipationSchema() {
     return (SszPrimitiveListSchema<Byte, SszByte, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION));
   }
 
   @SuppressWarnings("unchecked")
   public SszPrimitiveListSchema<Byte, SszByte, ?> getCurrentEpochParticipationSchema() {
     return (SszPrimitiveListSchema<Byte, SszByte, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION));
   }
 
   public SszUInt64ListSchema<?> getInactivityScoresSchema() {
     return (SszUInt64ListSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
   public SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
     return (SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
   }
 
   public SyncCommitteeSchema getNextSyncCommitteeSchema() {
     return (SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
   }
 
   public ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
     return (ExecutionPayloadHeaderSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
   }
 
   @Override

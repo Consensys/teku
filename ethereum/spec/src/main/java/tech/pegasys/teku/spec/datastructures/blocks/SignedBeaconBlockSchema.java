@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -26,6 +27,10 @@ public class SignedBeaconBlockSchema
         "SignedBeaconBlock",
         namedSchema("message", beaconBlockSchema),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
+  }
+
+  public SignedBeaconBlock create(final BeaconBlock message, final BLSSignature signature) {
+    return new SignedBeaconBlock(this, message, signature);
   }
 
   @Override

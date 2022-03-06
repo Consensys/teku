@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
@@ -54,6 +55,23 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
   @Override
   public Optional<Throwable> getFailureCause() {
     return Optional.empty();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final SuccessfulBlockImportResult that = (SuccessfulBlockImportResult) o;
+    return blockOnCanonicalChain == that.blockOnCanonicalChain && Objects.equals(block, that.block);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(block, blockOnCanonicalChain);
   }
 
   @Override
