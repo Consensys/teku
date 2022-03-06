@@ -179,6 +179,8 @@ public class AttestationValidator {
 
                         // The current finalized_checkpoint is an ancestor of the block defined by
                         // aggregate.data.beacon_block_root
+                        // Because all nodes in the proto-array descend from the finalized block,
+                        // no further validation is needed to satisfy this rule.
 
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
