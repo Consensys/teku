@@ -29,8 +29,8 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
     public ForkDataSchema() {
       super(
           "ForkData",
-          namedSchema("currentVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
-          namedSchema("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_SCHEMA));
+          namedSchema("current_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("genesis_validators_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override

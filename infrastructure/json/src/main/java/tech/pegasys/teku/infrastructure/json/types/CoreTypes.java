@@ -28,6 +28,8 @@ public class CoreTypes {
   public static final DeserializableTypeDefinition<Boolean> BOOLEAN_TYPE =
       new BooleanTypeDefinition();
 
+  public static final DeserializableTypeDefinition<Byte> BYTE_TYPE = new ByteTypeDefinition();
+
   public static final DeserializableTypeDefinition<Bytes32> BYTES32_TYPE =
       DeserializableTypeDefinition.string(Bytes32.class)
           .formatter(Bytes32::toHexString)

@@ -163,7 +163,7 @@ public interface SszPrimitiveSchemas {
 
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
-          return SszPrimitiveTypeDefinitions.sszSerializedType(this, "Hexadecimal byte");
+          return SszPrimitiveTypeDefinitions.SSZ_BYTE_TYPE_DEFINTION;
         }
 
         @Override
