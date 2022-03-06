@@ -71,10 +71,10 @@ public class ValidatorKeysApi {
     checkStatus(addResult.get("data"), expectedStatus);
   }
 
-  public void removeValidatorAndCheckStatus(
+  public void removeLocalValidatorAndCheckStatus(
       final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
     final JsonNode removeResult =
-        jsonProvider.getObjectMapper().readTree(removeValidator(publicKey));
+        jsonProvider.getObjectMapper().readTree(removeLocalValidator(publicKey));
     assertThat(removeResult.get("data").size()).isEqualTo(1);
     checkStatus(removeResult.get("data"), expectedStatus);
     if (expectedStatus.equals("deleted") || expectedStatus.equals("not_active")) {
@@ -84,6 +84,14 @@ public class ValidatorKeysApi {
       assertThat(slashingData.size()).isEqualTo(1);
       assertThat(slashingData.get(0).get("pubkey").asText()).isEqualTo(publicKey.toString());
     }
+  }
+
+  public void removeRemoteValidatorAndCheckStatus(
+      final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
+    final JsonNode removeResult =
+        jsonProvider.getObjectMapper().readTree(removeRemoteValidator(publicKey));
+    assertThat(removeResult.get("data").size()).isEqualTo(1);
+    checkStatus(removeResult.get("data"), expectedStatus);
   }
 
   public void assertLocalValidatorListing(final List<BLSPublicKey> expectedKeys)
@@ -176,11 +184,19 @@ public class ValidatorKeysApi {
     return Map.of("pubkey", publicKey.toString(), "url", signerUrl);
   }
 
-  private String removeValidator(final BLSPublicKey publicKey) throws IOException {
+  private String removeLocalValidator(final BLSPublicKey publicKey) throws IOException {
     final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
     final String result =
         httpClient.delete(validatorUri.get(), LOCAL_KEYS_URL, body, authHeaders());
-    LOG.debug("DELETE Keys: " + result);
+    LOG.debug("DELETE LOCAL Keys: " + result);
+    return result;
+  }
+
+  private String removeRemoteValidator(final BLSPublicKey publicKey) throws IOException {
+    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
+    final String result =
+        httpClient.delete(validatorUri.get(), REMOTE_KEYS_URL, body, authHeaders());
+    LOG.debug("DELETE REMOTE Keys: " + result);
     return result;
   }
 
