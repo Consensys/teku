@@ -88,9 +88,9 @@ public class SimpleHttpClient {
     final Request.Builder builder =
         new Request.Builder().url(baseUrl.resolve(path).toURL()).delete(requestBody);
     headers.forEach(builder::header);
+    LOG.debug("DELETE {}{}, body {}", baseUrl, path, jsonBody);
 
     final Response response = httpClient.newCall(builder.build()).execute();
-
     assertThat(response.isSuccessful()).isTrue();
     final ResponseBody responseBody = response.body();
     assertThat(responseBody).isNotNull();

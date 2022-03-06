@@ -20,6 +20,7 @@ import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -103,6 +104,18 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
         validatorKeystores.getPublicKeys(), web3SignerNode.getValidatorRestApiUrl(), "duplicate");
 
     validatorClient.waitForLogMessageContaining("Published block");
+
+    // remove a validator
+    final BLSPublicKey removedPubKey = validatorKeystores.getPublicKeys().get(0);
+    validatorNodeApi.removeRemoteValidatorAndCheckStatus(removedPubKey, "deleted");
+
+    // should only be 7 validators left
+    validatorClient.waitForLogMessageContaining("Removed remote validator");
+    validatorClient.waitForLogMessageContaining("Published block");
+    validatorNodeApi.assertRemoteValidatorListing(validatorKeystores.getPublicKeys().subList(1, 7));
+
+    // remove validator that doesn't exist
+    validatorNodeApi.removeRemoteValidatorAndCheckStatus(removedPubKey, "not_found");
 
     validatorClient.stop();
     web3SignerNode.stop();
