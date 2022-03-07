@@ -1,16 +1,13 @@
 {
   "title" : "ImportRemoteSignerDefinition",
   "type" : "object",
+  "required" : [ "pubkey" ],
   "properties" : {
     "pubkey" : {
       "$ref" : "#/components/schemas/PubKey"
     },
     "url" : {
-      "allOf" : [ {
-        "$ref" : "#/components/schemas/Signer"
-      }, {
-        "required" : false
-      } ]
+      "$ref" : "#/components/schemas/Signer"
     }
   }
 }

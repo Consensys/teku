@@ -1,16 +1,13 @@
 {
   "title" : "SignerDefinition",
   "type" : "object",
+  "required" : [ "pubkey", "readonly" ],
   "properties" : {
     "pubkey" : {
       "$ref" : "#/components/schemas/PubKey"
     },
     "url" : {
-      "allOf" : [ {
-        "$ref" : "#/components/schemas/Signer"
-      }, {
-        "required" : false
-      } ]
+      "$ref" : "#/components/schemas/Signer"
     },
     "readonly" : {
       "type" : "boolean"

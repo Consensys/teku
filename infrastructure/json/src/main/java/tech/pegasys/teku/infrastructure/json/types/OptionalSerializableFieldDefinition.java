@@ -45,14 +45,8 @@ class OptionalSerializableFieldDefinition<TObject, TField>
 
   @Override
   public void writeOpenApiField(final JsonGenerator gen) throws IOException {
-    gen.writeObjectFieldStart(name);
-    gen.writeArrayFieldStart("allOf");
+    gen.writeFieldName(name);
     type.serializeOpenApiTypeOrReference(gen);
-    gen.writeStartObject();
-    gen.writeBooleanField("required", false);
-    gen.writeEndObject();
-    gen.writeEndArray();
-    gen.writeEndObject();
   }
 
   @Override
