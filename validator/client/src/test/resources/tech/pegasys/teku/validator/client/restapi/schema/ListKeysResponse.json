@@ -1,21 +1,25 @@
 {
-  "title": "ListKeysResponse",
-  "type": "object",
-  "properties": {
-    "data": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "validating_pubkey": {
-            "$ref": "#/components/schemas/PubKey"
+  "title" : "ListKeysResponse",
+  "type" : "object",
+  "properties" : {
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "properties" : {
+          "validating_pubkey" : {
+            "$ref" : "#/components/schemas/PubKey"
           },
-          "derivation_path": {
-            "type": "string",
-            "description": "The derivation path (if present in the imported keystore)."
+          "derivation_path" : {
+            "allOf" : [ {
+              "type" : "string",
+              "description" : "The derivation path (if present in the imported keystore)."
+            }, {
+              "required" : false
+            } ]
           },
-          "readonly": {
-            "type": "boolean"
+          "readonly" : {
+            "type" : "boolean"
           }
         }
       }
