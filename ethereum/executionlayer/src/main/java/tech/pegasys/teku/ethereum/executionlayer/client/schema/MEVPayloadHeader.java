@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,26 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
+package tech.pegasys.teku.ethereum.executionlayer.client.schema;
 
-import java.util.Locale;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
-
-public enum BlockBodyFields implements SszFieldName {
-  RANDAO_REVEAL,
-  ETH1_DATA,
-  GRAFFITI,
-  PROPOSER_SLASHINGS,
-  ATTESTER_SLASHINGS,
-  ATTESTATIONS,
-  DEPOSITS,
-  VOLUNTARY_EXITS,
-  SYNC_AGGREGATE,
-  EXECUTION_PAYLOAD,
-  EXECUTION_PAYLOAD_HEADER;
-
-  @Override
-  public String getSszFieldName() {
-    return name().toLowerCase(Locale.ROOT);
-  }
-}
+public class MEVPayloadHeader {}

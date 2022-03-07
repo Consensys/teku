@@ -15,22 +15,26 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.SignedBlindedBeaconBlock;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineClient {
+  // eth namespace
   SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
 
+  // engine namespace
   SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId);
 
   SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload);
@@ -40,4 +44,10 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
       TransitionConfigurationV1 transitionConfiguration);
+
+  // builder namespace
+  SafeFuture<Response<ExecutionPayloadHeaderV1>> getPayloadHeader(Bytes8 payloadId);
+
+  SafeFuture<Response<ExecutionPayloadV1>> proposeBlindedBlock(
+      SignedBlindedBeaconBlock signedBlindedBeaconBlock);
 }

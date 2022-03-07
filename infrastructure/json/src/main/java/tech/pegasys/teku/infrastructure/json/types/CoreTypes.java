@@ -60,6 +60,15 @@ public class CoreTypes {
           .format("uint256")
           .build();
 
+  public static final DeserializableTypeDefinition<UInt256> UINT256_TYPE =
+      DeserializableTypeDefinition.string(UInt256.class)
+          .formatter(value -> value.toBigInteger().toString(10))
+          .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
+          .example("1")
+          .description("unsigned 256 bit integer")
+          .format("uint256")
+          .build();
+
   public static final DeserializableTypeDefinition<Integer> INTEGER_TYPE =
       new IntegerTypeDefinition();
 

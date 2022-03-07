@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -107,6 +108,13 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   @Override
   public BeaconBlockBodyBuilder executionPayload(
       Supplier<ExecutionPayload> executionPayloadSupplier) {
+    // No execution payload in phase 0
+    return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder executionPayloadHeader(
+      Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
     // No execution payload in phase 0
     return this;
   }

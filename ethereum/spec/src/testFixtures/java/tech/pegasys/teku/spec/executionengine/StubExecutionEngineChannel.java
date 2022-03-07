@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -132,6 +133,33 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
       TransitionConfiguration transitionConfiguration) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("exchangeTransitionConfiguration not supported"));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(Bytes8 payloadId, UInt64 slot) {
+    return getPayload(payloadId, slot)
+        .thenApply(
+            executionPayload ->
+                spec.atSlot(slot)
+                    .getSchemaDefinitions()
+                    .toVersionBellatrix()
+                    .orElseThrow()
+                    .getExecutionPayloadHeaderSchema()
+                    .create(
+                        executionPayload.getParentHash(),
+                        executionPayload.getFeeRecipient(),
+                        executionPayload.getStateRoot(),
+                        executionPayload.getReceiptsRoot(),
+                        executionPayload.getLogsBloom(),
+                        executionPayload.getPrevRandao(),
+                        executionPayload.getBlockNumber(),
+                        executionPayload.getGasLimit(),
+                        executionPayload.getGasUsed(),
+                        executionPayload.getTimestamp(),
+                        executionPayload.getExtraData(),
+                        executionPayload.getBaseFeePerGas(),
+                        executionPayload.getBlockHash(),
+                        executionPayload.getTransactions().hashTreeRoot()));
   }
 
   public PayloadStatus getPayloadStatus() {
