@@ -24,7 +24,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
@@ -121,8 +121,8 @@ class EndpointMetadataTest {
   @Test
   @SuppressWarnings({"unchecked", "rawtypes"})
   void requestBodyType_shouldAcceptLists() {
-    final DeserializableArrayTypeDefinition<String> type =
-        new DeserializableArrayTypeDefinition(CoreTypes.STRING_TYPE);
+    final DeserializableListTypeDefinition<String> type =
+        new DeserializableListTypeDefinition(CoreTypes.STRING_TYPE);
     final EndpointMetadata metadata =
         validBuilder()
             .requestBodyType(type)

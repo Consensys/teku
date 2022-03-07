@@ -13,38 +13,32 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import java.util.Collection;
 
-public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
-    implements SerializableTypeDefinition<CollectionT> {
-  private final SerializableTypeDefinition<ItemT> itemType;
-
-  public SerializableArrayTypeDefinition(final SerializableTypeDefinition<ItemT> itemType) {
-    this.itemType = itemType;
-  }
-
-  @Override
-  public void serialize(final CollectionT values, final JsonGenerator gen) throws IOException {
-    gen.writeStartArray();
-    for (ItemT value : values) {
-      itemType.serialize(value, gen);
-    }
-    gen.writeEndArray();
-  }
+class ByteTypeDefinition implements DeserializableTypeDefinition<Byte> {
 
   @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
-    gen.writeStringField("type", "array");
-    gen.writeFieldName("items");
-    itemType.serializeOpenApiTypeOrReference(gen);
+    gen.writeStringField("type", "string");
+    gen.writeStringField("format", "byte");
     gen.writeEndObject();
   }
 
   @Override
-  public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-    return itemType.getSelfAndReferencedTypeDefinitions();
+  public void serialize(final Byte value, final JsonGenerator gen) throws IOException {
+    gen.writeString(Integer.toString(Byte.toUnsignedInt(value)));
+  }
+
+  @Override
+  public Byte deserialize(final JsonParser parser) throws IOException {
+    final int value = Integer.parseUnsignedInt(parser.getValueAsString(), 10);
+    checkArgument(
+        value <= Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for unsigned byte", value);
+    return (byte) value;
   }
 }

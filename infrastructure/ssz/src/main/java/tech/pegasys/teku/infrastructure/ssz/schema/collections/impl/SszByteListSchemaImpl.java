@@ -17,12 +17,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszByteListSchemaImpl<SszListT extends SszByteList>
@@ -50,5 +52,10 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
   public SszListT createFromElements(List<? extends SszByte> elements) {
     Bytes bytes = Bytes.of(elements.stream().mapToInt(sszByte -> 0xFF & sszByte.get()).toArray());
     return fromBytes(bytes);
+  }
+
+  @Override
+  public DeserializableTypeDefinition<SszListT> getJsonTypeDefinition() {
+    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ encoded byte list");
   }
 }

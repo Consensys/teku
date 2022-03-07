@@ -1,6 +1,10 @@
 dependencies {
+  api project(':infrastructure:json')
+
   implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:crypto')
+
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   implementation 'it.unimi.dsi:fastutil'
   implementation 'org.apache.commons:commons-lang3'

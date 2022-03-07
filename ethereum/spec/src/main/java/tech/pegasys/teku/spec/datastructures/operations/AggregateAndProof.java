@@ -34,7 +34,7 @@ public class AggregateAndProof
     public AggregateAndProofSchema(final SpecConfig specConfig) {
       super(
           "AggregateAndProof",
-          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("aggregator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("aggregate", new AttestationSchema(specConfig)),
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));
     }

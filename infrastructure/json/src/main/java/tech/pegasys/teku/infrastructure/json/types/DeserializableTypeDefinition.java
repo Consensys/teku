@@ -30,7 +30,7 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
-    return new DeserializableArrayTypeDefinition<>(itemType);
+    return new DeserializableListTypeDefinition<>(itemType);
   }
 
   static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(

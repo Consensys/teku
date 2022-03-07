@@ -33,6 +33,8 @@ import java.util.Locale;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Fail;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 
 public class OpenApiTestUtil<TObject> {
   private final ObjectMapper mapper;
@@ -168,5 +170,14 @@ public class OpenApiTestUtil<TObject> {
   private JsonNode loadResourceFile(final String resourceFile) throws IOException {
     final String resource = Resources.toString(Resources.getResource(clazz, resourceFile), UTF_8);
     return mapper.readTree(resource);
+  }
+
+  public static String serializeEndpointMetadata(final RestApiEndpoint endpoint) throws Exception {
+    return JsonUtil.serialize(
+        gen -> {
+          gen.writeStartObject();
+          endpoint.getMetadata().writeOpenApi(gen);
+          gen.writeEndObject();
+        });
   }
 }

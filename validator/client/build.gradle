@@ -11,6 +11,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:json')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:restapi')
   implementation project(':infrastructure:serviceutils')
@@ -43,6 +44,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:json'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
+  testImplementation testFixtures(project(':infrastructure:json'))
   testImplementation testFixtures(project(':infrastructure:restapi'))
 
 }

@@ -27,8 +27,8 @@ public class ProposerSlashing
     public ProposerSlashingSchema() {
       super(
           "ProposerSlashing",
-          namedSchema("header_1", SignedBeaconBlockHeader.SSZ_SCHEMA),
-          namedSchema("header_2", SignedBeaconBlockHeader.SSZ_SCHEMA));
+          namedSchema("signed_header_1", SignedBeaconBlockHeader.SSZ_SCHEMA),
+          namedSchema("signed_header_2", SignedBeaconBlockHeader.SSZ_SCHEMA));
     }
 
     @Override

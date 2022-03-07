@@ -35,8 +35,7 @@ public class PendingAttestation
       super(
           "PendingAttestation",
           namedSchema(
-              "aggregation_bitfield",
-              SszBitlistSchema.create(config.getMaxValidatorsPerCommittee())),
+              "aggregation_bits", SszBitlistSchema.create(config.getMaxValidatorsPerCommittee())),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("inclusion_delay", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));

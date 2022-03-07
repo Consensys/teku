@@ -14,9 +14,11 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.sszSerializedType;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitvectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
@@ -35,6 +37,11 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   public SszBitvectorSchemaImpl(long length) {
     super(SszPrimitiveSchemas.BIT_SCHEMA, length);
     checkArgument(length > 0, "Invalid Bitlist length");
+  }
+
+  @Override
+  protected DeserializableTypeDefinition<SszBitvector> createTypeDefinition() {
+    return sszSerializedType(this, "SSZ hexadecimal");
   }
 
   @Override
