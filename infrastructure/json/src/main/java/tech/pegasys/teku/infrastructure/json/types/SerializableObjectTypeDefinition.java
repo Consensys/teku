@@ -55,21 +55,23 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
       gen.writeStringField("title", name.get());
     }
     gen.writeStringField("type", "object");
-    final String[] requiredFieldNames =
-        fields.values().stream()
-            .filter(SerializableFieldDefinition::isRequired)
-            .map(SerializableFieldDefinition::getName)
-            .toArray(String[]::new);
-    if (requiredFieldNames.length > 0) {
-      gen.writeFieldName("required");
-      gen.writeArray(requiredFieldNames, 0, requiredFieldNames.length);
-    }
+    writeRequiredFields(gen);
     gen.writeObjectFieldStart("properties");
     for (SerializableFieldDefinition<TObject> field : fields.values()) {
       field.writeOpenApiField(gen);
     }
     gen.writeEndObject();
     gen.writeEndObject();
+  }
+
+  private void writeRequiredFields(final JsonGenerator gen) throws IOException {
+    final String[] requiredFieldNames =
+        fields.values().stream()
+            .filter(SerializableFieldDefinition::isRequired)
+            .map(SerializableFieldDefinition::getName)
+            .toArray(String[]::new);
+    gen.writeFieldName("required");
+    gen.writeArray(requiredFieldNames, 0, requiredFieldNames.length);
   }
 
   @Override
