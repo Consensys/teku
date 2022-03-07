@@ -1,18 +1,17 @@
 {
-  "title": "DeleteKeyResult",
-  "type": "object",
-  "properties": {
-    "status": {
-      "enum": [
-        "deleted",
-        "not_active",
-        "not_found",
-        "error"
-      ],
-      "type": "string"
+  "title" : "DeleteKeyResult",
+  "type" : "object",
+  "properties" : {
+    "status" : {
+      "type" : "string",
+      "enum" : [ "deleted", "not_active", "not_found", "error" ]
     },
-    "message": {
-      "type": "string"
+    "message" : {
+      "allOf" : [ {
+        "type" : "string"
+      }, {
+        "required" : false
+      } ]
     }
   }
 }

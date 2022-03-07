@@ -1,17 +1,17 @@
 {
-  "title": "PostKeyResult",
-  "type": "object",
-  "properties": {
-    "status": {
-      "enum": [
-        "imported",
-        "duplicate",
-        "error"
-      ],
-      "type": "string"
+  "title" : "PostKeyResult",
+  "type" : "object",
+  "properties" : {
+    "status" : {
+      "type" : "string",
+      "enum" : [ "imported", "duplicate", "error" ]
     },
-    "message": {
-      "type": "string"
+    "message" : {
+      "allOf" : [ {
+        "type" : "string"
+      }, {
+        "required" : false
+      } ]
     }
   }
 }

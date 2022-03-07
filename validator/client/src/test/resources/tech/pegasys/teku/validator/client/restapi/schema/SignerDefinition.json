@@ -6,7 +6,11 @@
       "$ref" : "#/components/schemas/PubKey"
     },
     "url" : {
-      "$ref" : "#/components/schemas/Signer"
+      "allOf" : [ {
+        "$ref" : "#/components/schemas/Signer"
+      }, {
+        "required" : false
+      } ]
     },
     "readonly" : {
       "type" : "boolean"
