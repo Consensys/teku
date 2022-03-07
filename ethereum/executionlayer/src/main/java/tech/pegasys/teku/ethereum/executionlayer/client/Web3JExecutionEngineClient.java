@@ -34,12 +34,14 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthInterceptor;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.SignedBlindedBeaconBlock;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -104,47 +106,70 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId) {
-    Request<?, GetPayloadWeb3jResponse> web3jRequest =
+    Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getPayloadV1",
             Collections.singletonList(payloadId.toHexString()),
             eeWeb3jService,
-            GetPayloadWeb3jResponse.class);
+            ExecutionPayloadV1Web3jResponse.class);
     return doRequest(web3jRequest);
   }
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload) {
-    Request<?, NewPayloadWeb3jResponse> web3jRequest =
+    Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV1",
             Collections.singletonList(executionPayload),
             eeWeb3jService,
-            NewPayloadWeb3jResponse.class);
+            PayloadStatusV1Web3jResponse.class);
     return doRequest(web3jRequest);
   }
 
   @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdated(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes) {
-    Request<?, ForkChoiceUpdatedWeb3jResponse> web3jRequest =
+    Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV1",
             list(forkChoiceState, payloadAttributes.orElse(null)),
             eeWeb3jService,
-            ForkChoiceUpdatedWeb3jResponse.class);
+            ForkChoiceUpdatedResultWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
 
   @Override
   public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
       TransitionConfigurationV1 transitionConfiguration) {
-    Request<?, ExchangeTransitionConfigurationWeb3jResponse> web3jRequest =
+    Request<?, TransitionConfigurationV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_exchangeTransitionConfigurationV1",
             Collections.singletonList(transitionConfiguration),
             eeWeb3jService,
-            ExchangeTransitionConfigurationWeb3jResponse.class);
+            TransitionConfigurationV1Web3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
+  @Override
+  public SafeFuture<Response<ExecutionPayloadHeaderV1>> getPayloadHeader(Bytes8 payloadId) {
+    Request<?, ExecutionPayloadHeaderV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "builder_getPayloadHeaderV1",
+            Collections.singletonList(payloadId.toHexString()),
+            eeWeb3jService,
+            ExecutionPayloadHeaderV1Web3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
+  @Override
+  public SafeFuture<Response<ExecutionPayloadV1>> proposeBlindedBlock(
+      SignedBlindedBeaconBlock signedBlindedBeaconBlock) {
+    Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "builder_proposeBlindedBlockV1",
+            Collections.singletonList(signedBlindedBeaconBlock),
+            eeWeb3jService,
+            ExecutionPayloadV1Web3jResponse.class);
     return doRequest(web3jRequest);
   }
 
@@ -193,16 +218,20 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return SafeFuture.of(responseFuture);
   }
 
-  static class GetPayloadWeb3jResponse
+  static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
-  static class NewPayloadWeb3jResponse extends org.web3j.protocol.core.Response<PayloadStatusV1> {}
+  static class PayloadStatusV1Web3jResponse
+      extends org.web3j.protocol.core.Response<PayloadStatusV1> {}
 
-  static class ForkChoiceUpdatedWeb3jResponse
+  static class ForkChoiceUpdatedResultWeb3jResponse
       extends org.web3j.protocol.core.Response<ForkChoiceUpdatedResult> {}
 
-  static class ExchangeTransitionConfigurationWeb3jResponse
+  static class TransitionConfigurationV1Web3jResponse
       extends org.web3j.protocol.core.Response<TransitionConfigurationV1> {}
+
+  static class ExecutionPayloadHeaderV1Web3jResponse
+      extends org.web3j.protocol.core.Response<ExecutionPayloadHeaderV1> {}
 
   /**
    * Returns a list that supports null items.

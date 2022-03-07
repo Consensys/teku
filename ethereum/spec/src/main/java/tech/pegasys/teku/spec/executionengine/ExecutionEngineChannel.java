@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
@@ -58,12 +59,20 @@ public interface ExecutionEngineChannel extends ChannelInterface {
             TransitionConfiguration transitionConfiguration) {
           return SafeFuture.completedFuture(transitionConfiguration);
         }
+
+        @Override
+        public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(
+            final Bytes8 payloadId, final UInt64 slot) {
+          return SafeFuture.completedFuture(null);
+        }
       };
 
+  // eth namespace
   SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
 
+  // engine namespace
   SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes);
 
@@ -73,6 +82,9 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
       final TransitionConfiguration transitionConfiguration);
+
+  // builder namespace
+  SafeFuture<ExecutionPayloadHeader> getPayloadHeader(final Bytes8 payloadId, final UInt64 slot);
 
   enum Version {
     KINTSUGI,
