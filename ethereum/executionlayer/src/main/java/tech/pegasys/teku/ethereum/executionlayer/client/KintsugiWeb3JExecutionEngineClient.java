@@ -61,13 +61,13 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload) {
-    Request<?, NewPayloadWeb3jResponse> web3jRequest =
+    Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_executePayloadV1",
             Collections.singletonList(
                 KintsugiExecutionPayloadV1.fromExecutionPayloadV1(executionPayload)),
             eeWeb3jService,
-            NewPayloadWeb3jResponse.class);
+            PayloadStatusV1Web3jResponse.class);
     return doRequest(web3jRequest);
   }
 

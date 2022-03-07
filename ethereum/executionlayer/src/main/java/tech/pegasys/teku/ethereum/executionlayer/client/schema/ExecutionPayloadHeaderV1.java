@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,30 +13,29 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesDeserializer;
+import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
-public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
-  @JsonSerialize(contentUsing = BytesSerializer.class)
-  @JsonDeserialize(contentUsing = BytesDeserializer.class)
-  public final List<Bytes> transactions;
+public class ExecutionPayloadHeaderV1 extends ExecutionPayloadCommon {
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = Bytes32Deserializer.class)
+  public final Bytes32 transactionsRoot;
 
-  public ExecutionPayloadV1(
+  public ExecutionPayloadHeaderV1(
       @JsonProperty("parentHash") Bytes32 parentHash,
       @JsonProperty("feeRecipient") Bytes20 feeRecipient,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
@@ -50,7 +49,7 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
       @JsonProperty("extraData") Bytes extraData,
       @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
-      @JsonProperty("transactions") List<Bytes> transactions) {
+      @JsonProperty("transactionsRoot") Bytes32 transactionsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -65,12 +64,13 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         extraData,
         baseFeePerGas,
         blockHash);
-    this.transactions = transactions != null ? transactions : List.of();
+    checkNotNull(transactionsRoot, "transactionsRoot");
+    this.transactionsRoot = transactionsRoot;
   }
 
-  public ExecutionPayload asInternalExecutionPayload(
-      ExecutionPayloadSchema executionPayloadSchema) {
-    return executionPayloadSchema.create(
+  public ExecutionPayloadHeader asInternalExecutionPayloadHeader(
+      ExecutionPayloadHeaderSchema executionPayloadHeaderSchema) {
+    return executionPayloadHeaderSchema.create(
         parentHash,
         feeRecipient,
         stateRoot,
@@ -84,27 +84,26 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         extraData,
         baseFeePerGas,
         blockHash,
-        transactions);
+        transactionsRoot);
   }
 
-  public static ExecutionPayloadV1 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
-    return new ExecutionPayloadV1(
-        executionPayload.getParentHash(),
-        executionPayload.getFeeRecipient(),
-        executionPayload.getStateRoot(),
-        executionPayload.getReceiptsRoot(),
-        executionPayload.getLogsBloom(),
-        executionPayload.getPrevRandao(),
-        executionPayload.getBlockNumber(),
-        executionPayload.getGasLimit(),
-        executionPayload.getGasUsed(),
-        executionPayload.getTimestamp(),
-        executionPayload.getExtraData(),
-        executionPayload.getBaseFeePerGas(),
-        executionPayload.getBlockHash(),
-        executionPayload.getTransactions().stream()
-            .map(SszByteListImpl::getBytes)
-            .collect(Collectors.toList()));
+  public static ExecutionPayloadHeaderV1 fromInternalExecutionPayloadHeader(
+      ExecutionPayloadHeader executionPayloadHeader) {
+    return new ExecutionPayloadHeaderV1(
+        executionPayloadHeader.getParentHash(),
+        executionPayloadHeader.getFeeRecipient(),
+        executionPayloadHeader.getStateRoot(),
+        executionPayloadHeader.getReceiptsRoot(),
+        executionPayloadHeader.getLogsBloom(),
+        executionPayloadHeader.getPrevRandao(),
+        executionPayloadHeader.getBlockNumber(),
+        executionPayloadHeader.getGasLimit(),
+        executionPayloadHeader.getGasUsed(),
+        executionPayloadHeader.getTimestamp(),
+        executionPayloadHeader.getExtraData(),
+        executionPayloadHeader.getBaseFeePerGas(),
+        executionPayloadHeader.getBlockHash(),
+        executionPayloadHeader.getTransactionsRoot());
   }
 
   @Override
@@ -118,13 +117,13 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
     if (!super.equals(o)) {
       return false;
     }
-    final ExecutionPayloadV1 that = (ExecutionPayloadV1) o;
-    return Objects.equals(transactions, that.transactions);
+    final ExecutionPayloadHeaderV1 that = (ExecutionPayloadHeaderV1) o;
+    return Objects.equals(transactionsRoot, that.transactionsRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), transactions);
+    return Objects.hash(super.hashCode(), transactionsRoot);
   }
 
   @Override
@@ -143,7 +142,7 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
         .add("blockHash", blockHash)
-        .add("transactions", transactions)
+        .add("transactionsRoot", transactionsRoot)
         .toString();
   }
 }

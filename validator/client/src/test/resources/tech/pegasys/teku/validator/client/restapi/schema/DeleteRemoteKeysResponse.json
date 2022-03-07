@@ -1,6 +1,7 @@
 {
   "title" : "DeleteRemoteKeysResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "type" : "array",
