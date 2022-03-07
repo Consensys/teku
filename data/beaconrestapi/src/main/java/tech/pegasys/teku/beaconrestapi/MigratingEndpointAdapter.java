@@ -31,7 +31,7 @@ public abstract class MigratingEndpointAdapter extends RestApiEndpoint implement
     app.addHandler(metadata.getMethod(), metadata.getPath(), this);
   }
 
-  public void adapt(final Context ctx) throws Exception {
+  protected void adapt(final Context ctx) throws Exception {
     final RestApiRequest request = new RestApiRequest(ctx, getMetadata());
     handleRequest(request);
   }
