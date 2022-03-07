@@ -64,12 +64,12 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
 
     // a random key won't be found, remove should give not_found
-    api.removeValidatorAndCheckStatus(extraKeys.getPublicKeys().get(0), "not_found");
+    api.removeLocalValidatorAndCheckStatus(extraKeys.getPublicKeys().get(0), "not_found");
 
     beaconNode.waitForEpoch(2);
     // remove a validator
     final BLSPublicKey removedPubkey = validatorKeystores.getPublicKeys().get(0);
-    api.removeValidatorAndCheckStatus(removedPubkey, "deleted");
+    api.removeLocalValidatorAndCheckStatus(removedPubkey, "deleted");
 
     // should only be 7 validators left
     validatorClient.waitForLogMessageContaining("Removed validator");
@@ -77,7 +77,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys().subList(1, 7));
 
     // remove the same validator again
-    api.removeValidatorAndCheckStatus(removedPubkey, "not_active");
+    api.removeLocalValidatorAndCheckStatus(removedPubkey, "not_active");
 
     validatorClient.stop();
 

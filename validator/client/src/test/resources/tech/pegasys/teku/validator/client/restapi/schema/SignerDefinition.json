@@ -1,6 +1,7 @@
 {
   "title" : "SignerDefinition",
   "type" : "object",
+  "required" : [ "pubkey", "readonly" ],
   "properties" : {
     "pubkey" : {
       "$ref" : "#/components/schemas/PubKey"

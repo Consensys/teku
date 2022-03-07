@@ -1,6 +1,7 @@
 {
   "title" : "ImportRemoteSignerDefinition",
   "type" : "object",
+  "required" : [ "pubkey" ],
   "properties" : {
     "pubkey" : {
       "$ref" : "#/components/schemas/PubKey"
