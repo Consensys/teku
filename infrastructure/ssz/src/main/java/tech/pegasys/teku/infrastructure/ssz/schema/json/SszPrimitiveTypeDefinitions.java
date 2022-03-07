@@ -70,6 +70,7 @@ public interface SszPrimitiveTypeDefinitions {
         .formatter(value -> value.sszSerialize().toHexString())
         .parser(value -> schema.sszDeserialize(Bytes.fromHexString(value)))
         .format("bytes")
+        .pattern("^0x[a-fA-F0-9]{2,}$")
         .description(description)
         .build();
   }
