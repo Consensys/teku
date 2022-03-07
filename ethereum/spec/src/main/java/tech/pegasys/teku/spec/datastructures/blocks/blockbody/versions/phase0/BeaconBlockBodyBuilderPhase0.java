@@ -116,7 +116,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   public BeaconBlockBodyBuilder executionPayloadHeader(
       Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
     // No execution payload in phase 0
-    return null;
+    return this;
   }
 
   protected void validateSchema() {
