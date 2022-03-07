@@ -13,14 +13,20 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity.IdentityData;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants.CacheLength;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
@@ -39,11 +45,18 @@ public class GetIdentityTest extends AbstractBeaconHandlerTest {
     when(nodeid.toBase58()).thenReturn("aeiou");
     when(eth2P2PNetwork.getNodeAddress()).thenReturn("address");
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
+    final RestApiRequest request = mock(RestApiRequest.class);
+    handler.handleRequest(request);
 
-    IdentityResponse response = getResponseObject(IdentityResponse.class);
-    assertThat(response.data.peerId).isEqualTo("aeiou");
-    assertThat(response.data.p2pAddresses.get(0)).isEqualTo("address");
+    verify(request)
+        .respondOk(
+            refEq(
+                new IdentityData(
+                    "aeiou",
+                    Optional.empty(),
+                    List.of("address"),
+                    Collections.emptyList(),
+                    defaultMetadata)),
+            eq(CacheLength.NO_CACHE));
   }
 }

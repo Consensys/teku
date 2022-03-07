@@ -83,6 +83,7 @@ public class GetIdentity extends MigratingEndpointAdapter {
                   "Bitvector representing the node's persistent sync committee subnet subscriptions."),
               MetadataMessage::getOptionalSyncnets)
           .build();
+
   private static final SerializableTypeDefinition<IdentityData> IDENTITY_DATA_TYPE =
       SerializableTypeDefinition.object(IdentityData.class)
           .name("NetworkIdentity")
@@ -117,6 +118,7 @@ public class GetIdentity extends MigratingEndpointAdapter {
               IdentityData::getDiscoveryAddresses)
           .withField("metadata", METADATA_TYPE, IdentityData::getMetadata)
           .build();
+
   private static final SerializableTypeDefinition<IdentityData> IDENTITY_RESPONSE_TYPE =
       SerializableTypeDefinition.object(IdentityData.class)
           .name("GetNetworkIdentityResponse")
@@ -171,14 +173,14 @@ public class GetIdentity extends MigratingEndpointAdapter {
     request.respondOk(networkIdentity, CacheLength.NO_CACHE);
   }
 
-  private static class IdentityData {
+  static class IdentityData {
     private final String peerId;
     private final Optional<String> enr;
     private final List<String> listeningAddresses;
     private final List<String> discoveryAddresses;
     private final MetadataMessage metadata;
 
-    private IdentityData(
+    IdentityData(
         final String peerId,
         final Optional<String> enr,
         final List<String> listeningAddresses,
