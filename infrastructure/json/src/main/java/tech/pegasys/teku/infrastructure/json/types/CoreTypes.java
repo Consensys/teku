@@ -49,13 +49,7 @@ public class CoreTypes {
           .build();
 
   public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
-      DeserializableTypeDefinition.string(UInt64.class)
-          .formatter(UInt64::toString)
-          .parser(UInt64::valueOf)
-          .example("1")
-          .description("unsigned 64 bit integer")
-          .format("uint64")
-          .build();
+      uint64("unsigned 64 bit integer");
 
   public static final DeserializableTypeDefinition<UInt256> UINT256_TYPE =
       DeserializableTypeDefinition.string(UInt256.class)
@@ -76,8 +70,23 @@ public class CoreTypes {
           .withField("message", STRING_TYPE, HttpErrorResponse::getMessage)
           .build();
 
+  public static DeserializableTypeDefinition<UInt64> uint64(final String description) {
+    return DeserializableTypeDefinition.string(UInt64.class)
+        .formatter(UInt64::toString)
+        .parser(UInt64::valueOf)
+        .example("1")
+        .description(description)
+        .format("uint64")
+        .build();
+  }
+
   public static DeserializableTypeDefinition<String> string(final String description) {
     return stringBuilder().description(description).build();
+  }
+
+  public static DeserializableTypeDefinition<String> string(
+      final String description, final String example) {
+    return stringBuilder().description(description).example(example).build();
   }
 
   private static StringTypeBuilder<String> stringBuilder() {

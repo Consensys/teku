@@ -69,7 +69,7 @@ public class DeleteKeysTest {
         .thenReturn(new DeleteKeysResponse(List.of(success(), success()), ""));
     when(request.getRequestBody()).thenReturn(requestData);
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(keyManager).deleteValidators(eq(keys), any());
     verify(request, never()).respondError(anyInt(), any());
     verify(request, times(1)).respondOk(any(DeleteKeysResponse.class));
@@ -81,7 +81,7 @@ public class DeleteKeysTest {
     when(keyManager.deleteValidators(any(), any()))
         .thenReturn(new DeleteKeysResponse(List.of(), ""));
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(keyManager).deleteValidators(eq(Collections.emptyList()), any());
     verify(request, never()).respondError(anyInt(), any());
     verify(request, times(1)).respondOk(any(DeleteKeysResponse.class));
@@ -91,7 +91,7 @@ public class DeleteKeysTest {
   void shouldReturnBadRequest() throws JsonProcessingException {
     when(request.getRequestBody()).thenThrow(new MissingRequestBodyException());
 
-    assertThatThrownBy(() -> endpoint.handle(request))
+    assertThatThrownBy(() -> endpoint.handleRequest(request))
         .isInstanceOf(MissingRequestBodyException.class);
     verify(keyManager, never()).deleteValidators(any(), any());
     verify(request, never()).respondOk(any());

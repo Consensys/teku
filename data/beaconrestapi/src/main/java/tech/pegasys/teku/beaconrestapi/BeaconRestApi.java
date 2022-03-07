@@ -100,6 +100,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -112,6 +113,8 @@ public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
+  private OpenApiDocBuilder openApiDocBuilder;
+  private String migratedOpenApi;
 
   private void initialize(
       final DataProvider dataProvider,
@@ -143,6 +146,11 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(dataProvider, eventChannels, asyncRunner, configuration);
     addTekuSpecificHandlers(dataProvider);
+    migratedOpenApi = openApiDocBuilder.build();
+  }
+
+  public String getMigratedOpenApi() {
+    return migratedOpenApi;
   }
 
   private void addStandardApiHandlers(
@@ -225,11 +233,19 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
+    final Info applicationInfo = createApplicationInfo();
+    openApiDocBuilder =
+        new OpenApiDocBuilder()
+            .title(applicationInfo.getTitle())
+            .version(applicationInfo.getVersion())
+            .description(applicationInfo.getDescription())
+            .license(applicationInfo.getLicense().getName(), applicationInfo.getLicense().getUrl());
     this.app =
         Javalin.create(
             config -> {
               config.registerPlugin(
-                  new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
+                  new OpenApiPlugin(
+                      getOpenApiOptions(jsonProvider, configuration, applicationInfo)));
               config.defaultContentType = "application/json";
               config.showJavalinBanner = false;
               if (configuration.getRestApiCorsAllowedOrigins() != null
@@ -274,27 +290,31 @@ public class BeaconRestApi {
   }
 
   private static OpenApiOptions getOpenApiOptions(
-      final JsonProvider jsonProvider, final BeaconRestApiConfig config) {
+      final JsonProvider jsonProvider,
+      final BeaconRestApiConfig config,
+      final Info applicationInfo) {
     final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
-    final Info applicationInfo =
-        new Info()
-            .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
-            .version(VersionProvider.IMPLEMENTATION_VERSION)
-            .description(
-                "A minimal API specification for the beacon node, which enables a validator "
-                    + "to connect and perform its obligations on the Ethereum 2.0 phase 0 beacon chain.")
-            .license(
-                new License()
-                    .name("Apache 2.0")
-                    .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
     final OpenApiOptions options =
         new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
     if (config.isRestApiDocsEnabled()) {
       options.path("/swagger-docs").swagger(new SwaggerOptions("/swagger-ui"));
     }
     return options;
+  }
+
+  private static Info createApplicationInfo() {
+    return new Info()
+        .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
+        .version(VersionProvider.IMPLEMENTATION_VERSION)
+        .description(
+            "A minimal API specification for the beacon node, which enables a validator "
+                + "to connect and perform its obligations on the Ethereum 2.0 phase 0 beacon chain.")
+        .license(
+            new License()
+                .name("Apache 2.0")
+                .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
   }
 
   private void addTekuSpecificHandlers(final DataProvider provider) {
@@ -312,7 +332,7 @@ public class BeaconRestApi {
 
   private void addNodeHandlers(final DataProvider provider) {
     app.get(GetHealth.ROUTE, new GetHealth(provider));
-    app.get(GetIdentity.ROUTE, new GetIdentity(provider, jsonProvider));
+    addMigratedEndpoint(new GetIdentity(provider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers(provider, jsonProvider));
@@ -324,6 +344,11 @@ public class BeaconRestApi {
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
+  }
+
+  private void addMigratedEndpoint(final MigratingEndpointAdapter endpoint) {
+    endpoint.addEndpoint(app);
+    openApiDocBuilder.endpoint(endpoint);
   }
 
   private void addValidatorHandlers(final DataProvider dataProvider) {

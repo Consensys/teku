@@ -13,37 +13,130 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.uint64;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
-import io.javalin.core.util.Header;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.api.response.v1.node.Identity;
 import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants.CacheLength;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
-public class GetIdentity implements Handler {
+public class GetIdentity extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/identity";
-  private final JsonProvider jsonProvider;
-  private final NetworkDataProvider network;
 
-  public GetIdentity(final DataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
-    this.network = provider.getNetworkDataProvider();
+  private static DeserializableTypeDefinition<SszBitvector> bitvector(
+      final SszBitvectorSchema<? extends SszBitvector> schema, final String description) {
+    return new StringTypeBuilder<SszBitvector>()
+        .formatter(vector -> vector.sszSerialize().toHexString().toLowerCase(Locale.ROOT))
+        .parser(data -> schema.sszDeserialize(Bytes.fromHexString(data)))
+        .pattern("^0x[a-fA-F0-9]{2,}$")
+        .description(description)
+        .build();
   }
 
-  GetIdentity(final NetworkDataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  private static final SerializableTypeDefinition<MetadataMessage> METADATA_TYPE =
+      SerializableTypeDefinition.object(MetadataMessage.class)
+          .name("MetaData")
+          .withField(
+              "seq_number",
+              uint64(
+                  "Uint64 starting at 0 used to version the node's metadata. "
+                      + "If any other field in the local MetaData changes, the node MUST increment seq_number by 1."),
+              MetadataMessage::getSeqNumber)
+          .withField(
+              "attnets",
+              bitvector(
+                  SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT),
+                  "Bitvector representing the node's persistent attestation subnet subscriptions."),
+              MetadataMessage::getAttnets)
+          .withOptionalField( // TODO: This doesn't currently mark the field as optional
+              "syncnets",
+              bitvector(
+                  SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT),
+                  "Bitvector representing the node's persistent sync committee subnet subscriptions."),
+              MetadataMessage::getOptionalSyncnets)
+          .build();
+  private static final SerializableTypeDefinition<IdentityData> IDENTITY_DATA_TYPE =
+      SerializableTypeDefinition.object(IdentityData.class)
+          .name("NetworkIdentity")
+          .withField(
+              "peer_id",
+              string(
+                  "Cryptographic hash of a peer’s public key. "
+                      + "[Read more](https://docs.libp2p.io/concepts/peer-id/)",
+                  "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
+              IdentityData::getPeerId)
+          .withOptionalField(
+              "enr",
+              string(
+                  "Ethereum node record. [Read more](https://eips.ethereum.org/EIPS/eip-778)",
+                  "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
+              IdentityData::getEnr)
+          .withField(
+              "p2p_addresses",
+              listOf(
+                  string(
+                      "Node's addresses on which eth2 rpc requests are served. "
+                          + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
+                      "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")),
+              IdentityData::getListeningAddresses)
+          .withField(
+              "discovery_addresses",
+              listOf(
+                  string(
+                      "Node's addresses on which is listening for discv5 requests. "
+                          + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
+                      "/ip4/7.7.7.7/udp/30303/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")),
+              IdentityData::getDiscoveryAddresses)
+          .withField("metadata", METADATA_TYPE, IdentityData::getMetadata)
+          .build();
+  private static final SerializableTypeDefinition<IdentityData> IDENTITY_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(IdentityData.class)
+          .name("GetNetworkIdentityResponse")
+          .withField("data", IDENTITY_DATA_TYPE, Function.identity())
+          .build();
+  private final NetworkDataProvider network;
+
+  public GetIdentity(final DataProvider provider) {
+    this(provider.getNetworkDataProvider());
+  }
+
+  GetIdentity(final NetworkDataProvider provider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getNetworkIdentity")
+            .summary("Get node network identity")
+            .description("Retrieves data about the node's network presence")
+            .tags(TAG_NODE)
+            .response(SC_OK, "Request successful", IDENTITY_RESPONSE_TYPE)
+            .build());
     this.network = provider;
   }
 
@@ -61,15 +154,61 @@ public class GetIdentity implements Handler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    final Identity networkIdentity =
-        new Identity(
+  public void handle(final Context ctx) throws Exception {
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    final IdentityData networkIdentity =
+        new IdentityData(
             network.getNodeIdAsBase58(),
-            network.getEnr().orElse(""),
+            network.getEnr(),
             network.getListeningAddresses(),
             network.getDiscoveryAddresses(),
             network.getMetadata());
-    ctx.json(jsonProvider.objectToJSON(new IdentityResponse(networkIdentity)));
+
+    request.respondOk(networkIdentity, CacheLength.NO_CACHE);
+  }
+
+  private static class IdentityData {
+    private final String peerId;
+    private final Optional<String> enr;
+    private final List<String> listeningAddresses;
+    private final List<String> discoveryAddresses;
+    private final MetadataMessage metadata;
+
+    private IdentityData(
+        final String peerId,
+        final Optional<String> enr,
+        final List<String> listeningAddresses,
+        final List<String> discoveryAddresses,
+        final MetadataMessage metadata) {
+      this.peerId = peerId;
+      this.enr = enr;
+      this.listeningAddresses = listeningAddresses;
+      this.discoveryAddresses = discoveryAddresses;
+      this.metadata = metadata;
+    }
+
+    public String getPeerId() {
+      return peerId;
+    }
+
+    public Optional<String> getEnr() {
+      return enr;
+    }
+
+    public List<String> getListeningAddresses() {
+      return listeningAddresses;
+    }
+
+    public List<String> getDiscoveryAddresses() {
+      return discoveryAddresses;
+    }
+
+    public MetadataMessage getMetadata() {
+      return metadata;
+    }
   }
 }

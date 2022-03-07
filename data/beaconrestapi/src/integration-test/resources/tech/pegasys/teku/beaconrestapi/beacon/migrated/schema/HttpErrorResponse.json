@@ -1,0 +1,12 @@
+{
+  "title" : "HttpErrorResponse",
+  "type" : "object",
+  "properties" : {
+    "status" : {
+      "type" : "number"
+    },
+    "message" : {
+      "type" : "string"
+    }
+  }
+}

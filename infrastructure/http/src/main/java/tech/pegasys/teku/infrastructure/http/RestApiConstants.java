@@ -113,4 +113,19 @@ public class RestApiConstants {
   public static final String CACHE_NONE = "max-age=0";
   // Finalized max-age equates to 1 year
   public static final String CACHE_FINALIZED = "max-age=31556952";
+
+  public enum CacheLength {
+    NO_CACHE("max-age=0"),
+    FINALIZED("max-age=31556952");
+
+    private final String httpHeaderValue;
+
+    CacheLength(final String httpHeaderValue) {
+      this.httpHeaderValue = httpHeaderValue;
+    }
+
+    public String getHttpHeaderValue() {
+      return httpHeaderValue;
+    }
+  }
 }

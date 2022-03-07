@@ -1,0 +1,9 @@
+{
+  "title" : "GetNetworkIdentityResponse",
+  "type" : "object",
+  "properties" : {
+    "data" : {
+      "$ref" : "#/components/schemas/NetworkIdentity"
+    }
+  }
+}

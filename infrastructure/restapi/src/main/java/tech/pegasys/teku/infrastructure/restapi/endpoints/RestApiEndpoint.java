@@ -27,5 +27,5 @@ public abstract class RestApiEndpoint {
     return metadata;
   }
 
-  public abstract void handle(RestApiRequest request) throws JsonProcessingException;
+  public abstract void handleRequest(RestApiRequest request) throws JsonProcessingException;
 }

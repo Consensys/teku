@@ -31,7 +31,7 @@ public class GetIdentityTest extends AbstractBeaconHandlerTest {
     final MetadataMessage defaultMetadata =
         spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
 
-    GetIdentity handler = new GetIdentity(network, jsonProvider);
+    GetIdentity handler = new GetIdentity(network);
     NodeId nodeid = mock(NodeId.class);
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(defaultMetadata);
