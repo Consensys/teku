@@ -1,6 +1,7 @@
 {
   "title" : "NetworkIdentity",
   "type" : "object",
+  "required" : [ "peer_id", "p2p_addresses", "discovery_addresses", "metadata" ],
   "properties" : {
     "peer_id" : {
       "type" : "string",

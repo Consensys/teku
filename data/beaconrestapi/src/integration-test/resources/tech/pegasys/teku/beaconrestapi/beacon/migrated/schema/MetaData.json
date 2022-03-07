@@ -1,6 +1,7 @@
 {
   "title" : "MetaData",
   "type" : "object",
+  "required" : [ "seq_number", "attnets" ],
   "properties" : {
     "seq_number" : {
       "type" : "string",
@@ -16,8 +17,7 @@
     "syncnets" : {
       "type" : "string",
       "pattern" : "^0x[a-fA-F0-9]{2,}$",
-      "description" : "Bitvector representing the node's persistent sync committee subnet subscriptions.",
-      "required": false
+      "description" : "Bitvector representing the node's persistent sync committee subnet subscriptions."
     }
   }
 }
