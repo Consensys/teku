@@ -1,6 +1,7 @@
 {
   "title" : "PostKeysRequest",
   "type" : "object",
+  "required" : [ "keystores", "passwords" ],
   "properties" : {
     "keystores" : {
       "type" : "array",
@@ -15,12 +16,8 @@
       }
     },
     "slashing_protection" : {
-      "allOf" : [ {
-        "type" : "string",
-        "description" : "JSON serialized representation of the slash protection data in format defined in EIP-3076: Slashing Protection Interchange Format."
-      }, {
-        "required" : false
-      } ]
+      "type" : "string",
+      "description" : "JSON serialized representation of the slash protection data in format defined in EIP-3076: Slashing Protection Interchange Format."
     }
   }
 }
