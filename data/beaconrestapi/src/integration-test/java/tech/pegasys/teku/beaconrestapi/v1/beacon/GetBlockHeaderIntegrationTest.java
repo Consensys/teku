@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetBlockHeaderIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -41,6 +42,23 @@ public class GetBlockHeaderIntegrationTest extends AbstractDataBackedRestAPIInte
         jsonProvider.jsonToObject(response.body().string(), GetBlockHeaderResponse.class);
     final BlockHeader data = body.data;
     assertThat(data).isEqualTo(new BlockHeader(created.get(0).getBlock(), true));
+  }
+
+  @Test
+  public void shouldGetNonCanonicalBlockHeader() throws IOException {
+    createBlocksAtSlots(10);
+    final ChainBuilder fork = chainBuilder.fork();
+    SignedBlockAndState forked = fork.generateNextBlock();
+    SignedBlockAndState canonical = chainBuilder.generateNextBlock(1);
+    chainUpdater.saveBlock(forked);
+    chainUpdater.updateBestBlock(canonical);
+
+    final Response response = get(forked.getRoot().toHexString());
+
+    final GetBlockHeaderResponse body =
+        jsonProvider.jsonToObject(response.body().string(), GetBlockHeaderResponse.class);
+
+    assertThat(body.data.canonical).isFalse();
   }
 
   public Response get(final String blockIdString) throws IOException {
