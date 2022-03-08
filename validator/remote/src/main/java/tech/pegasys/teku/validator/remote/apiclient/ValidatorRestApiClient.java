@@ -61,7 +61,7 @@ public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 
-  void sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
+  Optional<PostDataFailureResponse> sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 
   Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
