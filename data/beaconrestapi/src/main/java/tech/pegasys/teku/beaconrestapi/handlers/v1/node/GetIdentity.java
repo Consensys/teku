@@ -28,21 +28,16 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants.CacheLength;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
@@ -50,16 +45,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 
 public class GetIdentity extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/identity";
-
-  private static DeserializableTypeDefinition<SszBitvector> bitvector(
-      final SszBitvectorSchema<? extends SszBitvector> schema, final String description) {
-    return new StringTypeBuilder<SszBitvector>()
-        .formatter(vector -> vector.sszSerialize().toHexString().toLowerCase(Locale.ROOT))
-        .parser(data -> schema.sszDeserialize(Bytes.fromHexString(data)))
-        .pattern("^0x[a-fA-F0-9]{2,}$")
-        .description(description)
-        .build();
-  }
 
   private static final SerializableTypeDefinition<MetadataMessage> METADATA_TYPE =
       SerializableTypeDefinition.object(MetadataMessage.class)
@@ -72,15 +57,17 @@ public class GetIdentity extends MigratingEndpointAdapter {
               MetadataMessage::getSeqNumber)
           .withField(
               "attnets",
-              bitvector(
-                  SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT),
-                  "Bitvector representing the node's persistent attestation subnet subscriptions."),
+              SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT)
+                  .getJsonTypeDefinition()
+                  .withDescription(
+                      "Bitvector representing the node's persistent attestation subnet subscriptions."),
               MetadataMessage::getAttnets)
-          .withOptionalField( // TODO: This doesn't currently mark the field as optional
+          .withOptionalField(
               "syncnets",
-              bitvector(
-                  SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT),
-                  "Bitvector representing the node's persistent sync committee subnet subscriptions."),
+              SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)
+                  .getJsonTypeDefinition()
+                  .withDescription(
+                      "Bitvector representing the node's persistent sync committee subnet subscriptions."),
               MetadataMessage::getOptionalSyncnets)
           .build();
 
