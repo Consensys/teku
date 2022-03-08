@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -583,10 +584,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveCheckpointState(checkpoint);
   }
 
-  public Map<Bytes32, UInt64> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads() {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
-        .orElse(Collections.emptyMap());
+        .orElse(Collections.emptyList());
   }
 
   public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {

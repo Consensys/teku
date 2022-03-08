@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -68,6 +69,28 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
 
   public boolean isOptimistic() {
     return isOptimistic;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ProtoNodeData that = (ProtoNodeData) o;
+    return isOptimistic == that.isOptimistic
+        && Objects.equals(slot, that.slot)
+        && Objects.equals(root, that.root)
+        && Objects.equals(parentRoot, that.parentRoot)
+        && Objects.equals(stateRoot, that.stateRoot)
+        && Objects.equals(executionBlockHash, that.executionBlockHash);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(slot, root, parentRoot, stateRoot, executionBlockHash, isOptimistic);
   }
 
   @Override
