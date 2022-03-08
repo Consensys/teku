@@ -528,11 +528,11 @@ public class Web3JExecutionEngineClientTest {
 
     final String bodyResponse =
         "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":"
-            + "{\"payloadStatus\" : { \"status\": \"INVALID\", \"latestValidHash\": "
+            + "{\"payloadStatus\" : { \"status\": \"INVALID\", \"latestValidHash\": \""
             + latestValidHash
-            + ", \"validationError\": "
+            + "\", \"validationError\": \""
             + validationError
-            + "}}}";
+            + "\"}}}";
 
     mockWebServer.enqueue(
         new MockResponse()
