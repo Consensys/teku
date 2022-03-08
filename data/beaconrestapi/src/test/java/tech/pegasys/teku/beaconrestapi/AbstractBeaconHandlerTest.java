@@ -105,6 +105,7 @@ public abstract class AbstractBeaconHandlerTest {
         value,
         spec.getGenesisSpec().getMilestone(),
         false,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        true);
   }
 }

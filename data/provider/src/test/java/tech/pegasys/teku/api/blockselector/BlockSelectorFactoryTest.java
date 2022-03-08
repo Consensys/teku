@@ -77,6 +77,7 @@ public class BlockSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(client.isCanonicalBlock(any(), any())).thenReturn(true);
     List<BlockAndMetaData> blockList =
         blockSelectorFactory.forBlockRoot(block.getRoot()).getBlock().get();
     verify(client).getBlockByBlockRoot(block.getRoot());
@@ -103,6 +104,6 @@ public class BlockSelectorFactoryTest {
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {
     return new BlockAndMetaData(
-        block, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+        block, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX), true);
   }
 }

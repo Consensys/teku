@@ -116,8 +116,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected CombinedChainDataClient combinedChainDataClient;
 
   // Update utils
-  private ChainBuilder chainBuilder;
-  private ChainUpdater chainUpdater;
+  protected ChainBuilder chainBuilder;
+  protected ChainUpdater chainUpdater;
 
   protected final JsonProvider jsonProvider = new JsonProvider();
 
