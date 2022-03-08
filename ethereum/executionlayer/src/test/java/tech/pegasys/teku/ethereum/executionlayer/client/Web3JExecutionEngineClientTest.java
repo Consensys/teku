@@ -28,15 +28,10 @@ import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
@@ -45,7 +40,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Serializer;
@@ -56,10 +50,8 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsH
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsHexSerializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -78,13 +70,6 @@ public class Web3JExecutionEngineClientTest {
   ObjectMapper objectMapper;
   SerializerProvider serializerProvider;
   DataStructureUtil dataStructureUtil;
-  private final MockWebServer mockWebServer = new MockWebServer();
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
-
-  @AfterEach
-  public void stopMWS() throws Exception {
-    mockWebServer.shutdown();
-  }
 
   @BeforeEach
   @TestTemplate
@@ -509,77 +494,6 @@ public class Web3JExecutionEngineClientTest {
             internalTransitionConfiguration);
 
     assertThat(externalTransitionConfiguration2).isEqualTo(externalTransitionConfiguration);
-  }
-
-  @TestTemplate
-  void shouldRoundtripWithMockedWebServer() throws InterruptedException, IOException {
-
-    mockWebServer.start();
-
-    final Web3JExecutionEngineClient eeClient =
-        new Web3JExecutionEngineClient(
-            "http://localhost:" + mockWebServer.getPort(), timeProvider, Optional.empty());
-
-    final Bytes32 latestValidHash =
-        Bytes32.fromHexString("0x135bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
-    final String validationError = "error";
-    final PayloadStatus payloadStatusResponse =
-        PayloadStatus.invalid(Optional.of(latestValidHash), Optional.of(validationError));
-
-    final String bodyResponse =
-        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":"
-            + "{\"payloadStatus\" : { \"status\": \"INVALID\", \"latestValidHash\": \""
-            + latestValidHash
-            + "\", \"validationError\": \""
-            + validationError
-            + "\"}}}";
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(200)
-            .setBody(bodyResponse)
-            .addHeader("Content-Type", "application/json"));
-
-    final ForkChoiceStateV1 forkChoiceStateV1Orig =
-        new ForkChoiceStateV1(
-            Bytes32.fromHexString(
-                "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464"),
-            Bytes32.fromHexString(
-                "0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef"),
-            Bytes32.fromHexString(
-                "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e"));
-
-    final PayloadAttributesV1 payloadAttributesV1Request =
-        new PayloadAttributesV1(
-            UInt64.valueOf(10),
-            Bytes32.fromHexString(
-                "0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef"),
-            Bytes20.fromHexString("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d"));
-
-    final SafeFuture<Response<ForkChoiceUpdatedResult>> futureResponseForkChoiceUpdatedResult =
-        eeClient.forkChoiceUpdated(forkChoiceStateV1Orig, Optional.of(payloadAttributesV1Request));
-
-    final RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(
-            "{\"jsonrpc\":\"2.0\",\"method\":\"engine_forkchoiceUpdatedV1\",\"params\":["
-                + "{\"headBlockHash\":\"0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464\","
-                + "\"safeBlockHash\":\"0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef\","
-                + "\"finalizedBlockHash\":\"0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e\"},"
-                + "{\"timestamp\":\"0xa\","
-                + "\"prevRandao\":\"0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef\","
-                + "\"suggestedFeeRecipient\":\"0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d\"}],"
-                + "\"id\":0}");
-
-    assertThat(futureResponseForkChoiceUpdatedResult.join())
-        .matches(
-            forkChoiceUpdatedResultResponse ->
-                forkChoiceUpdatedResultResponse
-                    .getPayload()
-                    .asInternalExecutionPayload()
-                    .getPayloadStatus()
-                    .equals(payloadStatusResponse));
   }
 
   private ForkChoiceUpdatedResult createExternalForkChoiceUpdatedResult(
