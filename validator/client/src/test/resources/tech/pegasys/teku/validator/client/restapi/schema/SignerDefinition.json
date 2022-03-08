@@ -10,7 +10,8 @@
       "$ref" : "#/components/schemas/Signer"
     },
     "readonly" : {
-      "type" : "boolean"
+      "type" : "boolean",
+      "description" : "Whether the validator can be modified"
     }
   }
 }

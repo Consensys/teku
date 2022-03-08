@@ -26,6 +26,8 @@ public class DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> {
   private final Map<String, DeserializableFieldDefinition<TObject, TBuilder>> fields =
       new LinkedHashMap<>();
   private Optional<String> name = Optional.empty();
+  private Optional<String> title = Optional.empty();
+  private Optional<String> description = Optional.empty();
   private Supplier<TBuilder> initializer;
   private Function<TBuilder, TObject> finisher;
 
@@ -33,6 +35,17 @@ public class DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> {
 
   public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> name(final String name) {
     this.name = Optional.of(name);
+    return this;
+  }
+
+  public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> title(final String title) {
+    this.title = Optional.of(title);
+    return this;
+  }
+
+  public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> description(
+      final String description) {
+    this.description = Optional.of(description);
     return this;
   }
 
@@ -69,6 +82,7 @@ public class DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> {
   public DeserializableTypeDefinition<TObject> build() {
     checkNotNull(initializer, "Must specify an initializer");
     checkNotNull(finisher, "Must specify a finisher");
-    return new DeserializableObjectTypeDefinition<>(name, initializer, finisher, fields);
+    return new DeserializableObjectTypeDefinition<>(
+        name, title.or(() -> name), description, initializer, finisher, fields);
   }
 }
