@@ -42,6 +42,12 @@ public class SszTypeDefinitionWrapper<DataT, SszDataT extends SszPrimitive<DataT
   }
 
   @Override
+  public DeserializableTypeDefinition<SszDataT> withDescription(final String description) {
+    return new SszTypeDefinitionWrapper<>(
+        schema, primitiveTypeDefinition.withDescription(description));
+  }
+
+  @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     primitiveTypeDefinition.serializeOpenApiType(gen);
   }

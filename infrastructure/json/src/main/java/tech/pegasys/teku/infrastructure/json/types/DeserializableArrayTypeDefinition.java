@@ -36,6 +36,15 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     this.createFromList = createFromList;
   }
 
+  public DeserializableArrayTypeDefinition(
+      final DeserializableTypeDefinition<ItemT> itemType,
+      final Function<List<ItemT>, CollectionT> createFromList,
+      final String description) {
+    super(itemType, description);
+    this.itemType = itemType;
+    this.createFromList = createFromList;
+  }
+
   @Override
   public CollectionT deserialize(final JsonParser parser) throws IOException {
     if (!parser.isExpectedStartArrayToken()) {
@@ -47,5 +56,10 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
       result.add(itemType.deserialize(parser));
     }
     return createFromList.apply(result);
+  }
+
+  @Override
+  public DeserializableTypeDefinition<CollectionT> withDescription(final String description) {
+    return new DeserializableArrayTypeDefinition<>(itemType, createFromList, description);
   }
 }

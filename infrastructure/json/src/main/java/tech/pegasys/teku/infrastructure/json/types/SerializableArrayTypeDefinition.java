@@ -16,13 +16,22 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Optional;
 
 public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
     implements SerializableTypeDefinition<CollectionT> {
   private final SerializableTypeDefinition<ItemT> itemType;
+  private final Optional<String> description;
 
   public SerializableArrayTypeDefinition(final SerializableTypeDefinition<ItemT> itemType) {
     this.itemType = itemType;
+    this.description = Optional.empty();
+  }
+
+  public SerializableArrayTypeDefinition(
+      final SerializableTypeDefinition<ItemT> itemType, final String description) {
+    this.itemType = itemType;
+    this.description = Optional.of(description);
   }
 
   @Override
@@ -35,9 +44,17 @@ public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable
   }
 
   @Override
+  public SerializableTypeDefinition<CollectionT> withDescription(final String description) {
+    return new SerializableArrayTypeDefinition<>(itemType, description);
+  }
+
+  @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("type", "array");
+    if (description.isPresent()) {
+      gen.writeStringField("description", description.get());
+    }
     gen.writeFieldName("items");
     itemType.serializeOpenApiTypeOrReference(gen);
     gen.writeEndObject();

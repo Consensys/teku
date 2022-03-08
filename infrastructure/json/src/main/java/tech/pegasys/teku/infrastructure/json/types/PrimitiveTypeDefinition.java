@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,23 +14,23 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 
-class IntegerTypeDefinition extends PrimitiveTypeDefinition<Integer> {
+public abstract class PrimitiveTypeDefinition<T> implements DeserializableTypeDefinition<T> {
 
   @Override
-  public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
+  public final void serializeOpenApiType(final JsonGenerator gen) throws IOException {
+    gen.writeStartObject();
+    serializeOpenApiTypeFields(gen);
+    gen.writeEndObject();
+  }
+
+  protected void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "number");
   }
 
   @Override
-  public void serialize(final Integer value, final JsonGenerator gen) throws IOException {
-    gen.writeNumber(value);
-  }
-
-  @Override
-  public Integer deserialize(final JsonParser parser) throws IOException {
-    return parser.getIntValue();
+  public DeserializableTypeDefinition<T> withDescription(final String description) {
+    return new DescribedPrimitiveTypeDefinition<>(this, description);
   }
 }

@@ -20,6 +20,9 @@ import java.util.List;
 public interface SerializableTypeDefinition<T> extends OpenApiTypeDefinition {
   void serialize(T value, JsonGenerator gen) throws IOException;
 
+  @Override
+  SerializableTypeDefinition<T> withDescription(final String description);
+
   static <T> SerializableObjectTypeDefinitionBuilder<T> object(
       @SuppressWarnings("unused") final Class<T> type) {
     return object();

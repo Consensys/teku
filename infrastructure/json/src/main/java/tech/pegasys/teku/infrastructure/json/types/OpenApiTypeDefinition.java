@@ -27,6 +27,8 @@ public interface OpenApiTypeDefinition {
     return Optional.empty();
   }
 
+  OpenApiTypeDefinition withDescription(final String description);
+
   void serializeOpenApiType(JsonGenerator gen) throws IOException;
 
   default Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {

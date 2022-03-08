@@ -80,6 +80,11 @@ class OpenApiTypeDefinitionTest {
     }
 
     @Override
+    public OpenApiTypeDefinition withDescription(final String description) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
       gen.writeStartObject();
       gen.writeStringField("type", "custom");

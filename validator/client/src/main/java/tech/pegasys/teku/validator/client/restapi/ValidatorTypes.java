@@ -95,7 +95,10 @@ public class ValidatorTypes {
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
               __ -> Optional.empty())
-          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
+          .withField(
+              "readonly",
+              BOOLEAN_TYPE.withDescription("Whether the validator can be modified"),
+              Validator::isReadOnly)
           .build();
 
   public static SerializableTypeDefinition<List<Validator>> LIST_KEYS_RESPONSE_TYPE =
@@ -107,6 +110,7 @@ public class ValidatorTypes {
   public static DeserializableTypeDefinition<URL> URL_TYPE =
       DeserializableTypeDefinition.string(URL.class)
           .name("Signer")
+          .description("URL of the remote signer to use for this validator")
           .formatter(URL::toString)
           .parser(
               url -> {
@@ -142,7 +146,7 @@ public class ValidatorTypes {
           .withOptionalField("url", URL_TYPE, ExternalValidator::getUrl, ExternalValidator::setUrl)
           .withField(
               "readonly",
-              BOOLEAN_TYPE,
+              BOOLEAN_TYPE.withDescription("Whether the validator can be modified"),
               ExternalValidator::isReadOnly,
               ExternalValidator::setReadOnly)
           .build();
