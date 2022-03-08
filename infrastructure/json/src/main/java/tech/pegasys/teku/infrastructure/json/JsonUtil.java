@@ -34,8 +34,13 @@ public class JsonUtil {
   }
 
   public static String serialize(final JsonWriter serializer) throws JsonProcessingException {
+    return serialize(FACTORY, serializer);
+  }
+
+  public static String serialize(final JsonFactory factory, final JsonWriter serializer)
+      throws JsonProcessingException {
     final StringWriter writer = new StringWriter();
-    try (final JsonGenerator gen = FACTORY.createGenerator(writer)) {
+    try (final JsonGenerator gen = factory.createGenerator(writer)) {
       serializer.accept(gen);
     } catch (final JsonProcessingException e) {
       throw e;

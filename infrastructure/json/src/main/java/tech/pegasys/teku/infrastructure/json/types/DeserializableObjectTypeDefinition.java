@@ -41,10 +41,12 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
 
   DeserializableObjectTypeDefinition(
       final Optional<String> name,
+      final Optional<String> title,
+      final Optional<String> description,
       final Supplier<TBuilder> initializer,
       final Function<TBuilder, TObject> finisher,
       final Map<String, DeserializableFieldDefinition<TObject, TBuilder>> fields) {
-    super(name, fields);
+    super(name, title, description, fields);
     this.initializer = initializer;
     this.finisher = finisher;
     this.deserializableFields = fields;
@@ -85,6 +87,17 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
     }
 
     return finisher.apply(builder);
+  }
+
+  @Override
+  public DeserializableTypeDefinition<TObject> withDescription(final String description) {
+    return new DeserializableObjectTypeDefinition<>(
+        Optional.empty(), // Clear name to ensure customised type is inlined
+        getTitle(),
+        Optional.of(description),
+        initializer,
+        finisher,
+        deserializableFields);
   }
 
   @Override

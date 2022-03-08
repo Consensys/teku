@@ -16,12 +16,12 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Integer.min;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -172,11 +172,9 @@ public abstract class AbstractSszCollectionSchema<
   protected DeserializedData sszDeserializeVector(SszReader reader) {
     if (getElementSchema().isFixedSize()) {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
-      if (sszSuperNodeHint.isPresent()) {
-        return sszDeserializeSupernode(reader, sszSuperNodeHint.get().getDepth());
-      } else {
-        return sszDeserializeFixed(reader);
-      }
+      return sszSuperNodeHint
+          .map(superNodeHint -> sszDeserializeSupernode(reader, superNodeHint.getDepth()))
+          .orElseGet(() -> sszDeserializeFixed(reader));
     } else {
       return sszDeserializeVariable(reader);
     }
@@ -215,12 +213,12 @@ public abstract class AbstractSszCollectionSchema<
     int elementBitSize = getSszElementBitSize();
     if (elementBitSize >= 8) {
       checkSsz(
-          bytesSize * 8 / elementBitSize <= getMaxLength(),
+          bytesSize * 8L / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     } else {
       // preliminary rough check
       checkSsz(
-          (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
+          (bytesSize - 1) * 8L / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     }
     if (getElementSchema() instanceof AbstractSszPrimitiveSchema) {

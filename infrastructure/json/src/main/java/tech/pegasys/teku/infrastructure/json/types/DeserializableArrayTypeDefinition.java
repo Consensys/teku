@@ -19,27 +19,47 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
-public class DeserializableArrayTypeDefinition<T> extends SerializableArrayTypeDefinition<T>
-    implements DeserializableTypeDefinition<List<T>> {
+public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
+    extends SerializableArrayTypeDefinition<ItemT, CollectionT>
+    implements DeserializableTypeDefinition<CollectionT> {
 
-  private final DeserializableTypeDefinition<T> itemType;
+  private final DeserializableTypeDefinition<ItemT> itemType;
+  private final Function<List<ItemT>, CollectionT> createFromList;
 
-  public DeserializableArrayTypeDefinition(final DeserializableTypeDefinition<T> itemType) {
+  public DeserializableArrayTypeDefinition(
+      final DeserializableTypeDefinition<ItemT> itemType,
+      final Function<List<ItemT>, CollectionT> createFromList) {
     super(itemType);
     this.itemType = itemType;
+    this.createFromList = createFromList;
+  }
+
+  public DeserializableArrayTypeDefinition(
+      final DeserializableTypeDefinition<ItemT> itemType,
+      final Function<List<ItemT>, CollectionT> createFromList,
+      final String description) {
+    super(itemType, description);
+    this.itemType = itemType;
+    this.createFromList = createFromList;
   }
 
   @Override
-  public List<T> deserialize(final JsonParser parser) throws IOException {
+  public CollectionT deserialize(final JsonParser parser) throws IOException {
     if (!parser.isExpectedStartArrayToken()) {
       throw MismatchedInputException.from(
           parser, (Class<?>) null, "Array expected but got " + parser.getCurrentToken());
     }
-    final List<T> result = new ArrayList<>();
+    final List<ItemT> result = new ArrayList<>();
     while (parser.nextToken() != JsonToken.END_ARRAY) {
       result.add(itemType.deserialize(parser));
     }
-    return result;
+    return createFromList.apply(result);
+  }
+
+  @Override
+  public DeserializableTypeDefinition<CollectionT> withDescription(final String description) {
+    return new DeserializableArrayTypeDefinition<>(itemType, createFromList, description);
   }
 }

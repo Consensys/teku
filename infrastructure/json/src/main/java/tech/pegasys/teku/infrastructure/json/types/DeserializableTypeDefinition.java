@@ -23,6 +23,9 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   TObject deserialize(JsonParser parser) throws IOException;
 
+  @Override
+  DeserializableTypeDefinition<TObject> withDescription(final String description);
+
   static <TObject> StringTypeBuilder<TObject> string(
       @SuppressWarnings("unused") final Class<TObject> clazz) {
     return new StringTypeBuilder<>();
@@ -30,7 +33,7 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
-    return new DeserializableArrayTypeDefinition<>(itemType);
+    return new DeserializableListTypeDefinition<>(itemType);
   }
 
   static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(

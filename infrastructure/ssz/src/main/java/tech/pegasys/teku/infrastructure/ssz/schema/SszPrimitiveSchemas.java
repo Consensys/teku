@@ -14,6 +14,12 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BIT_TYPE_DEFINTION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES32_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES4_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_NONE_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_UINT256_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_UINT64_TYPE_DEFINITION;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -23,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -32,6 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
@@ -62,6 +70,11 @@ public interface SszPrimitiveSchemas {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.EMPTY_LEAF;
+        }
+
+        @Override
+        public DeserializableTypeDefinition<SszNone> getJsonTypeDefinition() {
+          return SSZ_NONE_TYPE_DEFINITION;
         }
 
         @Override
@@ -104,6 +117,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public DeserializableTypeDefinition<SszBit> getJsonTypeDefinition() {
+          return SSZ_BIT_TYPE_DEFINTION;
+        }
+
+        @Override
         protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
           final byte data = bytes.get(0);
           if (data != 0 && data != 1) {
@@ -141,6 +159,11 @@ public interface SszPrimitiveSchemas {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
+        }
+
+        @Override
+        public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
+          return SszPrimitiveTypeDefinitions.SSZ_BYTE_TYPE_DEFINTION;
         }
 
         @Override
@@ -220,6 +243,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public DeserializableTypeDefinition<SszUInt64> getJsonTypeDefinition() {
+          return SSZ_UINT64_TYPE_DEFINITION;
+        }
+
+        @Override
         public String toString() {
           return "UInt64";
         }
@@ -247,6 +275,11 @@ public interface SszPrimitiveSchemas {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[32];
+        }
+
+        @Override
+        public DeserializableTypeDefinition<SszUInt256> getJsonTypeDefinition() {
+          return SSZ_UINT256_TYPE_DEFINITION;
         }
 
         @Override
@@ -283,6 +316,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public DeserializableTypeDefinition<SszBytes4> getJsonTypeDefinition() {
+          return SSZ_BYTES4_TYPE_DEFINITION;
+        }
+
+        @Override
         public String toString() {
           return "Bytes4";
         }
@@ -308,6 +346,11 @@ public interface SszPrimitiveSchemas {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[32];
+        }
+
+        @Override
+        public DeserializableTypeDefinition<SszBytes32> getJsonTypeDefinition() {
+          return SSZ_BYTES32_TYPE_DEFINITION;
         }
 
         @Override

@@ -17,13 +17,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 
-class IntegerTypeDefinition implements DeserializableTypeDefinition<Integer> {
+class IntegerTypeDefinition extends PrimitiveTypeDefinition<Integer> {
 
   @Override
-  public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
+  public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "number");
-    gen.writeEndObject();
   }
 
   @Override
