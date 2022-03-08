@@ -14,7 +14,16 @@
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -22,28 +31,63 @@ import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class Web3JExecutionEngineClientTest {
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
+  Writer jsonWriter;
+  JsonGenerator jsonGenerator;
+  ObjectMapper objectMapper;
+  SerializerProvider serializerProvider;
+  DataStructureUtil dataStructureUtil;
+  Spec spec;
+
+  Web3JExecutionEngineClient eeClient;
+
   @BeforeEach
-  public void beforeEach() throws Exception {
-    mockWebServer.shutdown();
+  void setUp(SpecContext specContext) throws IOException {
+    jsonWriter = new StringWriter();
+    jsonGenerator = new JsonFactory().createGenerator(jsonWriter);
+    objectMapper = new ObjectMapper();
+    serializerProvider = objectMapper.getSerializerProvider();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    spec = specContext.getSpec();
+    mockWebServer.start();
+
+    eeClient =
+        new Web3JExecutionEngineClient(
+            "http://localhost:" + mockWebServer.getPort(), timeProvider, Optional.empty());
   }
 
   @AfterEach
@@ -51,13 +95,9 @@ public class Web3JExecutionEngineClientTest {
     mockWebServer.shutdown();
   }
 
-  @Test
+  @TestTemplate
   @SuppressWarnings("unchecked")
-  void shouldRoundtripWithMockedWebServer() throws Exception {
-    final Web3JExecutionEngineClient eeClient =
-        new Web3JExecutionEngineClient(
-            "http://localhost:" + mockWebServer.getPort(), timeProvider, Optional.empty());
-
+  void forkChoiceUpdated_shouldRoundtripWithMockedWebServer() throws Exception {
     final Bytes32 latestValidHash =
         Bytes32.fromHexString("0x135bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
     final String validationError = "error";
@@ -78,7 +118,7 @@ public class Web3JExecutionEngineClientTest {
             .setBody(bodyResponse)
             .addHeader("Content-Type", "application/json"));
 
-    final ForkChoiceStateV1 forkChoiceStateV1Orig =
+    final ForkChoiceStateV1 forkChoiceStateV1Request =
         new ForkChoiceStateV1(
             Bytes32.fromHexString(
                 "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464"),
@@ -95,7 +135,8 @@ public class Web3JExecutionEngineClientTest {
             Bytes20.fromHexString("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d"));
 
     final SafeFuture<Response<ForkChoiceUpdatedResult>> futureResponseForkChoiceUpdatedResult =
-        eeClient.forkChoiceUpdated(forkChoiceStateV1Orig, Optional.of(payloadAttributesV1Request));
+        eeClient.forkChoiceUpdated(
+            forkChoiceStateV1Request, Optional.of(payloadAttributesV1Request));
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -107,8 +148,7 @@ public class Web3JExecutionEngineClientTest {
     final Map<String, Object> payloadAttributes =
         (Map<String, Object>) ((List<Object>) data.get("params")).get(1);
 
-    assertThat(data.get("method")).isEqualTo("engine_forkchoiceUpdatedV1");
-    assertThat(data.get("id")).isEqualTo(0);
+    verifyJsonRpcMethodCall(data, "engine_forkchoiceUpdatedV1");
 
     assertThat(forkChoiceState.get("headBlockHash"))
         .isEqualTo("0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
@@ -131,5 +171,171 @@ public class Web3JExecutionEngineClientTest {
                     .asInternalExecutionPayload()
                     .getPayloadStatus()
                     .equals(payloadStatusResponse));
+  }
+
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  void proposeBlindedBlock_shouldRoundtripWithMockedWebServer() throws Exception {
+    final String jsonExecutionPayloadResponse =
+        "{\"parentHash\":\"0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464\","
+            + "\"feeRecipient\":\"0x367cbd40ac7318427aadb97345a91fa2e965daf3\","
+            + "\"stateRoot\":\"0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e\","
+            + "\"receiptsRoot\":\"0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9\","
+            + "\"logsBloom\":\"0x6fdfab408c56b6105a76eff5c0435d09fc6ed7a938e7f946cf74fbbb9416428f619b26eab6d66297cbd9dbc84db437c8d36f9b30556f5f8062bbc80a0e3f35fb2f4921ae3f8361dacf697513c2f8aac786dccb24a7ca3eef9743ab9071ee3663dca121493e717c27ee277bf5d484a83c2da75b4bea86c1d15a2b29352abad715b00fa1c4b94733e496720ced4c31ce785ec3e407136f39dcb857d7d9ff590deeb512704b2f0a58ee953d5a85894a9e9ab9528d1fc87daf2064b515ee861e4dd23bb5714c0fb38a36a1da1698fbee3aae5de1b51de39f6e3d3309e338abb70e275410a1b83e9e9d43d051e6a4a9bdbe6d6fb282c4f2463428a0502a0e2e4b71fb\","
+            + "\"prevRandao\":\"0x8200a6402ca295554fb9562193cc71d60272d63beeaf2201fdf53e846e77f919\","
+            + "\"blockNumber\":\"0x40b79d4886f7bf4c\","
+            + "\"gasLimit\":\"0x40b1be5bcbd70aec\","
+            + "\"gasUsed\":\"0x3fd8861ec01cf90b\","
+            + "\"timestamp\":\"0x3fd2a73204fc44aa\","
+            + "\"extraData\":\"0x0c65de3f6bad3d\","
+            + "\"baseFeePerGas\":\"0x6b0ac13f8a279ad3abec11bed1a49214f6e7af79b643595df6a38706b338e93b\","
+            + "\"blockHash\":\"0x7e2bbb3f2a737918a12f79e9a52da7e1fceaae0b6c0c82172425cbce8d99a0c6\","
+            + "\"transactions\":[\"0xb88ea93f0a5617\"]}";
+
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":" + jsonExecutionPayloadResponse + "}";
+
+    final ExecutionPayloadSchema executionPayloadSchema =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadSchema();
+
+    final ExecutionPayload executionPayloadResponse =
+        objectMapper
+            .readValue(jsonExecutionPayloadResponse, ExecutionPayloadV1.class)
+            .asInternalExecutionPayload(executionPayloadSchema);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setBody(bodyResponse)
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json"));
+
+    final SignedBeaconBlock signedBeaconBlockRequest =
+        dataStructureUtil.randomSignedBlindedBeaconBlock();
+
+    SafeFuture<Response<ExecutionPayloadV1>> futureResponseProposeBlindedBlock =
+        eeClient.proposeBlindedBlock(signedBeaconBlockRequest);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    final Map<String, Object> data =
+        JsonTestUtil.parse(request.getBody().readString(StandardCharsets.UTF_8));
+
+    final String signedBeaconBlockSignature =
+        (String)
+            ((Map<String, Object>) ((List<Object>) data.get("params")).get(0)).get("signature");
+    final Map<String, Object> beaconBlock =
+        (Map<String, Object>)
+            ((Map<String, Object>) ((List<Object>) data.get("params")).get(0)).get("message");
+
+    verifyJsonRpcMethodCall(data, "builder_proposeBlindedBlockV1");
+
+    assertThat(signedBeaconBlockRequest.getSignature())
+        .isEqualTo(
+            BLSSignature.fromBytesCompressed(Bytes.fromHexString(signedBeaconBlockSignature)));
+
+    assertThat(signedBeaconBlockRequest.getSlot())
+        .isEqualTo(UInt64.valueOf(beaconBlock.get("slot").toString()));
+    assertThat(signedBeaconBlockRequest.getProposerIndex())
+        .isEqualTo(UInt64.valueOf(beaconBlock.get("proposer_index").toString()));
+    assertThat(signedBeaconBlockRequest.getParentRoot())
+        .isEqualTo(Bytes32.fromHexString(beaconBlock.get("parent_root").toString()));
+    assertThat(signedBeaconBlockRequest.getStateRoot())
+        .isEqualTo(Bytes32.fromHexString(beaconBlock.get("state_root").toString()));
+
+    final Map<String, Object> executionPayloadHeader =
+        (Map<String, Object>)
+            ((Map<String, Object>) beaconBlock.get("body")).get("execution_payload_header");
+
+    assertThat(
+            signedBeaconBlockRequest
+                .getBeaconBlock()
+                .orElseThrow()
+                .getBody()
+                .getOptionalExecutionPayloadHeader()
+                .orElseThrow()
+                .getTransactionsRoot())
+        .isEqualTo(
+            Bytes32.fromHexString(executionPayloadHeader.get("transactions_root").toString()));
+
+    assertThat(futureResponseProposeBlindedBlock.join())
+        .matches(
+            executionPayloadV1Response1 ->
+                executionPayloadV1Response1
+                    .getPayload()
+                    .asInternalExecutionPayload(executionPayloadSchema)
+                    .equals(executionPayloadResponse));
+  }
+
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  void getPayloadHeader_shouldRoundtripWithMockedWebServer() throws Exception {
+    final String jsonExecutionPayloadHeaderResponse =
+        "{\"parentHash\":\"0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464\","
+            + "\"feeRecipient\":\"0x367cbd40ac7318427aadb97345a91fa2e965daf3\","
+            + "\"stateRoot\":\"0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e\","
+            + "\"receiptsRoot\":\"0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9\","
+            + "\"logsBloom\":\"0x6fdfab408c56b6105a76eff5c0435d09fc6ed7a938e7f946cf74fbbb9416428f619b26eab6d66297cbd9dbc84db437c8d36f9b30556f5f8062bbc80a0e3f35fb2f4921ae3f8361dacf697513c2f8aac786dccb24a7ca3eef9743ab9071ee3663dca121493e717c27ee277bf5d484a83c2da75b4bea86c1d15a2b29352abad715b00fa1c4b94733e496720ced4c31ce785ec3e407136f39dcb857d7d9ff590deeb512704b2f0a58ee953d5a85894a9e9ab9528d1fc87daf2064b515ee861e4dd23bb5714c0fb38a36a1da1698fbee3aae5de1b51de39f6e3d3309e338abb70e275410a1b83e9e9d43d051e6a4a9bdbe6d6fb282c4f2463428a0502a0e2e4b71fb\","
+            + "\"prevRandao\":\"0x8200a6402ca295554fb9562193cc71d60272d63beeaf2201fdf53e846e77f919\","
+            + "\"blockNumber\":\"0x40b79d4886f7bf4c\","
+            + "\"gasLimit\":\"0x40b1be5bcbd70aec\","
+            + "\"gasUsed\":\"0x3fd8861ec01cf90b\","
+            + "\"timestamp\":\"0x3fd2a73204fc44aa\","
+            + "\"extraData\":\"0x0c65de3f6bad3d\","
+            + "\"baseFeePerGas\":\"0x6b0ac13f8a279ad3abec11bed1a49214f6e7af79b643595df6a38706b338e93b\","
+            + "\"blockHash\":\"0x7e2bbb3f2a737918a12f79e9a52da7e1fceaae0b6c0c82172425cbce8d99a0c6\","
+            + "\"transactionsRoot\":\"0x9e2bbb3f2a737918a12f79e9a52da7e1fceaae0b6c0c82172425cbce8d99a0c6\"}";
+
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":" + jsonExecutionPayloadHeaderResponse + "}";
+
+    final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema();
+
+    final ExecutionPayloadHeader executionPayloadHeaderResponse =
+        objectMapper
+            .readValue(jsonExecutionPayloadHeaderResponse, ExecutionPayloadHeaderV1.class)
+            .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setBody(bodyResponse)
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json"));
+
+    final Bytes8 payloadIdRequest = dataStructureUtil.randomBytes8();
+
+    SafeFuture<Response<ExecutionPayloadHeaderV1>> futureResponseExecutionPayloadHeader =
+        eeClient.getPayloadHeader(payloadIdRequest);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    final Map<String, Object> data =
+        JsonTestUtil.parse(request.getBody().readString(StandardCharsets.UTF_8));
+
+    final String payloadId = (String) ((List<Object>) data.get("params")).get(0);
+
+    verifyJsonRpcMethodCall(data, "builder_getPayloadHeaderV1");
+
+    assertThat(payloadIdRequest).isEqualTo(Bytes8.fromHexString(payloadId));
+
+    assertThat(futureResponseExecutionPayloadHeader.join())
+        .matches(
+            executionPayloadHeaderV1Response1 ->
+                executionPayloadHeaderV1Response1
+                    .getPayload()
+                    .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema)
+                    .equals(executionPayloadHeaderResponse));
+  }
+
+  private void verifyJsonRpcMethodCall(Map<String, Object> data, final String method) {
+    assertThat(data.get("method")).asInstanceOf(STRING).isEqualTo(method);
+    assertThat(data.get("id")).asInstanceOf(INTEGER).isGreaterThanOrEqualTo(0);
+    assertThat(data.get("jsonrpc")).asInstanceOf(STRING).isEqualTo("2.0");
   }
 }

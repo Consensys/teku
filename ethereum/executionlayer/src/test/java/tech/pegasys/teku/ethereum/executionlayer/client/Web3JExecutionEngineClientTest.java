@@ -72,7 +72,6 @@ public class Web3JExecutionEngineClientTest {
   DataStructureUtil dataStructureUtil;
 
   @BeforeEach
-  @TestTemplate
   void setUp(SpecContext specContext) throws IOException {
     jsonWriter = new StringWriter();
     jsonGenerator = new JsonFactory().createGenerator(jsonWriter);

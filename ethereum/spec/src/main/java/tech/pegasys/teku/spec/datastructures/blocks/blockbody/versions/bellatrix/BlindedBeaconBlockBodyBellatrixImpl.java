@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 /** A Beacon block body */
-class BlindedBeaconBlockBodyBellatrixImpl
+public class BlindedBeaconBlockBodyBellatrixImpl
     extends Container10<
         BlindedBeaconBlockBodyBellatrixImpl,
         SszSignature,

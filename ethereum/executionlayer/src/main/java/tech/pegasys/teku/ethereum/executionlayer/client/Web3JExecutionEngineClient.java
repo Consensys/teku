@@ -15,6 +15,8 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
@@ -41,11 +44,12 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdated
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.SignedBlindedBeaconBlock;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
+import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeaconBlockSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
@@ -62,6 +66,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       final String eeEndpoint,
       final TimeProvider timeProvider,
       final Optional<JwtConfig> jwtConfig) {
+    SimpleModule module = new SimpleModule("TekuEESsz", new Version(1, 0, 0, null, null, null));
+    module.addSerializer(SignedBeaconBlock.class, new SignedBeaconBlockSerializer());
+    ObjectMapperFactory.getObjectMapper().registerModule(module);
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
     this.eth1Web3j = Web3j.build(eeWeb3jService);
     this.timeProvider = timeProvider;
@@ -163,7 +170,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<ExecutionPayloadV1>> proposeBlindedBlock(
-      SignedBlindedBeaconBlock signedBlindedBeaconBlock) {
+      SignedBeaconBlock signedBlindedBeaconBlock) {
     Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
         new Request<>(
             "builder_proposeBlindedBlockV1",

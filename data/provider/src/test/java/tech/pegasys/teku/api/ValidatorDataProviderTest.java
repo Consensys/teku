@@ -94,7 +94,6 @@ public class ValidatorDataProviderTest {
   private final BLSSignature signature = new BLSSignature(signatureInternal);
 
   @BeforeEach
-  @TestTemplate
   public void setup(SpecContext specContext) {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
