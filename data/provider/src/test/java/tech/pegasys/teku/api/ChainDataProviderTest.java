@@ -388,7 +388,8 @@ public class ChainDataProviderTest {
                 new StateSyncCommittees(committeeIndices, List.of(committeeIndices)),
                 SpecMilestone.ALTAIR,
                 false,
-                false));
+                false,
+                true));
   }
 
   @Test
@@ -526,6 +527,7 @@ public class ChainDataProviderTest {
         expected,
         spec.atSlot(slot).getMilestone(),
         false,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        true);
   }
 }

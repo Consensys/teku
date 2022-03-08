@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,5 +27,9 @@ public interface MetadataMessage extends SszContainer, RpcRequest {
   @Override
   default int getMaximumRequestChunks() {
     return 1;
+  }
+
+  default Optional<SszBitvector> getOptionalSyncnets() {
+    return Optional.empty();
   }
 }

@@ -512,6 +512,31 @@ public class CombinedChainDataClient {
     return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot));
   }
 
+  public boolean isCanonicalBlock(final UInt64 slot, final Bytes32 root) {
+    if (isFinalized(slot)) {
+      return true;
+    }
+    return recentChainData
+        .getChainHead()
+        .map(
+            chainHead ->
+                spec.getAncestor(
+                        recentChainData.getForkChoiceStrategy().orElseThrow(),
+                        chainHead.getRoot(),
+                        slot)
+                    .map(ancestor -> ancestor.equals(root))
+                    .orElse(false))
+        .orElse(false);
+  }
+
+  public boolean isOptimisticBlock(final Bytes32 blockRoot) {
+    return recentChainData
+        .getForkChoiceStrategy()
+        .map(forkChoice -> isOptimistic(blockRoot, forkChoice))
+        // Can't be optimistically imported if we don't have a Store yet.
+        .orElse(false);
+  }
+
   @SuppressWarnings("unchecked")
   private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
     final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
@@ -528,14 +553,6 @@ public class CombinedChainDataClient {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
     canonicalBlock.ifPresent(signedBeaconBlocks::add);
     return signedBeaconBlocks;
-  }
-
-  public boolean isOptimisticBlock(final Bytes32 blockRoot) {
-    return recentChainData
-        .getForkChoiceStrategy()
-        .map(forkChoice -> isOptimistic(blockRoot, forkChoice))
-        // Can't be optimistically imported if we don't have a Store yet.
-        .orElse(false);
   }
 
   private boolean isOptimistic(

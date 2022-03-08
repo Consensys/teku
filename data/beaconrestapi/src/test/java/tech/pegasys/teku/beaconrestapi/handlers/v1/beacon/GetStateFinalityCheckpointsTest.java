@@ -46,7 +46,8 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
                         FinalityCheckpointsResponse.fromState(state),
                         spec.getGenesisSpec().getMilestone(),
                         false,
-                        spec.isMilestoneSupported(SpecMilestone.BELLATRIX)))));
+                        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+                        true))));
 
     handler.handle(context);
 

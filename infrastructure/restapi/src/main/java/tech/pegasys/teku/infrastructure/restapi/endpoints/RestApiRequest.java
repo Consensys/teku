@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
@@ -50,6 +51,12 @@ public class RestApiRequest {
     respond(HttpStatusCodes.SC_OK, JSON_CONTENT_TYPE, response);
   }
 
+  public void respondOk(final Object response, final CacheLength cacheLength)
+      throws JsonProcessingException {
+    context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());
+    respond(HttpStatusCodes.SC_OK, JSON_CONTENT_TYPE, response);
+  }
+
   public void respondError(final int statusCode, final String message)
       throws JsonProcessingException {
     respond(statusCode, JSON_CONTENT_TYPE, new HttpErrorResponse(statusCode, message));
@@ -59,6 +66,7 @@ public class RestApiRequest {
   private void respond(final int statusCode, final String contentType, final Object response)
       throws JsonProcessingException {
     final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
-    context.status(statusCode).result(JsonUtil.serialize(response, type));
+    context.status(statusCode);
+    context.result(JsonUtil.serialize(response, type));
   }
 }
