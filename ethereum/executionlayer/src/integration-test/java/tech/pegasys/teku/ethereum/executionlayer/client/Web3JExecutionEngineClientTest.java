@@ -15,10 +15,6 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +32,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributes
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
@@ -56,7 +53,7 @@ public class Web3JExecutionEngineClientTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void shouldRoundtripWithMockedWebServer() throws InterruptedException, IOException {
+  void shouldRoundtripWithMockedWebServer() throws Exception {
     final Web3JExecutionEngineClient eeClient =
         new Web3JExecutionEngineClient(
             "http://localhost:" + mockWebServer.getPort(), timeProvider, Optional.empty());
@@ -103,7 +100,7 @@ public class Web3JExecutionEngineClientTest {
     final RecordedRequest request = mockWebServer.takeRequest();
 
     final Map<String, Object> data =
-        parseGenericJson(request.getBody().readString(StandardCharsets.UTF_8));
+        JsonTestUtil.parse(request.getBody().readString(StandardCharsets.UTF_8));
 
     final Map<String, Object> forkChoiceState =
         (Map<String, Object>) ((List<Object>) data.get("params")).get(0);
@@ -134,12 +131,5 @@ public class Web3JExecutionEngineClientTest {
                     .asInternalExecutionPayload()
                     .getPayloadStatus()
                     .equals(payloadStatusResponse));
-  }
-
-  private Map<String, Object> parseGenericJson(final String json) throws JsonProcessingException {
-    final ObjectMapper mapper = new ObjectMapper();
-    final MapType type =
-        mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class);
-    return mapper.readValue(json, type);
   }
 }
