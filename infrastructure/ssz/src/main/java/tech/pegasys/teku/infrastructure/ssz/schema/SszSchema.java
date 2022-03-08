@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
@@ -73,6 +77,16 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
+  }
+
+  DeserializableTypeDefinition<SszDataT> getJsonTypeDefinition();
+
+  default void jsonSerialize(final SszDataT view, final JsonGenerator gen) throws IOException {
+    getJsonTypeDefinition().serialize(view, gen);
+  }
+
+  default SszDataT jsonDeserialize(final JsonParser parser) throws IOException {
+    return getJsonTypeDefinition().deserialize(parser);
   }
 
   /**

@@ -135,7 +135,7 @@ public class TerminalPowBlockMonitor {
     }
 
     if (!inSync) {
-      LOG.info("Node is syncing, skipping check.");
+      LOG.debug("Node is syncing, skipping check.");
       return;
     }
 

@@ -24,7 +24,22 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkData;
+import tech.pegasys.teku.spec.datastructures.state.SigningData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -130,6 +145,33 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsBellatrix.required(schemas).getExecutionPayloadSchema()))
           .put("ssz_static/PowBlock", IGNORE_TESTS)
+
+          // Legacy Schemas (Not yet migrated to SchemaDefinitions)
+          .put(
+              "ssz_static/AttestationData", new SszTestExecutor<>(__ -> AttestationData.SSZ_SCHEMA))
+          .put(
+              "ssz_static/BeaconBlockHeader",
+              new SszTestExecutor<>(__ -> BeaconBlockHeader.SSZ_SCHEMA))
+          .put("ssz_static/Checkpoint", new SszTestExecutor<>(__ -> Checkpoint.SSZ_SCHEMA))
+          .put("ssz_static/Deposit", new SszTestExecutor<>(__ -> Deposit.SSZ_SCHEMA))
+          .put("ssz_static/DepositData", new SszTestExecutor<>(__ -> DepositData.SSZ_SCHEMA))
+          .put("ssz_static/DepositMessage", new SszTestExecutor<>(__ -> DepositMessage.SSZ_SCHEMA))
+          .put("ssz_static/Eth1Block", IGNORE_TESTS) // We don't have an Eth1Block structure
+          .put("ssz_static/Eth1Data", new SszTestExecutor<>(__ -> Eth1Data.SSZ_SCHEMA))
+          .put("ssz_static/Fork", new SszTestExecutor<>(__ -> Fork.SSZ_SCHEMA))
+          .put("ssz_static/ForkData", new SszTestExecutor<>(__ -> ForkData.SSZ_SCHEMA))
+          .put(
+              "ssz_static/ProposerSlashing",
+              new SszTestExecutor<>(__ -> ProposerSlashing.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedBeaconBlockHeader",
+              new SszTestExecutor<>(__ -> SignedBeaconBlockHeader.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedVoluntaryExit",
+              new SszTestExecutor<>(__ -> SignedVoluntaryExit.SSZ_SCHEMA))
+          .put("ssz_static/SigningData", new SszTestExecutor<>(__ -> SigningData.SSZ_SCHEMA))
+          .put("ssz_static/Validator", new SszTestExecutor<>(__ -> Validator.SSZ_SCHEMA))
+          .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(__ -> VoluntaryExit.SSZ_SCHEMA))
           .build();
 
   public SszTestExecutor(final SchemaProvider<T> sszType) {
@@ -143,13 +185,19 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
     final SchemaDefinitions schemaDefinitions =
         testDefinition.getSpec().getGenesisSchemaDefinitions();
-    final T result = sszType.get(schemaDefinitions).sszDeserialize(inputData);
+    final SszSchema<T> sszSchema = sszType.get(schemaDefinitions);
+    final T result = sszSchema.sszDeserialize(inputData);
 
     // Deserialize
     assertThat(result.hashTreeRoot()).isEqualTo(expectedRoot);
 
     // Serialize
     assertThat(result.sszSerialize()).isEqualTo(inputData);
+
+    // Check TypeDefinition by parsing from YAML version
+    final T yamlResult =
+        TestDataUtils.loadYaml(testDefinition, "value.yaml", sszSchema.getJsonTypeDefinition());
+    assertThat(yamlResult.hashTreeRoot()).isEqualTo(expectedRoot);
   }
 
   private interface SchemaProvider<T extends SszData> {

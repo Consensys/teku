@@ -26,7 +26,8 @@ public enum BlockBodyFields implements SszFieldName {
   DEPOSITS,
   VOLUNTARY_EXITS,
   SYNC_AGGREGATE,
-  EXECUTION_PAYLOAD;
+  EXECUTION_PAYLOAD,
+  EXECUTION_PAYLOAD_HEADER;
 
   @Override
   public String getSszFieldName() {

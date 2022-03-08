@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.common.io.Resources;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,13 +58,5 @@ public class JsonTestUtil {
             TypeFactory.defaultInstance()
                 .constructCollectionLikeType(ArrayList.class, Object.class))
         .readValue(json);
-  }
-
-  public static Map<String, Object> parseJsonResource(
-      final Class<?> contextClass, final String resourceName) throws Exception {
-    final String expected =
-        Resources.toString(
-            Resources.getResource(contextClass, resourceName), StandardCharsets.UTF_8);
-    return JsonTestUtil.parse(expected);
   }
 }

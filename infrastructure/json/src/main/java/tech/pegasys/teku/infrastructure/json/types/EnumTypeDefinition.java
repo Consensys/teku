@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 
-public class EnumTypeDefinition<T extends Enum<T>> implements DeserializableTypeDefinition<T> {
+public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefinition<T> {
   final Class<T> itemType;
 
   public EnumTypeDefinition(final Class<T> itemType) {
@@ -36,8 +36,7 @@ public class EnumTypeDefinition<T extends Enum<T>> implements DeserializableType
   }
 
   @Override
-  public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
+  public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "string");
     gen.writeArrayFieldStart("enum");
 
@@ -45,7 +44,6 @@ public class EnumTypeDefinition<T extends Enum<T>> implements DeserializableType
       gen.writeString(value.toString());
     }
     gen.writeEndArray();
-    gen.writeEndObject();
   }
 
   @Override

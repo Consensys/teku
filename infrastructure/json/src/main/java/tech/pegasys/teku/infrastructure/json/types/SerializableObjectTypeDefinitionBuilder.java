@@ -22,11 +22,23 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
 
   private final Map<String, SerializableFieldDefinition<TObject>> fields = new LinkedHashMap<>();
   private Optional<String> name = Optional.empty();
+  private Optional<String> title = Optional.empty();
+  private Optional<String> description = Optional.empty();
 
   SerializableObjectTypeDefinitionBuilder() {}
 
   public SerializableObjectTypeDefinitionBuilder<TObject> name(final String name) {
     this.name = Optional.of(name);
+    return this;
+  }
+
+  public SerializableObjectTypeDefinitionBuilder<TObject> title(final String title) {
+    this.title = Optional.of(title);
+    return this;
+  }
+
+  public SerializableObjectTypeDefinitionBuilder<TObject> description(final String description) {
+    this.description = Optional.of(description);
     return this;
   }
 
@@ -47,6 +59,6 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
   }
 
   public SerializableTypeDefinition<TObject> build() {
-    return new SerializableObjectTypeDefinition<>(name, fields);
+    return new SerializableObjectTypeDefinition<>(name, title.or(() -> name), description, fields);
   }
 }

@@ -15,11 +15,15 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
@@ -29,6 +33,18 @@ public class BeaconStateSchemaAltairTest
   @Override
   protected Spec createSpec() {
     return TestSpecFactory.createMinimalAltair();
+  }
+
+  @Test
+  void shouldRoundTripViaJson() throws JsonProcessingException {
+    final BeaconStateAltair state = randomState();
+    final BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> schema =
+        getSchema(dataStructureUtil.getSpec().getGenesisSpecConfig());
+    final DeserializableTypeDefinition<BeaconStateAltair> typeDefinition =
+        schema.getJsonTypeDefinition();
+    final String json = JsonUtil.serialize(state, typeDefinition);
+    final BeaconState result = JsonUtil.parse(json, typeDefinition);
+    assertThat(result).isEqualTo(state);
   }
 
   @Override

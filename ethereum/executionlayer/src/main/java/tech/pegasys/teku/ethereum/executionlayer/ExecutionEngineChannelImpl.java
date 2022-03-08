@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEn
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
@@ -197,5 +199,28 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
                     "exchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
                     transitionConfiguration,
                     remoteTransitionConfiguration));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(
+      final Bytes8 payloadId, final UInt64 slot) {
+    LOG.trace("calling getPayloadHeader(payloadId={}, slot={})", payloadId, slot);
+
+    return executionEngineClient
+        .getPayloadHeader(payloadId)
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenCombine(
+            SafeFuture.of(
+                () ->
+                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                        .getExecutionPayloadHeaderSchema()),
+            ExecutionPayloadHeaderV1::asInternalExecutionPayloadHeader)
+        .thenPeek(
+            executionPayloadHeader ->
+                LOG.trace(
+                    "getPayloadHeader(payloadId={}, slot={}) -> {}",
+                    payloadId,
+                    slot,
+                    executionPayloadHeader));
   }
 }

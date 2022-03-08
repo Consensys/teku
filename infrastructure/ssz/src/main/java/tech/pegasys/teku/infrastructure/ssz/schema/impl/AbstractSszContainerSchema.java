@@ -26,12 +26,14 @@ import java.util.Queue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszContainerTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
@@ -83,6 +85,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   private final TreeNode defaultTree;
   private final long treeWidth;
   private final int fixedPartSize;
+  private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   protected AbstractSszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
@@ -100,6 +103,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
+    this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
   protected AbstractSszContainerSchema(List<SszSchema<?>> childrenSchemas) {
@@ -113,6 +117,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
+    jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
   @Override
@@ -125,6 +130,11 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public C getDefault() {
     return createFromBackingNode(getDefaultTree());
+  }
+
+  @Override
+  public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
+    return jsonTypeDefinition;
   }
 
   @Override

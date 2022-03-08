@@ -14,9 +14,11 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.sszSerializedType;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -32,6 +34,11 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
 
   public SszByteVectorSchemaImpl(long vectorLength) {
     super(SszPrimitiveSchemas.BYTE_SCHEMA, vectorLength);
+  }
+
+  @Override
+  protected DeserializableTypeDefinition<SszVectorT> createTypeDefinition() {
+    return sszSerializedType(this, "SSZ hexadecimal");
   }
 
   @Override

@@ -16,17 +16,36 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Optional;
 
 public class BooleanTypeDefinition implements DeserializableTypeDefinition<Boolean> {
+  private final Optional<String> description;
+
+  public BooleanTypeDefinition() {
+    this.description = Optional.empty();
+  }
+
+  public BooleanTypeDefinition(final String description) {
+    this.description = Optional.of(description);
+  }
+
   @Override
   public Boolean deserialize(final JsonParser parser) throws IOException {
     return parser.getBooleanValue();
   }
 
   @Override
+  public DeserializableTypeDefinition<Boolean> withDescription(final String description) {
+    return new BooleanTypeDefinition(description);
+  }
+
+  @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("type", "boolean");
+    if (description.isPresent()) {
+      gen.writeStringField("description", description.get());
+    }
     gen.writeEndObject();
   }
 

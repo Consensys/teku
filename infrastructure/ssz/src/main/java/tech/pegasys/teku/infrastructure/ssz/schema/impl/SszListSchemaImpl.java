@@ -23,10 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszListSchemaImpl<ElementDataT extends SszData>
     extends AbstractSszListSchema<ElementDataT, SszList<ElementDataT>> {
 
-  public SszListSchemaImpl(SszSchema<ElementDataT> elementSchema, long maxLength) {
-    super(elementSchema, maxLength);
-  }
-
   public SszListSchemaImpl(
       SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
     super(elementSchema, maxLength, hints);

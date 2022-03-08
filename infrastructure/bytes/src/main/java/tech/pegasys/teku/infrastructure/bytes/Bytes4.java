@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.MutableBytes;
 public class Bytes4 {
   public static final int SIZE = 4;
 
-  private Bytes bytes;
+  private final Bytes bytes;
 
   public Bytes4(Bytes bytes) {
     checkArgument(bytes.size() == 4, "Bytes4 should be 4 bytes, but was %s bytes.", bytes.size());
