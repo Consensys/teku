@@ -91,6 +91,6 @@ public interface ExecutionEngineChannel extends ChannelInterface {
     KILN,
     KILNV2;
 
-    public static Version DEFAULT_VERSION = KINTSUGI;
+    public static Version DEFAULT_VERSION = KILNV2;
   }
 }
