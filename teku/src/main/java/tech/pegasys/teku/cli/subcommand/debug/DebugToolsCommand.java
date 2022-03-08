@@ -44,7 +44,7 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 @Command(
     name = "debug-tools",
     description = "Utilities for debugging issues",
-    subcommands = {DebugDbCommand.class},
+    subcommands = {DebugDbCommand.class, PrettyPrintCommand.class},
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
