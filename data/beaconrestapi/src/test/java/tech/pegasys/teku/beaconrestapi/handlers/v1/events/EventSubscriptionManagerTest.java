@@ -327,7 +327,9 @@ public class EventSubscriptionManagerTest {
 
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(
-        sampleVoluntaryExit.asInternalSignedVoluntaryExit(), InternalValidationResult.ACCEPT);
+        sampleVoluntaryExit.asInternalSignedVoluntaryExit(),
+        InternalValidationResult.ACCEPT,
+        false);
     asyncRunner.executeQueuedActions();
   }
 
@@ -386,7 +388,8 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerContributionEvent() {
-    manager.onSyncCommitteeContribution(contributionAndProof, InternalValidationResult.ACCEPT);
+    manager.onSyncCommitteeContribution(
+        contributionAndProof, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
   }
 }

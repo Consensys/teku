@@ -68,6 +68,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     voluntaryExitProcessSuccessful.start();
     validatorClient.waitForLogMessageContaining("has changed status from");
     assertThat(voluntaryExitProcessFailing.getLoggedErrors())
-        .contains("Failed to submit exit for validator");
+        .containsPattern(
+            "Exit for validator [0-9]+ is invalid: Validator has not been active long enough");
   }
 }
