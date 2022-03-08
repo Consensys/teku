@@ -841,7 +841,7 @@ class ValidatorApiHandlerTest {
   void sendSyncCommitteeMessages_shouldAddMessagesToPool() {
     final SyncCommitteeMessage message = dataStructureUtil.randomSyncCommitteeMessage();
     final List<SyncCommitteeMessage> messages = List.of(message);
-    when(syncCommitteeMessagePool.add(any()))
+    when(syncCommitteeMessagePool.addLocal(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
@@ -853,7 +853,7 @@ class ValidatorApiHandlerTest {
   void sendSyncCommitteeMessages_shouldRaiseErrors() {
     final SyncCommitteeMessage message = dataStructureUtil.randomSyncCommitteeMessage();
     final List<SyncCommitteeMessage> messages = List.of(message);
-    when(syncCommitteeMessagePool.add(any()))
+    when(syncCommitteeMessagePool.addLocal(any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
@@ -874,7 +874,7 @@ class ValidatorApiHandlerTest {
   void sendSignedContributionAndProofs_shouldAddContributionsToPool() {
     final SignedContributionAndProof contribution =
         dataStructureUtil.randomSignedContributionAndProof(5);
-    when(syncCommitteeContributionPool.add(any()))
+    when(syncCommitteeContributionPool.addLocal(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<Void> result =
@@ -888,11 +888,11 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedContributionAndProof(5);
     final SignedContributionAndProof contribution2 =
         dataStructureUtil.randomSignedContributionAndProof(5);
-    when(syncCommitteeContributionPool.add(contribution1))
+    when(syncCommitteeContributionPool.addLocal(contribution1))
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Bad")));
-    when(syncCommitteeContributionPool.add(contribution2))
+    when(syncCommitteeContributionPool.addLocal(contribution2))
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Worse")));

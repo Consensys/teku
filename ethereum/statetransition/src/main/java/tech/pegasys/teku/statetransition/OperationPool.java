@@ -128,7 +128,15 @@ public class OperationPool<T extends SszData> {
         .collect(schema.collector());
   }
 
-  public SafeFuture<InternalValidationResult> add(final T item) {
+  public SafeFuture<InternalValidationResult> addLocal(final T item) {
+    return add(item, false);
+  }
+
+  public SafeFuture<InternalValidationResult> addRemote(final T item) {
+    return add(item, true);
+  }
+
+  private SafeFuture<InternalValidationResult> add(final T item, final boolean fromNetwork) {
     return operationValidator
         .validateFully(item)
         .thenApply(
@@ -137,7 +145,7 @@ public class OperationPool<T extends SszData> {
               if (result.code().equals(ValidationResultCode.ACCEPT)
                   || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
                 operations.add(item);
-                subscribers.forEach(s -> s.onOperationAdded(item, result));
+                subscribers.forEach(s -> s.onOperationAdded(item, result, fromNetwork));
               }
 
               return result;
@@ -158,7 +166,8 @@ public class OperationPool<T extends SszData> {
   }
 
   public interface OperationAddedSubscriber<T> {
-    void onOperationAdded(T operation, InternalValidationResult validationStatus);
+    void onOperationAdded(
+        T operation, InternalValidationResult validationStatus, boolean fromNetwork);
   }
 
   private int size() {

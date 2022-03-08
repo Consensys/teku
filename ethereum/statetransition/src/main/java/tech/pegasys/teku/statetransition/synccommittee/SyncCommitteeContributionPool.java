@@ -54,8 +54,18 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
     subscribers.subscribe(subscriber);
   }
 
-  public SafeFuture<InternalValidationResult> add(
+  public SafeFuture<InternalValidationResult> addLocal(
       final SignedContributionAndProof signedContributionAndProof) {
+    return add(signedContributionAndProof, false);
+  }
+
+  public SafeFuture<InternalValidationResult> addRemote(
+      final SignedContributionAndProof signedContributionAndProof) {
+    return add(signedContributionAndProof, true);
+  }
+
+  private SafeFuture<InternalValidationResult> add(
+      final SignedContributionAndProof signedContributionAndProof, final boolean fromNetwork) {
     return validator
         .validate(signedContributionAndProof)
         .thenPeek(
@@ -63,7 +73,9 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
               if (result.isAccept()) {
                 doAdd(signedContributionAndProof.getMessage().getContribution());
                 subscribers.forEach(
-                    subscriber -> subscriber.onOperationAdded(signedContributionAndProof, result));
+                    subscriber ->
+                        subscriber.onOperationAdded(
+                            signedContributionAndProof, result, fromNetwork));
               }
             });
   }
