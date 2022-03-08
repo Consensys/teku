@@ -33,10 +33,8 @@ import tech.pegasys.teku.validator.client.ActiveKeyManager;
 class ValidatorOpenApiTest {
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
   private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
-  private RestApi restApi;
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
-  private Optional<String> maybeJson;
   private JsonNode jsonNode;
 
   @BeforeEach
@@ -49,8 +47,8 @@ class ValidatorOpenApiTest {
     when(config.getRestApiKeystoreFile()).thenReturn(Optional.of(Path.of("keystore")));
     when(config.getRestApiKeystorePasswordFile()).thenReturn(Optional.of(Path.of("pass")));
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
-    restApi = ValidatorRestApi.create(config, keyManager, dataDirLayout);
-    maybeJson = restApi.getRestApiDocs();
+    final RestApi restApi = ValidatorRestApi.create(config, keyManager, dataDirLayout);
+    final Optional<String> maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
     jsonNode = util.parseSwagger(maybeJson.orElseThrow());
   }

@@ -19,14 +19,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 
-class ByteTypeDefinition implements DeserializableTypeDefinition<Byte> {
+class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
 
   @Override
-  public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
+  public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "string");
     gen.writeStringField("format", "byte");
-    gen.writeEndObject();
   }
 
   @Override
