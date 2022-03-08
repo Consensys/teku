@@ -31,6 +31,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -177,9 +178,15 @@ public class VoluntaryExitCommand implements Runnable {
               .getSigner()
               .signVoluntaryExit(message, forkInfo)
               .join();
-      apiClient.sendVoluntaryExit(new SignedVoluntaryExit(message, signature));
-      SUB_COMMAND_LOG.display(
-          "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
+      Optional<PostDataFailureResponse> response =
+          apiClient.sendVoluntaryExit(new SignedVoluntaryExit(message, signature));
+      if (response.isPresent()) {
+        SUB_COMMAND_LOG.error(response.get().message);
+      } else {
+        SUB_COMMAND_LOG.display(
+            "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
+      }
+
     } catch (IllegalArgumentException ex) {
       SUB_COMMAND_LOG.error(
           "Failed to submit exit for validator " + publicKey.toAbbreviatedString());

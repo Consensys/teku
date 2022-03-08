@@ -76,7 +76,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
-import tech.pegasys.teku.statetransition.OperationAcceptedFilter;
+import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -691,11 +691,11 @@ public class BeaconChainController extends Service
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
-            .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
-            .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
-            .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
-            .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::add)
-            .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::add)
+            .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
+            .gossipedProposerSlashingProcessor(proposerSlashingPool::addRemote)
+            .gossipedVoluntaryExitProcessor(voluntaryExitPool::addRemote)
+            .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
+            .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(
@@ -709,15 +709,15 @@ public class BeaconChainController extends Service
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(
-        new OperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));
     syncCommitteeContributionPool.subscribeOperationAdded(
-        new OperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeContribution));
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeContribution));
     proposerSlashingPool.subscribeOperationAdded(
-        new OperationAcceptedFilter<>(p2pNetwork::publishProposerSlashing));
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishProposerSlashing));
     attesterSlashingPool.subscribeOperationAdded(
-        new OperationAcceptedFilter<>(p2pNetwork::publishAttesterSlashing));
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishAttesterSlashing));
     voluntaryExitPool.subscribeOperationAdded(
-        new OperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {

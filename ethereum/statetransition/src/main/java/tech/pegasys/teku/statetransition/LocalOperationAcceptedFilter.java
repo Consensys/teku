@@ -18,17 +18,28 @@ import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
-public class OperationAcceptedFilter<T> implements OperationAddedSubscriber<T> {
+/**
+ * Filters added operations to just those that need to be published out via gossip.
+ *
+ * <p>Operations received via gossip are automatically forwarded based on the returned validation
+ * result so only operations received from the local API need to be gossiped on.
+ *
+ * @param <T> the type of operation being filtered.
+ */
+public class LocalOperationAcceptedFilter<T> implements OperationAddedSubscriber<T> {
 
   private final Consumer<T> delegate;
 
-  public OperationAcceptedFilter(final Consumer<T> delegate) {
+  public LocalOperationAcceptedFilter(final Consumer<T> delegate) {
     this.delegate = delegate;
   }
 
   @Override
-  public void onOperationAdded(final T operation, final InternalValidationResult validationStatus) {
-    if (validationStatus.code() == ValidationResultCode.ACCEPT) {
+  public void onOperationAdded(
+      final T operation,
+      final InternalValidationResult validationStatus,
+      final boolean fromNetwork) {
+    if (!fromNetwork && validationStatus.code() == ValidationResultCode.ACCEPT) {
       delegate.accept(operation);
     }
   }

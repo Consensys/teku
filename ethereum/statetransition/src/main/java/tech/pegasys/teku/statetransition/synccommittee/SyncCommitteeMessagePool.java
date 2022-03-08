@@ -63,13 +63,25 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
     subscribers.subscribe(subscriber);
   }
 
-  public SafeFuture<InternalValidationResult> add(final ValidateableSyncCommitteeMessage message) {
+  public SafeFuture<InternalValidationResult> addLocal(
+      final ValidateableSyncCommitteeMessage message) {
+    return add(message, false);
+  }
+
+  public SafeFuture<InternalValidationResult> addRemote(
+      final ValidateableSyncCommitteeMessage message) {
+    return add(message, true);
+  }
+
+  private SafeFuture<InternalValidationResult> add(
+      final ValidateableSyncCommitteeMessage message, final boolean fromNetwork) {
     return validator
         .validate(message)
         .thenPeek(
             result -> {
               if (result.isAccept()) {
-                subscribers.forEach(subscriber -> subscriber.onOperationAdded(message, result));
+                subscribers.forEach(
+                    subscriber -> subscriber.onOperationAdded(message, result, fromNetwork));
                 doAdd(message);
               }
             });
