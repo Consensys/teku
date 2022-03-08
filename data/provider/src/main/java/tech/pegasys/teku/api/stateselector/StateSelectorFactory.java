@@ -86,7 +86,7 @@ public class StateSelectorFactory {
       final ChainHead chainHead = maybeChainHead.get();
       return chainHead
           .getState()
-          .thenApply(state -> Optional.of(addMetaData(state, chainHead.isOptimistic())));
+          .thenApply(state -> Optional.of(addMetaData(state, chainHead.isOptimistic(), true)));
     };
   }
 
@@ -100,7 +100,8 @@ public class StateSelectorFactory {
                     finalized ->
                         addMetaData(
                             finalized.getState(),
-                            isCheckpointOptimistic(finalized.getCheckpoint().getRoot()))));
+                            isCheckpointOptimistic(finalized.getCheckpoint().getRoot()),
+                            true)));
   }
 
   public StateSelector justifiedSelector() {
@@ -110,18 +111,17 @@ public class StateSelectorFactory {
             .thenApply(
                 maybeState ->
                     maybeState.map(
-                        state ->
-                            addMetaData(
-                                state,
-                                isCheckpointOptimistic(
-                                    BeaconBlockHeader.fromState(state).getRoot()))));
+                        state -> {
+                          BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+                          return addMetaData(state, isCheckpointOptimistic(header.getRoot()), true);
+                        }));
   }
 
   public StateSelector genesisSelector() {
     return () ->
         client
             .getStateAtSlotExact(GENESIS_SLOT)
-            .thenApply(maybeState -> maybeState.map(state -> addMetaData(state, false)));
+            .thenApply(maybeState -> maybeState.map(state -> addMetaData(state, false, true)));
   }
 
   public StateSelector forSlot(final UInt64 slot) {
@@ -134,7 +134,8 @@ public class StateSelectorFactory {
                         .getStateAtSlotExact(slot, head.getRoot())
                         .thenApply(
                             maybeState ->
-                                maybeState.map(state -> addMetaData(state, head.isOptimistic()))))
+                                maybeState.map(
+                                    state -> addMetaData(state, head.isOptimistic(), true))))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -145,11 +146,13 @@ public class StateSelectorFactory {
             .thenApply(
                 maybeState ->
                     maybeState.map(
-                        state ->
-                            addMetaData(
-                                state,
-                                client.isOptimisticBlock(
-                                    BeaconBlockHeader.fromState(state).getRoot()))));
+                        state -> {
+                          BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+                          return addMetaData(
+                              state,
+                              client.isOptimisticBlock(header.getRoot()),
+                              client.isCanonicalBlock(state.getSlot(), header.getRoot()));
+                        }));
   }
 
   public StateSelector forBlockRoot(final Bytes32 blockRoot) {
@@ -159,15 +162,21 @@ public class StateSelectorFactory {
             .thenApply(
                 maybeState ->
                     maybeState.map(
-                        state -> addMetaData(state, client.isOptimisticBlock(blockRoot))));
+                        state ->
+                            addMetaData(
+                                state,
+                                client.isOptimisticBlock(blockRoot),
+                                client.isCanonicalBlock(state.getSlot(), blockRoot))));
   }
 
-  private StateAndMetaData addMetaData(final BeaconState state, final boolean executionOptimistic) {
+  private StateAndMetaData addMetaData(
+      final BeaconState state, final boolean executionOptimistic, final boolean canonical) {
     return new StateAndMetaData(
         state,
         spec.atSlot(state.getSlot()).getMilestone(),
         executionOptimistic,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        canonical);
   }
 
   private boolean isCheckpointOptimistic(final Bytes32 root) {
