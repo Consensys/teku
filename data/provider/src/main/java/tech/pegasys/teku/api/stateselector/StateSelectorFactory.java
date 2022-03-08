@@ -113,10 +113,7 @@ public class StateSelectorFactory {
                     maybeState.map(
                         state -> {
                           BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
-                          return addMetaData(
-                              state,
-                              isCheckpointOptimistic(header.getRoot()),
-                              client.isCanonicalBlock(header.getSlot(), header.getRoot()));
+                          return addMetaData(state, isCheckpointOptimistic(header.getRoot()), true);
                         }));
   }
 
@@ -154,7 +151,7 @@ public class StateSelectorFactory {
                           return addMetaData(
                               state,
                               client.isOptimisticBlock(header.getRoot()),
-                              client.isCanonicalBlock(header.getSlot(), header.getRoot()));
+                              client.isCanonicalBlock(state.getSlot(), header.getRoot()));
                         }));
   }
 

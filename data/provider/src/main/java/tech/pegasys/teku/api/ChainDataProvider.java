@@ -121,11 +121,15 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
       final String slotParameter) {
-    return fromBlock(
-        slotParameter,
-        block ->
-            new BlockHeader(
-                block, combinedChainDataClient.isCanonicalBlock(block.getSlot(), block.getRoot())));
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(
+            maybeBlockAndMetadata ->
+                maybeBlockAndMetadata.map(
+                    blockAndMetaData ->
+                        blockAndMetaData.map(
+                            block -> new BlockHeader(block, blockAndMetaData.isCanonical()))));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
@@ -339,11 +343,7 @@ public class ChainDataProvider {
                   blockAndMetaDataList.stream()
                       .map(
                           blockData ->
-                              new BlockHeader(
-                                  blockData.getData(),
-                                  combinedChainDataClient.isCanonicalBlock(
-                                      blockData.getData().getSlot(),
-                                      blockData.getData().getRoot())))
+                              new BlockHeader(blockData.getData(), blockData.isCanonical()))
                       .collect(toList()));
             });
   }
