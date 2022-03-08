@@ -309,7 +309,7 @@ public class BeaconRestApi {
         .version(VersionProvider.IMPLEMENTATION_VERSION)
         .description(
             "A minimal API specification for the beacon node, which enables a validator "
-                + "to connect and perform its obligations on the Ethereum 2.0 phase 0 beacon chain.")
+                + "to connect and perform its obligations on the Ethereum beacon chain.")
         .license(
             new License()
                 .name("Apache 2.0")

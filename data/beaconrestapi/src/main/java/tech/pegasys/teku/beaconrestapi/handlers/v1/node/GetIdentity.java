@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.http.RestApiConstants.CacheLength;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -157,7 +157,7 @@ public class GetIdentity extends MigratingEndpointAdapter {
             network.getDiscoveryAddresses(),
             network.getMetadata());
 
-    request.respondOk(networkIdentity, CacheLength.NO_CACHE);
+    request.respondOk(networkIdentity, NO_CACHE);
   }
 
   static class IdentityData {

@@ -20,7 +20,6 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
-import tech.pegasys.teku.infrastructure.http.RestApiConstants.CacheLength;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
