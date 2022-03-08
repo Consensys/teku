@@ -121,6 +121,14 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
+    final Info applicationInfo = createApplicationInfo();
+    openApiDocBuilder =
+        new OpenApiDocBuilder()
+            .title(applicationInfo.getTitle())
+            .version(applicationInfo.getVersion())
+            .description(applicationInfo.getDescription())
+            .license(applicationInfo.getLicense().getName(), applicationInfo.getLicense().getUrl());
+
     if (app._conf != null) {
       // the beaconRestApi test mocks the app object, and will skip this
       app._conf.server(
@@ -233,19 +241,11 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
-    final Info applicationInfo = createApplicationInfo();
-    openApiDocBuilder =
-        new OpenApiDocBuilder()
-            .title(applicationInfo.getTitle())
-            .version(applicationInfo.getVersion())
-            .description(applicationInfo.getDescription())
-            .license(applicationInfo.getLicense().getName(), applicationInfo.getLicense().getUrl());
     this.app =
         Javalin.create(
             config -> {
               config.registerPlugin(
-                  new OpenApiPlugin(
-                      getOpenApiOptions(jsonProvider, configuration, applicationInfo)));
+                  new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
               config.showJavalinBanner = false;
               if (configuration.getRestApiCorsAllowedOrigins() != null
@@ -290,12 +290,11 @@ public class BeaconRestApi {
   }
 
   private static OpenApiOptions getOpenApiOptions(
-      final JsonProvider jsonProvider,
-      final BeaconRestApiConfig config,
-      final Info applicationInfo) {
+      final JsonProvider jsonProvider, final BeaconRestApiConfig config) {
     final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
+    final Info applicationInfo = createApplicationInfo();
     final OpenApiOptions options =
         new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
     if (config.isRestApiDocsEnabled()) {
