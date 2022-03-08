@@ -68,12 +68,21 @@ class SyncCommitteeMessagePoolTest {
   }
 
   @Test
-  void shouldNotifySubscriberWhenValidMessageAdded() {
+  void shouldNotifySubscriberWhenLocalValidMessageAdded() {
     pool.subscribeOperationAdded(subscriber);
     when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    assertThat(pool.add(message)).isCompletedWithValue(ACCEPT);
-    verify(subscriber).onOperationAdded(message, ACCEPT);
+    assertThat(pool.addLocal(message)).isCompletedWithValue(ACCEPT);
+    verify(subscriber).onOperationAdded(message, ACCEPT, false);
+  }
+
+  @Test
+  void shouldNotifySubscriberWhenRemoteValidMessageAdded() {
+    pool.subscribeOperationAdded(subscriber);
+    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    assertThat(pool.addRemote(message)).isCompletedWithValue(ACCEPT);
+    verify(subscriber).onOperationAdded(message, ACCEPT, true);
   }
 
   @Test
@@ -81,7 +90,7 @@ class SyncCommitteeMessagePoolTest {
     pool.subscribeOperationAdded(subscriber);
     when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(reject("Bad")));
 
-    assertThat(pool.add(message)).isCompletedWithValue(reject("Bad"));
+    assertThat(pool.addLocal(message)).isCompletedWithValue(reject("Bad"));
     verifyNoInteractions(subscriber);
   }
 
@@ -90,7 +99,7 @@ class SyncCommitteeMessagePoolTest {
     pool.subscribeOperationAdded(subscriber);
     when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(IGNORE));
 
-    assertThat(pool.add(message)).isCompletedWithValue(IGNORE);
+    assertThat(pool.addLocal(message)).isCompletedWithValue(IGNORE);
     verifyNoInteractions(subscriber);
   }
 
@@ -286,7 +295,7 @@ class SyncCommitteeMessagePoolTest {
   }
 
   private void addValid(final ValidateableSyncCommitteeMessage message0) {
-    assertThat(pool.add(message0)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addLocal(message0)).isCompletedWithValue(ACCEPT);
   }
 
   private void assertMessagesPresentForSlots(
