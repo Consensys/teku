@@ -17,8 +17,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.uint64;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,7 +51,7 @@ public class GetIdentity extends MigratingEndpointAdapter {
           .name("MetaData")
           .withField(
               "seq_number",
-              uint64(
+              UINT64_TYPE.withDescription(
                   "Uint64 starting at 0 used to version the node's metadata. "
                       + "If any other field in the local MetaData changes, the node MUST increment seq_number by 1."),
               MetadataMessage::getSeqNumber)
