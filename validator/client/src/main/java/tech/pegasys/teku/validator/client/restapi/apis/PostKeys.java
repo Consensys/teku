@@ -54,7 +54,7 @@ public class PostKeys extends RestApiEndpoint {
   }
 
   @Override
-  public void handle(final RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final PostKeysRequest body = request.getRequestBody();
     if (body.getPasswords().size() != body.getKeystores().size()) {
       request.respondError(
