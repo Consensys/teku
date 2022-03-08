@@ -16,5 +16,7 @@ dependencies {
   runtimeOnly 'io.jsonwebtoken:jjwt-impl'
   runtimeOnly 'io.jsonwebtoken:jjwt-jackson'
 
+  testImplementation 'com.squareup.okhttp3:mockwebserver'
   testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':infrastructure:time'))
 }
