@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
@@ -146,7 +147,7 @@ public class VoluntaryExitCommand implements Runnable {
 
   private Object2IntMap<BLSPublicKey> getValidatorIndices(
       OwnedValidators blsPublicKeyValidatorMap) {
-    Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
+    final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         blsPublicKeyValidatorMap.getPublicKeys().stream()
             .map(BLSPublicKey::toString)
@@ -163,6 +164,14 @@ public class VoluntaryExitCommand implements Runnable {
                           validatorIndices.put(
                               response.validator.pubkey.asBLSPublicKey(),
                               response.index.intValue())));
+
+      batch.forEach(
+          key -> {
+            if (!validatorIndices.containsKey(
+                BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(key)))) {
+              SUB_COMMAND_LOG.error("Validator not found: " + key);
+            }
+          });
     }
     return validatorIndices;
   }
