@@ -35,6 +35,7 @@ public class JwtSecretKeyLoader {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String JWT_SECRET_FILE_NAME = "ee-jwt-secret.hex";
+  public static final String UNPREFIXED_JWT_SECRET_FILE_NAME = "unprefixed-ee-jwt-secret.hex";
   private final Optional<String> jwtSecretFile;
   private final Path beaconDataDirectory;
 
