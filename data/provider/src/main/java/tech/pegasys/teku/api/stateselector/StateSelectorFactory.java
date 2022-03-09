@@ -174,8 +174,4 @@ public class StateSelectorFactory {
         spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
         canonical);
   }
-
-  private boolean isCheckpointOptimistic(final Bytes32 root) {
-    return client.isOptimisticBlock(root);
-  }
 }
