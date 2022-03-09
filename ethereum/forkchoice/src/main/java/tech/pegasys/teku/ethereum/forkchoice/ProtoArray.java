@@ -136,7 +136,7 @@ public class ProtoArray {
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
-            optimisticallyProcessed ? OPTIMISTIC : VALID);
+            optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);
 
     indices.add(blockRoot, nodeIndex);
     nodes.add(node);
