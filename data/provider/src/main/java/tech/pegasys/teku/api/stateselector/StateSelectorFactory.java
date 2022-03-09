@@ -100,10 +100,8 @@ public class StateSelectorFactory {
                         addMetaData(
                             finalized.getState(),
                             // The finalized checkpoint may change because of optimistically
-                            // imported blocks
-                            // at the head and if the head isn't optimistic, the finalized block
-                            // can't be
-                            // optimistic.
+                            // imported blocks at the head and if the head isn't optimistic, the
+                            // finalized block can't be optimistic.
                             client.isChainHeadOptimistic(),
                             true)));
   }
@@ -115,10 +113,10 @@ public class StateSelectorFactory {
             .thenApply(
                 maybeState ->
                     maybeState.map(
-                        state -> {
-                          BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
-                          return addMetaData(state, isCheckpointOptimistic(header.getRoot()), true);
-                        }));
+                        // The justified checkpoint may change because of optimistically
+                        // imported blocks at the head and if the head isn't optimistic, the
+                        // justified block can't be optimistic.
+                        state -> addMetaData(state, client.isChainHeadOptimistic(), true)));
   }
 
   public StateSelector genesisSelector() {
