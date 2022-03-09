@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -65,6 +66,12 @@ public interface ExecutionEngineChannel extends ChannelInterface {
             final Bytes8 payloadId, final UInt64 slot) {
           return SafeFuture.completedFuture(null);
         }
+
+        @Override
+        public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+            SignedBeaconBlock signedBlindedBeaconBlock) {
+          return SafeFuture.completedFuture(null);
+        }
       };
 
   // eth namespace
@@ -85,6 +92,9 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   // builder namespace
   SafeFuture<ExecutionPayloadHeader> getPayloadHeader(final Bytes8 payloadId, final UInt64 slot);
+
+  SafeFuture<ExecutionPayload> proposeBlindedBlock(
+      final SignedBeaconBlock signedBlindedBeaconBlock);
 
   enum Version {
     KINTSUGI,

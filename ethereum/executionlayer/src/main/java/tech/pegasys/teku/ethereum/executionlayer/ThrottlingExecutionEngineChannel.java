@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -85,5 +86,10 @@ public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel 
   @Override
   public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(Bytes8 payloadId, UInt64 slot) {
     return taskQueue.queueTask(() -> delegate.getPayloadHeader(payloadId, slot));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayload> proposeBlindedBlock(SignedBeaconBlock signedBlindedBeaconBlock) {
+    return taskQueue.queueTask(() -> delegate.proposeBlindedBlock(signedBlindedBeaconBlock));
   }
 }
