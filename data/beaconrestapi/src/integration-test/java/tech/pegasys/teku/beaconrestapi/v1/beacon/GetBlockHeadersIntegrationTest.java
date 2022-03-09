@@ -20,9 +20,11 @@ import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
@@ -62,6 +64,22 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
 
     assertThat(body.data.size()).isGreaterThan(0);
     assertThat(body.data.get(0).root).isEqualTo(parent.getRoot());
+  }
+
+  @Test
+  public void shouldGetNonCanonicalHeadersBySlot() throws IOException {
+    createBlocksAtSlots(10);
+    final ChainBuilder fork = chainBuilder.fork();
+    SignedBlockAndState forked = fork.generateNextBlock();
+    SignedBlockAndState canonical = chainBuilder.generateNextBlock(1);
+    chainUpdater.saveBlock(forked);
+    chainUpdater.updateBestBlock(canonical);
+    final Response response = get(forked.getSlot());
+
+    final GetBlockHeadersResponse body =
+        jsonProvider.jsonToObject(response.body().string(), GetBlockHeadersResponse.class);
+
+    assertThat(body.data.get(0).canonical).isFalse();
   }
 
   public Response get() throws IOException {
