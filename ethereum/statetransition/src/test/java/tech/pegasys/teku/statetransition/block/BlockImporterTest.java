@@ -232,7 +232,7 @@ public class BlockImporterTest {
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
     assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
-    tx.setFinalizedCheckpoint(finalized);
+    tx.setFinalizedCheckpoint(finalized, false);
     tx.commit().join();
 
     // Known blocks should report as successfully imported
@@ -256,7 +256,7 @@ public class BlockImporterTest {
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
     assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
-    tx.setFinalizedCheckpoint(finalized);
+    tx.setFinalizedCheckpoint(finalized, false);
     tx.commit().join();
 
     // Import a block prior to the latest finalized block
@@ -332,7 +332,7 @@ public class BlockImporterTest {
     final Bytes32 finalizedRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 finalizedEpoch = UInt64.ONE;
     final Checkpoint finalized = new Checkpoint(finalizedEpoch, finalizedRoot);
-    tx.setFinalizedCheckpoint(finalized);
+    tx.setFinalizedCheckpoint(finalized, false);
     tx.commit().join();
 
     // Now create a new block that is not descendant from the finalized block

@@ -36,8 +36,8 @@ public class PendingPoolTest {
   private final PendingPool<SignedBeaconBlock> pendingPool =
       PendingPool.createForBlocks(spec, historicalTolerance, futureTolerance, maxItems);
   private UInt64 currentSlot = historicalTolerance.times(2);
-  private List<Bytes32> requiredRootEvents = new ArrayList<>();
-  private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
+  private final List<Bytes32> requiredRootEvents = new ArrayList<>();
+  private final List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
 
   @BeforeEach
   public void setup() {
@@ -128,7 +128,7 @@ public class PendingPoolTest {
   public void add_nonFinalizedBlock() {
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    pendingPool.onNewFinalizedCheckpoint(checkpoint);
+    pendingPool.onNewFinalizedCheckpoint(checkpoint, false);
 
     final UInt64 slot = checkpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
     setSlot(slot);
@@ -147,7 +147,7 @@ public class PendingPoolTest {
   public void add_finalizedBlock() {
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    pendingPool.onNewFinalizedCheckpoint(checkpoint);
+    pendingPool.onNewFinalizedCheckpoint(checkpoint, false);
     final long slot = checkpoint.getEpochStartSlot(spec).longValue() + 10;
     setSlot(slot);
 
@@ -442,7 +442,7 @@ public class PendingPoolTest {
     }
 
     // Update finalized checkpoint and prune
-    pendingPool.onNewFinalizedCheckpoint(checkpoint);
+    pendingPool.onNewFinalizedCheckpoint(checkpoint, false);
     pendingPool.prune();
 
     // Check that all final blocks have been pruned

@@ -571,8 +571,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
-    finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
+    finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint, fromOptimisticBlock);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
