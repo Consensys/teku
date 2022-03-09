@@ -315,7 +315,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
               }
 
               IntSummaryStatistics inclusionDistanceStatistics =
-                  inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
+                  inclusionDistances.intStream().summaryStatistics();
 
               // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
               // is empty.

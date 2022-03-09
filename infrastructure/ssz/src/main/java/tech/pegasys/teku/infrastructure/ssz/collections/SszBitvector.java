@@ -52,7 +52,7 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
 
   /** Streams indices of all bits set in this {@link SszBitvector} */
   default IntStream streamAllSetBits() {
-    return getAllSetBits().stream().mapToInt(i -> i);
+    return getAllSetBits().intStream();
   }
 
   @Override
