@@ -332,19 +332,24 @@ public class ChainDataProvider {
     }
 
     return defaultBlockSelectorFactory
-        .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .nonCanonicalBlocksSelector(slot.orElse(combinedChainDataClient.getHeadSlot()))
         .getBlock()
         .thenApply(
-            blockAndMetaDataList -> {
-              final boolean executionOptimistic =
-                  blockAndMetaDataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
-              return new GetBlockHeadersResponse(
-                  bellatrixEnabled ? executionOptimistic : null,
-                  blockAndMetaDataList.stream()
+            blockAndMetadataList -> {
+              final Boolean executionOptimistic =
+                  bellatrixEnabled
+                      ? blockAndMetadataList.stream()
+                          .anyMatch(BlockAndMetaData::isExecutionOptimistic)
+                      : null;
+              final List<BlockHeader> headers =
+                  blockAndMetadataList.stream()
                       .map(
-                          blockData ->
-                              new BlockHeader(blockData.getData(), blockData.isCanonical()))
-                      .collect(toList()));
+                          blockAndMetaData ->
+                              new BlockHeader(
+                                  blockAndMetaData.getData(), blockAndMetaData.isCanonical()))
+                      .collect(toList());
+              return new GetBlockHeadersResponse(
+                  bellatrixEnabled ? executionOptimistic : null, headers);
             });
   }
 
