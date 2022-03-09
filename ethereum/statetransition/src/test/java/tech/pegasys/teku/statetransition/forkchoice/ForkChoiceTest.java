@@ -125,8 +125,6 @@ class ForkChoiceTest {
         .setTime(genesis.getState().getGenesis_time().plus(10L * spec.getSecondsPerSlot(ZERO)));
 
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(optimisticSyncStateTracker);
-    verify(optimisticSyncStateTracker).onOptimisticHeadChanged(true);
-    reset(optimisticSyncStateTracker);
   }
 
   @Test
