@@ -38,8 +38,10 @@ class JwtSecretKeyLoaderTest {
     final SecretKeySpec jwtSecret = JwtTestHelper.generateJwtSecret();
 
     Files.writeString(jwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toHexString());
+
+    // should strip (CR)LF too
     Files.writeString(
-        unprefixedJwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toUnprefixedHexString());
+        unprefixedJwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toUnprefixedHexString() + "\n");
 
     final JwtSecretKeyLoader keyLoader =
         new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);

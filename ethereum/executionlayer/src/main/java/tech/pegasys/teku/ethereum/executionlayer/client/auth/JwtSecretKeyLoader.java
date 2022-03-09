@@ -72,7 +72,7 @@ public class JwtSecretKeyLoader {
   private SecretKeySpec loadSecretFromFile(final String jwtSecretFile) {
     final Path filePath = Paths.get(jwtSecretFile);
     try {
-      final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(filePath));
+      final Bytes bytesFromHex = Bytes.fromHexString(Files.readAllLines(filePath).get(0));
       return new SecretKeySpec(bytesFromHex.toArray(), SignatureAlgorithm.HS256.getJcaName());
     } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new InvalidConfigurationException(
