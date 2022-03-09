@@ -148,8 +148,10 @@ public class SyncCommitteeMessageValidator {
             .map(List::of)
             .orElseGet(
                 () ->
-                    assignedSubcommittees.getAssignedSubcommittees().stream()
-                        .map(subnetId -> getUniquenessKey(message, subnetId))
+                    assignedSubcommittees
+                        .getAssignedSubcommittees()
+                        .intStream()
+                        .mapToObj(subnetId -> getUniquenessKey(message, subnetId))
                         .collect(toList()));
 
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the

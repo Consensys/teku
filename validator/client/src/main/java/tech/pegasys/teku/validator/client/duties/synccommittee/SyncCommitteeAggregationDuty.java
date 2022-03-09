@@ -96,8 +96,10 @@ public class SyncCommitteeAggregationDuty {
       final SyncCommitteeUtil syncCommitteeUtil,
       final ForkInfo forkInfo,
       final ValidatorAndCommitteeIndices assignment) {
-    return syncCommitteeUtil.getSyncSubcommittees(assignment.getCommitteeIndices()).stream()
-        .map(
+    return syncCommitteeUtil
+        .getSyncSubcommittees(assignment.getCommitteeIndices())
+        .intStream()
+        .mapToObj(
             subcommitteeIndex ->
                 performAggregationIfRequired(
                     syncCommitteeUtil,
