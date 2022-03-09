@@ -116,15 +116,15 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
-    return voluntaryExitPool.add(exit.asInternalSignedVoluntaryExit());
+    return voluntaryExitPool.addLocal(exit.asInternalSignedVoluntaryExit());
   }
 
   public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
-    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing(spec));
+    return attesterSlashingPool.addLocal(slashing.asInternalAttesterSlashing(spec));
   }
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
-    return proposerSlashingPool.add(slashing.asInternalProposerSlashing());
+    return proposerSlashingPool.addLocal(slashing.asInternalProposerSlashing());
   }
 
   public void subscribeToReceivedBlocks(ImportedBlockListener listener) {

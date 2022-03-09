@@ -59,7 +59,7 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
 
     final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);
 
-    doThrow(new RuntimeException()).when(proposerSlashingPool).add(slashing);
+    doThrow(new RuntimeException()).when(proposerSlashingPool).addLocal(slashing);
 
     Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
     assertThat(response.code()).isEqualTo(500);
@@ -72,12 +72,12 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
 
     final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);
 
-    when(proposerSlashingPool.add(slashing))
+    when(proposerSlashingPool.addLocal(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
 
-    verify(proposerSlashingPool).add(slashing);
+    verify(proposerSlashingPool).addLocal(slashing);
 
     assertThat(response.code()).isEqualTo(200);
   }

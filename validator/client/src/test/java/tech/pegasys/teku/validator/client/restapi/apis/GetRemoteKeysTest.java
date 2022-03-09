@@ -48,7 +48,7 @@ class GetRemoteKeysTest {
     when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
     final GetRemoteKeys endpoint = new GetRemoteKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
 
     verify(request).respondOk(activeRemoteValidatorList);
   }
@@ -59,7 +59,7 @@ class GetRemoteKeysTest {
     when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
     final GetRemoteKeys endpoint = new GetRemoteKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
 
     verify(request).respondOk(Collections.emptyList());
   }

@@ -186,7 +186,7 @@ class BlockOperationSelectorFactoryTest {
     addToPool(voluntaryExitPool, voluntaryExit);
     addToPool(proposerSlashingPool, proposerSlashing);
     addToPool(attesterSlashingPool, attesterSlashing);
-    assertThat(contributionPool.add(contribution)).isCompletedWithValue(ACCEPT);
+    assertThat(contributionPool.addLocal(contribution)).isCompletedWithValue(ACCEPT);
 
     factory
         .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
@@ -204,7 +204,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private <T extends SszData> void addToPool(final OperationPool<T> pool, final T operation) {
-    assertThat(pool.add(operation)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(operation)).isCompletedWithValue(ACCEPT);
   }
 
   @Test
@@ -240,7 +240,7 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing1);
     addToPool(attesterSlashingPool, attesterSlashing2);
     addToPool(attesterSlashingPool, attesterSlashing3);
-    assertThat(contributionPool.add(contribution)).isCompletedWithValue(ACCEPT);
+    assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
 
     when(proposerSlashingValidator.validateForStateTransition(blockSlotState, proposerSlashing2))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE));

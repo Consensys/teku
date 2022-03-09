@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,19 +13,17 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+public enum CacheLength {
+  NO_CACHE("max-age=0"),
+  FINALIZED("max-age=31556952");
 
-public abstract class RestApiEndpoint {
+  private final String httpHeaderValue;
 
-  private final EndpointMetadata metadata;
-
-  protected RestApiEndpoint(final EndpointMetadata metadata) {
-    this.metadata = metadata;
+  CacheLength(final String httpHeaderValue) {
+    this.httpHeaderValue = httpHeaderValue;
   }
 
-  public EndpointMetadata getMetadata() {
-    return metadata;
+  public String getHttpHeaderValue() {
+    return httpHeaderValue;
   }
-
-  public abstract void handleRequest(RestApiRequest request) throws JsonProcessingException;
 }

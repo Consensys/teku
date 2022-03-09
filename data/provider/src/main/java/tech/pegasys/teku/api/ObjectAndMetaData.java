@@ -24,21 +24,24 @@ public class ObjectAndMetaData<T> {
   private final SpecMilestone milestone;
   private final boolean executionOptimistic;
   private final boolean bellatrixEnabled;
+  private final boolean canonical;
 
   public ObjectAndMetaData(
       final T data,
       final SpecMilestone milestone,
       final boolean executionOptimistic,
-      final boolean bellatrixEnabled) {
+      final boolean bellatrixEnabled,
+      final boolean canonical) {
     this.data = data;
     this.milestone = milestone;
     this.executionOptimistic = executionOptimistic;
     this.bellatrixEnabled = bellatrixEnabled;
+    this.canonical = canonical;
   }
 
   public <X> ObjectAndMetaData<X> map(final Function<T, X> mapper) {
     return new ObjectAndMetaData<>(
-        mapper.apply(data), milestone, executionOptimistic, bellatrixEnabled);
+        mapper.apply(data), milestone, executionOptimistic, bellatrixEnabled, canonical);
   }
 
   public T getData() {
@@ -51,6 +54,10 @@ public class ObjectAndMetaData<T> {
 
   public boolean isExecutionOptimistic() {
     return executionOptimistic;
+  }
+
+  public boolean isCanonical() {
+    return canonical;
   }
 
   /**
@@ -72,13 +79,15 @@ public class ObjectAndMetaData<T> {
     }
     final ObjectAndMetaData<?> that = (ObjectAndMetaData<?>) o;
     return executionOptimistic == that.executionOptimistic
+        && bellatrixEnabled == that.bellatrixEnabled
+        && canonical == that.canonical
         && Objects.equals(data, that.data)
         && milestone == that.milestone;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, milestone, executionOptimistic);
+    return Objects.hash(data, milestone, executionOptimistic, bellatrixEnabled, canonical);
   }
 
   @Override
@@ -87,6 +96,8 @@ public class ObjectAndMetaData<T> {
         .add("data", data)
         .add("milestone", milestone)
         .add("executionOptimistic", executionOptimistic)
+        .add("bellatrixEnabled", bellatrixEnabled)
+        .add("canonical", canonical)
         .toString();
   }
 }

@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.api.response.v1.teku.PeerScore;
-import tech.pegasys.teku.api.schema.Metadata;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
   private final Eth2P2PNetwork network;
@@ -76,8 +76,8 @@ public class NetworkDataProvider {
     return discoveryAddressOptional.map(List::of).orElseGet(List::of);
   }
 
-  public Metadata getMetadata() {
-    return new Metadata(network.getMetadata());
+  public MetadataMessage getMetadata() {
+    return network.getMetadata();
   }
 
   public List<tech.pegasys.teku.api.response.v1.node.Peer> getPeers() {

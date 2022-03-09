@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -52,5 +53,10 @@ public class MetadataMessageAltair
 
   public SszBitvector getSyncnets() {
     return getField2();
+  }
+
+  @Override
+  public Optional<SszBitvector> getOptionalSyncnets() {
+    return Optional.of(getSyncnets());
   }
 }

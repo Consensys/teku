@@ -60,7 +60,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
     final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
 
-    doThrow(new RuntimeException()).when(voluntaryExitPool).add(signedVoluntaryExit);
+    doThrow(new RuntimeException()).when(voluntaryExitPool).addLocal(signedVoluntaryExit);
 
     Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
@@ -73,12 +73,12 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
     final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
 
-    when(voluntaryExitPool.add(signedVoluntaryExit))
+    when(voluntaryExitPool.addLocal(signedVoluntaryExit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
 
-    verify(voluntaryExitPool).add(signedVoluntaryExit);
+    verify(voluntaryExitPool).addLocal(signedVoluntaryExit);
 
     assertThat(response.code()).isEqualTo(SC_OK);
   }

@@ -41,7 +41,7 @@ public class PostRemoteKeysTest {
     final PostRemoteKeysRequest body = new PostRemoteKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(request).respondOk(List.of());
   }
 
@@ -62,7 +62,7 @@ public class PostRemoteKeysTest {
     List<PostKeyResult> results = List.of(PostKeyResult.success(), PostKeyResult.success());
     when(keyManager.importExternalValidators(externalValidators)).thenReturn(results);
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(request).respondOk(results);
   }
 
@@ -84,7 +84,7 @@ public class PostRemoteKeysTest {
     List<PostKeyResult> results = List.of(PostKeyResult.success(), PostKeyResult.duplicate());
     when(keyManager.importExternalValidators(externalValidators)).thenReturn(results);
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(request).respondOk(results);
   }
 }
