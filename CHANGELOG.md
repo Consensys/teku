@@ -21,5 +21,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Reduced CPU usage when finding ancestor block roots.
 - Updated gossip validation rules to match consensus spec v1.1.0.
 - Reduced memory usage when deduplicating gossip messages.
+- GetBlockHeaders `/eth/v1/beacon/headers` can now return non canonical block headers if they are available.
 
 ### Bug Fixes
