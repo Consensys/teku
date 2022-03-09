@@ -92,7 +92,6 @@ public class StateSelectorFactory {
   }
 
   public StateSelector finalizedSelector() {
-    // TODO: May need to check if chain head is optimistic as well
     return () ->
         SafeFuture.completedFuture(
             client
@@ -101,7 +100,10 @@ public class StateSelectorFactory {
                     finalized ->
                         addMetaData(
                             finalized.getState(),
-                            isCheckpointOptimistic(finalized.getCheckpoint().getRoot()),
+                            // The finalized checkpoint may change because of optimistically
+                            // imported blocks at the head and if the head isn't optimistic, the
+                            // finalized block can't be optimistic.
+                            client.isChainHeadOptimistic(),
                             true)));
   }
 
@@ -112,10 +114,10 @@ public class StateSelectorFactory {
             .thenApply(
                 maybeState ->
                     maybeState.map(
-                        state -> {
-                          BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
-                          return addMetaData(state, isCheckpointOptimistic(header.getRoot()), true);
-                        }));
+                        // The justified checkpoint may change because of optimistically
+                        // imported blocks at the head and if the head isn't optimistic, the
+                        // justified block can't be optimistic.
+                        state -> addMetaData(state, client.isChainHeadOptimistic(), true)));
   }
 
   public StateSelector genesisSelector() {
@@ -141,33 +143,27 @@ public class StateSelectorFactory {
   }
 
   public StateSelector forStateRoot(final Bytes32 stateRoot) {
-    return () ->
-        client
-            .getStateByStateRoot(stateRoot)
-            .thenApply(
-                maybeState ->
-                    maybeState.map(
-                        state -> {
-                          BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
-                          return addMetaData(
-                              state,
-                              client.isOptimisticBlock(header.getRoot()),
-                              client.isCanonicalBlock(state.getSlot(), header.getRoot()));
-                        }));
+    return () -> client.getStateByStateRoot(stateRoot).thenApply(this::addMetaData);
   }
 
   public StateSelector forBlockRoot(final Bytes32 blockRoot) {
-    return () ->
-        client
-            .getStateByBlockRoot(blockRoot)
-            .thenApply(
-                maybeState ->
-                    maybeState.map(
-                        state ->
-                            addMetaData(
-                                state,
-                                client.isOptimisticBlock(blockRoot),
-                                client.isCanonicalBlock(state.getSlot(), blockRoot))));
+    return () -> client.getStateByBlockRoot(blockRoot).thenApply(this::addMetaData);
+  }
+
+  private Optional<StateAndMetaData> addMetaData(final Optional<BeaconState> maybeState) {
+    final Optional<ChainHead> maybeChainHead = client.getChainHead();
+    if (maybeChainHead.isEmpty() || maybeState.isEmpty()) {
+      return Optional.empty();
+    } else {
+      final ChainHead chainHead = maybeChainHead.get();
+      final BeaconState state = maybeState.get();
+      final Bytes32 blockRoot = BeaconBlockHeader.fromState(state).getRoot();
+      return Optional.of(
+          addMetaData(
+              state,
+              chainHead.isOptimistic() || client.isOptimisticBlock(blockRoot),
+              client.isCanonicalBlock(state.getSlot(), blockRoot, chainHead.getRoot())));
+    }
   }
 
   private StateAndMetaData addMetaData(
@@ -178,9 +174,5 @@ public class StateSelectorFactory {
         executionOptimistic,
         spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
         canonical);
-  }
-
-  private boolean isCheckpointOptimistic(final Bytes32 root) {
-    return client.isOptimisticBlock(root);
   }
 }

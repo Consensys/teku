@@ -76,9 +76,14 @@ public class BlockSelectorFactoryTest {
   @Test
   public void blockRootSelector_shouldGetBlockByBlockRoot()
       throws ExecutionException, InterruptedException {
+    final SignedBlockAndState head =
+        data.randomSignedBlockAndState(block.getSlot().plus(3), block.getRoot());
+    final ChainHead chainHead = ChainHead.create(head);
+    when(client.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(client.isCanonicalBlock(block.getSlot(), block.getRoot(), chainHead.getRoot()))
+        .thenReturn(true);
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(client.isCanonicalBlock(any(), any())).thenReturn(true);
     List<BlockAndMetaData> blockList =
         blockSelectorFactory.forBlockRoot(block.getRoot()).getBlock().get();
     verify(client).getBlockByBlockRoot(block.getRoot());

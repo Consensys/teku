@@ -372,6 +372,10 @@ public class CombinedChainDataClient {
     return recentChainData.getChainHead();
   }
 
+  public boolean isChainHeadOptimistic() {
+    return recentChainData.isChainHeadOptimistic();
+  }
+
   public boolean isStoreAvailable() {
     return recentChainData != null && recentChainData.getStore() != null;
   }
@@ -503,7 +507,7 @@ public class CombinedChainDataClient {
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> GetAllBlocksAtSlot(final UInt64 slot) {
+  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final UInt64 slot) {
     if (isFinalized(slot)) {
       return historicalChainData
           .getNonCanonicalBlocksBySlot(slot)
@@ -512,20 +516,14 @@ public class CombinedChainDataClient {
     return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot));
   }
 
-  public boolean isCanonicalBlock(final UInt64 slot, final Bytes32 root) {
+  public boolean isCanonicalBlock(
+      final UInt64 slot, final Bytes32 blockRoot, final Bytes32 chainHeadRoot) {
     if (isFinalized(slot)) {
       return true;
     }
-    return recentChainData
-        .getChainHead()
-        .map(
-            chainHead ->
-                spec.getAncestor(
-                        recentChainData.getForkChoiceStrategy().orElseThrow(),
-                        chainHead.getRoot(),
-                        slot)
-                    .map(ancestor -> ancestor.equals(root))
-                    .orElse(false))
+    return spec.getAncestor(
+            recentChainData.getForkChoiceStrategy().orElseThrow(), chainHeadRoot, slot)
+        .map(ancestor -> ancestor.equals(blockRoot))
         .orElse(false);
   }
 

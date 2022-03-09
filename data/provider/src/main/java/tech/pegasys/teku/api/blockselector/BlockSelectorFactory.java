@@ -84,20 +84,37 @@ public class BlockSelectorFactory {
 
   private SafeFuture<Optional<BlockAndMetaData>> fromChainHead(final ChainHead head) {
     return head.getBlock()
-        .thenApply(maybeBlock -> lookupBlockData(maybeBlock, head.isOptimistic(), true));
+        .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, head.isOptimistic()));
   }
 
   public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {
-    return () ->
-        client.GetAllBlocksAtSlot(slot)
-            .thenApply(
-                blocks -> blocks.stream().map(this::lookupBlockData).collect(Collectors.toList()));
+    return () -> {
+      final Optional<ChainHead> maybeChainHead = client.getChainHead();
+      if (maybeChainHead.isEmpty()) {
+        return SafeFuture.completedFuture(Collections.emptyList());
+      }
+      final ChainHead chainHead = maybeChainHead.get();
+      return client
+          .getAllBlocksAtSlot(slot)
+          .thenApply(
+              blocks ->
+                  blocks.stream()
+                      .map(block -> lookupBlockData(block, chainHead))
+                      .collect(Collectors.toList()));
+    };
   }
 
   public BlockSelector finalizedSelector() {
     return () ->
         optionalToList(
-            SafeFuture.completedFuture(lookupBlockData(client.getFinalizedBlock(), true)));
+            SafeFuture.completedFuture(
+                // Finalized checkpoint is always canonical
+                lookupCanonicalBlockData(
+                    client.getFinalizedBlock(),
+                    // The finalized checkpoint may change because of optimistically imported blocks
+                    // at the head and if the head isn't optimistic, the finalized block can't be
+                    // optimistic.
+                    client.isChainHeadOptimistic())));
   }
 
   public BlockSelector genesisSelector() {
@@ -105,7 +122,7 @@ public class BlockSelectorFactory {
         optionalToList(
             client
                 .getBlockAtSlotExact(GENESIS_SLOT)
-                .thenApply(maybeBlock -> lookupBlockData(maybeBlock, false, true)));
+                .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, false)));
   }
 
   public BlockSelector forSlot(final UInt64 slot) {
@@ -122,7 +139,7 @@ public class BlockSelectorFactory {
   private SafeFuture<Optional<BlockAndMetaData>> forSlot(final ChainHead head, final UInt64 slot) {
     return client
         .getBlockAtSlotExact(slot, head.getRoot())
-        .thenApply(maybeBlock -> lookupBlockData(maybeBlock, head.isOptimistic(), true));
+        .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, head.isOptimistic()));
   }
 
   public BlockSelector forBlockRoot(final Bytes32 blockRoot) {
@@ -136,32 +153,27 @@ public class BlockSelectorFactory {
         maybeBlock -> maybeBlock.map(List::of).orElseGet(Collections::emptyList));
   }
 
-  private Optional<BlockAndMetaData> lookupBlockData(
-      final Optional<SignedBeaconBlock> maybeBlock, final boolean isCanonical) {
-    return maybeBlock.map(block -> lookupBlockData(block, isCanonical));
-  }
-
   private Optional<BlockAndMetaData> lookupBlockData(final Optional<SignedBeaconBlock> maybeBlock) {
-    return maybeBlock.map(this::lookupBlockData);
+    // Ensure we use the same chain head when calculating metadata to ensure a consistent view.
+    final Optional<ChainHead> chainHead = client.getChainHead();
+    if (maybeBlock.isEmpty() || chainHead.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(lookupBlockData(maybeBlock.get(), chainHead.get()));
   }
 
-  private Optional<BlockAndMetaData> lookupBlockData(
-      final Optional<SignedBeaconBlock> maybeBlock,
-      final boolean isOptimistic,
-      final boolean isCanonical) {
-    return maybeBlock.map(block -> lookupBlockData(block, isOptimistic, isCanonical));
-  }
-
-  private BlockAndMetaData lookupBlockData(final SignedBeaconBlock block) {
-    return lookupBlockData(
-        block,
-        client.isOptimisticBlock(block.getRoot()),
-        client.isCanonicalBlock(block.getSlot(), block.getRoot()));
+  private Optional<BlockAndMetaData> lookupCanonicalBlockData(
+      final Optional<SignedBeaconBlock> maybeBlock, final boolean isOptimistic) {
+    return maybeBlock.map(block -> lookupBlockData(block, isOptimistic, true));
   }
 
   private BlockAndMetaData lookupBlockData(
-      final SignedBeaconBlock block, final boolean isCanonical) {
-    return lookupBlockData(block, client.isOptimisticBlock(block.getRoot()), isCanonical);
+      final SignedBeaconBlock block, final ChainHead chainHead) {
+    return lookupBlockData(
+        block,
+        // If the chain head is optimistic that will "taint" whether the block is canonical
+        chainHead.isOptimistic() || client.isOptimisticBlock(block.getRoot()),
+        client.isCanonicalBlock(block.getSlot(), block.getRoot(), chainHead.getRoot()));
   }
 
   private BlockAndMetaData lookupBlockData(

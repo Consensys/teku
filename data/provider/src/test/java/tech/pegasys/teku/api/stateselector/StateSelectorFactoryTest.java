@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.stateselector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,12 +23,14 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -72,7 +73,6 @@ public class StateSelectorFactoryTest {
   public void justifiedSelector_shouldGetJustifiedState()
       throws ExecutionException, InterruptedException {
     when(client.getJustifiedState()).thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    when(client.isCanonicalBlock(any(), any())).thenReturn(true);
     Optional<StateAndMetaData> result = factory.justifiedSelector().getState().get();
     assertThat(result).contains(withMetaData(state));
     verify(client).getJustifiedState();
@@ -102,9 +102,14 @@ public class StateSelectorFactoryTest {
   @Test
   public void forStateRoot_shouldGetStateAtSlotExact()
       throws ExecutionException, InterruptedException {
+    final Bytes32 blockRoot = BeaconBlockHeader.fromState(state).getRoot();
+    final SignedBlockAndState head =
+        data.randomSignedBlockAndState(state.getSlot().plus(3), blockRoot);
+    final ChainHead chainHead = ChainHead.create(head);
+    when(client.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(client.isCanonicalBlock(state.getSlot(), blockRoot, chainHead.getRoot())).thenReturn(true);
     when(client.getStateByStateRoot(state.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    when(client.isCanonicalBlock(any(), any())).thenReturn(true);
     Optional<StateAndMetaData> result = factory.forStateRoot(state.hashTreeRoot()).getState().get();
     assertThat(result).contains(withMetaData(state));
     verify(client).getStateByStateRoot(state.hashTreeRoot());

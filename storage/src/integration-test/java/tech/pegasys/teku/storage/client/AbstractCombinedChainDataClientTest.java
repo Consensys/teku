@@ -284,7 +284,12 @@ public abstract class AbstractCombinedChainDataClientTest {
         chainUpdater.advanceChain(targetBlock.getSlot().plus(UInt64.ONE));
     chainUpdater.updateBestBlock(bestBlock);
 
-    assertThat(client.isCanonicalBlock(targetBlock.getSlot(), targetBlock.getRoot())).isTrue();
+    assertThat(
+            client.isCanonicalBlock(
+                targetBlock.getSlot(),
+                targetBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isTrue();
   }
 
   @Test
@@ -294,7 +299,12 @@ public abstract class AbstractCombinedChainDataClientTest {
     final SignedBlockAndState bestBlock = chainUpdater.advanceChain(UInt64.ONE);
     chainUpdater.updateBestBlock(bestBlock);
 
-    assertThat(client.isCanonicalBlock(bestBlock.getSlot(), bestBlock.getRoot())).isTrue();
+    assertThat(
+            client.isCanonicalBlock(
+                bestBlock.getSlot(),
+                bestBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isTrue();
   }
 
   @Test
@@ -305,7 +315,12 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.updateBestBlock(bestBlock);
     final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
 
-    assertThat(client.isCanonicalBlock(targetBlock.getSlot(), targetBlock.getRoot())).isFalse();
+    assertThat(
+            client.isCanonicalBlock(
+                targetBlock.getSlot(),
+                targetBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isFalse();
   }
 
   @Test
@@ -319,7 +334,12 @@ public abstract class AbstractCombinedChainDataClientTest {
     final SignedBlockAndState bestBlock = chainUpdater.advanceChain(parentBlock.getSlot().plus(2));
     chainUpdater.updateBestBlock(bestBlock);
 
-    assertThat(client.isCanonicalBlock(orphanBlock.getSlot(), orphanBlock.getRoot())).isFalse();
+    assertThat(
+            client.isCanonicalBlock(
+                orphanBlock.getSlot(),
+                orphanBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isFalse();
   }
 
   @Test
