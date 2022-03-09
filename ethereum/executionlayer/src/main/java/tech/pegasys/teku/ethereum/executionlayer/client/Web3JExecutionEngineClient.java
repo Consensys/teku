@@ -62,13 +62,16 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private final TimeProvider timeProvider;
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
 
+  static {
+    SimpleModule module = new SimpleModule("TekuEESsz", new Version(1, 0, 0, null, null, null));
+    module.addSerializer(SignedBeaconBlock.class, new SignedBeaconBlockSerializer());
+    ObjectMapperFactory.getObjectMapper().registerModule(module);
+  }
+
   public Web3JExecutionEngineClient(
       final String eeEndpoint,
       final TimeProvider timeProvider,
       final Optional<JwtConfig> jwtConfig) {
-    SimpleModule module = new SimpleModule("TekuEESsz", new Version(1, 0, 0, null, null, null));
-    module.addSerializer(SignedBeaconBlock.class, new SignedBeaconBlockSerializer());
-    ObjectMapperFactory.getObjectMapper().registerModule(module);
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
     this.eth1Web3j = Web3j.build(eeWeb3jService);
     this.timeProvider = timeProvider;

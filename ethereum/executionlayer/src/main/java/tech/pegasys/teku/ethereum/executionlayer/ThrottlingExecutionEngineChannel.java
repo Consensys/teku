@@ -89,7 +89,8 @@ public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel 
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> proposeBlindedBlock(SignedBeaconBlock signedBlindedBeaconBlock) {
+  public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+      SignedBeaconBlock signedBlindedBeaconBlock) {
     return taskQueue.queueTask(() -> delegate.proposeBlindedBlock(signedBlindedBeaconBlock));
   }
 }
