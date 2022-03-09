@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -123,7 +124,7 @@ public class ValidatorKeysOptions {
 
   private List<String> parseValidatorExternalKeys() {
     return validatorExternalSignerPublicKeys.stream()
-        .filter(val -> !Strings.isNullOrEmpty(val))
+        .filter(StringUtils::isNotBlank)
         .collect(Collectors.toList());
   }
 
