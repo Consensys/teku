@@ -143,7 +143,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
 
   protected void onNewVoluntaryExit(
       final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit,
-      final InternalValidationResult result) {
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
     final SignedVoluntaryExit voluntaryExitEvent = new SignedVoluntaryExit(exit);
     notifySubscribersOfEvent(EventType.voluntary_exit, voluntaryExitEvent);
   }
@@ -152,7 +153,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final tech.pegasys.teku.spec.datastructures.operations.versions.altair
               .SignedContributionAndProof
           proof,
-      final InternalValidationResult result) {
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
     if (result.isAccept()) {
       final SignedContributionAndProof signedContributionAndProof =
           new SignedContributionAndProof(proof);

@@ -45,7 +45,7 @@ public class DeleteRemoteKeys extends RestApiEndpoint {
   }
 
   @Override
-  public void handle(final RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     DeleteKeysRequest deleteRequest = request.getRequestBody();
     request.respondOk(keyManager.deleteExternalValidators(deleteRequest.getPublicKeys()));
   }

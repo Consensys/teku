@@ -111,6 +111,4 @@ public class RestApiConstants {
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
 
   public static final String CACHE_NONE = "max-age=0";
-  // Finalized max-age equates to 1 year
-  public static final String CACHE_FINALIZED = "max-age=31556952";
 }

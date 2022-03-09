@@ -32,8 +32,7 @@ public class Identity {
 
   @JsonProperty("enr")
   @Schema(
-      description =
-          "Ethereum node record. " + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
+      description = "Ethereum node record. [Read more](https://eips.ethereum.org/EIPS/eip-778)",
       example =
           "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499S"
               + "ZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8")
@@ -76,6 +75,26 @@ public class Identity {
     this.p2pAddresses = p2pAddresses;
     this.discoveryAddresses = discoveryAddresses;
     this.metadata = metadata;
+  }
+
+  public String getPeerId() {
+    return peerId;
+  }
+
+  public String getEnr() {
+    return enr;
+  }
+
+  public List<String> getP2pAddresses() {
+    return p2pAddresses;
+  }
+
+  public List<String> getDiscoveryAddresses() {
+    return discoveryAddresses;
+  }
+
+  public Metadata getMetadata() {
+    return metadata;
   }
 
   @Override

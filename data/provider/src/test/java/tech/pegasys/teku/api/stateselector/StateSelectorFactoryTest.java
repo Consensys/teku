@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.stateselector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,6 +71,7 @@ public class StateSelectorFactoryTest {
   public void justifiedSelector_shouldGetJustifiedState()
       throws ExecutionException, InterruptedException {
     when(client.getJustifiedState()).thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+    when(client.isCanonicalBlock(any(), any())).thenReturn(true);
     Optional<StateAndMetaData> result = factory.justifiedSelector().getState().get();
     assertThat(result).contains(withMetaData(state));
     verify(client).getJustifiedState();
@@ -101,6 +103,7 @@ public class StateSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.getStateByStateRoot(state.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+    when(client.isCanonicalBlock(any(), any())).thenReturn(true);
     Optional<StateAndMetaData> result = factory.forStateRoot(state.hashTreeRoot()).getState().get();
     assertThat(result).contains(withMetaData(state));
     verify(client).getStateByStateRoot(state.hashTreeRoot());
@@ -137,6 +140,6 @@ public class StateSelectorFactoryTest {
 
   private StateAndMetaData withMetaData(final BeaconState state) {
     return new StateAndMetaData(
-        state, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+        state, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX), true);
   }
 }

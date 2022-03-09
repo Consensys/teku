@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
@@ -89,19 +90,6 @@ public class GossipHandlerTest {
   }
 
   @Test
-  @SuppressWarnings("FutureReturnValueIgnored")
-  public void apply_duplicate() {
-    final Bytes data = Bytes.fromHexString("0x01");
-    final MockMessageApi message = new MockMessageApi(data, topic);
-
-    gossipHandler.apply(message);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
-
-    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verify(topicHandler).handleMessage(any());
-  }
-
-  @Test
   public void gossip_newMessage() {
     final Bytes message = Bytes.fromHexString("0x01");
     gossipHandler.gossip(message);
@@ -109,47 +97,21 @@ public class GossipHandlerTest {
   }
 
   @Test
-  public void gossip_duplicateMessage() {
+  public void gossip_duplicateMessage() { // Deduplication is done a libp2p level.
     final Bytes message = Bytes.fromHexString("0x01");
     gossipHandler.gossip(message);
     gossipHandler.gossip(message);
-    verify(publisher).publish(toByteBuf(message), topic);
+    verify(publisher, times(2)).publish(toByteBuf(message), topic);
   }
 
   @Test
   public void gossip_distinctMessages() {
     final Bytes message1 = Bytes.fromHexString("0x01");
-    final Bytes message2 = Bytes.fromHexString("0x01");
+    final Bytes message2 = Bytes.fromHexString("0x02");
     gossipHandler.gossip(message1);
     gossipHandler.gossip(message2);
     verify(publisher).publish(toByteBuf(message1), topic);
     verify(publisher).publish(toByteBuf(message2), topic);
-  }
-
-  @Test
-  @SuppressWarnings("FutureReturnValueIgnored")
-  public void gossip_afterDuplicateApply() {
-    final Bytes data = Bytes.fromHexString("0x01");
-    final MockMessageApi message = new MockMessageApi(data, topic);
-
-    gossipHandler.apply(message);
-    gossipHandler.gossip(data);
-
-    verify(publisher, never()).publish(any(), any());
-  }
-
-  @Test
-  @SuppressWarnings("FutureReturnValueIgnored")
-  public void apply_afterDuplicateGossip() {
-    final Bytes data = Bytes.fromHexString("0x01");
-    final MockMessageApi message = new MockMessageApi(data, topic);
-
-    gossipHandler.gossip(data);
-    gossipHandler.apply(message);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
-
-    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verify(topicHandler, never()).handleMessage(any());
   }
 
   private ByteBuf toByteBuf(final Bytes bytes) {

@@ -33,6 +33,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 4);
+    final ValidatorKeystores extraKeys =
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
 
     final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
@@ -43,7 +45,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
     final TekuVoluntaryExit voluntaryExitProcessSuccessful =
         createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeystores);
+            .withValidatorKeystores(validatorKeystores)
+            .withValidatorKeystores(extraKeys);
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
@@ -68,6 +71,9 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     voluntaryExitProcessSuccessful.start();
     validatorClient.waitForLogMessageContaining("has changed status from");
     assertThat(voluntaryExitProcessFailing.getLoggedErrors())
-        .contains("Failed to submit exit for validator");
+        .containsPattern(
+            "Exit for validator [0-9]+ is invalid: Validator has not been active long enough");
+    assertThat(voluntaryExitProcessSuccessful.getLoggedErrors())
+        .contains("Validator not found: " + extraKeys.getPublicKeys().get(0).toString());
   }
 }

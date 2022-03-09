@@ -170,7 +170,7 @@ class OpenApiDocBuilderTest {
   private RestApiEndpoint endpoint(final EndpointMetadata metadata) {
     return new RestApiEndpoint(metadata) {
       @Override
-      public void handle(final RestApiRequest request) {}
+      public void handleRequest(final RestApiRequest request) {}
     };
   }
 }

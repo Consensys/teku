@@ -83,7 +83,7 @@ public class BlockSelectorFactory {
 
   private SafeFuture<Optional<BlockAndMetaData>> fromChainHead(final ChainHead head) {
     return head.getBlock()
-        .thenApply(maybeBlock -> lookupBlockData(maybeBlock, head.isOptimistic()));
+        .thenApply(maybeBlock -> lookupBlockData(maybeBlock, head.isOptimistic(), true));
   }
 
   public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {
@@ -95,7 +95,8 @@ public class BlockSelectorFactory {
 
   public BlockSelector finalizedSelector() {
     return () ->
-        optionalToList(SafeFuture.completedFuture(lookupBlockData(client.getFinalizedBlock())));
+        optionalToList(
+            SafeFuture.completedFuture(lookupBlockData(client.getFinalizedBlock(), true)));
   }
 
   public BlockSelector genesisSelector() {
@@ -103,7 +104,7 @@ public class BlockSelectorFactory {
         optionalToList(
             client
                 .getBlockAtSlotExact(GENESIS_SLOT)
-                .thenApply(maybeBlock -> lookupBlockData(maybeBlock, false)));
+                .thenApply(maybeBlock -> lookupBlockData(maybeBlock, false, true)));
   }
 
   public BlockSelector forSlot(final UInt64 slot) {
@@ -120,7 +121,7 @@ public class BlockSelectorFactory {
   private SafeFuture<Optional<BlockAndMetaData>> forSlot(final ChainHead head, final UInt64 slot) {
     return client
         .getBlockAtSlotExact(slot, head.getRoot())
-        .thenApply(maybeBlock -> lookupBlockData(maybeBlock, head.isOptimistic()));
+        .thenApply(maybeBlock -> lookupBlockData(maybeBlock, head.isOptimistic(), true));
   }
 
   public BlockSelector forBlockRoot(final Bytes32 blockRoot) {
@@ -134,25 +135,41 @@ public class BlockSelectorFactory {
         maybeBlock -> maybeBlock.map(List::of).orElseGet(Collections::emptyList));
   }
 
-  private Optional<BlockAndMetaData> lookupBlockData(final Optional<SignedBeaconBlock> block) {
-    return block.map(this::lookupBlockData);
+  private Optional<BlockAndMetaData> lookupBlockData(
+      final Optional<SignedBeaconBlock> maybeBlock, final boolean isCanonical) {
+    return maybeBlock.map(block -> lookupBlockData(block, isCanonical));
+  }
+
+  private Optional<BlockAndMetaData> lookupBlockData(final Optional<SignedBeaconBlock> maybeBlock) {
+    return maybeBlock.map(this::lookupBlockData);
   }
 
   private Optional<BlockAndMetaData> lookupBlockData(
-      final Optional<SignedBeaconBlock> maybeBlock, final boolean isOptimistic) {
-    return maybeBlock.map(block -> lookupBlockData(block, isOptimistic));
+      final Optional<SignedBeaconBlock> maybeBlock,
+      final boolean isOptimistic,
+      final boolean isCanonical) {
+    return maybeBlock.map(block -> lookupBlockData(block, isOptimistic, isCanonical));
   }
 
   private BlockAndMetaData lookupBlockData(final SignedBeaconBlock block) {
-    return lookupBlockData(block, client.isOptimisticBlock(block.getRoot()));
+    return lookupBlockData(
+        block,
+        client.isOptimisticBlock(block.getRoot()),
+        client.isCanonicalBlock(block.getSlot(), block.getRoot()));
   }
 
   private BlockAndMetaData lookupBlockData(
-      final SignedBeaconBlock block, final boolean isOptimistic) {
+      final SignedBeaconBlock block, final boolean isCanonical) {
+    return lookupBlockData(block, client.isOptimisticBlock(block.getRoot()), isCanonical);
+  }
+
+  private BlockAndMetaData lookupBlockData(
+      final SignedBeaconBlock block, final boolean isOptimistic, final boolean isCanonical) {
     return new BlockAndMetaData(
         block,
         spec.atSlot(block.getSlot()).getMilestone(),
         isOptimistic,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX));
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        isCanonical);
   }
 }
