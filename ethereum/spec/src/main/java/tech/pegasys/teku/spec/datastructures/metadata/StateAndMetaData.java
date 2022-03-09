@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.stateselector;
+package tech.pegasys.teku.spec.datastructures.metadata;
 
-import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 

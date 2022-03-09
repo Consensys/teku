@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.blockselector;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 public interface BlockSelector {
   SafeFuture<List<BlockAndMetaData>> getBlock();
