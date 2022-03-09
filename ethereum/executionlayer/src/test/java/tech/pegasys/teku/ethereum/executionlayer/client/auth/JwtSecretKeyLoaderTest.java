@@ -32,17 +32,19 @@ class JwtSecretKeyLoaderTest {
   void testGetSecretKey_ReadSecretFromProvidedFilePath(@TempDir final Path tempDir)
       throws IOException {
     final Path jwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.JWT_SECRET_FILE_NAME);
-    final Path unprefixedJwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.UNPREFIXED_JWT_SECRET_FILE_NAME);
+    final Path unprefixedJwtSecretFile =
+        tempDir.resolve(JwtSecretKeyLoader.UNPREFIXED_JWT_SECRET_FILE_NAME);
 
     final SecretKeySpec jwtSecret = JwtTestHelper.generateJwtSecret();
 
     Files.writeString(jwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toHexString());
-    Files.writeString(unprefixedJwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toUnprefixedHexString());
+    Files.writeString(
+        unprefixedJwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toUnprefixedHexString());
 
     final JwtSecretKeyLoader keyLoader =
         new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);
     final JwtSecretKeyLoader unprefixedFileKeyLoader =
-            new JwtSecretKeyLoader(Optional.of(unprefixedJwtSecretFile.toString()), tempDir);
+        new JwtSecretKeyLoader(Optional.of(unprefixedJwtSecretFile.toString()), tempDir);
 
     final Key loadedSecret = keyLoader.getSecretKey();
     final Key unprefixedLoadedSecret = unprefixedFileKeyLoader.getSecretKey();
