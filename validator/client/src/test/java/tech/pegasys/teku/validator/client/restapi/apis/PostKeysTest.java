@@ -44,7 +44,7 @@ public class PostKeysTest {
     body.setKeystores(List.of("{}"));
     body.setPasswords(List.of());
     when(request.getRequestBody()).thenReturn(body);
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(request)
         .respondError(
             SC_BAD_REQUEST, "Keystores count (1) and Passwords count (0) differ, cannot proceed.");
@@ -59,7 +59,7 @@ public class PostKeysTest {
     body.setSlashingProtection(Optional.of("{}"));
     when(request.getRequestBody()).thenReturn(body);
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(request).respondOk(List.of());
   }
 
@@ -70,7 +70,7 @@ public class PostKeysTest {
     final PostKeysRequest body = new PostKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
     verify(request).respondOk(List.of());
   }
 
@@ -84,7 +84,7 @@ public class PostKeysTest {
     body.setKeystores(List.of("keystore"));
     when(request.getRequestBody()).thenReturn(body);
 
-    assertThatThrownBy(() -> endpoint.handle(request))
+    assertThatThrownBy(() -> endpoint.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
         .hasMessageStartingWith("Import data does not appear to have metadata");
   }

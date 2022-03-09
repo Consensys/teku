@@ -49,7 +49,7 @@ public class PostRemoteKeys extends RestApiEndpoint {
   }
 
   @Override
-  public void handle(final RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final PostRemoteKeysRequest body = request.getRequestBody();
 
     if (body.getExternalValidators().isEmpty()) {

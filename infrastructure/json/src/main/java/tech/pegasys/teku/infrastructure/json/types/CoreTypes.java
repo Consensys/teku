@@ -80,6 +80,11 @@ public class CoreTypes {
     return stringBuilder().description(description).build();
   }
 
+  public static DeserializableTypeDefinition<String> string(
+      final String description, final String example) {
+    return stringBuilder().description(description).example(example).build();
+  }
+
   private static StringTypeBuilder<String> stringBuilder() {
     return DeserializableTypeDefinition.string(String.class)
         .formatter(Function.identity())
