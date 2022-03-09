@@ -440,6 +440,15 @@ class ProtoArrayTest {
     assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block4a)).isEmpty();
   }
 
+  @Test
+  void onBlock_shouldNotMarkDefaultPayloadAsOptimistic() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
+    addOptimisticBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), dataStructureUtil.randomBytes32());
+
+    assertThat(protoArray.getProtoNode(block1a).orElseThrow().isOptimistic()).isFalse();
+    assertThat(protoArray.getProtoNode(block1b).orElseThrow().isOptimistic()).isTrue();
+  }
+
   private void assertHead(final Bytes32 expectedBlockHash) {
     assertThat(
             protoArray.findOptimisticHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
