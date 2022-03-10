@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration.Builder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
@@ -120,17 +119,18 @@ public class Eth2NetworkConfigurationTest {
         .containsExactlyInAnyOrderElementsOf(config.getDiscoveryBootnodes());
   }
 
+  @SuppressWarnings("Convert2MethodRef")
   public static Stream<Arguments> getDefinedNetworks() {
     return Stream.of(
-        Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) Builder::applyMainnetNetworkDefaults),
-        Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) Builder::applyMinimalNetworkDefaults),
-        Arguments.of(Eth2Network.PRATER, (NetworkDefinition) Builder::applyPraterNetworkDefaults),
+        Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
+        Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
+        Arguments.of(Eth2Network.PRATER, (NetworkDefinition) b -> b.applyPraterNetworkDefaults()),
         Arguments.of(
-            Eth2Network.KINTSUGI, (NetworkDefinition) Builder::applyKintsugiNetworkDefaults),
-        Arguments.of(Eth2Network.KILN, (NetworkDefinition) Builder::applyKilnNetworkDefaults),
-        Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) Builder::applySwiftNetworkDefaults),
+            Eth2Network.KINTSUGI, (NetworkDefinition) b -> b.applyKintsugiNetworkDefaults()),
+        Arguments.of(Eth2Network.KILN, (NetworkDefinition) b -> b.applyKilnNetworkDefaults()),
+        Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
-            Eth2Network.LESS_SWIFT, (NetworkDefinition) Builder::applyLessSwiftNetworkDefaults));
+            Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()));
   }
 
   private List<NodeRecord> parseBootnodes(List<String> bootnodes) {
