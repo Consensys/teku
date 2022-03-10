@@ -15,10 +15,10 @@ package tech.pegasys.teku.api.blockselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -95,12 +95,8 @@ public class BlockSelectorFactory {
       }
       final ChainHead chainHead = maybeChainHead.get();
       return client
-          .getAllBlocksAtSlot(slot)
-          .thenApply(
-              blocks ->
-                  blocks.stream()
-                      .map(block -> lookupBlockData(block, chainHead))
-                      .collect(Collectors.toList()));
+          .getAllBlocksAtSlot(slot, chainHead.getRoot())
+          .thenApply(blocks -> new ArrayList<>(blocks));
     };
   }
 
