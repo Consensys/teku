@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -603,9 +602,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(Collections.emptyList());
   }
 
-  public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
+  public List<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
     return getForkChoiceStrategy()
         .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
-        .orElse(Collections.emptySet());
+        .orElse(Collections.emptyList());
   }
 }

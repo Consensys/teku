@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -33,7 +32,7 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 
-  Set<Bytes32> getBlockRootsAtSlot(UInt64 slot);
+  List<Bytes32> getBlockRootsAtSlot(UInt64 slot);
 
   List<ProtoNodeData> getChainHeads();
 
