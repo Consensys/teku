@@ -77,7 +77,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;

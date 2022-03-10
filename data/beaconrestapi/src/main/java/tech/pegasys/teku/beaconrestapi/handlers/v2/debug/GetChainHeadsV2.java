@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -25,7 +25,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.debug.GetChainHeadsResponseV2;
+import tech.pegasys.teku.api.response.v2.debug.GetChainHeadsResponseV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeads;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
