@@ -119,6 +119,7 @@ public class Eth2NetworkConfigurationTest {
         .containsExactlyInAnyOrderElementsOf(config.getDiscoveryBootnodes());
   }
 
+  @SuppressWarnings("Convert2MethodRef")
   public static Stream<Arguments> getDefinedNetworks() {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
@@ -126,6 +127,7 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.PRATER, (NetworkDefinition) b -> b.applyPraterNetworkDefaults()),
         Arguments.of(
             Eth2Network.KINTSUGI, (NetworkDefinition) b -> b.applyKintsugiNetworkDefaults()),
+        Arguments.of(Eth2Network.KILN, (NetworkDefinition) b -> b.applyKilnNetworkDefaults()),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()));
