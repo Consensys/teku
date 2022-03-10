@@ -77,7 +77,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   void shouldAllowMultipleMevBoostUrls() throws MalformedURLException {
-    final String[] args = {"--ee-payload-builders", "http://a.com,http://b.com"};
+    final String[] args = {"--Xee-payload-builders", "http://a.com,http://b.com"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionEngine().getMevBoostUrls())
         .containsOnly(new URL("http://a.com"), new URL("http://b.com"));

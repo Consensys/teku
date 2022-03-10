@@ -34,7 +34,7 @@ public class ExecutionEngineOptions {
   private String executionEngineEndpoint = null;
 
   @Option(
-      names = {"--ee-version"},
+      names = {"--Xee-version"},
       paramLabel = "<EXECUTION_ENGINE_VERSION>",
       description =
           "Execution Engine API version. Possible values are: kintsugi (default), kiln or kilnV2",
@@ -43,7 +43,7 @@ public class ExecutionEngineOptions {
   private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
   @Option(
-      names = {"--ee-payload-builders"},
+      names = {"--Xee-payload-builders"},
       paramLabel = "<MEV_BUILDER_URL>",
       description = "List of MEV boost api compatible endpoints to get execution payloads",
       arity = "1..*",
