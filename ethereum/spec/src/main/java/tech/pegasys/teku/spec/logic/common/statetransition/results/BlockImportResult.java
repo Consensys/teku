@@ -55,8 +55,10 @@ public interface BlockImportResult {
     return new OptimisticSuccessfulBlockImportResult(block);
   }
 
-  static BlockImportResult knownBlock(final SignedBeaconBlock block) {
-    return new SuccessfulBlockImportResult(block);
+  static BlockImportResult knownBlock(final SignedBeaconBlock block, final boolean isOptimistic) {
+    return isOptimistic
+        ? new OptimisticSuccessfulBlockImportResult(block)
+        : new SuccessfulBlockImportResult(block);
   }
 
   enum FailureReason {
