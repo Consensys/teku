@@ -34,7 +34,7 @@ public class ExecutionEngineOptions {
   private String executionEngineEndpoint = null;
 
   @Option(
-      names = {"--Xee-version"},
+      names = {"--ee-version"},
       paramLabel = "<EXECUTION_ENGINE_VERSION>",
       description =
           "Execution Engine API version. Possible values are: kintsugi (default), kiln or kilnV2",
