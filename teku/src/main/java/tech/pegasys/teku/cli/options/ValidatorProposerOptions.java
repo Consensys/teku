@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -36,6 +37,7 @@ public class ValidatorProposerOptions {
   @Option(
       names = {"--validators-proposer-config-refresh-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description =
           "Enable the proposer configuration reload on every proposer preparation (once per epoch)",
       arity = "0..1",
