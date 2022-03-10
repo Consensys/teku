@@ -95,11 +95,20 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public Map<Bytes32, UInt64> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads() {
     return chainBuilder
         .getChainHead()
-        .map(h -> Map.of(h.getRoot(), h.getSlot()))
-        .orElse(Collections.emptyMap());
+        .map(
+            h ->
+                List.of(
+                    new ProtoNodeData(
+                        h.getSlot(),
+                        h.getRoot(),
+                        h.getParentRoot(),
+                        h.getStateRoot(),
+                        h.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                        false)))
+        .orElse(Collections.emptyList());
   }
 
   @Override

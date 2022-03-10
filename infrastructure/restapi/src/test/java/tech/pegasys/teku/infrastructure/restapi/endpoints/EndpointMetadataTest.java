@@ -15,10 +15,13 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -116,6 +119,15 @@ class EndpointMetadataTest {
             .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
             .build();
     assertThat(metadata.getTags()).containsExactly(RestApiConstants.TAG_EXPERIMENTAL);
+  }
+
+  @Test
+  void shouldDeprecateEndpoint() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder().deprecated(true).response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+    final JsonGenerator generator = mock(JsonGenerator.class);
+    metadata.writeOpenApi(generator);
+    verify(generator).writeBooleanField("deprecated", true);
   }
 
   @Test

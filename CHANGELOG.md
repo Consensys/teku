@@ -6,6 +6,7 @@
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
+- The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
 - The commandline option `--validators-performance-tracking-enabled` has been deprecated in favour of `--validators-performance-tracking-mode`
  
 ## Current Releases
@@ -19,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Added configuration for the Kiln testnet (`--network kiln`).
+- Added `/eth/v2/debug/beacon/heads` REST API to include information on whether the execution payload of each chain head has been executed or not.
 - Reduced CPU usage when finding ancestor block roots.
 - Updated gossip validation rules to match consensus spec v1.1.0.
 - Reduced memory usage when deduplicating gossip messages.
