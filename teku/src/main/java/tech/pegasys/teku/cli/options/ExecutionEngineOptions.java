@@ -29,8 +29,7 @@ public class ExecutionEngineOptions {
       names = {"--ee-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Engine node.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private String executionEngineEndpoint = null;
 
   @Option(
