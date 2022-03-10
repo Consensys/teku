@@ -299,7 +299,10 @@ public class ForkChoiceUtil {
   }
 
   public void applyBlockToStore(
-      final MutableStore store, final SignedBeaconBlock signedBlock, final BeaconState postState) {
+      final MutableStore store,
+      final SignedBeaconBlock signedBlock,
+      final BeaconState postState,
+      final boolean isBlockOptimistic) {
     // Add new block to store
     store.putBlockAndState(signedBlock, postState);
 
@@ -319,7 +322,7 @@ public class ForkChoiceUtil {
     // Update finalized checkpoint
     final Checkpoint finalizedCheckpoint = postState.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      store.setFinalizedCheckpoint(finalizedCheckpoint);
+      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
 
       // Potentially update justified if different from store
       if (!store.getJustifiedCheckpoint().equals(postState.getCurrent_justified_checkpoint())) {
