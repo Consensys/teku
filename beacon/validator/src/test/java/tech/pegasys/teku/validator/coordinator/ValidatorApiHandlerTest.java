@@ -753,7 +753,7 @@ class ValidatorApiHandlerTest {
   public void sendSignedBlock_shouldConvertKnownBlockResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     when(blockImportChannel.importBlock(block))
-        .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockGossipChannel).publishBlock(block);
