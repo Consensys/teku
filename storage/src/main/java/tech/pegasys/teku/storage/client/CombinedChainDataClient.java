@@ -31,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -507,13 +509,18 @@ public class CombinedChainDataClient {
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final UInt64 slot) {
+  public SafeFuture<Set<BlockAndMetaData>> getAllBlocksAtSlot(
+      final UInt64 slot, final ChainHead chainHead) {
     if (isFinalized(slot)) {
       return historicalChainData
           .getNonCanonicalBlocksBySlot(slot)
-          .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
+          .thenCombine(
+              getBlockAtSlotExact(slot),
+              (blocks, canonicalBlock) ->
+                  mergeNonCanonicalAndCanonicalBlocks(blocks, chainHead, canonicalBlock));
     }
-    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot));
+
+    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot), chainHead);
   }
 
   public boolean isCanonicalBlock(
@@ -521,10 +528,7 @@ public class CombinedChainDataClient {
     if (isFinalized(slot)) {
       return true;
     }
-    return spec.getAncestor(
-            recentChainData.getForkChoiceStrategy().orElseThrow(), chainHeadRoot, slot)
-        .map(ancestor -> ancestor.equals(blockRoot))
-        .orElse(false);
+    return isCanonicalBlockCalculated(slot, blockRoot, chainHeadRoot);
   }
 
   public boolean isOptimisticBlock(final Bytes32 blockRoot) {
@@ -535,22 +539,57 @@ public class CombinedChainDataClient {
         .orElse(false);
   }
 
+  private boolean isCanonicalBlockCalculated(
+      final UInt64 slot, final Bytes32 blockRoot, final Bytes32 chainHeadRoot) {
+    return spec.getAncestor(
+            recentChainData.getForkChoiceStrategy().orElseThrow(), chainHeadRoot, slot)
+        .map(ancestor -> ancestor.equals(blockRoot))
+        .orElse(false);
+  }
+
   @SuppressWarnings("unchecked")
-  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
+  private SafeFuture<Set<BlockAndMetaData>> getBlocksByRoots(
+      final Set<Bytes32> blockRoots, final ChainHead chainHead) {
     final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
         blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
     return SafeFuture.collectAll(futures)
         .thenApply(
             optionalBlocks ->
-                optionalBlocks.stream().flatMap(Optional::stream).collect(Collectors.toSet()));
+                optionalBlocks.stream()
+                    .flatMap(Optional::stream)
+                    .map(
+                        block ->
+                            toBlockAndMetaData(
+                                block,
+                                chainHead,
+                                isCanonicalBlockCalculated(
+                                    block.getSlot(), block.getRoot(), chainHead.getRoot())))
+                    .collect(Collectors.toSet()));
   }
 
-  Set<SignedBeaconBlock> mergeNonCanonicalAndCanonicalBlocks(
+  Set<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
       final Set<SignedBeaconBlock> signedBeaconBlocks,
+      final ChainHead chainHead,
       final Optional<SignedBeaconBlock> canonicalBlock) {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
-    canonicalBlock.ifPresent(signedBeaconBlocks::add);
-    return signedBeaconBlocks;
+    final Set<BlockAndMetaData> result =
+        signedBeaconBlocks.stream()
+            .map(block -> toBlockAndMetaData(block, chainHead, false))
+            .collect(Collectors.toSet());
+    canonicalBlock.ifPresent(block -> result.add(toBlockAndMetaData(block, chainHead, true)));
+    return result;
+  }
+
+  private BlockAndMetaData toBlockAndMetaData(
+      final SignedBeaconBlock signedBeaconBlock,
+      final ChainHead chainHead,
+      final boolean canonical) {
+    return new BlockAndMetaData(
+        signedBeaconBlock,
+        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone(),
+        chainHead.isOptimistic() || isOptimisticBlock(signedBeaconBlock.getRoot()),
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        canonical);
   }
 
   private boolean isOptimistic(
