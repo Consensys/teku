@@ -18,5 +18,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {}
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {}
 }

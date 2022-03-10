@@ -37,7 +37,7 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setJustifiedCheckpoint(Checkpoint justified_checkpoint);
 
-  void setFinalizedCheckpoint(Checkpoint finalized_checkpoint);
+  void setFinalizedCheckpoint(Checkpoint finalized_checkpoint, boolean fromOptimisticBlock);
 
   void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
 

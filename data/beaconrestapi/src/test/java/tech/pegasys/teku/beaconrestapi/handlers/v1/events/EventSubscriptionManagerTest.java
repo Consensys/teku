@@ -94,7 +94,7 @@ public class EventSubscriptionManagerTest {
       data.randomSignedContributionAndProof(0L);
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
-      new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
+      new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, null);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
@@ -351,7 +351,7 @@ public class EventSubscriptionManagerTest {
 
   private void triggerFinalizedCheckpointEvent() {
     manager.onNewFinalizedCheckpoint(
-        new Checkpoint(sampleCheckpointEvent.epoch, sampleCheckpointEvent.block));
+        new Checkpoint(sampleCheckpointEvent.epoch, sampleCheckpointEvent.block), false);
     asyncRunner.executeQueuedActions();
   }
 

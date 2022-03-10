@@ -268,7 +268,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void setFinalizedCheckpoint(final Checkpoint finalized_checkpoint) {
+  public void setFinalizedCheckpoint(
+      final Checkpoint finalized_checkpoint, final boolean fromOptimisticBlock) {
     this.finalized_checkpoint = finalized_checkpoint;
   }
 

@@ -176,12 +176,16 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
-    final FinalizedCheckpointEvent checkpointString =
+    final FinalizedCheckpointEvent event =
         new FinalizedCheckpointEvent(
-            checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch());
-    notifySubscribersOfEvent(EventType.finalized_checkpoint, checkpointString);
+            checkpoint.getRoot(),
+            stateRoot.orElse(Bytes32.ZERO),
+            checkpoint.getEpoch(),
+            getExecutionOptimisticForApi(fromOptimisticBlock));
+    notifySubscribersOfEvent(EventType.finalized_checkpoint, event);
   }
 
   protected void onSyncStateChange(final SyncState syncState) {
