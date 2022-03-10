@@ -39,7 +39,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.debug.ChainHead;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
@@ -60,6 +59,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -105,10 +105,16 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final SafeFuture<Optional<List<ChainHead>>> future = provider.getChainHeads();
-    final Optional<List<ChainHead>> maybeResult = future.get();
-    assertThat(maybeResult.orElse(emptyList()))
-        .containsExactly(new ChainHead(bestBlock.getSlot(), blockRoot));
+    final List<ProtoNodeData> chainHeads = provider.getChainHeads();
+    assertThat(chainHeads)
+        .containsExactly(
+            new ProtoNodeData(
+                bestBlock.getSlot(),
+                blockRoot,
+                bestBlock.getParentRoot(),
+                bestBlock.getStateRoot(),
+                bestBlock.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                false));
   }
 
   @Test
