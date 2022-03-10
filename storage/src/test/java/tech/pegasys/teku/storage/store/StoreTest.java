@@ -212,7 +212,7 @@ class StoreTest extends AbstractStoreTest {
 
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
     tx.putBlockAndState(finalizedBlockAndState);
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     final SafeFuture<CheckpointState> result = store.retrieveFinalizedCheckpointAndState();
@@ -264,7 +264,7 @@ class StoreTest extends AbstractStoreTest {
     // Add blocks
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
     // Update checkpoints
-    tx.setFinalizedCheckpoint(checkpoint1);
+    tx.setFinalizedCheckpoint(checkpoint1, false);
     tx.setJustifiedCheckpoint(checkpoint2);
     tx.setBestJustifiedCheckpoint(checkpoint3);
     // Update time

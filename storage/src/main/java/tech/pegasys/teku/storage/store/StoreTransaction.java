@@ -56,6 +56,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> genesisTime = Optional.empty();
   Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
   Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
+  boolean finalizedCheckpointOptimistic = false;
   Optional<Checkpoint> bestJustifiedCheckpoint = Optional.empty();
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   boolean proposerBoostRootSet = false;
@@ -118,8 +119,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
+  public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint, boolean fromOptimisticBlock) {
     this.finalizedCheckpoint = Optional.of(finalized_checkpoint);
+    this.finalizedCheckpointOptimistic = fromOptimisticBlock;
   }
 
   @Override
@@ -179,7 +181,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                         }
 
                         // Signal back changes to the handler
-                        finalizedCheckpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                        finalizedCheckpoint.ifPresent(
+                            checkpoint ->
+                                updateHandler.onNewFinalizedCheckpoint(
+                                    checkpoint, finalizedCheckpointOptimistic));
                       });
             });
   }

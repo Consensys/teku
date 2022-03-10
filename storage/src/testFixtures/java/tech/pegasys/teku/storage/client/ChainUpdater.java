@@ -128,7 +128,7 @@ public class ChainUpdater {
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(checkpoint);
+    tx.setFinalizedCheckpoint(checkpoint, false);
     assertThat(tx.commit()).isDone();
 
     return blockAndState;
@@ -200,7 +200,7 @@ public class ChainUpdater {
     }
     final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().isGreaterThan(recentChainData.getFinalizedEpoch())) {
-      tx.setFinalizedCheckpoint(finalizedCheckpoint);
+      tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     }
     assertThat(tx.commit()).isCompleted();
   }
