@@ -43,7 +43,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
       "0",
       "--Xnetwork-bellatrix-fork-epoch",
       "1",
-      "--Xee-endpoint",
+      "--ee-endpoint",
       "http://example.com:1234/path/"
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);

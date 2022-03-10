@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 public class ExecutionEngineOptions {
 
   @Option(
-      names = {"--Xee-endpoint"},
+      names = {"--ee-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Engine node.",
       arity = "1",

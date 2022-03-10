@@ -59,7 +59,7 @@ public class ExecutionEngineConfiguration {
     return endpoint.orElseThrow(
         () ->
             new InvalidConfigurationException(
-                "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
+                "Invalid configuration. --ee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
   }
 
   public Optional<String> getJwtSecretFile() {
