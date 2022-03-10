@@ -23,16 +23,14 @@ public class ValidatorProposerOptions {
       paramLabel = "<ADDRESS>",
       description =
           "Default fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
-      arity = "0..1",
-      hidden = true)
+      arity = "0..1")
   private String proposerDefaultFeeRecipient = null;
 
   @Option(
       names = {"--validators-proposer-config"},
       paramLabel = "<STRING>",
       description = "remote URL or local file path to load proposer configuration from",
-      arity = "0..1",
-      hidden = true)
+      arity = "0..1")
   private String proposerConfig = null;
 
   @Option(
@@ -41,8 +39,7 @@ public class ValidatorProposerOptions {
       description =
           "Enable the proposer configuration reload on every proposer preparation (once per epoch)",
       arity = "0..1",
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private boolean proposerConfigRefreshEnabled =
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
