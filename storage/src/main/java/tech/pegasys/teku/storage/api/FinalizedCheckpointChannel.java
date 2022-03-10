@@ -17,5 +17,5 @@ import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public interface FinalizedCheckpointChannel extends VoidReturningChannelInterface {
-  void onNewFinalizedCheckpoint(final Checkpoint checkpoint);
+  void onNewFinalizedCheckpoint(Checkpoint checkpoint, boolean fromOptimisticBlock);
 }

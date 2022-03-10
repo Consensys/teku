@@ -98,7 +98,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     recentChainData
         .retrieveBlockState(checkpoint.getRoot())
         .thenAccept(
