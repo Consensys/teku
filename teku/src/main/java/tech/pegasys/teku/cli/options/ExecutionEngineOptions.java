@@ -29,8 +29,7 @@ public class ExecutionEngineOptions {
       names = {"--ee-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Engine node.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private String executionEngineEndpoint = null;
 
   @Option(
@@ -51,7 +50,6 @@ public class ExecutionEngineOptions {
   private List<String> mevUrls = new ArrayList<>();
 
   @Option(
-      hidden = true,
       names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
