@@ -31,7 +31,7 @@ public class ExecutionEngineConfigurationTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getEndpoint)
         .withMessageContaining(
-            "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled");
+            "Invalid configuration. --ee-endpoint parameter is mandatory when Bellatrix milestone is enabled");
   }
 
   @Test

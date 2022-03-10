@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 public class ExecutionEngineOptions {
 
   @Option(
-      names = {"--Xee-endpoint"},
+      names = {"--ee-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Engine node.",
       arity = "1",
@@ -52,7 +52,7 @@ public class ExecutionEngineOptions {
 
   @Option(
       hidden = true,
-      names = {"--Xee-jwt-secret"},
+      names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
           "Location of the file specifying the hex-encoded 256 bit secret key to be used for verifying/generating jwt tokens",

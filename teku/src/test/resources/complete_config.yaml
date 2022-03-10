@@ -25,7 +25,7 @@ eth1-endpoint: "http://localhost:8545"
 #Xeth1-deposits-from-storage-enabled: true
 
 # execution engine
-Xee-endpoint: "http://localhost:8550"
+ee-endpoint: "http://localhost:8550"
 
 # output
 #Xtransaction-record-directory: "/tmp/teku"
