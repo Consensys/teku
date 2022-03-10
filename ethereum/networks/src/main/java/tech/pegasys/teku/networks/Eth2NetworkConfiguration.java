@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
+import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KINTSUGI;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
@@ -366,6 +367,8 @@ public class Eth2NetworkConfiguration {
           return applyPraterNetworkDefaults();
         case KINTSUGI:
           return applyKintsugiNetworkDefaults();
+        case KILN:
+          return applyKilnNetworkDefaults();
         case SWIFT:
           return applySwiftNetworkDefaults();
         case LESS_SWIFT:
@@ -465,6 +468,17 @@ public class Eth2NetworkConfiguration {
               "enr:-KG4QLIhAeEVABV4Id22qEbjemJ0b9JBjRhdYpKN0kvpVi_GbFkQTvAf7-Da-5sW2oNenTW3is_GxLImUCtYzxPMOR4DhGV0aDKQR9ByjGEAAHAKAAAAAAAAAIJpZIJ2NIJpcISl6LF5iXNlY3AyNTZrMaED6XFvht9SUPD0FlYWnjunXhF9FdQMQO56816C9iFNt-WDdGNwgiMog3VkcIIjKA",
               "enr:-LK4QPluMnS3OaiMpy7E0dSF-n7ES9Ort7mpOj85lS_43jGvfuV-SOZyjYNG-WEIT5aOzpWH2vgBbF2MoB94IZdDLxIBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhKEjS06Jc2VjcDI1NmsxoQM0uDjlVaZoToQ6ReyUkgFTQizlE6avXGljrWIz9Rf4LoN0Y3CCIyiDdWRwgiMo",
               "enr:-Ku4QM4JL9b3RGfRnnfAY7jqDRiTTGaU2OWk0j4YWbR7N2YHc7RjPGiVERqiWHasIjmMz-No86wsvf4KHuyM4FeRtuMFh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhKEjQ92Jc2VjcDI1NmsxoQN_UgL8zuTFqyGm5_lKZqUdoHMH2XeU0OvNmZwgycMmSIN0Y3CCIyg");
+    }
+
+    public Builder applyKilnNetworkDefaults() {
+      return reset()
+          .constants(KILN.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(0)
+          .defaultInitialState(
+              "https://github.com/eth-clients/merge-testnets/raw/a44b13a8d495984f4bc9770348a1c451f615be76/kiln/genesis.ssz")
+          .discoveryBootnodes(
+              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk");
     }
   }
 }
