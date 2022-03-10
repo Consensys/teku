@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Debug" ],
     "summary" : "Get fork choice leaves",
-    "description" : "Retrieves all possible chain heads (leaves of fork choice tree).",
+    "description" : "Retrieves all possible chain heads (leaves of fork choice tree).\n\nDeprecated - use `/eth/v2/debug/beacon/heads",
     "operationId" : "getEthV1DebugBeaconHeads",
     "responses" : {
       "200" : {
@@ -18,6 +18,7 @@
       "500" : {
         "description" : "Server Error"
       }
-    }
+    },
+    "deprecated" : true
   }
 }

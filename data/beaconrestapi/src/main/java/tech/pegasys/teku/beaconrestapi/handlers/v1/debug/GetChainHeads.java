@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.function.Function;
@@ -31,22 +28,12 @@ public abstract class GetChainHeads extends MigratingEndpointAdapter {
 
   private final ChainDataProvider chainDataProvider;
 
-  public GetChainHeads(
-      final ChainDataProvider chainDataProvider,
-      final String route,
-      final SerializableTypeDefinition<ProtoNodeData> chainHeadTypeDefinition) {
-    super(
-        EndpointMetadata.get(route)
-            .operationId("getDebugChainHeads")
-            .summary("Get fork choice leaves")
-            .description("Retrieves all possible chain heads (leaves of fork choice tree).")
-            .tags(TAG_DEBUG)
-            .response(SC_OK, "Success", responseType(chainHeadTypeDefinition))
-            .build());
+  public GetChainHeads(final ChainDataProvider chainDataProvider, final EndpointMetadata metadata) {
+    super(metadata);
     this.chainDataProvider = chainDataProvider;
   }
 
-  private static SerializableTypeDefinition<List<ProtoNodeData>> responseType(
+  protected static SerializableTypeDefinition<List<ProtoNodeData>> responseType(
       final SerializableTypeDefinition<ProtoNodeData> chainHeadTypeDefinition) {
     return SerializableTypeDefinition.<List<ProtoNodeData>>object()
         .withField(

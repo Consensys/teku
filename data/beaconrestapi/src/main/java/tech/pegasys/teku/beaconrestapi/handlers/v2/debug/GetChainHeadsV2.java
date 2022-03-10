@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.api.response.v2.debug.GetChainHeadsResponseV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeads;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 
 public class GetChainHeadsV2 extends GetChainHeads {
@@ -47,7 +49,15 @@ public class GetChainHeadsV2 extends GetChainHeads {
   }
 
   public GetChainHeadsV2(final ChainDataProvider chainDataProvider) {
-    super(chainDataProvider, ROUTE, CHAIN_HEAD_TYPE_V2);
+    super(
+        chainDataProvider,
+        EndpointMetadata.get(ROUTE)
+            .operationId("getDebugChainHeadsV2")
+            .summary("Get fork choice leaves")
+            .description("Retrieves all possible chain heads (leaves of fork choice tree).")
+            .tags(TAG_DEBUG)
+            .response(SC_OK, "Success", responseType(CHAIN_HEAD_TYPE_V2))
+            .build());
   }
 
   @OpenApi(

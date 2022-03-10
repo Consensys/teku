@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.debug.GetChainHeadsResponse;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 
 public class GetChainHeadsV1 extends GetChainHeads {
@@ -45,7 +47,18 @@ public class GetChainHeadsV1 extends GetChainHeads {
   }
 
   public GetChainHeadsV1(final ChainDataProvider chainDataProvider) {
-    super(chainDataProvider, ROUTE, CHAIN_HEAD_TYPE_V1);
+    super(
+        chainDataProvider,
+        EndpointMetadata.get(ROUTE)
+            .operationId("getDebugChainHeads")
+            .summary("Get fork choice leaves")
+            .description(
+                "Retrieves all possible chain heads (leaves of fork choice tree).\n\n"
+                    + "Deprecated - use `/eth/v2/debug/beacon/heads")
+            .tags(TAG_DEBUG)
+            .deprecated(true)
+            .response(SC_OK, "Success", responseType(CHAIN_HEAD_TYPE_V1))
+            .build());
   }
 
   @OpenApi(
