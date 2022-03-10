@@ -56,6 +56,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-performance-tracking-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enable validator performance tracking",
       fallbackValue = "true",
       arity = "0..1",
