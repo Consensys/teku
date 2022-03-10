@@ -179,6 +179,6 @@ class ValidatorConfigTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(task::run)
         .withMessageContaining(
-            "Invalid configuration. --Xvalidators-proposer-default-fee-recipient or --Xvalidators-proposer-config must be specified when Bellatrix milestone is active");
+            "Invalid configuration. --validators-proposer-default-fee-recipient or --validators-proposer-config must be specified when Bellatrix milestone is active");
   }
 }

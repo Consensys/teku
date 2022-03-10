@@ -185,7 +185,7 @@ public class ValidatorConfig {
         && proposerConfigSource.isEmpty()
         && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. --Xvalidators-proposer-default-fee-recipient or --Xvalidators-proposer-config must be specified when Bellatrix milestone is active");
+          "Invalid configuration. --validators-proposer-default-fee-recipient or --validators-proposer-config must be specified when Bellatrix milestone is active");
     }
   }
 

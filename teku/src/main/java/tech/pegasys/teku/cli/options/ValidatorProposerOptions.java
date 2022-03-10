@@ -19,7 +19,7 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorProposerOptions {
   @Option(
-      names = {"--Xvalidators-proposer-default-fee-recipient"},
+      names = {"--validators-proposer-default-fee-recipient"},
       paramLabel = "<ADDRESS>",
       description =
           "Default fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
@@ -28,7 +28,7 @@ public class ValidatorProposerOptions {
   private String proposerDefaultFeeRecipient = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-config"},
+      names = {"--validators-proposer-config"},
       paramLabel = "<STRING>",
       description = "remote URL or local file path to load proposer configuration from",
       arity = "0..1",
@@ -36,7 +36,7 @@ public class ValidatorProposerOptions {
   private String proposerConfig = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-config-refresh-enabled"},
+      names = {"--validators-proposer-config-refresh-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
           "Enable the proposer configuration reload on every proposer preparation (once per epoch)",
