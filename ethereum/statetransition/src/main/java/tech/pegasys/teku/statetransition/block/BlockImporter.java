@@ -78,11 +78,12 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
-    if (recentChainData.containsBlock(block.getMessage().hashTreeRoot())) {
+    final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
+    if (knownOptimistic.isPresent()) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
           () -> formatBlock(block));
-      return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
+      return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
     }
 
     if (!weakSubjectivityValidator.isBlockValid(block, getForkChoiceStrategy())) {

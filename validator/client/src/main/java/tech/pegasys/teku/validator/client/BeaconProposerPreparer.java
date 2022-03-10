@@ -117,7 +117,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .orElseThrow(
             () ->
                 new InvalidConfigurationException(
-                    "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active"));
+                    "Invalid configuration. --validators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active"));
   }
 
   @Override
