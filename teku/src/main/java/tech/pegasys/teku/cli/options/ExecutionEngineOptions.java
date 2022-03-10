@@ -53,7 +53,7 @@ public class ExecutionEngineOptions {
 
   @Option(
       hidden = true,
-      names = {"--ee-jwt-secret"},
+      names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
           "Location of the file specifying the hex-encoded 256 bit secret key to be used for verifying/generating jwt tokens",
