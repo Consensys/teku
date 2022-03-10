@@ -167,12 +167,15 @@ public class BlockManager extends Service
   }
 
   private Optional<SafeFuture<BlockImportResult>> handleKnownBlock(final SignedBeaconBlock block) {
-    if (pendingBlocks.contains(block)
-        || futureBlocks.contains(block)
-        || recentChainData.containsBlock(block.getRoot())) {
-      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
+    if (pendingBlocks.contains(block) || futureBlocks.contains(block)) {
+      // Pending and future blocks can't have been executed yet so must be marked optimistic
+      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, true)));
     }
-    return Optional.empty();
+    return recentChainData
+        .isBlockOptimistic(block.getRoot())
+        .map(
+            isOptimistic ->
+                SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
   private SafeFuture<BlockImportResult> handleBlockImport(final SignedBeaconBlock block) {

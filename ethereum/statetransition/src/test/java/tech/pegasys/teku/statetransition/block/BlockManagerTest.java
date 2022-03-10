@@ -178,8 +178,26 @@ public class BlockManagerTest {
     verify(subscriber).onBlockImported(nextBlock, false);
 
     assertThatSafeFuture(blockManager.importBlock(nextBlock))
-        .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock));
+        .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, false));
     verify(subscriber, times(2)).onBlockImported(nextBlock, false);
+  }
+
+  @Test
+  public void shouldNotifySubscribersOnKnownOptimisticBlock() {
+    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    blockManager.subscribeToReceivedBlocks(subscriber);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
+
+    safeJoin(blockManager.importBlock(nextBlock));
+    verify(subscriber).onBlockImported(nextBlock, true);
+
+    assertThatSafeFuture(blockManager.importBlock(nextBlock))
+        .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, true));
+    verify(subscriber, times(2)).onBlockImported(nextBlock, true);
   }
 
   @Test
