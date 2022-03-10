@@ -23,7 +23,6 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +48,6 @@ import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.debug.ChainHead;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -65,6 +63,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -465,14 +464,8 @@ public class ChainDataProvider {
                     validatorParameterToIndex(state, validatorParameter).stream().mapToInt(a -> a));
   }
 
-  public SafeFuture<Optional<List<ChainHead>>> getChainHeads() {
-    List<ChainHead> result = new ArrayList<>();
-    recentChainData.getChainHeads().forEach((k, v) -> result.add(new ChainHead(v, k)));
-
-    if (result.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    return SafeFuture.completedFuture(Optional.of(result));
+  public List<ProtoNodeData> getChainHeads() {
+    return recentChainData.getChainHeads();
   }
 
   // Returns false

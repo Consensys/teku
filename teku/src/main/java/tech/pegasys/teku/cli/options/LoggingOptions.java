@@ -68,6 +68,7 @@ public class LoggingOptions {
       paramLabel = "<BOOLEAN>",
       description = "Whether warnings are logged for invalid P2P messages",
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       arity = "0..1")
   private boolean logIncludeP2pWarningsEnabled = false;
@@ -103,6 +104,7 @@ public class LoggingOptions {
   @Option(
       names = {"--Xlog-wire-cipher-enabled"},
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether raw encrypted wire packets are logged",
       fallbackValue = "true",
@@ -112,6 +114,7 @@ public class LoggingOptions {
   @Option(
       names = {"--Xlog-wire-plain-enabled"},
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether raw decrypted wire packets are logged",
       fallbackValue = "true",
@@ -121,6 +124,7 @@ public class LoggingOptions {
   @Option(
       names = {"--Xlog-wire-mux-enabled"},
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether multiplexer wire packets (aka Libp2p stream frames) are logged",
       fallbackValue = "true",
@@ -130,6 +134,7 @@ public class LoggingOptions {
   @Option(
       names = {"--Xlog-wire-gossip-enabled"},
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether gossip messages are logged",
       fallbackValue = "true",

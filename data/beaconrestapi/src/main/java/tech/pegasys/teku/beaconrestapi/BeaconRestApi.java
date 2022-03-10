@@ -76,7 +76,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeads;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
@@ -94,6 +94,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeac
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -128,7 +129,6 @@ public class BeaconRestApi {
             .version(applicationInfo.getVersion())
             .description(applicationInfo.getDescription())
             .license(applicationInfo.getLicense().getName(), applicationInfo.getLicense().getUrl());
-
     if (app._conf != null) {
       // the beaconRestApi test mocks the app object, and will skip this
       app._conf.server(
@@ -184,7 +184,8 @@ public class BeaconRestApi {
   }
 
   private void addDebugHandlers(final DataProvider dataProvider) {
-    app.get(GetChainHeads.ROUTE, new GetChainHeads(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetChainHeadsV1(dataProvider));
+    addMigratedEndpoint(new GetChainHeadsV2(dataProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
