@@ -1,5 +1,7 @@
 # Extends the mainnet preset
 PRESET_BASE: 'mainnet'
+CONFIG_NAME: 'kiln'
+
 # Genesis
 # ---------------------------------------------------------------
 MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 95000
