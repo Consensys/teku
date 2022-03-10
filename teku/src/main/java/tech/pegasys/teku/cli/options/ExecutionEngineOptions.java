@@ -50,7 +50,6 @@ public class ExecutionEngineOptions {
   private List<String> mevUrls = new ArrayList<>();
 
   @Option(
-      hidden = true,
       names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
