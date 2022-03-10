@@ -23,7 +23,6 @@ import io.javalin.http.Context;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.api.ObjectAndMetaData;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public abstract class AbstractBeaconHandlerTest {
 

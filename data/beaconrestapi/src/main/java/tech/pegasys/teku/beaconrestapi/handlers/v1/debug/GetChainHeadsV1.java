@@ -54,8 +54,9 @@ public class GetChainHeadsV1 extends GetChainHeads {
       summary = "Get fork choice leaves",
       tags = {TAG_DEBUG},
       deprecated = true,
-      description = "Retrieves all possible chain heads (leaves of fork choice tree).\n\n"
-          + "Deprecated - use `/eth/v2/debug/beacon/heads",
+      description =
+          "Retrieves all possible chain heads (leaves of fork choice tree).\n\n"
+              + "Deprecated - use `/eth/v2/debug/beacon/heads",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

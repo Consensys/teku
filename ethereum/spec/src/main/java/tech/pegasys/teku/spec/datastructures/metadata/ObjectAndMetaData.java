@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api;
+package tech.pegasys.teku.spec.datastructures.metadata;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;

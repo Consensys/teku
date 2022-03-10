@@ -18,8 +18,10 @@ For information on changes in released versions of Teku, see the [releases page]
      Blocks that pass the gossip validation rules but fail state transition will no longer emit a `block` event.
 
 ### Additions and Improvements
+- Added configuration for the Kiln testnet (`--network kiln`).
 - Reduced CPU usage when finding ancestor block roots.
 - Updated gossip validation rules to match consensus spec v1.1.0.
 - Reduced memory usage when deduplicating gossip messages.
+- GetBlockHeaders `/eth/v1/beacon/headers` can now return non-canonical block headers.
 
 ### Bug Fixes

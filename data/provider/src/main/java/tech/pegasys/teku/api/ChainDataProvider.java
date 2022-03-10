@@ -36,7 +36,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.api.blockselector.BlockAndMetaData;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.SszResponse;
@@ -57,7 +56,6 @@ import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.stateselector.StateAndMetaData;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -67,6 +65,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -331,19 +332,24 @@ public class ChainDataProvider {
     }
 
     return defaultBlockSelectorFactory
-        .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .nonCanonicalBlocksSelector(slot.orElse(combinedChainDataClient.getHeadSlot()))
         .getBlock()
         .thenApply(
-            blockAndMetaDataList -> {
-              final boolean executionOptimistic =
-                  blockAndMetaDataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
-              return new GetBlockHeadersResponse(
-                  bellatrixEnabled ? executionOptimistic : null,
-                  blockAndMetaDataList.stream()
+            blockAndMetadataList -> {
+              final Boolean executionOptimistic =
+                  bellatrixEnabled
+                      ? blockAndMetadataList.stream()
+                          .anyMatch(BlockAndMetaData::isExecutionOptimistic)
+                      : null;
+              final List<BlockHeader> headers =
+                  blockAndMetadataList.stream()
                       .map(
-                          blockData ->
-                              new BlockHeader(blockData.getData(), blockData.isCanonical()))
-                      .collect(toList()));
+                          blockAndMetaData ->
+                              new BlockHeader(
+                                  blockAndMetaData.getData(), blockAndMetaData.isCanonical()))
+                      .collect(toList());
+              return new GetBlockHeadersResponse(
+                  bellatrixEnabled ? executionOptimistic : null, headers);
             });
   }
 
