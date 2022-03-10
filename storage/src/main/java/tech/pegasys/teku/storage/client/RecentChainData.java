@@ -570,6 +570,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(true);
   }
 
+  /**
+   * Returns empty if the block is unknown, or an optional indicating whether the block is
+   * optimistically imported or not.
+   *
+   * @param blockRoot the block to check
+   * @return empty if the block is unknown, Optional(true) when the block is optimistically imported
+   *     and Optional(false) when imported and fully validated.
+   */
+  public Optional<Boolean> isBlockOptimistic(final Bytes32 blockRoot) {
+    return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.isOptimistic(blockRoot));
+  }
+
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
