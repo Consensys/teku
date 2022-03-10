@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 class ReputationManagerTest {
 
   private static final int MORE_THAN_DISALLOW_PERIOD =
-      ReputationManager.FAILURE_BAN_PERIOD.intValue() + 1;
+      ReputationManager.COOLDOWN_PERIOD.intValue() + 1;
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final PeerAddress peerAddress = new PeerAddress(new MockNodeId(1));
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();

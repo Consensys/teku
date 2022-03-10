@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.networking.p2p.reputation;
 
-import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.TOO_MANY_PEERS;
-import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.UNRESPONSIVE;
-
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +28,11 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class ReputationManager {
-  static final UInt64 FAILURE_BAN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
+  // This is not a big ban, we expect the peer could be usable very soon
+  static final UInt64 COOLDOWN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
+  // It's a big ban, we expect that the peer is not useful until major changes, for example,
+  // software update
+  static final UInt64 BAN_PERIOD = UInt64.valueOf(TimeUnit.HOURS.toSeconds(12));
 
   static final int LARGE_CHANGE = 10;
   static final int SMALL_CHANGE = 3;
@@ -85,7 +86,8 @@ public class ReputationManager {
    */
   public boolean adjustReputation(
       final PeerAddress peerAddress, final ReputationAdjustment effect) {
-    return getOrCreateReputation(peerAddress).adjustReputation(effect);
+    return getOrCreateReputation(peerAddress)
+        .adjustReputation(effect, timeProvider.getTimeInSeconds());
   }
 
   private Reputation getOrCreateReputation(final PeerAddress peerAddress) {
@@ -93,35 +95,27 @@ public class ReputationManager {
   }
 
   private static class Reputation {
-    private static final EnumSet<DisconnectReason> LOCAL_TEMPORARY_DISCONNECT_REASONS =
+    private static final EnumSet<DisconnectReason> BAN_REASONS =
         EnumSet.of(
-            // We're currently at limit so don't mark peer unsuitable
-            TOO_MANY_PEERS,
-            // Peer may have been unresponsive due to a temporary network issue. In particular
-            // our internet access may have failed and all peers could be unresponsive.
-            // If we consider them all permanently unsuitable we may not be able to rejoin the
-            // network once our internet access is restored.
-            UNRESPONSIVE);
+            DisconnectReason.IRRELEVANT_NETWORK,
+            DisconnectReason.UNABLE_TO_VERIFY_NETWORK,
+            DisconnectReason.REMOTE_FAULT);
 
-    private volatile Optional<UInt64> lastInitiationFailure = Optional.empty();
-    private volatile boolean unsuitable = false;
+    private volatile Optional<UInt64> suitableAfter = Optional.empty();
     private final AtomicInteger score = new AtomicInteger(0);
 
     public void reportInitiatedConnectionFailed(final UInt64 failureTime) {
-      lastInitiationFailure = Optional.of(failureTime);
+      suitableAfter = Optional.of(failureTime.plus(COOLDOWN_PERIOD));
     }
 
     public boolean shouldInitiateConnection(final UInt64 currentTime) {
-      return !unsuitable
-          && lastInitiationFailure
-              .map(
-                  lastFailureTime ->
-                      lastFailureTime.plus(FAILURE_BAN_PERIOD).compareTo(currentTime) < 0)
-              .orElse(true);
+      return suitableAfter
+          .map(suitableAfter -> suitableAfter.compareTo(currentTime) < 0)
+          .orElse(true);
     }
 
     public void reportInitiatedConnectionSuccessful() {
-      lastInitiationFailure = Optional.empty();
+      suitableAfter = Optional.empty();
     }
 
     public void reportDisconnection(
@@ -130,26 +124,25 @@ public class ReputationManager {
         final boolean locallyInitiated) {
       if (isLocallyConsideredUnsuitable(reason, locallyInitiated)
           || reason.map(DisconnectReason::isPermanent).orElse(false)) {
-        unsuitable = true;
+        suitableAfter = Optional.of(disconnectTime.plus(BAN_PERIOD));
       } else {
-        lastInitiationFailure = Optional.of(disconnectTime);
+        suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
       }
     }
 
     private boolean isLocallyConsideredUnsuitable(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
-      return locallyInitiated
-          && reason.map(r -> !LOCAL_TEMPORARY_DISCONNECT_REASONS.contains(r)).orElse(false);
+      return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
     }
 
-    public boolean adjustReputation(final ReputationAdjustment effect) {
+    public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
       final int newScore =
           score.updateAndGet(
               current -> Math.min(MAX_REPUTATION_SCORE, current + effect.getScoreChange()));
       final boolean shouldDisconnect = newScore <= DISCONNECT_THRESHOLD;
       if (shouldDisconnect) {
-        // Prevent our node from connecting out to the remote peer.
-        unsuitable = true;
+        // Prevent our node from connecting out to the remote peer for a long time
+        suitableAfter = Optional.of(currentTime.plus(BAN_PERIOD));
       }
       return shouldDisconnect;
     }
