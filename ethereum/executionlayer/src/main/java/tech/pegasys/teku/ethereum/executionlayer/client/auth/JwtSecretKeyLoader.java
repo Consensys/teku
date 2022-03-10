@@ -35,7 +35,6 @@ public class JwtSecretKeyLoader {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String JWT_SECRET_FILE_NAME = "ee-jwt-secret.hex";
-  public static final String UNPREFIXED_JWT_SECRET_FILE_NAME = "unprefixed-ee-jwt-secret.hex";
   private final Optional<String> jwtSecretFile;
   private final Path beaconDataDirectory;
 
@@ -72,7 +71,7 @@ public class JwtSecretKeyLoader {
   private SecretKeySpec loadSecretFromFile(final String jwtSecretFile) {
     final Path filePath = Paths.get(jwtSecretFile);
     try {
-      final Bytes bytesFromHex = Bytes.fromHexString(Files.readAllLines(filePath).get(0));
+      final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(filePath).trim());
       return new SecretKeySpec(bytesFromHex.toArray(), SignatureAlgorithm.HS256.getJcaName());
     } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new InvalidConfigurationException(
