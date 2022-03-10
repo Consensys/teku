@@ -43,7 +43,7 @@ public class ExecutionEngineOptions {
   private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
   @Option(
-      names = {"--Xee-payload-builders"},
+      names = {"--ee-payload-builders"},
       paramLabel = "<MEV_BUILDER_URL>",
       description = "List of MEV boost api compatible endpoints to get execution payloads",
       arity = "1..*",
