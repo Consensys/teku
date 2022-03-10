@@ -394,8 +394,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                 new tech.pegasys.teku.api.schema.altair
                                     .SyncCommitteeSubnetSubscription(
                                     UInt64.valueOf(subscription.getValidatorIndex()),
-                                    subscription.getSyncCommitteeIndices().stream()
-                                        .map(UInt64::valueOf)
+                                    subscription
+                                        .getSyncCommitteeIndices()
+                                        .intStream()
+                                        .mapToObj(UInt64::valueOf)
                                         .collect(toList()),
                                     subscription.getUntilEpoch()))
                         .collect(toList())))

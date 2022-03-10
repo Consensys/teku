@@ -294,7 +294,7 @@ class RecentChainDataTest {
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(newCheckpoint);
+    tx.setFinalizedCheckpoint(newCheckpoint, false);
 
     tx.commit().reportExceptions();
 
@@ -557,7 +557,7 @@ class RecentChainDataTest {
     // Initially finalized slot should match store
     assertThat(tx.getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
     // Update checkpoint and check finalized slot accessors
-    tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
+    tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()), false);
     assertThat(tx.getLatestFinalizedBlockSlot()).isEqualTo(finalizedBlockSlot);
     assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
         .isEqualTo(genesis.getSlot());
@@ -975,7 +975,7 @@ class RecentChainDataTest {
     // Add blocks and finalize epoch 1, so that blocks will be pruned
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(1);
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     newBlocks.forEach(tx::putBlockAndState);
     tx.commit().reportExceptions();
 
@@ -1046,7 +1046,7 @@ class RecentChainDataTest {
     saveBlock(recentChainData, finalizedBlock);
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
+    tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()), false);
     assertThat(tx.commit()).isCompleted();
   }
 

@@ -154,7 +154,7 @@ public class DepositProviderTest {
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
-    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot));
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
   }

@@ -284,7 +284,8 @@ public class ForkChoice {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
-    forkChoiceUtil.applyBlockToStore(transaction, block, postState);
+    forkChoiceUtil.applyBlockToStore(
+        transaction, block, postState, payloadResult.hasNotValidatedStatus());
 
     if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final int secondsPerSlot = spec.getSecondsPerSlot(block.getSlot());

@@ -48,8 +48,8 @@ public interface UpdatableStore extends ReadOnlyStore {
   }
 
   interface StoreUpdateHandler {
-    StoreUpdateHandler NOOP = finalizedCheckpoint -> {};
+    StoreUpdateHandler NOOP = (finalizedCheckpoint, fromOptimisticBlock) -> {};
 
-    void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
+    void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock);
   }
 }

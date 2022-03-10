@@ -304,7 +304,8 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     this.latestFinalizedSlot = checkpoint.getEpochStartSlot(spec);
   }
 
