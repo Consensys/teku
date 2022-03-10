@@ -43,6 +43,7 @@ class CombinedChainDataClientTest {
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+  private final ChainHead chainHead = mock(ChainHead.class);
 
   final HashSet<SignedBeaconBlock> nonCanonicalBlocks = new HashSet<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
@@ -52,6 +53,7 @@ class CombinedChainDataClientTest {
   void setUp() {
     when(recentChainData.getForkChoiceStrategy()).thenReturn(Optional.of(forkChoiceStrategy));
     when(forkChoiceStrategy.isOptimistic(any())).thenReturn(Optional.of(true));
+    when(chainHead.isOptimistic()).thenReturn(false);
   }
 
   @Test
@@ -67,7 +69,8 @@ class CombinedChainDataClientTest {
     nonCanonicalBlocks.add(firstBlock);
     assertThat(
             client
-                .mergeNonCanonicalAndCanonicalBlocks(nonCanonicalBlocks, Optional.of(secondBlock))
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.of(secondBlock))
                 .stream()
                 .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(firstBlock, secondBlock);
@@ -80,7 +83,8 @@ class CombinedChainDataClientTest {
 
     assertThat(
             client
-                .mergeNonCanonicalAndCanonicalBlocks(nonCanonicalBlocks, Optional.empty())
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.empty())
                 .stream()
                 .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(firstBlock, secondBlock);
@@ -90,7 +94,8 @@ class CombinedChainDataClientTest {
   public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnCanonicalOnly() {
     assertThat(
             client
-                .mergeNonCanonicalAndCanonicalBlocks(nonCanonicalBlocks, Optional.of(secondBlock))
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.of(secondBlock))
                 .stream()
                 .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(secondBlock);

@@ -510,14 +510,17 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Set<BlockAndMetaData>> getAllBlocksAtSlot(
-      final UInt64 slot, final Bytes32 chainHeadRoot) {
+      final UInt64 slot, final ChainHead chainHead) {
     if (isFinalized(slot)) {
       return historicalChainData
           .getNonCanonicalBlocksBySlot(slot)
-          .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
+          .thenCombine(
+              getBlockAtSlotExact(slot),
+              (blocks, canonicalBlock) ->
+                  mergeNonCanonicalAndCanonicalBlocks(blocks, chainHead, canonicalBlock));
     }
 
-    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot), chainHeadRoot);
+    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot), chainHead);
   }
 
   public boolean isCanonicalBlock(
@@ -546,7 +549,7 @@ public class CombinedChainDataClient {
 
   @SuppressWarnings("unchecked")
   private SafeFuture<Set<BlockAndMetaData>> getBlocksByRoots(
-      final Set<Bytes32> blockRoots, final Bytes32 chainHeadRoot) {
+      final Set<Bytes32> blockRoots, final ChainHead chainHead) {
     final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
         blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
     return SafeFuture.collectAll(futures)
@@ -558,29 +561,33 @@ public class CombinedChainDataClient {
                         block ->
                             toBlockAndMetaData(
                                 block,
+                                chainHead,
                                 isCanonicalBlockCalculated(
-                                    block.getSlot(), block.getRoot(), chainHeadRoot)))
+                                    block.getSlot(), block.getRoot(), chainHead.getRoot())))
                     .collect(Collectors.toSet()));
   }
 
   Set<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
       final Set<SignedBeaconBlock> signedBeaconBlocks,
+      final ChainHead chainHead,
       final Optional<SignedBeaconBlock> canonicalBlock) {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
     final Set<BlockAndMetaData> result =
         signedBeaconBlocks.stream()
-            .map(block -> toBlockAndMetaData(block, false))
+            .map(block -> toBlockAndMetaData(block, chainHead, false))
             .collect(Collectors.toSet());
-    canonicalBlock.ifPresent(block -> result.add(toBlockAndMetaData(block, true)));
+    canonicalBlock.ifPresent(block -> result.add(toBlockAndMetaData(block, chainHead, true)));
     return result;
   }
 
   private BlockAndMetaData toBlockAndMetaData(
-      final SignedBeaconBlock signedBeaconBlock, final boolean canonical) {
+      final SignedBeaconBlock signedBeaconBlock,
+      final ChainHead chainHead,
+      final boolean canonical) {
     return new BlockAndMetaData(
         signedBeaconBlock,
         spec.atSlot(signedBeaconBlock.getSlot()).getMilestone(),
-        isOptimisticBlock(signedBeaconBlock.getRoot()),
+        chainHead.isOptimistic() || isOptimisticBlock(signedBeaconBlock.getRoot()),
         spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
         canonical);
   }

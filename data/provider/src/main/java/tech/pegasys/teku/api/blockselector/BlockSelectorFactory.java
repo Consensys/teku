@@ -95,7 +95,7 @@ public class BlockSelectorFactory {
       }
       final ChainHead chainHead = maybeChainHead.get();
       return client
-          .getAllBlocksAtSlot(slot, chainHead.getRoot())
+          .getAllBlocksAtSlot(slot, chainHead)
           .thenApply(blocks -> new ArrayList<>(blocks));
     };
   }
