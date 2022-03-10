@@ -65,6 +65,7 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
       final String mixinName, final CommandLine.Model.CommandSpec commandSpec) {
     // Recreate the options but flip hidden to false.
     final CommandLine.Model.CommandSpec cs = CommandLine.Model.CommandSpec.create();
+    cs.usageMessage().showDefaultValues(true);
     commandSpec.options().stream()
         .filter(option -> option.hidden() && option.names()[0].startsWith("--X"))
         .forEach(option -> cs.addOption(option.toBuilder().hidden(false).build()));
