@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +23,8 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
@@ -80,7 +80,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
             .map(s -> Integer.parseInt(s.substring(19, 20)))
             .collect(Collectors.toList());
     assertThat(validatorIds.size()).isEqualTo(4);
-    assertThat(validatorIds).isEqualTo(List.of(0, 1, 2, 3));
+    assertThat(validatorIds).containsExactlyInAnyOrder(0, 1, 2, 3);
     assertThat(voluntaryExitProcessSuccessful.getLoggedErrors())
         .contains("Validator not found: " + extraKeys.getPublicKeys().get(0).toString());
   }
