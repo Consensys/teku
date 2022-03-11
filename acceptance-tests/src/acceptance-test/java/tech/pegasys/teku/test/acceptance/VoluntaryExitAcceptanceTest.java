@@ -15,6 +15,9 @@ package tech.pegasys.teku.test.acceptance;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -34,7 +37,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 4);
     final ValidatorKeystores extraKeys =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
+        new ValidatorKeystores(createTekuDepositSender(networkName).generateValidatorKeys(1));
 
     final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
@@ -70,9 +73,14 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     beaconNode.waitForLogMessageContaining("Epoch: 3");
     voluntaryExitProcessSuccessful.start();
     validatorClient.waitForLogMessageContaining("has changed status from");
-    assertThat(voluntaryExitProcessFailing.getLoggedErrors())
-        .containsPattern(
-            "Exit for validator [0-9]+ is invalid: Validator has not been active long enough");
+    final List<Integer> validatorIds =
+        Arrays.asList(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
+            .stream()
+            .filter(s -> s.contains("Validator has not been active long enough"))
+            .map(s -> Integer.parseInt(s.substring(19, 20)))
+            .collect(Collectors.toList());
+    assertThat(validatorIds.size()).isEqualTo(4);
+    assertThat(validatorIds).isEqualTo(List.of(0, 1, 2, 3));
     assertThat(voluntaryExitProcessSuccessful.getLoggedErrors())
         .contains("Validator not found: " + extraKeys.getPublicKeys().get(0).toString());
   }
