@@ -217,8 +217,10 @@ public class Eth2NetworkConfiguration {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
                             safeSlotsToImportOptimistically);
                         bellatrixForkEpoch.ifPresent(bellatrixBuilder::bellatrixForkEpoch);
-                        totalTerminalDifficultyOverride.ifPresent(bellatrixBuilder::terminalTotalDifficulty);
-                        terminalBlockHashEpochOverride.ifPresent(bellatrixBuilder::terminalBlockHashActivationEpoch);
+                        totalTerminalDifficultyOverride.ifPresent(
+                            bellatrixBuilder::terminalTotalDifficulty);
+                        terminalBlockHashEpochOverride.ifPresent(
+                            bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
                 });
