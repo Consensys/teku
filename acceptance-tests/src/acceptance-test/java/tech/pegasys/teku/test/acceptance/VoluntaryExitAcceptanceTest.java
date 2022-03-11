@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,8 +25,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
