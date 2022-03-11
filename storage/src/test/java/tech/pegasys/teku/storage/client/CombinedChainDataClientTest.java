@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +45,7 @@ class CombinedChainDataClientTest {
       new CombinedChainDataClient(recentChainData, historicalChainData, spec);
   private final ChainHead chainHead = mock(ChainHead.class);
 
-  final HashSet<SignedBeaconBlock> nonCanonicalBlocks = new HashSet<>();
+  final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
 

@@ -331,13 +331,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Set<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
+  public List<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getNodes().stream()
           .filter(protoNode -> protoNode.getBlockSlot().equals(slot))
           .map(ProtoNode::getBlockRoot)
-          .collect(Collectors.toSet());
+          .collect(Collectors.toList());
     } finally {
       protoArrayLock.readLock().unlock();
     }

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -509,7 +508,7 @@ public class CombinedChainDataClient {
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 
-  public SafeFuture<Set<BlockAndMetaData>> getAllBlocksAtSlot(
+  public SafeFuture<List<BlockAndMetaData>> getAllBlocksAtSlot(
       final UInt64 slot, final ChainHead chainHead) {
     if (isFinalized(slot)) {
       return historicalChainData
@@ -548,8 +547,9 @@ public class CombinedChainDataClient {
   }
 
   @SuppressWarnings("unchecked")
-  private SafeFuture<Set<BlockAndMetaData>> getBlocksByRoots(
-      final Set<Bytes32> blockRoots, final ChainHead chainHead) {
+  private SafeFuture<List<BlockAndMetaData>> getBlocksByRoots(
+      final List<Bytes32> blockRoots, final ChainHead chainHead) {
+
     final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
         blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
     return SafeFuture.collectAll(futures)
@@ -564,18 +564,18 @@ public class CombinedChainDataClient {
                                 chainHead,
                                 isCanonicalBlockCalculated(
                                     block.getSlot(), block.getRoot(), chainHead.getRoot())))
-                    .collect(Collectors.toSet()));
+                    .collect(Collectors.toList()));
   }
 
-  Set<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
-      final Set<SignedBeaconBlock> signedBeaconBlocks,
+  List<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
+      final List<SignedBeaconBlock> signedBeaconBlocks,
       final ChainHead chainHead,
       final Optional<SignedBeaconBlock> canonicalBlock) {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
-    final Set<BlockAndMetaData> result =
+    final List<BlockAndMetaData> result =
         signedBeaconBlocks.stream()
             .map(block -> toBlockAndMetaData(block, chainHead, false))
-            .collect(Collectors.toSet());
+            .collect(Collectors.toList());
     canonicalBlock.ifPresent(block -> result.add(toBlockAndMetaData(block, chainHead, true)));
     return result;
   }
