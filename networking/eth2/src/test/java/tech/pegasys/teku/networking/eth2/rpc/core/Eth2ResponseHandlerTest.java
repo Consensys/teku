@@ -61,7 +61,7 @@ public class Eth2ResponseHandlerTest {
     // Complete
     handler.onCompleted(error);
 
-    // assertThat(responsesReceived).containsExactly(1, 2);
+    assertThatIntCollection(responsesReceived).containsExactly(1, 2);
     assertFailedWithDefaultError(handler);
   }
 
