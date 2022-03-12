@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collections;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,7 +37,7 @@ class MetadataMessageTest {
   private static final Bytes EXPECTED_SSZ =
       Bytes.fromHexString("0x23000000000000000100000000000080");
   private static final MetadataMessage MESSAGE =
-      PHASE0_SCHEMA.create(UInt64.valueOf(0x23), List.of(0, 63), Collections.emptyList());
+      PHASE0_SCHEMA.create(UInt64.valueOf(0x23), IntList.of(0, 63), Collections.emptyList());
 
   @Test
   public void shouldSerializeToSsz() {
@@ -57,7 +57,7 @@ class MetadataMessageTest {
             () ->
                 PHASE0_SCHEMA.create(
                     UInt64.valueOf(15),
-                    List.of(Constants.ATTESTATION_SUBNET_COUNT),
+                    IntList.of(Constants.ATTESTATION_SUBNET_COUNT),
                     Collections.emptyList()))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }
@@ -69,7 +69,7 @@ class MetadataMessageTest {
                 ALTAIR_SCHEMA.create(
                     UInt64.valueOf(15),
                     Collections.emptyList(),
-                    List.of(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)))
+                    IntList.of(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }
 }

@@ -16,6 +16,10 @@ package tech.pegasys.teku.statetransition.validation.signatures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import it.unimi.dsi.fastutil.booleans.BooleanList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,8 +137,8 @@ public class AggregatingSignatureVerificationServiceTest {
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
     for (int i = 0; i < batchSize; i += 5) {
-      final List<Integer> indices = new ArrayList<>();
-      final List<Boolean> useValidSignatures = new ArrayList<>();
+      final IntList indices = new IntArrayList();
+      final BooleanList useValidSignatures = new BooleanArrayList();
       for (int j = 0; j < 5; j++) {
         useValidSignatures.add(true);
         indices.add(i);
@@ -157,8 +161,8 @@ public class AggregatingSignatureVerificationServiceTest {
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
     for (int i = 0; i < batchSize; i += 5) {
-      final List<Integer> indices = new ArrayList<>();
-      final List<Boolean> useValidSignatures = new ArrayList<>();
+      final IntList indices = new IntArrayList();
+      final BooleanList useValidSignatures = new BooleanArrayList();
       // batch 1 contains i: 5-9, and the second signature will be invalid
       for (int j = 0; j < 5; j++) {
         useValidSignatures.add(i != 5 || j != 1);
@@ -370,9 +374,7 @@ public class AggregatingSignatureVerificationServiceTest {
   }
 
   private SafeFuture<Boolean> executeListVerify(
-      final List<Integer> keyIndices,
-      final List<Integer> data,
-      final List<Boolean> useValidSignatures) {
+      final IntList keyIndices, final IntList data, final BooleanList useValidSignatures) {
     final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
     final List<Bytes> messages = new ArrayList<>();
     final List<BLSSignature> signatures = new ArrayList<>();

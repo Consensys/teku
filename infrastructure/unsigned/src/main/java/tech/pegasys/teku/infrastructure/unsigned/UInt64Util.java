@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.infrastructure.unsigned;
 
+import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.longs.LongCollection;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class UInt64Util {
-  public static List<UInt64> intToUInt64List(final Collection<Integer> sourceList) {
-    return sourceList.stream().map(UInt64::valueOf).collect(Collectors.toList());
+  public static List<UInt64> intToUInt64List(final IntCollection sourceList) {
+    return sourceList.intStream().mapToObj(UInt64::valueOf).collect(Collectors.toList());
   }
 
-  public static List<UInt64> longToUInt64List(final Collection<Long> sourceList) {
-    return sourceList.stream().map(UInt64::valueOf).collect(Collectors.toList());
+  public static List<UInt64> longToUInt64List(final LongCollection sourceList) {
+    return sourceList.longStream().mapToObj(UInt64::valueOf).collect(Collectors.toList());
   }
 
   public static List<UInt64> stringToUInt64List(final Collection<String> sourceList) {

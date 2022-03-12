@@ -16,6 +16,8 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Suppliers;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayDeque;
@@ -274,7 +276,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     int endOffset = reader.getAvailableBytes();
     int childCount = getFieldsCount();
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
-    List<Integer> variableChildrenOffsets = new ArrayList<>(childCount);
+    IntList variableChildrenOffsets = new IntArrayList(childCount);
     for (int i = 0; i < childCount; i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {

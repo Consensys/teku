@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.collect.ImmutableMap;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -65,7 +66,7 @@ class PeerSubnetSubscriptionsTest {
   @Test
   public void create_shouldSetUpExpectedSubscriptions() {
     // Set up some sync committee subnets we should be participating in
-    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
     final Map<String, Collection<NodeId>> subscribersByTopic =
         ImmutableMap.<String, Collection<NodeId>>builder()
@@ -123,7 +124,7 @@ class PeerSubnetSubscriptionsTest {
   @Test
   public void getSubscribersRequired_allSubnetsAreJustBelowTarget() {
     // Set up some sync committee subnets we should be participating in
-    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
     withSubscriberCountForAllSubnets(1);
     final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
@@ -133,7 +134,7 @@ class PeerSubnetSubscriptionsTest {
   @Test
   public void getSubscribersRequired_allSubnetsHaveExactlyEnoughSubscribers() {
     // Set up some sync committee subnets we should be participating in
-    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
     final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
@@ -143,7 +144,7 @@ class PeerSubnetSubscriptionsTest {
   @Test
   public void getSubscribersRequired_allSubnetsOverlyFull() {
     // Set up some sync committee subnets we should be participating in
-    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT + 1);
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
@@ -155,7 +156,7 @@ class PeerSubnetSubscriptionsTest {
   public void getSubscribersRequired_onlySyncnetsAreBelowTarget() {
     // Set up attnets to be full, syncnets to be empty
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
-    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
     final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
     assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT);
@@ -171,7 +172,7 @@ class PeerSubnetSubscriptionsTest {
 
   @Test
   public void isSyncCommitteeSubnetRelevant() {
-    syncnetSubscriptions.setSubscriptions(List.of(1, 3));
+    syncnetSubscriptions.setSubscriptions(IntList.of(1, 3));
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
     assertThat(subscriptions.isSyncCommitteeSubnetRelevant(0)).isFalse();

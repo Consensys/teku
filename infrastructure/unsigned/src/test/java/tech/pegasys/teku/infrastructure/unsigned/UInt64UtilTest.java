@@ -15,19 +15,21 @@ package tech.pegasys.teku.infrastructure.unsigned;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class UInt64UtilTest {
   @Test
   void shouldConvertIntegerListToUInt64() {
-    assertThat(UInt64Util.intToUInt64List(List.of(1, 2, 3)))
+    assertThat(UInt64Util.intToUInt64List(IntList.of(1, 2, 3)))
         .containsExactly(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
   }
 
   @Test
   void shouldConvertLongListToUInt64() {
-    assertThat(UInt64Util.longToUInt64List(List.of(1L, 2L, 3L)))
+    assertThat(UInt64Util.longToUInt64List(LongList.of(1L, 2L, 3L)))
         .containsExactly(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
   }
 

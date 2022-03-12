@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Integer.min;
 
 import com.google.common.base.Suppliers;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -262,7 +264,7 @@ public abstract class AbstractSszCollectionSchema<
       checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
       int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
       checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
-      List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
+      IntList elementOffsets = new IntArrayList(elementsCount + 1);
       elementOffsets.add(firstElementOffset);
       for (int i = 1; i < elementsCount; i++) {
         int offset = SszType.sszBytesToLength(reader.read(SSZ_LENGTH_SIZE));

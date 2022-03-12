@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +85,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
       curNodeUpdate.addUpdate(childIndex % elementsPerChunk, entry.getValue());
     }
 
-    List<Long> gIndices = new ArrayList<>();
+    LongList gIndices = new LongArrayList();
     List<TreeNode> newValues = new ArrayList<>();
     SszPrimitiveSchema<ElementT, SszElementT> elementType = getPrimitiveElementSchema();
     for (NodeUpdate<ElementT, SszElementT> nodeUpdate : nodeUpdates) {

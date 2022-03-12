@@ -1,2 +1,3 @@
 dependencies {
+	implementation 'it.unimi.dsi:fastutil'
 }

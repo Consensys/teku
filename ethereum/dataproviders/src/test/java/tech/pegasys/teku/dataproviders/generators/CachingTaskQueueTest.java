@@ -16,7 +16,7 @@ package tech.pegasys.teku.dataproviders.generators;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -329,13 +329,13 @@ class CachingTaskQueueTest {
   public static class StubTask implements CacheableTask<Integer, String> {
     private final SafeFuture<Optional<String>> result = new SafeFuture<>();
     private final Integer key;
-    private final List<Integer> intermediateSteps;
+    private final IntList intermediateSteps;
     private boolean regenerated = false;
     private Optional<String> rebasedTo = Optional.empty();
 
-    public StubTask(final Integer key, final Integer... intermediateSteps) {
+    public StubTask(final Integer key, final int... intermediateSteps) {
       this.key = key;
-      this.intermediateSteps = List.of(intermediateSteps);
+      this.intermediateSteps = IntList.of(intermediateSteps);
     }
 
     @Override
