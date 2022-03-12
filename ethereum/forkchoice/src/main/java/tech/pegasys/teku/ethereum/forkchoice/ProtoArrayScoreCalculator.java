@@ -143,7 +143,7 @@ class ProtoArrayScoreCalculator {
                   currentDeltaIndex < deltas.size(),
                   "ProtoArrayForkChoice: Invalid node delta index");
               long delta =
-                  subtractExact(deltas.get(currentDeltaIndex), balanceToRemove.longValue());
+                  subtractExact(deltas.getLong(currentDeltaIndex), balanceToRemove.longValue());
               deltas.set(currentDeltaIndex.intValue(), delta);
             });
   }

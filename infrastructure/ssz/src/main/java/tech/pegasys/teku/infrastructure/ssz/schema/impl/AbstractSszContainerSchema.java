@@ -295,7 +295,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         throw new SszDeserializeException("Invalid SSZ: unread bytes for fixed size container");
       }
     } else {
-      if (variableChildrenOffsets.get(0) != endOffset - reader.getAvailableBytes()) {
+      if (variableChildrenOffsets.getInt(0) != endOffset - reader.getAvailableBytes()) {
         throw new SszDeserializeException(
             "First variable element offset doesn't match the end of fixed part");
       }
@@ -307,7 +307,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         new ArrayDeque<>(variableChildrenOffsets.size() - 1);
     for (int i = 0; i < variableChildrenOffsets.size() - 1; i++) {
       variableChildrenSizes.add(
-          variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i));
+          variableChildrenOffsets.getInt(i + 1) - variableChildrenOffsets.getInt(i));
     }
 
     if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {

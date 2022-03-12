@@ -167,7 +167,7 @@ public abstract class AbstractSszMutableComposite<
     } else {
       IntCache<SszChildT> cache = backingImmutableData.transferCache();
       Stream<Map.Entry<Integer, SszChildT>> changesList =
-          childrenChanges.entrySet().stream()
+          childrenChanges.int2ObjectEntrySet().stream()
               .map(
                   entry -> {
                     ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = entry.getValue();

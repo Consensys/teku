@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
@@ -272,13 +271,11 @@ public abstract class AbstractSszCollectionSchema<
       }
       elementOffsets.add(endOffset);
 
-      List<Integer> elementSizes =
-          IntStream.range(0, elementOffsets.size() - 1)
-              .map(i -> elementOffsets.get(i + 1) - elementOffsets.get(i))
-              .boxed()
-              .collect(Collectors.toList());
+      IntList elementSizes = new IntArrayList();
+      IntStream.range(0, elementOffsets.size() - 1)
+          .forEach(i -> elementSizes.add(elementOffsets.getInt(i + 1) - elementOffsets.getInt(i)));
 
-      if (elementSizes.stream().anyMatch(s -> s < 0)) {
+      if (elementSizes.intStream().anyMatch(s -> s < 0)) {
         throw new SszDeserializeException("Invalid SSZ: wrong child offsets");
       }
 

@@ -380,9 +380,9 @@ public class AggregatingSignatureVerificationServiceTest {
     final List<BLSSignature> signatures = new ArrayList<>();
     for (int i = 0; i < keyIndices.size(); i++) {
       publicKeys.add(List.of(KEYS.get(i).getPublicKey()));
-      messages.add(Bytes.of(data.get(i)));
+      messages.add(Bytes.of(data.getInt(i)));
       signatures.add(
-          useValidSignatures.get(i)
+          useValidSignatures.getBoolean(i)
               ? BLS.sign(KEYS.get(i).getSecretKey(), messages.get(i))
               : BLSSignature.empty());
     }

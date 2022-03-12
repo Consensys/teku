@@ -345,7 +345,9 @@ class CachingTaskQueueTest {
 
     @Override
     public Stream<Integer> streamIntermediateSteps() {
-      return intermediateSteps.stream();
+      @SuppressWarnings("DoNotUseDeprecatedFastutilMethod")
+      Stream<Integer> stream = intermediateSteps.stream();
+      return stream;
     }
 
     @Override
