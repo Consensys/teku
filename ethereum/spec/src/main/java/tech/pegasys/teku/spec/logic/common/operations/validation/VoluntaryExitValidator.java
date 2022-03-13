@@ -52,8 +52,8 @@ public class VoluntaryExitValidator
     return firstOf(
         () ->
             check(
-                UInt64.valueOf(state.getValidators().size()).compareTo(exit.getValidatorIndex())
-                    > 0,
+                UInt64.valueOf(state.getValidators().size())
+                    .isGreaterThan(exit.getValidatorIndex()),
                 ExitInvalidReason.invalidValidatorIndex()),
         () ->
             check(
@@ -62,11 +62,11 @@ public class VoluntaryExitValidator
                 ExitInvalidReason.validatorInactive()),
         () ->
             check(
-                getValidator(state, exit).getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
+                getValidator(state, exit).getExit_epoch().equals(FAR_FUTURE_EPOCH),
                 ExitInvalidReason.exitInitiated()),
         () ->
             check(
-                beaconStateAccessors.getCurrentEpoch(state).compareTo(exit.getEpoch()) >= 0,
+                beaconStateAccessors.getCurrentEpoch(state).isGreaterThanOrEqualTo(exit.getEpoch()),
                 ExitInvalidReason.submittedTooEarly()),
         () -> {
           UInt64 exitEpoch =
