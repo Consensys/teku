@@ -245,7 +245,7 @@ class BlockOperationSelectorFactoryTest {
     when(proposerSlashingValidator.validateForStateTransition(blockSlotState, proposerSlashing2))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE));
     when(voluntaryExitValidator.validateForStateTransition(blockSlotState, voluntaryExit2))
-        .thenReturn(Optional.of(ExitInvalidReason.INVALID_SIGNATURE));
+        .thenReturn(Optional.of(ExitInvalidReason.invalidSignature()));
     when(attesterSlashingValidator.validateForStateTransition(blockSlotState, attesterSlashing2))
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
 

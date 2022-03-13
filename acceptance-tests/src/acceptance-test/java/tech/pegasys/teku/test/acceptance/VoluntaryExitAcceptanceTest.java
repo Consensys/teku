@@ -72,7 +72,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("has changed status from");
     assertThat(voluntaryExitProcessFailing.getLoggedErrors())
         .containsPattern(
-            "Exit for validator [0-9]+ is invalid: Validator has not been active long enough");
+            "Exit for validator [0-9]+ is invalid: Validator cannot exit until epoch 4");
     assertThat(voluntaryExitProcessSuccessful.getLoggedErrors())
         .contains("Validator not found: " + extraKeys.getPublicKeys().get(0).toString());
   }
