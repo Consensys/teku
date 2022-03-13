@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -106,7 +107,7 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
-    return SafeFuture.completedFuture(new HashSet<>());
+  public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
+    return SafeFuture.completedFuture(new ArrayList<>());
   }
 }

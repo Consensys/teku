@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -42,7 +43,7 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
-  Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
+  List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 

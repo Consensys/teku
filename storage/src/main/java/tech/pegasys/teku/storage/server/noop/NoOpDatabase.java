@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.storage.server.noop;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -152,8 +152,8 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    return new HashSet<>();
+  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    return new ArrayList<>();
   }
 
   @Override

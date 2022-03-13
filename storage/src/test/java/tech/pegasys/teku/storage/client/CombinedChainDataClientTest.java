@@ -14,10 +14,11 @@
 package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -41,14 +43,17 @@ class CombinedChainDataClientTest {
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+  private final ChainHead chainHead = mock(ChainHead.class);
 
-  final HashSet<SignedBeaconBlock> nonCanonicalBlocks = new HashSet<>();
+  final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
 
   @BeforeEach
   void setUp() {
     when(recentChainData.getForkChoiceStrategy()).thenReturn(Optional.of(forkChoiceStrategy));
+    when(forkChoiceStrategy.isOptimistic(any())).thenReturn(Optional.of(true));
+    when(chainHead.isOptimistic()).thenReturn(false);
   }
 
   @Test
@@ -63,8 +68,11 @@ class CombinedChainDataClientTest {
   public void mergeNonCanonicalAndCanonicalBlocks_shouldAddCanonicalBlockIfPresent() {
     nonCanonicalBlocks.add(firstBlock);
     assertThat(
-            client.mergeNonCanonicalAndCanonicalBlocks(
-                nonCanonicalBlocks, Optional.of(secondBlock)))
+            client
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.of(secondBlock))
+                .stream()
+                .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(firstBlock, secondBlock);
   }
 
@@ -72,15 +80,24 @@ class CombinedChainDataClientTest {
   public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnNonCanonicalOnly() {
     nonCanonicalBlocks.add(firstBlock);
     nonCanonicalBlocks.add(secondBlock);
-    assertThat(client.mergeNonCanonicalAndCanonicalBlocks(nonCanonicalBlocks, Optional.empty()))
+
+    assertThat(
+            client
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.empty())
+                .stream()
+                .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(firstBlock, secondBlock);
   }
 
   @Test
   public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnCanonicalOnly() {
     assertThat(
-            client.mergeNonCanonicalAndCanonicalBlocks(
-                nonCanonicalBlocks, Optional.of(secondBlock)))
+            client
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.of(secondBlock))
+                .stream()
+                .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(secondBlock);
   }
 

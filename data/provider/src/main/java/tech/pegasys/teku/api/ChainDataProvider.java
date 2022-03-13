@@ -123,7 +123,7 @@ public class ChainDataProvider {
       final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
+        .getBlock()
         .thenApply(
             maybeBlockAndMetadata ->
                 maybeBlockAndMetadata.map(
@@ -140,7 +140,7 @@ public class ChainDataProvider {
   public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
+        .getBlock()
         .thenApply(
             maybeBlock ->
                 maybeBlock
@@ -208,7 +208,7 @@ public class ChainDataProvider {
     } else {
       return defaultBlockSelectorFactory
           .nonCanonicalBlocksSelector(UInt64.valueOf(slot))
-          .getBlock()
+          .getBlocks()
           .thenApply(
               blockList -> {
                 final Set<SignedBeaconBlockWithRoot> blocks =
@@ -333,7 +333,7 @@ public class ChainDataProvider {
 
     return defaultBlockSelectorFactory
         .nonCanonicalBlocksSelector(slot.orElse(combinedChainDataClient.getHeadSlot()))
-        .getBlock()
+        .getBlocks()
         .thenApply(
             blockAndMetadataList -> {
               final Boolean executionOptimistic =
@@ -533,7 +533,7 @@ public class ChainDataProvider {
       final Function<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock, T> mapper) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
+        .getBlock()
         .thenApply(maybeBlockData -> maybeBlockData.map(blockData -> blockData.map(mapper)));
   }
 

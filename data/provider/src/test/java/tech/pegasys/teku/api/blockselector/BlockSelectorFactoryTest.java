@@ -50,7 +50,7 @@ public class BlockSelectorFactoryTest {
   public void headSelector_shouldGetBestBlock() throws ExecutionException, InterruptedException {
     final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
     when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
-    List<BlockAndMetaData> blockList = blockSelectorFactory.headSelector().getBlock().get();
+    List<BlockAndMetaData> blockList = blockSelectorFactory.headSelector().getBlocks().get();
     verify(client).getChainHead();
     assertThat(blockList).containsExactly(withMetaData(blockAndState.getBlock()));
   }
@@ -59,7 +59,7 @@ public class BlockSelectorFactoryTest {
   public void finalizedSelector_shouldGetFinalizedBlock()
       throws ExecutionException, InterruptedException {
     when(client.getFinalizedBlock()).thenReturn(Optional.of(block));
-    List<BlockAndMetaData> blockList = blockSelectorFactory.finalizedSelector().getBlock().get();
+    List<BlockAndMetaData> blockList = blockSelectorFactory.finalizedSelector().getBlocks().get();
     verify(client).getFinalizedBlock();
     assertThat(blockList).containsExactly(withMetaData(block));
   }
@@ -68,7 +68,7 @@ public class BlockSelectorFactoryTest {
   public void genesisSelector_shouldGetSlotZero() throws ExecutionException, InterruptedException {
     when(client.getBlockAtSlotExact(UInt64.ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    List<BlockAndMetaData> blockList = blockSelectorFactory.genesisSelector().getBlock().get();
+    List<BlockAndMetaData> blockList = blockSelectorFactory.genesisSelector().getBlocks().get();
     verify(client).getBlockAtSlotExact(UInt64.ZERO);
     assertThat(blockList).containsExactly(withMetaData(block));
   }
@@ -85,7 +85,7 @@ public class BlockSelectorFactoryTest {
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     List<BlockAndMetaData> blockList =
-        blockSelectorFactory.forBlockRoot(block.getRoot()).getBlock().get();
+        blockSelectorFactory.forBlockRoot(block.getRoot()).getBlocks().get();
     verify(client).getBlockByBlockRoot(block.getRoot());
     assertThat(blockList).containsExactly(withMetaData(block));
   }
@@ -98,7 +98,7 @@ public class BlockSelectorFactoryTest {
     when(client.getBlockAtSlotExact(block.getSlot(), head.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     List<BlockAndMetaData> blockList =
-        blockSelectorFactory.forSlot(block.getSlot()).getBlock().get();
+        blockSelectorFactory.forSlot(block.getSlot()).getBlocks().get();
     verify(client).getBlockAtSlotExact(block.getSlot(), head.getRoot());
     assertThat(blockList).containsExactly(withMetaData(block));
   }

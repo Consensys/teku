@@ -113,7 +113,7 @@ public interface Database extends AutoCloseable {
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
-  Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot);
+  List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot);
 
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();

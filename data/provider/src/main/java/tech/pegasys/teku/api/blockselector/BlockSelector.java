@@ -19,9 +19,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 public interface BlockSelector {
-  SafeFuture<List<BlockAndMetaData>> getBlock();
+  SafeFuture<List<BlockAndMetaData>> getBlocks();
 
-  default SafeFuture<Optional<BlockAndMetaData>> getSingleBlock() {
-    return getBlock().thenApply(blockList -> blockList.stream().findFirst());
+  default SafeFuture<Optional<BlockAndMetaData>> getBlock() {
+    return getBlocks().thenApply(blockList -> blockList.stream().findFirst());
   }
 }
