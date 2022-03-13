@@ -68,19 +68,15 @@ public class VoluntaryExitValidator
             check(
                 beaconStateAccessors.getCurrentEpoch(state).compareTo(exit.getEpoch()) >= 0,
                 ExitInvalidReason.submittedTooEarly()),
-        () ->
-            check(
-                beaconStateAccessors
-                    .getCurrentEpoch(state)
-                    .isGreaterThanOrEqualTo(
-                        getValidator(state, exit)
-                            .getActivation_epoch()
-                            .plus(specConfig.getShardCommitteePeriod())),
-                ExitInvalidReason.validatorTooYoung(
-                    getValidator(state, exit)
-                        .getActivation_epoch()
-                        .plus(specConfig.getShardCommitteePeriod())
-                        .plus(1))));
+        () -> {
+          UInt64 exitEpoch =
+              getValidator(state, exit)
+                  .getActivation_epoch()
+                  .plus(specConfig.getShardCommitteePeriod());
+          return check(
+              beaconStateAccessors.getCurrentEpoch(state).isGreaterThanOrEqualTo(exitEpoch),
+              ExitInvalidReason.validatorTooYoung(exitEpoch));
+        });
   }
 
   private Validator getValidator(BeaconState state, VoluntaryExit exit) {
