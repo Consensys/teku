@@ -22,27 +22,45 @@ import org.testcontainers.utility.MountableFile;
 public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final int JSON_RPC_PORT = 8545;
+  private static final int ENGINE_JSON_RPC_PORT = 8550;
+  private static final String BESU_DOCKER_IMAGE_NAME = "hyperledger/besu";
 
   public BesuNode(final Network network) {
-    super(network, "hyperledger/besu:21.10.9", LOG);
+    this(network, BesuDockerVersion.V21_10_9, "besu/depositContractGenesis.json");
+  }
+
+  public BesuNode(final Network network, final BesuDockerVersion version, final String genesisFile) {
+    super(network, BESU_DOCKER_IMAGE_NAME + ":" + version.getVersion() , LOG);
     container
-        .withExposedPorts(JSON_RPC_PORT)
+        .withExposedPorts(JSON_RPC_PORT, ENGINE_JSON_RPC_PORT)
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
         .waitingFor(new HttpWaitStrategy().forPort(JSON_RPC_PORT).forPath("/liveness"))
         .withCopyFileToContainer(
-            MountableFile.forClasspathResource("besu/depositContractGenesis.json"), "/genesis.json")
+            MountableFile.forClasspathResource(genesisFile), "/genesis.json")
         .withCommand(
             "--rpc-http-enabled",
+            // TODO clean up, command builder
+            "--rpc-http-api",
+            "ETH,NET,WEB3,ENGINE",
             "--rpc-http-port",
             Integer.toString(JSON_RPC_PORT),
             "--rpc-http-cors-origins=*",
             "--host-allowlist=*",
+            "--engine-rpc-http-port",
+            Integer.toString(ENGINE_JSON_RPC_PORT),
+            "--engine-host-allowlist=*",
+            "--Xmerge-support=true",
             "--miner-enabled",
             "--miner-coinbase",
             "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
             "--genesis-file",
             "/genesis.json");
   }
+
+//  docker run -p 8550:8550 -v $(PWD)/genesis.json:/opt/besu/genesis.json \
+//  hyperledger/besu:develop --genesis-file /opt/besu/genesis.json --rpc-http-enabled \
+//          --rpc-http-api=ETH,NET,WEB3,ENGINE --engine-rpc-http-port 8550 --engine-host-allowlist='*' \
+//          --miner-enabled=true --miner-coinbase=0xfe3b557e8fb62b89f4916b721be55ceb828dbd73 --logging=INFO --Xmerge-support=true
 
   public void start() {
     container.start();
@@ -58,6 +76,14 @@ public class BesuNode extends Node {
 
   public String getExternalJsonRpcUrl() {
     return "http://127.0.0.1:" + container.getMappedPort(JSON_RPC_PORT);
+  }
+
+  public String getInternalEngineJsonRpcUrl() {
+    return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
+  }
+
+  public String getExternalEngineJsonRpcUrl() {
+    return "http://127.0.0.1:" + container.getMappedPort(ENGINE_JSON_RPC_PORT);
   }
 
   public String getRichBenefactorKey() {

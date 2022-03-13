@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -69,12 +70,14 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -287,6 +290,27 @@ public class TekuNode extends Node {
                 .isNotEqualTo(startingFinalizedEpoch),
         9,
         MINUTES);
+  }
+
+  public void waitForNonDefaultExecutionPayload() {
+    LOG.debug("Wait for a block containing a non default execution payload");
+
+    waitFor(
+        () -> {
+          final Optional<SignedBlock> block = fetchHeadBlock();
+          assertThat(block).isPresent();
+          assertThat(block.get()).isInstanceOf(SignedBeaconBlockBellatrix.class);
+
+          final SignedBeaconBlockBellatrix bellatrixBlock = (SignedBeaconBlockBellatrix) block.get();
+          final ExecutionPayload executionPayload = bellatrixBlock.getMessage().getBody().executionPayload
+              .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
+              .orElseThrow();
+
+          assertThat(executionPayload.isDefault()).isFalse();
+          LOG.debug("Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
+          LOG.debug("Non default execution payload found at block " +
+              bellatrixBlock.getMessage().getBody().executionPayload.blockNumber);
+        }, 300, MINUTES);
   }
 
   public void waitForFullSyncCommitteeAggregate() {
@@ -662,6 +686,26 @@ public class TekuNode extends Node {
 
     public Config withAltairEpoch(final UInt64 altairSlot) {
       configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
+      return this;
+    }
+
+    public Config withBellatrixEpoch(final UInt64 bellatrixSlot) {
+      configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixSlot.toString());
+      return this;
+    }
+
+    public Config withTotalTerminalDifficulty(final String totalTerminalDifficulty) {
+      configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+      return this;
+    }
+
+    public Config withValidatorProposerDefaultFeeRecipient(final String validatorProposerDefaultFeeRecipient) {
+      configMap.put("validators-proposer-default-fee-recipient", validatorProposerDefaultFeeRecipient);
+      return this;
+    }
+
+    public Config withExecutionEngineEndpoint(final String eeEndpoint) {
+      configMap.put("ee-endpoint", eeEndpoint);
       return this;
     }
 

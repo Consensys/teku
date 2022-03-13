@@ -93,6 +93,10 @@ public class AcceptanceTestBase {
     return addNode(new BesuNode(network));
   }
 
+  protected BesuNode createBesuNode(BesuDockerVersion version, String genesisFile) {
+    return addNode(new BesuNode(network, version ,genesisFile));
+  }
+
   private <T extends Node> T addNode(final T node) {
     nodes.add(node);
     return node;
