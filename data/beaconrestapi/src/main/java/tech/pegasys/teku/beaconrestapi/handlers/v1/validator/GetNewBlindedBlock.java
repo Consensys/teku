@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
@@ -54,7 +55,7 @@ public class GetNewBlindedBlock extends GetNewBlock implements Handler {
       path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Produce unsigned blinded block",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL},
       description =
           "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. "
               + "A blinded block is a block with only a transactions root, rather than a full transactions list.\n\n"
