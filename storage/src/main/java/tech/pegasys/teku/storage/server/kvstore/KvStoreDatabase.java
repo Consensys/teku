@@ -502,7 +502,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
     return finalizedDao.getNonCanonicalBlocksAtSlot(slot);
   }
 
