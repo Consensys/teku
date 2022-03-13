@@ -76,7 +76,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final List<Integer> validatorIds =
         Arrays.asList(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
             .stream()
-            .filter(s -> s.contains("Validator has not been active long enough"))
+            .filter(s -> s.contains("Validator cannot exit until epoch 3"))
             .map(s -> Integer.parseInt(s.substring(19, 20)))
             .collect(Collectors.toList());
     assertThat(validatorIds.size()).isEqualTo(4);

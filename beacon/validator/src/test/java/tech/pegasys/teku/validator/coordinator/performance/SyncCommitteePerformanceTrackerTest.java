@@ -154,6 +154,7 @@ class SyncCommitteePerformanceTrackerTest {
     final SignedBeaconBlock signedBlock = mock(SignedBeaconBlock.class);
     final BeaconBlock block = mock(BeaconBlock.class);
     final BeaconBlockBodyAltair blockBody = mock(BeaconBlockBodyAltair.class);
+    @SuppressWarnings("UseFastutil")
     final SyncAggregate syncAggregate =
         ((BeaconBlockBodySchemaAltair) schemaDefinitionsAltair.getBeaconBlockBodySchema())
             .getSyncAggregateSchema()

@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.merkletree;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatBooleanCollection;
 
-import java.util.ArrayList;
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import it.unimi.dsi.fastutil.booleans.BooleanList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
@@ -59,7 +60,7 @@ public class MerkleTreeTest {
   void getProof() {
     merkleTree1 = new OptimizedMerkleTree(treeDepth);
 
-    List<Boolean> results = new ArrayList<>();
+    BooleanList results = new BooleanArrayList();
     for (int index = 0; index < 7; index++) {
       Bytes32 leaf = leaves.get(index);
       merkleTree1.add(leaf);
@@ -75,7 +76,7 @@ public class MerkleTreeTest {
                   index,
                   root));
     }
-    assertThat(results).allSatisfy(Assertions::assertTrue);
+    assertThatBooleanCollection(results).allSatisfy(Assertions::assertTrue);
   }
 
   private SszBytes32Vector toSszBytes32Vector(List<Bytes32> list) {
@@ -91,7 +92,7 @@ public class MerkleTreeTest {
       merkleTree2.add(leaves.get(i));
     }
 
-    List<Boolean> results = new ArrayList<>();
+    BooleanList results = new BooleanArrayList();
     for (int index = 0; index < 8; index++) {
       Bytes32 leaf = leaves.get(index);
       merkleTree1.add(leaf);
@@ -107,7 +108,7 @@ public class MerkleTreeTest {
                   index,
                   root));
     }
-    assertThat(results).allSatisfy(Assertions::assertTrue);
+    assertThatBooleanCollection(results).allSatisfy(Assertions::assertTrue);
   }
 
   @Test
@@ -125,7 +126,7 @@ public class MerkleTreeTest {
 
     Bytes32 root = merkleTree1.getRoot();
 
-    List<Boolean> results = new ArrayList<>();
+    BooleanList results = new BooleanArrayList();
     for (int index = 0; index < 10; index++) {
       results.add(
           genesisSpec
@@ -137,6 +138,6 @@ public class MerkleTreeTest {
                   index,
                   root));
     }
-    assertThat(results).allSatisfy(Assertions::assertTrue);
+    assertThatBooleanCollection(results).allSatisfy(Assertions::assertTrue);
   }
 }

@@ -17,6 +17,8 @@ import static java.lang.Integer.min;
 import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,7 +40,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private static final Logger LOG = LogManager.getLogger();
 
   private final AttestationTopicSubscriber persistentSubnetSubscriber;
-  private final Set<Integer> availableSubnetIndices = new HashSet<>();
+  private final IntSet availableSubnetIndices = new IntOpenHashSet();
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
       new TreeSet<>(
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)

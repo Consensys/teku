@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -371,12 +372,12 @@ public final class DataStructureUtil {
     return getSyncAggregateSchema(specVersionAltair).createEmpty();
   }
 
-  public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
+  public SyncAggregate randomSyncAggregate(final int... participantIndices) {
     SpecVersion specVersionAltair =
         Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
 
     return getSyncAggregateSchema(specVersionAltair)
-        .create(List.of(participantIndices), randomSignature());
+        .create(IntList.of(participantIndices), randomSignature());
   }
 
   private SyncAggregateSchema getSyncAggregateSchema(SpecVersion specVersionAltair) {
