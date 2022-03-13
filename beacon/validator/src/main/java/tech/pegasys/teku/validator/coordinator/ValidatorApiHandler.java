@@ -174,6 +174,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     new IllegalStateException("Head state is not yet available")))
         .thenApply(
             state -> {
+              @SuppressWarnings("UseFastutil")
               final Map<BLSPublicKey, Integer> results = new HashMap<>();
               publicKeys.forEach(
                   publicKey ->

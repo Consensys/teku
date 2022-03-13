@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.infrastructure.collections;
 
+import it.unimi.dsi.fastutil.booleans.BooleanCollection;
+import it.unimi.dsi.fastutil.booleans.BooleanList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.longs.LongCollection;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collection;
 import java.util.List;
 import org.assertj.core.api.AbstractCollectionAssert;
@@ -30,6 +34,25 @@ public class PrimitiveCollectionAssert {
   public static AbstractCollectionAssert<
           ?, Collection<? extends Integer>, Integer, ObjectAssert<Integer>>
       assertThatIntCollection(final IntCollection collection) {
+    return Assertions.assertThat(collection);
+  }
+
+  public static ListAssert<Long> assertThatLongCollection(final LongList collection) {
+    return Assertions.assertThat((List<Long>) collection);
+  }
+
+  public static AbstractCollectionAssert<?, Collection<? extends Long>, Long, ObjectAssert<Long>>
+      assertThatLongCollection(final LongCollection collection) {
+    return Assertions.assertThat(collection);
+  }
+
+  public static ListAssert<Boolean> assertThatBooleanCollection(final BooleanList collection) {
+    return Assertions.assertThat((List<Boolean>) collection);
+  }
+
+  public static AbstractCollectionAssert<
+          ?, Collection<? extends Boolean>, Boolean, ObjectAssert<Boolean>>
+      assertThatBooleanCollection(final BooleanCollection collection) {
     return Assertions.assertThat(collection);
   }
 }

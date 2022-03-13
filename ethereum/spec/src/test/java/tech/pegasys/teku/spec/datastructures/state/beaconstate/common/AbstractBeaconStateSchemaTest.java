@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants.SLOT_FIELD;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
@@ -57,8 +58,8 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   void vectorLengthsTest() {
-    List<Integer> vectorLengths =
-        List.of(
+    IntList vectorLengths =
+        IntList.of(
             genesisConfig.getSlotsPerHistoricalRoot(),
             genesisConfig.getSlotsPerHistoricalRoot(),
             genesisConfig.getEpochsPerHistoricalVector(),

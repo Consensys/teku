@@ -21,8 +21,9 @@ import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.gIdxIsSelf;
 import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.gIdxLeftGIndex;
 import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.gIdxRightGIndex;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,7 +82,7 @@ public class SszNodeTemplate {
             new BinaryVisitor<>() {
               @Override
               public Map<Long, Location> visitLeaf(long gIndex, LeafNode node) {
-                Map<Long, Location> ret = new HashMap<>();
+                Long2ObjectMap<Location> ret = new Long2ObjectOpenHashMap<Location>();
                 ret.put(gIndex, new Location(0, node.getData().size(), true));
                 return ret;
               }

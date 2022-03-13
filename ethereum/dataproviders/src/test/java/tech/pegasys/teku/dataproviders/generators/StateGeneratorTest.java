@@ -16,6 +16,7 @@ package tech.pegasys.teku.dataproviders.generators;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -142,10 +143,10 @@ public class StateGeneratorTest {
   public static Stream<Arguments> getParameters() {
     Stream.Builder<Arguments> builder = Stream.builder();
 
-    final List<Integer> stateCacheSizes = List.of(0, 1, 100);
-    final List<Integer> blockBatchSizes = List.of(1, 5, 1000);
-    for (Integer stateCacheSize : stateCacheSizes) {
-      for (Integer blockBatchSize : blockBatchSizes) {
+    final IntList stateCacheSizes = IntList.of(0, 1, 100);
+    final IntList blockBatchSizes = IntList.of(1, 5, 1000);
+    for (int stateCacheSize : stateCacheSizes) {
+      for (int blockBatchSize : blockBatchSizes) {
         builder.add(Arguments.of(stateCacheSize, blockBatchSize));
       }
     }

@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -185,7 +184,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             && data.getBeacon_block_root().equals(getBlockRootAtSlot(state, data.getSlot()));
 
     // Participation flag indices
-    final List<Integer> participationFlagIndices = new ArrayList<>();
+    final IntList participationFlagIndices = new IntArrayList();
     if (isMatchingSource
         && inclusionDelay.isLessThanOrEqualTo(config.getSquareRootSlotsPerEpoch())) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX);

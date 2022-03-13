@@ -15,9 +15,9 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArgumentsProvider.supportedDatabaseVersions;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -30,14 +30,14 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageSystemArgumentsProvider implements ArgumentsProvider {
 
-  private final List<Long> stateStorageFrequencyOptions =
-      List.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
+  private final LongList stateStorageFrequencyOptions =
+      LongList.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
 
   @Override
   public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
     final Map<String, StorageSystemSupplier> storageSystems = new HashMap<>();
     for (StateStorageMode mode : StateStorageMode.values()) {
-      for (Long storageFrequency : stateStorageFrequencyOptions) {
+      for (long storageFrequency : stateStorageFrequencyOptions) {
         for (DatabaseVersion databaseVersion : supportedDatabaseVersions()) {
           storageSystems.put(
               describeStorage(databaseVersion.name() + " (in-memory)", storageFrequency),
