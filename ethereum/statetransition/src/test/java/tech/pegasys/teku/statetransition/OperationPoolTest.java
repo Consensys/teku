@@ -157,7 +157,7 @@ public class OperationPoolTest {
     pool.addLocal(slashing2);
 
     when(validator.validateForStateTransition(any(), eq(slashing1)))
-        .thenReturn(Optional.of(ExitInvalidReason.SUBMITTED_TOO_EARLY));
+        .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
     when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(Optional.empty());
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
