@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.response.v1.beacon;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@SuppressWarnings("JavaCase")
 @Schema(description = "[Validator status specification](https://hackmd.io/ofFJ5gOmQpu1jjHilHbdQQ)")
 public enum ValidatorStatus {
   pending_initialized,

@@ -31,11 +31,11 @@ import tech.pegasys.teku.infrastructure.ssz.ContainersGenerator;
 public class GeneratedClassesNotModifiedTest {
 
   private static final String PROJECT_PROPERTY_NAME = "ssz.project.source.path";
-  private static final Pattern oneLineCommentPattern =
+  private static final Pattern ONE_LINE_COMMENT_PATTERN =
       Pattern.compile("^[\\s]*//.*?$", Pattern.DOTALL | Pattern.MULTILINE);
-  private static final Pattern multilineLineCommentPattern =
+  private static final Pattern MULTILINE_LINE_COMMENT_PATTERN =
       Pattern.compile("/\\*(.|\\n)+?\\*/", Pattern.DOTALL | Pattern.MULTILINE);
-  private static final Pattern spacesPattern =
+  private static final Pattern SPACES_PATTERN =
       Pattern.compile("[\\n\\r\\s]+", Pattern.DOTALL | Pattern.MULTILINE);
 
   /**
@@ -88,11 +88,11 @@ public class GeneratedClassesNotModifiedTest {
   }
 
   private String removeSpaces(String src) {
-    return spacesPattern.matcher(src).replaceAll("");
+    return SPACES_PATTERN.matcher(src).replaceAll("");
   }
 
   private String removeComments(String src) {
-    String s1 = multilineLineCommentPattern.matcher(src).replaceAll("");
-    return oneLineCommentPattern.matcher(s1).replaceAll("");
+    String s1 = MULTILINE_LINE_COMMENT_PATTERN.matcher(src).replaceAll("");
+    return ONE_LINE_COMMENT_PATTERN.matcher(s1).replaceAll("");
   }
 }

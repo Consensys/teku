@@ -40,10 +40,10 @@ public class BlstBLS12381 implements BLS12381 {
   private static final int BATCH_RANDOM_BYTES = 8;
   // Note: SecureRandom is thread-safe.
   // We avoid creating new instances as that reads from /dev/random which may block on entropy
-  private static final SecureRandom random = SecureRandomProvider.createSecureRandom();
+  private static final SecureRandom RANDOM = SecureRandomProvider.createSecureRandom();
 
   private static Random getRND() {
-    return random;
+    return RANDOM;
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {

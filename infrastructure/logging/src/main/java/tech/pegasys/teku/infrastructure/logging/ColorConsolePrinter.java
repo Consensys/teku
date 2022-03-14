@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.logging;
 
 public class ColorConsolePrinter {
 
-  private static final String resetCode = "\u001B[0m";
+  private static final String RESET_CODE = "\u001B[0m";
 
   public enum Color {
     BLACK,
@@ -29,7 +29,7 @@ public class ColorConsolePrinter {
   }
 
   public static String print(final String message, final Color color) {
-    return LoggingConfigurator.isColorEnabled() ? colorCode(color) + message + resetCode : message;
+    return LoggingConfigurator.isColorEnabled() ? colorCode(color) + message + RESET_CODE : message;
   }
 
   private static String colorCode(final Color color) {

@@ -26,10 +26,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 
 class BitvectorImplTest {
 
-  private static final int testBitvectorLength = 4;
+  private static final int TEST_BITVECTOR_LENGTH = 4;
 
   private static BitvectorImpl createBitvector() {
-    return new BitvectorImpl(testBitvectorLength, 0, 3);
+    return new BitvectorImpl(TEST_BITVECTOR_LENGTH, 0, 3);
   }
 
   @Test
@@ -63,7 +63,7 @@ class BitvectorImplTest {
     BitvectorImpl bitvector = createBitvector();
 
     Bytes ssz = bitvector.serialize();
-    BitvectorImpl bitvector1 = BitvectorImpl.fromBytes(ssz, testBitvectorLength);
+    BitvectorImpl bitvector1 = BitvectorImpl.fromBytes(ssz, TEST_BITVECTOR_LENGTH);
     Assertions.assertEquals(bitvector, bitvector1);
   }
 

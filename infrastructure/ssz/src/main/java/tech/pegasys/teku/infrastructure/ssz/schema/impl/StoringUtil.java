@@ -14,7 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.NodeRelation.Predecessor;
+import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.NodeRelation.PREDECESSOR;
 import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.gIdxCompose;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -132,7 +132,7 @@ public class StoringUtil {
   private static int getUsefulChildCount(
       final long rootGIndex, final int childDepth, final long lastUsefulGIndex) {
     final int childCount;
-    if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == Predecessor) {
+    if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == PREDECESSOR) {
       childCount = GIndexUtil.gIdxChildIndexFromGIndex(lastUsefulGIndex, childDepth) + 1;
     } else {
       childCount = Math.toIntExact(1L << childDepth);

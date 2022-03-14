@@ -44,7 +44,7 @@ class KeyGeneratorTest {
   private static final int VALIDATORS_COUNT = 2;
   private static final String EXPECTED_PASSWORD = "testpassword";
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
-  private static final Function<String, String> envSupplier =
+  private static final Function<String, String> ENV_SUPPLIER =
       s -> EXPECTED_ENV_VARIABLE.equals(s) ? EXPECTED_PASSWORD : null;
   private ConsoleAdapter consoleAdapter;
   private CommandSpec commandSpec;
@@ -182,7 +182,7 @@ class KeyGeneratorTest {
             withdrawalPasswordOptions,
             consoleAdapter,
             commandSpec,
-            envSupplier,
+            ENV_SUPPLIER,
             SUB_COMMAND_LOG::display);
     keyGenerator.generateKeys();
 
