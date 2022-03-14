@@ -18,8 +18,6 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -31,7 +29,6 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class ReputationManager {
-  private static final Logger LOG = LogManager.getLogger();
   // This is not a big ban, we expect the peer could be usable very soon
   static final UInt64 COOLDOWN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
   // It's a big ban, we expect that the peer is not useful until major changes, for example,
