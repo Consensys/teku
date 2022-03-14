@@ -39,8 +39,12 @@ public class WeakSubjectivityUpdate {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final WeakSubjectivityUpdate that = (WeakSubjectivityUpdate) o;
     return Objects.equals(weakSubjectivityCheckpoint, that.weakSubjectivityCheckpoint);
   }

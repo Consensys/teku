@@ -156,8 +156,12 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       final KintsugiForkChoiceUpdatedResult that = (KintsugiForkChoiceUpdatedResult) o;
       return Objects.equals(status, that.status) && Objects.equals(payloadId, that.payloadId);
     }
@@ -420,8 +424,12 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       final KitsugiPayloadAttributesV1 that = (KitsugiPayloadAttributesV1) o;
       return Objects.equals(timestamp, that.timestamp)
           && Objects.equals(random, that.random)

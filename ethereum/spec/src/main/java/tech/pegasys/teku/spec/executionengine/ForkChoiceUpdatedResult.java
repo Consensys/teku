@@ -37,8 +37,12 @@ public class ForkChoiceUpdatedResult {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ForkChoiceUpdatedResult that = (ForkChoiceUpdatedResult) o;
     return Objects.equals(payloadStatus, that.payloadStatus)
         && Objects.equals(payloadId, that.payloadId);

@@ -44,8 +44,12 @@ public class ProposerSlashing {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ProposerSlashing)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ProposerSlashing)) {
+      return false;
+    }
     ProposerSlashing that = (ProposerSlashing) o;
     return Objects.equals(signed_header_1, that.signed_header_1)
         && Objects.equals(signed_header_2, that.signed_header_2);

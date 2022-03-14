@@ -88,6 +88,25 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
     this.transactionsRoot = executionPayloadHeader.getTransactionsRoot();
   }
 
+  public ExecutionPayloadHeader(
+      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
+    super(
+        executionPayload.getParentHash(),
+        executionPayload.getFeeRecipient(),
+        executionPayload.getStateRoot(),
+        executionPayload.getReceiptsRoot(),
+        executionPayload.getLogsBloom(),
+        executionPayload.getPrevRandao(),
+        executionPayload.getBlockNumber(),
+        executionPayload.getGasLimit(),
+        executionPayload.getGasUsed(),
+        executionPayload.getTimestamp(),
+        executionPayload.getExtraData(),
+        executionPayload.getBaseFeePerGas(),
+        executionPayload.getBlockHash());
+    this.transactionsRoot = executionPayload.getTransactions().hashTreeRoot();
+  }
+
   public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader>
       asInternalExecutionPayloadHeader(final Spec spec, final UInt64 slot) {
 

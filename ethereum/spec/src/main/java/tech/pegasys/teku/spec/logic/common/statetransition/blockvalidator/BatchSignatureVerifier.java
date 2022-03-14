@@ -58,7 +58,9 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
   @Override
   public synchronized boolean verify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    if (complete) throw new IllegalStateException("Reuse of disposable instance");
+    if (complete) {
+      throw new IllegalStateException("Reuse of disposable instance");
+    }
 
     checkArgument(!publicKeys.isEmpty(), "No public keys supplied for verify");
     toVerify.add(new Job(toVerify.size(), publicKeys, message, signature));
@@ -86,7 +88,9 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
    * instance methods would fail with exception
    */
   public synchronized boolean batchVerify() {
-    if (complete) throw new IllegalStateException("Reuse of disposable instance");
+    if (complete) {
+      throw new IllegalStateException("Reuse of disposable instance");
+    }
     List<BatchSemiAggregate> batchSemiAggregates =
         toVerify.stream()
             .parallel()

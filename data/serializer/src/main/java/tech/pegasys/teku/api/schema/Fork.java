@@ -57,8 +57,12 @@ public class Fork {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Fork fork = (Fork) o;
     return Objects.equals(previous_version, fork.previous_version)
         && Objects.equals(current_version, fork.current_version)

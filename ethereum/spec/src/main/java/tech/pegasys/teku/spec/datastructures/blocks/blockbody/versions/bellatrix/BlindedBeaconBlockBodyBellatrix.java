@@ -39,6 +39,11 @@ public interface BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   @Override
+  default boolean isBlinded() {
+    return true;
+  }
+
+  @Override
   BlindedBeaconBlockBodySchemaBellatrix<?> getSchema();
 
   @Override
