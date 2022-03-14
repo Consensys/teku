@@ -89,11 +89,13 @@ public class LibP2PPeer implements Peer {
     getAgentVersionFromIdentity()
         .thenAccept(
             maybeAgent -> {
-              LOG.debug("Connected peer has agent string: {}", maybeAgent.orElse("Unknown"));
+              LOG.debug(
+                  "Connected peer id {} ({}) has agent string: {}",
+                  peerId,
+                  connection.remoteAddress(),
+                  maybeAgent.orElse("Unknown"));
               maybeAgentString = maybeAgent;
-              if (maybeAgent.isPresent()) {
-                peerClientType = getPeerTypeFromAgentString(maybeAgent.get());
-              }
+              maybeAgent.ifPresent(s -> peerClientType = getPeerTypeFromAgentString(s));
             })
         .finish(error -> LOG.debug("Failed to retrieve client identity", error));
   }
