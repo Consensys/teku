@@ -100,7 +100,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
 
     if (verifySignature
         && !spec.verifyVoluntaryExitSignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
-      return Optional.of(ExitInvalidReason.INVALID_SIGNATURE);
+      return Optional.of(ExitInvalidReason.invalidSignature());
     }
     return Optional.empty();
   }

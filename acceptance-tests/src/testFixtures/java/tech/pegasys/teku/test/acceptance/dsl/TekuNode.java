@@ -24,6 +24,8 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -228,14 +230,14 @@ public class TekuNode extends Node {
     for (UInt64 i = UInt64.ZERO; i.isLessThan(totalValidatorCount); i = i.increment()) {
       validators.add(i);
     }
-    final Map<UInt64, Boolean> data =
+    final Object2BooleanMap<UInt64> data =
         getValidatorLivenessAtEpoch(UInt64.valueOf(epoch), validators);
     for (ValidatorLivenessExpectation expectation : args) {
       expectation.verify(data);
     }
   }
 
-  private Map<UInt64, Boolean> getValidatorLivenessAtEpoch(
+  private Object2BooleanMap<UInt64> getValidatorLivenessAtEpoch(
       final UInt64 epoch, List<UInt64> validators) throws IOException {
 
     final ValidatorLivenessRequest request = new ValidatorLivenessRequest(epoch, validators);
@@ -244,7 +246,7 @@ public class TekuNode extends Node {
             getRestApiUrl(), "/eth/v1/validator/liveness", jsonProvider.objectToJSON(request));
     final PostValidatorLivenessResponse livenessResponse =
         jsonProvider.jsonToObject(response, PostValidatorLivenessResponse.class);
-    final Map<UInt64, Boolean> output = new HashMap<>();
+    final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
     for (ValidatorLivenessAtEpoch entry : livenessResponse.data) {
       output.put(entry.index, entry.isLive);
     }

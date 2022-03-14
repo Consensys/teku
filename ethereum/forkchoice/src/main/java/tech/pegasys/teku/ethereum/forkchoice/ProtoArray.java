@@ -23,6 +23,8 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -281,7 +283,7 @@ public class ProtoArray {
     removeBlockRoot(node.getBlockRoot());
     markDescendantsAsInvalid(index);
     // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
-    applyDeltas(new ArrayList<>(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
+    applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   private Optional<Integer> findFirstInvalidNodeIndex(
@@ -343,7 +345,7 @@ public class ProtoArray {
    * @param justifiedEpoch
    * @param finalizedEpoch
    */
-  public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
+  public void applyScoreChanges(LongList deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
     checkArgument(
         deltas.size() == getTotalTrackedNodeCount(),
         "ProtoArray: Invalid delta length expected %s but got %s",
@@ -595,7 +597,7 @@ public class ProtoArray {
     indices.remove(blockRoot);
   }
 
-  private void applyDeltas(final List<Long> deltas) {
+  private void applyDeltas(final LongList deltas) {
     applyToNodes((node, nodeIndex) -> applyDelta(deltas, node, nodeIndex));
     applyToNodes(this::updateBestDescendantOfParent);
   }
@@ -605,14 +607,14 @@ public class ProtoArray {
         .ifPresent(parentIndex -> maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
   }
 
-  private void applyDelta(final List<Long> deltas, final ProtoNode node, final int nodeIndex) {
+  private void applyDelta(final LongList deltas, final ProtoNode node, final int nodeIndex) {
     // If the node is invalid, remove any existing weight.
-    long nodeDelta = node.isInvalid() ? -node.getWeight().longValue() : deltas.get(nodeIndex);
+    long nodeDelta = node.isInvalid() ? -node.getWeight().longValue() : deltas.getLong(nodeIndex);
     node.adjustWeight(nodeDelta);
 
     if (node.getParentIndex().isPresent()) {
       int parentIndex = node.getParentIndex().get();
-      deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
+      deltas.set(parentIndex, deltas.getLong(parentIndex) + nodeDelta);
     }
   }
 

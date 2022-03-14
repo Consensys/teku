@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -494,7 +495,7 @@ class ProtoArrayTest {
     return Hash.sha256(blockRoot);
   }
 
-  private List<Long> computeDeltas() {
+  private LongList computeDeltas() {
     final List<UInt64> balances =
         Collections.nCopies(voteUpdater.getHighestVotedValidatorIndex().intValue(), UInt64.ONE);
     return ProtoArrayScoreCalculator.computeDeltas(

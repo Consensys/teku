@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntLists;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -142,15 +143,15 @@ class SubnetScorerTest {
 
     assertCandidatePeerScores(
         scorer,
-        entry(candidateWithSubnets(List.of(1, 3), List.of(1)), 562),
-        entry(candidateWithSubnets(List.of(1), List.of(1)), 312),
-        entry(candidateWithSubnets(List.of(2), List.of(1)), 1062),
-        entry(candidateWithSubnets(List.of(3), List.of(1)), 312),
-        entry(candidateWithSubnets(emptyList(), emptyList()), 0),
-        entry(candidateWithSubnets(List.of(5), emptyList()), 1000),
-        entry(candidateWithSubnets(List.of(4), emptyList()), 0),
-        entry(candidateWithSubnets(emptyList(), List.of(2)), 1000),
-        entry(candidateWithSubnets(emptyList(), List.of(3)), 0));
+        entry(candidateWithSubnets(IntList.of(1, 3), IntList.of(1)), 562),
+        entry(candidateWithSubnets(IntList.of(1), IntList.of(1)), 312),
+        entry(candidateWithSubnets(IntList.of(2), IntList.of(1)), 1062),
+        entry(candidateWithSubnets(IntList.of(3), IntList.of(1)), 312),
+        entry(candidateWithSubnets(IntLists.emptyList(), IntLists.emptyList()), 0),
+        entry(candidateWithSubnets(IntList.of(5), IntLists.emptyList()), 1000),
+        entry(candidateWithSubnets(IntList.of(4), IntLists.emptyList()), 0),
+        entry(candidateWithSubnets(IntLists.emptyList(), IntList.of(2)), 1000),
+        entry(candidateWithSubnets(IntLists.emptyList(), IntList.of(3)), 0));
   }
 
   @SafeVarargs

@@ -19,4 +19,5 @@ dependencies {
   testFixturesApi 'org.apache.tuweni:tuweni-units'
   testFixturesApi project(':infrastructure:unsigned')
   testFixturesImplementation project(':infrastructure:bytes')
+  testFixturesImplementation 'it.unimi.dsi:fastutil'
 }
