@@ -37,8 +37,12 @@ public class BlockPerformance {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof BlockPerformance)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BlockPerformance)) {
+      return false;
+    }
     BlockPerformance that = (BlockPerformance) o;
     return numberOfExpectedBlocks == that.numberOfExpectedBlocks
         && numberOfIncludedBlocks == that.numberOfIncludedBlocks

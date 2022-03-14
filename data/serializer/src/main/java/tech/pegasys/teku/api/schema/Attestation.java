@@ -67,8 +67,12 @@ public class Attestation {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Attestation)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Attestation)) {
+      return false;
+    }
     Attestation that = (Attestation) o;
     return Objects.equals(aggregation_bits, that.aggregation_bits)
         && Objects.equals(data, that.data)

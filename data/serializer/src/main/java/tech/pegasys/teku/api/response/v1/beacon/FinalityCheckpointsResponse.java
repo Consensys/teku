@@ -53,8 +53,12 @@ public class FinalityCheckpointsResponse {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final FinalityCheckpointsResponse that = (FinalityCheckpointsResponse) o;
     return Objects.equals(previous_justified, that.previous_justified)
         && Objects.equals(current_justified, that.current_justified)

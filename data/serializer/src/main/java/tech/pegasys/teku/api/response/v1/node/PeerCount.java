@@ -57,8 +57,12 @@ public class PeerCount {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PeerCount peerCount = (PeerCount) o;
     return Objects.equals(disconnected, peerCount.disconnected)
         && Objects.equals(connecting, peerCount.connecting)

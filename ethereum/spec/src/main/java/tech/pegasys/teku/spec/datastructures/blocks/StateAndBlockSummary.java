@@ -106,8 +106,12 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final StateAndBlockSummary that = (StateAndBlockSummary) o;
     return Objects.equals(state, that.state) && Objects.equals(blockSummary, that.blockSummary);
   }

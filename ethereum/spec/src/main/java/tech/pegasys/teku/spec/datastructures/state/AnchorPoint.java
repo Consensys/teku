@@ -148,9 +148,15 @@ public class AnchorPoint extends StateAndBlockSummary {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
     final AnchorPoint that = (AnchorPoint) o;
     return isGenesis == that.isGenesis && Objects.equals(checkpoint, that.checkpoint);
   }

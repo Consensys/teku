@@ -49,8 +49,12 @@ public class PeerScore {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof PeerScore)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof PeerScore)) {
+      return false;
+    }
     PeerScore peerScore = (PeerScore) o;
     return Objects.equals(peerId, peerScore.peerId)
         && Objects.equals(gossipScore, peerScore.gossipScore);

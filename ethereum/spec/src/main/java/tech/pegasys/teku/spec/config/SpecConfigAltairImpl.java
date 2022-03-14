@@ -132,8 +132,12 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SpecConfigAltairImpl that = (SpecConfigAltairImpl) o;
     return Objects.equals(specConfig, that.specConfig)
         && minSlashingPenaltyQuotientAltair == that.minSlashingPenaltyQuotientAltair

@@ -70,8 +70,12 @@ public class ExternalValidator {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ExternalValidator that = (ExternalValidator) o;
     return readOnly == that.readOnly && publicKey.equals(that.publicKey) && url.equals(that.url);
   }
