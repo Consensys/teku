@@ -17,17 +17,17 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.simpl.RAMJobStore;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 public class TimerService extends Service {
 
@@ -39,23 +39,36 @@ public class TimerService extends Service {
 
   private final Scheduler sched;
   private final JobDetail job;
-  private static int START_DELAY = 0;
-  private int interval;
+  // Tick interval
+  private final int intervalMs = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000);
 
-  public TimerService(ServiceConfig config) {
-    SchedulerFactory sf = new StdSchedulerFactory();
-    this.interval = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000); // Tick interval
+  public TimerService(final TimeTickHandler timeTickHandler) {
+    final SchedulerFactory sf = createSchedulerFactory();
     try {
       sched = sf.getScheduler();
       job =
           newJob(ScheduledTimeEvent.class)
               .withIdentity("Timer-" + TIMER_ID_GENERATOR.incrementAndGet())
               .build();
-      job.getJobDataMap()
-          .put(TIME_EVENTS_CHANNEL, config.getEventChannels().getPublisher(TimeTickChannel.class));
+      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, timeTickHandler);
 
     } catch (SchedulerException e) {
       throw new IllegalArgumentException("TimerService failed to initialize", e);
+    }
+  }
+
+  private StdSchedulerFactory createSchedulerFactory() {
+    try {
+      final Properties properties = new Properties();
+      properties.put("org.quartz.threadPool.threadCount", "1");
+      properties.put("org.quartz.threadPool.threadNamePrefix", "TimeTick");
+      properties.put("org.quartz.jobStore.class", RAMJobStore.class.getName());
+      properties.put("org.quartz.scheduler.skipUpdateCheck", "true");
+      // If job doesn't fire by the time the next one is due, skip it entirely
+      properties.put("org.quartz.jobStore.misfireThreshold", Integer.toString(intervalMs));
+      return new StdSchedulerFactory(properties);
+    } catch (final SchedulerException e) {
+      throw new IllegalStateException("Failed to configure timer", e);
     }
   }
 
@@ -65,8 +78,13 @@ public class TimerService extends Service {
       SimpleTrigger trigger =
           newTrigger()
               .withIdentity("TimerTrigger-" + TIMER_TRIGGER_ID_GENERATOR.incrementAndGet())
-              .startAt(DateBuilder.futureDate(START_DELAY, DateBuilder.IntervalUnit.MILLISECOND))
-              .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
+              .withSchedule(
+                  simpleSchedule()
+                      .withIntervalInMilliseconds(intervalMs)
+                      // If a scheduled event fails (including if it is delayed too much by resource
+                      // contention), then just skip it and fire the next event when it is due
+                      .withMisfireHandlingInstructionNextWithRemainingCount()
+                      .repeatForever())
               .build();
       sched.scheduleJob(job, trigger);
       sched.start();

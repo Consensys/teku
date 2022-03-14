@@ -62,7 +62,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.timer.TimeTickChannel;
+import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -146,8 +146,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends Service
-    implements TimeTickChannel, BeaconChainControllerFacade {
+public class BeaconChainController extends Service implements BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
@@ -198,6 +197,7 @@ public class BeaconChainController extends Service
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
+  private TimerService timerService;
 
   protected BeaconChainController() {}
 
@@ -271,6 +271,7 @@ public class BeaconChainController extends Service
             blockManager.stop(),
             attestationManager.stop(),
             p2pNetwork.stop(),
+            timerService.stop(),
             SafeFuture.fromRunnable(
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
@@ -281,12 +282,14 @@ public class BeaconChainController extends Service
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
+    timerService = new TimerService(this::onTick);
 
     StorageQueryChannel storageQueryChannel =
         eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
     StorageUpdateChannel storageUpdateChannel =
         eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
+    // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
@@ -311,15 +314,14 @@ public class BeaconChainController extends Service
               }
               return SafeFuture.completedFuture(client);
             })
-        .thenAccept(
-            client -> {
-              // Init other services
-              this.initAll();
-              eventChannels.subscribe(TimeTickChannel.class, this);
-
+        // Init other services
+        .thenRun(this::initAll)
+        .thenRun(
+            () -> {
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
-            });
+            })
+        .thenCompose(__ -> timerService.start());
   }
 
   public void initAll() {
@@ -997,8 +999,7 @@ public class BeaconChainController extends Service
             });
   }
 
-  @Override
-  public void onTick() {
+  private void onTick() {
     if (recentChainData.isPreGenesis()) {
       return;
     }
