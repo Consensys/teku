@@ -69,6 +69,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
@@ -396,6 +397,7 @@ public class BeaconRestApi {
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
     app.post(PostBlock.ROUTE, new PostBlock(dataProvider, jsonProvider));
+    app.post(PostBlindedBlock.ROUTE, new PostBlindedBlock(dataProvider, jsonProvider));
 
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
     app.get(
