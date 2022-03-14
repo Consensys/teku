@@ -55,6 +55,10 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
+  default boolean isBlinded() {
+    return false;
+  }
+
   @Override
   BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();
 
