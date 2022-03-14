@@ -41,8 +41,6 @@ public class TekuDepositSender extends Node {
   public TekuDepositSender(final Network network, final Spec spec) {
     super(network, TekuNode.TEKU_DOCKER_IMAGE_NAME, DockerVersion.LOCAL_BUILD, LOG);
     this.spec = spec;
-
-    container.withCommand("--validators-proposer-default-fee-recipient", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
   }
 
   public ValidatorKeystores sendValidatorDeposits(

@@ -39,7 +39,7 @@ public class BesuNode extends Node {
             MountableFile.forClasspathResource(genesisFile), "/genesis.json")
         .withCommand(
             "--rpc-http-enabled",
-            // TODO clean up, command builder
+            // FIXME: clean up before PR - this needs to be made configurable so doesn't break other tests
             "--rpc-http-api",
             "ETH,NET,WEB3,ENGINE",
             "--rpc-http-port",
@@ -56,11 +56,6 @@ public class BesuNode extends Node {
             "--genesis-file",
             "/genesis.json");
   }
-
-//  docker run -p 8550:8550 -v $(PWD)/genesis.json:/opt/besu/genesis.json \
-//  hyperledger/besu:develop --genesis-file /opt/besu/genesis.json --rpc-http-enabled \
-//          --rpc-http-api=ETH,NET,WEB3,ENGINE --engine-rpc-http-port 8550 --engine-host-allowlist='*' \
-//          --miner-enabled=true --miner-coinbase=0xfe3b557e8fb62b89f4916b721be55ceb828dbd73 --logging=INFO --Xmerge-support=true
 
   public void start() {
     container.start();
@@ -80,10 +75,6 @@ public class BesuNode extends Node {
 
   public String getInternalEngineJsonRpcUrl() {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
-  }
-
-  public String getExternalEngineJsonRpcUrl() {
-    return "http://127.0.0.1:" + container.getMappedPort(ENGINE_JSON_RPC_PORT);
   }
 
   public String getRichBenefactorKey() {
