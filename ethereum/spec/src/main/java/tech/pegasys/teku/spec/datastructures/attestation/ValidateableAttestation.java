@@ -38,12 +38,12 @@ public class ValidateableAttestation {
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
   private final boolean producedLocally;
+  private final OptionalInt receivedSubnetId;
 
   private volatile boolean isValidIndexedAttestation = false;
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
-  private volatile OptionalInt receivedSubnetId;
 
   public static ValidateableAttestation from(final Spec spec, Attestation attestation) {
     return new ValidateableAttestation(
@@ -175,8 +175,12 @@ public class ValidateableAttestation {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ValidateableAttestation)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ValidateableAttestation)) {
+      return false;
+    }
     ValidateableAttestation that = (ValidateableAttestation) o;
     return Objects.equal(getAttestation(), that.getAttestation())
         && Objects.equal(maybeAggregate, that.maybeAggregate);

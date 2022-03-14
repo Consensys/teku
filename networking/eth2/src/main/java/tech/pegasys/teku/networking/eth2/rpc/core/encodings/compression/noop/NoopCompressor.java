@@ -35,7 +35,9 @@ public class NoopCompressor implements Compressor {
 
     @Override
     public Optional<ByteBuf> decodeOneMessage(ByteBuf input) throws CompressionException {
-      if (disposed) throw new DisposedDecompressorException();
+      if (disposed) {
+        throw new DisposedDecompressorException();
+      }
       return uncompressedPayloadSize > 0
           ? decoder.decodeOneMessage(input)
           : Optional.of(Unpooled.EMPTY_BUFFER);
@@ -43,7 +45,9 @@ public class NoopCompressor implements Compressor {
 
     @Override
     public void complete() throws CompressionException {
-      if (disposed) throw new DisposedDecompressorException();
+      if (disposed) {
+        throw new DisposedDecompressorException();
+      }
       decoder.complete();
       disposed = true;
     }

@@ -47,8 +47,12 @@ public class SignedBlock {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SignedBlock that = (SignedBlock) o;
     return Objects.equals(slot, that.slot) && Objects.equals(signingRoot, that.signingRoot);
   }

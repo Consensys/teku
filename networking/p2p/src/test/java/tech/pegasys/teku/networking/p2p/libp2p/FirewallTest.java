@@ -48,7 +48,9 @@ public class FirewallTest {
     long waitTime = 0;
     while (waitTime < maxWaitSeconds * 1000) {
       long l = channel.runScheduledPendingTasks();
-      if (l < 0) break;
+      if (l < 0) {
+        break;
+      }
       long ms = l / 1_000_000;
       waitTime += ms;
       Thread.sleep(ms);

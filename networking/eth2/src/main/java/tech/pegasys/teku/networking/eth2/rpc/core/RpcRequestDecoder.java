@@ -66,7 +66,9 @@ public final class RpcRequestDecoder<T extends RpcRequest & SszData> {
       maybeRequest = decodeRequest(Unpooled.EMPTY_BUFFER);
     }
     decoder.complete();
-    if (!complete) throw new PayloadTruncatedException();
+    if (!complete) {
+      throw new PayloadTruncatedException();
+    }
     return maybeRequest;
   }
 }
