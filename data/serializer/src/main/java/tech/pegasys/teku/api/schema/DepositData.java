@@ -65,8 +65,12 @@ public class DepositData {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof DepositData)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof DepositData)) {
+      return false;
+    }
     DepositData that = (DepositData) o;
     return Objects.equals(pubkey, that.pubkey)
         && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)

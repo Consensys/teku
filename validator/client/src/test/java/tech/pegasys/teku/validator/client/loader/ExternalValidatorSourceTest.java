@@ -283,8 +283,12 @@ public class ExternalValidatorSourceTest {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       ValidatorProviderInfo that = (ValidatorProviderInfo) o;
       return Objects.equals(publicKey, that.publicKey) && Objects.equals(url, that.url);
     }

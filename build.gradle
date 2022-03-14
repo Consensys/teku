@@ -173,20 +173,13 @@ allprojects {
       check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
       // these checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
-      // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
-      if (JavaVersion.current() == JavaVersion.VERSION_12) {
-        check('Finally', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      }
-      // This check is broken after Java 12.  See https://github.com/google/error-prone/issues/1352
-      if (JavaVersion.current() > JavaVersion.VERSION_12) {
-        check('TypeParameterUnusedInFormals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      }
     }
     options.encoding = 'UTF-8'
   }
