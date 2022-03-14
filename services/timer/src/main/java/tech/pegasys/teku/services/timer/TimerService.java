@@ -32,7 +32,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 public class TimerService extends Service {
 
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
+  public static final String TICK_HANDLER = "TickHandler";
 
   private static final AtomicInteger TIMER_ID_GENERATOR = new AtomicInteger();
   private static final AtomicInteger TIMER_TRIGGER_ID_GENERATOR = new AtomicInteger();
@@ -50,7 +50,7 @@ public class TimerService extends Service {
           newJob(ScheduledTimeEvent.class)
               .withIdentity("Timer-" + TIMER_ID_GENERATOR.incrementAndGet())
               .build();
-      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, timeTickHandler);
+      job.getJobDataMap().put(TICK_HANDLER, timeTickHandler);
 
     } catch (SchedulerException e) {
       throw new IllegalArgumentException("TimerService failed to initialize", e);
