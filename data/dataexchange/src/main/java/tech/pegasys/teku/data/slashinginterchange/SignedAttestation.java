@@ -44,8 +44,12 @@ public class SignedAttestation {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SignedAttestation that = (SignedAttestation) o;
     return Objects.equals(sourceEpoch, that.sourceEpoch)
         && Objects.equals(targetEpoch, that.targetEpoch)

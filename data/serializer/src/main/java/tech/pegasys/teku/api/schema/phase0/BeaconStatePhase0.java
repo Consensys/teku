@@ -143,8 +143,12 @@ public class BeaconStatePhase0 extends BeaconState implements State {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final BeaconStatePhase0 that = (BeaconStatePhase0) o;
     return Objects.equals(previous_epoch_attestations, that.previous_epoch_attestations)
         && Objects.equals(current_epoch_attestations, that.current_epoch_attestations);

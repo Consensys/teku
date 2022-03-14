@@ -128,8 +128,12 @@ public class BeaconBlockBody {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof BeaconBlockBody)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BeaconBlockBody)) {
+      return false;
+    }
     BeaconBlockBody that = (BeaconBlockBody) o;
     return Objects.equals(randao_reveal, that.randao_reveal)
         && Objects.equals(eth1_data, that.eth1_data)

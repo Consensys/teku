@@ -83,8 +83,12 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof BeaconBlock)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BeaconBlock)) {
+      return false;
+    }
     BeaconBlock that = (BeaconBlock) o;
     return Objects.equals(slot, that.slot)
         && Objects.equals(proposer_index, that.proposer_index)

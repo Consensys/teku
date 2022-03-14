@@ -55,8 +55,12 @@ public class Eth1Data {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Eth1Data)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Eth1Data)) {
+      return false;
+    }
     Eth1Data eth1Data = (Eth1Data) o;
     return Objects.equals(deposit_root, eth1Data.deposit_root)
         && Objects.equals(deposit_count, eth1Data.deposit_count)

@@ -52,8 +52,12 @@ public class StateSyncCommittees {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final StateSyncCommittees that = (StateSyncCommittees) o;
     return Objects.equals(validators, that.validators)
         && Objects.equals(validatorAggregates, that.validatorAggregates);

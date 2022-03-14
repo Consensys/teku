@@ -38,8 +38,12 @@ public class ChainHead {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ChainHead chainHead = (ChainHead) o;
     return Objects.equals(slot, chainHead.slot) && Objects.equals(root, chainHead.root);
   }

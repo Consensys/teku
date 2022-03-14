@@ -71,8 +71,12 @@ public class IndexedAttestation {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof IndexedAttestation)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof IndexedAttestation)) {
+      return false;
+    }
     IndexedAttestation that = (IndexedAttestation) o;
     return Objects.equals(attesting_indices, that.attesting_indices)
         && Objects.equals(data, that.data)
