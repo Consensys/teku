@@ -73,8 +73,12 @@ public class Peer {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Peer peer = (Peer) o;
     return Objects.equals(peerId, peer.peerId)
         && Objects.equals(enr, peer.enr)

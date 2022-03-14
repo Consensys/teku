@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -128,7 +128,7 @@ public class ChainUpdater {
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(checkpoint);
+    tx.setFinalizedCheckpoint(checkpoint, false);
     assertThat(tx.commit()).isDone();
 
     return blockAndState;
@@ -200,7 +200,7 @@ public class ChainUpdater {
     }
     final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().isGreaterThan(recentChainData.getFinalizedEpoch())) {
-      tx.setFinalizedCheckpoint(finalizedCheckpoint);
+      tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     }
     assertThat(tx.commit()).isCompleted();
   }

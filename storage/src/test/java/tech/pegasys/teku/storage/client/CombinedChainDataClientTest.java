@@ -14,15 +14,21 @@
 package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -33,13 +39,22 @@ class CombinedChainDataClientTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+  private final ChainHead chainHead = mock(ChainHead.class);
 
-  final HashSet<SignedBeaconBlock> nonCanonicalBlocks = new HashSet<>();
+  final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
+
+  @BeforeEach
+  void setUp() {
+    when(recentChainData.getForkChoiceStrategy()).thenReturn(Optional.of(forkChoiceStrategy));
+    when(forkChoiceStrategy.isOptimistic(any())).thenReturn(Optional.of(true));
+    when(chainHead.isOptimistic()).thenReturn(false);
+  }
 
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
@@ -53,8 +68,11 @@ class CombinedChainDataClientTest {
   public void mergeNonCanonicalAndCanonicalBlocks_shouldAddCanonicalBlockIfPresent() {
     nonCanonicalBlocks.add(firstBlock);
     assertThat(
-            client.mergeNonCanonicalAndCanonicalBlocks(
-                nonCanonicalBlocks, Optional.of(secondBlock)))
+            client
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.of(secondBlock))
+                .stream()
+                .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(firstBlock, secondBlock);
   }
 
@@ -62,15 +80,43 @@ class CombinedChainDataClientTest {
   public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnNonCanonicalOnly() {
     nonCanonicalBlocks.add(firstBlock);
     nonCanonicalBlocks.add(secondBlock);
-    assertThat(client.mergeNonCanonicalAndCanonicalBlocks(nonCanonicalBlocks, Optional.empty()))
+
+    assertThat(
+            client
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.empty())
+                .stream()
+                .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(firstBlock, secondBlock);
   }
 
   @Test
   public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnCanonicalOnly() {
     assertThat(
-            client.mergeNonCanonicalAndCanonicalBlocks(
-                nonCanonicalBlocks, Optional.of(secondBlock)))
+            client
+                .mergeNonCanonicalAndCanonicalBlocks(
+                    nonCanonicalBlocks, chainHead, Optional.of(secondBlock))
+                .stream()
+                .map(BlockAndMetaData::getData))
         .containsExactlyInAnyOrder(secondBlock);
+  }
+
+  @Test
+  void isOptimistic_shouldReturnOptimisticStatusOfKnownBlocks() {
+    when(forkChoiceStrategy.isOptimistic(firstBlock.getRoot())).thenReturn(Optional.of(true));
+    when(forkChoiceStrategy.isOptimistic(secondBlock.getRoot())).thenReturn(Optional.of(false));
+
+    assertThat(client.isOptimisticBlock(firstBlock.getRoot())).isTrue();
+    assertThat(client.isOptimisticBlock(secondBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void isOptimistic_shouldReturnOptimisticStatusOfFinalizedBlockForUnknownBlocks() {
+    final Checkpoint finalized = dataStructureUtil.randomCheckpoint();
+    when(recentChainData.getFinalizedCheckpoint()).thenReturn(Optional.of(finalized));
+    when(forkChoiceStrategy.isOptimistic(firstBlock.getRoot())).thenReturn(Optional.empty());
+    when(forkChoiceStrategy.isOptimistic(finalized.getRoot())).thenReturn(Optional.of(true));
+
+    assertThat(client.isOptimisticBlock(firstBlock.getRoot())).isTrue();
   }
 }

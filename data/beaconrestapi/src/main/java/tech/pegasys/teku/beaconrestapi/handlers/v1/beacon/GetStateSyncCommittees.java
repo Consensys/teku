@@ -51,6 +51,7 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateSyncCommittees extends AbstractHandler implements Handler {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/sync_committees";
@@ -98,7 +99,7 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
         ctx.json(jsonProvider.objectToJSON(List.of()));
       }
 
-      final SafeFuture<Optional<StateSyncCommittees>> future =
+      final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> future =
           chainDataProvider.getStateSyncCommittees(pathParams.get(PARAM_STATE_ID), epoch);
 
       handleOptionalResult(
@@ -120,8 +121,12 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(final Context context, final StateSyncCommittees response)
+  private Optional<String> handleResult(
+      final Context context, final ObjectAndMetaData<StateSyncCommittees> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateSyncCommitteesResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateSyncCommitteesResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

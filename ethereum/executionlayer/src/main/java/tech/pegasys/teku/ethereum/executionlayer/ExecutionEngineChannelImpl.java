@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEn
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
@@ -35,11 +36,13 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
@@ -197,5 +200,55 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
                     "exchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
                     transitionConfiguration,
                     remoteTransitionConfiguration));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(
+      final Bytes8 payloadId, final UInt64 slot) {
+    LOG.trace("calling getPayloadHeader(payloadId={}, slot={})", payloadId, slot);
+
+    return executionEngineClient
+        .getPayloadHeader(payloadId)
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenCombine(
+            SafeFuture.of(
+                () ->
+                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                        .getExecutionPayloadHeaderSchema()),
+            ExecutionPayloadHeaderV1::asInternalExecutionPayloadHeader)
+        .thenPeek(
+            executionPayloadHeader ->
+                LOG.trace(
+                    "getPayloadHeader(payloadId={}, slot={}) -> {}",
+                    payloadId,
+                    slot,
+                    executionPayloadHeader));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+      SignedBeaconBlock signedBlindedBeaconBlock) {
+    LOG.trace("calling proposeBlindedBlock(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+
+    checkArgument(
+        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
+        "SignedBeaconBlock must be blind");
+
+    return executionEngineClient
+        .proposeBlindedBlock(signedBlindedBeaconBlock)
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenCombine(
+            SafeFuture.of(
+                () ->
+                    SchemaDefinitionsBellatrix.required(
+                            spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions())
+                        .getExecutionPayloadSchema()),
+            ExecutionPayloadV1::asInternalExecutionPayload)
+        .thenPeek(
+            executionPayload ->
+                LOG.trace(
+                    "proposeBlindedBlock(signedBlindedBeaconBlock={}) -> {}",
+                    signedBlindedBeaconBlock,
+                    executionPayload));
   }
 }

@@ -311,9 +311,15 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
     final DefaultEth2Peer that = (DefaultEth2Peer) o;
     return Objects.equals(rpcMethods, that.rpcMethods);
   }

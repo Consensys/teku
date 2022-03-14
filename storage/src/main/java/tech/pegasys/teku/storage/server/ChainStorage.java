@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -198,7 +199,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
+  public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
   }
 

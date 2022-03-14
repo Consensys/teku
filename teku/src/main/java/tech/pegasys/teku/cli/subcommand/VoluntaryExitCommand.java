@@ -27,10 +27,12 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -145,7 +147,7 @@ public class VoluntaryExitCommand implements Runnable {
 
   private Object2IntMap<BLSPublicKey> getValidatorIndices(
       OwnedValidators blsPublicKeyValidatorMap) {
-    Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
+    final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         blsPublicKeyValidatorMap.getPublicKeys().stream()
             .map(BLSPublicKey::toString)
@@ -162,6 +164,14 @@ public class VoluntaryExitCommand implements Runnable {
                           validatorIndices.put(
                               response.validator.pubkey.asBLSPublicKey(),
                               response.index.intValue())));
+
+      batch.forEach(
+          key -> {
+            if (!validatorIndices.containsKey(
+                BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(key)))) {
+              SUB_COMMAND_LOG.error("Validator not found: " + key);
+            }
+          });
     }
     return validatorIndices;
   }
@@ -177,9 +187,15 @@ public class VoluntaryExitCommand implements Runnable {
               .getSigner()
               .signVoluntaryExit(message, forkInfo)
               .join();
-      apiClient.sendVoluntaryExit(new SignedVoluntaryExit(message, signature));
-      SUB_COMMAND_LOG.display(
-          "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
+      Optional<PostDataFailureResponse> response =
+          apiClient.sendVoluntaryExit(new SignedVoluntaryExit(message, signature));
+      if (response.isPresent()) {
+        SUB_COMMAND_LOG.error(response.get().message);
+      } else {
+        SUB_COMMAND_LOG.display(
+            "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
+      }
+
     } catch (IllegalArgumentException ex) {
       SUB_COMMAND_LOG.error(
           "Failed to submit exit for validator " + publicKey.toAbbreviatedString());

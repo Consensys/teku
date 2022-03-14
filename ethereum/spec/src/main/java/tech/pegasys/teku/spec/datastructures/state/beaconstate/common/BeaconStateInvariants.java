@@ -38,11 +38,10 @@ public class BeaconStateInvariants {
 
   // Fields
   static SszField GENESIS_TIME_FIELD =
-      new SszField(0, BeaconStateFields.GENESIS_TIME.name(), GENESIS_TIME_SCHEMA);
+      new SszField(0, BeaconStateFields.GENESIS_TIME, GENESIS_TIME_SCHEMA);
   static SszField GENESIS_VALIDATORS_ROOT_FIELD =
-      new SszField(
-          1, BeaconStateFields.GENESIS_VALIDATORS_ROOT.name(), GENESIS_VALIDATORS_ROOT_SCHEMA);
-  static SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT.name(), SLOT_SCHEMA);
+      new SszField(1, BeaconStateFields.GENESIS_VALIDATORS_ROOT, GENESIS_VALIDATORS_ROOT_SCHEMA);
+  static SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT, SLOT_SCHEMA);
 
   // Return list of invariant fields
   static List<SszField> getInvariantFields() {

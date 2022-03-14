@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -68,5 +69,5 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot);
 
-  SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot);
+  SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot);
 }

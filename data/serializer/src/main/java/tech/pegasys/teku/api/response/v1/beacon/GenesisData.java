@@ -22,7 +22,7 @@ import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GenesisData {
@@ -54,8 +54,12 @@ public class GenesisData {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final GenesisData that = (GenesisData) o;
     return Objects.equals(genesisTime, that.genesisTime)
         && Objects.equals(genesisValidatorsRoot, that.genesisValidatorsRoot)

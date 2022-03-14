@@ -21,7 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
@@ -36,11 +36,11 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
-import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class EndpointMetadata {
   private final HandlerType method;
@@ -49,6 +49,7 @@ public class EndpointMetadata {
   private final String summary;
   private final Optional<String> security;
   private final String description;
+  private final boolean deprecated;
   private final Map<String, OpenApiResponse> responses;
   private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
   private final List<String> tags;
@@ -60,6 +61,7 @@ public class EndpointMetadata {
       final String summary,
       final Optional<String> security,
       final String description,
+      final boolean deprecated,
       final Map<String, OpenApiResponse> responses,
       final Optional<DeserializableTypeDefinition<?>> requestBodyType,
       final List<String> tags) {
@@ -69,6 +71,7 @@ public class EndpointMetadata {
     this.summary = summary;
     this.security = security;
     this.description = description;
+    this.deprecated = deprecated;
     this.responses = responses;
     this.requestBodyType = requestBodyType;
     this.tags = tags;
@@ -122,6 +125,9 @@ public class EndpointMetadata {
     gen.writeStringField("operationId", operationId);
     gen.writeStringField("summary", summary);
     gen.writeStringField("description", description);
+    if (deprecated) {
+      gen.writeBooleanField("deprecated", true);
+    }
 
     if (requestBodyType.isPresent()) {
       final DeserializableTypeDefinition<?> content = requestBodyType.get();
@@ -185,6 +191,7 @@ public class EndpointMetadata {
     private String operationId;
     private String summary;
     private String description;
+    private boolean deprecated = false;
     private Optional<String> security = Optional.empty();
     private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
@@ -221,6 +228,11 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder description(final String description) {
       this.description = description;
+      return this;
+    }
+
+    public EndpointMetaDataBuilder deprecated(final boolean deprecated) {
+      this.deprecated = deprecated;
       return this;
     }
 
@@ -301,6 +313,7 @@ public class EndpointMetadata {
           summary,
           security,
           description,
+          deprecated,
           responses,
           requestBodyType,
           tags);

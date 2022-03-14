@@ -24,8 +24,12 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -50,6 +54,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -222,14 +227,14 @@ public class TekuNode extends Node {
     for (UInt64 i = UInt64.ZERO; i.isLessThan(totalValidatorCount); i = i.increment()) {
       validators.add(i);
     }
-    final Map<UInt64, Boolean> data =
+    final Object2BooleanMap<UInt64> data =
         getValidatorLivenessAtEpoch(UInt64.valueOf(epoch), validators);
     for (ValidatorLivenessExpectation expectation : args) {
       expectation.verify(data);
     }
   }
 
-  private Map<UInt64, Boolean> getValidatorLivenessAtEpoch(
+  private Object2BooleanMap<UInt64> getValidatorLivenessAtEpoch(
       final UInt64 epoch, List<UInt64> validators) throws IOException {
 
     final ValidatorLivenessRequest request = new ValidatorLivenessRequest(epoch, validators);
@@ -238,7 +243,7 @@ public class TekuNode extends Node {
             getRestApiUrl(), "/eth/v1/validator/liveness", jsonProvider.objectToJSON(request));
     final PostValidatorLivenessResponse livenessResponse =
         jsonProvider.jsonToObject(response, PostValidatorLivenessResponse.class);
-    final Map<UInt64, Boolean> output = new HashMap<>();
+    final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
     for (ValidatorLivenessAtEpoch entry : livenessResponse.data) {
       output.put(entry.index, entry.isLive);
     }
@@ -551,6 +556,8 @@ public class TekuNode extends Node {
   public static class Config {
     public static String DEFAULT_NETWORK_NAME = "swift";
 
+    private Optional<InputStream> maybeNetworkYaml = Optional.empty();
+
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
@@ -648,6 +655,13 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withNetwork(final InputStream stream, final String networkName) {
+      this.maybeNetworkYaml = Optional.of(stream);
+      this.networkName = networkName;
+      configMap.put("network", NETWORK_FILE_PATH);
+      return this;
+    }
+
     public Config withAltairEpoch(final UInt64 altairSlot) {
       configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
       return this;
@@ -681,6 +695,21 @@ public class TekuNode extends Node {
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
+
+      if (maybeNetworkYaml.isPresent()) {
+        final File networkFile = File.createTempFile("network", ".yaml");
+        networkFile.deleteOnExit();
+        try (FileOutputStream out = new FileOutputStream(networkFile)) {
+          IOUtils.copy(maybeNetworkYaml.get(), out);
+        } catch (Exception ex) {
+          LOG.error("Failed to write network yaml", ex);
+        } finally {
+          if (maybeNetworkYaml.isPresent()) {
+            maybeNetworkYaml.get().close();
+          }
+        }
+        configFiles.put(networkFile, NETWORK_FILE_PATH);
+      }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");
       privateKeyFile.deleteOnExit();

@@ -40,6 +40,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetBlockHeader extends AbstractHandler implements Handler {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/headers/:block_id";
@@ -74,13 +75,16 @@ public class GetBlockHeader extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<BlockHeader>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> future =
         chainDataProvider.getBlockHeader(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final BlockHeader response)
+  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<BlockHeader> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockHeaderResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetBlockHeaderResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

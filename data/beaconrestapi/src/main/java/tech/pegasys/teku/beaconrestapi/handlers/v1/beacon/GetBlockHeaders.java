@@ -88,8 +88,7 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
       ctx.future(
           chainDataProvider
               .getBlockHeaders(parentRoot, slot)
-              .thenApplyChecked(
-                  result -> jsonProvider.objectToJSON(new GetBlockHeadersResponse(result)))
+              .thenApplyChecked(jsonProvider::objectToJSON)
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);

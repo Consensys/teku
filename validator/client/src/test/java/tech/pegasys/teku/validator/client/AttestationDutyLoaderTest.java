@@ -88,7 +88,7 @@ class AttestationDutyLoaderTest {
   @Test
   void shouldSubscribeToSubnetWhenValidatorIsAggregator() {
     final UInt64 slot = UInt64.ONE;
-    final Integer validatorIndex = VALIDATOR_INDICES.get(0);
+    final int validatorIndex = VALIDATOR_INDICES.getInt(0);
     final int committeeLength = 1;
     final int committeeIndex = 3;
     final int committeesAtSlot = 4;
@@ -124,7 +124,7 @@ class AttestationDutyLoaderTest {
   @Test
   void shouldSubscribeToSubnetWhenValidatorIsNotAggregator() {
     final UInt64 slot = UInt64.ONE;
-    final Integer validatorIndex = VALIDATOR_INDICES.get(0);
+    final int validatorIndex = VALIDATOR_INDICES.getInt(0);
     final int committeeLength = 10000000;
     final int committeeIndex = 3;
     final int committeesAtSlot = 4;

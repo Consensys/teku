@@ -9,7 +9,7 @@
 
 ## Documentation
 
-- [ ] I thought about documentation and added the `documentation` label to this PR if updates are required.
+- [ ] I thought about documentation and added the `doc-change-required` label to this PR if updates are required.
 
 ## Changelog
 

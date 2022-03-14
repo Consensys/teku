@@ -14,10 +14,10 @@
 package tech.pegasys.teku.storage.client;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,8 +31,8 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -288,6 +288,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           newChainHead.getStateRoot(),
           newChainHead.getRoot(),
           epochTransition,
+          newChainHead.isOptimistic(),
 
           // Chain head must be or descend from the justified checkpoint so we know if the previous
           // duty dependent root isn't available from protoarray it must be the parent of the
@@ -569,9 +570,22 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(true);
   }
 
+  /**
+   * Returns empty if the block is unknown, or an optional indicating whether the block is
+   * optimistically imported or not.
+   *
+   * @param blockRoot the block to check
+   * @return empty if the block is unknown, Optional(true) when the block is optimistically imported
+   *     and Optional(false) when imported and fully validated.
+   */
+  public Optional<Boolean> isBlockOptimistic(final Bytes32 blockRoot) {
+    return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.isOptimistic(blockRoot));
+  }
+
   @Override
-  public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
-    finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
+    finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint, fromOptimisticBlock);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
@@ -582,15 +596,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveCheckpointState(checkpoint);
   }
 
-  public Map<Bytes32, UInt64> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads() {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
-        .orElse(Collections.emptyMap());
+        .orElse(Collections.emptyList());
   }
 
-  public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
+  public List<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
     return getForkChoiceStrategy()
         .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
-        .orElse(Collections.emptySet());
+        .orElse(Collections.emptyList());
   }
 }

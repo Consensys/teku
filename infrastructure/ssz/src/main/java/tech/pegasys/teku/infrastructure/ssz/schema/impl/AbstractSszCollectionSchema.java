@@ -16,13 +16,14 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Integer.min;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
@@ -172,11 +173,9 @@ public abstract class AbstractSszCollectionSchema<
   protected DeserializedData sszDeserializeVector(SszReader reader) {
     if (getElementSchema().isFixedSize()) {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
-      if (sszSuperNodeHint.isPresent()) {
-        return sszDeserializeSupernode(reader, sszSuperNodeHint.get().getDepth());
-      } else {
-        return sszDeserializeFixed(reader);
-      }
+      return sszSuperNodeHint
+          .map(superNodeHint -> sszDeserializeSupernode(reader, superNodeHint.getDepth()))
+          .orElseGet(() -> sszDeserializeFixed(reader));
     } else {
       return sszDeserializeVariable(reader);
     }
@@ -215,12 +214,12 @@ public abstract class AbstractSszCollectionSchema<
     int elementBitSize = getSszElementBitSize();
     if (elementBitSize >= 8) {
       checkSsz(
-          bytesSize * 8 / elementBitSize <= getMaxLength(),
+          bytesSize * 8L / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     } else {
       // preliminary rough check
       checkSsz(
-          (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
+          (bytesSize - 1) * 8L / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     }
     if (getElementSchema() instanceof AbstractSszPrimitiveSchema) {
@@ -264,7 +263,7 @@ public abstract class AbstractSszCollectionSchema<
       checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
       int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
       checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
-      List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
+      IntList elementOffsets = new IntArrayList(elementsCount + 1);
       elementOffsets.add(firstElementOffset);
       for (int i = 1; i < elementsCount; i++) {
         int offset = SszType.sszBytesToLength(reader.read(SSZ_LENGTH_SIZE));
@@ -272,13 +271,11 @@ public abstract class AbstractSszCollectionSchema<
       }
       elementOffsets.add(endOffset);
 
-      List<Integer> elementSizes =
-          IntStream.range(0, elementOffsets.size() - 1)
-              .map(i -> elementOffsets.get(i + 1) - elementOffsets.get(i))
-              .boxed()
-              .collect(Collectors.toList());
+      IntList elementSizes = new IntArrayList();
+      IntStream.range(0, elementOffsets.size() - 1)
+          .forEach(i -> elementSizes.add(elementOffsets.getInt(i + 1) - elementOffsets.getInt(i)));
 
-      if (elementSizes.stream().anyMatch(s -> s < 0)) {
+      if (elementSizes.intStream().anyMatch(s -> s < 0)) {
         throw new SszDeserializeException("Invalid SSZ: wrong child offsets");
       }
 

@@ -65,13 +65,23 @@ class SyncCommitteeContributionPoolTest {
   }
 
   @Test
-  void shouldNotifySubscribersWhenValidContributionAdded() {
+  void shouldNotifySubscribersWhenLocalValidContributionAdded() {
     pool.subscribeOperationAdded(subscriber);
 
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(10);
-    addValid(proof);
+    addValidLocal(proof);
 
-    verify(subscriber).onOperationAdded(proof, ACCEPT);
+    verify(subscriber).onOperationAdded(proof, ACCEPT, false);
+  }
+
+  @Test
+  void shouldNotifySubscribersWhenRemoteValidContributionAdded() {
+    pool.subscribeOperationAdded(subscriber);
+
+    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(10);
+    addValidRemote(proof);
+
+    verify(subscriber).onOperationAdded(proof, ACCEPT, true);
   }
 
   @Test
@@ -80,7 +90,7 @@ class SyncCommitteeContributionPoolTest {
 
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(10);
     when(validator.validate(proof)).thenReturn(SafeFuture.completedFuture(reject("Bad")));
-    assertThat(pool.add(proof)).isCompletedWithValue(reject("Bad"));
+    assertThat(pool.addLocal(proof)).isCompletedWithValue(reject("Bad"));
 
     verifyNoInteractions(subscriber);
   }
@@ -97,12 +107,12 @@ class SyncCommitteeContributionPoolTest {
   void shouldCreateEmptySyncAggregateWhenNoContributionsMatchRequiredSlotAndBlockRoot() {
     final SignedContributionAndProof rightSlotWrongBlockRoot =
         dataStructureUtil.randomSignedContributionAndProof(10);
-    addValid(rightSlotWrongBlockRoot);
+    addValidLocal(rightSlotWrongBlockRoot);
     final SignedContributionAndProof wrongSlotRightBlockRoot =
         dataStructureUtil.randomSignedContributionAndProof(9);
 
-    addValid(rightSlotWrongBlockRoot);
-    addValid(wrongSlotRightBlockRoot);
+    addValidLocal(rightSlotWrongBlockRoot);
+    addValidLocal(wrongSlotRightBlockRoot);
 
     final SyncAggregate result =
         pool.createSyncAggregateForBlock(
@@ -114,7 +124,7 @@ class SyncCommitteeContributionPoolTest {
   @Test
   void shouldCreateSyncAggregateFromSingleContribution() {
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(15);
-    addValid(proof);
+    addValidLocal(proof);
 
     final SyncCommitteeContribution contribution = proof.getMessage().getContribution();
     final SyncAggregate result =
@@ -129,9 +139,9 @@ class SyncCommitteeContributionPoolTest {
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(25);
 
     final SignedContributionAndProof bestProof = withParticipationBits(proof, 1, 2, 3);
-    addValid(withParticipationBits(proof, 1, 3));
-    addValid(bestProof);
-    addValid(withParticipationBits(proof, 2));
+    addValidLocal(withParticipationBits(proof, 1, 3));
+    addValidLocal(bestProof);
+    addValidLocal(withParticipationBits(proof, 2));
 
     final SyncCommitteeContribution contribution = bestProof.getMessage().getContribution();
     final SyncAggregate result =
@@ -160,11 +170,11 @@ class SyncCommitteeContributionPoolTest {
         dataStructureUtil.randomSignedContributionAndProof(14);
     final SignedContributionAndProof proof5 =
         dataStructureUtil.randomSignedContributionAndProof(15);
-    addValid(proof1);
-    addValid(proof2);
-    addValid(proof3);
-    addValid(proof4);
-    addValid(proof5);
+    addValidLocal(proof1);
+    addValidLocal(proof2);
+    addValidLocal(proof3);
+    addValidLocal(proof4);
+    addValidLocal(proof5);
 
     pool.onSlot(UInt64.valueOf(15));
 
@@ -192,8 +202,12 @@ class SyncCommitteeContributionPoolTest {
         contribution.getSlot().plus(1), contribution.getBeaconBlockRoot());
   }
 
-  private void addValid(final SignedContributionAndProof proof) {
-    assertThat(pool.add(proof)).isCompletedWithValue(ACCEPT);
+  private void addValidLocal(final SignedContributionAndProof proof) {
+    assertThat(pool.addLocal(proof)).isCompletedWithValue(ACCEPT);
+  }
+
+  private void addValidRemote(final SignedContributionAndProof proof) {
+    assertThat(pool.addRemote(proof)).isCompletedWithValue(ACCEPT);
   }
 
   private void assertSyncAggregateFromContribution(

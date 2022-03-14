@@ -116,8 +116,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected CombinedChainDataClient combinedChainDataClient;
 
   // Update utils
-  private ChainBuilder chainBuilder;
-  private ChainUpdater chainUpdater;
+  protected ChainBuilder chainBuilder;
+  protected ChainUpdater chainUpdater;
 
   protected final JsonProvider jsonProvider = new JsonProvider();
 
@@ -133,10 +133,22 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       final StateStorageMode storageMode,
       final boolean useMockForkChoice,
       final SpecMilestone specMilestone) {
+    setupStorage(storageMode, useMockForkChoice, specMilestone, false);
+  }
+
+  private void setupStorage(
+      final StateStorageMode storageMode,
+      final boolean useMockForkChoice,
+      final SpecMilestone specMilestone,
+      final boolean storeNonCanonicalBlocks) {
     this.spec = TestSpecFactory.createMinimal(specMilestone);
     this.specConfig = spec.getGenesisSpecConfig();
     this.storageSystem =
-        InMemoryStorageSystemBuilder.create().specProvider(spec).storageMode(storageMode).build();
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
+            .storageMode(storageMode)
+            .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+            .build();
     activeValidatorChannel = new ActiveValidatorCache(spec, 10);
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
@@ -195,6 +207,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startRestAPIAtGenesis() {
     startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0);
+  }
+
+  protected void startRestApiAtGenesisStoringNonCanonicalBlocks() {
+    setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0, true);
+    chainUpdater.initializeGenesis();
+    setupAndStartRestAPI();
   }
 
   protected void startRestAPIAtGenesis(

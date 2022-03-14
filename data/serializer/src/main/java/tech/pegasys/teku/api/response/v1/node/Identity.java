@@ -32,8 +32,7 @@ public class Identity {
 
   @JsonProperty("enr")
   @Schema(
-      description =
-          "Ethereum node record. " + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
+      description = "Ethereum node record. [Read more](https://eips.ethereum.org/EIPS/eip-778)",
       example =
           "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499S"
               + "ZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8")
@@ -78,10 +77,34 @@ public class Identity {
     this.metadata = metadata;
   }
 
+  public String getPeerId() {
+    return peerId;
+  }
+
+  public String getEnr() {
+    return enr;
+  }
+
+  public List<String> getP2pAddresses() {
+    return p2pAddresses;
+  }
+
+  public List<String> getDiscoveryAddresses() {
+    return discoveryAddresses;
+  }
+
+  public Metadata getMetadata() {
+    return metadata;
+  }
+
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Identity identity = (Identity) o;
     return Objects.equals(peerId, identity.peerId)
         && Objects.equals(enr, identity.enr)

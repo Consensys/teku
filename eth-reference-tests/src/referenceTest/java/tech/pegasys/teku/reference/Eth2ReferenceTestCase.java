@@ -31,7 +31,6 @@ import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_generic.SszGenericTests;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
-import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutorDeprecated;
 
 public abstract class Eth2ReferenceTestCase {
 
@@ -46,7 +45,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(SszGenericTests.SSZ_GENERIC_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
-          .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
           .put("merkle/single_proof", TestExecutor.IGNORE_TESTS)
           .build();
 

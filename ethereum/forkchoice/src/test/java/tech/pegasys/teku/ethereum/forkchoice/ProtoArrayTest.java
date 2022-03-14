@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -440,6 +441,15 @@ class ProtoArrayTest {
     assertThat(protoArray.findOptimisticallySyncedMergeTransitionBlock(block4a)).isEmpty();
   }
 
+  @Test
+  void onBlock_shouldNotMarkDefaultPayloadAsOptimistic() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), Bytes32.ZERO);
+    addOptimisticBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), dataStructureUtil.randomBytes32());
+
+    assertThat(protoArray.getProtoNode(block1a).orElseThrow().isOptimistic()).isFalse();
+    assertThat(protoArray.getProtoNode(block1b).orElseThrow().isOptimistic()).isTrue();
+  }
+
   private void assertHead(final Bytes32 expectedBlockHash) {
     assertThat(
             protoArray.findOptimisticHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
@@ -485,7 +495,7 @@ class ProtoArrayTest {
     return Hash.sha256(blockRoot);
   }
 
-  private List<Long> computeDeltas() {
+  private LongList computeDeltas() {
     final List<UInt64> balances =
         Collections.nCopies(voteUpdater.getHighestVotedValidatorIndex().intValue(), UInt64.ONE);
     return ProtoArrayScoreCalculator.computeDeltas(

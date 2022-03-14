@@ -1,4 +1,5 @@
 dependencies {
+    api project(':infrastructure:bytes')
     api 'it.unimi.dsi:fastutil'
     api 'org.apache.tuweni:tuweni-bytes'
 
@@ -25,6 +26,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
+    testImplementation testFixtures(project(':infrastructure:collections'))
 
     // From datastructures - TODO(#3356) clean up these imports
     api project(':infrastructure:bls')
@@ -59,6 +61,7 @@ dependencies {
 
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
+    testFixturesImplementation project(':infrastructure:bytes')
     testFixturesImplementation testFixtures(project(':infrastructure:bls'))
     testFixturesImplementation project(':infrastructure:events')
 }

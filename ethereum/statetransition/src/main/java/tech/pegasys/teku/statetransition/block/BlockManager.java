@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.FailedBlockImportResult;
@@ -52,7 +52,7 @@ public class BlockManager extends Service
   // and will not require any further retry. Descendants of these blocks will be considered invalid
   // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.create(500);
-  private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
+  private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
   public BlockManager(
@@ -109,12 +109,14 @@ public class BlockManager extends Service
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 
-  public void subscribeToReceivedBlocks(ReceivedBlockListener receivedBlockListener) {
-    receivedBlockSubscribers.subscribe(receivedBlockListener);
+  public void subscribeToReceivedBlocks(ImportedBlockListener importedBlockListener) {
+    receivedBlockSubscribers.subscribe(importedBlockListener);
   }
 
-  private void notifyReceivedBlockSubscribers(SignedBeaconBlock signedBeaconBlock) {
-    receivedBlockSubscribers.forEach(s -> s.accept(signedBeaconBlock));
+  private void notifyReceivedBlockSubscribers(
+      final SignedBeaconBlock signedBeaconBlock, final boolean executionOptimistic) {
+    receivedBlockSubscribers.forEach(
+        s -> s.onBlockImported(signedBeaconBlock, executionOptimistic));
   }
 
   @Override
@@ -133,12 +135,14 @@ public class BlockManager extends Service
 
   private SafeFuture<BlockImportResult> doImportBlock(final SignedBeaconBlock block) {
     return handleInvalidBlock(block)
-        .or(
-            () -> {
-              notifyReceivedBlockSubscribers(block);
-              return handleKnownBlock(block);
-            })
-        .orElseGet(() -> handleBlockImport(block));
+        .or(() -> handleKnownBlock(block))
+        .orElseGet(() -> handleBlockImport(block))
+        .thenPeek(
+            result -> {
+              if (result.isSuccessful()) {
+                notifyReceivedBlockSubscribers(block, result.isImportedOptimistically());
+              }
+            });
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
@@ -163,12 +167,15 @@ public class BlockManager extends Service
   }
 
   private Optional<SafeFuture<BlockImportResult>> handleKnownBlock(final SignedBeaconBlock block) {
-    if (pendingBlocks.contains(block)
-        || futureBlocks.contains(block)
-        || recentChainData.containsBlock(block.getRoot())) {
-      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
+    if (pendingBlocks.contains(block) || futureBlocks.contains(block)) {
+      // Pending and future blocks can't have been executed yet so must be marked optimistic
+      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, true)));
     }
-    return Optional.empty();
+    return recentChainData
+        .isBlockOptimistic(block.getRoot())
+        .map(
+            isOptimistic ->
+                SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
   private SafeFuture<BlockImportResult> handleBlockImport(final SignedBeaconBlock block) {

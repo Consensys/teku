@@ -24,8 +24,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
@@ -117,7 +117,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .orElseThrow(
             () ->
                 new InvalidConfigurationException(
-                    "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active"));
+                    "Invalid configuration. --validators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active"));
   }
 
   @Override

@@ -33,15 +33,13 @@ public interface MutableBeaconStatePhase0 extends MutableBeaconState, BeaconStat
   // Attestations
   @Override
   default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS);
     return getAnyByRef(fieldIndex);
   }
 
   @Override
   default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS);
     return getAnyByRef(fieldIndex);
   }
 

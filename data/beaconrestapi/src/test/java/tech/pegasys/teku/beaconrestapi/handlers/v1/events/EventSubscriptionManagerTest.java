@@ -78,7 +78,8 @@ public class EventSubscriptionManagerTest {
           data.randomBytes32(),
           data.randomBytes32(),
           data.randomBytes32(),
-          epoch);
+          epoch,
+          null);
 
   private final HeadEvent headEvent =
       new HeadEvent(
@@ -86,13 +87,14 @@ public class EventSubscriptionManagerTest {
           data.randomBytes32(),
           data.randomBytes32(),
           false,
+          true,
           data.randomBytes32(),
           data.randomBytes32());
   private final SignedContributionAndProof contributionAndProof =
       data.randomSignedContributionAndProof(0L);
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
-      new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
+      new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, null);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
@@ -236,7 +238,8 @@ public class EventSubscriptionManagerTest {
             eventString.substring(eventString.indexOf("{")), BlockEvent.class);
 
     assertThat(event)
-        .isEqualTo(BlockEvent.fromSignedBeaconBlock(sampleBlock.asInternalSignedBeaconBlock(spec)));
+        .isEqualTo(
+            BlockEvent.fromSignedBeaconBlock(sampleBlock.asInternalSignedBeaconBlock(spec), null));
   }
 
   @Test
@@ -324,7 +327,9 @@ public class EventSubscriptionManagerTest {
 
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(
-        sampleVoluntaryExit.asInternalSignedVoluntaryExit(), InternalValidationResult.ACCEPT);
+        sampleVoluntaryExit.asInternalSignedVoluntaryExit(),
+        InternalValidationResult.ACCEPT,
+        false);
     asyncRunner.executeQueuedActions();
   }
 
@@ -335,7 +340,7 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerBlockEvent() {
-    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec));
+    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec), false);
     asyncRunner.executeQueuedActions();
   }
 
@@ -346,7 +351,7 @@ public class EventSubscriptionManagerTest {
 
   private void triggerFinalizedCheckpointEvent() {
     manager.onNewFinalizedCheckpoint(
-        new Checkpoint(sampleCheckpointEvent.epoch, sampleCheckpointEvent.block));
+        new Checkpoint(sampleCheckpointEvent.epoch, sampleCheckpointEvent.block), false);
     asyncRunner.executeQueuedActions();
   }
 
@@ -356,6 +361,7 @@ public class EventSubscriptionManagerTest {
         chainReorgEvent.newHeadState,
         chainReorgEvent.newHeadBlock,
         chainReorgEvent.slot.mod(specConfig.getSlotsPerEpoch()).equals(UInt64.ZERO),
+        false,
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         Optional.of(
@@ -374,6 +380,7 @@ public class EventSubscriptionManagerTest {
         headEvent.state,
         headEvent.block,
         false,
+        false,
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         Optional.empty());
@@ -381,7 +388,8 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerContributionEvent() {
-    manager.onSyncCommitteeContribution(contributionAndProof, InternalValidationResult.ACCEPT);
+    manager.onSyncCommitteeContribution(
+        contributionAndProof, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
   }
 }

@@ -20,8 +20,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.ArrayList;
@@ -38,6 +41,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
@@ -144,8 +148,72 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    blockManager.importBlock(nextBlock).join();
+    safeJoin(blockManager.importBlock(nextBlock));
     assertThat(pendingBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void shouldNotifySubscribersOnImport() {
+    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    blockManager.subscribeToReceivedBlocks(subscriber);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
+
+    safeJoin(blockManager.importBlock(nextBlock));
+    verify(subscriber).onBlockImported(nextBlock, false);
+  }
+
+  @Test
+  public void shouldNotifySubscribersOnKnownBlock() {
+    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    blockManager.subscribeToReceivedBlocks(subscriber);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
+
+    safeJoin(blockManager.importBlock(nextBlock));
+    verify(subscriber).onBlockImported(nextBlock, false);
+
+    assertThatSafeFuture(blockManager.importBlock(nextBlock))
+        .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, false));
+    verify(subscriber, times(2)).onBlockImported(nextBlock, false);
+  }
+
+  @Test
+  public void shouldNotifySubscribersOnKnownOptimisticBlock() {
+    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    blockManager.subscribeToReceivedBlocks(subscriber);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
+
+    safeJoin(blockManager.importBlock(nextBlock));
+    verify(subscriber).onBlockImported(nextBlock, true);
+
+    assertThatSafeFuture(blockManager.importBlock(nextBlock))
+        .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, true));
+    verify(subscriber, times(2)).onBlockImported(nextBlock, true);
+  }
+
+  @Test
+  public void shouldNotNotifySubscribersOnInvalidBlock() {
+    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    blockManager.subscribeToReceivedBlocks(subscriber);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock validBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    final SignedBeaconBlock invalidBlock =
+        validBlock.getSchema().create(validBlock.getMessage(), dataStructureUtil.randomSignature());
+    incrementSlot();
+
+    assertThatSafeFuture(blockManager.importBlock(invalidBlock))
+        .isCompletedWithValueMatching(result -> !result.isSuccessful());
+    verifyNoInteractions(subscriber);
   }
 
   @Test
@@ -159,7 +227,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.importBlock(nextNextBlock).join();
+    safeJoin(blockManager.importBlock(nextNextBlock));
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -212,7 +280,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    blockManager.importBlock(nextBlock).join();
+    safeJoin(blockManager.importBlock(nextBlock));
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -228,7 +296,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     incrementSlot();
-    blockManager.importBlock(nextNextBlock).join();
+    safeJoin(blockManager.importBlock(nextNextBlock));
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();

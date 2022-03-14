@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collections;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -132,7 +133,7 @@ class AttestationTopicSubscriberTest {
 
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
-    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(Set.of(1, 2));
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(IntSet.of(1, 2));
 
     verify(eth2P2PNetwork).subscribeToAttestationSubnetId(1);
     verify(eth2P2PNetwork).subscribeToAttestationSubnetId(2);
@@ -155,7 +156,7 @@ class AttestationTopicSubscriberTest {
 
     subscriber.subscribeToPersistentSubnets(subnetSubscription);
 
-    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(Set.of(2));
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(IntSet.of(2));
 
     verify(eth2P2PNetwork).subscribeToAttestationSubnetId(2);
   }
@@ -208,7 +209,7 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions1);
 
     verify(eth2P2PNetwork).subscribeToAttestationSubnetId(subnetId);
-    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(Set.of(subnetId));
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(IntSet.of(subnetId));
 
     Set<SubnetSubscription> subnetSubscriptions2 =
         Set.of(new SubnetSubscription(subnetId, secondSlot));

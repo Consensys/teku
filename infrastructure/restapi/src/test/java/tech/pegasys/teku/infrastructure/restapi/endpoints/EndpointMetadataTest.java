@@ -15,19 +15,22 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
-import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableArrayTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 class EndpointMetadataTest {
   @Test
@@ -119,10 +122,19 @@ class EndpointMetadataTest {
   }
 
   @Test
+  void shouldDeprecateEndpoint() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder().deprecated(true).response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+    final JsonGenerator generator = mock(JsonGenerator.class);
+    metadata.writeOpenApi(generator);
+    verify(generator).writeBooleanField("deprecated", true);
+  }
+
+  @Test
   @SuppressWarnings({"unchecked", "rawtypes"})
   void requestBodyType_shouldAcceptLists() {
-    final DeserializableArrayTypeDefinition<String> type =
-        new DeserializableArrayTypeDefinition(CoreTypes.STRING_TYPE);
+    final DeserializableListTypeDefinition<String> type =
+        new DeserializableListTypeDefinition(CoreTypes.STRING_TYPE);
     final EndpointMetadata metadata =
         validBuilder()
             .requestBodyType(type)

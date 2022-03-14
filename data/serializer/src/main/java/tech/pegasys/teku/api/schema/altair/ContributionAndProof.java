@@ -55,8 +55,12 @@ public class ContributionAndProof {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ContributionAndProof that = (ContributionAndProof) o;
     return Objects.equals(aggregatorIndex, that.aggregatorIndex)
         && Objects.equals(selectionProof, that.selectionProof)

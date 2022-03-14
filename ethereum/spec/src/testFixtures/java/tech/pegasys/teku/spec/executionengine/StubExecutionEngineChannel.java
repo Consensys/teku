@@ -24,11 +24,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -132,6 +134,80 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
       TransitionConfiguration transitionConfiguration) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("exchangeTransitionConfiguration not supported"));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(Bytes8 payloadId, UInt64 slot) {
+    return getPayload(payloadId, slot)
+        .thenApply(
+            executionPayload ->
+                spec.atSlot(slot)
+                    .getSchemaDefinitions()
+                    .toVersionBellatrix()
+                    .orElseThrow()
+                    .getExecutionPayloadHeaderSchema()
+                    .create(
+                        executionPayload.getParentHash(),
+                        executionPayload.getFeeRecipient(),
+                        executionPayload.getStateRoot(),
+                        executionPayload.getReceiptsRoot(),
+                        executionPayload.getLogsBloom(),
+                        executionPayload.getPrevRandao(),
+                        executionPayload.getBlockNumber(),
+                        executionPayload.getGasLimit(),
+                        executionPayload.getGasUsed(),
+                        executionPayload.getTimestamp(),
+                        executionPayload.getExtraData(),
+                        executionPayload.getBaseFeePerGas(),
+                        executionPayload.getBlockHash(),
+                        executionPayload.getTransactions().hashTreeRoot()));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+      SignedBeaconBlock signedBlindedBeaconBlock) {
+    Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
+        spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions().toVersionBellatrix();
+
+    if (schemaDefinitionsBellatrix.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new UnsupportedOperationException(
+              "proposeBlindedBlock not supported for non-Bellatrix milestones"));
+    }
+
+    if (!signedBlindedBeaconBlock.getBeaconBlock().orElseThrow().getBody().isBlinded()) {
+      return SafeFuture.failedFuture(
+          new UnsupportedOperationException(
+              "proposeBlindedBlock requires a signed blinded beacon block"));
+    }
+
+    ExecutionPayloadHeader executionPayloadHeader =
+        signedBlindedBeaconBlock
+            .getBeaconBlock()
+            .orElseThrow()
+            .getBody()
+            .getOptionalExecutionPayloadHeader()
+            .orElseThrow();
+
+    return SafeFuture.completedFuture(
+        schemaDefinitionsBellatrix
+            .get()
+            .getExecutionPayloadSchema()
+            .create(
+                executionPayloadHeader.getParentHash(),
+                executionPayloadHeader.getFeeRecipient(),
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes.EMPTY,
+                executionPayloadHeader.getPrevRandao(),
+                UInt64.valueOf(payloadIdCounter.get()),
+                UInt64.ONE,
+                UInt64.ZERO,
+                executionPayloadHeader.getTimestamp(),
+                Bytes.EMPTY,
+                UInt256.ONE,
+                Bytes32.random(),
+                List.of()));
   }
 
   public PayloadStatus getPayloadStatus() {

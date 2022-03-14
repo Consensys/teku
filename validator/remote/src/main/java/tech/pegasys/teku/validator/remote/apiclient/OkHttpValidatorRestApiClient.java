@@ -200,8 +200,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendVoluntaryExit(final SignedVoluntaryExit voluntaryExit) {
-    post(SEND_SIGNED_VOLUNTARY_EXIT, voluntaryExit, createHandler());
+  public Optional<PostDataFailureResponse> sendVoluntaryExit(
+      final SignedVoluntaryExit voluntaryExit) {
+    return post(
+        SEND_SIGNED_VOLUNTARY_EXIT,
+        voluntaryExit,
+        ResponseHandler.createForEmptyOkAndContentInBadResponse(
+            jsonProvider, PostDataFailureResponse.class));
   }
 
   @Override

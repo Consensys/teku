@@ -21,7 +21,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes8Deserializer;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 
 public class ForkChoiceUpdatedResult {
   private final PayloadStatusV1 payloadStatus;
@@ -45,8 +45,12 @@ public class ForkChoiceUpdatedResult {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ForkChoiceUpdatedResult that = (ForkChoiceUpdatedResult) o;
     return Objects.equals(payloadStatus, that.payloadStatus)
         && Objects.equals(payloadId, that.payloadId);

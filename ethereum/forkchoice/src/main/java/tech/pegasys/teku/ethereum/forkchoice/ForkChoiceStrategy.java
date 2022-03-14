@@ -14,12 +14,11 @@
 package tech.pegasys.teku.ethereum.forkchoice;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -109,7 +108,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
-      List<Long> deltas =
+      LongList deltas =
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
@@ -154,17 +153,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Map<Bytes32, UInt64> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads() {
     protoArrayLock.readLock().lock();
     try {
-      final Map<Bytes32, UInt64> chainHeads = new HashMap<>();
-      protoArray.getNodes().stream()
+      return protoArray.getNodes().stream()
           .filter(
               protoNode ->
                   protoNode.getBestChildIndex().isEmpty()
                       && protoArray.nodeIsViableForHead(protoNode))
-          .forEach(protoNode -> chainHeads.put(protoNode.getBlockRoot(), protoNode.getBlockSlot()));
-      return Collections.unmodifiableMap(chainHeads);
+          .map(ProtoNode::getBlockData)
+          .collect(Collectors.toList());
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -298,10 +296,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public boolean isOptimistic(final Bytes32 blockRoot) {
+  public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(blockRoot).map(ProtoNode::isOptimistic).orElse(false);
+      return getProtoNode(blockRoot).map(ProtoNode::isOptimistic);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -334,13 +332,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Set<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
+  public List<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getNodes().stream()
           .filter(protoNode -> protoNode.getBlockSlot().equals(slot))
           .map(ProtoNode::getBlockRoot)
-          .collect(Collectors.toSet());
+          .collect(Collectors.toList());
     } finally {
       protoArrayLock.readLock().unlock();
     }

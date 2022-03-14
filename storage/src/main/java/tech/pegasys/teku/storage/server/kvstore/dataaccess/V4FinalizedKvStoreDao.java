@@ -17,6 +17,7 @@ import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -77,12 +78,12 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   }
 
   @Override
-  public Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
     Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
     return maybeRoots.stream()
         .flatMap(Collection::stream)
         .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
-        .collect(Collectors.toSet());
+        .collect(Collectors.toList());
   }
 
   @Override

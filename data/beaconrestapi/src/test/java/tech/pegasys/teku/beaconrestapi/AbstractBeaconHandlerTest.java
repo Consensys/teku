@@ -22,7 +22,6 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -34,7 +33,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public abstract class AbstractBeaconHandlerTest {
 
@@ -44,7 +45,6 @@ public abstract class AbstractBeaconHandlerTest {
   protected final Context context = mock(Context.class);
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
-  protected final ConfigProvider configProvider = new ConfigProvider(spec);
 
   protected final SyncService syncService = mock(SyncService.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
@@ -96,5 +96,14 @@ public abstract class AbstractBeaconHandlerTest {
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),
         UInt64.valueOf(highestSlot));
+  }
+
+  protected <T> ObjectAndMetaData<T> withMetaData(final T value) {
+    return new ObjectAndMetaData<>(
+        value,
+        spec.getGenesisSpec().getMilestone(),
+        false,
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        true);
   }
 }

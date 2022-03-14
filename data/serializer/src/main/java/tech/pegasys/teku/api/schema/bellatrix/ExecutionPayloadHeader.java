@@ -24,7 +24,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -86,6 +86,25 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
         executionPayloadHeader.getBaseFeePerGas(),
         executionPayloadHeader.getBlockHash());
     this.transactionsRoot = executionPayloadHeader.getTransactionsRoot();
+  }
+
+  public ExecutionPayloadHeader(
+      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
+    super(
+        executionPayload.getParentHash(),
+        executionPayload.getFeeRecipient(),
+        executionPayload.getStateRoot(),
+        executionPayload.getReceiptsRoot(),
+        executionPayload.getLogsBloom(),
+        executionPayload.getPrevRandao(),
+        executionPayload.getBlockNumber(),
+        executionPayload.getGasLimit(),
+        executionPayload.getGasUsed(),
+        executionPayload.getTimestamp(),
+        executionPayload.getExtraData(),
+        executionPayload.getBaseFeePerGas(),
+        executionPayload.getBlockHash());
+    this.transactionsRoot = executionPayload.getTransactions().hashTreeRoot();
   }
 
   public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader>

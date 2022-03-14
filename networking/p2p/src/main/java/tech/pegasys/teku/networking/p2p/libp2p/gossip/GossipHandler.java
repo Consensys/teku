@@ -19,7 +19,6 @@ import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
 import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.Unpooled;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
@@ -37,15 +35,10 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
 
   private static final SafeFuture<ValidationResult> VALIDATION_FAILED =
       SafeFuture.completedFuture(ValidationResult.Invalid);
-  private static final SafeFuture<ValidationResult> VALIDATION_IGNORED =
-      SafeFuture.completedFuture(ValidationResult.Ignore);
-
-  private static final int MAX_SENT_MESSAGES = 2048;
 
   private final Topic topic;
   private final PubsubPublisherApi publisher;
   private final TopicHandler handler;
-  private final Set<Bytes> processedMessages = LimitedSet.create(MAX_SENT_MESSAGES);
   private final Counter messageCounter;
 
   public GossipHandler(
@@ -78,15 +71,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
           maxMessageSize);
       return VALIDATION_FAILED;
     }
-    byte[] arr = new byte[message.getData().readableBytes()];
-    message.getData().slice().readBytes(arr);
-    Bytes bytes = Bytes.wrap(arr);
-    if (!processedMessages.add(bytes)) {
-      // We've already seen this message, skip processing
-      LOG.trace("Ignoring duplicate message for topic {}: {} bytes", topic, bytes.size());
-      return VALIDATION_IGNORED;
-    }
-    LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
+    LOG.trace("Received message for topic {}", topic);
 
     PubsubMessage pubsubMessage = message.getOriginalMessage();
     if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
@@ -98,11 +83,6 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
   }
 
   public void gossip(Bytes bytes) {
-    if (!processedMessages.add(bytes)) {
-      // We've already gossiped this data
-      return;
-    }
-
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
     SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
         .finish(

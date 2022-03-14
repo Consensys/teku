@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 
 public class ProposerConfig {
   @JsonProperty(value = "proposer_config")
@@ -60,8 +60,12 @@ public class ProposerConfig {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ProposerConfig that = (ProposerConfig) o;
     return Objects.equals(proposerConfig, that.proposerConfig)
         && Objects.equals(defaultConfig, that.defaultConfig);
@@ -89,8 +93,12 @@ public class ProposerConfig {
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       final Config that = (Config) o;
       return Objects.equals(feeRecipient, that.feeRecipient);
     }

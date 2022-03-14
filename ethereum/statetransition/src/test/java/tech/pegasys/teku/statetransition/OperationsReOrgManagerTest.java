@@ -110,6 +110,7 @@ public class OperationsReOrgManagerTest {
         fork2Block2.getStateRoot(),
         fork2Block2.hashTreeRoot(),
         false,
+        false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         ReorgContext.of(
@@ -189,6 +190,7 @@ public class OperationsReOrgManagerTest {
         UInt64.valueOf(13),
         block2.getStateRoot(),
         block2.hashTreeRoot(),
+        false,
         false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),

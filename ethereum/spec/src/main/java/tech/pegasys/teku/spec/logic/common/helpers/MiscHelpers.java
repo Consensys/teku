@@ -22,14 +22,13 @@ import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -243,10 +242,6 @@ public class MiscHelpers {
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
-    return false;
-  }
-
-  public boolean isMergeTransitionComplete(final SignedBeaconBlock block) {
     return false;
   }
 }

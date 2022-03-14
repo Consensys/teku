@@ -1,21 +1,24 @@
 {
-  "title": "ListKeysResponse",
-  "type": "object",
-  "properties": {
-    "data": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "validating_pubkey": {
-            "$ref": "#/components/schemas/PubKey"
+  "title" : "ListKeysResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "required" : [ "validating_pubkey", "readonly" ],
+        "properties" : {
+          "validating_pubkey" : {
+            "$ref" : "#/components/schemas/PubKey"
           },
-          "derivation_path": {
-            "type": "string",
-            "description": "The derivation path (if present in the imported keystore)."
+          "derivation_path" : {
+            "type" : "string",
+            "description" : "The derivation path (if present in the imported keystore)."
           },
-          "readonly": {
-            "type": "boolean"
+          "readonly" : {
+            "type" : "boolean",
+            "description" : "Whether the validator can be modified"
           }
         }
       }

@@ -14,7 +14,10 @@
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatLongCollection;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
@@ -175,7 +178,7 @@ public class TreeTest {
   void testTreeNodeIterator() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateAll(
         (node, idx) -> {
           assertThat(root.get(idx)).isSameAs(node);
@@ -183,7 +186,7 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices)
+    assertThatLongCollection(iteratedIndices)
         .containsExactly(
             0b1L, 0b10L, 0b100L, 0b1000L, 0b1001L, 0b101L, 0b1010L, 0b1011L, 0b11L, 0b110L, 0b111L);
   }
@@ -192,7 +195,7 @@ public class TreeTest {
   void testTreeNodeIteratorWithRange() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateRange(
         0b101,
         0b110,
@@ -202,7 +205,7 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices)
+    assertThatLongCollection(iteratedIndices)
         .containsExactly(0b1L, 0b10L, 0b101L, 0b1010L, 0b1011L, 0b11L, 0b110L);
   }
 
@@ -210,7 +213,7 @@ public class TreeTest {
   void testTreeNodeIteratorWithDegenerateRange() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateRange(
         0b100000,
         0b100001,
@@ -220,14 +223,14 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices).containsExactly(0b1L, 0b10L, 0b100L, 0b1000L);
+    assertThatLongCollection(iteratedIndices).containsExactly(0b1L, 0b10L, 0b100L, 0b1000L);
   }
 
   @Test
   void testTreeNodeIteratorWithEqualStartEndNodes() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateRange(
         0b11,
         0b11,
@@ -237,7 +240,7 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices).containsExactly(0b1L, 0b11L, 0b110L, 0b111L);
+    assertThatLongCollection(iteratedIndices).containsExactly(0b1L, 0b11L, 0b110L, 0b111L);
   }
 
   static List<LeafNode> collectLeaves(TreeNode n, long from, long to) {

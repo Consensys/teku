@@ -28,8 +28,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -121,14 +121,6 @@ public class Spec {
 
   private SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
     return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
-  }
-
-  private SpecVersion specVersionFromForkChoice(ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
-    final UInt64 latestSlot =
-        forkChoiceStrategy.getChainHeads().values().stream()
-            .max(UInt64::compareTo)
-            .orElse(UInt64.MAX_VALUE);
-    return atSlot(latestSlot);
   }
 
   public SpecConfig getSpecConfig(final UInt64 epoch) {
@@ -408,7 +400,7 @@ public class Spec {
 
   public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    return specVersionFromForkChoice(forkChoiceStrategy)
+    return forGetAncestor(forkChoiceStrategy, root, slot)
         .getForkChoiceUtil()
         .getAncestor(forkChoiceStrategy, root, slot);
   }
@@ -419,16 +411,23 @@ public class Spec {
       UInt64 startSlot,
       UInt64 step,
       UInt64 count) {
-    return specVersionFromForkChoice(forkChoiceStrategy)
+    return forGetAncestor(forkChoiceStrategy, root, startSlot)
         .getForkChoiceUtil()
         .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
-    return specVersionFromForkChoice(forkChoiceStrategy)
+    return forGetAncestor(forkChoiceStrategy, root, startSlot)
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
+  }
+
+  private SpecVersion forGetAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 startSlot) {
+    return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
   public void onTick(MutableStore store, UInt64 time) {
@@ -637,10 +636,6 @@ public class Spec {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
   }
 
-  public boolean isMergeTransitionComplete(final SignedBeaconBlock block) {
-    return atBlock(block).miscHelpers().isMergeTransitionComplete(block);
-  }
-
   // Private helpers
   private SpecVersion atState(final BeaconState state) {
     return atSlot(state.getSlot());
@@ -671,8 +666,12 @@ public class Spec {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Spec spec = (Spec) o;
     return Objects.equals(forkSchedule, spec.forkSchedule);
   }

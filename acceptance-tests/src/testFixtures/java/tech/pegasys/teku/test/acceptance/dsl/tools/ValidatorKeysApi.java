@@ -36,7 +36,8 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorKeysApi {
   private static final Logger LOG = LogManager.getLogger();
-  private static final String KEYS_URL = "/eth/v1/keystores";
+  private static final String LOCAL_KEYS_URL = "/eth/v1/keystores";
+  private static final String REMOTE_KEYS_URL = "/eth/v1/remotekeys";
   private final JsonProvider jsonProvider = new JsonProvider();
   private final SimpleHttpClient httpClient;
   private final Supplier<URI> validatorUri;
@@ -51,20 +52,29 @@ public class ValidatorKeysApi {
     this.apiPasswordSupplier = Suppliers.memoize(apiPasswordSupplier::get);
   }
 
-  public void addValidatorsAndExpect(
+  public void addLocalValidatorsAndExpect(
       final ValidatorKeystores validatorKeystores, final String expectedStatus) throws IOException {
     final Path tempDir = Files.createTempDirectory("validator-keys-api");
     final JsonNode addResult =
-        jsonProvider.getObjectMapper().readTree(addValidators(validatorKeystores, tempDir));
+        jsonProvider.getObjectMapper().readTree(addLocalValidators(validatorKeystores, tempDir));
     assertThat(addResult.get("data").size()).isEqualTo(validatorKeystores.getValidatorCount());
     checkStatus(addResult.get("data"), expectedStatus);
     tempDir.toFile().delete();
   }
 
-  public void removeValidatorAndCheckStatus(
+  public void addRemoteValidatorsAndExpect(
+      final List<BLSPublicKey> expectedKeys, final String signerUrl, final String expectedStatus)
+      throws IOException {
+    final JsonNode addResult =
+        jsonProvider.getObjectMapper().readTree(addRemoteValidators(expectedKeys, signerUrl));
+    assertThat(addResult.get("data").size()).isEqualTo(expectedKeys.size());
+    checkStatus(addResult.get("data"), expectedStatus);
+  }
+
+  public void removeLocalValidatorAndCheckStatus(
       final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
     final JsonNode removeResult =
-        jsonProvider.getObjectMapper().readTree(removeValidator(publicKey));
+        jsonProvider.getObjectMapper().readTree(removeLocalValidator(publicKey));
     assertThat(removeResult.get("data").size()).isEqualTo(1);
     checkStatus(removeResult.get("data"), expectedStatus);
     if (expectedStatus.equals("deleted") || expectedStatus.equals("not_active")) {
@@ -76,8 +86,17 @@ public class ValidatorKeysApi {
     }
   }
 
-  public void assertValidatorListing(final List<BLSPublicKey> expectedKeys) throws IOException {
-    final JsonNode result = jsonProvider.getObjectMapper().readTree(getValidatorListing());
+  public void removeRemoteValidatorAndCheckStatus(
+      final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
+    final JsonNode removeResult =
+        jsonProvider.getObjectMapper().readTree(removeRemoteValidator(publicKey));
+    assertThat(removeResult.get("data").size()).isEqualTo(1);
+    checkStatus(removeResult.get("data"), expectedStatus);
+  }
+
+  public void assertLocalValidatorListing(final List<BLSPublicKey> expectedKeys)
+      throws IOException {
+    final JsonNode result = jsonProvider.getObjectMapper().readTree(getLocalValidatorListing());
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();
     final List<String> expectedKeyStrings =
@@ -93,17 +112,47 @@ public class ValidatorKeysApi {
     checkReadOnly(data, false);
   }
 
-  private String getValidatorListing() throws IOException {
-    final String result = httpClient.get(validatorUri.get(), KEYS_URL, authHeaders());
-    LOG.debug("GET Keys: " + result);
+  public void assertRemoteValidatorListing(final List<BLSPublicKey> expectedKeys)
+      throws IOException {
+    final JsonNode result = jsonProvider.getObjectMapper().readTree(getRemoteValidatorListing());
+    final JsonNode data = result.get("data");
+    assertThat(data.isArray()).isTrue();
+    final List<String> expectedKeyStrings =
+        expectedKeys.stream()
+            .map(key -> key.toBytesCompressed().toHexString())
+            .collect(Collectors.toList());
+    final List<String> actualKeyStrings =
+        data.findValues("pubkey").stream().map(node -> node.asText()).collect(Collectors.toList());
+
+    Assertions.assertThat(actualKeyStrings).containsOnlyOnceElementsOf(expectedKeyStrings);
+    checkReadOnly(data, false);
+  }
+
+  public URI getValidatorUri() {
+    return validatorUri.get();
+  }
+
+  private String getRemoteValidatorListing() throws IOException {
+    final String result = httpClient.get(validatorUri.get(), REMOTE_KEYS_URL, authHeaders());
+    LOG.debug("GET REMOTE Keys: " + result);
+    return result;
+  }
+
+  private String getLocalValidatorListing() throws IOException {
+    final String result = httpClient.get(validatorUri.get(), LOCAL_KEYS_URL, authHeaders());
+    LOG.debug("GET LOCAL Keys: " + result);
     return result;
   }
 
   private Map<String, String> authHeaders() {
+    if (apiPasswordSupplier.get().isEmpty()) {
+      LOG.debug("Not using auth headers");
+      return Map.of();
+    }
     return Map.of("Authorization", "Bearer " + apiPasswordSupplier.get());
   }
 
-  private String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
+  private String addLocalValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
       throws IOException {
     final List<String> keystores = validatorKeystores.getKeystores(tempDir);
     final List<String> passwords = validatorKeystores.getPasswords();
@@ -111,15 +160,43 @@ public class ValidatorKeysApi {
     final String body =
         jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
 
-    final String result = httpClient.post(validatorUri.get(), KEYS_URL, body, authHeaders());
+    final String result = httpClient.post(validatorUri.get(), LOCAL_KEYS_URL, body, authHeaders());
     LOG.debug("POST Keys: " + result);
     return result;
   }
 
-  private String removeValidator(final BLSPublicKey publicKey) throws IOException {
+  private String addRemoteValidators(final List<BLSPublicKey> publicKeys, final String signerUrl)
+      throws IOException {
+
+    List<Map<String, String>> requestPayload =
+        publicKeys.stream()
+            .map(k -> remotePostRequestBody(k, signerUrl))
+            .collect(Collectors.toList());
+    final String body = jsonProvider.objectToJSON(Map.of("remote_keys", requestPayload));
+
+    final String result = httpClient.post(validatorUri.get(), REMOTE_KEYS_URL, body, authHeaders());
+    LOG.debug("POST REMOTE Keys: " + result);
+    return result;
+  }
+
+  private Map<String, String> remotePostRequestBody(
+      final BLSPublicKey publicKey, final String signerUrl) {
+    return Map.of("pubkey", publicKey.toString(), "url", signerUrl);
+  }
+
+  private String removeLocalValidator(final BLSPublicKey publicKey) throws IOException {
     final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
-    final String result = httpClient.delete(validatorUri.get(), KEYS_URL, body, authHeaders());
-    LOG.debug("DELETE Keys: " + result);
+    final String result =
+        httpClient.delete(validatorUri.get(), LOCAL_KEYS_URL, body, authHeaders());
+    LOG.debug("DELETE LOCAL Keys: " + result);
+    return result;
+  }
+
+  private String removeRemoteValidator(final BLSPublicKey publicKey) throws IOException {
+    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
+    final String result =
+        httpClient.delete(validatorUri.get(), REMOTE_KEYS_URL, body, authHeaders());
+    LOG.debug("DELETE REMOTE Keys: " + result);
     return result;
   }
 

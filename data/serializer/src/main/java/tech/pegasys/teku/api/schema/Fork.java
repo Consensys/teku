@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Fork {
@@ -57,8 +57,12 @@ public class Fork {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Fork fork = (Fork) o;
     return Objects.equals(previous_version, fork.previous_version)
         && Objects.equals(current_version, fork.current_version)

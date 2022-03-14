@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
-import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition.enumOf;
-import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.enumOf;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,13 +25,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
@@ -94,7 +95,10 @@ public class ValidatorTypes {
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
               __ -> Optional.empty())
-          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
+          .withField(
+              "readonly",
+              BOOLEAN_TYPE.withDescription("Whether the validator can be modified"),
+              Validator::isReadOnly)
           .build();
 
   public static SerializableTypeDefinition<List<Validator>> LIST_KEYS_RESPONSE_TYPE =
@@ -106,6 +110,7 @@ public class ValidatorTypes {
   public static DeserializableTypeDefinition<URL> URL_TYPE =
       DeserializableTypeDefinition.string(URL.class)
           .name("Signer")
+          .description("URL of the remote signer to use for this validator")
           .formatter(URL::toString)
           .parser(
               url -> {
@@ -141,7 +146,7 @@ public class ValidatorTypes {
           .withOptionalField("url", URL_TYPE, ExternalValidator::getUrl, ExternalValidator::setUrl)
           .withField(
               "readonly",
-              BOOLEAN_TYPE,
+              BOOLEAN_TYPE.withDescription("Whether the validator can be modified"),
               ExternalValidator::isReadOnly,
               ExternalValidator::setReadOnly)
           .build();
@@ -199,4 +204,11 @@ public class ValidatorTypes {
               DeleteKeysRequest::getPublicKeys,
               DeleteKeysRequest::setPublicKeys)
           .build();
+
+  public static SerializableTypeDefinition<DeleteRemoteKeysResponse>
+      DELETE_REMOTE_KEYS_RESPONSE_TYPE =
+          SerializableTypeDefinition.object(DeleteRemoteKeysResponse.class)
+              .name("DeleteRemoteKeysResponse")
+              .withField("data", listOf(DELETE_KEY_RESULT), DeleteRemoteKeysResponse::getData)
+              .build();
 }

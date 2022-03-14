@@ -334,7 +334,7 @@ public abstract class AbstractDatabaseTest {
 
     // Finalize block2
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
+    transaction.setFinalizedCheckpoint(finalizedCheckpoint, false);
     commit(transaction);
 
     assertThat(database.getLatestAvailableFinalizedState(block2.getSlot()))
@@ -355,7 +355,7 @@ public abstract class AbstractDatabaseTest {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setGenesisTime(UInt64.valueOf(3));
-    transaction.setFinalizedCheckpoint(checkpoint1);
+    transaction.setFinalizedCheckpoint(checkpoint1, false);
     transaction.setJustifiedCheckpoint(checkpoint2);
     transaction.setBestJustifiedCheckpoint(checkpoint3);
 
@@ -554,7 +554,7 @@ public abstract class AbstractDatabaseTest {
     add(newBlocks);
     // Then finalize
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     // All finalized blocks and states should be available
@@ -590,7 +590,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     final Optional<SlotAndExecutionPayload> transitionPayload =
@@ -620,7 +620,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     final Optional<ExecutionPayload> transitionPayload =
@@ -647,7 +647,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     final Optional<SlotAndExecutionPayload> transitionPayload =
@@ -671,7 +671,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     final Optional<SlotAndExecutionPayload> transitionPayload =
@@ -697,7 +697,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
     final Optional<SlotAndExecutionPayload> transitionPayload =
         SlotAndExecutionPayload.fromBlock(transitionBlock.getBlock());
@@ -730,7 +730,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
     // Finalize the next epoch
@@ -741,7 +741,7 @@ public abstract class AbstractDatabaseTest {
     final Checkpoint finalizedCheckpoint2 =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     final StoreTransaction tx2 = recentChainData.startStoreTransaction();
-    tx2.setFinalizedCheckpoint(finalizedCheckpoint2);
+    tx2.setFinalizedCheckpoint(finalizedCheckpoint2, false);
     assertThat(tx2.commit()).isCompleted();
 
     final Optional<SlotAndExecutionPayload> transitionPayload =
@@ -1396,7 +1396,7 @@ public abstract class AbstractDatabaseTest {
   protected void finalizeEpoch(
       final UInt64 epoch, final SignedBlockAndState block, final StoreTransaction transaction) {
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
-    transaction.setFinalizedCheckpoint(checkpoint);
+    transaction.setFinalizedCheckpoint(checkpoint, false);
   }
 
   protected void justifyEpoch(

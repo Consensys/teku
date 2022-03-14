@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,9 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
@@ -56,9 +60,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -371,12 +372,12 @@ public final class DataStructureUtil {
     return getSyncAggregateSchema(specVersionAltair).createEmpty();
   }
 
-  public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
+  public SyncAggregate randomSyncAggregate(final int... participantIndices) {
     SpecVersion specVersionAltair =
         Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
 
     return getSyncAggregateSchema(specVersionAltair)
-        .create(List.of(participantIndices), randomSignature());
+        .create(IntList.of(participantIndices), randomSignature());
   }
 
   private SyncAggregateSchema getSyncAggregateSchema(SpecVersion specVersionAltair) {
@@ -621,6 +622,11 @@ public final class DataStructureUtil {
     return blocks;
   }
 
+  public SignedBeaconBlock randomSignedBlindedBeaconBlock() {
+    final BeaconBlock beaconBlock = randomBlindedBeaconBlock(randomUInt64());
+    return signedBlock(beaconBlock);
+  }
+
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
     return randomSignedBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -679,6 +685,25 @@ public final class DataStructureUtil {
 
     return new BeaconBlock(
         spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema(),
+        slotNum,
+        proposer_index,
+        previous_root,
+        state_root,
+        body);
+  }
+
+  public BeaconBlock randomBlindedBeaconBlock(UInt64 slotNum) {
+    final UInt64 proposer_index = randomUInt64();
+    Bytes32 previous_root = randomBytes32();
+    Bytes32 state_root = randomBytes32();
+    BeaconBlockBody body = randomBlindedBeaconBlockBody(slotNum);
+
+    return new BeaconBlock(
+        spec.atSlot(slotNum)
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getBlindedBeaconBlockSchema(),
         slotNum,
         proposer_index,
         previous_root,
@@ -787,6 +812,37 @@ public final class DataStructureUtil {
   public BeaconBlockHeader randomBeaconBlockHeader(final UInt64 slot, final UInt64 proposerIndex) {
     return new BeaconBlockHeader(
         slot, proposerIndex, randomBytes32(), randomBytes32(), randomBytes32());
+  }
+
+  public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
+    BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slotNum)
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getBlindedBeaconBlockBodySchema();
+
+    return schema.createBlockBody(
+        builder ->
+            builder
+                .randaoReveal(randomSignature())
+                .eth1Data(randomEth1Data())
+                .graffiti(Bytes32.ZERO)
+                .proposerSlashings(
+                    randomSszList(
+                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                .attesterSlashings(
+                    randomSszList(
+                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                .attestations(
+                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                .deposits(
+                    randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                .voluntaryExits(
+                    randomSszList(
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                .executionPayloadHeader(this::randomExecutionPayloadHeader));
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {

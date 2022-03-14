@@ -174,6 +174,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     new IllegalStateException("Head state is not yet available")))
         .thenApply(
             state -> {
+              @SuppressWarnings("UseFastutil")
               final Map<BLSPublicKey, Integer> results = new HashMap<>();
               publicKeys.forEach(
                   publicKey ->
@@ -259,7 +260,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 (maybeList) ->
                     maybeList.map(
                         list ->
-                            list.stream()
+                            list.getData().stream()
                                 .collect(
                                     toMap(
                                         ValidatorResponse::getPublicKey,
@@ -564,7 +565,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processSyncCommitteeMessage(
       final ValidateableSyncCommitteeMessage message) {
     return syncCommitteeMessagePool
-        .add(message)
+        .addLocal(message)
         .thenPeek(
             result -> {
               if (result.isAccept() || result.isSaveForFuture()) {
@@ -587,7 +588,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> aggregates) {
-    return SafeFuture.collectAll(aggregates.stream().map(syncCommitteeContributionPool::add))
+    return SafeFuture.collectAll(aggregates.stream().map(syncCommitteeContributionPool::addLocal))
         .thenAccept(
             results -> {
               final List<String> errorMessages =
@@ -720,8 +721,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     final BeaconState state = maybeState.get();
     return new SyncCommitteeDuties(
-        validatorIndices.stream()
-            .flatMap(validatorIndex -> getSyncCommitteeDuty(state, epoch, validatorIndex).stream())
+        validatorIndices
+            .intStream()
+            .mapToObj(validatorIndex -> getSyncCommitteeDuty(state, epoch, validatorIndex))
+            .flatMap(Optional::stream)
             .collect(toList()));
   }
 

@@ -44,6 +44,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = false;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
@@ -52,6 +53,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -61,6 +63,7 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
             reorgContext);
@@ -72,6 +75,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = true;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
@@ -83,6 +87,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -92,6 +97,7 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
             reorgContext);
@@ -103,6 +109,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = false;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
@@ -114,6 +121,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -126,6 +134,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = false;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
@@ -137,6 +146,7 @@ class CoalescingChainHeadChannelTest {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         false,
+        true,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         Optional.empty());
@@ -146,6 +156,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -159,6 +170,7 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
             reorgContext);
@@ -171,6 +183,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = false;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
@@ -180,6 +193,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -189,6 +203,7 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
             reorgContext);
@@ -205,6 +220,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = true;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
@@ -215,6 +231,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -225,6 +242,7 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
             reorgContext);
@@ -241,6 +259,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = true;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
 
@@ -265,6 +284,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext);
@@ -285,6 +305,7 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final boolean executionOptimistic = true;
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext1 =
@@ -311,6 +332,7 @@ class CoalescingChainHeadChannelTest {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         false,
+        false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         reorgContext2);
@@ -320,6 +342,7 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
+        executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
         reorgContext1);
@@ -333,6 +356,7 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
             reorgContext2);

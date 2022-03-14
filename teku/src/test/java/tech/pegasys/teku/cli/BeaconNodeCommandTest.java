@@ -342,7 +342,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "0x77f7bED277449F51505a4C54550B074030d989bC",
       "--eth1-endpoint",
       "http://localhost:8545",
-      "--Xee-endpoint",
+      "--ee-endpoint",
       "http://localhost:8550",
       "--metrics-enabled",
       "false",

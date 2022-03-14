@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 
 public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
@@ -29,8 +29,8 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
     public ForkDataSchema() {
       super(
           "ForkData",
-          namedSchema("currentVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
-          namedSchema("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_SCHEMA));
+          namedSchema("current_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("genesis_validators_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override

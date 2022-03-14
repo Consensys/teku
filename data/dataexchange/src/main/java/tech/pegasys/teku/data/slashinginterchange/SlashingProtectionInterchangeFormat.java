@@ -33,8 +33,12 @@ public class SlashingProtectionInterchangeFormat {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SlashingProtectionInterchangeFormat that = (SlashingProtectionInterchangeFormat) o;
     return Objects.equals(metadata, that.metadata) && Objects.equals(data, that.data);
   }

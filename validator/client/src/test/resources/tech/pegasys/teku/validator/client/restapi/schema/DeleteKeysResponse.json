@@ -1,15 +1,16 @@
 {
-  "title": "DeleteKeysResponse",
-  "type": "object",
-  "properties": {
-    "data": {
-      "type": "array",
-      "items": {
-        "$ref": "#/components/schemas/DeleteKeyResult"
+  "title" : "DeleteKeysResponse",
+  "type" : "object",
+  "required" : [ "data", "slashing_protection" ],
+  "properties" : {
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/DeleteKeyResult"
       }
     },
-    "slashing_protection": {
-      "type": "string"
+    "slashing_protection" : {
+      "type" : "string"
     }
   }
 }

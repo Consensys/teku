@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -45,12 +46,18 @@ public class HeadEvent {
   @JsonInclude(Include.NON_NULL)
   public final Bytes32 currentDutyDependentRoot;
 
+  @JsonProperty("execution_optimistic")
+  @JsonInclude(Include.NON_NULL)
+  @Schema(hidden = true)
+  public final Boolean executionOptimistic;
+
   @JsonCreator
   public HeadEvent(
       @JsonProperty(value = "slot", required = true) final UInt64 slot,
       @JsonProperty("block") final Bytes32 block,
       @JsonProperty("state") final Bytes32 state,
       @JsonProperty("epoch_transition") final boolean epochTransition,
+      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
       @JsonProperty("previous_duty_dependent_root") final Bytes32 previousDutyDependentRoot,
       @JsonProperty("current_duty_dependent_root") final Bytes32 currentDutyDependentRoot) {
     this.slot = slot;
@@ -59,6 +66,7 @@ public class HeadEvent {
     this.epochTransition = epochTransition;
     this.previousDutyDependentRoot = previousDutyDependentRoot;
     this.currentDutyDependentRoot = currentDutyDependentRoot;
+    this.executionOptimistic = executionOptimistic;
   }
 
   @Override

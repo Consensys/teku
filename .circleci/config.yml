@@ -5,7 +5,7 @@ orbs:
 executors:
   small_executor:
     docker:
-      - image: circleci/openjdk:11.0.8-jdk-buster
+      - image: cimg/openjdk:11.0.13
         auth: &docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
           username: "cddockeruser"
@@ -24,7 +24,7 @@ executors:
 
   medium_executor:
     docker:
-      - image: circleci/openjdk:11.0.8-jdk-buster
+      - image: cimg/openjdk:11.0.13
         auth:
           <<: *docker-auth
     resource_class: medium
@@ -36,7 +36,7 @@ executors:
 
   medium_plus_executor:
     docker:
-      - image: circleci/openjdk:11.0.8-jdk-buster
+      - image: cimg/openjdk:11.0.13
         auth:
           <<: *docker-auth
     resource_class: "medium+"
@@ -47,7 +47,7 @@ executors:
 
   large_executor:
     docker:
-      - image: circleci/openjdk:11.0.8-jdk-buster
+      - image: cimg/openjdk:11.0.13
         auth:
           <<: *docker-auth
     resource_class: large
@@ -294,7 +294,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 3
+    parallelism: 5
     executor: machine_executor_amd64
     steps:
       - prepare
@@ -302,6 +302,7 @@ jobs:
           at: ~/project
       - run:
           name: AcceptanceTests
+          no_output_timeout: 20m
           command: |
             CLASSNAMES=$(circleci tests glob "**/src/acceptance-test/java/**/*.java" \
               | sed 's@.*/src/acceptance-test/java/@@' \

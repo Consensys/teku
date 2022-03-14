@@ -26,18 +26,16 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 public class ExecutionEngineOptions {
 
   @Option(
-      names = {"--Xee-endpoint"},
+      names = {"--ee-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Engine node.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private String executionEngineEndpoint = null;
 
   @Option(
       names = {"--Xee-version"},
       paramLabel = "<EXECUTION_ENGINE_VERSION>",
-      description =
-          "Execution Engine API version. Possible values are: kintsugi (default), kiln or kilnV2",
+      description = "Execution Engine API version. " + "Valid values: ${COMPLETION-CANDIDATES}",
       arity = "1",
       hidden = true)
   private Version executionEngineVersion = Version.DEFAULT_VERSION;
@@ -52,8 +50,7 @@ public class ExecutionEngineOptions {
   private List<String> mevUrls = new ArrayList<>();
 
   @Option(
-      hidden = true,
-      names = {"--Xee-jwt-secret"},
+      names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
           "Location of the file specifying the hex-encoded 256 bit secret key to be used for verifying/generating jwt tokens",

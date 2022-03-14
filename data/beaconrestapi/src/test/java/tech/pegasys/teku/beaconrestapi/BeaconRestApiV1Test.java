@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.Javalin;
 import io.javalin.http.Handler;
+import io.javalin.http.HandlerType;
 import io.javalin.jetty.JettyServer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -73,6 +74,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
@@ -154,7 +156,11 @@ public class BeaconRestApiV1Test {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getParameters")
   void getRouteExists(final String route, final Class<Handler> type) {
-    verify(app).get(eq(route), any(type));
+    if (MigratingEndpointAdapter.class.isAssignableFrom(type)) {
+      verify(app).addHandler(eq(HandlerType.GET), eq(route), any(type));
+    } else {
+      verify(app).get(eq(route), any(type));
+    }
   }
 
   @Test
@@ -212,6 +218,7 @@ public class BeaconRestApiV1Test {
                 tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
                 tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
+        .add(Arguments.of(GetNewBlindedBlock.ROUTE, GetNewBlindedBlock.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class))
         .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class));
 
@@ -241,7 +248,11 @@ public class BeaconRestApiV1Test {
   @ParameterizedTest(name = "{0}")
   @MethodSource("postParameters")
   void postRouteExists(final String route, final Class<Handler> type) {
-    verify(app).post(eq(route), any(type));
+    if (MigratingEndpointAdapter.class.isAssignableFrom(type)) {
+      verify(app).addHandler(eq(HandlerType.POST), eq(route), any(type));
+    } else {
+      verify(app).post(eq(route), any(type));
+    }
   }
 
   static Stream<Arguments> postParameters() {

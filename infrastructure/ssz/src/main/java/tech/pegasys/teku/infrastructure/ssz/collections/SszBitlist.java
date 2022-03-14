@@ -73,7 +73,7 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
 
   /** Streams indices of all bits set in this {@link SszBitlist} */
   default IntStream streamAllSetBits() {
-    return getAllSetBits().stream().mapToInt(i -> i);
+    return getAllSetBits().intStream();
   }
 
   @Override

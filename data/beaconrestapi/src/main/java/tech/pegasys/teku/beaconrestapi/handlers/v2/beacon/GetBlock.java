@@ -47,6 +47,7 @@ import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetBlock extends AbstractHandler implements Handler {
   private static final String OAPI_ROUTE = "/eth/v2/beacon/blocks/:block_id";
@@ -93,17 +94,21 @@ public class GetBlock extends AbstractHandler implements Handler {
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
 
     } else {
-      final SafeFuture<Optional<SignedBeaconBlock>> future =
-          chainDataProvider.getBlockV2(blockIdentifier);
+      final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> future =
+          chainDataProvider.getBlock(blockIdentifier);
       handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
 
-  private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock response)
+  private Optional<String> handleJsonResult(
+      Context ctx, final ObjectAndMetaData<SignedBeaconBlock> response)
       throws JsonProcessingException {
-    final Version version = chainDataProvider.getVersionAtSlot(response.getMessage().slot);
+    final Version version = Version.fromMilestone(response.getMilestone());
     ctx.header(HEADER_CONSENSUS_VERSION, version.name());
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponseV2(version, response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetBlockResponseV2(
+                version, response.isExecutionOptimisticForApi(), response.getData())));
   }
 
   private String resultFilename(final SszResponse response) {

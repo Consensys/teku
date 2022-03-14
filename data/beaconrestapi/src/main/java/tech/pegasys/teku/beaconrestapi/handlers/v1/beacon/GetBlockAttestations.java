@@ -41,6 +41,7 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetBlockAttestations extends AbstractHandler implements Handler {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/blocks/:block_id/attestations";
@@ -76,13 +77,17 @@ public class GetBlockAttestations extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
 
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<List<Attestation>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> future =
         chainDataProvider.getBlockAttestations(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<Attestation> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<Attestation>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockAttestationsResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetBlockAttestationsResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

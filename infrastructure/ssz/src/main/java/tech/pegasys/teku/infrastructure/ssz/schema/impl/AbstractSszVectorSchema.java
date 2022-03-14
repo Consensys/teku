@@ -16,11 +16,15 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
+import com.google.common.base.Suppliers;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -48,6 +52,9 @@ public abstract class AbstractSszVectorSchema<
   private final int fixedPartSize;
   private SszLengthBounds sszLengthBounds;
 
+  private final Supplier<DeserializableTypeDefinition<SszVectorT>> jsonTypeDefinition =
+      Suppliers.memoize(this::createTypeDefinition);
+
   protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
@@ -66,6 +73,11 @@ public abstract class AbstractSszVectorSchema<
     this.isListBacking = isListBacking;
     this.fixedPartSize = calcSszFixedPartSize();
     this.sszLengthBounds = computeSszLengthBounds(elementSchema, vectorLength);
+  }
+
+  protected DeserializableTypeDefinition<SszVectorT> createTypeDefinition() {
+    return new DeserializableArrayTypeDefinition<>(
+        getElementSchema().getJsonTypeDefinition(), this::createFromElements);
   }
 
   @Override
@@ -206,6 +218,11 @@ public abstract class AbstractSszVectorSchema<
         .addBytes(elementSchema.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
         .mul(length)
         .ceilToBytes();
+  }
+
+  @Override
+  public DeserializableTypeDefinition<SszVectorT> getJsonTypeDefinition() {
+    return jsonTypeDefinition.get();
   }
 
   @Override

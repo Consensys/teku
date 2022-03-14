@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -24,6 +25,7 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -73,6 +75,18 @@ public class TestDataUtils {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
     try (final InputStream in = Files.newInputStream(path)) {
       return new ObjectMapper(new YAMLFactory()).readerFor(type).readValue(in);
+    }
+  }
+
+  public static <T> T loadYaml(
+      final TestDefinition testDefinition,
+      final String fileName,
+      final DeserializableTypeDefinition<T> type)
+      throws IOException {
+    final Path path = testDefinition.getTestDirectory().resolve(fileName);
+    try (final YAMLParser in = new YAMLFactory().createParser(Files.newInputStream(path))) {
+      in.nextToken();
+      return type.deserialize(in);
     }
   }
 }
