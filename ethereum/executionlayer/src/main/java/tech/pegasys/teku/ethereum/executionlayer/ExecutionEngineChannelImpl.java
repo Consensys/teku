@@ -231,10 +231,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
     LOG.trace("calling proposeBlindedBlock(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     checkArgument(
-        signedBlindedBeaconBlock
-            .getBeaconBlock()
-            .map(beaconBlock -> beaconBlock.getBody().isBlinded())
-            .orElse(false),
+        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
         "SignedBeaconBlock must be blind");
 
     return executionEngineClient
