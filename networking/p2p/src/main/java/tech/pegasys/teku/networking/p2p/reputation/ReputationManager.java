@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.networking.p2p.reputation;
 
+import com.google.common.base.MoreObjects;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -28,6 +31,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class ReputationManager {
+  private static final Logger LOG = LogManager.getLogger();
   // This is not a big ban, we expect the peer could be usable very soon
   static final UInt64 COOLDOWN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
   // It's a big ban, we expect that the peer is not useful until major changes, for example,
@@ -58,10 +62,10 @@ public class ReputationManager {
         .reportInitiatedConnectionFailed(timeProvider.getTimeInSeconds());
   }
 
-  public boolean isConnectionInitiationAllowed(final PeerAddress peerAddress) {
+  public boolean isConnectionAllowed(final PeerAddress peerAddress) {
     return peerReputations
         .getCached(peerAddress.getId())
-        .map(reputation -> reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds()))
+        .map(reputation -> reputation.shouldAllowConnection(timeProvider.getTimeInSeconds()))
         .orElse(true);
   }
 
@@ -95,6 +99,7 @@ public class ReputationManager {
   }
 
   private static class Reputation {
+    private static final int DEFAULT_SCORE = 0;
     private static final EnumSet<DisconnectReason> BAN_REASONS =
         EnumSet.of(
             DisconnectReason.IRRELEVANT_NETWORK,
@@ -102,16 +107,18 @@ public class ReputationManager {
             DisconnectReason.REMOTE_FAULT);
 
     private volatile Optional<UInt64> suitableAfter = Optional.empty();
-    private final AtomicInteger score = new AtomicInteger(0);
+    private final AtomicInteger score = new AtomicInteger(DEFAULT_SCORE);
 
     public void reportInitiatedConnectionFailed(final UInt64 failureTime) {
       suitableAfter = Optional.of(failureTime.plus(COOLDOWN_PERIOD));
     }
 
-    public boolean shouldInitiateConnection(final UInt64 currentTime) {
-      return suitableAfter
-          .map(suitableAfter -> suitableAfter.compareTo(currentTime) < 0)
-          .orElse(true);
+    public boolean shouldAllowConnection(final UInt64 currentTime) {
+      return isSuitableAt(currentTime);
+    }
+
+    private boolean isSuitableAt(final UInt64 someTime) {
+      return suitableAfter.map(suitableAfter -> suitableAfter.compareTo(someTime) < 0).orElse(true);
     }
 
     public void reportInitiatedConnectionSuccessful() {
@@ -125,7 +132,8 @@ public class ReputationManager {
       if (isLocallyConsideredUnsuitable(reason, locallyInitiated)
           || reason.map(DisconnectReason::isPermanent).orElse(false)) {
         suitableAfter = Optional.of(disconnectTime.plus(BAN_PERIOD));
-      } else {
+        score.set(DEFAULT_SCORE);
+      } else if (suitableAfter.isEmpty()) {
         suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
       }
     }
@@ -136,6 +144,10 @@ public class ReputationManager {
     }
 
     public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
+      // No extra penalizing if already not suitable
+      if (!isSuitableAt(currentTime)) {
+        return score.get() <= DISCONNECT_THRESHOLD;
+      }
       final int newScore =
           score.updateAndGet(
               current -> Math.min(MAX_REPUTATION_SCORE, current + effect.getScoreChange()));
@@ -143,8 +155,17 @@ public class ReputationManager {
       if (shouldDisconnect) {
         // Prevent our node from connecting out to the remote peer for a long time
         suitableAfter = Optional.of(currentTime.plus(BAN_PERIOD));
+        score.set(DEFAULT_SCORE);
       }
       return shouldDisconnect;
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("suitableAfter", suitableAfter)
+          .add("score", score)
+          .toString();
     }
   }
 }

@@ -74,7 +74,7 @@ class Eth2PeerSelectionStrategyTest {
   @BeforeEach
   void setUp() {
     when(peerSubnetSubscriptions.createScorer()).thenReturn(peerScorer);
-    when(reputationManager.isConnectionInitiationAllowed(any())).thenReturn(true);
+    when(reputationManager.isConnectionAllowed(any())).thenReturn(true);
     when(network.createPeerAddress(any(DiscoveryPeer.class)))
         .thenAnswer(
             invocation -> {
@@ -86,8 +86,8 @@ class Eth2PeerSelectionStrategyTest {
   @Test
   void selectPeersToConnect_shouldNotConnectToPeersWithBadReputation() {
     final Eth2PeerSelectionStrategy strategy = createStrategy();
-    when(reputationManager.isConnectionInitiationAllowed(PEER1)).thenReturn(false);
-    when(reputationManager.isConnectionInitiationAllowed(PEER2)).thenReturn(true);
+    when(reputationManager.isConnectionAllowed(PEER1)).thenReturn(false);
+    when(reputationManager.isConnectionAllowed(PEER2)).thenReturn(true);
 
     assertThat(
             strategy.selectPeersToConnect(
