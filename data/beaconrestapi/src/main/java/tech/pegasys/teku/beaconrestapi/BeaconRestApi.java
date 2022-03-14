@@ -84,6 +84,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
@@ -362,6 +363,7 @@ public class BeaconRestApi {
         tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock(
             dataProvider, jsonProvider));
+    app.get(GetNewBlindedBlock.ROUTE, new GetNewBlindedBlock(dataProvider, jsonProvider));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));

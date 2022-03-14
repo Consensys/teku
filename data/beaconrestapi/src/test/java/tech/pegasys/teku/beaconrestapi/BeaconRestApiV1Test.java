@@ -74,6 +74,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
@@ -217,6 +218,7 @@ public class BeaconRestApiV1Test {
                 tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
                 tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
+        .add(Arguments.of(GetNewBlindedBlock.ROUTE, GetNewBlindedBlock.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class))
         .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class));
 
