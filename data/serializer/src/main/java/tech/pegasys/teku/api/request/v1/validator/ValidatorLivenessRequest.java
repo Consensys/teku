@@ -39,8 +39,12 @@ public class ValidatorLivenessRequest {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ValidatorLivenessRequest that = (ValidatorLivenessRequest) o;
     return Objects.equals(epoch, that.epoch) && Objects.equals(indices, that.indices);
   }

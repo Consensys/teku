@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
@@ -40,7 +40,7 @@ public class HistoricalBatchTest {
   @Test
   void vectorLengthsTest() {
     final int slotsPerHistoricalRoot = SPEC.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
-    List<Integer> vectorLengths = List.of(slotsPerHistoricalRoot, slotsPerHistoricalRoot);
+    IntList vectorLengths = IntList.of(slotsPerHistoricalRoot, slotsPerHistoricalRoot);
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(schema));
   }
 

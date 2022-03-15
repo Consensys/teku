@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -26,12 +28,13 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszTestUtils {
 
-  public static List<Integer> getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
-    return sszContainerSchema.getFieldSchemas().stream()
+  public static IntList getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
+    IntList vectorLengths = new IntArrayList();
+    sszContainerSchema.getFieldSchemas().stream()
         .filter(t -> t instanceof SszVectorSchema)
         .map(t -> (SszVectorSchema<?, ?>) t)
-        .map(SszVectorSchema::getLength)
-        .collect(Collectors.toList());
+        .forEach(t -> vectorLengths.add(t.getLength()));
+    return vectorLengths;
   }
 
   public static SszBitlist not(SszBitlist bitlist) {

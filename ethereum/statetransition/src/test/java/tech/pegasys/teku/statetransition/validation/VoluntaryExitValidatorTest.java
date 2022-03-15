@@ -96,7 +96,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(getBestState(), exit))
-        .thenReturn(Optional.of(ExitInvalidReason.EXIT_INITIATED));
+        .thenReturn(Optional.of(ExitInvalidReason.exitInitiated()));
     when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
 

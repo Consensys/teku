@@ -54,8 +54,12 @@ public class DeleteKeyResult {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final DeleteKeyResult that = (DeleteKeyResult) o;
     return status == that.status && Objects.equals(message, that.message);
   }

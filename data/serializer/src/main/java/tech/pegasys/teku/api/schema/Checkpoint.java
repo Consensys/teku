@@ -50,8 +50,12 @@ public class Checkpoint {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Checkpoint)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Checkpoint)) {
+      return false;
+    }
     Checkpoint that = (Checkpoint) o;
     return Objects.equal(epoch, that.epoch) && Objects.equal(root, that.root);
   }

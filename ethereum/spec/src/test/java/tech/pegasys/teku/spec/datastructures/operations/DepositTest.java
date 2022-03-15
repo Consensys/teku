@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -90,7 +91,7 @@ class DepositTest {
 
   @Test
   void vectorLengthsTest() {
-    List<Integer> vectorLengths = List.of(DEPOSIT_CONTRACT_TREE_DEPTH + 1);
+    IntList vectorLengths = IntList.of(DEPOSIT_CONTRACT_TREE_DEPTH + 1);
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(Deposit.SSZ_SCHEMA));
   }
 

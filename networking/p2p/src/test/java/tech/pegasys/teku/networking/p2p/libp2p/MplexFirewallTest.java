@@ -29,9 +29,12 @@ import io.netty.channel.ChannelId;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.DefaultChannelId;
 import io.netty.channel.embedded.EmbeddedChannel;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntLists;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -156,20 +159,22 @@ public class MplexFirewallTest {
 
   @Test
   void testThatDoesntDisconnectOnAllowedParallelStreams() {
-    List<Integer> openedIds = new ArrayList<>();
+    IntList openedIds = new IntArrayList();
     for (int i = 0; i < 18; i++) {
       writeOneInbound(
           new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       openedIds.add(i);
       time.addAndGet(112); // ~9 per sec
     }
+
+    Random random = new Random();
     for (int i = 18; i < 200; i++) {
       writeOneInbound(
           new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       openedIds.add(i);
 
-      Collections.shuffle(openedIds);
-      Integer toRemove = openedIds.remove(0);
+      IntLists.shuffle(openedIds, random);
+      int toRemove = openedIds.removeInt(0);
 
       writeOneInbound(
           new MuxFrame(

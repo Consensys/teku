@@ -205,8 +205,12 @@ public class BlockValidator {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (!(o instanceof SlotAndProposer)) return false;
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof SlotAndProposer)) {
+        return false;
+      }
       SlotAndProposer that = (SlotAndProposer) o;
       return Objects.equal(slot, that.slot) && Objects.equal(proposer_index, that.proposer_index);
     }

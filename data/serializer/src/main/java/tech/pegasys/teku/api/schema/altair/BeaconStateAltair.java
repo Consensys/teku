@@ -152,9 +152,15 @@ public class BeaconStateAltair extends BeaconState implements State {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
     final BeaconStateAltair that = (BeaconStateAltair) o;
     return Arrays.equals(previous_epoch_participation, that.previous_epoch_participation)
         && Arrays.equals(current_epoch_participation, that.current_epoch_participation)

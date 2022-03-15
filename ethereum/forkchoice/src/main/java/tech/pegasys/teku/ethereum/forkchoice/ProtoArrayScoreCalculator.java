@@ -18,7 +18,8 @@ import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
 import static java.lang.Math.toIntExact;
 
-import java.util.ArrayList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +46,7 @@ class ProtoArrayScoreCalculator {
    *       is always valid).
    * </ul>
    */
-  static List<Long> computeDeltas(
+  static LongList computeDeltas(
       VoteUpdater store,
       int protoArraySize,
       Function<Bytes32, Optional<Integer>> getIndexByRoot,
@@ -55,7 +56,7 @@ class ProtoArrayScoreCalculator {
       Optional<Bytes32> newProposerBoostRoot,
       UInt64 previousBoostAmount,
       UInt64 newBoostAmount) {
-    List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
+    LongList deltas = new LongArrayList(Collections.nCopies(protoArraySize, 0L));
 
     UInt64.rangeClosed(UInt64.ZERO, store.getHighestVotedValidatorIndex())
         .forEach(
@@ -75,7 +76,7 @@ class ProtoArrayScoreCalculator {
       final Function<Bytes32, Optional<Integer>> getIndexByRoot,
       final List<UInt64> oldBalances,
       final List<UInt64> newBalances,
-      final List<Long> deltas,
+      final LongList deltas,
       final UInt64 validatorIndex) {
     VoteTracker vote = store.getVote(validatorIndex);
 
@@ -110,7 +111,7 @@ class ProtoArrayScoreCalculator {
 
   private static void addBalance(
       final Function<Bytes32, Optional<Integer>> getIndexByRoot,
-      final List<Long> deltas,
+      final LongList deltas,
       final Bytes32 targetRoot,
       final UInt64 balanceToAdd) {
     // We ignore the vote if it is not known in `indices`. We assume that it is outside
@@ -121,14 +122,14 @@ class ProtoArrayScoreCalculator {
             nextDeltaIndex -> {
               checkState(
                   nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-              long delta = addExact(deltas.get(nextDeltaIndex), balanceToAdd.longValue());
-              deltas.set(nextDeltaIndex, delta);
+              long delta = addExact(deltas.getLong(nextDeltaIndex), balanceToAdd.longValue());
+              deltas.set(nextDeltaIndex.intValue(), delta);
             });
   }
 
   private static void subtractBalance(
       final Function<Bytes32, Optional<Integer>> getIndexByRoot,
-      final List<Long> deltas,
+      final LongList deltas,
       final Bytes32 targetRoot,
       final UInt64 balanceToRemove) {
 
@@ -142,8 +143,8 @@ class ProtoArrayScoreCalculator {
                   currentDeltaIndex < deltas.size(),
                   "ProtoArrayForkChoice: Invalid node delta index");
               long delta =
-                  subtractExact(deltas.get(currentDeltaIndex), balanceToRemove.longValue());
-              deltas.set(currentDeltaIndex, delta);
+                  subtractExact(deltas.getLong(currentDeltaIndex), balanceToRemove.longValue());
+              deltas.set(currentDeltaIndex.intValue(), delta);
             });
   }
 }

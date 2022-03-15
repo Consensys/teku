@@ -15,9 +15,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatIntCollection;
 
-import java.util.ArrayList;
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ public class Eth2ResponseHandlerTest {
 
   @Test
   public void expectMultipleResponses_successful() {
-    final List<Integer> responsesReceived = new ArrayList<>();
+    final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
         Eth2RpcResponseHandler.expectMultipleResponses(
             RpcResponseListener.from(responsesReceived::add));
@@ -41,14 +42,14 @@ public class Eth2ResponseHandlerTest {
     assertNotDone(handler);
     handler.onCompleted();
 
-    assertThat(responsesReceived).contains(1, 2);
+    assertThatIntCollection(responsesReceived).contains(1, 2);
     assertThat(handler.getCompletedFuture()).isCompleted();
     assertThat(handler.getResult()).isCompleted();
   }
 
   @Test
   public void expectMultipleResponses_partiallySuccessful() {
-    final List<Integer> responsesReceived = new ArrayList<>();
+    final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
         Eth2RpcResponseHandler.expectMultipleResponses(
             RpcResponseListener.from(responsesReceived::add));
@@ -60,7 +61,7 @@ public class Eth2ResponseHandlerTest {
     // Complete
     handler.onCompleted(error);
 
-    assertThat(responsesReceived).containsExactly(1, 2);
+    assertThatIntCollection(responsesReceived).containsExactly(1, 2);
     assertFailedWithDefaultError(handler);
   }
 
