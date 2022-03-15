@@ -41,8 +41,20 @@ public class SerializableOneOfTypeDefinition<TObject>
   }
 
   @Override
+  public Optional<String> getTypeName() {
+    return name;
+  }
+
+  public Optional<String> getTitle() {
+    return title;
+  }
+
+  @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
+    if (title.isPresent()) {
+      gen.writeStringField("title", title.get());
+    }
     if (description.isPresent()) {
       gen.writeStringField("description", description.get());
     }
@@ -66,7 +78,11 @@ public class SerializableOneOfTypeDefinition<TObject>
 
   @Override
   public SerializableTypeDefinition<TObject> withDescription(final String description) {
-    return new SerializableOneOfTypeDefinition<>(name, title, Optional.of(description), this.types);
+    return new SerializableOneOfTypeDefinition<>(
+        Optional.empty(), // Clear name to ensure customised type is inlined
+        title,
+        Optional.of(description),
+        this.types);
   }
 
   @Override

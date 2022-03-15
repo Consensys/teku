@@ -39,6 +39,7 @@ public class SerializableOneOfTypeDefinitionBuilderTest {
 
   SerializableOneOfTypeDefinition<TestType> definition =
       new SerializableOneOfDefinitionTypeBuilder<TestType>()
+          .description("meaningful description")
           .withType(TestObjA.class, TYPE_A)
           .withType(TestObjB.class, TYPE_B)
           .build();
@@ -53,8 +54,10 @@ public class SerializableOneOfTypeDefinitionBuilderTest {
   @Test
   void openapiType() throws Exception {
     final String json = JsonUtil.serialize(definition::serializeOpenApiTypeOrReference);
-    final Map<String, Object> result = JsonTestUtil.parse(json);
-    final List<Map<String, String>> oneOf = (ArrayList<Map<String, String>>) result.get("oneOf");
+    final Map<String, Object> swaggerDocumentMap = JsonTestUtil.parse(json);
+    final List<Map<String, String>> oneOf =
+        (ArrayList<Map<String, String>>) swaggerDocumentMap.get("oneOf");
+    assertThat(swaggerDocumentMap.get("description")).isEqualTo("meaningful description");
 
     final List<String> refs =
         oneOf.stream().map(element -> element.get("$ref")).collect(Collectors.toList());
