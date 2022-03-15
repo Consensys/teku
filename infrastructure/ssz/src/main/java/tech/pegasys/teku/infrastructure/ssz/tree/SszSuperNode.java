@@ -119,7 +119,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   @Override
   public boolean iterate(
       long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
-    if (GIndexUtil.gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
+    if (GIndexUtil.gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.LEFT) {
       return true;
     } else {
       return visitor.visit(this, thisGeneralizedIndex);
