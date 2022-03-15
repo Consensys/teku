@@ -150,11 +150,6 @@ public class PeerManager implements ConnectionHandler {
 
   @VisibleForTesting
   void onConnectedPeer(Peer peer) {
-    if (!reputationManager.isConnectionAllowed(peer.getAddress())) {
-      LOG.debug("Disconnecting banned peer {}", peer::getId);
-      peer.disconnectImmediately(Optional.of(DisconnectReason.BANNED), true);
-      return;
-    }
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
       LOG.debug("onConnectedPeer() {}", peer.getId());
