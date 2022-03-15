@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.forkchoice;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -107,7 +108,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
-      List<Long> deltas =
+      LongList deltas =
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),

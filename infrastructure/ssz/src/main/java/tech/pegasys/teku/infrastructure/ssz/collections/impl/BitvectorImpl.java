@@ -121,8 +121,12 @@ class BitvectorImpl {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof BitvectorImpl)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BitvectorImpl)) {
+      return false;
+    }
     BitvectorImpl bitvector = (BitvectorImpl) o;
     return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
   }

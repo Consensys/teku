@@ -54,8 +54,12 @@ public class AttesterSlashing {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof AttesterSlashing)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof AttesterSlashing)) {
+      return false;
+    }
     AttesterSlashing that = (AttesterSlashing) o;
     return Objects.equals(attestation_1, that.attestation_1)
         && Objects.equals(attestation_2, that.attestation_2);

@@ -48,8 +48,12 @@ public class SignedContributionAndProof {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SignedContributionAndProof that = (SignedContributionAndProof) o;
     return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
   }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
@@ -62,6 +63,19 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
         executionPayloadHeader,
         "Execution Payload Header is required for bellatrix blinded blocks");
     this.executionPayloadHeader = executionPayloadHeader;
+  }
+
+  public BlindedBeaconBlockBodyBellatrix(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
+              .BlindedBeaconBlockBodyBellatrix
+          blockBody) {
+    super(blockBody);
+    this.executionPayloadHeader = new ExecutionPayloadHeader(blockBody.getExecutionPayloadHeader());
+  }
+
+  public BlindedBeaconBlockBodyBellatrix(final BeaconBlockBodyBellatrix blockBody) {
+    super(blockBody);
+    this.executionPayloadHeader = new ExecutionPayloadHeader(blockBody.getExecutionPayload());
   }
 
   @Override

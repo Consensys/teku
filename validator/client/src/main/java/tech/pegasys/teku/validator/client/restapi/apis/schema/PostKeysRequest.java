@@ -61,8 +61,12 @@ public class PostKeysRequest {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PostKeysRequest that = (PostKeysRequest) o;
     return Objects.equals(keystores, that.keystores)
         && Objects.equals(passwords, that.passwords)

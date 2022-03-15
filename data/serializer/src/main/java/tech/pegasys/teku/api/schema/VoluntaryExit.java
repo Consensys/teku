@@ -47,8 +47,12 @@ public class VoluntaryExit {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof VoluntaryExit)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof VoluntaryExit)) {
+      return false;
+    }
     VoluntaryExit that = (VoluntaryExit) o;
     return Objects.equals(epoch, that.epoch)
         && Objects.equals(validator_index, that.validator_index);

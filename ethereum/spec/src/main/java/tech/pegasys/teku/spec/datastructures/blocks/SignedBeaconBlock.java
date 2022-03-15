@@ -36,10 +36,15 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
 
   public static SignedBeaconBlock create(
       final Spec spec, final BeaconBlock message, final BLSSignature signature) {
-    return new SignedBeaconBlock(
-        spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
-        message,
-        signature);
+    SignedBeaconBlockSchema signedBeaconBlockSchema =
+        message.getBody().isBlinded()
+            ? spec.atSlot(message.getSlot())
+                .getSchemaDefinitions()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getSignedBlindedBeaconBlockBodySchema()
+            : spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema();
+    return new SignedBeaconBlock(signedBeaconBlockSchema, message, signature);
   }
 
   @Override

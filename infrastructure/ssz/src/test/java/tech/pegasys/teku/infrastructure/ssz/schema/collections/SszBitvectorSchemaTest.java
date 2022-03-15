@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatIntCollection;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -132,6 +133,6 @@ public class SszBitvectorSchemaTest extends SszVectorSchemaTestBase {
     SszBitvector sszBitvector = (SszBitvector) sszList;
     assertThat(sszBitvector.getSchema()).isEqualTo(schema);
     assertThat(sszBitvector.size()).isEqualTo(10);
-    assertThat(sszBitvector.streamAllSetBits()).containsExactlyElementsOf(List.of(1));
+    assertThat(sszBitvector.streamAllSetBits()).containsExactlyElementsOf(IntList.of(1));
   }
 }

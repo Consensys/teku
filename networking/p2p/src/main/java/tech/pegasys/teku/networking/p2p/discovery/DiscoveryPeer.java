@@ -63,8 +63,12 @@ public class DiscoveryPeer {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof DiscoveryPeer)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof DiscoveryPeer)) {
+      return false;
+    }
     DiscoveryPeer that = (DiscoveryPeer) o;
     return Objects.equal(getPublicKey(), that.getPublicKey())
         && Objects.equal(getNodeAddress(), that.getNodeAddress())

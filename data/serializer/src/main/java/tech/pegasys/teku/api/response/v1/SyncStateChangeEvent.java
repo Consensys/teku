@@ -28,8 +28,12 @@ public class SyncStateChangeEvent {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof SyncStateChangeEvent)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SyncStateChangeEvent)) {
+      return false;
+    }
     SyncStateChangeEvent that = (SyncStateChangeEvent) o;
     return Objects.equals(sync_state, that.sync_state);
   }

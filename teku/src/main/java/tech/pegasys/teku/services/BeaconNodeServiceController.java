@@ -21,7 +21,6 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.services.powchain.PowchainService;
-import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class BeaconNodeServiceController extends ServiceController {
@@ -35,7 +34,6 @@ public class BeaconNodeServiceController extends ServiceController {
       services.add(new ExecutionEngineService(serviceConfig, tekuConfig.executionEngine()));
     }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
-    services.add(new TimerService(serviceConfig));
     services.add(
         new NatService(
             tekuConfig.natConfiguration(),

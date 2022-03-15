@@ -16,26 +16,26 @@ package tech.pegasys.teku.services.timer;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import org.quartz.JobListener;
+import org.quartz.TriggerListener;
 
 public class ScheduledTimeEvent implements Job {
 
   /**
-   * Called by the <code>{@link Scheduler}</code> when a <code>{@link Trigger}</code> fires that is
-   * associated with the <code>Job</code>.
+   * Called by the <code>{@link org.quartz.Scheduler}</code> when a <code>{@link org.quartz.Trigger}
+   * </code> fires that is associated with the <code>Job</code>.
    *
    * <p>The implementation may wish to set a {@link JobExecutionContext#setResult(Object) result}
    * object on the {@link JobExecutionContext} before this method exits. The result itself is
    * meaningless to Quartz, but may be informative to <code>{@link JobListener}s</code> or <code>
    * {@link TriggerListener}s</code> that are watching the job's execution.
    *
-   * @param context
-   * @throws JobExecutionException if there is an exception while executing the job.
+   * @param context the job execution context
    */
   @Override
-  public void execute(JobExecutionContext context) throws JobExecutionException {
+  public void execute(JobExecutionContext context) {
     JobDataMap data = context.getJobDetail().getJobDataMap();
-    TimeTickChannel timeTickChannel = (TimeTickChannel) data.get(TimerService.TIME_EVENTS_CHANNEL);
-    timeTickChannel.onTick();
+    TimeTickHandler timeTickHandler = (TimeTickHandler) data.get(TimerService.TICK_HANDLER);
+    timeTickHandler.onTick();
   }
 }

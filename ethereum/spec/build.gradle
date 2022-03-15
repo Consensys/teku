@@ -26,6 +26,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
+    testImplementation testFixtures(project(':infrastructure:collections'))
 
     // From datastructures - TODO(#3356) clean up these imports
     api project(':infrastructure:bls')
