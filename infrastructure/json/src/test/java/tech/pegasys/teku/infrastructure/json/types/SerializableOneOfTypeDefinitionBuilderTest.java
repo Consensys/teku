@@ -38,7 +38,7 @@ public class SerializableOneOfTypeDefinitionBuilderTest {
           .build();
 
   SerializableOneOfTypeDefinition<TestType> definition =
-      new SerializableOneOfDefinitionTypeBuilder<TestType>()
+      new SerializableOneOfTypeDefinitionBuilder<TestType>()
           .description("meaningful description")
           .withType(TestObjA.class, TYPE_A)
           .withType(TestObjB.class, TYPE_B)

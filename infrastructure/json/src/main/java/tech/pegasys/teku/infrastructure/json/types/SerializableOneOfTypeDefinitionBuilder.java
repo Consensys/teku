@@ -17,7 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class SerializableOneOfDefinitionTypeBuilder<TObject> {
+public class SerializableOneOfTypeDefinitionBuilder<TObject> {
   private final Map<Class<? extends TObject>, SerializableTypeDefinition<? extends TObject>> types =
       new LinkedHashMap<>();
   private Optional<String> name = Optional.empty();
@@ -28,25 +28,25 @@ public class SerializableOneOfDefinitionTypeBuilder<TObject> {
     return new SerializableOneOfTypeDefinition<>(name, title.or(() -> name), description, types);
   }
 
-  public <T extends TObject> SerializableOneOfDefinitionTypeBuilder<TObject> name(
+  public <T extends TObject> SerializableOneOfTypeDefinitionBuilder<TObject> name(
       final String name) {
     this.name = Optional.ofNullable(name);
     return this;
   }
 
-  public <T extends TObject> SerializableOneOfDefinitionTypeBuilder<TObject> title(
+  public <T extends TObject> SerializableOneOfTypeDefinitionBuilder<TObject> title(
       final String title) {
     this.title = Optional.ofNullable(title);
     return this;
   }
 
-  public <T extends TObject> SerializableOneOfDefinitionTypeBuilder<TObject> description(
+  public <T extends TObject> SerializableOneOfTypeDefinitionBuilder<TObject> description(
       final String description) {
     this.description = Optional.ofNullable(description);
     return this;
   }
 
-  public <T extends TObject> SerializableOneOfDefinitionTypeBuilder<TObject> withType(
+  public <T extends TObject> SerializableOneOfTypeDefinitionBuilder<TObject> withType(
       final Class<T> clazz, final SerializableTypeDefinition<T> typeDefinition) {
     types.put(clazz, typeDefinition);
     return this;

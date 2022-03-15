@@ -88,7 +88,7 @@ public class SerializableOneOfTypeDefinition<TObject>
   @Override
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
     return types.values().stream()
-        .flatMap(type -> type.getReferencedTypeDefinitions().stream())
+        .flatMap(type -> type.getSelfAndReferencedTypeDefinitions().stream())
         .collect(toSet());
   }
 }
