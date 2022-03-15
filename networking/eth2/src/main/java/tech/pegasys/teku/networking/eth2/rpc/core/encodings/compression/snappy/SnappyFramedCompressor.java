@@ -43,8 +43,12 @@ public class SnappyFramedCompressor implements Compressor {
 
     @Override
     public Optional<ByteBuf> decodeOneMessage(ByteBuf input) throws CompressionException {
-      if (broken) throw new CompressionException("Compressed stream is broken");
-      if (disposed) throw new DisposedDecompressorException();
+      if (broken) {
+        throw new CompressionException("Compressed stream is broken");
+      }
+      if (disposed) {
+        throw new DisposedDecompressorException();
+      }
 
       while (true) {
         try {

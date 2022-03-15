@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,10 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.timer;
+package tech.pegasys.teku.api.schema.interfaces;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
+import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
-public interface TimeTickChannel extends VoidReturningChannelInterface {
-  void onTick();
-}
+@Schema(oneOf = {BeaconBlockPhase0.class, BeaconBlockAltair.class, BlindedBlockBellatrix.class})
+public interface UnsignedBlindedBlock {}

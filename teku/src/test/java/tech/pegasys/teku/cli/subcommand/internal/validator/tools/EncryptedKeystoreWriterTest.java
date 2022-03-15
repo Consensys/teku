@@ -28,24 +28,26 @@ import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 class EncryptedKeystoreWriterTest {
-  private static final BLSSecretKey validator1SecretKey =
+  private static final BLSSecretKey VALIDATOR_1_SECRET_KEY =
       BLSSecretKey.fromBytes(
           Bytes32.fromHexString(
               "0x2CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460"));
-  private static final BLSSecretKey withdrawal1SecretKey =
+  private static final BLSSecretKey WITHDRAWAL_1_SECRET_KEY =
       BLSSecretKey.fromBytes(
           Bytes32.fromHexString(
               "0x6EA631AA885EC84AFA60BBD7887B5DBC91F594DEA29334E99576B51FAAD0E453"));
-  private static final BLSSecretKey validator2SecretKey =
+  private static final BLSSecretKey VALIDATOR_2_SECRET_KEY =
       BLSSecretKey.fromBytes(
           Bytes32.fromHexString(
               "0x147599AA450AADF69988F20FF1ADB3A3BF31BF9CDC77CF492FF95667708D8E79"));
-  private static final BLSSecretKey withdrawal2SecretKey =
+  private static final BLSSecretKey WITHDRAWAL_2_SECRET_KEY =
       BLSSecretKey.fromBytes(
           Bytes32.fromHexString(
               "0x0610B84CD68FB0FAB2F04A2A05EE01CD5F7374EB8EA93E26DB9C61DD2704B5BD"));
-  private static final String validator1PubKey = new BLSPublicKey(validator1SecretKey).toString();
-  private static final String validator2PubKey = new BLSPublicKey(validator2SecretKey).toString();
+  private static final String VALIDATOR_1_PUB_KEY =
+      new BLSPublicKey(VALIDATOR_1_SECRET_KEY).toString();
+  private static final String VALIDATOR_2_PUB_KEY =
+      new BLSPublicKey(VALIDATOR_2_SECRET_KEY).toString();
 
   private static final String PASSWORD = "test123";
 
@@ -58,21 +60,25 @@ class EncryptedKeystoreWriterTest {
             PASSWORD,
             tempDir,
             System.out::println);
-    keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
+    keysWriter.writeKeys(
+        new BLSKeyPair(VALIDATOR_1_SECRET_KEY), new BLSKeyPair(WITHDRAWAL_1_SECRET_KEY));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(trimPublicKey(validator1PubKey) + "_validator.json"), validator1SecretKey);
+        tempDir.resolve(trimPublicKey(VALIDATOR_1_PUB_KEY) + "_validator.json"),
+        VALIDATOR_1_SECRET_KEY);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(trimPublicKey(validator1PubKey) + "_withdrawal.json"),
-        withdrawal1SecretKey);
+        tempDir.resolve(trimPublicKey(VALIDATOR_1_PUB_KEY) + "_withdrawal.json"),
+        WITHDRAWAL_1_SECRET_KEY);
 
-    keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
+    keysWriter.writeKeys(
+        new BLSKeyPair(VALIDATOR_2_SECRET_KEY), new BLSKeyPair(WITHDRAWAL_2_SECRET_KEY));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(trimPublicKey(validator2PubKey) + "_validator.json"), validator2SecretKey);
+        tempDir.resolve(trimPublicKey(VALIDATOR_2_PUB_KEY) + "_validator.json"),
+        VALIDATOR_2_SECRET_KEY);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(trimPublicKey(validator2PubKey) + "_withdrawal.json"),
-        withdrawal2SecretKey);
+        tempDir.resolve(trimPublicKey(VALIDATOR_2_PUB_KEY) + "_withdrawal.json"),
+        WITHDRAWAL_2_SECRET_KEY);
   }
 
   private void assertKeyStoreCreatedAndCanBeDecrypted(

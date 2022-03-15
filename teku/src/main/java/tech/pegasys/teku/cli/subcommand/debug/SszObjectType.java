@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
+@SuppressWarnings("JavaCase")
 public enum SszObjectType {
   AggregateAndProof(schemas(SchemaDefinitions::getAggregateAndProofSchema)),
   SignedBeaconBlock(schemas(SchemaDefinitions::getSignedBeaconBlockSchema)),

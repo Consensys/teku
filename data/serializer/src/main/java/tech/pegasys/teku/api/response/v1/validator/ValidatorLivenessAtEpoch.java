@@ -42,8 +42,12 @@ public class ValidatorLivenessAtEpoch {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ValidatorLivenessAtEpoch that = (ValidatorLivenessAtEpoch) o;
     return isLive == that.isLive
         && Objects.equals(index, that.index)

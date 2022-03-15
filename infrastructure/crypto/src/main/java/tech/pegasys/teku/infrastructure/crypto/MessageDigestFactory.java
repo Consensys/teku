@@ -25,12 +25,12 @@ public class MessageDigestFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String SHA_256 = "SHA-256";
-  private static final Provider securityProvider = selectSecurityProvider();
+  private static final Provider SECURITY_PROVIDER = selectSecurityProvider();
 
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   public static MessageDigest createSha256() {
     try {
-      return MessageDigest.getInstance(SHA_256, securityProvider);
+      return MessageDigest.getInstance(SHA_256, SECURITY_PROVIDER);
     } catch (final NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 algorithm not available", e);
     }

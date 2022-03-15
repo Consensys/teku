@@ -21,8 +21,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
 public class FileBackedGraffitiProviderTest {
-  private static final Bytes32 graffiti = Bytes32Parser.toBytes32("myGraffiti");
-  private static final Bytes32 graffitiFromSampleFile = Bytes32Parser.toBytes32("123456789");
+  private static final Bytes32 GRAFFITI = Bytes32Parser.toBytes32("myGraffiti");
+  private static final Bytes32 GRAFFITI_FROM_SAMPLE_FILE = Bytes32Parser.toBytes32("123456789");
 
   @Test
   public void testBothEmpty() {
@@ -32,8 +32,8 @@ public class FileBackedGraffitiProviderTest {
 
   @Test
   public void testGraffitiWithoutFile() {
-    var graffitiProvider = new FileBackedGraffitiProvider(Optional.of(graffiti), Optional.empty());
-    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(graffiti));
+    var graffitiProvider = new FileBackedGraffitiProvider(Optional.of(GRAFFITI), Optional.empty());
+    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(GRAFFITI));
   }
 
   @Test
@@ -41,22 +41,22 @@ public class FileBackedGraffitiProviderTest {
     var graffitiProvider =
         new FileBackedGraffitiProvider(
             Optional.empty(), Optional.of(Path.of("src/test/resources/graffitiSample.txt")));
-    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(graffitiFromSampleFile));
+    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(GRAFFITI_FROM_SAMPLE_FILE));
   }
 
   @Test
   public void testGraffitiWithFile() {
     var graffitiProvider =
         new FileBackedGraffitiProvider(
-            Optional.of(graffiti), Optional.of(Path.of("src/test/resources/graffitiSample.txt")));
-    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(graffitiFromSampleFile));
+            Optional.of(GRAFFITI), Optional.of(Path.of("src/test/resources/graffitiSample.txt")));
+    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(GRAFFITI_FROM_SAMPLE_FILE));
   }
 
   @Test
   public void testDefaultGraffitiIsUsedIfFileReadFails() {
     var graffitiProvider =
         new FileBackedGraffitiProvider(
-            Optional.of(graffiti), Optional.of(Path.of("src/test/resources/noGraffitiFound.txt")));
-    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(graffiti));
+            Optional.of(GRAFFITI), Optional.of(Path.of("src/test/resources/noGraffitiFound.txt")));
+    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(GRAFFITI));
   }
 }

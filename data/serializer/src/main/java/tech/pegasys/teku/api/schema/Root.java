@@ -32,8 +32,12 @@ public class Root {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Root)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Root)) {
+      return false;
+    }
     Root root1 = (Root) o;
     return Objects.equal(root, root1.root);
   }

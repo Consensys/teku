@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 public interface SszMutablePrimitiveListTestBase
     extends SszListTestBase, SszMutableCollectionTestBase {
 
-  RandomSszDataGenerator generator = new RandomSszDataGenerator();
+  RandomSszDataGenerator GENERATOR = new RandomSszDataGenerator();
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
@@ -61,7 +61,7 @@ public interface SszMutablePrimitiveListTestBase
 
       int appendListSize = Integer.min(3, (int) (collection.getSchema().getMaxLength() - origSize));
       List<ElT> appendList =
-          Stream.generate(() -> generator.randomData(collection.getPrimitiveElementSchema()))
+          Stream.generate(() -> GENERATOR.randomData(collection.getPrimitiveElementSchema()))
               .limit(appendListSize)
               .map(SszPrimitive::get)
               .collect(Collectors.toList());

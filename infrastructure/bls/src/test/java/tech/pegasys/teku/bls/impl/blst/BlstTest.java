@@ -27,7 +27,7 @@ import tech.pegasys.teku.bls.impl.AbstractBLS12381Test;
 import tech.pegasys.teku.bls.impl.BLS12381;
 
 public class BlstTest extends AbstractBLS12381Test {
-  private static final Random random = new Random(1);
+  private static final Random RANDOM = new Random(1);
 
   private static BLS12381 BLS;
 
@@ -55,7 +55,7 @@ public class BlstTest extends AbstractBLS12381Test {
   void testBatchVerifySingleSig() {
     Bytes msg = Bytes32.ZERO;
 
-    BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK = blstSK.derivePublicKey();
 
     BlstSignature blstSignature = BlstBLS12381.sign(blstSK, msg);
@@ -71,13 +71,13 @@ public class BlstTest extends AbstractBLS12381Test {
   void testBatchVerifyCoupleSigs() {
     Bytes msg1 = Bytes32.fromHexString("123456");
 
-    BlstSecretKey blstSK1 = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK1 = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK1 = blstSK1.derivePublicKey();
     BlstSignature blstSignature1 = BlstBLS12381.sign(blstSK1, msg1);
 
     Bytes msg2 = Bytes32.fromHexString("654321");
 
-    BlstSecretKey blstSK2 = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK2 = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK2 = blstSK2.derivePublicKey();
     BlstSignature blstSignature2 = BlstBLS12381.sign(blstSK2, msg2);
 
@@ -93,7 +93,7 @@ public class BlstTest extends AbstractBLS12381Test {
   @Test
   void succeedsWhenPrepareBatchVerifyNotInG2ThrowsException() {
     Bytes msg = Bytes32.fromHexString("123456");
-    BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK = blstSK.derivePublicKey();
     BlstSignature blstSignature = notInG2();
 

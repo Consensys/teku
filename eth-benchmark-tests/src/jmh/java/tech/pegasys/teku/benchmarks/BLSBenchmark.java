@@ -58,7 +58,9 @@ public class BLSBenchmark {
   public void verifySignatureSimple() {
     for (int i = 0; i < sigCnt; i++) {
       boolean res = BLS.verify(keyPairs.get(i).getPublicKey(), messages.get(i), signatures.get(i));
-      if (!res) throw new IllegalStateException();
+      if (!res) {
+        throw new IllegalStateException();
+      }
     }
   }
 
@@ -76,7 +78,9 @@ public class BLSBenchmark {
             signatures.subList(0, sigCnt),
             false,
             false);
-    if (!res) throw new IllegalStateException();
+    if (!res) {
+      throw new IllegalStateException();
+    }
   }
 
   @Benchmark
@@ -93,7 +97,9 @@ public class BLSBenchmark {
             signatures.subList(0, sigCnt),
             true,
             false);
-    if (!res) throw new IllegalStateException();
+    if (!res) {
+      throw new IllegalStateException();
+    }
   }
 
   @Benchmark
@@ -110,7 +116,9 @@ public class BLSBenchmark {
             signatures.subList(0, sigCnt),
             true,
             true);
-    if (!res) throw new IllegalStateException();
+    if (!res) {
+      throw new IllegalStateException();
+    }
   }
 
   @Benchmark
@@ -127,6 +135,8 @@ public class BLSBenchmark {
             signatures.subList(0, sigCnt),
             false,
             true);
-    if (!res) throw new IllegalStateException();
+    if (!res) {
+      throw new IllegalStateException();
+    }
   }
 }

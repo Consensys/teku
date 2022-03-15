@@ -54,8 +54,12 @@ public class GenesisData {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final GenesisData that = (GenesisData) o;
     return Objects.equals(genesisTime, that.genesisTime)
         && Objects.equals(genesisValidatorsRoot, that.genesisValidatorsRoot)

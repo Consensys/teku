@@ -59,8 +59,12 @@ public class EpochCommitteeResponse {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof EpochCommitteeResponse)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof EpochCommitteeResponse)) {
+      return false;
+    }
     EpochCommitteeResponse that = (EpochCommitteeResponse) o;
     return Objects.equal(index, that.index)
         && Objects.equal(slot, that.slot)

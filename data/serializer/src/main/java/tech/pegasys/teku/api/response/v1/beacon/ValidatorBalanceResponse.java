@@ -57,8 +57,12 @@ public class ValidatorBalanceResponse {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ValidatorBalanceResponse)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ValidatorBalanceResponse)) {
+      return false;
+    }
     ValidatorBalanceResponse that = (ValidatorBalanceResponse) o;
     return Objects.equal(index, that.index) && Objects.equal(balance, that.balance);
   }
