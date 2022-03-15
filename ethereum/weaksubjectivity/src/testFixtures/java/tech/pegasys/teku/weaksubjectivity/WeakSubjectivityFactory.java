@@ -20,10 +20,10 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public class WeakSubjectivityFactory {
 
   private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
-  private static final WeakSubjectivityConfig wsConfig =
+  private static final WeakSubjectivityConfig WS_CONFIG =
       WeakSubjectivityConfig.builder().specProvider(SPEC).build();
 
   public static WeakSubjectivityValidator lenientValidator() {
-    return WeakSubjectivityValidator.lenient(wsConfig);
+    return WeakSubjectivityValidator.lenient(WS_CONFIG);
   }
 }

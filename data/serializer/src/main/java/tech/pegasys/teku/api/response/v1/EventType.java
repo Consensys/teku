@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.response.v1;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("JavaCase")
 public enum EventType {
   head,
   block,

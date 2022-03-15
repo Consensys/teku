@@ -29,25 +29,25 @@ public class GIndexUtil {
 
   /** See {@link #gIdxCompare(long, long)} */
   public enum NodeRelation {
-    Left,
-    Right,
-    Successor,
-    Predecessor,
-    Same;
+    LEFT,
+    RIGHT,
+    SUCCESSOR,
+    PREDECESSOR,
+    SAME;
 
     /** <code>gIdxCompare(idx1, idx2) == gIdxCompare(idx2, idx1).inverse()</code> */
     public NodeRelation inverse() {
       switch (this) {
-        case Left:
-          return Right;
-        case Right:
-          return Left;
-        case Predecessor:
-          return Successor;
-        case Successor:
-          return Predecessor;
-        case Same:
-          return Same;
+        case LEFT:
+          return RIGHT;
+        case RIGHT:
+          return LEFT;
+        case PREDECESSOR:
+          return SUCCESSOR;
+        case SUCCESSOR:
+          return PREDECESSOR;
+        case SAME:
+          return SAME;
         default:
           throw new IllegalArgumentException("Unknown: " + this);
       }
@@ -96,11 +96,11 @@ public class GIndexUtil {
    * generalized index <code>idx2</code>:
    *
    * <ul>
-   *   <li>{@link NodeRelation#Left}: idx1 is to the left of idx2
-   *   <li>{@link NodeRelation#Right}: idx1 is to the right of idx2
-   *   <li>{@link NodeRelation#Successor}: idx1 is the successor of idx2
-   *   <li>{@link NodeRelation#Predecessor}: idx1 is the predecessor of idx2
-   *   <li>{@link NodeRelation#Same}: idx1 is equal to idx2
+   *   <li>{@link NodeRelation#LEFT}: idx1 is to the left of idx2
+   *   <li>{@link NodeRelation#RIGHT}: idx1 is to the right of idx2
+   *   <li>{@link NodeRelation#SUCCESSOR}: idx1 is the successor of idx2
+   *   <li>{@link NodeRelation#PREDECESSOR}: idx1 is the predecessor of idx2
+   *   <li>{@link NodeRelation#SAME}: idx1 is equal to idx2
    * </ul>
    */
   public static NodeRelation gIdxCompare(long idx1, long idx2) {
@@ -115,17 +115,17 @@ public class GIndexUtil {
     long minDepthIdx2 = idx2 >>> (depth2 - minDepth);
     if (minDepthIdx1 == minDepthIdx2) {
       if (depth1 < depth2) {
-        return NodeRelation.Predecessor;
+        return NodeRelation.PREDECESSOR;
       } else if (depth1 > depth2) {
-        return NodeRelation.Successor;
+        return NodeRelation.SUCCESSOR;
       } else {
-        return NodeRelation.Same;
+        return NodeRelation.SAME;
       }
     } else {
       if (minDepthIdx1 < minDepthIdx2) {
-        return NodeRelation.Left;
+        return NodeRelation.LEFT;
       } else {
-        return NodeRelation.Right;
+        return NodeRelation.RIGHT;
       }
     }
   }

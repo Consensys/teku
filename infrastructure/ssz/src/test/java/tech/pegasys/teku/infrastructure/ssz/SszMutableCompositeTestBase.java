@@ -37,7 +37,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   SszSchema<?> NON_EXISTING_SCHEMA = SszUInt64ListSchema.create(9283496234L);
   SszData NON_EXISTING_SCHEMA_DATA = NON_EXISTING_SCHEMA.getDefault();
-  RandomSszDataGenerator generator = new RandomSszDataGenerator();
+  RandomSszDataGenerator GENERATOR = new RandomSszDataGenerator();
 
   static SszData getSomeNewChild(SszCompositeSchema<?> schema) {
     final SszSchema<?> childSchema;
@@ -124,7 +124,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
     List<SszData> newChildrenValues =
         updateIndices.stream()
-            .map(idx -> generator.randomData(schema.getChildSchema(idx)))
+            .map(idx -> GENERATOR.randomData(schema.getChildSchema(idx)))
             .collect(Collectors.toList());
 
     for (int i = 0; i < updateIndices.size(); i++) {
@@ -184,7 +184,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     SszCompositeSchema<?> schema = data.getSchema();
     List<SszData> newChildren =
         updatedIndices.stream()
-            .map(updatedIndex -> generator.randomData(schema.getChildSchema(updatedIndex)))
+            .map(updatedIndex -> GENERATOR.randomData(schema.getChildSchema(updatedIndex)))
             .collect(Collectors.toList());
 
     List<SszComposite<SszData>> updatedData = new ArrayList<>();
@@ -220,7 +220,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
       // the structure could be extended (just a List for now)
       int origSize = data.size();
 
-      SszData appendChild = generator.randomData(data.getSchema().getChildSchema(origSize));
+      SszData appendChild = GENERATOR.randomData(data.getSchema().getChildSchema(origSize));
       data.set(origSize, appendChild);
 
       assertThat(data.size()).isEqualTo(origSize + 1);
@@ -271,11 +271,11 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     }
     AtomicInteger invalidateCount = new AtomicInteger();
     data.setInvalidator(__ -> invalidateCount.incrementAndGet());
-    data.set(0, generator.randomData(data.getSchema().getChildSchema(0)));
+    data.set(0, GENERATOR.randomData(data.getSchema().getChildSchema(0)));
 
     assertThat(invalidateCount).hasValue(1);
 
-    data.update(0, __ -> generator.randomData(data.getSchema().getChildSchema(0)));
+    data.update(0, __ -> GENERATOR.randomData(data.getSchema().getChildSchema(0)));
 
     assertThat(invalidateCount).hasValue(2);
   }

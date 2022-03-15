@@ -43,10 +43,10 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class MultiThreadedStoreTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  private static final UInt64 genesisTime = UInt64.valueOf(100);
+  private static final UInt64 GENESIS_TIME = UInt64.valueOf(100);
   private static final Logger LOG = LogManager.getLogger();
-  private static final Spec spec = TestSpecFactory.createMinimalBellatrix();
-  private static final StateStorageMode storageMode = StateStorageMode.PRUNE;
+  private static final Spec SPEC = TestSpecFactory.createMinimalBellatrix();
+  private static final StateStorageMode STORAGE_MODE = StateStorageMode.PRUNE;
   private ChainBuilder chainBuilder;
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
@@ -58,12 +58,12 @@ public class MultiThreadedStoreTest {
   public void setup() {
     LOG.info("Starting test");
     this.slot = new AtomicLong(1);
-    this.chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    this.chainBuilder = ChainBuilder.create(SPEC, VALIDATOR_KEYS);
     this.storageSystem =
-        createStorageSystemInternal(storageMode, StoreConfig.createDefault(), true);
+        createStorageSystemInternal(STORAGE_MODE, StoreConfig.createDefault(), true);
     this.recentChainData = storageSystem.recentChainData();
     final SignedBlockAndState genesisBlockAndState =
-        chainBuilder.generateGenesis(genesisTime, true);
+        chainBuilder.generateGenesis(GENESIS_TIME, true);
     this.recentChainData.initializeFromGenesis(genesisBlockAndState.getState(), UInt64.ZERO);
   }
 
@@ -113,7 +113,7 @@ public class MultiThreadedStoreTest {
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
-        .specProvider(spec)
+        .specProvider(SPEC)
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.LEVELDB2)
         .storageMode(storageMode)
