@@ -39,7 +39,7 @@ public class GetPeersTest extends AbstractBeaconHandlerTest {
   final Eth2Peer peer2 = mock(Eth2Peer.class);
 
   @BeforeEach
-  void setup() throws IOException {
+  void setup() {
     when(peer1.getId()).thenReturn(peerId1);
     when(peer1.getAddress()).thenReturn(new PeerAddress(peerId1));
     when(peer1.isConnected()).thenReturn(true);
