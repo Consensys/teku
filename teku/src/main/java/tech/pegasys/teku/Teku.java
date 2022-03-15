@@ -18,14 +18,18 @@ import java.nio.charset.Charset;
 import java.security.Security;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.config.TekuConfigurationPrinter;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
+  private static final Logger LOG = LogManager.getLogger();
 
   static {
     // Disable libsodium in tuweni Hash because the check for it's presence can be very slow.
@@ -65,6 +69,7 @@ public final class Teku {
 
   private static Node start(final TekuConfiguration config, final boolean validatorOnly) {
     final Node node;
+    LOG.debug(TekuConfigurationPrinter.lazyPrint(config));
     if (validatorOnly) {
       node = new ValidatorNode(config);
     } else {
