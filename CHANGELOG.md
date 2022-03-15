@@ -15,16 +15,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- `block` events are now published on the beacon rest API after the block is imported, instead of after it had passed gossip validation rules.
-     Blocks that pass the gossip validation rules but fail state transition will no longer emit a `block` event.
 
 ### Additions and Improvements
-- Added configuration for the Kiln testnet (`--network kiln`).
-- Added `/eth/v2/debug/beacon/heads` REST API to include information on whether the execution payload of each chain head has been executed or not.
-- Reduced CPU usage when finding ancestor block roots.
-- Updated gossip validation rules to match consensus spec v1.1.0.
-- Reduced memory usage when deduplicating gossip messages.
-- GetBlockHeaders `/eth/v1/beacon/headers` can now return non-canonical block headers.
 
 ### Bug Fixes
 - Make performance degradation more graceful when there is insufficient CPU for the beacon node to keep up with the chain. Reduces regularity of "Cannot create attestation for future slot" errors.
