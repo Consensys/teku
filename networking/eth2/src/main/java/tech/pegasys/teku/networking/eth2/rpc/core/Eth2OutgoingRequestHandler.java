@@ -119,7 +119,9 @@ public class Eth2OutgoingRequestHandler<
   public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
     this.rpcStream = rpcStream;
 
-    if (!data.isReadable()) return;
+    if (!data.isReadable()) {
+      return;
+    }
 
     try {
       if (state.get() != EXPECT_DATA) {

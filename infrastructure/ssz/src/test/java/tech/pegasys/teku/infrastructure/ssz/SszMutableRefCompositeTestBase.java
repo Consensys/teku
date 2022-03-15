@@ -26,7 +26,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestBase {
-  RandomSszDataGenerator generator = new RandomSszDataGenerator();
+  RandomSszDataGenerator GENERATOR = new RandomSszDataGenerator();
 
   default Stream<Arguments> sszMutableByRefCompositeArguments() {
     return passWhenEmpty(
@@ -106,7 +106,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszComposite<SszData> origData = data.commitChanges();
     SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
 
-    SszData newChildValue = generator.randomData(childSchema);
+    SszData newChildValue = GENERATOR.randomData(childSchema);
     data.set(updateChildIndex, newChildValue);
 
     SszDataAssert.assertThatSszData(data.get(updateChildIndex))
@@ -126,7 +126,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
       SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
     SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
 
-    SszData newChildValue = generator.randomData(childSchema);
+    SszData newChildValue = GENERATOR.randomData(childSchema);
     SszMutableData mutableChild = newChildValue.createWritableCopy();
     SszData sszMutableChildUpdated1 = updateSomething(mutableChild);
     data.set(updateChildIndex, mutableChild);
@@ -170,7 +170,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszDataAssert.assertThatSszData(data.get(updateChildIndex))
         .isEqualByGettersTo(newChildValueByRef);
 
-    SszData newChildValue = generator.randomData(childSchema);
+    SszData newChildValue = GENERATOR.randomData(childSchema);
     data.set(updateChildIndex, newChildValue);
 
     SszDataAssert.assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValue);
@@ -184,7 +184,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszMutableComposite<SszData> mutableComposite = (SszMutableComposite<SszData>) mutableData;
     Assumptions.assumeTrue(mutableComposite.size() > 0);
     SszComposite<SszData> orig = mutableComposite.commitChanges();
-    SszData newChildData = generator.randomData(mutableComposite.getSchema().getChildSchema(0));
+    SszData newChildData = GENERATOR.randomData(mutableComposite.getSchema().getChildSchema(0));
     mutableComposite.set(0, newChildData);
     SszMutableComposite<SszData> writableCopy = orig.createWritableCopy();
     writableCopy.set(0, newChildData);

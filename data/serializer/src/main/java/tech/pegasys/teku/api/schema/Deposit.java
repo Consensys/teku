@@ -54,8 +54,12 @@ public class Deposit {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Deposit)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Deposit)) {
+      return false;
+    }
     Deposit deposit = (Deposit) o;
     return Objects.equals(proof, deposit.proof) && Objects.equals(data, deposit.data);
   }

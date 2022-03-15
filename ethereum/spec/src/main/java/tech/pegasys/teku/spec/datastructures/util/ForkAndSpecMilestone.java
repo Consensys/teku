@@ -36,8 +36,12 @@ public class ForkAndSpecMilestone {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ForkAndSpecMilestone that = (ForkAndSpecMilestone) o;
     return Objects.equals(fork, that.fork) && specMilestone == that.specMilestone;
   }

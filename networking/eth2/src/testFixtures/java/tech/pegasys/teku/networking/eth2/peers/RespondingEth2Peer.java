@@ -54,8 +54,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class RespondingEth2Peer implements Eth2Peer {
-  private static final MockNodeIdGenerator idGenerator = new MockNodeIdGenerator();
-  private static final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
+  private static final MockNodeIdGenerator ID_GENERATOR = new MockNodeIdGenerator();
+  private static final Bytes4 FORK_DIGEST = Bytes4.fromHexString("0x11223344");
 
   private final Spec spec;
   private final ChainBuilder chain;
@@ -83,7 +83,7 @@ public class RespondingEth2Peer implements Eth2Peer {
     this.forks = forks;
     this.status = status;
 
-    this.nodeId = idGenerator.next();
+    this.nodeId = ID_GENERATOR.next();
   }
 
   public static RespondingEth2Peer create(
@@ -95,7 +95,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   private static PeerStatus createStatus(final StateAndBlockSummary head) {
     final Checkpoint finalizedCheckpoint = head.getState().getFinalized_checkpoint();
     return new PeerStatus(
-        forkDigest,
+        FORK_DIGEST,
         finalizedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
         head.getRoot(),
@@ -104,7 +104,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   private PeerStatus createStatus(final Checkpoint head, final Checkpoint finalized) {
     return new PeerStatus(
-        forkDigest,
+        FORK_DIGEST,
         finalized.getRoot(),
         finalized.getEpoch(),
         head.getRoot(),

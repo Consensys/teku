@@ -36,7 +36,7 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ValidatorKeys;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class GenerateKeysAndSendDepositsCommandTest {
-  private static final Consumer<Integer> shutdownFunction = status -> {};
+  private static final Consumer<Integer> SHUTDOWN_FUNCTION = status -> {};
 
   private KeyGenerationOptions keyGenerationOptions;
   private KeyGenerator keyGenerator;
@@ -64,7 +64,7 @@ class GenerateKeysAndSendDepositsCommandTest {
 
     final GenerateKeysAndSendDepositsCommand generateKeysAndSendDepositsCommand =
         new GenerateKeysAndSendDepositsCommand(
-            shutdownFunction, depositOptions, keyGenerationOptions, new VerbosityOptions(true));
+            SHUTDOWN_FUNCTION, depositOptions, keyGenerationOptions, new VerbosityOptions(true));
 
     generateKeysAndSendDepositsCommand.run();
 
@@ -87,7 +87,7 @@ class GenerateKeysAndSendDepositsCommandTest {
 
     final GenerateKeysAndSendDepositsCommand generateKeysAndSendDepositsCommand =
         new GenerateKeysAndSendDepositsCommand(
-            shutdownFunction, depositOptions, keyGenerationOptions, new VerbosityOptions(true));
+            SHUTDOWN_FUNCTION, depositOptions, keyGenerationOptions, new VerbosityOptions(true));
 
     generateKeysAndSendDepositsCommand.run();
 
@@ -105,7 +105,7 @@ class GenerateKeysAndSendDepositsCommandTest {
   public void generatesAndRegistersWithoutDisplayConfirmation() {
     final GenerateKeysAndSendDepositsCommand generateKeysAndSendDepositsCommand =
         new GenerateKeysAndSendDepositsCommand(
-            shutdownFunction, depositOptions, keyGenerationOptions, new VerbosityOptions(false));
+            SHUTDOWN_FUNCTION, depositOptions, keyGenerationOptions, new VerbosityOptions(false));
 
     generateKeysAndSendDepositsCommand.run();
     verify(keyGenerationOptions).createKeyGenerator(false);
@@ -117,7 +117,7 @@ class GenerateKeysAndSendDepositsCommandTest {
   public void generatesAndRegistersWithDisplayConfirmation() {
     final GenerateKeysAndSendDepositsCommand generateKeysAndSendDepositsCommand =
         new GenerateKeysAndSendDepositsCommand(
-            shutdownFunction, depositOptions, keyGenerationOptions, new VerbosityOptions(true));
+            SHUTDOWN_FUNCTION, depositOptions, keyGenerationOptions, new VerbosityOptions(true));
 
     generateKeysAndSendDepositsCommand.run();
     verify(keyGenerationOptions).createKeyGenerator(true);

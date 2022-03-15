@@ -291,8 +291,8 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   private static class TestContextCodec implements RpcContextCodec<Bytes4, BeaconState> {
-    private static final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
-    private static final Spec altairSpec = TestSpecFactory.createMinimalAltair();
+    private static final Spec PHASE0_SPEC = TestSpecFactory.createMinimalPhase0();
+    private static final Spec ALTAIR_SPEC = TestSpecFactory.createMinimalAltair();
 
     static final Bytes4 FORK_DIGEST_PHASE0 = Bytes4.fromHexStringLenient("0x01");
     static final Bytes4 FORK_DIGEST_ALTAIR = Bytes4.fromHexStringLenient("0x02");
@@ -316,10 +316,12 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     public Optional<SszSchema<BeaconState>> getSchemaFromContext(final Bytes4 forkDigest) {
       final SszSchema<BeaconState> phase0Schema =
           SszSchema.as(
-              BeaconState.class, BeaconStateSchemaPhase0.create(phase0Spec.getGenesisSpecConfig()));
+              BeaconState.class,
+              BeaconStateSchemaPhase0.create(PHASE0_SPEC.getGenesisSpecConfig()));
       final SszSchema<BeaconState> altairSchema =
           SszSchema.as(
-              BeaconState.class, BeaconStateSchemaAltair.create(altairSpec.getGenesisSpecConfig()));
+              BeaconState.class,
+              BeaconStateSchemaAltair.create(ALTAIR_SPEC.getGenesisSpecConfig()));
       Optional<SszSchema<BeaconState>> schema = Optional.empty();
       if (forkDigest.equals(FORK_DIGEST_PHASE0)) {
         schema = Optional.of(phase0Schema);

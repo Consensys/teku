@@ -26,7 +26,7 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.options.VerbosityOpti
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
 
 class GenerateKeysCommandTest {
-  private static final Consumer<Integer> shutdownFunction = status -> {};
+  private static final Consumer<Integer> SHUTDOWN_FUNCTION = status -> {};
   private KeyGenerationOptions keyGenerationOptions;
   private KeyGenerator keyGenerator;
 
@@ -40,7 +40,8 @@ class GenerateKeysCommandTest {
   @Test
   public void generatesKeysWithDisplayConfirmation() {
     final GenerateKeysCommand generateKeysCommand =
-        new GenerateKeysCommand(shutdownFunction, keyGenerationOptions, new VerbosityOptions(true));
+        new GenerateKeysCommand(
+            SHUTDOWN_FUNCTION, keyGenerationOptions, new VerbosityOptions(true));
 
     generateKeysCommand.run();
     verify(keyGenerationOptions).createKeyGenerator(true);
@@ -51,7 +52,7 @@ class GenerateKeysCommandTest {
   public void generatesKeysWithoutDisplayConfirmation() {
     final GenerateKeysCommand generateKeysCommand =
         new GenerateKeysCommand(
-            shutdownFunction, keyGenerationOptions, new VerbosityOptions(false));
+            SHUTDOWN_FUNCTION, keyGenerationOptions, new VerbosityOptions(false));
 
     generateKeysCommand.run();
     verify(keyGenerationOptions).createKeyGenerator(false);

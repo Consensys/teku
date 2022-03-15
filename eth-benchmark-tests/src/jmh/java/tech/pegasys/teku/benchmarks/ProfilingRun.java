@@ -132,7 +132,9 @@ public class ProfilingRun {
                   + result);
           blockCount++;
           measuredBlockCount++;
-          if (blockCount > iterationBlockLimit) break;
+          if (blockCount > iterationBlockLimit) {
+            break;
+          }
         }
       }
       long totalT = System.currentTimeMillis() - totalS;

@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -222,5 +223,32 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
                     payloadId,
                     slot,
                     executionPayloadHeader));
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+      SignedBeaconBlock signedBlindedBeaconBlock) {
+    LOG.trace("calling proposeBlindedBlock(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+
+    checkArgument(
+        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
+        "SignedBeaconBlock must be blind");
+
+    return executionEngineClient
+        .proposeBlindedBlock(signedBlindedBeaconBlock)
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenCombine(
+            SafeFuture.of(
+                () ->
+                    SchemaDefinitionsBellatrix.required(
+                            spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions())
+                        .getExecutionPayloadSchema()),
+            ExecutionPayloadV1::asInternalExecutionPayload)
+        .thenPeek(
+            executionPayload ->
+                LOG.trace(
+                    "proposeBlindedBlock(signedBlindedBeaconBlock={}) -> {}",
+                    signedBlindedBeaconBlock,
+                    executionPayload));
   }
 }

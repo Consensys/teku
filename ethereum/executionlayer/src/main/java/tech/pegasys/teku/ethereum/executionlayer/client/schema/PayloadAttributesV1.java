@@ -69,8 +69,12 @@ public class PayloadAttributesV1 {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PayloadAttributesV1 that = (PayloadAttributesV1) o;
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)

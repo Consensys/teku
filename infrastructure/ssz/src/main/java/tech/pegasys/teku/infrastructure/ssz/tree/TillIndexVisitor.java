@@ -34,9 +34,9 @@ class TillIndexVisitor implements TreeVisitor {
   @Override
   public boolean visit(TreeNode node, long generalizedIndex) {
     NodeRelation compareRes = GIndexUtil.gIdxCompare(generalizedIndex, tillGIndex);
-    if (inclusive && compareRes == NodeRelation.Right) {
+    if (inclusive && compareRes == NodeRelation.RIGHT) {
       return false;
-    } else if (!inclusive && (compareRes == NodeRelation.Same)) {
+    } else if (!inclusive && (compareRes == NodeRelation.SAME)) {
       return false;
     } else {
       return delegate.visit(node, generalizedIndex);

@@ -28,12 +28,12 @@ import org.junit.jupiter.api.Test;
 
 abstract class BLSPublicKeyTest {
 
-  private static final Bytes infinityPublicKeyBytes =
+  private static final Bytes INFINITY_PUBLIC_KEY_BYTES =
       Bytes.fromHexString(
           "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
-  private static final BLSPublicKey infinityPublicKey =
-      BLSPublicKey.fromSSZBytes(infinityPublicKeyBytes);
+  private static final BLSPublicKey INFINITY_PUBLIC_KEY =
+      BLSPublicKey.fromSSZBytes(INFINITY_PUBLIC_KEY_BYTES);
 
   @Test
   void fromBytesCompressedValidate_okWhenValidBytes() {
@@ -62,8 +62,8 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenTwoInfinityPublicKeysAreEqual() {
-    BLSPublicKey publicKey1 = new BLSPublicKey(infinityPublicKey.getPublicKey());
-    BLSPublicKey publicKey2 = new BLSPublicKey(infinityPublicKey.getPublicKey());
+    BLSPublicKey publicKey1 = new BLSPublicKey(INFINITY_PUBLIC_KEY.getPublicKey());
+    BLSPublicKey publicKey2 = new BLSPublicKey(INFINITY_PUBLIC_KEY.getPublicKey());
     assertEquals(publicKey1, publicKey2);
   }
 
@@ -122,7 +122,7 @@ abstract class BLSPublicKeyTest {
               writer.writeFixedBytes(Bytes.wrap(pointBytes));
             });
     BLSPublicKey deserializedPublicKey = BLSPublicKey.fromSSZBytes(infinityBytesSsz);
-    assertEquals(infinityPublicKey, deserializedPublicKey);
+    assertEquals(INFINITY_PUBLIC_KEY, deserializedPublicKey);
   }
 
   @Test
@@ -164,7 +164,7 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
-    BLSPublicKey publicKey1 = infinityPublicKey;
+    BLSPublicKey publicKey1 = INFINITY_PUBLIC_KEY;
     BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
   }
@@ -192,9 +192,9 @@ abstract class BLSPublicKeyTest {
             Bytes48.fromHexString(
                 "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224"));
 
-    BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk, infinityPublicKey));
+    BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk, INFINITY_PUBLIC_KEY));
 
-    assertThat(aggrPk).isEqualTo(infinityPublicKey);
+    assertThat(aggrPk).isEqualTo(INFINITY_PUBLIC_KEY);
   }
 
   @Test
@@ -212,7 +212,7 @@ abstract class BLSPublicKeyTest {
 
     BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk1, pk2));
 
-    assertThat(aggrPk).isEqualTo(infinityPublicKey);
+    assertThat(aggrPk).isEqualTo(INFINITY_PUBLIC_KEY);
   }
 
   @Test

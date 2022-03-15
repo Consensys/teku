@@ -43,7 +43,7 @@ public class LoadingUtil {
       final long lastUsefulGIndex,
       final ChildLoader childLoader) {
     if (depthToLoad == 0) {
-      if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == NodeRelation.Right) {
+      if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == NodeRelation.RIGHT) {
         // Leaf node is past the last useful node so can just use the default tree
         return defaultTree;
       }
@@ -131,13 +131,13 @@ public class LoadingUtil {
     final NodeRelation relationRootToLastUseful =
         GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
     switch (relationRootToLastUseful) {
-      case Left:
-      case Predecessor:
+      case LEFT:
+      case PREDECESSOR:
         return true;
 
-      case Same:
-      case Right:
-      case Successor:
+      case SAME:
+      case RIGHT:
+      case SUCCESSOR:
         return false;
 
       default:

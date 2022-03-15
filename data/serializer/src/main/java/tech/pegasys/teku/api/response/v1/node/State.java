@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.response.v1.node;
 
+@SuppressWarnings("JavaCase")
 public enum State {
   disconnected,
   connecting,

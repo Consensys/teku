@@ -84,8 +84,12 @@ public class DatabaseNetwork {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final DatabaseNetwork that = (DatabaseNetwork) o;
     return Objects.equals(forkVersion, that.forkVersion)
         && Objects.equals(depositContract, that.depositContract);
