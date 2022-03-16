@@ -84,6 +84,10 @@ public class NetworkDataProvider {
     return network.streamPeers().map(this::toPeer).collect(Collectors.toList());
   }
 
+  public List<Eth2Peer> getEth2Peers() {
+    return network.streamPeers().collect(Collectors.toList());
+  }
+
   public List<PeerScore> getPeerScores() {
     return network.streamPeers().map(this::toPeerScore).collect(Collectors.toList());
   }
