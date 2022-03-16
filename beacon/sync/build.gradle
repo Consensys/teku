@@ -48,6 +48,7 @@ dependencies {
     testFixturesImplementation testFixtures(project('::networking:eth2'))
     testFixturesImplementation testFixtures(project('::networking:p2p'))
     testFixturesImplementation testFixtures(project('::infrastructure:events'))
+    testFixturesImplementation testFixtures(project(':infrastructure:logging'))
 
     testFixturesImplementation 'org.mockito:mockito-core'
     testFixturesImplementation 'org.hyperledger.besu:plugin-api'

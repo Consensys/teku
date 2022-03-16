@@ -197,6 +197,18 @@ public class EventLogger {
     error(configurationErrorEventLog, Color.RED);
   }
 
+  public void lateBlockImport(
+      final Bytes32 root,
+      final UInt64 slot,
+      final UInt64 arrivalTime,
+      final UInt64 processingTimeMs) {
+    String reorgEventLog =
+        String.format(
+            "Late Block Import *** Arrival Time: %s, Processing Time: %s: Block: %s",
+            processingTimeMs, arrivalTime, LogFormatter.formatBlock(slot, root));
+    warn(reorgEventLog, Color.YELLOW);
+  }
+
   private void info(final String message, final Color color) {
     log.info(print(message, color));
   }
