@@ -96,7 +96,9 @@ public class BlockManager extends Service
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
 
-    final UInt64 blockArrivalTimeMs = timeProvider.getTimeInMillis();
+    final BlockImportPerformance blockImportPerformance = new BlockImportPerformance(timeProvider);
+
+    blockImportPerformance.arrival(recentChainData, block.getSlot());
 
     if (propagateInvalidity(block).isPresent()) {
       return SafeFuture.completedFuture(
@@ -111,8 +113,8 @@ public class BlockManager extends Service
             LOG.trace(
                 "Preparing to import block: {} arrived at {}",
                 () -> formatBlock(block.getSlot(), block.getRoot()),
-                () -> blockArrivalTimeMs);
-            doImportBlock(block, Optional.of(blockArrivalTimeMs))
+                blockImportPerformance::getBlockArrivalTimeStamp);
+            doImportBlock(block, Optional.of(blockImportPerformance))
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -151,13 +153,14 @@ public class BlockManager extends Service
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
-      final SignedBeaconBlock block, final Optional<UInt64> maybeBlockArrivalTimeMs) {
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
                 handleBlockImport(block)
-                    .thenPeek(__ -> lateBlockImportCheck(maybeBlockArrivalTimeMs, block)))
+                    .thenPeek(__ -> lateBlockImportCheck(blockImportPerformance, block)))
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -262,23 +265,18 @@ public class BlockManager extends Service
   }
 
   private void lateBlockImportCheck(
-      final Optional<UInt64> maybeBlockArrivalTimeMs, final SignedBeaconBlock block) {
-    maybeBlockArrivalTimeMs.ifPresent(
-        blockArrivalTimeMs -> {
-          final UInt64 currentTime = timeProvider.getTimeInMillis();
-          final UInt64 timeAtSlotStartMs =
-              recentChainData.computeTimeAtSlot(block.getSlot()).times(1000);
-          final UInt64 timeWarningLimitMs =
-              timeAtSlotStartMs.plus(
-                  (recentChainData.getSpec().getSecondsPerSlot(block.getSlot()) * 1000L) / 3);
-
-          if (currentTime.isGreaterThan(timeWarningLimitMs)) {
+      final Optional<BlockImportPerformance> maybeBlockImportPerformance,
+      final SignedBeaconBlock block) {
+    maybeBlockImportPerformance.ifPresent(
+        blockImportPerformance -> {
+          blockImportPerformance.processed();
+          if (blockImportPerformance.isSlotTimeWarningPassed()) {
 
             eventLogger.lateBlockImport(
                 block.getRoot(),
                 block.getSlot(),
-                blockArrivalTimeMs.minus(timeAtSlotStartMs),
-                currentTime.minus(blockArrivalTimeMs));
+                blockImportPerformance.getArrivalDelay(),
+                blockImportPerformance.getProcessingTime());
           }
         });
   }
