@@ -80,12 +80,13 @@ public class FutureItems<T> implements SlotEventsChannel {
 
     LOG.trace("Save future item at slot {} for later import: {}", slot, item);
     queuedFutureItems.computeIfAbsent(slot, key -> createNewSet()).add(item);
-    valueConsumer.accept(countFutureItemsByType(item));
+    valueConsumer.accept(countFutureItemsByType(item.getClass()));
   }
 
-  private Long countFutureItemsByType(final T item) {
+  @SuppressWarnings("rawtypes")
+  private Long countFutureItemsByType(final Class clazz) {
     return queuedFutureItems.values().stream()
-        .map(ss -> ss.stream().filter(z -> z.getClass().equals(item.getClass())).count())
+        .map(ss -> ss.stream().filter(z -> z.getClass().equals(clazz)).count())
         .reduce(0L, Long::sum);
   }
 
@@ -95,12 +96,14 @@ public class FutureItems<T> implements SlotEventsChannel {
    * @param currentSlot The slot to be considered current
    * @return The set of items that are no longer in the future
    */
-  public List<T> prune(final UInt64 currentSlot) {
+  @SuppressWarnings("rawtypes")
+  public List<T> prune(final UInt64 currentSlot, final Class clazz) {
     final List<T> dequeued = new ArrayList<>();
     queuedFutureItems
         .headMap(currentSlot, true)
         .keySet()
         .forEach(key -> dequeued.addAll(queuedFutureItems.remove(key)));
+    valueConsumer.accept(countFutureItemsByType(clazz));
     return dequeued;
   }
 

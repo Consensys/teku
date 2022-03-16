@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -61,7 +62,7 @@ public class FutureItemsTest {
     futureItems.add(item);
 
     final UInt64 priorSlot = item.getSlot().minus(UInt64.ONE);
-    final List<Item> pruned = futureItems.prune(priorSlot);
+    final List<Item> pruned = futureItems.prune(priorSlot, Item.class);
     assertThat(pruned).isEmpty();
 
     assertThat(futureItems.size()).isEqualTo(1);
@@ -75,9 +76,26 @@ public class FutureItemsTest {
 
     futureItems.add(item);
 
-    final List<Item> pruned = futureItems.prune(item.getSlot());
+    final List<Item> pruned = futureItems.prune(item.getSlot(), Item.class);
     assertThat(pruned).containsExactly(item);
     assertThat(futureItems.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void metrics_shouldIncreaseAndDecrease() {
+    final AtomicLong itemCount = new AtomicLong(0L);
+    final FutureItems<Item> futureItemsCache = FutureItems.create(Item::getSlot, itemCount::set);
+    futureItemsCache.onSlot(currentSlot);
+    final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
+    final Item item = new Item(itemSlot);
+
+    futureItemsCache.add(item);
+    assertThat(itemCount.get()).isEqualTo(1L);
+
+    final UInt64 pruneSlot = item.getSlot().plus(UInt64.ONE);
+    assertThat(futureItemsCache.prune(pruneSlot, Item.class)).containsExactly(item);
+
+    assertThat(itemCount.get()).isEqualTo(0L);
   }
 
   @Test
@@ -87,7 +105,7 @@ public class FutureItemsTest {
 
     futureItems.add(item);
 
-    final List<Item> pruned = futureItems.prune(item.getSlot().plus(UInt64.ONE));
+    final List<Item> pruned = futureItems.prune(item.getSlot().plus(UInt64.ONE), Item.class);
     assertThat(pruned).containsExactly(item);
     assertThat(futureItems.size()).isEqualTo(0);
   }

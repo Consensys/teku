@@ -153,7 +153,8 @@ public class AttestationManager extends Service
   @Override
   public void onSlot(final UInt64 slot) {
     futureAttestations.onSlot(slot);
-    List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
+    List<ValidateableAttestation> attestations =
+        futureAttestations.prune(slot, ValidateableAttestation.class);
     if (attestations.isEmpty()) {
       return;
     }
