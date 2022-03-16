@@ -126,7 +126,8 @@ public class ValidatorDataProvider {
         .createUnsignedBlock(
             slot,
             tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
-            graffiti)
+            graffiti,
+            false)
         .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getBeaconBlock));
   }
 

@@ -370,7 +370,8 @@ class RemoteValidatorApiHandlerTest {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
 
     SafeFuture<Optional<BeaconBlock>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, Optional.of(Bytes32.random()));
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, Optional.of(Bytes32.random()), false);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -387,11 +388,11 @@ class RemoteValidatorApiHandlerTest {
         new tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0(beaconBlock);
 
     when(apiClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), refEq(schemaBlsSignature), eq(graffiti)))
+            eq(beaconBlock.getSlot()), refEq(schemaBlsSignature), eq(graffiti), eq(false)))
         .thenReturn(Optional.of(schemaBeaconBlock));
 
     SafeFuture<Optional<BeaconBlock>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti);
+        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
   }

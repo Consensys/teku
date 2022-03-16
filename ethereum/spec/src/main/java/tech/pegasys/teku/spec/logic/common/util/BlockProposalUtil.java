@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -47,7 +48,8 @@ public class BlockProposalUtil {
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder)
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
+      final boolean blinded)
       throws StateTransitionException {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -56,20 +58,22 @@ public class BlockProposalUtil {
         blockSlotState.getSlot());
 
     // Create block body
-    final BeaconBlockBody beaconBlockBody =
-        schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
+    final BeaconBlockBody beaconBlockBody = createBeaconBlockBody(bodyBuilder);
+
+    final BeaconBlockSchema beaconBlockSchema =
+        blinded
+            ? schemaDefinitions.getBlindedBeaconBlockSchema()
+            : schemaDefinitions.getBeaconBlockSchema();
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
-    BeaconBlock newBlock =
-        schemaDefinitions
-            .getBeaconBlockSchema()
-            .create(
-                newSlot,
-                UInt64.valueOf(proposerIndex),
-                parentBlockSigningRoot,
-                tmpStateRoot,
-                beaconBlockBody);
+    final BeaconBlock newBlock =
+        beaconBlockSchema.create(
+            newSlot,
+            UInt64.valueOf(proposerIndex),
+            parentBlockSigningRoot,
+            tmpStateRoot,
+            beaconBlockBody);
 
     // Run state transition and set state root
     // Skip verifying signatures as all operations are coming from our own pools.
@@ -82,12 +86,17 @@ public class BlockProposalUtil {
               BLSSignatureVerifier.NO_OP,
               OptimisticExecutionPayloadExecutor.NOOP);
 
-      Bytes32 stateRoot = newState.hashTreeRoot();
-      BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);
+      final Bytes32 stateRoot = newState.hashTreeRoot();
+      final BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);
 
       return new BeaconBlockAndState(newCompleteBlock, newState);
     } catch (final BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
+  }
+
+  private BeaconBlockBody createBeaconBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    return schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
   }
 }

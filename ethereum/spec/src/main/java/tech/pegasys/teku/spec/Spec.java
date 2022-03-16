@@ -494,12 +494,13 @@ public class Spec {
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder)
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
+      final boolean blinded)
       throws StateTransitionException {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
+            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
   }
 
   // Block Processor Utils

@@ -157,11 +157,18 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public Optional<BeaconBlock> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final boolean blinded) {
     final Map<String, String> pathParams = Map.of("slot", slot.toString());
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
+
+    if (blinded) {
+      throw new UnsupportedOperationException("blinded blocks not yet implemented");
+    }
 
     return get(
             GET_UNSIGNED_BLOCK_V2,

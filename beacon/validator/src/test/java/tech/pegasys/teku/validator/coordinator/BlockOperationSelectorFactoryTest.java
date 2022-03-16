@@ -139,7 +139,8 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionEngine);
+          executionEngine,
+          false);
 
   @BeforeEach
   void setUp() {
@@ -163,7 +164,11 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            false)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
@@ -189,7 +194,7 @@ class BlockOperationSelectorFactoryTest {
     assertThat(contributionPool.addLocal(contribution)).isCompletedWithValue(ACCEPT);
 
     factory
-        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
+        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty(), false)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -250,7 +255,7 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
 
     factory
-        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
+        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty(), false)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -270,7 +275,11 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            false)
         .accept(bodyBuilder);
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
   }
@@ -290,7 +299,11 @@ class BlockOperationSelectorFactoryTest {
 
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            false)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);

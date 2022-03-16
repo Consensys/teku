@@ -17,8 +17,11 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -50,6 +53,7 @@ public class BlockOperationSelectorFactory {
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionEngineChannel executionEngineChannel;
+  private final boolean isMevBoostEnabled;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -61,8 +65,9 @@ public class BlockOperationSelectorFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      ForkChoiceNotifier forkChoiceNotifier,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final ExecutionEngineChannel executionEngineChannel,
+      final boolean isMevBoostEnabled) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -74,13 +79,15 @@ public class BlockOperationSelectorFactory {
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionEngineChannel = executionEngineChannel;
+    this.isMevBoostEnabled = isMevBoostEnabled;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti) {
+      final Optional<Bytes32> optionalGraffiti,
+      final boolean blinded) {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
@@ -127,24 +134,54 @@ public class BlockOperationSelectorFactory {
                   contributionPool.createSyncAggregateForBlock(
                       blockSlotState.getSlot(), parentRoot))
           .executionPayload(
-              () ->
-                  forkChoiceNotifier
-                      .getPayloadId(parentRoot, blockSlotState.getSlot())
-                      .thenApply(
-                          maybePayloadId -> {
-                            if (maybePayloadId.isEmpty()) {
-                              // TTD not reached
-                              return SchemaDefinitionsBellatrix.required(
-                                      spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                                  .getExecutionPayloadSchema()
-                                  .getDefault();
-                            } else {
-                              return executionEngineChannel
-                                  .getPayload(maybePayloadId.get(), blockSlotState.getSlot())
-                                  .join();
-                            }
-                          })
-                      .join());
+              payloadProvider(
+                  parentRoot,
+                  blockSlotState,
+                  () ->
+                      SchemaDefinitionsBellatrix.required(
+                              spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                          .getExecutionPayloadSchema()
+                          .getDefault(),
+                  (payloadId) ->
+                      executionEngineChannel
+                          .getPayload(payloadId, blockSlotState.getSlot())
+                          .join()));
+
+      if (isMevBoostEnabled || blinded) {
+        bodyBuilder.executionPayloadHeader(
+            payloadProvider(
+                parentRoot,
+                blockSlotState,
+                () ->
+                    SchemaDefinitionsBellatrix.required(
+                            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                        .getExecutionPayloadHeaderSchema()
+                        .getDefault(),
+                (payloadId) ->
+                    executionEngineChannel
+                        .getPayloadHeader(payloadId, blockSlotState.getSlot())
+                        .join()));
+      }
     };
+  }
+
+  private <T> Supplier<T> payloadProvider(
+      final Bytes32 parentRoot,
+      final BeaconState blockSlotState,
+      Supplier<T> defaultSupplier,
+      Function<Bytes8, T> supplier) {
+    return () ->
+        forkChoiceNotifier
+            .getPayloadId(parentRoot, blockSlotState.getSlot())
+            .thenApply(
+                maybePayloadId -> {
+                  if (maybePayloadId.isEmpty()) {
+                    // TTD not reached
+                    return defaultSupplier.get();
+                  } else {
+                    return supplier.apply(maybePayloadId.get());
+                  }
+                })
+            .join();
   }
 }
