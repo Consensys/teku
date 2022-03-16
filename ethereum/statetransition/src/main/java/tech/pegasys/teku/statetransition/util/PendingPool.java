@@ -91,6 +91,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
     this.sizeGauge = sizeGauge;
+    sizeGauge.set(0, itemType); // Init the label so it appears in metrics immediately
   }
 
   public synchronized void add(T item) {
