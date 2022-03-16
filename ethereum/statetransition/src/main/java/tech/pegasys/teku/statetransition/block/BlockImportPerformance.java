@@ -19,11 +19,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
   private final TimeProvider timeProvider;
-  private UInt64 timeAtSlotStartMs;
+  private UInt64 timeAtSlotStartTimeStamp;
   private UInt64 blockArrivalTimeStamp;
   private UInt64 importCompletedTimeStamp;
   private UInt64 arrivalDelay;
-  private UInt64 timeWarningLimitMs;
+  private UInt64 timeWarningLimitTimeStamp;
   private UInt64 processingTime;
 
   public BlockImportPerformance(final TimeProvider timeProvider) {
@@ -32,12 +32,13 @@ public class BlockImportPerformance {
 
   public void arrival(final RecentChainData recentChainData, final UInt64 slot) {
     blockArrivalTimeStamp = timeProvider.getTimeInMillis();
-    timeAtSlotStartMs = recentChainData.computeTimeAtSlot(slot).times(1000);
+    timeAtSlotStartTimeStamp = recentChainData.computeTimeAtSlot(slot).times(1000);
 
-    arrivalDelay = blockArrivalTimeStamp.minusMinZero(timeAtSlotStartMs);
+    arrivalDelay = blockArrivalTimeStamp.minusMinZero(timeAtSlotStartTimeStamp);
 
-    timeWarningLimitMs =
-        timeAtSlotStartMs.plus((recentChainData.getSpec().getSecondsPerSlot(slot) * 1000L) / 3);
+    timeWarningLimitTimeStamp =
+        timeAtSlotStartTimeStamp.plus(
+            (recentChainData.getSpec().getSecondsPerSlot(slot) * 1000L) / 3);
   }
 
   public void processed() {
@@ -45,8 +46,8 @@ public class BlockImportPerformance {
     processingTime = timeProvider.getTimeInMillis().minus(blockArrivalTimeStamp);
   }
 
-  public UInt64 getTimeAtSlotStartMs() {
-    return timeAtSlotStartMs;
+  public UInt64 getTimeAtSlotStartTimeStamp() {
+    return timeAtSlotStartTimeStamp;
   }
 
   public UInt64 getBlockArrivalTimeStamp() {
@@ -58,7 +59,7 @@ public class BlockImportPerformance {
   }
 
   public boolean isSlotTimeWarningPassed() {
-    return importCompletedTimeStamp.isGreaterThan(timeWarningLimitMs);
+    return importCompletedTimeStamp.isGreaterThan(timeWarningLimitTimeStamp);
   }
 
   public UInt64 getProcessingTime() {
