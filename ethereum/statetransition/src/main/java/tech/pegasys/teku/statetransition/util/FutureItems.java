@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,24 +33,32 @@ public class FutureItems<T> implements SlotEventsChannel {
   static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
   private static final int MAX_ITEMS_PER_SLOT = 500;
 
+  private final Consumer<Long> valueConsumer;
   private final UInt64 futureSlotTolerance;
   private final Function<T, UInt64> slotFunction;
 
   private final NavigableMap<UInt64, Set<T>> queuedFutureItems = new ConcurrentSkipListMap<>();
   private volatile UInt64 currentSlot = UInt64.ZERO;
 
-  private FutureItems(final Function<T, UInt64> slotFunction, final UInt64 futureSlotTolerance) {
+  private FutureItems(
+      final Function<T, UInt64> slotFunction,
+      final UInt64 futureSlotTolerance,
+      final Consumer<Long> valueConsumer) {
     this.slotFunction = slotFunction;
     this.futureSlotTolerance = futureSlotTolerance;
-  }
-
-  public static <T> FutureItems<T> create(final Function<T, UInt64> slotFunction) {
-    return new FutureItems<T>(slotFunction, DEFAULT_FUTURE_SLOT_TOLERANCE);
+    this.valueConsumer = valueConsumer;
   }
 
   public static <T> FutureItems<T> create(
-      final Function<T, UInt64> slotFunction, final UInt64 futureSlotTolerance) {
-    return new FutureItems<T>(slotFunction, futureSlotTolerance);
+      final Function<T, UInt64> slotFunction, final Consumer<Long> valueConsumer) {
+    return new FutureItems<T>(slotFunction, DEFAULT_FUTURE_SLOT_TOLERANCE, valueConsumer);
+  }
+
+  public static <T> FutureItems<T> create(
+      final Function<T, UInt64> slotFunction,
+      final UInt64 futureSlotTolerance,
+      final Consumer<Long> valueConsumer) {
+    return new FutureItems<T>(slotFunction, futureSlotTolerance, valueConsumer);
   }
 
   @Override
@@ -71,6 +80,13 @@ public class FutureItems<T> implements SlotEventsChannel {
 
     LOG.trace("Save future item at slot {} for later import: {}", slot, item);
     queuedFutureItems.computeIfAbsent(slot, key -> createNewSet()).add(item);
+    valueConsumer.accept(countFutureItemsByType(item));
+  }
+
+  private Long countFutureItemsByType(final T item) {
+    return queuedFutureItems.values().stream()
+        .map(ss -> ss.stream().filter(z -> z.getClass().equals(item.getClass())).count())
+        .reduce(0L, Long::sum);
   }
 
   /**

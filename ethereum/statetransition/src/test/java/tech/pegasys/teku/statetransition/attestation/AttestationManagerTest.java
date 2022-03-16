@@ -66,7 +66,8 @@ class AttestationManagerTest {
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(
+          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, (__) -> {});
   private final SignatureVerificationService signatureVerificationService =
       mock(SignatureVerificationService.class);
   private final ActiveValidatorCache activeValidatorCache = mock(ActiveValidatorCache.class);

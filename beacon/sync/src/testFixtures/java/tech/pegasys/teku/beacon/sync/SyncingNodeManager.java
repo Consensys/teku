@@ -115,7 +115,7 @@ public class SyncingNodeManager {
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        FutureItems.create(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot, (__) -> {});
     BlockManager blockManager =
         new BlockManager(
             recentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);

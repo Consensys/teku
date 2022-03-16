@@ -76,7 +76,7 @@ public class BlockManagerTest {
       PendingPool.createForBlocks(
           spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
-      FutureItems.create(SignedBeaconBlock::getSlot);
+      FutureItems.create(SignedBeaconBlock::getSlot, (__) -> {});
 
   private final StorageSystem localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final RecentChainData localRecentChainData = localChain.recentChainData();

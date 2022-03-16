@@ -55,7 +55,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
       PendingPool.createForBlocks(
           spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
-      FutureItems.create(SignedBeaconBlock::getSlot);
+      FutureItems.create(SignedBeaconBlock::getSlot, (__) -> {});
 
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);

@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class FutureItemsTest {
 
   private final UInt64 currentSlot = UInt64.valueOf(5);
-  private final FutureItems<Item> futureItems = FutureItems.create(Item::getSlot);
+  private final FutureItems<Item> futureItems = FutureItems.create(Item::getSlot, (__) -> {});
 
   @BeforeEach
   public void beforeEach() {

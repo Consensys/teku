@@ -77,7 +77,8 @@ class AttestationManagerIntegrationTest {
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(
+          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, (__) -> {});
   private final SignatureVerificationService signatureVerificationService =
       SignatureVerificationService.createSimple();
   private final AttestationValidator attestationValidator =
