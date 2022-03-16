@@ -200,12 +200,12 @@ public class EventLogger {
   public void lateBlockImport(
       final Bytes32 root,
       final UInt64 slot,
-      final UInt64 arrivalTime,
+      final UInt64 arrivalDelayMs,
       final UInt64 processingTimeMs) {
     String reorgEventLog =
         String.format(
-            "Late Block Import *** Arrival Time: %s, Processing Time: %s: Block: %s",
-            processingTimeMs, arrivalTime, LogFormatter.formatBlock(slot, root));
+            "Late Block Import *** Arrival Delay: %s, Processing Time: %s: Block: %s",
+            processingTimeMs, arrivalDelayMs, LogFormatter.formatBlock(slot, root));
     warn(reorgEventLog, Color.YELLOW);
   }
 

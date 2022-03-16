@@ -564,7 +564,7 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verify(eventLogger)
         .lateBlockImport(
-            block.getRoot(), block.getSlot(), UInt64.valueOf(7_000), UInt64.valueOf(3_000));
+            block.getRoot(), block.getSlot(), UInt64.valueOf(1_000), UInt64.valueOf(3_000));
   }
 
   @Test

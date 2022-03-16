@@ -43,8 +43,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class BlockManager extends Service
     implements SlotEventsChannel, BlockImportChannel, BlockImportNotifications {
   private static final Logger LOG = LogManager.getLogger();
-  private static final UInt64 SLOW_BLOCK_PROCESSING_TIME_THRESHOLD_MS = UInt64.valueOf(1000);
-  private static final UInt64 BLOCK_ARRIVAL_DELAY_THRESHOLD_MS = UInt64.valueOf(3000);
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
@@ -268,20 +266,22 @@ public class BlockManager extends Service
     maybeBlockArrivalTimeMs.ifPresent(
         blockArrivalTimeMs -> {
           final UInt64 currentTime = timeProvider.getTimeInMillis();
-          if (currentTime.isGreaterThan(computeBlockImportTimeWarningLimit(block.getSlot()))) {
+          final UInt64 timeAtSlotStartMs =
+              recentChainData.computeTimeAtSlot(block.getSlot()).times(1000);
+          final UInt64 timeWarningLimitMs =
+              timeAtSlotStartMs.plus(
+                  (recentChainData.getSpec().getSecondsPerSlot(block.getSlot()) * 1000L) / 3);
+
+          if (currentTime.isGreaterThan(timeWarningLimitMs)) {
 
             final UInt64 processingTime = currentTime.minus(blockArrivalTimeMs);
 
             eventLogger.lateBlockImport(
-                block.getRoot(), block.getSlot(), blockArrivalTimeMs, processingTime);
+                block.getRoot(),
+                block.getSlot(),
+                blockArrivalTimeMs.minus(timeAtSlotStartMs),
+                processingTime);
           }
         });
-  }
-
-  private UInt64 computeBlockImportTimeWarningLimit(UInt64 slot) {
-    return recentChainData
-        .computeTimeAtSlot(slot)
-        .plus(recentChainData.getSpec().getSecondsPerSlot(slot) / 3)
-        .times(1000);
   }
 }
