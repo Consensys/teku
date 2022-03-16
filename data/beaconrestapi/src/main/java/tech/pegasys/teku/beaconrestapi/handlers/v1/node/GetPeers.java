@@ -46,18 +46,10 @@ public class GetPeers extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/peers";
 
   private static final DeserializableTypeDefinition<State> STATE_TYPE =
-      DeserializableTypeDefinition.string(State.class)
-          .name("State")
-          .formatter(State::toString)
-          .parser(State::valueOf)
-          .build();
+      DeserializableTypeDefinition.enumOf(State.class);
 
   private static final DeserializableTypeDefinition<Direction> DIRECTION_TYPE =
-      DeserializableTypeDefinition.string(Direction.class)
-          .name("Direction")
-          .formatter(Direction::toString)
-          .parser(Direction::valueOf)
-          .build();
+      DeserializableTypeDefinition.enumOf(Direction.class);
 
   private static final SerializableTypeDefinition<Eth2Peer> PEER_DATA_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)

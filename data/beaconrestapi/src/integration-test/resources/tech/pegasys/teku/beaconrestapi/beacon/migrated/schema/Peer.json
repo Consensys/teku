@@ -19,10 +19,12 @@
       "example" : "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"
     },
     "state" : {
-      "$ref" : "#/components/schemas/State"
+      "type" : "string",
+      "enum" : [ "disconnected", "connecting", "connected", "disconnecting" ]
     },
     "direction" : {
-      "$ref" : "#/components/schemas/Direction"
+      "type" : "string",
+      "enum" : [ "inbound", "outbound" ]
     }
   }
 }
