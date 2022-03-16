@@ -35,11 +35,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
@@ -48,9 +47,8 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private static final Comparator<SlotAndRoot> SLOT_AND_ROOT_COMPARATOR =
       Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
-  private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
-  private static final int DEFAULT_MAX_ITEMS = 5000;
 
+  private final String itemType;
   private final Spec spec;
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
@@ -69,11 +67,14 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private final Function<T, Bytes32> hashTreeRootFunction;
   private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
   private final Function<T, UInt64> targetSlotFunction;
+  private final SettableLabelledGauge sizeGauge;
 
   private volatile UInt64 currentSlot = UInt64.ZERO;
   private volatile UInt64 latestFinalizedSlot = GENESIS_SLOT;
 
   PendingPool(
+      final SettableLabelledGauge sizeGauge,
+      final String itemType,
       final Spec spec,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
@@ -81,6 +82,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UInt64> targetSlotFunction) {
+    this.itemType = itemType;
     this.spec = spec;
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
@@ -88,40 +90,8 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     this.hashTreeRootFunction = hashTreeRootFunction;
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
-  }
-
-  public static PendingPool<SignedBeaconBlock> createForBlocks(final Spec spec) {
-    return createForBlocks(
-        spec,
-        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
-        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_ITEMS);
-  }
-
-  public static PendingPool<SignedBeaconBlock> createForBlocks(
-      final Spec spec,
-      final UInt64 historicalBlockTolerance,
-      final UInt64 futureBlockTolerance,
-      final int maxItems) {
-    return new PendingPool<>(
-        spec,
-        historicalBlockTolerance,
-        futureBlockTolerance,
-        maxItems,
-        block -> block.getMessage().hashTreeRoot(),
-        block -> Collections.singleton(block.getParentRoot()),
-        SignedBeaconBlock::getSlot);
-  }
-
-  public static PendingPool<ValidateableAttestation> createForAttestations(final Spec spec) {
-    return new PendingPool<>(
-        spec,
-        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
-        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_ITEMS,
-        ValidateableAttestation::hash_tree_root,
-        ValidateableAttestation::getDependentBlockRoots,
-        ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+    this.sizeGauge = sizeGauge;
+    sizeGauge.set(0, itemType); // Init the label so it appears in metrics immediately
   }
 
   public synchronized void add(T item) {
@@ -162,6 +132,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
           "Save unattached item at slot {} for future import: {}",
           targetSlotFunction.apply(item),
           item);
+      sizeGauge.set(pendingItems.size(), itemType);
     }
 
     orderedPendingItems.add(toSlotAndRoot(item));
@@ -185,6 +156,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
                 s -> s.onRequiredBlockRootDropped(requiredRoot));
           }
         });
+    sizeGauge.set(pendingItems.size(), itemType);
   }
 
   public synchronized int size() {
