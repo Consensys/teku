@@ -16,9 +16,10 @@ package tech.pegasys.teku.infrastructure.json.types;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 public class SerializableOneOfTypeDefinitionBuilder<TObject> {
-  private final Map<Class<? extends TObject>, SerializableTypeDefinition<? extends TObject>> types =
+  private final Map<Predicate<TObject>, SerializableTypeDefinition<? extends TObject>> types =
       new LinkedHashMap<>();
   private Optional<String> name = Optional.empty();
   private Optional<String> title = Optional.empty();
@@ -47,8 +48,8 @@ public class SerializableOneOfTypeDefinitionBuilder<TObject> {
   }
 
   public <T extends TObject> SerializableOneOfTypeDefinitionBuilder<TObject> withType(
-      final Class<T> clazz, final SerializableTypeDefinition<T> typeDefinition) {
-    types.put(clazz, typeDefinition);
+      final Predicate<TObject> predicate, final SerializableTypeDefinition<T> typeDefinition) {
+    types.put(predicate, typeDefinition);
     return this;
   }
 }

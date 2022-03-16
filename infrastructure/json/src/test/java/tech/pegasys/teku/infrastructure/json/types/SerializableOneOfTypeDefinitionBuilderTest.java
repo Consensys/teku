@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
@@ -40,8 +41,8 @@ public class SerializableOneOfTypeDefinitionBuilderTest {
   SerializableOneOfTypeDefinition<TestType> definition =
       new SerializableOneOfTypeDefinitionBuilder<TestType>()
           .description("meaningful description")
-          .withType(TestObjA.class, TYPE_A)
-          .withType(TestObjB.class, TYPE_B)
+          .withType(TestObjA.isInstance, TYPE_A)
+          .withType(TestObjB.isInstance, TYPE_B)
           .build();
 
   @Test
@@ -79,11 +80,22 @@ public class SerializableOneOfTypeDefinitionBuilderTest {
     public String getName() {
       return name;
     }
+
+    static Predicate<TestType> isInstance = testType -> testType instanceof TestObjA;
   }
 
-  static class TestObjB extends TestObjA {
+  static class TestObjB implements TestType {
+    private final String name;
+
     public TestObjB(final String name) {
-      super(name);
+      this.name = name;
     }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    static Predicate<TestType> isInstance = testType -> testType instanceof TestObjB;
   }
 }
