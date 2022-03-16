@@ -49,7 +49,7 @@ public class TekuConfigurationPrinter {
     return () -> {
       Pair<String, Optional<Exception>> result = printSafely(tekuConfiguration);
       if (result.getRight().isEmpty()) {
-        return new ParameterizedMessage(result.getLeft());
+        return new ParameterizedMessage("Teku configuration: {}", result.getLeft());
       } else {
         return new ParameterizedMessage(result.getLeft(), result.getRight().get());
       }
