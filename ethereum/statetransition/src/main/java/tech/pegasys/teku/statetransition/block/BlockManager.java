@@ -274,13 +274,11 @@ public class BlockManager extends Service
 
           if (currentTime.isGreaterThan(timeWarningLimitMs)) {
 
-            final UInt64 processingTime = currentTime.minus(blockArrivalTimeMs);
-
             eventLogger.lateBlockImport(
                 block.getRoot(),
                 block.getSlot(),
                 blockArrivalTimeMs.minus(timeAtSlotStartMs),
-                processingTime);
+                currentTime.minus(blockArrivalTimeMs));
           }
         });
   }
