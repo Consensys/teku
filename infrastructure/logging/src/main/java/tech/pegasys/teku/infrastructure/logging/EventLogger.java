@@ -204,7 +204,7 @@ public class EventLogger {
       final UInt64 processingTimeMs) {
     String reorgEventLog =
         String.format(
-            "Late Block Import *** Arrival Delay: %s, Processing Time: %s: Block: %s",
+            "Late Block Import *** Arrival Delay: %sms, Processing Time: %sms: Block: %s",
             arrivalDelayMs, processingTimeMs, LogFormatter.formatBlock(slot, root));
     warn(reorgEventLog, Color.YELLOW);
   }
