@@ -29,8 +29,14 @@ public enum BlockBodyFields implements SszFieldName {
   EXECUTION_PAYLOAD,
   EXECUTION_PAYLOAD_HEADER;
 
+  private final String sszFieldName;
+
+  BlockBodyFields() {
+    this.sszFieldName = name().toLowerCase(Locale.ROOT);
+  }
+
   @Override
   public String getSszFieldName() {
-    return name().toLowerCase(Locale.ROOT);
+    return sszFieldName;
   }
 }
