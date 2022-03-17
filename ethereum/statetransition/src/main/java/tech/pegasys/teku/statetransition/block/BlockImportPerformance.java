@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
   private final TimeProvider timeProvider;
-  private UInt64 timeAtSlotStartTimeStamp;
   private UInt64 blockArrivalTimeStamp;
   private UInt64 importCompletedTimeStamp;
   private UInt64 arrivalDelay;
@@ -32,22 +33,19 @@ public class BlockImportPerformance {
 
   public void arrival(final RecentChainData recentChainData, final UInt64 slot) {
     blockArrivalTimeStamp = timeProvider.getTimeInMillis();
-    timeAtSlotStartTimeStamp = recentChainData.computeTimeAtSlot(slot).times(1000);
+    final UInt64 timeAtSlotStartTimeStamp =
+        secondsToMillis(recentChainData.computeTimeAtSlot(slot));
 
     arrivalDelay = blockArrivalTimeStamp.minusMinZero(timeAtSlotStartTimeStamp);
 
     timeWarningLimitTimeStamp =
         timeAtSlotStartTimeStamp.plus(
-            (recentChainData.getSpec().getSecondsPerSlot(slot) * 1000L) / 3);
+            secondsToMillis(recentChainData.getSpec().getSecondsPerSlot(slot)).dividedBy(3));
   }
 
   public void processed() {
     importCompletedTimeStamp = timeProvider.getTimeInMillis();
     processingTime = timeProvider.getTimeInMillis().minus(blockArrivalTimeStamp);
-  }
-
-  public UInt64 getTimeAtSlotStartTimeStamp() {
-    return timeAtSlotStartTimeStamp;
   }
 
   public UInt64 getBlockArrivalTimeStamp() {
