@@ -106,7 +106,7 @@ public class BlockManager extends Service
   public void onSlot(final UInt64 slot) {
     pendingBlocks.onSlot(slot);
     futureBlocks.onSlot(slot);
-    futureBlocks.prune(slot, SignedBeaconBlock.class).forEach(this::importBlockIgnoringResult);
+    futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 
   public void subscribeToReceivedBlocks(ImportedBlockListener importedBlockListener) {

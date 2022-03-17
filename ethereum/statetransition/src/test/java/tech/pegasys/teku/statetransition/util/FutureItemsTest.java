@@ -14,17 +14,20 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class FutureItemsTest {
 
   private final UInt64 currentSlot = UInt64.valueOf(5);
-  private final FutureItems<Item> futureItems = FutureItems.create(Item::getSlot, (__) -> {});
+  private final SettableLabelledGauge gauge = mock(SettableLabelledGauge.class);
+  private final FutureItems<Item> futureItems = FutureItems.create(Item::getSlot, gauge, "items");
 
   @BeforeEach
   public void beforeEach() {
@@ -62,7 +65,7 @@ public class FutureItemsTest {
     futureItems.add(item);
 
     final UInt64 priorSlot = item.getSlot().minus(UInt64.ONE);
-    final List<Item> pruned = futureItems.prune(priorSlot, Item.class);
+    final List<Item> pruned = futureItems.prune(priorSlot);
     assertThat(pruned).isEmpty();
 
     assertThat(futureItems.size()).isEqualTo(1);
@@ -76,26 +79,24 @@ public class FutureItemsTest {
 
     futureItems.add(item);
 
-    final List<Item> pruned = futureItems.prune(item.getSlot(), Item.class);
+    final List<Item> pruned = futureItems.prune(item.getSlot());
     assertThat(pruned).containsExactly(item);
     assertThat(futureItems.size()).isEqualTo(0);
   }
 
   @Test
   public void metrics_shouldIncreaseAndDecrease() {
-    final AtomicLong itemCount = new AtomicLong(0L);
-    final FutureItems<Item> futureItemsCache = FutureItems.create(Item::getSlot, itemCount::set);
-    futureItemsCache.onSlot(currentSlot);
+    futureItems.onSlot(currentSlot);
     final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
     final Item item = new Item(itemSlot);
 
-    futureItemsCache.add(item);
-    assertThat(itemCount.get()).isEqualTo(1L);
+    futureItems.add(item);
+    verify(gauge).set(1L, "items");
 
     final UInt64 pruneSlot = item.getSlot().plus(UInt64.ONE);
-    assertThat(futureItemsCache.prune(pruneSlot, Item.class)).containsExactly(item);
+    assertThat(futureItems.prune(pruneSlot)).containsExactly(item);
 
-    assertThat(itemCount.get()).isEqualTo(0L);
+    verify(gauge).set(0L, "items");
   }
 
   @Test
@@ -105,7 +106,7 @@ public class FutureItemsTest {
 
     futureItems.add(item);
 
-    final List<Item> pruned = futureItems.prune(item.getSlot().plus(UInt64.ONE), Item.class);
+    final List<Item> pruned = futureItems.prune(item.getSlot().plus(UInt64.ONE));
     assertThat(pruned).containsExactly(item);
     assertThat(futureItems.size()).isEqualTo(0);
   }

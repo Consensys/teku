@@ -35,6 +35,7 @@ dependencies {
     integrationTestImplementation testFixtures(project(':beacon:sync'))
 
     testFixturesImplementation project(':infrastructure:serviceutils')
+    testFixturesImplementation project(':infrastructure:metrics')
     testFixturesImplementation project(':ethereum:statetransition')
     testFixturesImplementation project(':ethereum:weaksubjectivity')
 

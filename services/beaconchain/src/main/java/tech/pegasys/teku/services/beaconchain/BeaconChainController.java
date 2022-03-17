@@ -623,7 +623,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
             UInt64.valueOf(3),
-            (val) -> futureItemsMetric.set(val, "attestations"));
+            futureItemsMetric,
+            "attestations");
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
@@ -822,8 +823,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initBlockManager() {
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        FutureItems.create(
-            SignedBeaconBlock::getSlot, (val) -> futureItemsMetric.set(val, "blocks"));
+        FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =
