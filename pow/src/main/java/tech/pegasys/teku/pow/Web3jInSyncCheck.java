@@ -38,12 +38,17 @@ public class Web3jInSyncCheck {
         // If we're close to the chain head, consider the node in sync
         // Avoids marking the node as invalid while it imports the latest block
         LOG.debug(
-            "Eth1 endpiont {} syncing but close to head so considering it valid. Current block {} Highest block: {}",
+            "Eth1 endpiont {} syncing but close to head so considering it valid. Current block: {} Highest block: {}",
             id,
             currentBlock,
             highestBlock);
         return false;
       }
+      LOG.info(
+          "Eth1 endpoint {} syncing. Current block: {} Highest block: {}",
+          id,
+          currentBlock,
+          highestBlock);
       return true;
     } catch (final NumberFormatException | NullPointerException e) {
       LOG.error("Failed to parse syncing details from eth1 endpoint {}", id, e);
