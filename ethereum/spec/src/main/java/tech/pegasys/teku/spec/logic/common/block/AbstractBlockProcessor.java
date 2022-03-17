@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -639,19 +637,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     OptionalInt existingIndex;
     if (pubKeyToIndexMap != null) {
       if (pubKeyToIndexMap.containsKey(pubkey)) {
-        existingIndex = OptionalInt.of(pubKeyToIndexMap.get(pubkey));
+        existingIndex = OptionalInt.of(pubKeyToIndexMap.getInt(pubkey));
       } else {
         pubKeyToIndexMap.put(pubkey, state.getValidators().size());
         existingIndex = OptionalInt.empty();
       }
     } else {
-      Function<Integer, BLSPublicKey> validatorPubkey =
-          index ->
-              beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
-      existingIndex =
-          IntStream.range(0, state.getValidators().size())
-              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
-              .findFirst();
+      final Optional<Integer> validatorIndex = validatorsUtil.getValidatorIndex(state, pubkey);
+      existingIndex = validatorIndex.map(OptionalInt::of).orElseGet(OptionalInt::empty);
     }
 
     if (existingIndex.isEmpty()) {
@@ -684,7 +677,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
     if (pubKeyToIndexMap != null) {
       // The validator won't be created so the calculated index won't be correct
-      pubKeyToIndexMap.remove(pubkey);
+      pubKeyToIndexMap.removeInt(pubkey);
     }
   }
 

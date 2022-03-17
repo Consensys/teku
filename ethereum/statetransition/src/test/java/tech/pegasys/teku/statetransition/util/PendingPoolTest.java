@@ -20,6 +20,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -32,9 +33,11 @@ public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 historicalTolerance = UInt64.valueOf(5);
   private final UInt64 futureTolerance = UInt64.valueOf(2);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final int maxItems = 15;
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      PendingPool.createForBlocks(spec, historicalTolerance, futureTolerance, maxItems);
+      new PendingPoolFactory(metricsSystem)
+          .createForBlocks(spec, historicalTolerance, futureTolerance, maxItems);
   private UInt64 currentSlot = historicalTolerance.times(2);
   private final List<Bytes32> requiredRootEvents = new ArrayList<>();
   private final List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();

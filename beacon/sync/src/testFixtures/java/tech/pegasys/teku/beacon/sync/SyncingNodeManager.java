@@ -51,6 +51,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -113,7 +114,8 @@ public class SyncingNodeManager {
             new StubExecutionEngineChannel(spec));
 
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
-    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(spec);
+    final PendingPool<SignedBeaconBlock> pendingBlocks =
+        new PendingPoolFactory(new NoOpMetricsSystem()).createForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockManager blockManager =

@@ -19,4 +19,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+- Fixed performance issue when processing blocks containing deposits.
 - Make performance degradation more graceful when there is insufficient CPU for the beacon node to keep up with the chain. Reduces regularity of "Cannot create attestation for future slot" errors.
