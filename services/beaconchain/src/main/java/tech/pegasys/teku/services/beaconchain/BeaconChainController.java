@@ -833,11 +833,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
               pendingBlocks,
               futureBlocks,
               blockValidator,
+              timeProvider,
+              EVENT_LOG,
               beaconAsyncRunner);
     } else {
       blockManager =
           new BlockManager(
-              recentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
+              recentChainData,
+              blockImporter,
+              pendingBlocks,
+              futureBlocks,
+              blockValidator,
+              timeProvider,
+              EVENT_LOG);
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
