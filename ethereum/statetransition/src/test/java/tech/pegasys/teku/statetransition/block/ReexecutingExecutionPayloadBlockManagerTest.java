@@ -30,7 +30,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -47,6 +49,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ReexecutingExecutionPayloadBlockManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final EventLogger eventLogger = mock(EventLogger.class);
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
@@ -83,6 +87,8 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
           pendingBlocks,
           futureBlocks,
           mock(BlockValidator.class),
+          timeProvider,
+          eventLogger,
           asyncRunner);
 
   @BeforeAll
