@@ -38,7 +38,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -67,6 +69,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final EventLogger eventLogger = mock(EventLogger.class);
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
@@ -108,7 +112,13 @@ public class BlockManagerTest {
           executionEngine);
   private final BlockManager blockManager =
       new BlockManager(
-          localRecentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
+          localRecentChainData,
+          blockImporter,
+          pendingBlocks,
+          futureBlocks,
+          blockValidator,
+          timeProvider,
+          eventLogger);
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
@@ -246,7 +256,9 @@ public class BlockManagerTest {
             blockImporter,
             pendingBlocks,
             futureBlocks,
-            mock(BlockValidator.class));
+            mock(BlockValidator.class),
+            timeProvider,
+            eventLogger);
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -531,6 +543,54 @@ public class BlockManagerTest {
                     invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
 
     assertThat(pendingBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
+  void onValidateAndImportBlock_shouldLogSlowImport() {
+    final SignedBeaconBlock block =
+        localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
+    // slot 1 - secondPerSlot 6
+
+    // arrival time
+    timeProvider.advanceTimeByMillis(7_000); // 1 second late
+
+    when(blockValidator.validate(any()))
+        .thenAnswer(
+            invocation -> {
+              // advance to simulate processing time of 3000ms
+              // we are now 4s into the slot (threshold for warning is 2)
+              timeProvider.advanceTimeByMillis(3_000);
+              return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+            });
+
+    assertThat(blockManager.validateAndImportBlock(block))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(eventLogger)
+        .lateBlockImport(
+            block.getRoot(), block.getSlot(), UInt64.valueOf(1_000), UInt64.valueOf(3_000));
+  }
+
+  @Test
+  void onValidateAndImportBlock_shouldNotLogSlowImport() {
+    final SignedBeaconBlock block =
+        localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
+    // slot 1 - secondPerSlot 6
+
+    // arrival time
+    timeProvider.advanceTimeByMillis(7_000); // 1 second late
+
+    when(blockValidator.validate(any()))
+        .thenAnswer(
+            invocation -> {
+              // advance to simulate processing time of 500ms
+              // we are now 1.5s into the slot (threshold for warning is 2)
+              timeProvider.advanceTimeByMillis(500);
+              return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+            });
+
+    assertThat(blockManager.validateAndImportBlock(block))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verifyNoInteractions(eventLogger);
   }
 
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {
