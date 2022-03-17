@@ -66,9 +66,15 @@ public enum BeaconStateFields implements SszFieldName {
   // Bellatrix fields
   LATEST_EXECUTION_PAYLOAD_HEADER;
 
+  private final String sszFieldName;
+
+  BeaconStateFields() {
+    this.sszFieldName = name().toLowerCase(Locale.ROOT);
+  }
+
   @Override
   public String getSszFieldName() {
-    return name().toLowerCase(Locale.ROOT);
+    return sszFieldName;
   }
 
   public static void copyCommonFieldsFromSource(
