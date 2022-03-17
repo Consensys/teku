@@ -89,7 +89,8 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
           mock(BlockValidator.class),
           timeProvider,
           eventLogger,
-          asyncRunner);
+          asyncRunner,
+          true);
 
   @BeforeAll
   public static void initSession() {
