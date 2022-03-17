@@ -205,7 +205,7 @@ public class EventLogger {
     String reorgEventLog =
         String.format(
             "Late Block Import *** Arrival Delay: %s, Processing Time: %s: Block: %s",
-            processingTimeMs, arrivalDelayMs, LogFormatter.formatBlock(slot, root));
+            arrivalDelayMs, processingTimeMs, LogFormatter.formatBlock(slot, root));
     warn(reorgEventLog, Color.YELLOW);
   }
 
