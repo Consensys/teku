@@ -29,6 +29,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -272,21 +273,21 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlock(nextNextBlock))
+    when(blockImporter.importBlock(nextNextBlock, Optional.empty()))
         .thenReturn(blockImportResult)
         .thenReturn(new SafeFuture<>());
 
     incrementSlot();
     incrementSlot();
     blockManager.importBlock(nextNextBlock);
-    ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
+    ignoreFuture(verify(blockImporter).importBlock(nextNextBlock, Optional.empty()));
 
     // Before nextNextBlock imports, it's parent becomes available
     when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
 
     // So when the block import completes, it should be retried
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
-    ignoreFuture(verify(blockImporter, times(2)).importBlock(nextNextBlock));
+    ignoreFuture(verify(blockImporter, times(2)).importBlock(nextNextBlock, Optional.empty()));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
   }
@@ -569,7 +570,9 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verify(eventLogger)
         .lateBlockImport(
-            block.getRoot(), block.getSlot(), UInt64.valueOf(1_000), UInt64.valueOf(3_000));
+            block.getRoot(),
+            block.getSlot(),
+            "Received 1000ms, Pre-state retrieved +3000ms, Block processed +0ms, Transaction prepared +0ms, Transaction committed +0ms, Import complete +0ms");
   }
 
   @Test

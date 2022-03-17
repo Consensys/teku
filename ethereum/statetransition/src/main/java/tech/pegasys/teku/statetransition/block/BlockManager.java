@@ -164,7 +164,7 @@ public class BlockManager extends Service
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block)
+                handleBlockImport(block, blockImportPerformance)
                     .thenPeek(__ -> lateBlockImportCheck(blockImportPerformance, block)))
         .thenPeek(
             result -> {
@@ -207,9 +207,11 @@ public class BlockManager extends Service
                 SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
-  private SafeFuture<BlockImportResult> handleBlockImport(final SignedBeaconBlock block) {
+  private SafeFuture<BlockImportResult> handleBlockImport(
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance) {
     return blockImporter
-        .importBlock(block)
+        .importBlock(block, blockImportPerformance)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -273,16 +275,6 @@ public class BlockManager extends Service
       final Optional<BlockImportPerformance> maybeBlockImportPerformance,
       final SignedBeaconBlock block) {
     maybeBlockImportPerformance.ifPresent(
-        blockImportPerformance -> {
-          blockImportPerformance.processed();
-          if (blockImportPerformance.isSlotTimeWarningPassed()) {
-
-            eventLogger.lateBlockImport(
-                block.getRoot(),
-                block.getSlot(),
-                blockImportPerformance.getArrivalDelay(),
-                blockImportPerformance.getProcessingTime());
-          }
-        });
+        blockImportPerformance -> blockImportPerformance.processingComplete(eventLogger, block));
   }
 }
