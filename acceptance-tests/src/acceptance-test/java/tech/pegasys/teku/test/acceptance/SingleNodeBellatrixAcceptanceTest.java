@@ -14,7 +14,6 @@
 package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -52,16 +51,10 @@ public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
     }
 
     @Test
-    void shouldHaveNonDefaultExecutionPayloadAfterMergeTransition() {
+    void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() {
         tekuNode.waitForGenesis();
         tekuNode.waitForNonDefaultExecutionPayload();
         tekuNode.waitForNewFinalization();
-    }
-
-    @Test
-    @Disabled
-    void shouldProgressChainAfterMergeTransition() {
-
     }
 
     private TekuNode.Config configureTekuNode(final TekuNode.Config node, final int genesisTime) {
