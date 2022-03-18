@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -81,6 +82,7 @@ public class GetStateFork extends MigratingEndpointAdapter {
             .description("Returns Fork object for state with given 'state_id'.")
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
             .build());
     this.chainDataProvider = chainDataProvider;
   }
