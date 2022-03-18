@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync;
 
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
@@ -30,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
@@ -119,7 +121,7 @@ public class SyncingNodeManager {
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         new PendingPoolFactory(new NoOpMetricsSystem()).createForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        FutureItems.create(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     BlockManager blockManager =
         new BlockManager(
             recentChainData,

@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -78,7 +79,10 @@ class AttestationManagerIntegrationTest {
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       new PendingPoolFactory(storageSystem.getMetricsSystem()).createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(
+          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+          mock(SettableLabelledGauge.class),
+          "attestations");
   private final SignatureVerificationService signatureVerificationService =
       SignatureVerificationService.createSimple();
   private final AttestationValidator attestationValidator =

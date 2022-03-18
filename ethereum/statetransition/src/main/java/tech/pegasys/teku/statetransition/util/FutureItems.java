@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
@@ -32,24 +33,39 @@ public class FutureItems<T> implements SlotEventsChannel {
   static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
   private static final int MAX_ITEMS_PER_SLOT = 500;
 
+  private final SettableLabelledGauge futureItemsCounter;
   private final UInt64 futureSlotTolerance;
   private final Function<T, UInt64> slotFunction;
 
   private final NavigableMap<UInt64, Set<T>> queuedFutureItems = new ConcurrentSkipListMap<>();
+  private final String type;
   private volatile UInt64 currentSlot = UInt64.ZERO;
 
-  private FutureItems(final Function<T, UInt64> slotFunction, final UInt64 futureSlotTolerance) {
+  private FutureItems(
+      final Function<T, UInt64> slotFunction,
+      final UInt64 futureSlotTolerance,
+      final SettableLabelledGauge futureItemsCounter,
+      final String type) {
     this.slotFunction = slotFunction;
     this.futureSlotTolerance = futureSlotTolerance;
-  }
-
-  public static <T> FutureItems<T> create(final Function<T, UInt64> slotFunction) {
-    return new FutureItems<T>(slotFunction, DEFAULT_FUTURE_SLOT_TOLERANCE);
+    this.futureItemsCounter = futureItemsCounter;
+    this.type = type;
   }
 
   public static <T> FutureItems<T> create(
-      final Function<T, UInt64> slotFunction, final UInt64 futureSlotTolerance) {
-    return new FutureItems<T>(slotFunction, futureSlotTolerance);
+      final Function<T, UInt64> slotFunction,
+      final SettableLabelledGauge futureItemsCounter,
+      final String type) {
+    return new FutureItems<T>(
+        slotFunction, DEFAULT_FUTURE_SLOT_TOLERANCE, futureItemsCounter, type);
+  }
+
+  public static <T> FutureItems<T> create(
+      final Function<T, UInt64> slotFunction,
+      final UInt64 futureSlotTolerance,
+      final SettableLabelledGauge futureItemsCounter,
+      final String type) {
+    return new FutureItems<T>(slotFunction, futureSlotTolerance, futureItemsCounter, type);
   }
 
   @Override
@@ -71,6 +87,7 @@ public class FutureItems<T> implements SlotEventsChannel {
 
     LOG.trace("Save future item at slot {} for later import: {}", slot, item);
     queuedFutureItems.computeIfAbsent(slot, key -> createNewSet()).add(item);
+    futureItemsCounter.set(size(), type);
   }
 
   /**
@@ -79,12 +96,14 @@ public class FutureItems<T> implements SlotEventsChannel {
    * @param currentSlot The slot to be considered current
    * @return The set of items that are no longer in the future
    */
+  @SuppressWarnings("rawtypes")
   public List<T> prune(final UInt64 currentSlot) {
     final List<T> dequeued = new ArrayList<>();
     queuedFutureItems
         .headMap(currentSlot, true)
         .keySet()
         .forEach(key -> dequeued.addAll(queuedFutureItems.remove(key)));
+    futureItemsCounter.set(size(), type);
     return dequeued;
   }
 
