@@ -52,7 +52,8 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final boolean blockImportPerformanceEnabled) {
     super(
         recentChainData,
         blockImporter,
@@ -60,7 +61,8 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
         futureBlocks,
         validator,
         timeProvider,
-        eventLogger);
+        eventLogger,
+        blockImportPerformanceEnabled);
     this.asyncRunner = asyncRunner;
   }
 

@@ -146,7 +146,7 @@ class ForkChoiceTest {
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -162,7 +162,7 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -370,7 +370,7 @@ class ForkChoiceTest {
   void onBlock_shouldSendForkChoiceUpdatedNotification() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertForkChoiceUpdateNotification(blockAndState, false);
@@ -632,7 +632,7 @@ class ForkChoiceTest {
     executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -884,13 +884,13 @@ class ForkChoiceTest {
 
   private void importBlock(final SignedBlockAndState block) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), executionEngine);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), executionEngine);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -903,7 +903,7 @@ class ForkChoiceTest {
 
   private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), executionEngine);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionEngine);
     assertBlockImportFailure(result, failureReason);
   }
 

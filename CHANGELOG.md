@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Reduced attestation pool memory usage.
 
 ### Bug Fixes
 - Fixed performance issue when processing blocks containing deposits.

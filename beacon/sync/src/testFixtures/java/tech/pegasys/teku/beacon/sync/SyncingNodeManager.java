@@ -130,7 +130,8 @@ public class SyncingNodeManager {
             futureBlocks,
             blockValidator,
             new SystemTimeProvider(),
-            EVENT_LOG);
+            EVENT_LOG,
+            false);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
