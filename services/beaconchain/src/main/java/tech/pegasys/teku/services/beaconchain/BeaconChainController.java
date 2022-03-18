@@ -226,7 +226,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem,
             BEACON,
             "future_items_size",
-            "Current number of pending items, labelled by type",
+            "Current number of items held for future slots, labelled by type",
             "type");
   }
 
