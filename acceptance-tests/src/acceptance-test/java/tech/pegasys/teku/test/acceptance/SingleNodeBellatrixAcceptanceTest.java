@@ -65,9 +65,9 @@ public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
     }
 
     private BesuNode.Config configureBesuNode(BesuNode.Config config) {
-        return config.withRpcHttpApi("ETH,NET,WEB3,ENGINE")
+        return config.withRpcHttpApi(new String[] {"ETH,NET,WEB3,ENGINE"})
             .withDefaultEngineRpcHttpPort()
-            .withEngineHostAllowList("*")
+            .withEngineHostAllowList(new String[] {"*"})
             .withMergeSupport(true)
             .withGenesisFile("besu/preMergeGenesis.json");
     }

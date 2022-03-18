@@ -100,11 +100,11 @@ public class BesuNode extends Node {
     public Config() {
       configMap.put("rpc-http-enabled", true);
       configMap.put("rpc-http-port", Integer.toString(JSON_RPC_PORT));
-      configMap.put("rpc-http-cors-origins", "*");
-      configMap.put("host-allowlist", "*");
+      configMap.put("rpc-http-cors-origins", new String[] {"*"});
+      configMap.put("host-allowlist", new String[] {"*"});
       configMap.put("miner-enabled", true);
       configMap.put("miner-coinbase", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
-      configMap.put("--genesis-file", "/genesis.json");
+      configMap.put("genesis-file", "/genesis.json");
     }
 
     public BesuNode.Config withGenesisFile(final String genesisFilePath) {
@@ -112,7 +112,7 @@ public class BesuNode extends Node {
       return this;
     }
 
-    public BesuNode.Config withRpcHttpApi(final String rpcHttpApis) {
+    public BesuNode.Config withRpcHttpApi(final String[] rpcHttpApis) {
       configMap.put("rpc-http-api", rpcHttpApis);
       return this;
     }
@@ -122,13 +122,13 @@ public class BesuNode extends Node {
       return this;
     }
 
-    public BesuNode.Config withEngineHostAllowList(final String engineHostAllowList) {
+    public BesuNode.Config withEngineHostAllowList(final String[] engineHostAllowList) {
       configMap.put("engine-host-allowlist", engineHostAllowList);
       return this;
     }
 
     public BesuNode.Config withMergeSupport(final boolean enableMergeSupport ) {
-      configMap.put("Xmerge-support", Boolean.toString(enableMergeSupport));
+      configMap.put("Xmerge-support", enableMergeSupport);
       return this;
     }
 
