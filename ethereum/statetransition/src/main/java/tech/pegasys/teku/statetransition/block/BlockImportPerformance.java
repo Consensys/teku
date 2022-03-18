@@ -15,52 +15,71 @@ package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import it.unimi.dsi.fastutil.Pair;
+import java.util.ArrayList;
+import java.util.List;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
   private final TimeProvider timeProvider;
-  private UInt64 blockArrivalTimeStamp;
-  private UInt64 importCompletedTimeStamp;
-  private UInt64 arrivalDelay;
+
+  private final List<Pair<String, UInt64>> events = new ArrayList<>();
   private UInt64 timeWarningLimitTimeStamp;
-  private UInt64 processingTime;
+  private UInt64 timeAtSlotStartTimeStamp;
 
   public BlockImportPerformance(final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
   }
 
   public void arrival(final RecentChainData recentChainData, final UInt64 slot) {
-    blockArrivalTimeStamp = timeProvider.getTimeInMillis();
-    final UInt64 timeAtSlotStartTimeStamp =
-        secondsToMillis(recentChainData.computeTimeAtSlot(slot));
-
-    arrivalDelay = blockArrivalTimeStamp.minusMinZero(timeAtSlotStartTimeStamp);
-
+    timeAtSlotStartTimeStamp = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
     timeWarningLimitTimeStamp =
         timeAtSlotStartTimeStamp.plus(
             secondsToMillis(recentChainData.getSpec().getSecondsPerSlot(slot)).dividedBy(3));
+    addEvent("Received");
   }
 
-  public void processed() {
-    importCompletedTimeStamp = timeProvider.getTimeInMillis();
-    processingTime = timeProvider.getTimeInMillis().minus(blockArrivalTimeStamp);
+  public void preStateRetrieved() {
+    addEvent("Pre-state retrieved");
   }
 
-  public UInt64 getBlockArrivalTimeStamp() {
-    return blockArrivalTimeStamp;
+  public void postStateCreated() {
+    addEvent("Block processed");
   }
 
-  public UInt64 getArrivalDelay() {
-    return arrivalDelay;
+  public void transactionReady() {
+    addEvent("Transaction prepared");
   }
 
-  public boolean isSlotTimeWarningPassed() {
-    return importCompletedTimeStamp.isGreaterThan(timeWarningLimitTimeStamp);
+  public void transactionCommitted() {
+    addEvent("Transaction committed");
   }
 
-  public UInt64 getProcessingTime() {
-    return processingTime;
+  public void processingComplete(final EventLogger eventLogger, final SignedBeaconBlock block) {
+    final UInt64 importCompletedTimestamp = addEvent("Import complete");
+
+    if (importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp)) {
+      UInt64 previousEventTimestamp = timeAtSlotStartTimeStamp;
+      final List<String> eventTimings = new ArrayList<>();
+      for (Pair<String, UInt64> event : events) {
+        // minusMinZero because sometimes time does actually go backwards so be safe.
+        final UInt64 stepDuration = event.right().minusMinZero(previousEventTimestamp);
+        eventTimings.add(
+            event.left() + (eventTimings.isEmpty() ? " " : " +") + stepDuration + "ms");
+        previousEventTimestamp = event.right();
+      }
+      final String combinedTimings = String.join(", ", eventTimings);
+      eventLogger.lateBlockImport(block.getRoot(), block.getSlot(), combinedTimings);
+    }
+  }
+
+  private UInt64 addEvent(final String label) {
+    final UInt64 timestamp = timeProvider.getTimeInMillis();
+    events.add(Pair.of(label, timestamp));
+    return timestamp;
   }
 }

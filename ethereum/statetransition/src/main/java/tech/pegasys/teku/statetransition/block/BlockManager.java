@@ -50,6 +50,7 @@ public class BlockManager extends Service
   private final BlockValidator validator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
+  private final boolean blockImportPerformanceEnabled;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
@@ -66,7 +67,8 @@ public class BlockManager extends Service
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final BlockValidator validator,
       final TimeProvider timeProvider,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final boolean blockImportPerformanceEnabled) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
@@ -74,6 +76,7 @@ public class BlockManager extends Service
     this.validator = validator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
+    this.blockImportPerformanceEnabled = blockImportPerformanceEnabled;
   }
 
   @Override
@@ -96,9 +99,15 @@ public class BlockManager extends Service
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
 
-    final BlockImportPerformance blockImportPerformance = new BlockImportPerformance(timeProvider);
+    final Optional<BlockImportPerformance> blockImportPerformance;
 
-    blockImportPerformance.arrival(recentChainData, block.getSlot());
+    if (blockImportPerformanceEnabled) {
+      final BlockImportPerformance performance = new BlockImportPerformance(timeProvider);
+      performance.arrival(recentChainData, block.getSlot());
+      blockImportPerformance = Optional.of(performance);
+    } else {
+      blockImportPerformance = Optional.empty();
+    }
 
     if (propagateInvalidity(block).isPresent()) {
       return SafeFuture.completedFuture(
@@ -110,11 +119,7 @@ public class BlockManager extends Service
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            LOG.trace(
-                "Preparing to import block: {} arrived at {}",
-                () -> formatBlock(block.getSlot(), block.getRoot()),
-                blockImportPerformance::getBlockArrivalTimeStamp);
-            doImportBlock(block, Optional.of(blockImportPerformance))
+            doImportBlock(block, blockImportPerformance)
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -159,7 +164,7 @@ public class BlockManager extends Service
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block)
+                handleBlockImport(block, blockImportPerformance)
                     .thenPeek(__ -> lateBlockImportCheck(blockImportPerformance, block)))
         .thenPeek(
             result -> {
@@ -202,9 +207,11 @@ public class BlockManager extends Service
                 SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
-  private SafeFuture<BlockImportResult> handleBlockImport(final SignedBeaconBlock block) {
+  private SafeFuture<BlockImportResult> handleBlockImport(
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance) {
     return blockImporter
-        .importBlock(block)
+        .importBlock(block, blockImportPerformance)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -268,16 +275,6 @@ public class BlockManager extends Service
       final Optional<BlockImportPerformance> maybeBlockImportPerformance,
       final SignedBeaconBlock block) {
     maybeBlockImportPerformance.ifPresent(
-        blockImportPerformance -> {
-          blockImportPerformance.processed();
-          if (blockImportPerformance.isSlotTimeWarningPassed()) {
-
-            eventLogger.lateBlockImport(
-                block.getRoot(),
-                block.getSlot(),
-                blockImportPerformance.getArrivalDelay(),
-                blockImportPerformance.getProcessingTime());
-          }
-        });
+        blockImportPerformance -> blockImportPerformance.processingComplete(eventLogger, block));
   }
 }

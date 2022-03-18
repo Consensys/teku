@@ -824,7 +824,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               blockValidator,
               timeProvider,
               EVENT_LOG,
-              beaconAsyncRunner);
+              beaconAsyncRunner,
+              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
     } else {
       blockManager =
           new BlockManager(
@@ -834,7 +835,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               futureBlocks,
               blockValidator,
               timeProvider,
-              EVENT_LOG);
+              EVENT_LOG,
+              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
