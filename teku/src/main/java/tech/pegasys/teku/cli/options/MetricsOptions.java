@@ -89,6 +89,16 @@ public class MetricsOptions {
       arity = "1")
   private int metricsPublicationInterval = MetricsConfig.DEFAULT_METRICS_PUBLICATION_INTERVAL;
 
+  @Option(
+      names = {"--Xmetrics-block-timing-tracking-enabled"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether block timing metrics are tracked and reported",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean blockPerformanceEnabled = MetricsConfig.DEFAULT_BLOCK_PERFORMANCE_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
@@ -99,7 +109,8 @@ public class MetricsOptions {
                 .metricsHostAllowlist(metricsHostAllowlist)
                 .metricsPublishEndpoint(parseMetricsEndpointUrl())
                 .metricsPublishInterval(metricsPublicationInterval)
-                .idleTimeoutSeconds(idleTimeoutSeconds));
+                .idleTimeoutSeconds(idleTimeoutSeconds)
+                .blockPerformanceEnabled(blockPerformanceEnabled));
   }
 
   private URL parseMetricsEndpointUrl() {

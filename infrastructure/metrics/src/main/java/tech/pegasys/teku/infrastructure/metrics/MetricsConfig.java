@@ -38,6 +38,7 @@ public class MetricsConfig {
       Arrays.asList("127.0.0.1", "localhost");
   public static final int DEFAULT_IDLE_TIMEOUT_SECONDS = 60;
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
+  public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = false;
 
   private final boolean metricsEnabled;
   private final int metricsPort;
@@ -47,6 +48,7 @@ public class MetricsConfig {
   private final Optional<URL> metricsEndpoint;
   private final int publicationInterval;
   private final int idleTimeoutSeconds;
+  private final boolean blockPerformanceEnabled;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -56,7 +58,8 @@ public class MetricsConfig {
       final List<String> metricsHostAllowlist,
       final URL metricsEndpoint,
       final int publicationInterval,
-      final int idleTimeoutSeconds) {
+      final int idleTimeoutSeconds,
+      final boolean blockPerformanceEnabled) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -65,6 +68,7 @@ public class MetricsConfig {
     this.metricsEndpoint = Optional.ofNullable(metricsEndpoint);
     this.publicationInterval = publicationInterval;
     this.idleTimeoutSeconds = idleTimeoutSeconds;
+    this.blockPerformanceEnabled = blockPerformanceEnabled;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -103,6 +107,10 @@ public class MetricsConfig {
     return idleTimeoutSeconds;
   }
 
+  public boolean isBlockPerformanceEnabled() {
+    return blockPerformanceEnabled;
+  }
+
   public static final class MetricsConfigBuilder {
 
     private boolean metricsEnabled = false;
@@ -113,6 +121,7 @@ public class MetricsConfig {
     private URL metricsPublishEndpoint = null;
     private int metricsPublishInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
+    private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
 
     private MetricsConfigBuilder() {}
 
@@ -168,6 +177,11 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder blockPerformanceEnabled(final boolean blockPerformanceEnabled) {
+      this.blockPerformanceEnabled = blockPerformanceEnabled;
+      return this;
+    }
+
     public MetricsConfig build() {
       return new MetricsConfig(
           metricsEnabled,
@@ -177,7 +191,8 @@ public class MetricsConfig {
           metricsHostAllowlist,
           metricsPublishEndpoint,
           metricsPublishInterval,
-          idleTimeoutSeconds);
+          idleTimeoutSeconds,
+          blockPerformanceEnabled);
     }
   }
 }

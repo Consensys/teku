@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_EPOCHS;
+import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_SLOTS;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
 import java.util.ArrayList;
@@ -295,12 +295,7 @@ class AggregatingAttestationPoolTest {
 
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
     aggregatingPool.onSlot(
-        pruneAttestationData
-            .getSlot()
-            .plus(
-                spec.getSlotsPerEpoch(pruneAttestationData.getSlot())
-                    * ATTESTATION_RETENTION_EPOCHS)
-            .plus(ONE));
+        pruneAttestationData.getSlot().plus(ATTESTATION_RETENTION_SLOTS).plus(ONE));
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(

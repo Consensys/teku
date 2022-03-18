@@ -215,7 +215,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getRoot(),
         block.getSlot(),
         block.getParentRoot());
-    final SafeFuture<BlockImportResult> result = forkChoice.onBlock(block, executionEngine);
+    final SafeFuture<BlockImportResult> result =
+        forkChoice.onBlock(block, Optional.empty(), executionEngine);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = result.join();
     assertThat(importResult)

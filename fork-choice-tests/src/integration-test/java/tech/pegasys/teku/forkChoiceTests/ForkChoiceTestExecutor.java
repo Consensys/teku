@@ -280,7 +280,7 @@ public class ForkChoiceTestExecutor {
 
   private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
-        fc.onBlock(block, new StubExecutionEngineChannel(SPEC)).join();
+        fc.onBlock(block, Optional.empty(), new StubExecutionEngineChannel(SPEC)).join();
     return blockImportResult.isSuccessful();
   }
 
