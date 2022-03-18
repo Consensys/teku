@@ -35,7 +35,7 @@ public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
     @BeforeEach
     void setup() throws Exception {
         final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
-        eth1Node = createBesuNode(DEVELOP, "besu/preMergeGenesis.json");
+        eth1Node = createBesuNode(DEVELOP, this::configureBesuNode);
         eth1Node.start();
 
         final int TOTAL_VALIDATORS = 4;
@@ -43,7 +43,7 @@ public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
                 .sendValidatorDeposits(eth1Node, TOTAL_VALIDATORS);
 
         tekuNode = createTekuNode(config ->
-                configureNode(config, genesisTime)
+                configureTekuNode(config, genesisTime)
                         .withDepositsFrom(eth1Node)
                         .withValidatorKeystores(validatorKeystores)
                         .withValidatorProposerDefaultFeeRecipient("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")
@@ -64,10 +64,18 @@ public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
 
     }
 
-    private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
+    private TekuNode.Config configureTekuNode(final TekuNode.Config node, final int genesisTime) {
         return node.withNetwork(NETWORK_NAME)
                 .withBellatrixEpoch(UInt64.ONE)
                 .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
                 .withGenesisTime(genesisTime);
+    }
+
+    private BesuNode.Config configureBesuNode(BesuNode.Config config) {
+        return config.withRpcHttpApi("ETH,NET,WEB3,ENGINE")
+            .withDefaultEngineRpcHttpPort()
+            .withEngineHostAllowList("*")
+            .withMergeSupport(true)
+            .withGenesisFile("besu/preMergeGenesis.json");
     }
 }

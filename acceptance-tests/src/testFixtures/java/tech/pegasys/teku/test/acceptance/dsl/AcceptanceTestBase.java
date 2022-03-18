@@ -90,11 +90,16 @@ public class AcceptanceTestBase {
   }
 
   protected BesuNode createBesuNode() {
-    return addNode(new BesuNode(network));
+    return createBesuNode(config -> {});
   }
 
-  protected BesuNode createBesuNode(BesuDockerVersion version, String genesisFile) {
-    return addNode(new BesuNode(network, version ,genesisFile));
+  protected BesuNode createBesuNode(final Consumer<BesuNode.Config> configOptions) {
+    return createBesuNode(BesuDockerVersion.V21_10_9, configOptions);
+  }
+
+  protected BesuNode createBesuNode(
+      final BesuDockerVersion version, final Consumer<BesuNode.Config> configOptions) {
+    return addNode(BesuNode.create(network, version, configOptions));
   }
 
   private <T extends Node> T addNode(final T node) {
