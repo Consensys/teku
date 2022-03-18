@@ -48,7 +48,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
  * included.
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
-  static final long ATTESTATION_RETENTION_EPOCHS = 2;
+  /**
+   * Duration to retain attestations. Attestations older than 32 slots are not rewarded for
+   * inclusion so no point in retaining them.
+   */
+  static final long ATTESTATION_RETENTION_SLOTS = 32;
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
@@ -88,12 +92,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   @Override
   public synchronized void onSlot(final UInt64 slot) {
-    final UInt64 attestationRetentionSlots =
-        UInt64.valueOf(spec.getSlotsPerEpoch(slot) * ATTESTATION_RETENTION_EPOCHS);
-    if (slot.compareTo(attestationRetentionSlots) <= 0) {
+    if (slot.compareTo(ATTESTATION_RETENTION_SLOTS) <= 0) {
       return;
     }
-    final UInt64 firstValidAttestationSlot = slot.minus(attestationRetentionSlots);
+    final UInt64 firstValidAttestationSlot = slot.minus(ATTESTATION_RETENTION_SLOTS);
     final Collection<Set<Bytes>> dataHashesToRemove =
         dataHashBySlot.headMap(firstValidAttestationSlot, false).values();
     dataHashesToRemove.stream()
