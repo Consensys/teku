@@ -47,24 +47,11 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
         tekuNode = createTekuNode(config ->
                 configureTekuNode(config, genesisTime)
                         .withDepositsFrom(eth1Node)
-                        .withRealNetwork()
+                        .withStartupTargetPeerCount(0)
                         .withValidatorKeystores(validatorKeystores)
                         .withValidatorProposerDefaultFeeRecipient("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")
                         .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl()));
         tekuNode.start();
-
-        // 2nd node is currently needed to produce block after merge, because PayloadAttributesCalculator only produce
-        // payload if node is in sync. ForkChoiceNotifier assumes we are not in sync at startup and triggering a
-        // sync status change is required.
-        final TekuNode node2 =
-            createTekuNode(
-                config ->
-                    configureTekuNode(config, genesisTime)
-                        .withDepositsFrom(eth1Node)
-                        .withRealNetwork()
-                        .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
-                        .withPeers(tekuNode));
-        node2.start();
     }
 
     @Test

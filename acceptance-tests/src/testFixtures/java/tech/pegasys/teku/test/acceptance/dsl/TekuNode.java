@@ -731,6 +731,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withStartupTargetPeerCount(Integer startupTargetPeerCount) {
+      configMap.put("Xstartup-target-peer-count", startupTargetPeerCount);
+      return this;
+    }
+
     public String getPeerId() {
       return peerId.toBase58();
     }
