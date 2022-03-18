@@ -298,6 +298,12 @@ public class ChainDataProvider {
     return fromState(stateIdParam, state -> new Fork(state.getFork()));
   }
 
+  public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.spec.datastructures.state.Fork>>>
+      getFork(final String stateIdParam) {
+    return fromState(
+        stateIdParam, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState::getFork);
+  }
+
   public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorBalanceResponse>>>>
       getStateValidatorBalances(final String stateIdParam, final List<String> validators) {
     return fromState(stateIdParam, state -> getValidatorBalancesFromState(state, validators));
