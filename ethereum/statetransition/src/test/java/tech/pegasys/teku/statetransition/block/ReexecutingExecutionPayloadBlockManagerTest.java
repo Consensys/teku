@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -89,7 +90,8 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
           mock(BlockValidator.class),
           timeProvider,
           eventLogger,
-          asyncRunner);
+          asyncRunner,
+          false);
 
   @BeforeAll
   public static void initSession() {
@@ -119,7 +121,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // syncing
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING));
@@ -127,7 +129,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
     // communication error
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
@@ -135,12 +137,12 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
     asyncRunner.executeQueuedActions();
 
     // successful imported now
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(nextBlock)));
 
     asyncRunner.executeQueuedActions();
 
-    verify(blockImporter, times(3)).importBlock(nextBlock);
+    verify(blockImporter, times(3)).importBlock(nextBlock, Optional.empty());
 
     // should be dequeued now, so no more interactions
     asyncRunner.executeQueuedActions();
@@ -153,14 +155,14 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // invalid
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.failedStateTransition(new IllegalStateException("invalid"))));
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
-    verify(blockImporter, times(1)).importBlock(nextBlock);
+    verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
     // should not bw queued
     asyncRunner.executeQueuedActions();
@@ -173,14 +175,14 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // syncing
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING));
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
-    verify(blockImporter, times(1)).importBlock(nextBlock);
+    verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
     blockManager.onSlot(currentSlot.plus(3));
 

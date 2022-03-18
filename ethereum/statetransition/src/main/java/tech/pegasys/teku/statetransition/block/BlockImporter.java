@@ -77,7 +77,14 @@ public class BlockImporter {
   }
 
   @CheckReturnValue
-  public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
+  public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
+    return importBlock(block, Optional.empty());
+  }
+
+  @CheckReturnValue
+  public SafeFuture<BlockImportResult> importBlock(
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance) {
     final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
     if (knownOptimistic.isPresent()) {
       LOG.trace(
@@ -92,7 +99,7 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> forkChoice.onBlock(block, executionEngine))
+        .thenCompose(__ -> forkChoice.onBlock(block, blockImportPerformance, executionEngine))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {
