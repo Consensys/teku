@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -22,39 +23,67 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 
-public class GetStateFork extends AbstractHandler implements Handler {
+public class GetStateFork extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/fork";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
+
+  private static final SerializableTypeDefinition<Fork> FORK_TYPE =
+      SerializableTypeDefinition.object(Fork.class)
+          .withField("previous_version", BYTES4_TYPE, Fork::getPrevious_version)
+          .withField("current_version", BYTES4_TYPE, Fork::getCurrent_version)
+          .withField("epoch", UINT64_TYPE, Fork::getEpoch)
+          .build();
+
+  private static final SerializableTypeDefinition<StateForkData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(StateForkData.class)
+          .name("GetStateForkResponse")
+          .description(
+              "The [Fork](https://github.com/ethereum/consensus-specs/blob/v1.0.1/specs/phase0/beacon-chain.md) object from the Eth2.0 spec.")
+          .withField("data", FORK_TYPE, StateForkData::getData)
+          .build();
+
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateFork(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.chainDataProvider = dataProvider.getChainDataProvider();
+  public GetStateFork(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  GetStateFork(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  GetStateFork(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getSateFork")
+            .summary("Get state fork")
+            .description("Returns Fork object for state with given 'state_id'.")
+            .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -77,16 +106,35 @@ public class GetStateFork extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParamMap = ctx.pathParamMap();
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<Fork>>> future =
-        chainDataProvider.getStateFork(pathParamMap.get(PARAM_STATE_ID));
-    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+        chainDataProvider.getFork(request.getPathParam(PARAM_STATE_ID));
+    request.handleOptionalResult(future, this::handleResult, SC_NOT_FOUND);
   }
 
   private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Fork> response)
       throws JsonProcessingException {
     return Optional.of(
-        jsonProvider.objectToJSON(
-            new GetStateForkResponse(response.isExecutionOptimisticForApi(), response.getData())));
+        JsonUtil.serialize(
+            new StateForkData(response.isExecutionOptimisticForApi(), response.getData()),
+            RESPONSE_TYPE));
+  }
+
+  static class StateForkData {
+    public final Boolean execution_optimistic;
+    public final Fork data;
+
+    public StateForkData(final Boolean executionOptimistic, final Fork data) {
+      this.execution_optimistic = executionOptimistic;
+      this.data = data;
+    }
+
+    public Fork getData() {
+      return data;
+    }
   }
 }
