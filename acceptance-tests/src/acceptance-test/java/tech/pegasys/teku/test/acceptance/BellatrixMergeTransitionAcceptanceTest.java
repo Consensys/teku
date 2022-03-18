@@ -22,9 +22,12 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import static tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion.DEVELOP;
 
-public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
+public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
     private final String NETWORK_NAME = "less-swift";
 
     private final SystemTimeProvider timeProvider = new SystemTimeProvider();
@@ -44,15 +47,32 @@ public class SingleNodeBellatrixAcceptanceTest extends AcceptanceTestBase {
         tekuNode = createTekuNode(config ->
                 configureTekuNode(config, genesisTime)
                         .withDepositsFrom(eth1Node)
+                        .withRealNetwork()
                         .withValidatorKeystores(validatorKeystores)
                         .withValidatorProposerDefaultFeeRecipient("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")
                         .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl()));
         tekuNode.start();
+
+        // 2nd node is currently needed to produce block after merge, because PayloadAttributesCalculator only produce
+        // payload if node is in sync. ForkChoiceNotifier assumes we are not in sync at startup and triggering a
+        // sync status change is required.
+        final TekuNode node2 =
+            createTekuNode(
+                config ->
+                    configureTekuNode(config, genesisTime)
+                        .withDepositsFrom(eth1Node)
+                        .withRealNetwork()
+                        .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
+                        .withPeers(tekuNode));
+        node2.start();
     }
 
     @Test
-    void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() {
+    void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() throws ExecutionException, InterruptedException, TimeoutException {
         tekuNode.waitForGenesis();
+        tekuNode.waitForLogMessageContaining("MERGE is completed");
+        tekuNode.waitForNewFinalization();
+
         tekuNode.waitForNonDefaultExecutionPayload();
         tekuNode.waitForNewFinalization();
     }

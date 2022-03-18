@@ -79,6 +79,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
@@ -97,7 +98,10 @@ public class TekuNode extends Node {
   private TekuNode(final Network network, final DockerVersion version, final Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
-    this.spec = SpecFactory.create(config.getNetworkName());
+
+    Consumer<SpecConfigBuilder> specConfigModifier = config.getSpecConfigModifier()
+        .orElse(__ -> {});
+    this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -310,8 +314,6 @@ public class TekuNode extends Node {
 
           assertThat(executionPayload.isDefault()).isFalse();
           LOG.debug("Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
-          LOG.debug("Non default execution payload found at block " +
-              bellatrixBlock.getMessage().getBody().executionPayload.blockNumber);
         }, 300, MINUTES);
   }
 
@@ -591,6 +593,7 @@ public class TekuNode extends Node {
     private final List<File> tarballsToCopy = new ArrayList<>();
 
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
+    private Optional<Consumer<SpecConfigBuilder>> specConfigModifier = Optional.empty();
 
     public Config() {
       configMap.put("network", networkName);
@@ -691,8 +694,12 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withBellatrixEpoch(final UInt64 bellatrixSlot) {
-      configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixSlot.toString());
+    public Config withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
+      configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
+      specConfigModifier = Optional.of(specConfigBuilder ->
+          specConfigBuilder.bellatrixBuilder(bellatrixBuilder ->
+              bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)
+          ));
       return this;
     }
 
@@ -730,6 +737,10 @@ public class TekuNode extends Node {
 
     public Optional<GenesisStateConfig> getGenesisStateConfig() {
       return genesisStateConfig;
+    }
+
+    public Optional<Consumer<SpecConfigBuilder>> getSpecConfigModifier() {
+      return specConfigModifier;
     }
 
     public Map<File, String> write() throws Exception {
