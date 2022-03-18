@@ -99,6 +99,8 @@ public class AggregateAttestationValidator {
                 return completedFuture(aggregateInternalValidationResult);
               }
 
+              // TODO: Not cool man. Use the state selector (preferably, don't look up the state
+              // again)
               return recentChainData
                   .retrieveBlockState(aggregate.getData().getBeacon_block_root())
                   .thenCompose(

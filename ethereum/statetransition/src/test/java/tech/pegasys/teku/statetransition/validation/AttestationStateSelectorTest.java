@@ -1,0 +1,195 @@
+/*
+ * Copyright 2022 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.statetransition.validation;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+
+class AttestationStateSelectorTest {
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
+  private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+  private final RecentChainData recentChainData = storageSystem.recentChainData();
+
+  private final AttestationStateSelector selector =
+      new AttestationStateSelector(spec, storageSystem.recentChainData());
+
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+  }
+
+  @BeforeEach
+  void setUp() {
+    chainUpdater.initializeGenesis(false);
+    chainUpdater.updateBestBlock(chainUpdater.advanceChain(5));
+  }
+
+  @Test
+  void shouldSelectChainHeadWhenBlockRootIsChainHeadRoot() {
+    final SafeFuture<Optional<BeaconState>> result =
+        selectStateFor(
+            recentChainData.getHeadSlot(), recentChainData.getBestBlockRoot().orElseThrow());
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(chainBuilder.getLatestBlockAndState().getState());
+  }
+
+  @Test
+  void shouldRollChainHeadForwardWhenBlockRootIsChainHeadRootButSlotIsTooFarInFuture()
+      throws Exception {
+    final UInt64 attestationEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot()).plus(2);
+    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(attestationEpoch).plus(3);
+    final UInt64 requiredStateSlot =
+        spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(attestationEpoch);
+    final SafeFuture<Optional<BeaconState>> result =
+        selectStateFor(attestationSlot, recentChainData.getBestBlockRoot().orElseThrow());
+
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(
+            spec.processSlots(chainBuilder.getLatestBlockAndState().getState(), requiredStateSlot));
+  }
+
+  @Test
+  void shouldUseFinalizedStateIfWithinLookaheadPeriod() {
+    // Finalized is currently genesis so can look ahead up to the end of epoch 1
+    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2)).minus(1);
+    // Block root doesn't matter because to be valid the target block must descend from finalized
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationSlot, blockRoot);
+
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(
+            recentChainData.getStore().getLatestFinalized().getState());
+  }
+
+  @Test
+  void shouldUseHeadStateIfAttestationInSameEpochAndBlockRootAncestorOfHead() {
+    // Advance chain so finalized checkpoint isn't suitable
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(25));
+    final SignedBlockAndState chainHead = chainBuilder.getLatestBlockAndState();
+    final UInt64 attestationSlot =
+        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(chainHead.getSlot()));
+    final Bytes32 blockRoot = chainBuilder.getBlockAtSlot(attestationSlot).getRoot();
+
+    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationSlot, blockRoot);
+
+    assertThatSafeFuture(result).isCompletedWithOptionalContaining(chainHead.getState());
+  }
+
+  @Test
+  void shouldNotUseHeadStateWhenAttestationIsForAncestorFromEarlierEpoch() {
+    // Advance chain so finalized checkpoint isn't suitable
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(25));
+    final SignedBlockAndState chainHead = chainBuilder.getLatestBlockAndState();
+    // Attestation slot is just before the chain head epoch
+    final UInt64 attestationSlot =
+        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(chainHead.getSlot())).minus(1);
+    final Bytes32 blockRoot = chainBuilder.getBlockAtSlot(attestationSlot).getRoot();
+
+    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationSlot, blockRoot);
+
+    final BeaconState selectedState = safeJoin(result).orElseThrow();
+    assertThat(selectedState).isNotEqualTo(chainHead.getState());
+  }
+
+  @Test
+  void shouldUseAncestorAtEarliestSlotWhenBlockIsAFork() {
+    final ChainBuilder forkBuilder = chainBuilder.fork();
+    // Advance chain so finalized checkpoint isn't suitable
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(25));
+
+    final SignedBlockAndState expected = forkBuilder.generateBlockAtSlot(16);
+    chainUpdater.saveBlock(expected);
+    final SignedBlockAndState forkBlock = forkBuilder.generateBlockAtSlot(24);
+    chainUpdater.saveBlock(forkBlock);
+
+    final SafeFuture<Optional<BeaconState>> result =
+        selectStateFor(UInt64.valueOf(25), forkBlock.getRoot());
+    assertThatSafeFuture(result).isCompletedWithOptionalContaining(expected.getState());
+  }
+
+  private SafeFuture<Optional<BeaconState>> selectStateFor(
+      final UInt64 attestationSlot, final Bytes32 blockRoot) {
+    final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);
+    final SafeFuture<Optional<BeaconState>> result = selector.getStateToValidate(attestationData);
+    final Optional<BeaconState> maybeState = safeJoin(result);
+    // Check the state is suitable for verifying the attestation
+    maybeState.ifPresent(
+        state -> {
+          final UInt64 attestationEpoch = attestationData.getTarget().getEpoch();
+          final UInt64 earliestSlot =
+              spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(attestationEpoch);
+          // Must be at or after the earliest slot
+          assertThat(state.getSlot()).isGreaterThanOrEqualTo(earliestSlot);
+
+          // State must not be from a future epoch
+          assertThat(spec.getCurrentEpoch(state)).isLessThanOrEqualTo(attestationEpoch);
+
+          // If the state isn't the finalized state, it must be a descendant of blockRoot
+          // (Finalized state is assumed to always be an ancestor)
+          if (!state.equals(recentChainData.getStore().getLatestFinalized().getState())) {
+            if (state.getSlot().isGreaterThan(attestationSlot)) {
+              // State is ahead so blockRoot must be ancestor of state
+              assertThat(spec.getBlockRootAtSlot(state, attestationSlot)).isEqualTo(blockRoot);
+            } else if (state.getSlot().isLessThan(attestationSlot)) {
+              // State is behind so state block root must be ancestor of block root
+              final Optional<Bytes32> attestationAncestorBlockRoot =
+                  recentChainData
+                      .getStore()
+                      .getForkChoiceStrategy()
+                      .getAncestor(blockRoot, state.getSlot());
+              final Bytes32 stateBlockRoot = BeaconBlockHeader.fromState(state).getRoot();
+              assertThat(attestationAncestorBlockRoot).contains(stateBlockRoot);
+            } else {
+              assertThat(BeaconBlockHeader.fromState(state).getRoot()).isEqualTo(blockRoot);
+            }
+          }
+        });
+    return result;
+  }
+
+  private AttestationData attestationFor(final UInt64 slot, final Bytes32 blockRoot) {
+    return dataStructureUtil.randomAttestationData(slot, blockRoot);
+  }
+}

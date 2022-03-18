@@ -44,6 +44,7 @@ public class AttestationValidator {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final AsyncBLSSignatureVerifier signatureVerifier;
+  private final AttestationStateSelector stateSelector;
 
   public AttestationValidator(
       final Spec spec,
@@ -52,6 +53,7 @@ public class AttestationValidator {
     this.recentChainData = recentChainData;
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
+    this.stateSelector = new AttestationStateSelector(spec, recentChainData);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -108,17 +110,18 @@ public class AttestationValidator {
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
-    return recentChainData
-        .retrieveBlockState(data.getBeacon_block_root())
-        .thenCompose(
-            maybeState ->
-                maybeState.isEmpty()
-                    ? completedFuture(Optional.empty())
-                    : resolveStateForAttestation(attestation, maybeState.get()))
+    if (!recentChainData.containsBlock(data.getBeacon_block_root())) {
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    return stateSelector
+        .getStateToValidate(attestation.getData())
         .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+                // We know the block is imported but now don't have a state to validate against
+                // Must have got pruned between checks
+                return completedFuture(InternalValidationResult.IGNORE);
               }
               final BeaconState state = maybeState.get();
               // The committee index is within the expected range
