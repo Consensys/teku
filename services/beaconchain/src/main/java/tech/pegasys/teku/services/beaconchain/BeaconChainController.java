@@ -221,7 +221,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.pendingPoolFactory = new PendingPoolFactory(this.metricsSystem);
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
-    futureItemsMetric =
+    this.futureItemsMetric =
         SettableLabelledGauge.create(
             metricsSystem,
             BEACON,
