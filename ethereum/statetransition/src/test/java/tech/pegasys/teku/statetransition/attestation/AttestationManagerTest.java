@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -69,7 +70,10 @@ class AttestationManagerTest {
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       new PendingPoolFactory(metricsSystem).createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(
+          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+          mock(SettableLabelledGauge.class),
+          "attestations");
   private final SignatureVerificationService signatureVerificationService =
       mock(SignatureVerificationService.class);
   private final ActiveValidatorCache activeValidatorCache = mock(ActiveValidatorCache.class);

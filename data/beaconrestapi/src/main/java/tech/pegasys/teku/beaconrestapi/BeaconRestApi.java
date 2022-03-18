@@ -385,7 +385,7 @@ public class BeaconRestApi {
   private void addBeaconHandlers(final DataProvider dataProvider) {
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
     app.get(GetStateRoot.ROUTE, new GetStateRoot(dataProvider, jsonProvider));
-    app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetStateFork(dataProvider));
     app.get(
         GetStateFinalityCheckpoints.ROUTE,
         new GetStateFinalityCheckpoints(dataProvider, jsonProvider));

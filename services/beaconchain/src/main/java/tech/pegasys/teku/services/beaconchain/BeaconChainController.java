@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.base.Throwables;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -150,6 +152,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SettableLabelledGauge futureItemsMetric;
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
   protected volatile BeaconChainConfiguration beaconConfig;
@@ -201,8 +204,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private TimerService timerService;
   private PendingPoolFactory pendingPoolFactory;
 
-  protected BeaconChainController() {}
-
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
@@ -220,6 +221,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.pendingPoolFactory = new PendingPoolFactory(this.metricsSystem);
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
+    this.futureItemsMetric =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            BEACON,
+            "future_items_size",
+            "Current number of items held for future slots, labelled by type",
+            "type");
   }
 
   @Override
@@ -613,7 +621,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         pendingPoolFactory.createForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
-            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
+            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+            UInt64.valueOf(3),
+            futureItemsMetric,
+            "attestations");
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
@@ -812,7 +823,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initBlockManager() {
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        FutureItems.create(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =

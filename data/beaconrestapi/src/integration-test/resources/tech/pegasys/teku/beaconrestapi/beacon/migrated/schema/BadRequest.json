@@ -1,0 +1,13 @@
+{
+  "title" : "BadRequest",
+  "type" : "object",
+  "required" : [ "code", "message" ],
+  "properties" : {
+    "code" : {
+      "type" : "number"
+    },
+    "message" : {
+      "type" : "string"
+    }
+  }
+}
