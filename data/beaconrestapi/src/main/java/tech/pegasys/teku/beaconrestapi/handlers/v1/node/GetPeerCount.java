@@ -45,21 +45,9 @@ public class GetPeerCount extends MigratingEndpointAdapter {
 
   private static final SerializableTypeDefinition<ResponseData> PEER_COUNT_TYPE =
       SerializableTypeDefinition.object(ResponseData.class)
-          .withField(
-              "disconnected",
-              UINT64_TYPE,
-              responseData ->
-                  UInt64.valueOf(
-                      responseData.getData().stream()
-                          .filter(eth2Peer -> !eth2Peer.isConnected())
-                          .count()))
+          .withField("disconnected", UINT64_TYPE, ResponseData::getDisconnected)
           .withField("connecting", UINT64_TYPE, responseData -> UInt64.valueOf(0))
-          .withField(
-              "connected",
-              UINT64_TYPE,
-              responseData ->
-                  UInt64.valueOf(
-                      responseData.getData().stream().filter(Eth2Peer::isConnected).count()))
+          .withField("connected", UINT64_TYPE, ResponseData::getConnected)
           .withField("disconnecting", UINT64_TYPE, responseData -> UInt64.valueOf(0))
           .build();
 
@@ -112,14 +100,31 @@ public class GetPeerCount extends MigratingEndpointAdapter {
   }
 
   static class ResponseData {
-    private final List<Eth2Peer> data;
+    UInt64 disconnected;
+    UInt64 connected;
 
     ResponseData(List<Eth2Peer> peers) {
-      this.data = peers;
+      long disconnected = 0;
+      long connected = 0;
+
+      for (Eth2Peer peer : peers) {
+        if (peer.isConnected()) {
+          connected++;
+        } else {
+          disconnected++;
+        }
+      }
+
+      this.disconnected = UInt64.valueOf(disconnected);
+      this.connected = UInt64.valueOf(connected);
     }
 
-    List<Eth2Peer> getData() {
-      return data;
+    UInt64 getDisconnected() {
+      return disconnected;
+    }
+
+    UInt64 getConnected() {
+      return connected;
     }
   }
 }
