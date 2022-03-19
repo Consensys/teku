@@ -628,8 +628,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
-        new AggregateAttestationValidator(
-            spec, recentChainData, attestationValidator, signatureVerificationService);
+        new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
         (slot, attestations) ->
             attestations.forEach(

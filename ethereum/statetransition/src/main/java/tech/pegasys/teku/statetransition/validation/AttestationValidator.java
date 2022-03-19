@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -65,7 +66,10 @@ public class AttestationValidator {
     }
 
     return singleOrAggregateAttestationChecks(
-        signatureVerifier, validateableAttestation, validateableAttestation.getReceivedSubnetId());
+            signatureVerifier,
+            validateableAttestation,
+            validateableAttestation.getReceivedSubnetId())
+        .thenApply(Pair::left);
   }
 
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
@@ -78,19 +82,22 @@ public class AttestationValidator {
     return InternalValidationResult.ACCEPT;
   }
 
-  SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final AsyncBLSSignatureVerifier signatureVerifier,
-      final ValidateableAttestation validateableAttestation,
-      final OptionalInt receivedOnSubnetId) {
+  SafeFuture<Pair<InternalValidationResult, Optional<BeaconState>>>
+      singleOrAggregateAttestationChecks(
+          final AsyncBLSSignatureVerifier signatureVerifier,
+          final ValidateableAttestation validateableAttestation,
+          final OptionalInt receivedOnSubnetId) {
 
     Attestation attestation = validateableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
     // The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {
       return completedFuture(
-          InternalValidationResult.reject(
-              "Attestation slot %s is not from target epoch %s",
-              data.getSlot(), data.getTarget().getEpoch()));
+          Pair.of(
+              InternalValidationResult.reject(
+                  "Attestation slot %s is not from target epoch %s",
+                  data.getSlot(), data.getTarget().getEpoch()),
+              Optional.empty()));
     }
 
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
@@ -101,17 +108,17 @@ public class AttestationValidator {
     final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
-      return completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(Pair.of(InternalValidationResult.IGNORE, Optional.empty()));
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, Optional.empty()));
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
     if (!recentChainData.containsBlock(data.getBeacon_block_root())) {
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, Optional.empty()));
     }
 
     return stateSelector
@@ -121,7 +128,7 @@ public class AttestationValidator {
               if (maybeState.isEmpty()) {
                 // We know the block is imported but now don't have a state to validate against
                 // Must have got pruned between checks
-                return completedFuture(InternalValidationResult.IGNORE);
+                return completedFuture(Pair.of(InternalValidationResult.IGNORE, maybeState));
               }
               final BeaconState state = maybeState.get();
               // The committee index is within the expected range
@@ -129,8 +136,10 @@ public class AttestationValidator {
                   .isGreaterThanOrEqualTo(
                       spec.getCommitteeCountPerSlot(state, data.getTarget().getEpoch()))) {
                 return completedFuture(
-                    InternalValidationResult.reject(
-                        "Committee index %s is out of range", data.getIndex()));
+                    Pair.of(
+                        InternalValidationResult.reject(
+                            "Committee index %s is out of range", data.getIndex()),
+                        maybeState));
               }
 
               // The attestation's committee index (attestation.data.index) is for the correct
@@ -139,9 +148,11 @@ public class AttestationValidator {
                   && spec.computeSubnetForAttestation(state, attestation)
                       != receivedOnSubnetId.getAsInt()) {
                 return completedFuture(
-                    InternalValidationResult.reject(
-                        "Attestation received on incorrect subnet (%s) for specified committee index (%s)",
-                        attestation.getData().getIndex(), receivedOnSubnetId.getAsInt()));
+                    Pair.of(
+                        InternalValidationResult.reject(
+                            "Attestation received on incorrect subnet (%s) for specified committee index (%s)",
+                            attestation.getData().getIndex(), receivedOnSubnetId.getAsInt()),
+                        maybeState));
               }
 
               // The check below is not specified in the Eth2 networking spec, yet an attestation
@@ -151,9 +162,11 @@ public class AttestationValidator {
                   spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregationBits().size()) {
                 return completedFuture(
-                    InternalValidationResult.reject(
-                        "Aggregation bit size %s is greater than committee size %s",
-                        attestation.getAggregationBits().size(), committee.size()));
+                    Pair.of(
+                        InternalValidationResult.reject(
+                            "Aggregation bit size %s is greater than committee size %s",
+                            attestation.getAggregationBits().size(), committee.size()),
+                        maybeState));
               }
 
               return spec.isValidIndexedAttestation(
@@ -161,9 +174,11 @@ public class AttestationValidator {
                   .thenApply(
                       signatureResult -> {
                         if (!signatureResult.isSuccessful()) {
-                          return InternalValidationResult.reject(
-                              "Attestation is not a valid indexed attestation: %s",
-                              signatureResult.getInvalidReason());
+                          return Pair.of(
+                              InternalValidationResult.reject(
+                                  "Attestation is not a valid indexed attestation: %s",
+                                  signatureResult.getInvalidReason()),
+                              maybeState);
                         }
 
                         // The attestation's target block is an ancestor of the block named in the
@@ -176,8 +191,10 @@ public class AttestationValidator {
                                 ancestorOfLMDVote ->
                                     ancestorOfLMDVote.equals(data.getTarget().getRoot()))
                             .orElse(false)) {
-                          return InternalValidationResult.reject(
-                              "Attestation LMD vote block does not descend from target block");
+                          return Pair.of(
+                              InternalValidationResult.reject(
+                                  "Attestation LMD vote block does not descend from target block"),
+                              maybeState);
                         }
 
                         // The current finalized_checkpoint is an ancestor of the block defined by
@@ -188,7 +205,7 @@ public class AttestationValidator {
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
                         validateableAttestation.saveCommitteeShufflingSeed(state);
-                        return InternalValidationResult.ACCEPT;
+                        return Pair.of(InternalValidationResult.ACCEPT, maybeState);
                       });
             });
   }

@@ -19,11 +19,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import it.unimi.dsi.fastutil.Pair;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -51,11 +54,11 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
-import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -106,8 +109,7 @@ class AggregateAttestationValidatorTest {
       spec.getGenesisSchemaDefinitions().getAggregateAndProofSchema();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
-  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final ChainUpdater chainUpdater =
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
@@ -118,8 +120,7 @@ class AggregateAttestationValidatorTest {
   private final AsyncBLSSignatureVerifier signatureVerifier =
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
   private final AggregateAttestationValidator validator =
-      new AggregateAttestationValidator(
-          spec, recentChainData, attestationValidator, signatureVerifier);
+      new AggregateAttestationValidator(spec, attestationValidator, signatureVerifier);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
 
@@ -137,34 +138,12 @@ class AggregateAttestationValidatorTest {
   public void setUp() {
     genesis = chainUpdater.initializeGenesis(false);
     bestBlock = chainUpdater.addNewBestBlock();
-
-    final AttestationValidator realAttestationValidator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier);
-    when(attestationValidator.resolveStateForAttestation(any(), any()))
-        .thenAnswer(
-            i ->
-                realAttestationValidator.resolveStateForAttestation(
-                    i.getArgument(0), i.getArgument(1)));
   }
 
   @Test
   public void shouldReturnValidForValidAggregate() {
     final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
-    whenAttestationIsValid(aggregate);
-    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
-        .isCompletedWithValue(InternalValidationResult.ACCEPT);
-  }
-
-  @Test
-  public void shouldReturnValidForValidAggregate_whenManyBlocksHaveBeenSkipped() {
-    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
-    final UInt64 currentSlot =
-        chainHead.getSlot().plus(spec.getSlotsPerEpoch(chainHead.getSlot()) * 3L);
-    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
-
-    final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(chainHead, currentSlot);
     whenAttestationIsValid(aggregate);
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
@@ -178,7 +157,7 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(reject("Nah mate")));
+        .thenReturn(SafeFuture.completedFuture(Pair.of(reject("Nah mate"), Optional.empty())));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(reject("Nah mate"));
   }
@@ -191,7 +170,8 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+        .thenReturn(
+            SafeFuture.completedFuture(Pair.of(InternalValidationResult.IGNORE, Optional.empty())));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.IGNORE);
@@ -205,7 +185,9 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, Optional.empty())));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
@@ -219,7 +201,9 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, Optional.empty())));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
@@ -238,7 +222,9 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, getStateFor(aggregate))));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -515,7 +501,17 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Pair.of(InternalValidationResult.ACCEPT, getStateFor(aggregate))));
+  }
+
+  private Optional<BeaconState> getStateFor(final SignedAggregateAndProof aggregate) {
+    return safeJoin(
+        storageSystem
+            .recentChainData()
+            .retrieveBlockState(
+                aggregate.getMessage().getAggregate().getData().getBeacon_block_root()));
   }
 
   private CommitteeAssignment getCommitteeAssignment(
