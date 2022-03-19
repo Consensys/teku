@@ -44,7 +44,7 @@ public class Predicates {
       } else {
         value = Hash.sha256(value, branch.getElement(i));
       }
-      index >>= 1;
+      index >>>= 1;
     }
     return value.equals(root);
   }
