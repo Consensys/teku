@@ -100,8 +100,8 @@ public class GetPeerCount extends MigratingEndpointAdapter {
   }
 
   static class ResponseData {
-    UInt64 disconnected;
-    UInt64 connected;
+    final UInt64 disconnected;
+    final UInt64 connected;
 
     ResponseData(List<Eth2Peer> peers) {
       long disconnected = 0;
