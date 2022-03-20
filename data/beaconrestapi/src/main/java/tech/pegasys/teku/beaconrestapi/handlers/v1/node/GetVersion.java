@@ -38,13 +38,13 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 public class GetVersion extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/version";
 
-  private static final SerializableTypeDefinition<VersionData> DATA_TYPE =
-      SerializableTypeDefinition.object(VersionData.class)
-          .withField("version", STRING_TYPE, VersionData::getVersion)
+  private static final SerializableTypeDefinition<String> DATA_TYPE =
+      SerializableTypeDefinition.object(String.class)
+          .withField("version", STRING_TYPE, Function.identity())
           .build();
 
-  private static final SerializableTypeDefinition<VersionData> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(VersionData.class)
+  private static final SerializableTypeDefinition<String> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(String.class)
           .name("GetVersionResponse")
           .withField("data", DATA_TYPE, Function.identity())
           .build();
@@ -79,18 +79,6 @@ public class GetVersion extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(new VersionData());
-  }
-
-  static class VersionData {
-    private final String version;
-
-    VersionData() {
-      this.version = VersionProvider.VERSION;
-    }
-
-    String getVersion() {
-      return version;
-    }
+    request.respondOk(VersionProvider.VERSION);
   }
 }

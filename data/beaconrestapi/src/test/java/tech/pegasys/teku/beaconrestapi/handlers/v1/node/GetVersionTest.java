@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class GetVersionTest extends AbstractBeaconHandlerTest {
 
@@ -29,6 +30,6 @@ public class GetVersionTest extends AbstractBeaconHandlerTest {
     final GetVersion handler = new GetVersion();
 
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(new GetVersion.VersionData()));
+    verify(request).respondOk(refEq(VersionProvider.VERSION));
   }
 }
