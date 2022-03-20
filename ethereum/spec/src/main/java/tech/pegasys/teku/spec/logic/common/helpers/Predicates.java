@@ -39,11 +39,12 @@ public class Predicates {
       Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
-      if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
+      if ((index & 1) == 1) {
         value = Hash.sha256(branch.getElement(i), value);
       } else {
         value = Hash.sha256(value, branch.getElement(i));
       }
+      index >>>= 1;
     }
     return value.equals(root);
   }

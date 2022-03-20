@@ -89,7 +89,7 @@ public class MigrateDatabaseCommand implements Runnable {
       description =
           "The file to export the slashing protection database to. (rocksdb: 4,5,6), leveldb1, leveldb2",
       arity = "1")
-  private String toDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
+  private String toDbVersion = DatabaseVersion.LEVELDB2.getValue();
 
   // batch size param
   @CommandLine.Option(
