@@ -83,6 +83,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
@@ -341,9 +342,7 @@ public class BeaconRestApi {
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing(provider, jsonProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
-        new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
+    addMigratedEndpoint(new GetVersion());
   }
 
   private void addMigratedEndpoint(final MigratingEndpointAdapter endpoint) {
