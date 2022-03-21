@@ -51,6 +51,8 @@ public class ExecutionPayloadSchema
         SszBytes32,
         SszList<Transaction>> {
 
+  private final ExecutionPayload defaultExecutionPayload;
+
   public ExecutionPayloadSchema(final SpecConfigBellatrix specConfig) {
     super(
         "ExecutionPayload",
@@ -71,6 +73,8 @@ public class ExecutionPayloadSchema
             "transactions",
             SszListSchema.create(
                 new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())));
+
+    this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
   public ExecutionPayload create(
@@ -125,5 +129,10 @@ public class ExecutionPayloadSchema
   @Override
   public ExecutionPayload createFromBackingNode(TreeNode node) {
     return new ExecutionPayload(this, node);
+  }
+
+  @Override
+  public ExecutionPayload getDefault() {
+    return defaultExecutionPayload;
   }
 }

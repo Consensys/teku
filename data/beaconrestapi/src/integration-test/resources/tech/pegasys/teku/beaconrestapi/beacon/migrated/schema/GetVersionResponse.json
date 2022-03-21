@@ -1,0 +1,16 @@
+{
+  "title" : "GetVersionResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "version" ],
+      "properties" : {
+        "version" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}
