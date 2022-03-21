@@ -32,7 +32,8 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
     this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaPhase0.create(specConfig, getAttesterSlashingSchema());
+        BeaconBlockBodySchemaPhase0.create(
+            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyPhase0");
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0();
   }
 
@@ -48,7 +49,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
 
   @Override
   public BeaconBlockSchema getBeaconBlockSchema() {
-    return new BeaconBlockSchema(getBeaconBlockBodySchema());
+    return new BeaconBlockSchema(getBeaconBlockBodySchema(), "BeaconBlockPhase0");
   }
 
   @Override
