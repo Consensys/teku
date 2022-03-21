@@ -83,6 +83,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
@@ -336,14 +337,12 @@ public class BeaconRestApi {
     app.get(GetHealth.ROUTE, new GetHealth(provider));
     addMigratedEndpoint(new GetIdentity(provider));
     addMigratedEndpoint(new GetPeers(provider));
-    app.get(GetPeerCount.ROUTE, new GetPeerCount(provider, jsonProvider));
+    addMigratedEndpoint(new GetPeerCount(provider));
     app.get(GetPeerById.ROUTE, new GetPeerById(provider, jsonProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing(provider, jsonProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
-        new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
+    addMigratedEndpoint(new GetVersion());
   }
 
   private void addMigratedEndpoint(final MigratingEndpointAdapter endpoint) {
@@ -385,7 +384,7 @@ public class BeaconRestApi {
   private void addBeaconHandlers(final DataProvider dataProvider) {
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
     app.get(GetStateRoot.ROUTE, new GetStateRoot(dataProvider, jsonProvider));
-    app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetStateFork(dataProvider));
     app.get(
         GetStateFinalityCheckpoints.ROUTE,
         new GetStateFinalityCheckpoints(dataProvider, jsonProvider));

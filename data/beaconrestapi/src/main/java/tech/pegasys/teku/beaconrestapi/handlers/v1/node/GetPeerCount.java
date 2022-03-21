@@ -13,39 +13,66 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.GetPeerCountResponse;
-import tech.pegasys.teku.api.response.v1.node.Peer;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
-public class GetPeerCount implements Handler {
+public class GetPeerCount extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/peer_count";
-  private final JsonProvider jsonProvider;
+
+  private static final SerializableTypeDefinition<ResponseData> PEER_COUNT_TYPE =
+      SerializableTypeDefinition.object(ResponseData.class)
+          .withField("disconnected", UINT64_TYPE, ResponseData::getDisconnected)
+          .withField("connecting", UINT64_TYPE, responseData -> UInt64.valueOf(0))
+          .withField("connected", UINT64_TYPE, ResponseData::getConnected)
+          .withField("disconnecting", UINT64_TYPE, responseData -> UInt64.valueOf(0))
+          .build();
+
+  private static final SerializableTypeDefinition<ResponseData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(ResponseData.class)
+          .name("GetPeerCountResponse")
+          .withField("data", PEER_COUNT_TYPE, Function.identity())
+          .build();
+
   private final NetworkDataProvider network;
 
-  public GetPeerCount(final DataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
-    this.network = provider.getNetworkDataProvider();
+  public GetPeerCount(final DataProvider provider) {
+    this(provider.getNetworkDataProvider());
   }
 
-  GetPeerCount(final NetworkDataProvider network, final JsonProvider jsonProvider) {
+  GetPeerCount(final NetworkDataProvider network) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getPeerCount")
+            .summary("Get peer count")
+            .description("Retrieves number of known peers.")
+            .tags(TAG_NODE)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .build());
     this.network = network;
-    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -63,7 +90,41 @@ public class GetPeerCount implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    List<Peer> peers = network.getPeers();
-    ctx.json(jsonProvider.objectToJSON(GetPeerCountResponse.create(peers)));
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    List<Eth2Peer> peers = network.getEth2Peers();
+    request.respondOk(new ResponseData(peers));
+  }
+
+  static class ResponseData {
+    final UInt64 disconnected;
+    final UInt64 connected;
+
+    ResponseData(List<Eth2Peer> peers) {
+      long disconnected = 0;
+      long connected = 0;
+
+      for (Eth2Peer peer : peers) {
+        if (peer.isConnected()) {
+          connected++;
+        } else {
+          disconnected++;
+        }
+      }
+
+      this.disconnected = UInt64.valueOf(disconnected);
+      this.connected = UInt64.valueOf(connected);
+    }
+
+    UInt64 getDisconnected() {
+      return disconnected;
+    }
+
+    UInt64 getConnected() {
+      return connected;
+    }
   }
 }
