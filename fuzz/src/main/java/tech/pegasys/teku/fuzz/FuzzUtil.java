@@ -28,14 +28,19 @@ import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
+import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -51,7 +56,9 @@ public class FuzzUtil {
   // "FuzzHarness" interface
 
   private final Spec spec;
-  private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
+  private final SpecConfigBellatrix specConfig;
+  private final BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema;
+  private final SpecVersion specVersion;
 
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
@@ -62,9 +69,15 @@ public class FuzzUtil {
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
     spec =
         useMainnetConfig
-            ? TestSpecFactory.createMainnetPhase0()
-            : TestSpecFactory.createMinimalPhase0();
-    beaconBlockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
+            ? TestSpecFactory.createMainnetBellatrix()
+            : TestSpecFactory.createMinimalBellatrix();
+    specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
+    specConfig = SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
+    beaconBlockBodySchema =
+        (BeaconBlockBodySchemaBellatrix<?>)
+            spec.forMilestone(SpecMilestone.BELLATRIX)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema();
     initialize(disable_bls);
     this.signatureVerifier = disable_bls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
   }
@@ -77,7 +90,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
     AttestationFuzzInput structuredInput =
-        deserialize(input, AttestationFuzzInput.createSchema(spec.getGenesisSpec()));
+        deserialize(input, AttestationFuzzInput.createSchema(specVersion));
     SszList<Attestation> attestations =
         beaconBlockBodySchema.getAttestationsSchema().of(structuredInput.getAttestation());
     // process and return post state
@@ -123,8 +136,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlock(final byte[] input) {
-    BlockFuzzInput structuredInput =
-        deserialize(input, BlockFuzzInput.createSchema(spec.getGenesisSpec()));
+    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createSchema(specVersion));
 
     try {
       BeaconState postState =
@@ -143,7 +155,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzBlockHeader(final byte[] input) {
     BlockHeaderFuzzInput structuredInput =
-        deserialize(input, BlockHeaderFuzzInput.createType(spec.getGenesisSpec()));
+        deserialize(input, BlockHeaderFuzzInput.createType(specVersion));
 
     try {
       BeaconState postState =
@@ -163,7 +175,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
     DepositFuzzInput structuredInput =
-        deserialize(input, DepositFuzzInput.createSchema(spec.getGenesisSpec()));
+        deserialize(input, DepositFuzzInput.createSchema(specVersion));
     SszList<Deposit> deposits =
         beaconBlockBodySchema.getDepositsSchema().of(structuredInput.getDeposit());
 
@@ -184,7 +196,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzProposerSlashing(final byte[] input) {
     ProposerSlashingFuzzInput structuredInput =
-        deserialize(input, ProposerSlashingFuzzInput.createType(spec.getGenesisSpec()));
+        deserialize(input, ProposerSlashingFuzzInput.createType(specVersion));
     SszList<ProposerSlashing> proposerSlashings =
         beaconBlockBodySchema
             .getProposerSlashingsSchema()
@@ -237,7 +249,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
     VoluntaryExitFuzzInput structuredInput =
-        deserialize(input, VoluntaryExitFuzzInput.createSchema(spec.getGenesisSpec()));
+        deserialize(input, VoluntaryExitFuzzInput.createSchema(specVersion));
     SszList<SignedVoluntaryExit> voluntaryExits =
         beaconBlockBodySchema.getVoluntaryExitsSchema().of(structuredInput.getExit());
 
@@ -249,6 +261,27 @@ public class FuzzUtil {
                   state ->
                       spec.getBlockProcessor(state.getSlot())
                           .processVoluntaryExits(state, voluntaryExits, signatureVerifier));
+      Bytes output = postState.sszSerialize();
+      return Optional.of(output.toArrayUnsafe());
+    } catch (BlockProcessingException e) {
+      // "expected error"
+      return Optional.empty();
+    }
+  }
+
+  public Optional<byte[]> fuzzSyncAggregate(final byte[] input) {
+    SyncAggregateFuzzInput structuredInput =
+        deserialize(input, SyncAggregateFuzzInput.createSchema(specVersion, specConfig));
+    SyncAggregate syncAggregate = structuredInput.getSyncAggregate();
+
+    try {
+      BeaconState postState =
+          structuredInput
+              .getState()
+              .updated(
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processSyncAggregate(state, syncAggregate, signatureVerifier));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
