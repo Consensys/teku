@@ -16,7 +16,7 @@
         }
       },
       "500" : {
-        "description" : "Internal error",
+        "description" : "Server Error",
         "content" : { }
       },
       "400" : {
