@@ -74,7 +74,7 @@ public class GetSyncing extends MigratingEndpointAdapter {
                     + "and if it is, what block it is up to.")
             .tags(TAG_NODE, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", SYNCING_RESPONSE_TYPE)
-            .response(SC_INTERNAL_SERVER_ERROR, "Internal error")
+            .response(SC_INTERNAL_SERVER_ERROR, "Server Error")
             .build());
     this.syncProvider = syncProvider;
   }
