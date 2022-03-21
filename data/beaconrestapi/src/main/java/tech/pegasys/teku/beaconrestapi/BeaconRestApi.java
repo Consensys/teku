@@ -334,7 +334,7 @@ public class BeaconRestApi {
   }
 
   private void addNodeHandlers(final DataProvider provider) {
-    app.get(GetHealth.ROUTE, new GetHealth(provider));
+    addMigratedEndpoint(new GetHealth(provider));
     addMigratedEndpoint(new GetIdentity(provider));
     addMigratedEndpoint(new GetPeers(provider));
     addMigratedEndpoint(new GetPeerCount(provider));
