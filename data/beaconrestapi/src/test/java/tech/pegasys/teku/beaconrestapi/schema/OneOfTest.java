@@ -77,4 +77,41 @@ public class OneOfTest {
             "#/components/schemas/BeaconBlockAltair",
             "#/components/schemas/BeaconBlockBellatrix");
   }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void shouldCreateOneOfBlindedBlockDefinition() throws Exception {
+    final SerializableOneOfTypeDefinition<BeaconBlock> schema =
+        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>()
+            .title("BlindedBlock")
+            .withType(
+                isPhase0,
+                spec.forMilestone(SpecMilestone.PHASE0)
+                    .getSchemaDefinitions()
+                    .getBlindedBlockSchema()
+                    .getJsonTypeDefinition())
+            .withType(
+                isAltair,
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBlindedBlockSchema()
+                    .getJsonTypeDefinition())
+            .withType(
+                isBellatrix,
+                spec.forMilestone(SpecMilestone.BELLATRIX)
+                    .getSchemaDefinitions()
+                    .getBlindedBlockSchema()
+                    .getJsonTypeDefinition())
+            .build();
+
+    final String openApiType = JsonUtil.serialize(schema::serializeOpenApiType);
+    Map<String, Object> parsed = JsonTestUtil.parse(openApiType);
+
+    List<Map<String, String>> oneOfList = (List<Map<String, String>>) parsed.get("oneOf");
+    assertThat(oneOfList.stream().flatMap(z -> z.values().stream()).collect(Collectors.toList()))
+        .containsOnly(
+            "#/components/schemas/BeaconBlockPhase0",
+            "#/components/schemas/BeaconBlockAltair",
+            "#/components/schemas/BlindedBlockBellatrix");
+  }
 }

@@ -89,6 +89,16 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
+  public BeaconBlockSchema getBlindedBlockSchema() {
+    return getBeaconBlockSchema();
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBlindedBlockBodySchema() {
+    return getBeaconBlockBodySchema();
+  }
+
+  @Override
   public MetadataMessageSchemaAltair getMetadataMessageSchema() {
     return metadataMessageSchema;
   }

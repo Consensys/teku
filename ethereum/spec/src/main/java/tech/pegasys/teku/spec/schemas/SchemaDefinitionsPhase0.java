@@ -58,6 +58,16 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   }
 
   @Override
+  public BeaconBlockSchema getBlindedBlockSchema() {
+    return getBeaconBlockSchema();
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBlindedBlockBodySchema() {
+    return getBeaconBlockBodySchema();
+  }
+
+  @Override
   public MetadataMessageSchemaPhase0 getMetadataMessageSchema() {
     return metadataMessageSchema;
   }
