@@ -30,7 +30,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -90,8 +89,8 @@ public class GetPeers extends MigratingEndpointAdapter {
           .build();
 
   private static final SerializableTypeDefinition<List<Eth2Peer>> PEERS_RESPONSE_TYPE =
-          SerializableTypeDefinition.<List<Eth2Peer>>object()
-          .name("GetNodePeersResponse")
+      SerializableTypeDefinition.<List<Eth2Peer>>object()
+          .name("GetPeersResponse")
           .withField("data", listOf(PEER_DATA_TYPE), Function.identity())
           .build();
 

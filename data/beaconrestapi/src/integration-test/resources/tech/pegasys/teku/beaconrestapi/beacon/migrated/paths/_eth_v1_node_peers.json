@@ -10,7 +10,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetNodePeersResponse"
+              "$ref" : "#/components/schemas/GetPeersResponse"
             }
           }
         }

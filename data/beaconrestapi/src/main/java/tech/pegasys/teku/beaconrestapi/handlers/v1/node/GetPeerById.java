@@ -48,7 +48,7 @@ public class GetPeerById extends MigratingEndpointAdapter {
 
   private static final SerializableTypeDefinition<Eth2Peer> PEERS_BY_ID_RESPONSE_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)
-          .name("GetNodePeersResponse")
+          .name("GetPeerResponse")
           .withField("data", PEER_DATA_TYPE, Function.identity())
           .build();
 
