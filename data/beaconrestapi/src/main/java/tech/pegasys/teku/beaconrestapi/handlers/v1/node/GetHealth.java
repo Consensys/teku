@@ -96,7 +96,7 @@ public class GetHealth extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!chainDataProvider.isStoreAvailable()) {
-      request.respondError(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues");
+      request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else if (syncProvider.isSyncing()) {
       int syncingStatus = SC_PARTIAL_CONTENT;
       try {
@@ -107,9 +107,9 @@ public class GetHealth extends MigratingEndpointAdapter {
       } catch (final IllegalArgumentException ex) {
         LOG.trace("Illegal parameter in GetHealth", ex);
       }
-      request.respondError(syncingStatus, "Node is syncing but can serve incomplete data");
+      request.respondWithCode(syncingStatus);
     } else {
-      request.respondOk("Node is ready");
+      request.respondWithCode(SC_OK);
     }
   }
 }

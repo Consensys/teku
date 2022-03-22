@@ -79,6 +79,11 @@ public class RestApiRequest {
     context.result(JsonUtil.serialize(response, type));
   }
 
+  /** This is only used when intending to return status code without a response body */
+  public void respondWithCode(final int statusCode) {
+    context.status(statusCode);
+  }
+
   public String getPathParam(String pathParameter) {
     return pathParamMap.get(pathParameter);
   }

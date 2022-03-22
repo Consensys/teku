@@ -14,11 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_CONTINUE;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.refEq;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
@@ -34,90 +35,92 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+
     handler.handleRequest(request);
-    verify(request)
-        .respondError(
-            eq(SC_PARTIAL_CONTENT), refEq("Node is syncing but can serve incomplete data"));
+    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnSyncingStatusWhenStartingUp() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+
     handler.handleRequest(request);
-    verify(request)
-        .respondError(
-            eq(SC_PARTIAL_CONTENT), refEq("Node is syncing but can serve incomplete data"));
+    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnCustomSyncingStatusWhenSyncing() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("100")));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    when(request.getQueryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("100")));
+
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
-    verify(request)
-        .respondError(eq(SC_CONTINUE), refEq("Node is syncing but can serve incomplete data"));
+    checkResponseWithoutBody(SC_CONTINUE);
   }
 
   @Test
   public void shouldReturnDefaultSyncingStatusWhenSyncingWrongParam() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    when(request.getQueryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("a")));
+    when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("a")));
+
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
-    verify(request)
-        .respondError(
-            eq(SC_PARTIAL_CONTENT), refEq("Node is syncing but can serve incomplete data"));
+    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnDefaultSyncingStatusWhenSyncingMultipleParams() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    when(request.getQueryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("1", "2")));
+    when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("1", "2")));
+
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
-    verify(request)
-        .respondError(
-            eq(SC_PARTIAL_CONTENT), refEq("Node is syncing but can serve incomplete data"));
+    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+
     handler.handleRequest(request);
-    verify(request).respondOk(refEq("Node is ready"));
+    checkResponseWithoutBody(SC_OK);
   }
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+
     handler.handleRequest(request);
-    verify(request)
-        .respondError(eq(SC_SERVICE_UNAVAILABLE), refEq("Node not initialized or having issues"));
+    checkResponseWithoutBody(SC_SERVICE_UNAVAILABLE);
+  }
+
+  private void checkResponseWithoutBody(final int statusCode) {
+    verify(context).status(eq(statusCode));
+    verify(context, never()).result(anyString());
   }
 }
