@@ -59,9 +59,9 @@ public class GetDepositContract extends MigratingEndpointAdapter {
       final Eth1Address depositContractAddress, final ConfigProvider configProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getPeerCount")
-            .summary("Get peer count")
-            .description("Retrieves number of known peers.")
+            .operationId("getDepositContractAddress")
+            .summary("Get deposit contract address")
+            .description("Retrieve deposit contract address and genesis fork version.")
             .tags(TAG_NODE)
             .response(SC_OK, "Request successful", DEPOSIT_CONTRACT_RESPONSE_TYPE)
             .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error.")
