@@ -69,7 +69,7 @@ public final class Teku {
 
   private static Node start(final TekuConfiguration config, final boolean validatorOnly) {
     final Node node;
-    LOG.info(TekuConfigurationPrinter.lazyPrint(config));
+    LOG.debug(TekuConfigurationPrinter.lazyPrint(config));
     if (validatorOnly) {
       node = new ValidatorNode(config);
     } else {
