@@ -45,20 +45,22 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 @ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final SchemaDefinitionsBellatrix genesisSchemaDefinitions =
+      SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions());
   private final BeaconBlockSchema beaconBlockSchema =
       genesisSchemaDefinitions.getBeaconBlockSchema();
-  private final BeaconStateSchema<?, ?> genesisBeaconStateSchema =
-      genesisSchemaDefinitions.getBeaconStateSchema();
+  private final BeaconStateSchemaBellatrix genesisBeaconStateSchema =
+      (BeaconStateSchemaBellatrix) genesisSchemaDefinitions.getBeaconStateSchema();
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
       genesisSchemaDefinitions.getSignedBeaconBlockSchema();
+
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is
   // correct/equivalent according to the spec
