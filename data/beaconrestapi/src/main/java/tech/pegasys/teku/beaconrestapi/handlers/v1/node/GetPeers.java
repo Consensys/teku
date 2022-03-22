@@ -29,6 +29,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -87,10 +89,10 @@ public class GetPeers extends MigratingEndpointAdapter {
                   eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound)
           .build();
 
-  private static final SerializableTypeDefinition<PeersData> PEERS_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(PeersData.class)
+  private static final SerializableTypeDefinition<List<Eth2Peer>> PEERS_RESPONSE_TYPE =
+          SerializableTypeDefinition.<List<Eth2Peer>>object()
           .name("GetNodePeersResponse")
-          .withField("data", listOf(PEER_DATA_TYPE), PeersData::getData)
+          .withField("data", listOf(PEER_DATA_TYPE), Function.identity())
           .build();
 
   private final NetworkDataProvider network;
@@ -129,19 +131,6 @@ public class GetPeers extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    PeersData peersData = new PeersData(network.getEth2Peers());
-    request.respondOk(peersData, NO_CACHE);
-  }
-
-  static class PeersData {
-    public final List<Eth2Peer> data;
-
-    PeersData(List<Eth2Peer> data) {
-      this.data = data;
-    }
-
-    public List<Eth2Peer> getData() {
-      return data;
-    }
+    request.respondOk(network.getEth2Peers(), NO_CACHE);
   }
 }
