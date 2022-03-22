@@ -1,9 +1,9 @@
 {
   "get" : {
-    "tags" : [ "Node" ],
-    "operationId" : "getPeerCount",
-    "summary" : "Get peer count",
-    "description" : "Retrieves number of known peers.",
+    "tags" : [ "Config" ],
+    "operationId" : "getDepositContractAddress",
+    "summary" : "Get deposit contract address",
+    "description" : "Retrieve deposit contract address and genesis fork version.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
