@@ -14,36 +14,45 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetSyncingTest extends AbstractBeaconHandlerTest {
+  private final ArgumentCaptor<String> args = ArgumentCaptor.forClass(String.class);
+
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {
-    GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
+    GetSyncing handler = new GetSyncing(syncDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 7, 10));
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
 
-    SyncingResponse response = getResponseObject(SyncingResponse.class);
-    assertThat(response.data.headSlot).isEqualTo(UInt64.valueOf(7));
-    assertThat(response.data.syncDistance).isEqualTo(UInt64.valueOf(3));
+    handler.handleRequest(request);
+    checkResponse("7", "3", true);
   }
 
   @Test
   public void shouldGetSyncStatusInSync() throws Exception {
-    GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
+    GetSyncing handler = new GetSyncing(syncDataProvider);
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
 
-    SyncingResponse response = getResponseObject(SyncingResponse.class);
-    assertThat(response.data.headSlot).isEqualTo(UInt64.valueOf(10));
-    assertThat(response.data.syncDistance).isEqualTo(UInt64.valueOf(0));
+    handler.handleRequest(request);
+    checkResponse("10", "0", false);
+  }
+
+  private void checkResponse(String headSlot, String syncDistance, boolean isSyncing) {
+    final String expectedResponse =
+        String.format(
+            "{\"data\":{\"head_slot\":\"%s\",\"sync_distance\":\"%s\",\"is_syncing\":%s}}",
+            headSlot, syncDistance, isSyncing);
+
+    verify(context).result(args.capture());
+    String response = args.getValue();
+    assertThat(response).isEqualTo(expectedResponse);
   }
 }
