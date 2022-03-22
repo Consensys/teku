@@ -23,8 +23,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SSZBenchmark {
-
-  private static SimpleOffsetSerializable state = new DataStructureUtil().randomBeaconState();
+  private static DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
+  private static SimpleOffsetSerializable state = dataStructureUtil.randomBeaconState();
 
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
@@ -33,8 +34,7 @@ public class SSZBenchmark {
     state.sszSerialize();
   }
 
-  private static ExecutionPayload executionPayload =
-      new DataStructureUtil(TestSpecFactory.createMainnetBellatrix()).randomExecutionPayload();
+  private static ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
 
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
