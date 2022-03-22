@@ -119,7 +119,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
-    jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
+    this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
   @Override

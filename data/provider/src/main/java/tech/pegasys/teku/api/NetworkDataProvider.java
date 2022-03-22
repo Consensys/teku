@@ -84,6 +84,10 @@ public class NetworkDataProvider {
     return network.streamPeers().map(this::toPeer).collect(Collectors.toList());
   }
 
+  public List<Eth2Peer> getEth2Peers() {
+    return network.streamPeers().collect(Collectors.toList());
+  }
+
   public List<PeerScore> getPeerScores() {
     return network.streamPeers().map(this::toPeerScore).collect(Collectors.toList());
   }
@@ -91,6 +95,11 @@ public class NetworkDataProvider {
   public Optional<tech.pegasys.teku.api.response.v1.node.Peer> getPeerById(final String peerId) {
     final NodeId nodeId = network.parseNodeId(peerId);
     return network.getPeer(nodeId).map(this::toPeer);
+  }
+
+  public Optional<Eth2Peer> getEth2PeerById(final String peerId) {
+    final NodeId nodeId = network.parseNodeId(peerId);
+    return network.getPeer(nodeId);
   }
 
   private <R> tech.pegasys.teku.api.response.v1.node.Peer toPeer(final Eth2Peer eth2Peer) {

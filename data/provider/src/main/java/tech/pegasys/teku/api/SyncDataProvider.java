@@ -33,6 +33,10 @@ public class SyncDataProvider {
         syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus), syncStatus.isSyncing());
   }
 
+  public SyncingStatus getSyncingStatus() {
+    return syncService.getSyncStatus();
+  }
+
   public long subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber) {
     return syncService.subscribeToSyncStateChanges(subscriber);
   }
