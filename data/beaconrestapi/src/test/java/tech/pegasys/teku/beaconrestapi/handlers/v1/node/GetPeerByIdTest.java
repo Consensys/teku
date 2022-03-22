@@ -38,12 +38,6 @@ public class GetPeerByIdTest extends AbstractBeaconHandlerTest {
 
   private final ArgumentCaptor<String> args = ArgumentCaptor.forClass(String.class);
 
-  //  final String peerId = PeerId.random().toBase58();
-  //  final Peer peer =
-  //      new Peer(
-  //          peerId, null, "/ip4/7.7.7.7/tcp/4242/p2p/" + peerId, State.connected,
-  // Direction.inbound);
-
   @BeforeEach
   void setUp() {
     when(peer.getId()).thenReturn(peerId);
