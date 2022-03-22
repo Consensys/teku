@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,6 +34,7 @@ public class RestApiRequest {
   private final Context context;
   private final EndpointMetadata metadata;
   private final Map<String, String> pathParamMap;
+  private final Map<String, List<String>> queryParamMap;
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
@@ -51,6 +53,7 @@ public class RestApiRequest {
     this.context = context;
     this.metadata = metadata;
     this.pathParamMap = context.pathParamMap();
+    this.queryParamMap = context.queryParamMap();
   }
 
   public void respondOk(final Object response) throws JsonProcessingException {
@@ -76,8 +79,17 @@ public class RestApiRequest {
     context.result(JsonUtil.serialize(response, type));
   }
 
+  /** This is only used when intending to return status code without a response body */
+  public void respondWithCode(final int statusCode) {
+    context.status(statusCode);
+  }
+
   public String getPathParam(String pathParameter) {
     return pathParamMap.get(pathParameter);
+  }
+
+  public Map<String, List<String>> getQueryParamMap() {
+    return queryParamMap;
   }
 
   public <T> void handleOptionalResult(

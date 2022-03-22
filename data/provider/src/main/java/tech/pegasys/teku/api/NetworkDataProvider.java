@@ -97,6 +97,11 @@ public class NetworkDataProvider {
     return network.getPeer(nodeId).map(this::toPeer);
   }
 
+  public Optional<Eth2Peer> getEth2PeerById(final String peerId) {
+    final NodeId nodeId = network.parseNodeId(peerId);
+    return network.getPeer(nodeId);
+  }
+
   private <R> tech.pegasys.teku.api.response.v1.node.Peer toPeer(final Eth2Peer eth2Peer) {
     final String peerId = eth2Peer.getId().toBase58();
     final String address = eth2Peer.getAddress().toExternalForm();
