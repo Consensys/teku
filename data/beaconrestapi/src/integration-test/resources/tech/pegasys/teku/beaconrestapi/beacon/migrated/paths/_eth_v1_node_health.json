@@ -1,0 +1,42 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "operationId" : "getNodePeers",
+    "summary" : "Get node peers",
+    "description" : "Retrieves data about the node's network peers.",
+    "responses" : {
+      "200" : {
+        "description" : "Node is ready",
+        "content" : { }
+      },
+      "206" : {
+        "description" : "Node is syncing but can serve incomplete data",
+        "content" : { }
+      },
+      "503" : {
+        "description" : "Node not initialized or having issues",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
