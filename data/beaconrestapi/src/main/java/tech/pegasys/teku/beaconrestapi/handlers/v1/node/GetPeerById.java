@@ -15,41 +15,59 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PEER_DATA_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.api.response.v1.node.Peer;
 import tech.pegasys.teku.api.response.v1.node.PeerResponse;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
-public class GetPeerById implements Handler {
+public class GetPeerById extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/node/peers/:peer_id";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
-  private final JsonProvider jsonProvider;
+
+  private static final SerializableTypeDefinition<Eth2Peer> PEERS_BY_ID_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(Eth2Peer.class)
+          .name("GetNodePeersResponse")
+          .withField("data", PEER_DATA_TYPE, Function.identity())
+          .build();
+
   private final NetworkDataProvider network;
 
-  public GetPeerById(final DataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
-    this.network = provider.getNetworkDataProvider();
+  public GetPeerById(final DataProvider provider) {
+    this(provider.getNetworkDataProvider());
   }
 
-  GetPeerById(final NetworkDataProvider network, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  GetPeerById(final NetworkDataProvider network) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getNodePeer")
+            .summary("Get node peer")
+            .description("Retrieves data about the given peer.")
+            .tags(TAG_NODE)
+            .response(SC_OK, "Request successful", PEERS_BY_ID_RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, "Peer not found")
+            .build());
     this.network = network;
   }
 
@@ -66,13 +84,17 @@ public class GetPeerById implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> parameters = ctx.pathParamMap();
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    Optional<Peer> peer = network.getPeerById(parameters.get("peer_id"));
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    Optional<Eth2Peer> peer = network.getEth2PeerById(request.getPathParam("peer_id"));
     if (peer.isEmpty()) {
-      ctx.status(SC_NOT_FOUND);
+      request.respondError(SC_NOT_FOUND, "Peer not found");
     } else {
-      ctx.json(jsonProvider.objectToJSON(new PeerResponse(peer.get())));
+      request.respondOk(peer.get());
     }
   }
 }

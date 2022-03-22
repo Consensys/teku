@@ -51,7 +51,7 @@ public class GetPeers extends MigratingEndpointAdapter {
   private static final DeserializableTypeDefinition<Direction> DIRECTION_TYPE =
       DeserializableTypeDefinition.enumOf(Direction.class);
 
-  private static final SerializableTypeDefinition<Eth2Peer> PEER_DATA_TYPE =
+  static final SerializableTypeDefinition<Eth2Peer> PEER_DATA_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)
           .name("Peer")
           .withField(

@@ -338,7 +338,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetIdentity(provider));
     addMigratedEndpoint(new GetPeers(provider));
     addMigratedEndpoint(new GetPeerCount(provider));
-    app.get(GetPeerById.ROUTE, new GetPeerById(provider, jsonProvider));
+    addMigratedEndpoint(new GetPeerById(provider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing(provider, jsonProvider));
