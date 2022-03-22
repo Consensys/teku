@@ -35,6 +35,8 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -46,12 +48,18 @@ class SyncControllerTest {
   private final SyncTargetSelector syncTargetSelector = mock(SyncTargetSelector.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Executor subscriberExecutor = mock(Executor.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final TargetChain targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
 
   private final SyncController syncController =
       new SyncController(
-          eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync);
+          eventThread,
+          subscriberExecutor,
+          recentChainData,
+          syncTargetSelector,
+          sync,
+          metricsSystem);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 
   @BeforeEach
@@ -171,6 +179,18 @@ class SyncControllerTest {
     previousSync.complete(SyncResult.COMPLETE);
 
     assertNotSyncing();
+  }
+
+  @Test
+  void shouldUpdateMetricWhenSyncStatusChanges() {
+    final SafeFuture<SyncResult> syncProcess = startFinalizedSync();
+    assertThat(syncController.isSyncActive()).isTrue();
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "node_syncing_active").getValue())
+        .isEqualTo(1.0);
+
+    syncProcess.complete(SyncResult.COMPLETE);
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "node_syncing_active").getValue())
+        .isEqualTo(0.0);
   }
 
   @Test

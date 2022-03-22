@@ -171,7 +171,8 @@ public class SyncServiceFactory {
               pendingBlocks,
               p2pNetwork,
               blockImporter,
-              spec);
+              spec,
+              metrics);
     } else {
       forwardSync =
           SinglePeerSyncServiceFactory.create(

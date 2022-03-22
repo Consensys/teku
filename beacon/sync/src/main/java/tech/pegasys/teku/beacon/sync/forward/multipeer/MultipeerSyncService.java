@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchFactory;
@@ -69,7 +70,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter,
-      final Spec spec) {
+      final Spec spec,
+      final MetricsSystem metricsSystem) {
     LOG.info("Using multipeer sync");
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
 
@@ -96,7 +98,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 finalizedTargetChains,
                 nonfinalizedTargetChains,
                 spec.getSlotsPerEpoch(recentChainData.getCurrentSlot().orElse(UInt64.ZERO))),
-            batchSync);
+            batchSync,
+            metricsSystem);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
             recentChainData.getSpec(),
