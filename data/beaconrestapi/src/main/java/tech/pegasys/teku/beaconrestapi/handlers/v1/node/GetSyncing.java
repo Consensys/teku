@@ -45,7 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class GetSyncing extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/syncing";
 
-  private static final SerializableTypeDefinition<SyncingStatus> DATA_TYPE =
+  private static final SerializableTypeDefinition<SyncingStatus> SYNC_RESPONSE_DATA_TYPE =
       SerializableTypeDefinition.object(SyncingStatus.class)
           .withField("head_slot", UINT64_TYPE, SyncingStatus::getCurrentSlot)
           .withField("sync_distance", UINT64_TYPE, GetSyncing::getSlotsBehind)
@@ -54,8 +54,8 @@ public class GetSyncing extends MigratingEndpointAdapter {
 
   private static final SerializableTypeDefinition<SyncingStatus> SYNCING_RESPONSE_TYPE =
       SerializableTypeDefinition.object(SyncingStatus.class)
-          .name("GetVersionResponse")
-          .withField("data", DATA_TYPE, Function.identity())
+          .name("GetSyncingStatusResponse")
+          .withField("data", SYNC_RESPONSE_DATA_TYPE, Function.identity())
           .build();
 
   private final SyncDataProvider syncProvider;
