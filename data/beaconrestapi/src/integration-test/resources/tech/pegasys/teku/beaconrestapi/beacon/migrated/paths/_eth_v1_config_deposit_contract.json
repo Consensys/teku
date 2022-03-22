@@ -1,0 +1,34 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "operationId" : "getPeerCount",
+    "summary" : "Get peer count",
+    "description" : "Retrieves number of known peers.",
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetDepositContractResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Beacon node internal error.",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

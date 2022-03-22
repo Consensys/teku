@@ -1,0 +1,19 @@
+{
+  "title" : "GetDepositContractResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "chain_id", "address" ],
+      "properties" : {
+        "chain_id" : {
+          "type" : "string"
+        },
+        "address" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}
