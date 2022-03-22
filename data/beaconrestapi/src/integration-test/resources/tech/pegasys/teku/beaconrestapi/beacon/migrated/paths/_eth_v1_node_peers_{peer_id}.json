@@ -1,0 +1,44 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "operationId" : "getNodePeer",
+    "summary" : "Get node peer",
+    "description" : "Retrieves data about the given peer.",
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetNodePeersResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Peer not found",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
