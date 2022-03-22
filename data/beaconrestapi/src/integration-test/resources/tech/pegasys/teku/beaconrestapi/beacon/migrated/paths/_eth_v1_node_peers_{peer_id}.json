@@ -1,19 +1,23 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "getNodePeers",
-    "summary" : "Get node peers",
-    "description" : "Retrieves data about the node's network peers.",
+    "operationId" : "getNodePeer",
+    "summary" : "Get node peer",
+    "description" : "Retrieves data about the given peer.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetPeersResponse"
+              "$ref" : "#/components/schemas/GetPeerResponse"
             }
           }
         }
+      },
+      "404" : {
+        "description" : "Peer not found",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
