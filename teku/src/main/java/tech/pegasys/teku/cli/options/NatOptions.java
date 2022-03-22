@@ -15,12 +15,13 @@ package tech.pegasys.teku.cli.options;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
 import tech.pegasys.teku.networking.nat.NatMethod;
 
-public class NatOptions {
+public class NatOptions implements LoggedOptions {
 
   @CommandLine.Option(
       names = {"--p2p-nat-method"},
@@ -36,5 +37,10 @@ public class NatOptions {
   public NatConfiguration getNetworkConfiguration() {
     checkNotNull(natMethod);
     return NatConfiguration.builder().natMethod(natMethod).build();
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this).add("natMethod", natMethod).toString();
   }
 }

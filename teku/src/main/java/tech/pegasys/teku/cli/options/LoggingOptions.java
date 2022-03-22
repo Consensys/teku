@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import com.google.common.base.MoreObjects;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
@@ -23,7 +24,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
-public class LoggingOptions {
+public class LoggingOptions implements LoggedOptions {
   private static final String WINDOWS_SEP = "\\";
   private static final String LINUX_SEP = "/";
 
@@ -44,6 +45,15 @@ public class LoggingOptions {
       fallbackValue = "true",
       arity = "0..1")
   private boolean logColorEnabled = true;
+
+  @Option(
+      names = {"--log-configuration-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Whether to log options used to build Teku configuration",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logConfigurationEnabled = true;
 
   @Option(
       names = {"--log-include-events-enabled"},
@@ -181,5 +191,28 @@ public class LoggingOptions {
         .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
         .destination(logDestination);
     return loggingBuilder.build();
+  }
+
+  public boolean isLogConfigurationEnabled() {
+    return logConfigurationEnabled;
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("logLevel", logLevel)
+        .add("logColorEnabled", logColorEnabled)
+        .add("logConfigurationEnabled", logConfigurationEnabled)
+        .add("logIncludeEventsEnabled", logIncludeEventsEnabled)
+        .add("logIncludeValidatorDutiesEnabled", logIncludeValidatorDutiesEnabled)
+        .add("logIncludeP2pWarningsEnabled", logIncludeP2pWarningsEnabled)
+        .add("logDestination", logDestination)
+        .add("logFile", logFile)
+        .add("logFileNamePattern", logFileNamePattern)
+        .add("logWireCipherEnabled", logWireCipherEnabled)
+        .add("logWirePlainEnabled", logWirePlainEnabled)
+        .add("logWireMuxEnabled", logWireMuxEnabled)
+        .add("logWireGossipEnabled", logWireGossipEnabled)
+        .toString();
   }
 }

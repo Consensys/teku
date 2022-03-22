@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
 
+import com.google.common.base.MoreObjects;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
 
-public class ExecutionEngineOptions {
+public class ExecutionEngineOptions implements LoggedOptions {
 
   @Option(
       names = {"--ee-endpoint"},
@@ -81,5 +82,15 @@ public class ExecutionEngineOptions {
       throw new InvalidConfigurationException(
           "Invalid configuration. MEV boost URL did not appear to be a valid URL.", e);
     }
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("executionEngineEndpoint", hideSensitiveOption(executionEngineEndpoint))
+        .add("executionEngineVersion", executionEngineVersion)
+        .add("mevUrls", hideSensitiveOption(mevUrls))
+        .add("jwtSecretFile", jwtSecretFile)
+        .toString();
   }
 }

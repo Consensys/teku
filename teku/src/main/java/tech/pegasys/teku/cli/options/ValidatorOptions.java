@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
+import com.google.common.base.MoreObjects;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
-public class ValidatorOptions {
+public class ValidatorOptions implements LoggedOptions {
 
   @Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -135,5 +136,23 @@ public class ValidatorOptions {
                 .generateEarlyAttestations(generateEarlyAttestations));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("validatorKeysOptions", validatorKeysOptions.presentOptions())
+        .add("validatorProposerOptions", validatorProposerOptions.presentOptions())
+        .add("graffiti", graffiti)
+        .add("graffitiFile", graffitiFile)
+        .add("validatorPerformanceTrackingEnabled", validatorPerformanceTrackingEnabled)
+        .add("validatorPerformanceTrackingMode", validatorPerformanceTrackingMode)
+        .add("validatorKeystoreLockingEnabled", validatorKeystoreLockingEnabled)
+        .add(
+            "validatorExternalSignerSlashingProtectionEnabled",
+            validatorExternalSignerSlashingProtectionEnabled)
+        .add("generateEarlyAttestations", generateEarlyAttestations)
+        .add("blindedBlocksApiEnabled", blindedBlocksApiEnabled)
+        .toString();
   }
 }

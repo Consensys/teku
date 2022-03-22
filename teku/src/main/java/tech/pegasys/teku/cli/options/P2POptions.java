@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
-public class P2POptions {
+public class P2POptions implements LoggedOptions {
 
   @Option(
       names = {"--p2p-enabled"},
@@ -302,5 +303,36 @@ public class P2POptions {
                   .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
             })
         .sync(s -> s.isMultiPeerSyncEnabled(multiPeerSyncEnabled));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("p2pEnabled", p2pEnabled)
+        .add("p2pInterface", p2pInterface)
+        .add("p2pPort", p2pPort)
+        .add("p2pUdpPort", p2pUdpPort)
+        .add("p2pDiscoveryEnabled", p2pDiscoveryEnabled)
+        .add("p2pDiscoveryBootnodes", p2pDiscoveryBootnodes)
+        .add("p2pAdvertisedIp", p2pAdvertisedIp)
+        .add("p2pAdvertisedPort", p2pAdvertisedPort)
+        .add("p2pAdvertisedUdpPort", p2pAdvertisedUdpPort)
+        .add("p2pPrivateKeyFile", p2pPrivateKeyFile)
+        .add("p2pLowerBound", p2pLowerBound)
+        .add("p2pUpperBound", p2pUpperBound)
+        .add("p2pTargetSubnetSubscriberCount", p2pTargetSubnetSubscriberCount)
+        .add("minimumRandomlySelectedPeerCount", minimumRandomlySelectedPeerCount)
+        .add("p2pStaticPeers", p2pStaticPeers)
+        .add("multiPeerSyncEnabled", multiPeerSyncEnabled)
+        .add("subscribeAllSubnetsEnabled", subscribeAllSubnetsEnabled)
+        .add("gossipScoringEnabled", gossipScoringEnabled)
+        .add("batchVerifyAttestationSignatures", batchVerifyAttestationSignatures)
+        .add("peerRateLimit", peerRateLimit)
+        .add("peerRequestLimit", peerRequestLimit)
+        .add("batchVerifyMaxThreads", batchVerifyMaxThreads)
+        .add("batchVerifyQueueCapacity", batchVerifyQueueCapacity)
+        .add("batchVerifyMaxBatchSize", batchVerifyMaxBatchSize)
+        .add("batchVerifyStrictThreadLimitEnabled", batchVerifyStrictThreadLimitEnabled)
+        .toString();
   }
 }

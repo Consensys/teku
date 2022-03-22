@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
+import com.google.common.base.MoreObjects;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -26,7 +27,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
-public class Eth2NetworkOptions {
+public class Eth2NetworkOptions implements LoggedOptions {
 
   @Option(
       names = {"-n", "--network"},
@@ -179,5 +180,23 @@ public class Eth2NetworkOptions {
 
   public String getNetwork() {
     return network;
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("network", network)
+        .add("initialState", initialState)
+        .add("eth1DepositContractAddress", eth1DepositContractAddress)
+        .add("altairForkEpoch", altairForkEpoch)
+        .add("bellatrixForkEpoch", bellatrixForkEpoch)
+        .add("totalTerminalDifficultyOverride", totalTerminalDifficultyOverride)
+        .add("terminalBlockHashOverride", terminalBlockHashOverride)
+        .add("terminalBlockHashEpochOverride", terminalBlockHashEpochOverride)
+        .add("safeSlotsToImportOptimistically", safeSlotsToImportOptimistically)
+        .add("startupTargetPeerCount", startupTargetPeerCount)
+        .add("startupTimeoutSeconds", startupTimeoutSeconds)
+        .add("proposerBoostEnabled", proposerBoostEnabled)
+        .toString();
   }
 }

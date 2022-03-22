@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public class StoreOptions {
+public class StoreOptions implements LoggedOptions {
   @Option(
       hidden = true,
       names = {"--Xhot-state-persistence-frequency"},
@@ -31,5 +32,12 @@ public class StoreOptions {
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
         b -> b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("hotStatePersistenceFrequencyInEpochs", hotStatePersistenceFrequencyInEpochs)
+        .toString();
   }
 }

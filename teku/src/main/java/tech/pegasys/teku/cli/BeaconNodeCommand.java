@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ExecutionEngineOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
+import tech.pegasys.teku.cli.options.LoggedOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NatOptions;
@@ -100,6 +102,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
 
+  private static final Logger LOG = LogManager.getLogger();
   public static final String LOG_FILE_PREFIX = "teku";
 
   public static final String CONFIG_FILE_OPTION_NAME = "--config-file";
@@ -348,6 +351,27 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   protected TekuConfiguration tekuConfiguration() {
     try {
+      if (loggingOptions.isLogConfigurationEnabled()) {
+        LOG.info(
+            "Building Teku configuration with following options: {}",
+            LoggedOptions.presentOptionsCollection(
+                Arrays.asList(
+                    eth2NetworkOptions,
+                    depositOptions,
+                    executionEngineOptions,
+                    weakSubjectivityOptions,
+                    validatorOptions,
+                    dataOptions,
+                    p2POptions,
+                    beaconRestApiOptions,
+                    validatorRestApiOptions,
+                    loggingOptions,
+                    interopOptions,
+                    dataStorageOptions,
+                    metricsOptions,
+                    natOptions,
+                    storeOptions)));
+      }
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
       // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);

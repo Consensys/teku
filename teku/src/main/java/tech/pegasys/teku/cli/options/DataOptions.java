@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.nio.file.Path;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 
-public abstract class DataOptions {
+public abstract class DataOptions implements LoggedOptions {
 
   @Option(
       names = {"--data-base-path", "--data-path"},
@@ -41,5 +42,10 @@ public abstract class DataOptions {
 
   protected DataConfig.Builder configure(final DataConfig.Builder config) {
     return config.dataBasePath(dataBasePath);
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper("DataOptions").add("dataBasePath", dataBasePath).toString();
   }
 }

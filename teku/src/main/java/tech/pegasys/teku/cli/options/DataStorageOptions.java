@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -21,7 +22,7 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
-public class DataStorageOptions {
+public class DataStorageOptions implements LoggedOptions {
 
   @CommandLine.Option(
       names = {"--data-storage-mode"},
@@ -95,5 +96,16 @@ public class DataStorageOptions {
 
   public boolean isStoreNonCanonicalBlocks() {
     return storeNonCanonicalBlocksEnabled;
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("dataStorageMode", dataStorageMode)
+        .add("dataStorageFrequency", dataStorageFrequency)
+        .add("createDbVersion", createDbVersion)
+        .add("storeNonCanonicalBlocksEnabled", storeNonCanonicalBlocksEnabled)
+        .add("maxKnownNodeCacheSize", maxKnownNodeCacheSize)
+        .toString();
   }
 }

@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.io.File;
 import picocli.CommandLine.Option;
 
-public class WithdrawalPublicKeyOptions {
+public class WithdrawalPublicKeyOptions implements LoggedOptions {
 
   @Option(
       names = {"--withdrawal-public-key"},
@@ -38,5 +39,13 @@ public class WithdrawalPublicKeyOptions {
 
   public File getWithdrawalKeystoreFile() {
     return withdrawalKeystoreFile;
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("withdrawalKey", withdrawalKey)
+        .add("withdrawalKeystoreFile", withdrawalKeystoreFile)
+        .toString();
   }
 }

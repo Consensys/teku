@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
-public class ValidatorRestApiOptions {
+public class ValidatorRestApiOptions implements LoggedOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
   @CommandLine.Option(
@@ -108,5 +109,20 @@ public class ValidatorRestApiOptions {
                 .validatorApiKeystoreFile(keystoreFile)
                 .validatorApiKeystorePasswordFile(keystorePasswordFile)
                 .restApiHostAllowlist(restApiHostAllowlist));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("restApiPort", restApiPort)
+        .add("restApiDocsEnabled", restApiDocsEnabled)
+        .add("restApiSslEnabled", restApiSslEnabled)
+        .add("restApiEnabled", restApiEnabled)
+        .add("restApiInterface", restApiInterface)
+        .add("restApiHostAllowlist", restApiHostAllowlist)
+        .add("restApiCorsAllowedOrigins", restApiCorsAllowedOrigins)
+        .add("keystoreFile", keystoreFile)
+        .add("keystorePasswordFile", keystorePasswordFile)
+        .toString();
   }
 }

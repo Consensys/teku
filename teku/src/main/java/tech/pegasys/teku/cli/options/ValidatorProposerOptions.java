@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
-public class ValidatorProposerOptions {
+public class ValidatorProposerOptions implements LoggedOptions {
   @Option(
       names = {"--validators-proposer-default-fee-recipient"},
       paramLabel = "<ADDRESS>",
@@ -52,5 +53,14 @@ public class ValidatorProposerOptions {
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("proposerDefaultFeeRecipient", proposerDefaultFeeRecipient)
+        .add("proposerConfig", proposerConfig)
+        .add("proposerConfigRefreshEnabled", proposerConfigRefreshEnabled)
+        .toString();
   }
 }

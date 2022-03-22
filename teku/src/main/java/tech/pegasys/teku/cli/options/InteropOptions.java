@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.InteropConfig;
 
-public class InteropOptions {
+public class InteropOptions implements LoggedOptions {
 
   @Option(
       hidden = true,
@@ -68,5 +69,16 @@ public class InteropOptions {
                 .interopOwnedValidatorCount(interopOwnerValidatorCount)
                 .interopNumberOfValidators(interopNumberOfValidators)
                 .interopEnabled(interopEnabled));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("interopGenesisTime", interopGenesisTime)
+        .add("interopOwnerValidatorStartIndex", interopOwnerValidatorStartIndex)
+        .add("interopOwnerValidatorCount", interopOwnerValidatorCount)
+        .add("interopNumberOfValidators", interopNumberOfValidators)
+        .add("interopEnabled", interopEnabled)
+        .toString();
   }
 }

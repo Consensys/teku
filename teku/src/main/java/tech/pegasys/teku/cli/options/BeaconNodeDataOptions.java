@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.nio.file.Path;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
@@ -29,5 +30,13 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   @Override
   protected DataConfig.Builder configure(final DataConfig.Builder config) {
     return super.configure(config).beaconDataPath(dataBeaconPath);
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("validatorClientDataOptions", super.presentOptions())
+        .add("dataBeaconPath", dataBeaconPath)
+        .toString();
   }
 }

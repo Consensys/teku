@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.nio.file.Path;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
@@ -31,5 +32,13 @@ public class ValidatorClientDataOptions extends DataOptions {
   @Override
   protected DataConfig.Builder configure(final DataConfig.Builder config) {
     return super.configure(config).validatorDataPath(dataValidatorPath);
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper("ValidatorClientDataOptions")
+        .add("dataOptions", super.presentOptions())
+        .add("dataValidatorPath", dataValidatorPath)
+        .toString();
   }
 }

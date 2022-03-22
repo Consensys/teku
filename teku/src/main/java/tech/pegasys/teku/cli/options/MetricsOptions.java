@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,7 +26,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
-public class MetricsOptions {
+public class MetricsOptions implements LoggedOptions {
 
   @Option(
       names = {"--metrics-enabled"},
@@ -123,5 +124,20 @@ public class MetricsOptions {
       throw new InvalidConfigurationException(
           "Invalid configuration. Metrics Endpoint has invalid syntax", e);
     }
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("metricsEnabled", metricsEnabled)
+        .add("metricsPort", metricsPort)
+        .add("metricsInterface", metricsInterface)
+        .add("metricsCategories", metricsCategories)
+        .add("metricsHostAllowlist", metricsHostAllowlist)
+        .add("idleTimeoutSeconds", idleTimeoutSeconds)
+        .add("metricsEndpoint", hideSensitiveOption(metricsEndpoint))
+        .add("metricsPublicationInterval", metricsPublicationInterval)
+        .add("blockPerformanceEnabled", blockPerformanceEnabled)
+        .toString();
   }
 }

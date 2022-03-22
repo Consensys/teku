@@ -16,9 +16,13 @@ package tech.pegasys.teku.cli.subcommand;
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry;
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import com.google.common.base.MoreObjects;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -26,6 +30,7 @@ import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
+import tech.pegasys.teku.cli.options.LoggedOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
@@ -54,7 +59,8 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
-public class ValidatorClientCommand implements Callable<Integer> {
+public class ValidatorClientCommand implements Callable<Integer>, LoggedOptions {
+  private static final Logger LOG = LogManager.getLogger();
   public static final String LOG_FILE_PREFIX = "teku-validator";
 
   @Mixin(name = "Validator")
@@ -162,6 +168,20 @@ public class ValidatorClientCommand implements Callable<Integer> {
   }
 
   private TekuConfiguration tekuConfiguration() {
+    if (loggingOptions.isLogConfigurationEnabled()) {
+      LOG.info(
+          "Building Teku configuration with following options: {}",
+          LoggedOptions.presentOptionsCollection(
+              Arrays.asList(
+                  validatorOptions,
+                  validatorClientOptions,
+                  dataOptions,
+                  validatorRestApiOptions,
+                  loggingOptions,
+                  interopOptions,
+                  metricsOptions,
+                  this)));
+    }
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
     configureEth2Network(builder);
     validatorOptions.configure(builder);
@@ -172,5 +192,10 @@ public class ValidatorClientCommand implements Callable<Integer> {
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
     return builder.build();
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this).add("networkOption", networkOption).toString();
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
-public class ValidatorKeysOptions {
+public class ValidatorKeysOptions implements LoggedOptions {
 
   @CommandLine.Option(
       names = {"--validator-keys"},
@@ -145,5 +146,26 @@ public class ValidatorKeysOptions {
       return null;
     }
     return Path.of(option);
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("validatorKeys", validatorKeys)
+        .add("validatorExternalSignerPublicKeys", validatorExternalSignerPublicKeys)
+        .add("validatorExternalSignerUrl", hideSensitiveOption(validatorExternalSignerUrl))
+        .add("validatorExternalSignerTimeout", validatorExternalSignerTimeout)
+        .add("validatorExternalSignerKeystore", validatorExternalSignerKeystore)
+        .add(
+            "validatorExternalSignerKeystorePasswordFile",
+            validatorExternalSignerKeystorePasswordFile)
+        .add("validatorExternalSignerTruststore", validatorExternalSignerTruststore)
+        .add(
+            "validatorExternalSignerTruststorePasswordFile",
+            validatorExternalSignerTruststorePasswordFile)
+        .add(
+            "validatorExternalSignerConcurrentRequestLimit",
+            validatorExternalSignerConcurrentRequestLimit)
+        .toString();
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.net.URI;
 import java.net.URISyntaxException;
 import picocli.CommandLine.Option;
@@ -20,7 +21,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
-public class ValidatorClientOptions {
+public class ValidatorClientOptions implements LoggedOptions {
 
   @Option(
       names = {"--beacon-node-api-endpoint"},
@@ -42,5 +43,12 @@ public class ValidatorClientOptions {
               + beaconNodeApiEndpoint,
           e);
     }
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("beaconNodeApiEndpoint", hideSensitiveOption(beaconNodeApiEndpoint))
+        .toString();
   }
 }

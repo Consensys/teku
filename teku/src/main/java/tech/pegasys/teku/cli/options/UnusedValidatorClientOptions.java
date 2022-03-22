@@ -16,13 +16,14 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_PEER_RATE_LIMIT;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_PEER_REQUEST_LIMIT;
 
+import com.google.common.base.MoreObjects;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
-public class UnusedValidatorClientOptions {
+public class UnusedValidatorClientOptions implements LoggedOptions {
   @Option(
       names = {"--initial-state"},
       paramLabel = "<STRING>",
@@ -123,5 +124,18 @@ public class UnusedValidatorClientOptions {
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);
     }
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("initialState", initialState)
+        .add("eth1DepositContractAddress", eth1DepositContractAddress)
+        .add("altairForkEpoch", altairForkEpoch)
+        .add("startupTargetPeerCount", startupTargetPeerCount)
+        .add("startupTimeoutSeconds", startupTimeoutSeconds)
+        .add("peerRateLimit", peerRateLimit)
+        .add("peerRequestLimit", peerRequestLimit)
+        .toString();
   }
 }

@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 
-public class MinimalEth2NetworkOptions {
+public class MinimalEth2NetworkOptions implements LoggedOptions {
 
   @Option(
       names = {"-n", "--network"},
@@ -37,5 +38,10 @@ public class MinimalEth2NetworkOptions {
 
   private Eth2NetworkConfiguration getConfig() {
     return Eth2NetworkConfiguration.builder(network).build();
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this).add("network", network).toString();
   }
 }

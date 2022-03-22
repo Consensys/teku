@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 
-public class DepositOptions {
+public class DepositOptions implements LoggedOptions {
 
   @Option(
       names = {"--eth1-endpoints", "--eth1-endpoint"},
@@ -53,5 +54,14 @@ public class DepositOptions {
             b.eth1Endpoints(eth1Endpoints)
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
                 .useTimeBasedHeadTracking(useTimeBasedHeadTracking));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("eth1Endpoints", hideSensitiveOption(eth1Endpoints))
+        .add("eth1LogsMaxBlockRange", eth1LogsMaxBlockRange)
+        .add("useTimeBasedHeadTracking", useTimeBasedHeadTracking)
+        .toString();
   }
 }

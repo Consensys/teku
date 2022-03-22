@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.MoreObjects;
 import java.io.InputStream;
 import java.util.Optional;
 import picocli.CommandLine;
@@ -24,7 +25,7 @@ import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
-public class WeakSubjectivityOptions {
+public class WeakSubjectivityOptions implements LoggedOptions {
   @CommandLine.Option(
       names = {"--ws-checkpoint"},
       paramLabel = "<STRING>",
@@ -85,5 +86,13 @@ public class WeakSubjectivityOptions {
       }
     }
     return Optional.empty();
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("weakSubjectivityCheckpoint", weakSubjectivityCheckpoint)
+        .add("suppressWSPeriodChecksUntilEpoch", suppressWSPeriodChecksUntilEpoch)
+        .toString();
   }
 }

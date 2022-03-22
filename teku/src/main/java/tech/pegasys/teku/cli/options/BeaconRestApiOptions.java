@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.MoreObjects;
 import java.util.List;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
@@ -20,7 +21,7 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 
-public class BeaconRestApiOptions {
+public class BeaconRestApiOptions implements LoggedOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
   private int maxUrlLength = BeaconRestApiConfig.DEFAULT_MAX_URL_LENGTH;
@@ -133,5 +134,21 @@ public class BeaconRestApiOptions {
                 .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
                 .maxPendingEvents(maxPendingEvents)
                 .validatorThreads(validatorThreads));
+  }
+
+  @Override
+  public String presentOptions() {
+    return MoreObjects.toStringHelper(this)
+        .add("maxUrlLength", maxUrlLength)
+        .add("restApiPort", restApiPort)
+        .add("restApiDocsEnabled", restApiDocsEnabled)
+        .add("restApiEnabled", restApiEnabled)
+        .add("restApiInterface", restApiInterface)
+        .add("restApiHostAllowlist", restApiHostAllowlist)
+        .add("restApiCorsAllowedOrigins", restApiCorsAllowedOrigins)
+        .add("maxPendingEvents", maxPendingEvents)
+        .add("beaconLivenessTrackingEnabled", beaconLivenessTrackingEnabled)
+        .add("validatorThreads", validatorThreads)
+        .toString();
   }
 }
