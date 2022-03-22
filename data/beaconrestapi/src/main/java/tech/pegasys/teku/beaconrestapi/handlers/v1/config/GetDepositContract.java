@@ -62,7 +62,7 @@ public class GetDepositContract extends MigratingEndpointAdapter {
             .operationId("getDepositContractAddress")
             .summary("Get deposit contract address")
             .description("Retrieve deposit contract address and genesis fork version.")
-            .tags(TAG_NODE)
+            .tags(TAG_CONFIG)
             .response(SC_OK, "Request successful", DEPOSIT_CONTRACT_RESPONSE_TYPE)
             .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error.")
             .build());
