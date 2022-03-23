@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class DepositContract {
   @Schema(type = "string", format = "uint64")
   public final UInt64 chain_id;
+
   public final String address;
 
   @JsonCreator

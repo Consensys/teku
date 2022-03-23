@@ -18,8 +18,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES20_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -47,7 +45,8 @@ public class GetDepositContract extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<DepositContractData> DEPOSIT_CONTRACT_TYPE =
       SerializableTypeDefinition.object(DepositContractData.class)
           .withField("chain_id", UINT64_TYPE, DepositContractData::getChainId)
-          .withField("address", BYTES20_TYPE, DepositContractData::getAddress)
+          .withField(
+              "address", Eth1Address.getJsonTypeDefinition(), DepositContractData::getAddress)
           .build();
 
   private static final SerializableTypeDefinition<DepositContractData>
