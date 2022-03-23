@@ -4,6 +4,14 @@
     "operationId" : "getNodePeers",
     "summary" : "Get node peers",
     "description" : "Retrieves data about the node's network peers.",
+    "parameters" : [ {
+      "name" : "syncing_status",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Customize syncing status instead of default status code (206)"
+      }
+    } ],
     "responses" : {
       "200" : {
         "description" : "Node is ready",

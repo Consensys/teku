@@ -7,6 +7,7 @@
     "parameters" : [ {
       "name" : "peer_id",
       "in" : "path",
+      "description" : "Cryptographic hash of a peer’s public key. [Read more](https://docs.libp2p.io/concepts/peer-id/)",
       "required" : true,
       "schema" : {
         "type" : "string"
