@@ -34,6 +34,7 @@ import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
@@ -52,14 +53,14 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 class FuzzUtilTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
-  private final SchemaDefinitionsBellatrix genesisSchemaDefinitions =
-      SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions());
-  private final BeaconBlockSchema beaconBlockSchema =
-      genesisSchemaDefinitions.getBeaconBlockSchema();
-  private final BeaconStateSchemaBellatrix genesisBeaconStateSchema =
-      (BeaconStateSchemaBellatrix) genesisSchemaDefinitions.getBeaconStateSchema();
+  private final SchemaDefinitionsBellatrix schemaDefinitions =
+      SchemaDefinitionsBellatrix.required(
+          spec.forMilestone(SpecMilestone.BELLATRIX).getSchemaDefinitions());
+  private final BeaconBlockSchema beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
+  private final BeaconStateSchemaBellatrix beaconStateSchema =
+      BeaconStateSchemaBellatrix.required(schemaDefinitions.getBeaconStateSchema());
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
-      genesisSchemaDefinitions.getSignedBeaconBlockSchema();
+      schemaDefinitions.getSignedBeaconBlockSchema();
 
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is
@@ -79,10 +80,11 @@ class FuzzUtilTest {
     final Attestation data =
         loadSsz(
             testCaseDir.resolve("attestation.ssz"),
-            spec.getGenesisSchemaDefinitions().getAttestationSchema());
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+            spec.forMilestone(SpecMilestone.BELLATRIX)
+                .getSchemaDefinitions()
+                .getAttestationSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -102,10 +104,11 @@ class FuzzUtilTest {
     final AttesterSlashing data =
         loadSsz(
             testCaseDir.resolve("attester_slashing.ssz"),
-            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema());
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+            spec.forMilestone(SpecMilestone.BELLATRIX)
+                .getSchemaDefinitions()
+                .getAttesterSlashingSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     AttesterSlashingFuzzInput input = new AttesterSlashingFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -126,9 +129,8 @@ class FuzzUtilTest {
     final SignedBeaconBlock block1 =
         loadSsz(testCaseDir.resolve("blocks_1.ssz"), signedBeaconBlockSchema);
     final List<SignedBeaconBlock> blocks = List.of(block0, block1);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     BeaconState currentState = preState;
     for (SignedBeaconBlock block : blocks) {
@@ -136,7 +138,7 @@ class FuzzUtilTest {
       byte[] rawInput = input.sszSerialize().toArrayUnsafe();
       Optional<Bytes> result = fuzzUtil.fuzzBlock(rawInput).map(Bytes::wrap);
       assertThat(result).isNotEmpty();
-      currentState = genesisBeaconStateSchema.sszDeserialize(result.get());
+      currentState = beaconStateSchema.sszDeserialize(result.get());
     }
 
     assertThat(currentState).isNotNull();
@@ -150,9 +152,8 @@ class FuzzUtilTest {
     final Path testCaseDir =
         Path.of("minimal/operations/block_header/pyspec_tests/success_block_header");
     final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz"), beaconBlockSchema);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     BlockHeaderFuzzInput input = new BlockHeaderFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -169,9 +170,8 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/operations/deposit/pyspec_tests/success_top_up");
     final Deposit data = loadSsz(testCaseDir.resolve("deposit.ssz"), Deposit.SSZ_SCHEMA);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     DepositFuzzInput input = new DepositFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -189,9 +189,8 @@ class FuzzUtilTest {
     final Path testCaseDir = Path.of("minimal/operations/proposer_slashing/pyspec_tests/success");
     final ProposerSlashing data =
         loadSsz(testCaseDir.resolve("proposer_slashing.ssz"), ProposerSlashing.SSZ_SCHEMA);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     ProposerSlashingFuzzInput input = new ProposerSlashingFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -209,9 +208,8 @@ class FuzzUtilTest {
     final Path testCaseDir = Path.of("minimal/operations/voluntary_exit/pyspec_tests/success");
     final SignedVoluntaryExit data =
         loadSsz(testCaseDir.resolve("voluntary_exit.ssz"), SignedVoluntaryExit.SSZ_SCHEMA);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
-    final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
 
     VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
