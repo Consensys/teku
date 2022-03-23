@@ -44,7 +44,10 @@ public class GetDepositContract extends MigratingEndpointAdapter {
 
   private static final SerializableTypeDefinition<DepositContractData> DEPOSIT_CONTRACT_TYPE =
       SerializableTypeDefinition.object(DepositContractData.class)
-          .withField("chain_id", UINT64_TYPE, DepositContractData::getChainId)
+          .withField(
+              "chain_id",
+              UINT64_TYPE.withDescription("Id of Eth1 chain on which contract is deployed."),
+              DepositContractData::getChainId)
           .withField(
               "address", Eth1Address.getJsonTypeDefinition(), DepositContractData::getAddress)
           .build();
