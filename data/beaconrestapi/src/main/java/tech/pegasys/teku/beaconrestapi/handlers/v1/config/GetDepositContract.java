@@ -18,7 +18,9 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES20_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -34,17 +36,18 @@ import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class GetDepositContract extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/config/deposit_contract";
-  private final String depositContractAddress;
+  private final Eth1Address depositContractAddress;
   private final ConfigProvider configProvider;
 
   private static final SerializableTypeDefinition<DepositContractData> DEPOSIT_CONTRACT_TYPE =
       SerializableTypeDefinition.object(DepositContractData.class)
-          .withField("chain_id", STRING_TYPE, DepositContractData::getChainId)
-          .withField("address", STRING_TYPE, DepositContractData::getAddress)
+          .withField("chain_id", UINT64_TYPE, DepositContractData::getChainId)
+          .withField("address", BYTES20_TYPE, DepositContractData::getAddress)
           .build();
 
   private static final SerializableTypeDefinition<DepositContractData>
@@ -66,7 +69,7 @@ public class GetDepositContract extends MigratingEndpointAdapter {
             .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error.")
             .build());
     this.configProvider = configProvider;
-    this.depositContractAddress = depositContractAddress.toHexString();
+    this.depositContractAddress = depositContractAddress;
   }
 
   @OpenApi(
@@ -94,19 +97,19 @@ public class GetDepositContract extends MigratingEndpointAdapter {
   }
 
   private static class DepositContractData {
-    final String chainId;
-    final String address;
+    final UInt64 chainId;
+    final Eth1Address address;
 
-    DepositContractData(int chainId, String address) {
-      this.chainId = String.valueOf(chainId);
+    DepositContractData(int chainId, Eth1Address address) {
+      this.chainId = UInt64.valueOf(chainId);
       this.address = address;
     }
 
-    String getChainId() {
+    UInt64 getChainId() {
       return chainId;
     }
 
-    String getAddress() {
+    Eth1Address getAddress() {
       return address;
     }
   }

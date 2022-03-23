@@ -8,10 +8,16 @@
       "required" : [ "chain_id", "address" ],
       "properties" : {
         "chain_id" : {
-          "type" : "string"
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
         },
         "address" : {
-          "type" : "string"
+          "type" : "string",
+          "description" : "Bytes20 hexadecimal",
+          "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943",
+          "format" : "byte"
         }
       }
     }
