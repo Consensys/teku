@@ -48,6 +48,7 @@ dependencies {
 
     testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
+    testImplementation testFixtures(project(':infrastructure:json'))
 
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
