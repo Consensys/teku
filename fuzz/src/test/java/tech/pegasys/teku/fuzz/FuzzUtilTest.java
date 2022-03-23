@@ -29,17 +29,25 @@ import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
+import tech.pegasys.teku.fuzz.input.ExecutionPayloadFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
+import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -53,9 +61,11 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 class FuzzUtilTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
+  private final SpecConfigBellatrix specConfig =
+      SpecConfigBellatrix.required(specVersion.getConfig());
   private final SchemaDefinitionsBellatrix schemaDefinitions =
-      SchemaDefinitionsBellatrix.required(
-          spec.forMilestone(SpecMilestone.BELLATRIX).getSchemaDefinitions());
+      SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions());
   private final BeaconBlockSchema beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
   private final BeaconStateSchemaBellatrix beaconStateSchema =
       BeaconStateSchemaBellatrix.required(schemaDefinitions.getBeaconStateSchema());
@@ -214,6 +224,59 @@ class FuzzUtilTest {
     VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzVoluntaryExit(rawInput).map(Bytes::wrap);
+
+    Bytes expected = postState.sszSerialize();
+    assertThat(result).isNotEmpty();
+    assertThat(result.get()).isEqualTo(expected);
+  }
+
+  @Test
+  public void fuzzSyncAggregate_minimal() {
+    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+
+    BeaconBlockBodySchemaAltair<?> beaconBlockBodySchema =
+        (BeaconBlockBodySchemaAltair<?>)
+            specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
+
+    final Path testCaseDir =
+        Path.of(
+            "minimal/operations/sync_aggregate/pyspec_tests/sync_committee_rewards_nonduplicate_committee");
+    final SyncAggregate data =
+        loadSsz(
+            testCaseDir.resolve("sync_aggregate.ssz"),
+            beaconBlockBodySchema.getSyncAggregateSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
+
+    SyncAggregateFuzzInput input = new SyncAggregateFuzzInput(spec, specConfig, preState, data);
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    Optional<Bytes> result = fuzzUtil.fuzzSyncAggregate(rawInput).map(Bytes::wrap);
+
+    Bytes expected = postState.sszSerialize();
+    assertThat(result).isNotEmpty();
+    assertThat(result.get()).isEqualTo(expected);
+  }
+
+  @Test
+  public void fuzzExecutionPayload_minimal() {
+    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+
+    BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema =
+        (BeaconBlockBodySchemaBellatrix<?>)
+            specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
+
+    final Path testCaseDir =
+        Path.of("minimal/operations/execution_payload/pyspec_tests/success_regular_payload");
+    final ExecutionPayload data =
+        loadSsz(
+            testCaseDir.resolve("execution_payload.ssz"),
+            beaconBlockBodySchema.getExecutionPayloadSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), beaconStateSchema);
+    final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), beaconStateSchema);
+
+    ExecutionPayloadFuzzInput input = new ExecutionPayloadFuzzInput(spec, preState, data);
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    Optional<Bytes> result = fuzzUtil.fuzzExecutionPayload(rawInput).map(Bytes::wrap);
 
     Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();

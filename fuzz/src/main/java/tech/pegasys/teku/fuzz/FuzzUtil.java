@@ -74,12 +74,10 @@ public class FuzzUtil {
             ? TestSpecFactory.createMainnetBellatrix()
             : TestSpecFactory.createMinimalBellatrix();
     specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
-    specConfig = SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
+    specConfig = SpecConfigBellatrix.required(specVersion.getConfig());
     beaconBlockBodySchema =
         (BeaconBlockBodySchemaBellatrix<?>)
-            spec.forMilestone(SpecMilestone.BELLATRIX)
-                .getSchemaDefinitions()
-                .getBeaconBlockBodySchema();
+            specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disable_bls);
     this.signatureVerifier = disable_bls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
   }
