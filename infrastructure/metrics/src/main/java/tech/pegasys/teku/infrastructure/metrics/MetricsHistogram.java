@@ -40,7 +40,7 @@ public class MetricsHistogram {
 
   private final Histogram histogram;
 
-  private MetricsHistogram(final Histogram histogram) {
+  protected MetricsHistogram(final Histogram histogram) {
     this.histogram = histogram;
   }
 
@@ -115,7 +115,7 @@ public class MetricsHistogram {
     }
   }
 
-  private Collector histogramToCollector(
+  protected Collector histogramToCollector(
       final MetricCategory metricCategory, final String name, final String help) {
     return new Collector() {
       final String metricName =

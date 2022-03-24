@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -51,6 +52,7 @@ public class BlockManager extends Service
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
   private final boolean blockImportPerformanceEnabled;
+  private final MetricsSystem metricsSystem;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
@@ -60,6 +62,8 @@ public class BlockManager extends Service
   private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
+  private BlockImportMetrics blockImportMetrics;
+
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
@@ -68,7 +72,8 @@ public class BlockManager extends Service
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final boolean blockImportPerformanceEnabled) {
+      final boolean blockImportPerformanceEnabled,
+      final MetricsSystem metricsSystem) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
@@ -77,6 +82,11 @@ public class BlockManager extends Service
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportPerformanceEnabled = blockImportPerformanceEnabled;
+    this.metricsSystem = metricsSystem;
+
+    if (blockImportPerformanceEnabled) {
+      blockImportMetrics = new BlockImportMetrics(metricsSystem);
+    }
   }
 
   @Override
@@ -102,7 +112,8 @@ public class BlockManager extends Service
     final Optional<BlockImportPerformance> blockImportPerformance;
 
     if (blockImportPerformanceEnabled) {
-      final BlockImportPerformance performance = new BlockImportPerformance(timeProvider);
+      final BlockImportPerformance performance =
+          new BlockImportPerformance(timeProvider, blockImportMetrics);
       performance.arrival(recentChainData, block.getSlot());
       blockImportPerformance = Optional.of(performance);
     } else {

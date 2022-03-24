@@ -25,14 +25,26 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
+  public static String RECEIVED_EVENT_LABEL = "Received";
+  public static String PRESTATE_RETRIEVED_EVENT_LABEL = "Pre-state retrieved";
+  public static String BLOCK_PROCESSED_EVENT_LABEL = "Block processed";
+  public static String TRANSACTION_PREPARED_EVENT_LABEL = "Transaction prepared";
+  public static String TRANSACTION_COMMITTED_EVENT_LABEL = "Transaction committed";
+  public static String IMPORT_COMPLETED_EVENT_LABEL = "Import complete";
+
+  public static String TOTAL_PROCESSING_TIME_LABEL = "Total Processing time";
+
   private final TimeProvider timeProvider;
+  private final BlockImportMetrics blockImportMetrics;
 
   private final List<Pair<String, UInt64>> events = new ArrayList<>();
   private UInt64 timeWarningLimitTimeStamp;
   private UInt64 timeAtSlotStartTimeStamp;
 
-  public BlockImportPerformance(final TimeProvider timeProvider) {
+  public BlockImportPerformance(
+      final TimeProvider timeProvider, final BlockImportMetrics blockImportMetrics) {
     this.timeProvider = timeProvider;
+    this.blockImportMetrics = blockImportMetrics;
   }
 
   public void arrival(final RecentChainData recentChainData, final UInt64 slot) {
@@ -40,39 +52,57 @@ public class BlockImportPerformance {
     timeWarningLimitTimeStamp =
         timeAtSlotStartTimeStamp.plus(
             secondsToMillis(recentChainData.getSpec().getSecondsPerSlot(slot)).dividedBy(3));
-    addEvent("Received");
+    addEvent(RECEIVED_EVENT_LABEL);
   }
 
   public void preStateRetrieved() {
-    addEvent("Pre-state retrieved");
+    addEvent(PRESTATE_RETRIEVED_EVENT_LABEL);
   }
 
   public void postStateCreated() {
-    addEvent("Block processed");
+    addEvent(BLOCK_PROCESSED_EVENT_LABEL);
   }
 
   public void transactionReady() {
-    addEvent("Transaction prepared");
+    addEvent(TRANSACTION_PREPARED_EVENT_LABEL);
   }
 
   public void transactionCommitted() {
-    addEvent("Transaction committed");
+    addEvent(TRANSACTION_COMMITTED_EVENT_LABEL);
   }
 
   public void processingComplete(final EventLogger eventLogger, final SignedBeaconBlock block) {
-    final UInt64 importCompletedTimestamp = addEvent("Import complete");
+    final UInt64 importCompletedTimestamp = addEvent(IMPORT_COMPLETED_EVENT_LABEL);
 
-    if (importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp)) {
-      UInt64 previousEventTimestamp = timeAtSlotStartTimeStamp;
-      final List<String> eventTimings = new ArrayList<>();
-      for (Pair<String, UInt64> event : events) {
-        // minusMinZero because sometimes time does actually go backwards so be safe.
-        final UInt64 stepDuration = event.right().minusMinZero(previousEventTimestamp);
-        eventTimings.add(
-            event.left() + (eventTimings.isEmpty() ? " " : " +") + stepDuration + "ms");
-        previousEventTimestamp = event.right();
+    final List<String> lateBlockEventTimings =
+        importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp)
+            ? new ArrayList<>()
+            : null;
+
+    UInt64 previousEventTimestamp = timeAtSlotStartTimeStamp;
+    Pair<String, UInt64> lastEvent;
+    for (Pair<String, UInt64> event : events) {
+
+      // minusMinZero because sometimes time does actually go backwards so be safe.
+      final UInt64 stepDuration = event.right().minusMinZero(previousEventTimestamp);
+      previousEventTimestamp = event.right();
+
+      blockImportMetrics.recordEvent(event.left(), stepDuration);
+
+      if (lateBlockEventTimings != null) {
+        lateBlockEventTimings.add(
+            event.left() + (lateBlockEventTimings.isEmpty() ? " " : " +") + stepDuration + "ms");
       }
-      final String combinedTimings = String.join(", ", eventTimings);
+
+      lastEvent = event;
+    }
+
+    // if(lastEvent.left().equals(IMPORT_COMPLETED_EVENT_LABEL)) {
+    //   events.get(0).right()
+    // }
+
+    if (lateBlockEventTimings != null) {
+      final String combinedTimings = String.join(", ", lateBlockEventTimings);
       eventLogger.lateBlockImport(block.getRoot(), block.getSlot(), combinedTimings);
     }
   }
