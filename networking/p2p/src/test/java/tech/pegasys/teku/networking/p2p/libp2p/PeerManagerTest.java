@@ -35,7 +35,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -55,11 +54,6 @@ public class PeerManagerTest {
           Collections.emptyList(),
           Collections.emptyList(),
           peerId -> 0.0);
-
-  @BeforeEach
-  public void setup() {
-    when(reputationManager.isConnectionAllowed(any())).thenReturn(true);
-  }
 
   @Test
   public void subscribeConnect_singleListener() {

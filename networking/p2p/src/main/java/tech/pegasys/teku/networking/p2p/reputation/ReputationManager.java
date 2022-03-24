@@ -59,10 +59,10 @@ public class ReputationManager {
         .reportInitiatedConnectionFailed(timeProvider.getTimeInSeconds());
   }
 
-  public boolean isConnectionAllowed(final PeerAddress peerAddress) {
+  public boolean isConnectionInitiationAllowed(final PeerAddress peerAddress) {
     return peerReputations
         .getCached(peerAddress.getId())
-        .map(reputation -> reputation.shouldAllowConnection(timeProvider.getTimeInSeconds()))
+        .map(reputation -> reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds()))
         .orElse(true);
   }
 
@@ -110,7 +110,7 @@ public class ReputationManager {
       suitableAfter = Optional.of(failureTime.plus(COOLDOWN_PERIOD));
     }
 
-    public boolean shouldAllowConnection(final UInt64 currentTime) {
+    public boolean shouldInitiateConnection(final UInt64 currentTime) {
       return isSuitableAt(currentTime);
     }
 

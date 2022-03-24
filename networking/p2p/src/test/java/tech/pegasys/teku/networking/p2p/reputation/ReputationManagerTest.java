@@ -42,12 +42,12 @@ class ReputationManagerTest {
   @Test
   public void shouldDisallowConnectionInitiationWhenConnectionHasFailedRecently() {
     reputationManager.reportInitiatedConnectionFailed(peerAddress);
-    assertThat(reputationManager.isConnectionAllowed(peerAddress)).isFalse();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
   }
 
   @Test
   public void shouldAllowConnectionInitiationToUnknownPeers() {
-    assertThat(reputationManager.isConnectionAllowed(peerAddress)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
   }
 
   @Test
@@ -55,7 +55,7 @@ class ReputationManagerTest {
     reputationManager.reportInitiatedConnectionFailed(peerAddress);
     reputationManager.reportInitiatedConnectionSuccessful(peerAddress);
 
-    assertThat(reputationManager.isConnectionAllowed(peerAddress)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
   }
 
   @Test
@@ -64,7 +64,7 @@ class ReputationManagerTest {
 
     timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
 
-    assertThat(reputationManager.isConnectionAllowed(peerAddress)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
   }
 
   @Test
@@ -86,7 +86,8 @@ class ReputationManagerTest {
   void shouldNotAllowConnectionAfterDisconnect() {
     reputationManager.reportDisconnection(peerAddress, Optional.empty(), true);
 
-    assertThat(reputationManager.isConnectionAllowed(new PeerAddress(new MockNodeId(1)))).isFalse();
+    assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
+        .isFalse();
   }
 
   @Test
@@ -95,7 +96,8 @@ class ReputationManagerTest {
 
     timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
 
-    assertThat(reputationManager.isConnectionAllowed(new PeerAddress(new MockNodeId(1)))).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
+        .isTrue();
   }
 
   @Test
@@ -105,7 +107,8 @@ class ReputationManagerTest {
 
     timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
 
-    assertThat(reputationManager.isConnectionAllowed(new PeerAddress(new MockNodeId(1)))).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
+        .isTrue();
   }
 
   @Test
@@ -115,7 +118,8 @@ class ReputationManagerTest {
 
     timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
 
-    assertThat(reputationManager.isConnectionAllowed(new PeerAddress(new MockNodeId(1)))).isFalse();
+    assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
+        .isFalse();
   }
 
   @Test
@@ -149,6 +153,6 @@ class ReputationManagerTest {
   @Test
   void shouldBeUnsuitableToConnectToAfterBeingDisconnected() {
     assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
-    assertThat(reputationManager.isConnectionAllowed(peerAddress)).isFalse();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
   }
 }

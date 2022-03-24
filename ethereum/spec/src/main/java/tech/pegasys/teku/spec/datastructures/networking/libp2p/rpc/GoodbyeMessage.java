@@ -48,7 +48,6 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
   public static final UInt64 REASON_UNABLE_TO_VERIFY_NETWORK = UInt64.valueOf(128);
   public static final UInt64 REASON_TOO_MANY_PEERS = UInt64.valueOf(129);
   public static final UInt64 REASON_RATE_LIMITING = UInt64.valueOf(130);
-  public static final UInt64 REASON_BANNED = UInt64.valueOf(251);
 
   private GoodbyeMessage(GoodbyeMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
