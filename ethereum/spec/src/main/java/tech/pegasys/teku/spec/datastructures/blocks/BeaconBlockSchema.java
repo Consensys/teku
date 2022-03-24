@@ -28,9 +28,10 @@ public class BeaconBlockSchema
     extends ContainerSchema5<
         BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody> {
 
-  public BeaconBlockSchema(final BeaconBlockBodySchema<?> blockBodySchema) {
+  public BeaconBlockSchema(
+      final BeaconBlockBodySchema<?> blockBodySchema, final String containerName) {
     super(
-        "BeaconBlock",
+        containerName,
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),

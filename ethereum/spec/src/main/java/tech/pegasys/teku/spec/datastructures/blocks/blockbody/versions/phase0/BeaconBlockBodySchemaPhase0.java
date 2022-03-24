@@ -50,6 +50,7 @@ public class BeaconBlockBodySchemaPhase0
     implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
 
   private BeaconBlockBodySchemaPhase0(
+      final String containerName,
       NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
@@ -59,7 +60,7 @@ public class BeaconBlockBodySchemaPhase0
       NamedSchema<SszList<Deposit>> depositsSchema,
       NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
     super(
-        "BeaconBlockBody",
+        containerName,
         randaoRevealSchema,
         eth1DataSchema,
         graffitiSchema,
@@ -71,8 +72,11 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   public static BeaconBlockBodySchemaPhase0 create(
-      final SpecConfig specConfig, final AttesterSlashingSchema attesterSlashingSchema) {
+      final SpecConfig specConfig,
+      final AttesterSlashingSchema attesterSlashingSchema,
+      final String containerName) {
     return new BeaconBlockBodySchemaPhase0(
+        containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI, SszPrimitiveSchemas.BYTES32_SCHEMA),
