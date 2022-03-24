@@ -41,6 +41,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
@@ -60,6 +61,7 @@ public class GetHealth extends MigratingEndpointAdapter {
             .operationId("getNodePeers")
             .summary("Get node peers")
             .description("Retrieves data about the node's network peers.")
+            .queryParam(SYNCING_STATUS, CoreTypes.string(SYNCING_STATUS_DESCRIPTION))
             .tags(TAG_NODE)
             .response(SC_OK, "Node is ready")
             .response(SC_PARTIAL_CONTENT, "Node is syncing but can serve incomplete data")
