@@ -53,6 +53,8 @@ public class EndpointMetadata {
   private final Map<String, OpenApiResponse> responses;
   private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
   private final List<String> tags;
+  private final Map<String, DeserializableTypeDefinition<?>> pathParams;
+  private final Map<String, DeserializableTypeDefinition<?>> queryParams;
 
   private EndpointMetadata(
       final HandlerType method,
@@ -64,7 +66,9 @@ public class EndpointMetadata {
       final boolean deprecated,
       final Map<String, OpenApiResponse> responses,
       final Optional<DeserializableTypeDefinition<?>> requestBodyType,
-      final List<String> tags) {
+      final List<String> tags,
+      final Map<String, DeserializableTypeDefinition<?>> pathParams,
+      final Map<String, DeserializableTypeDefinition<?>> queryParams) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
@@ -75,6 +79,8 @@ public class EndpointMetadata {
     this.responses = responses;
     this.requestBodyType = requestBodyType;
     this.tags = tags;
+    this.pathParams = pathParams;
+    this.queryParams = queryParams;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
@@ -128,6 +134,12 @@ public class EndpointMetadata {
     if (deprecated) {
       gen.writeBooleanField("deprecated", true);
     }
+    if (pathParams.size() > 0 || queryParams.size() > 0) {
+      gen.writeArrayFieldStart("parameters");
+      writeParameters(gen, pathParams, "path", true);
+      writeParameters(gen, queryParams, "query", false);
+      gen.writeEndArray();
+    }
 
     if (requestBodyType.isPresent()) {
       final DeserializableTypeDefinition<?> content = requestBodyType.get();
@@ -158,6 +170,25 @@ public class EndpointMetadata {
     }
     gen.writeEndObject();
     gen.writeEndObject();
+  }
+
+  private void writeParameters(
+      final JsonGenerator gen,
+      final Map<String, DeserializableTypeDefinition<?>> fields,
+      final String parameterUsedIn,
+      final boolean isMandatoryField)
+      throws IOException {
+    for (Map.Entry<String, DeserializableTypeDefinition<?>> entry : fields.entrySet()) {
+      gen.writeStartObject();
+      gen.writeObjectField("name", entry.getKey());
+      if (isMandatoryField) {
+        gen.writeObjectField("required", true);
+      }
+      gen.writeObjectField("in", parameterUsedIn);
+      gen.writeFieldName("schema");
+      entry.getValue().serializeOpenApiTypeOrReference(gen);
+      gen.writeEndObject();
+    }
   }
 
   private void writeTags(final JsonGenerator gen) throws IOException {
@@ -192,6 +223,8 @@ public class EndpointMetadata {
     private String summary;
     private String description;
     private boolean deprecated = false;
+    private final Map<String, DeserializableTypeDefinition<?>> pathParams = new LinkedHashMap<>();
+    private final Map<String, DeserializableTypeDefinition<?>> queryParams = new LinkedHashMap<>();
     private Optional<String> security = Optional.empty();
     private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
@@ -204,6 +237,18 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder path(final String path) {
       this.path = path;
+      return this;
+    }
+
+    public EndpointMetaDataBuilder pathParam(
+        final String param, final DeserializableTypeDefinition<?> pathParameterDefinition) {
+      pathParams.put(param, pathParameterDefinition);
+      return this;
+    }
+
+    public EndpointMetaDataBuilder queryParam(
+        final String param, final DeserializableTypeDefinition<?> queryParameterDefinition) {
+      queryParams.put(param, queryParameterDefinition);
       return this;
     }
 
@@ -316,7 +361,9 @@ public class EndpointMetadata {
           deprecated,
           responses,
           requestBodyType,
-          tags);
+          tags,
+          pathParams,
+          queryParams);
     }
 
     public EndpointMetaDataBuilder tags(final String... tags) {

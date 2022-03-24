@@ -18,6 +18,8 @@ import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWith
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PEER_DATA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -29,6 +31,7 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
@@ -37,6 +40,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.PeerResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -64,6 +68,10 @@ public class GetPeerById extends MigratingEndpointAdapter {
             .operationId("getNodePeer")
             .summary("Get node peer")
             .description("Retrieves data about the given peer.")
+            .pathParam(
+                PARAM_PEER_ID,
+                CoreTypes.string(
+                    PARAM_PEER_ID_DESCRIPTION, "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"))
             .tags(TAG_NODE)
             .response(SC_OK, "Request successful", PEERS_BY_ID_RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Peer not found")
@@ -77,6 +85,7 @@ public class GetPeerById extends MigratingEndpointAdapter {
       summary = "Get node peer",
       tags = {TAG_NODE},
       description = "Retrieves data about the given peer.",
+      pathParams = {@OpenApiParam(name = PARAM_PEER_ID, description = PARAM_PEER_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = PeerResponse.class)),
         @OpenApiResponse(status = RES_NOT_FOUND, description = "Peer not found"),

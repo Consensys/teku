@@ -71,6 +71,10 @@ public class RestApiConstants {
   public static final String COMMITTEE_INDEX_QUERY_DESCRIPTION =
       "`uint64` Committee index to query.";
 
+  public static final String PARAM_PEER_ID = "peer_id";
+  public static final String PARAM_PEER_ID_DESCRIPTION =
+      "Cryptographic hash of a peer’s public key. [Read more](https://docs.libp2p.io/concepts/peer-id/)";
+
   public static final String PARAM_BLOCK_ID = "block_id";
   public static final String PARAM_BLOCK_ID_DESCRIPTION =
       "Block identifier. Can be one of: "
