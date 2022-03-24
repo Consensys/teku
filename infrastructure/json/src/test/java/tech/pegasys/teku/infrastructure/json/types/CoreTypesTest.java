@@ -15,10 +15,9 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static tech.pegasys.teku.infrastructure.json.JsonUtil.parse;
+import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
@@ -48,11 +47,5 @@ class CoreTypesTest {
         JsonTestUtil.parse(serialize(value, CoreTypes.HTTP_ERROR_RESPONSE_TYPE));
 
     assertThat(result).containsOnly(entry("status", 442), entry("message", "No good"));
-  }
-
-  private <T> void assertRoundTrip(final T value, final DeserializableTypeDefinition<T> type)
-      throws JsonProcessingException {
-    final T result = parse(serialize(value, type), type);
-    assertThat(result).isEqualTo(value);
   }
 }

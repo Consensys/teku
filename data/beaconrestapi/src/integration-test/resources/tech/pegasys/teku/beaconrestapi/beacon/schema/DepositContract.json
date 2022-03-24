@@ -2,7 +2,8 @@
   "type" : "object",
   "properties" : {
     "chain_id" : {
-      "$ref" : "#/components/schemas/UInt64"
+      "type" : "string",
+      "format" : "uint64"
     },
     "address" : {
       "type" : "string"

@@ -4,6 +4,16 @@
     "operationId" : "getNodePeer",
     "summary" : "Get node peer",
     "description" : "Retrieves data about the given peer.",
+    "parameters" : [ {
+      "name" : "peer_id",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "Cryptographic hash of a peer’s public key. [Read more](https://docs.libp2p.io/concepts/peer-id/)",
+        "example" : "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"
+      }
+    } ],
     "responses" : {
       "200" : {
         "description" : "Request successful",
