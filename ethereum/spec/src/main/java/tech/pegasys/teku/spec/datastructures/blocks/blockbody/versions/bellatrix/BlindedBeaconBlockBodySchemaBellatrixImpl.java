@@ -56,6 +56,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
     implements BlindedBeaconBlockBodySchemaBellatrix<BlindedBeaconBlockBodyBellatrixImpl> {
 
   private BlindedBeaconBlockBodySchemaBellatrixImpl(
+      final String containerName,
       NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
@@ -67,7 +68,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
       NamedSchema<SyncAggregate> syncAggregateSchema,
       NamedSchema<ExecutionPayloadHeader> executionPayloadHeaderSchema) {
     super(
-        "BlindedBeaconBlockBody",
+        containerName,
         randaoRevealSchema,
         eth1DataSchema,
         graffitiSchema,
@@ -81,8 +82,11 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   }
 
   public static BlindedBeaconBlockBodySchemaBellatrixImpl create(
-      final SpecConfigBellatrix specConfig, final AttesterSlashingSchema attesterSlashingSchema) {
+      final SpecConfigBellatrix specConfig,
+      final AttesterSlashingSchema attesterSlashingSchema,
+      final String containerName) {
     return new BlindedBeaconBlockBodySchemaBellatrixImpl(
+        containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI, SszPrimitiveSchemas.BYTES32_SCHEMA),
