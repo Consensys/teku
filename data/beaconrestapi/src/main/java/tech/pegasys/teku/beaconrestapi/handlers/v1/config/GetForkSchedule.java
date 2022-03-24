@@ -61,7 +61,6 @@ public class GetForkSchedule extends MigratingEndpointAdapter {
             .description("Retrieve all scheduled upcoming forks this node is aware of.")
             .tags(TAG_CONFIG)
             .response(SC_OK, "Success", FORK_SCHEDULE_RESPONSE_TYPE)
-            .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error.")
             .build());
     this.configProvider = configProvider;
   }

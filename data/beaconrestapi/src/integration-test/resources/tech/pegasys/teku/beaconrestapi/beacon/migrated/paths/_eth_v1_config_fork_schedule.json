@@ -15,12 +15,18 @@
           }
         }
       },
-      "500" : {
-        "description" : "Beacon node internal error.",
-        "content" : { }
-      },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
         "content" : {
           "application/json" : {
             "schema" : {
