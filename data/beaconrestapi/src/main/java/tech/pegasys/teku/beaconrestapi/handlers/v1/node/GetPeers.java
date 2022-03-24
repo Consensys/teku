@@ -67,14 +67,15 @@ public class GetPeers extends MigratingEndpointAdapter {
               string(
                   "Ethereum node record. Not currently populated. "
                       + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
-                  "example: enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
+                  "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
                       + "Tfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYp"
                       + "Ma2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
               eth2Peer -> Optional.empty())
           .withField(
-              "address",
+              "last_seen_p2p_address",
               string(
-                  "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
+                  "Multiaddr used in last peer connection. "
+                      + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
                   "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
               eth2Peer -> eth2Peer.getAddress().toExternalForm())
           .withField(
