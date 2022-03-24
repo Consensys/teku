@@ -18,16 +18,28 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.infrastructure.ssz.SimpleOffsetSerializable;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SSZBenchmark {
-
-  private static SimpleOffsetSerializable state = new DataStructureUtil().randomBeaconState();
+  private static DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
+  private static SimpleOffsetSerializable state = dataStructureUtil.randomBeaconState();
 
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void BeaconStateSerialization() {
     state.sszSerialize();
+  }
+
+  private static ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+
+  @Benchmark
+  @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  public void ExecutionPayloadIsDefault() {
+    executionPayload.isDefault();
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.base.Throwables;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -62,7 +64,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.timer.TimeTickChannel;
+import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -100,6 +102,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValid
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
@@ -146,10 +149,10 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends Service
-    implements TimeTickChannel, BeaconChainControllerFacade {
+public class BeaconChainController extends Service implements BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SettableLabelledGauge futureItemsMetric;
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
   protected volatile BeaconChainConfiguration beaconConfig;
@@ -198,8 +201,8 @@ public class BeaconChainController extends Service
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
-
-  protected BeaconChainController() {}
+  private TimerService timerService;
+  private PendingPoolFactory pendingPoolFactory;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -215,8 +218,16 @@ public class BeaconChainController extends Service
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
+    this.pendingPoolFactory = new PendingPoolFactory(this.metricsSystem);
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
+    this.futureItemsMetric =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            BEACON,
+            "future_items_size",
+            "Current number of items held for future slots, labelled by type",
+            "type");
   }
 
   @Override
@@ -271,6 +282,7 @@ public class BeaconChainController extends Service
             blockManager.stop(),
             attestationManager.stop(),
             p2pNetwork.stop(),
+            timerService.stop(),
             SafeFuture.fromRunnable(
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
@@ -281,12 +293,14 @@ public class BeaconChainController extends Service
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
+    timerService = new TimerService(this::onTick);
 
     StorageQueryChannel storageQueryChannel =
         eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
     StorageUpdateChannel storageUpdateChannel =
         eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
+    // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
@@ -311,15 +325,14 @@ public class BeaconChainController extends Service
               }
               return SafeFuture.completedFuture(client);
             })
-        .thenAccept(
-            client -> {
-              // Init other services
-              this.initAll();
-              eventChannels.subscribe(TimeTickChannel.class, this);
-
+        // Init other services
+        .thenRun(this::initAll)
+        .thenRun(
+            () -> {
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
-            });
+            })
+        .thenCompose(__ -> timerService.start());
   }
 
   public void initAll() {
@@ -373,7 +386,7 @@ public class BeaconChainController extends Service
 
   protected void initPendingBlocks() {
     LOG.debug("BeaconChainController.initPendingBlocks()");
-    pendingBlocks = PendingPool.createForBlocks(spec);
+    pendingBlocks = pendingPoolFactory.createForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 
@@ -605,10 +618,13 @@ public class BeaconChainController extends Service
 
   protected void initAttestationManager() {
     final PendingPool<ValidateableAttestation> pendingAttestations =
-        PendingPool.createForAttestations(spec);
+        pendingPoolFactory.createForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
-            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
+            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+            UInt64.valueOf(3),
+            futureItemsMetric,
+            "attestations");
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
@@ -807,7 +823,7 @@ public class BeaconChainController extends Service
   public void initBlockManager() {
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        FutureItems.create(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =
@@ -817,11 +833,21 @@ public class BeaconChainController extends Service
               pendingBlocks,
               futureBlocks,
               blockValidator,
-              beaconAsyncRunner);
+              timeProvider,
+              EVENT_LOG,
+              beaconAsyncRunner,
+              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
     } else {
       blockManager =
           new BlockManager(
-              recentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
+              recentChainData,
+              blockImporter,
+              pendingBlocks,
+              futureBlocks,
+              blockValidator,
+              timeProvider,
+              EVENT_LOG,
+              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
@@ -997,8 +1023,7 @@ public class BeaconChainController extends Service
             });
   }
 
-  @Override
-  public void onTick() {
+  private void onTick() {
     if (recentChainData.isPreGenesis()) {
       return;
     }

@@ -23,6 +23,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -43,13 +45,24 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private Optional<Cancellable> cancellable = Optional.empty();
 
   public ReexecutingExecutionPayloadBlockManager(
-      RecentChainData recentChainData,
-      BlockImporter blockImporter,
-      PendingPool<SignedBeaconBlock> pendingBlocks,
-      FutureItems<SignedBeaconBlock> futureBlocks,
-      BlockValidator validator,
-      final AsyncRunner asyncRunner) {
-    super(recentChainData, blockImporter, pendingBlocks, futureBlocks, validator);
+      final RecentChainData recentChainData,
+      final BlockImporter blockImporter,
+      final PendingPool<SignedBeaconBlock> pendingBlocks,
+      final FutureItems<SignedBeaconBlock> futureBlocks,
+      final BlockValidator validator,
+      final TimeProvider timeProvider,
+      final EventLogger eventLogger,
+      final AsyncRunner asyncRunner,
+      final boolean blockImportPerformanceEnabled) {
+    super(
+        recentChainData,
+        blockImporter,
+        pendingBlocks,
+        futureBlocks,
+        validator,
+        timeProvider,
+        eventLogger,
+        blockImportPerformanceEnabled);
     this.asyncRunner = asyncRunner;
   }
 

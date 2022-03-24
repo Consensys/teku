@@ -31,15 +31,15 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
 
-  private static final Spec spec = TestSpecFactory.createMainnetPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private static final Spec SPEC = TestSpecFactory.createMainnetPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   private final HistoricalBatchSchema schema =
-      spec.getGenesisSchemaDefinitions().getHistoricalBatchSchema();
+      SPEC.getGenesisSchemaDefinitions().getHistoricalBatchSchema();
 
   @Test
   void vectorLengthsTest() {
-    final int slotsPerHistoricalRoot = spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
+    final int slotsPerHistoricalRoot = SPEC.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
     IntList vectorLengths = IntList.of(slotsPerHistoricalRoot, slotsPerHistoricalRoot);
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(schema));
   }
@@ -50,7 +50,7 @@ public class HistoricalBatchTest {
         schema.getBlockRootsSchema().getDefault().createWritableCopy();
     SszMutableBytes32Vector state_roots =
         schema.getStateRootsSchema().getDefault().createWritableCopy();
-    IntStream.range(0, spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot())
+    IntStream.range(0, SPEC.getGenesisSpecConfig().getSlotsPerHistoricalRoot())
         .forEach(
             i -> {
               block_roots.setElement(i, dataStructureUtil.randomBytes32());

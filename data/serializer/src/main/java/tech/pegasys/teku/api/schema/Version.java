@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.schema;
 
 import tech.pegasys.teku.spec.SpecMilestone;
 
+@SuppressWarnings("JavaCase")
 public enum Version {
   phase0,
   altair,

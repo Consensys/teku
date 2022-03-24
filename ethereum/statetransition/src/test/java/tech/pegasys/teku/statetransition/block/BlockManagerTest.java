@@ -29,6 +29,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +39,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -56,6 +61,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -65,6 +71,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final EventLogger eventLogger = mock(EventLogger.class);
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
@@ -72,11 +80,12 @@ public class BlockManagerTest {
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      PendingPool.createForBlocks(
-          spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+      new PendingPoolFactory(metricsSystem)
+          .createForBlocks(spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
-      FutureItems.create(SignedBeaconBlock::getSlot);
+      FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
 
   private final StorageSystem localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final RecentChainData localRecentChainData = localChain.recentChainData();
@@ -105,7 +114,14 @@ public class BlockManagerTest {
           executionEngine);
   private final BlockManager blockManager =
       new BlockManager(
-          localRecentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
+          localRecentChainData,
+          blockImporter,
+          pendingBlocks,
+          futureBlocks,
+          blockValidator,
+          timeProvider,
+          eventLogger,
+          true);
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
@@ -243,7 +259,10 @@ public class BlockManagerTest {
             blockImporter,
             pendingBlocks,
             futureBlocks,
-            mock(BlockValidator.class));
+            mock(BlockValidator.class),
+            timeProvider,
+            eventLogger,
+            false);
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -255,21 +274,21 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlock(nextNextBlock))
+    when(blockImporter.importBlock(nextNextBlock, Optional.empty()))
         .thenReturn(blockImportResult)
         .thenReturn(new SafeFuture<>());
 
     incrementSlot();
     incrementSlot();
     blockManager.importBlock(nextNextBlock);
-    ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
+    ignoreFuture(verify(blockImporter).importBlock(nextNextBlock, Optional.empty()));
 
     // Before nextNextBlock imports, it's parent becomes available
     when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
 
     // So when the block import completes, it should be retried
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
-    ignoreFuture(verify(blockImporter, times(2)).importBlock(nextNextBlock));
+    ignoreFuture(verify(blockImporter, times(2)).importBlock(nextNextBlock, Optional.empty()));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
   }
@@ -528,6 +547,56 @@ public class BlockManagerTest {
                     invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
 
     assertThat(pendingBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
+  void onValidateAndImportBlock_shouldLogSlowImport() {
+    final SignedBeaconBlock block =
+        localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
+    // slot 1 - secondPerSlot 6
+
+    // arrival time
+    timeProvider.advanceTimeByMillis(7_000); // 1 second late
+
+    when(blockValidator.validate(any()))
+        .thenAnswer(
+            invocation -> {
+              // advance to simulate processing time of 3000ms
+              // we are now 4s into the slot (threshold for warning is 2)
+              timeProvider.advanceTimeByMillis(3_000);
+              return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+            });
+
+    assertThat(blockManager.validateAndImportBlock(block))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(eventLogger)
+        .lateBlockImport(
+            block.getRoot(),
+            block.getSlot(),
+            "Received 1000ms, Pre-state retrieved +3000ms, Block processed +0ms, Transaction prepared +0ms, Transaction committed +0ms, Import complete +0ms");
+  }
+
+  @Test
+  void onValidateAndImportBlock_shouldNotLogSlowImport() {
+    final SignedBeaconBlock block =
+        localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
+    // slot 1 - secondPerSlot 6
+
+    // arrival time
+    timeProvider.advanceTimeByMillis(7_000); // 1 second late
+
+    when(blockValidator.validate(any()))
+        .thenAnswer(
+            invocation -> {
+              // advance to simulate processing time of 500ms
+              // we are now 1.5s into the slot (threshold for warning is 2)
+              timeProvider.advanceTimeByMillis(500);
+              return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+            });
+
+    assertThat(blockManager.validateAndImportBlock(block))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verifyNoInteractions(eventLogger);
   }
 
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {

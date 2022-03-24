@@ -163,6 +163,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return genesisTime;
   }
 
+  public UInt64 computeTimeAtSlot(UInt64 slot) {
+    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+  }
+
+  public UInt64 computeMillisSinceSlotStart(UInt64 currentTimeMs, UInt64 slot) {
+    return currentTimeMs.minus(computeTimeAtSlot(slot).times(1000));
+  }
+
   public Optional<GenesisData> getGenesisData() {
     return genesisData;
   }

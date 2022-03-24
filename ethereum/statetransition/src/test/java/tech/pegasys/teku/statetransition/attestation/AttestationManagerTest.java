@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -50,6 +52,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -63,10 +66,14 @@ class AttestationManagerTest {
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<ValidateableAttestation> pendingAttestations =
-      PendingPool.createForAttestations(spec);
+      new PendingPoolFactory(metricsSystem).createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(
+          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+          mock(SettableLabelledGauge.class),
+          "attestations");
   private final SignatureVerificationService signatureVerificationService =
       mock(SignatureVerificationService.class);
   private final ActiveValidatorCache activeValidatorCache = mock(ActiveValidatorCache.class);

@@ -13,31 +13,53 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.response.v1.node.Version;
 import tech.pegasys.teku.api.response.v1.node.VersionResponse;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetVersion implements Handler {
-  private final JsonProvider jsonProvider;
-
-  public GetVersion(JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
-  }
-
+public class GetVersion extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/version";
+
+  private static final SerializableTypeDefinition<String> DATA_TYPE =
+      SerializableTypeDefinition.object(String.class)
+          .withField("version", STRING_TYPE, Function.identity())
+          .build();
+
+  private static final SerializableTypeDefinition<String> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(String.class)
+          .name("GetVersionResponse")
+          .withField("data", DATA_TYPE, Function.identity())
+          .build();
+
+  public GetVersion() {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getNodeVersion")
+            .summary("Get node version")
+            .description(
+                "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).")
+            .tags(TAG_NODE)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .build());
+  }
 
   @OpenApi(
       path = ROUTE,
@@ -51,9 +73,12 @@ public class GetVersion implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    Version v = new Version(VersionProvider.VERSION);
-    VersionResponse response = new VersionResponse(v);
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    ctx.json(jsonProvider.objectToJSON(response));
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.respondOk(VersionProvider.VERSION);
   }
 }

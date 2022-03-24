@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.services.timer;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-
-public interface TimeTickChannel extends VoidReturningChannelInterface {
+public interface TimeTickHandler {
   void onTick();
 }

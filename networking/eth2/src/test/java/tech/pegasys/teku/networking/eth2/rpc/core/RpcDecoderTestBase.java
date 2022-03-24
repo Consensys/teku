@@ -51,8 +51,8 @@ public class RpcDecoderTestBase {
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
       getLengthPrefix(ERROR_MESSAGE_PLAIN_DATA.size());
 
-  protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
-  protected static final PeerLookup peerLookup = mock(PeerLookup.class);
+  protected static final AsyncRunner ASYNC_RUNNER = new StubAsyncRunner();
+  protected static final PeerLookup PEER_LOOKUP = mock(PeerLookup.class);
 
   protected static RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
       RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
@@ -65,7 +65,7 @@ public class RpcDecoderTestBase {
       METHOD =
           new SingleProtocolEth2RpcMethod<
               BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>(
-              asyncRunner,
+              ASYNC_RUNNER,
               "",
               1,
               ENCODING,
@@ -73,7 +73,7 @@ public class RpcDecoderTestBase {
               false,
               CONTEXT_ENCODER,
               mock(LocalMessageHandler.class),
-              peerLookup);
+              PEER_LOOKUP);
 
   protected List<List<ByteBuf>> testByteBufSlices(final Bytes... bytes) {
     List<List<ByteBuf>> ret = Utils.generateTestSlices(bytes);

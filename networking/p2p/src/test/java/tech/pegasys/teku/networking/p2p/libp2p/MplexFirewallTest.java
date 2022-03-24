@@ -40,7 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class MplexFirewallTest {
-  private static final ChannelId dummyChannelId = DefaultChannelId.newInstance();
+  private static final ChannelId DUMMY_CHANNEL_ID = DefaultChannelId.newInstance();
 
   private final AtomicLong time = new AtomicLong();
   private final MplexFirewall firewall = new MplexFirewall(10, 20, time::get);
@@ -77,9 +77,9 @@ public class MplexFirewallTest {
   void testThatDisconnectsOnRateLimitExceed() {
     for (int i = 0; i < 20; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
       time.incrementAndGet();
     }
     assertThat(channel.isOpen()).isFalse();
@@ -92,9 +92,9 @@ public class MplexFirewallTest {
   void testThatDoesntDisconnectOnAllowedRate() {
     for (int i = 0; i < 500; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isTrue();
@@ -105,9 +105,9 @@ public class MplexFirewallTest {
   void testThatDisconnectsOnExceededAfterAllowedRate() {
     for (int i = 0; i < 100; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isTrue();
@@ -115,9 +115,9 @@ public class MplexFirewallTest {
 
     for (int i = 100; i < 200; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
       time.addAndGet(80); // ~12 per sec
     }
     assertThat(channel.isOpen()).isFalse();
@@ -130,13 +130,13 @@ public class MplexFirewallTest {
   void testThatDoesntDisconnectOnHighDataRate() {
     for (int i = 0; i < 500; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       for (int j = 0; j < 30; j++) {
         writeOneInbound(
-            new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.DATA, data1K.slice()));
+            new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.DATA, data1K.slice()));
       }
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isTrue();
@@ -148,7 +148,7 @@ public class MplexFirewallTest {
     // opening 30 streams on normal open rate
     for (int i = 0; i < 30; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isFalse();
@@ -162,7 +162,7 @@ public class MplexFirewallTest {
     IntList openedIds = new IntArrayList();
     for (int i = 0; i < 18; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       openedIds.add(i);
       time.addAndGet(112); // ~9 per sec
     }
@@ -170,7 +170,7 @@ public class MplexFirewallTest {
     Random random = new Random();
     for (int i = 18; i < 200; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
       openedIds.add(i);
 
       IntLists.shuffle(openedIds, random);
@@ -178,7 +178,7 @@ public class MplexFirewallTest {
 
       writeOneInbound(
           new MuxFrame(
-              new MuxId(dummyChannelId, toRemove, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+              new MuxId(DUMMY_CHANNEL_ID, toRemove, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
       time.addAndGet(112); // ~9 per sec
     }
 
@@ -190,11 +190,11 @@ public class MplexFirewallTest {
   void testThatResetStreamFromLocalIsTracked() throws InterruptedException {
     for (int i = 0; i < 200; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
 
       channel
           .writeAndFlush(
-              new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.RESET, Unpooled.EMPTY_BUFFER))
+              new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.RESET, Unpooled.EMPTY_BUFFER))
           .await(1000);
       time.addAndGet(112); // ~9 per sec
     }
@@ -210,10 +210,10 @@ public class MplexFirewallTest {
   void testThatResetStreamFromRemoteIsTracked() {
     for (int i = 0; i < 200; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
 
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.RESET, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.RESET, Unpooled.EMPTY_BUFFER));
       time.addAndGet(112); // ~9 per sec
     }
 
@@ -228,11 +228,11 @@ public class MplexFirewallTest {
     // so it shouldn't affect the number of opened tracked streams
     for (int i = 0; i < 25; i++) {
       writeOneInbound(
-          new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
 
       channel
           .writeAndFlush(
-              new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER))
+              new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER))
           .await(1000);
       time.addAndGet(112); // ~9 per sec
     }
