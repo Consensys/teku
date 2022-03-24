@@ -129,7 +129,6 @@ public class BlockImportMetrics {
 
   public void recordEvent(final String eventLabel, final UInt64 duration) {
     MetricsHistogramWithCounters metric = eventsToMetric.get(eventLabel);
-    System.out.println(eventLabel + ": " + duration);
     if (metric != null) {
       metric.recordValue(duration);
     }
