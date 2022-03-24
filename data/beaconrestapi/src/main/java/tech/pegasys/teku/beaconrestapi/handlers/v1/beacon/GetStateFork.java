@@ -43,6 +43,7 @@ import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -81,6 +82,7 @@ public class GetStateFork extends MigratingEndpointAdapter {
             .summary("Get state fork")
             .description("Returns Fork object for state with given 'state_id'.")
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+            .pathParam(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
             .build());

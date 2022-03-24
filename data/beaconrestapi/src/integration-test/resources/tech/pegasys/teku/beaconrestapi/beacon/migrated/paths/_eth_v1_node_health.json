@@ -4,16 +4,26 @@
     "operationId" : "getNodePeers",
     "summary" : "Get node peers",
     "description" : "Retrieves data about the node's network peers.",
+    "parameters" : [ {
+      "name" : "syncing_status",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Customize syncing status instead of default status code (206)"
+      }
+    } ],
     "responses" : {
       "200" : {
-        "description" : "Request successful",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/GetPeersResponse"
-            }
-          }
-        }
+        "description" : "Node is ready",
+        "content" : { }
+      },
+      "206" : {
+        "description" : "Node is syncing but can serve incomplete data",
+        "content" : { }
+      },
+      "503" : {
+        "description" : "Node not initialized or having issues",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
