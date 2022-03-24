@@ -320,7 +320,7 @@ public class TekuNode extends Node {
           LOG.debug(
               "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
         },
-        300,
+        5,
         MINUTES);
   }
 

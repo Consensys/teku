@@ -15,8 +15,6 @@ package tech.pegasys.teku.test.acceptance;
 
 import static tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion.DEVELOP;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -57,8 +55,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition()
-      throws ExecutionException, InterruptedException, TimeoutException {
+  void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() {
     tekuNode.waitForGenesis();
     tekuNode.waitForLogMessageContaining("MERGE is completed");
     tekuNode.waitForNewFinalization();
