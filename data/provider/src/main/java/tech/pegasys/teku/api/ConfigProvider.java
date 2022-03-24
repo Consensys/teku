@@ -105,6 +105,10 @@ public class ConfigProvider {
     return new GetForkScheduleResponse(forkList);
   }
 
+  public List<tech.pegasys.teku.spec.datastructures.state.Fork> getStateForkSchedule() {
+    return spec.getForkSchedule().getForks();
+  }
+
   public SpecConfig getGenesisSpecConfig() {
     return spec.getGenesisSpecConfig();
   }

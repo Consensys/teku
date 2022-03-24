@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
@@ -23,6 +27,15 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
+  private static final SerializableTypeDefinition<Fork> FORK_TYPE =
+      SerializableTypeDefinition.object(Fork.class)
+          .name("Fork")
+          .description(
+              "The [Fork](https://github.com/ethereum/consensus-specs/blob/v1.0.1/specs/phase0/beacon-chain.md#fork) object from the Eth2.0 spec.")
+          .withField("previous_version", BYTES4_TYPE, Fork::getPrevious_version)
+          .withField("current_version", BYTES4_TYPE, Fork::getCurrent_version)
+          .withField("epoch", UINT64_TYPE, Fork::getEpoch)
+          .build();
 
   public static class ForkSchema extends ContainerSchema3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
@@ -64,5 +77,9 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
   public UInt64 getEpoch() {
     return getField2().get();
+  }
+
+  public static SerializableTypeDefinition<Fork> getJsonTypeDefinition() {
+    return FORK_TYPE;
   }
 }
