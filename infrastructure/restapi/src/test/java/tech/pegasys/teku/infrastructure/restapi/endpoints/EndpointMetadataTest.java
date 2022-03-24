@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -89,11 +90,61 @@ class EndpointMetadataTest {
     final EndpointMetadata metadata =
         validBuilder()
             .pathParam("test", STRING_TYPE.withDescription("test2"))
+            .queryParam("qtest", STRING_TYPE)
+            .queryParamRequired("rq", INTEGER_TYPE.withDescription("testing"))
             .response(SC_OK, "Success", STRING_TYPE)
             .build();
     final JsonGenerator generator = mock(JsonGenerator.class);
     metadata.writeOpenApi(generator);
     verify(generator).writeArrayFieldStart("parameters");
+  }
+
+  @Test
+  void queryParam_cannotSpecifyTwice() {
+    assertThatThrownBy(
+            () -> validBuilder().queryParam("t", STRING_TYPE).queryParam("t", STRING_TYPE))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void queryParamRequired_cannotSpecifyTwice() {
+    assertThatThrownBy(
+            () ->
+                validBuilder()
+                    .queryParamRequired("t", STRING_TYPE)
+                    .queryParamRequired("t", STRING_TYPE))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void queryParamRequired_cannotSpecifyWithQueryParam() {
+    assertThatThrownBy(
+            () -> validBuilder().queryParam("t", STRING_TYPE).queryParamRequired("t", STRING_TYPE))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void queryParam_cannotSpecifyWithQueryParamRequired() {
+    assertThatThrownBy(
+            () -> validBuilder().queryParamRequired("t", STRING_TYPE).queryParam("t", STRING_TYPE))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void pathParam_cannotSpecifyTwice() {
+    assertThatThrownBy(() -> validBuilder().pathParam("t", STRING_TYPE).pathParam("t", STRING_TYPE))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void pathParam_canSpecifyWithSameNameAsQueryParam() {
+    assertThat(
+            validBuilder()
+                .pathParam("t", STRING_TYPE)
+                .queryParam("t", STRING_TYPE)
+                .response(SC_OK, "Success", STRING_TYPE)
+                .build())
+        .isInstanceOf(EndpointMetadata.class);
   }
 
   @Test
