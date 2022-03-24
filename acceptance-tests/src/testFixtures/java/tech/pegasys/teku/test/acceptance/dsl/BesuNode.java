@@ -15,16 +15,15 @@ package tech.pegasys.teku.test.acceptance.dsl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
 
 public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -37,7 +36,7 @@ public class BesuNode extends Node {
   private final Config config;
 
   public BesuNode(final Network network, final BesuDockerVersion version, final Config config) {
-    super(network, BESU_DOCKER_IMAGE_NAME + ":" + version.getVersion() , LOG);
+    super(network, BESU_DOCKER_IMAGE_NAME + ":" + version.getVersion(), LOG);
     this.config = config;
 
     container
@@ -127,7 +126,7 @@ public class BesuNode extends Node {
       return this;
     }
 
-    public BesuNode.Config withMergeSupport(final boolean enableMergeSupport ) {
+    public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
       configMap.put("Xmerge-support", enableMergeSupport);
       return this;
     }

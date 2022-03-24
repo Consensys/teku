@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -99,8 +98,8 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
 
-    Consumer<SpecConfigBuilder> specConfigModifier = config.getSpecConfigModifier()
-        .orElse(__ -> {});
+    Consumer<SpecConfigBuilder> specConfigModifier =
+        config.getSpecConfigModifier().orElse(__ -> {});
     this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
 
     container
@@ -307,14 +306,22 @@ public class TekuNode extends Node {
           assertThat(block).isPresent();
           assertThat(block.get()).isInstanceOf(SignedBeaconBlockBellatrix.class);
 
-          final SignedBeaconBlockBellatrix bellatrixBlock = (SignedBeaconBlockBellatrix) block.get();
-          final ExecutionPayload executionPayload = bellatrixBlock.getMessage().getBody().executionPayload
-              .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
-              .orElseThrow();
+          final SignedBeaconBlockBellatrix bellatrixBlock =
+              (SignedBeaconBlockBellatrix) block.get();
+          final ExecutionPayload executionPayload =
+              bellatrixBlock
+                  .getMessage()
+                  .getBody()
+                  .executionPayload
+                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
+                  .orElseThrow();
 
           assertThat(executionPayload.isDefault()).isFalse();
-          LOG.debug("Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
-        }, 300, MINUTES);
+          LOG.debug(
+              "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
+        },
+        300,
+        MINUTES);
   }
 
   public void waitForFullSyncCommitteeAggregate() {
@@ -696,10 +703,11 @@ public class TekuNode extends Node {
 
     public Config withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
       configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
-      specConfigModifier = Optional.of(specConfigBuilder ->
-          specConfigBuilder.bellatrixBuilder(bellatrixBuilder ->
-              bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)
-          ));
+      specConfigModifier =
+          Optional.of(
+              specConfigBuilder ->
+                  specConfigBuilder.bellatrixBuilder(
+                      bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
       return this;
     }
 
@@ -708,8 +716,10 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withValidatorProposerDefaultFeeRecipient(final String validatorProposerDefaultFeeRecipient) {
-      configMap.put("validators-proposer-default-fee-recipient", validatorProposerDefaultFeeRecipient);
+    public Config withValidatorProposerDefaultFeeRecipient(
+        final String validatorProposerDefaultFeeRecipient) {
+      configMap.put(
+          "validators-proposer-default-fee-recipient", validatorProposerDefaultFeeRecipient);
       return this;
     }
 
