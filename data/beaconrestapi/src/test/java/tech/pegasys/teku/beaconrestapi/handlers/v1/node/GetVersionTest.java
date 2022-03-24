@@ -13,26 +13,23 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static org.mockito.ArgumentMatchers.refEq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.Version;
-import tech.pegasys.teku.api.response.v1.node.VersionResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class GetVersionTest extends AbstractBeaconHandlerTest {
-  private final VersionResponse versionResponse =
-      new VersionResponse(new Version(VersionProvider.VERSION));
 
   @Test
   public void shouldReturnVersionString() throws Exception {
-    GetVersion handler = new GetVersion(jsonProvider);
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
+    final RestApiRequest request = mock(RestApiRequest.class);
+    final GetVersion handler = new GetVersion();
 
-    VersionResponse response = getResponseObject(VersionResponse.class);
-    assertThat(response).isEqualTo(versionResponse);
+    handler.handleRequest(request);
+    verify(request).respondOk(refEq(VersionProvider.VERSION));
   }
 }

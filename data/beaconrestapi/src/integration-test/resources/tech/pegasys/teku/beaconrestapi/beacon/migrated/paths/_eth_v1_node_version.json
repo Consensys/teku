@@ -1,16 +1,16 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "getNodePeers",
-    "summary" : "Get node peers",
-    "description" : "Retrieves data about the node's network peers.",
+    "operationId" : "getNodeVersion",
+    "summary" : "Get node version",
+    "description" : "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).",
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetPeersResponse"
+              "$ref" : "#/components/schemas/GetVersionResponse"
             }
           }
         }

@@ -1,16 +1,16 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "getNodePeers",
-    "summary" : "Get node peers",
-    "description" : "Retrieves data about the node's network peers.",
+    "operationId" : "getPeerCount",
+    "summary" : "Get peer count",
+    "description" : "Retrieves number of known peers.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetPeersResponse"
+              "$ref" : "#/components/schemas/GetPeerCountResponse"
             }
           }
         }

@@ -60,6 +60,6 @@ public class GetPeersTest extends AbstractBeaconHandlerTest {
     GetPeers handler = new GetPeers(networkDataProvider);
     final RestApiRequest request = mock(RestApiRequest.class);
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(new GetPeers.PeersData(data)), eq(CacheLength.NO_CACHE));
+    verify(request).respondOk(refEq(data), eq(CacheLength.NO_CACHE));
   }
 }
