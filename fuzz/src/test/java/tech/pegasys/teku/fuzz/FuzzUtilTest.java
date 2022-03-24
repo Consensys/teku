@@ -72,13 +72,17 @@ class FuzzUtilTest {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
       schemaDefinitions.getSignedBeaconBlockSchema();
 
-  // Basic sanity tests for Fuzzing Harnesses
-  // NOTE: for the purposes of this class, we don't care so much that operation is
-  // correct/equivalent according to the spec
-  // (the reference tests cover this), but that the Fuzz harness is equivalent to the behavior of
-  // the internal process.
-  // e.g. These tests don't care whether process_deposits is correct, but that the harness correctly
-  // uses process_deposits.
+  // Basic sanity tests for fuzzing harnesses.
+  //
+  // For the purposes of this class, we do not care that operations are
+  // correct/equivalent according to the spec (the reference tests cover this),
+  // but that the fuzz harness is equivalent to the behavior of the internal
+  // process. For example, these tests do not care whether process_deposits is
+  // correct, only that the harness correctly uses process_deposits.
+  //
+  // These test case files are generated using the consensus-specs repo's
+  // gen_operations and gen_sanity generators. Reference link:
+  // https://github.com/ethereum/consensus-specs/tree/dev/tests/generators
 
   // *************** START Deposit Tests *****************
 
