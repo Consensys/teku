@@ -20,6 +20,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent;
 
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
@@ -37,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
-import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -81,9 +82,8 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
     final Map<String, List<String>> queryParameters = ctx.queryParamMap();
 
     final Optional<Bytes32> parentRoot =
-        SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent(queryParameters, PARENT_ROOT);
-    final Optional<UInt64> slot =
-        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
+        getParameterValueAsBytes32IfPresent(queryParameters, PARENT_ROOT);
+    final Optional<UInt64> slot = getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
     try {
       ctx.future(
           chainDataProvider
