@@ -23,8 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,19 +52,12 @@ public class GetStateFork extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/fork";
   public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
 
-  private static final SerializableTypeDefinition<Fork> FORK_TYPE =
-      SerializableTypeDefinition.object(Fork.class)
-          .withField("previous_version", BYTES4_TYPE, Fork::getPrevious_version)
-          .withField("current_version", BYTES4_TYPE, Fork::getCurrent_version)
-          .withField("epoch", UINT64_TYPE, Fork::getEpoch)
-          .build();
-
   private static final SerializableTypeDefinition<StateForkData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(StateForkData.class)
           .name("GetStateForkResponse")
           .description(
-              "The [Fork](https://github.com/ethereum/consensus-specs/blob/v1.0.1/specs/phase0/beacon-chain.md) object from the Eth2.0 spec.")
-          .withField("data", FORK_TYPE, StateForkData::getData)
+              "Returns [Fork](https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/beacon-chain.md#fork) object for state with given 'stateId'.")
+          .withField("data", Fork.getJsonTypeDefinition(), StateForkData::getData)
           .build();
 
   private final ChainDataProvider chainDataProvider;
