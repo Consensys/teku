@@ -20,9 +20,11 @@ import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
+import java.io.IOException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -70,44 +72,50 @@ class EndpointMetadataTest {
             objectType2,
             objectType3,
             CoreTypes.HTTP_ERROR_RESPONSE_TYPE,
-            CoreTypes.STRING_TYPE,
+            STRING_TYPE,
             CoreTypes.INTEGER_TYPE);
   }
 
   @Test
   void getResponseType_shouldThrowExceptionWhenStatusCodeNodeDeclared() {
     final EndpointMetadata metadata =
-        validBuilder().response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+        validBuilder().response(SC_OK, "Success", STRING_TYPE).build();
     assertThatThrownBy(() -> metadata.getResponseType(SC_NOT_FOUND, JSON_CONTENT_TYPE))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
+  void pathParam_shouldSerializeOpenApiDoc() throws IOException {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .pathParam("test", STRING_TYPE.withDescription("test2"))
+            .response(SC_OK, "Success", STRING_TYPE)
+            .build();
+    final JsonGenerator generator = mock(JsonGenerator.class);
+    metadata.writeOpenApi(generator);
+    verify(generator).writeArrayFieldStart("parameters");
+  }
+
+  @Test
   void getResponseType_shouldThrowExceptionWhenStatusCodeMatchesButContentTypeNotDeclared() {
     final EndpointMetadata metadata =
-        validBuilder().response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+        validBuilder().response(SC_OK, "Success", STRING_TYPE).build();
     assertThatThrownBy(() -> metadata.getResponseType(SC_OK, "foo"))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void requestBodyType_shouldAcceptTypes() {
-    final DeserializableTypeDefinition<String> type = CoreTypes.STRING_TYPE;
+    final DeserializableTypeDefinition<String> type = STRING_TYPE;
     final EndpointMetadata metadata =
-        validBuilder()
-            .requestBodyType(CoreTypes.STRING_TYPE)
-            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
-            .build();
+        validBuilder().requestBodyType(STRING_TYPE).response(SC_OK, "Success", STRING_TYPE).build();
     assertThat(metadata.getRequestBodyType()).isSameAs(type);
   }
 
   @Test
   void shouldAddSecurityToEndpoint() {
     final EndpointMetadata metadata =
-        validBuilder()
-            .security("authBearer")
-            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
-            .build();
+        validBuilder().security("authBearer").response(SC_OK, "Success", STRING_TYPE).build();
     assertThat(metadata.getSecurity()).contains("authBearer");
   }
 
@@ -116,7 +124,7 @@ class EndpointMetadataTest {
     final EndpointMetadata metadata =
         validBuilder()
             .tags(RestApiConstants.TAG_EXPERIMENTAL)
-            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
+            .response(SC_OK, "Success", STRING_TYPE)
             .build();
     assertThat(metadata.getTags()).containsExactly(RestApiConstants.TAG_EXPERIMENTAL);
   }
@@ -124,7 +132,7 @@ class EndpointMetadataTest {
   @Test
   void shouldDeprecateEndpoint() throws Exception {
     final EndpointMetadata metadata =
-        validBuilder().deprecated(true).response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+        validBuilder().deprecated(true).response(SC_OK, "Success", STRING_TYPE).build();
     final JsonGenerator generator = mock(JsonGenerator.class);
     metadata.writeOpenApi(generator);
     verify(generator).writeBooleanField("deprecated", true);
@@ -134,18 +142,15 @@ class EndpointMetadataTest {
   @SuppressWarnings({"unchecked", "rawtypes"})
   void requestBodyType_shouldAcceptLists() {
     final DeserializableListTypeDefinition<String> type =
-        new DeserializableListTypeDefinition(CoreTypes.STRING_TYPE);
+        new DeserializableListTypeDefinition(STRING_TYPE);
     final EndpointMetadata metadata =
-        validBuilder()
-            .requestBodyType(type)
-            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
-            .build();
+        validBuilder().requestBodyType(type).response(SC_OK, "Success", STRING_TYPE).build();
     assertThat(metadata.getRequestBodyType()).isSameAs(type);
   }
 
   @Test
   void getResponseType_shouldGetDeclaredType() {
-    final SerializableTypeDefinition<String> type = CoreTypes.STRING_TYPE;
+    final SerializableTypeDefinition<String> type = STRING_TYPE;
     final EndpointMetadata metadata = validBuilder().response(SC_OK, "Success", type).build();
     assertThat(metadata.getResponseType(SC_OK, JSON_CONTENT_TYPE)).isSameAs(type);
   }

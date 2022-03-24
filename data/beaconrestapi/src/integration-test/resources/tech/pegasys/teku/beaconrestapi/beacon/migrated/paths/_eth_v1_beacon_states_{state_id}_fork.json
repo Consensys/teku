@@ -4,6 +4,16 @@
     "operationId" : "getSateFork",
     "summary" : "Get state fork",
     "description" : "Returns Fork object for state with given 'state_id'.",
+    "parameters" : [ {
+      "name" : "state_id",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
+      }
+    } ],
     "responses" : {
       "200" : {
         "description" : "Request successful",
