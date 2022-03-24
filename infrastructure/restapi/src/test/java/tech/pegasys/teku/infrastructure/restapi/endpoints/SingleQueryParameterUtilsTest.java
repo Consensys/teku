@@ -150,8 +150,7 @@ public class SingleQueryParameterUtilsTest {
 
   @Test
   public void getParameterAsIntegerIfPresent_shouldReturnData() {
-    final Integer value = 123456;
-    final Map<String, List<String>> data = Map.of("t", List.of(value.toString()));
-    assertThat(getParameterValueAsIntegerIfPresent(data, "t")).isEqualTo(Optional.of(value));
+    final Map<String, List<String>> data = Map.of("t", List.of("123456"));
+    assertThat(getParameterValueAsIntegerIfPresent(data, "t")).isEqualTo(Optional.of(123456));
   }
 }
