@@ -16,7 +16,13 @@ package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 import java.security.Key;
 
 public class JwtConfig {
-  public static long EXPIRES_IN_SECONDS = 5;
+  /**
+   * EL SHOULD only accept iat timestamps which are within +-5 seconds from the current time.
+   * https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md So this
+   * constant should be less than 5 seconds for delivery delays/time difference
+   */
+  public static long EXPIRES_IN_SECONDS = 3;
+
   private final Key key;
 
   public JwtConfig(final Key key) {
