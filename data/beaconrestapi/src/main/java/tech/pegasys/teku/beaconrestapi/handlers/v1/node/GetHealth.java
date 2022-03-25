@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_PARTIAL_CONTENT;
@@ -32,8 +31,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -100,18 +97,18 @@ public class GetHealth extends MigratingEndpointAdapter {
     if (!chainDataProvider.isStoreAvailable()) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else if (syncProvider.isSyncing()) {
-      int syncingStatus = SC_PARTIAL_CONTENT;
-      try {
-        final Map<String, List<String>> parameters = request.getQueryParamMap();
-        if (!parameters.isEmpty()) {
-          syncingStatus = getParameterValueAsInt(parameters, SYNCING_STATUS);
-        }
-      } catch (final IllegalArgumentException ex) {
-        LOG.trace("Illegal parameter in GetHealth", ex);
-      }
-      request.respondWithCode(syncingStatus);
+      request.respondWithCode(getResponseCodeFromQueryParams(request));
     } else {
       request.respondWithCode(SC_OK);
     }
+  }
+
+  private int getResponseCodeFromQueryParams(final RestApiRequest request) {
+    try {
+      return request.getQueryParamAsOptionalInteger(SYNCING_STATUS).orElse(SC_PARTIAL_CONTENT);
+    } catch (IllegalArgumentException ex) {
+      LOG.trace("Illegal parameter in GetHealth", ex);
+    }
+    return SC_PARTIAL_CONTENT;
   }
 }
