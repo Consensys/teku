@@ -30,10 +30,14 @@ public class BeaconBlockBodySchemaPhase0Test {
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
-            specConfig, new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)));
+            specConfig,
+            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
-            specConfig, new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)));
+            specConfig,
+            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);
   }
@@ -44,10 +48,14 @@ public class BeaconBlockBodySchemaPhase0Test {
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
-            specConfig, new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)));
+            specConfig,
+            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
-            specConfig, new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)));
+            specConfig,
+            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);
   }
