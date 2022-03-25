@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.config.Constants.VALID_AGGREGATE_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
-import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,15 +90,18 @@ public class AggregateAttestationValidator {
     return singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
         .thenCompose(
             result -> {
-              final InternalValidationResult aggregateInternalValidationResult = result.left();
+              final InternalValidationResult aggregateInternalValidationResult = result.getResult();
 
               if (aggregateInternalValidationResult.isNotProcessable()) {
                 LOG.trace("Rejecting aggregate because attestation failed validation");
                 return completedFuture(aggregateInternalValidationResult);
               }
 
-              final Optional<BeaconState> maybeState = result.right();
+              final Optional<BeaconState> maybeState = result.getState();
               if (maybeState.isEmpty()) {
+                // State isn't yet available. We've already handled ignore and reject conditions
+                // as not processable above so need to save for when the state is available
+                LOG.trace("Saving aggregate for future because state is not yet available");
                 return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
               }
 
@@ -198,11 +200,10 @@ public class AggregateAttestationValidator {
     return signatureVerifier.verify(aggregatorPublicKey, signingRoot, selectionProof);
   }
 
-  SafeFuture<Pair<InternalValidationResult, Optional<BeaconState>>>
-      singleOrAggregateAttestationChecks(
-          final AsyncBatchBLSSignatureVerifier signatureVerifier,
-          final ValidateableAttestation validateableAttestation,
-          final OptionalInt receivedOnSubnetId) {
+  SafeFuture<InternalValidationResultWithState> singleOrAggregateAttestationChecks(
+      final AsyncBatchBLSSignatureVerifier signatureVerifier,
+      final ValidateableAttestation validateableAttestation,
+      final OptionalInt receivedOnSubnetId) {
     return attestationValidator.singleOrAggregateAttestationChecks(
         AsyncBLSSignatureVerifier.wrap(signatureVerifier),
         validateableAttestation,

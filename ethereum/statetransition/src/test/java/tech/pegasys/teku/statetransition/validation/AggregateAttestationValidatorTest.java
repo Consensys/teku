@@ -24,7 +24,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
-import it.unimi.dsi.fastutil.Pair;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -157,7 +156,8 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(Pair.of(reject("Nah mate"), Optional.empty())));
+        .thenReturn(
+            SafeFuture.completedFuture(InternalValidationResultWithState.reject("Nah mate")));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(reject("Nah mate"));
   }
@@ -170,8 +170,7 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(
-            SafeFuture.completedFuture(Pair.of(InternalValidationResult.IGNORE, Optional.empty())));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.ignore()));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.IGNORE);
@@ -185,9 +184,7 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, Optional.empty())));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.saveForFuture()));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
@@ -201,33 +198,10 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, Optional.empty())));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.saveForFuture()));
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
-  }
-
-  @Test
-  public void shouldRejectWhenAttestationValidatorSavesForFutureAndAggregateChecksFail() {
-    final SignedAggregateAndProof aggregate =
-        generator
-            .generator()
-            .blockAndState(storageSystem.getChainHead())
-            .aggregatorIndex(ONE)
-            .selectionProof(dataStructureUtil.randomSignature())
-            .generate();
-    ValidateableAttestation attestation =
-        ValidateableAttestation.aggregateFromValidator(spec, aggregate);
-    when(attestationValidator.singleOrAggregateAttestationChecks(
-            any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Pair.of(InternalValidationResult.SAVE_FOR_FUTURE, getStateFor(aggregate))));
-
-    assertThat(validator.validate(attestation))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -503,7 +477,7 @@ class AggregateAttestationValidatorTest {
             any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(
             SafeFuture.completedFuture(
-                Pair.of(InternalValidationResult.ACCEPT, getStateFor(aggregate))));
+                InternalValidationResultWithState.accept(getStateFor(aggregate).orElseThrow())));
   }
 
   private Optional<BeaconState> getStateFor(final SignedAggregateAndProof aggregate) {
