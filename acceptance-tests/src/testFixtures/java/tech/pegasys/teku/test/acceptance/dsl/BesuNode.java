@@ -111,22 +111,10 @@ public class BesuNode extends Node {
       return this;
     }
 
-    public BesuNode.Config withRpcHttpApi(final String[] rpcHttpApis) {
-      configMap.put("rpc-http-api", rpcHttpApis);
-      return this;
-    }
-
-    public BesuNode.Config withDefaultEngineRpcHttpPort() {
-      configMap.put("engine-rpc-http-port", Integer.toString(ENGINE_JSON_RPC_PORT));
-      return this;
-    }
-
-    public BesuNode.Config withEngineHostAllowList(final String[] engineHostAllowList) {
-      configMap.put("engine-host-allowlist", engineHostAllowList);
-      return this;
-    }
-
     public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
+      configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE"});
+      configMap.put("engine-rpc-http-port", Integer.toString(ENGINE_JSON_RPC_PORT));
+      configMap.put("engine-host-allowlist", new String[] {"*"});
       configMap.put("Xmerge-support", enableMergeSupport);
       return this;
     }

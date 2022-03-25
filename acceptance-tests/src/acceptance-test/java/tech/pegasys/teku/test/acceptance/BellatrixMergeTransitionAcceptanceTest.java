@@ -34,7 +34,10 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   @BeforeEach
   void setup() throws Exception {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
-    eth1Node = createBesuNode(DEVELOP, this::configureBesuNode);
+    eth1Node =
+        createBesuNode(
+            DEVELOP,
+            config -> config.withMergeSupport(true).withGenesisFile("besu/preMergeGenesis.json"));
     eth1Node.start();
 
     final int TOTAL_VALIDATORS = 4;
@@ -68,14 +71,5 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
         .withBellatrixEpoch(UInt64.ONE)
         .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
         .withGenesisTime(genesisTime);
-  }
-
-  private BesuNode.Config configureBesuNode(BesuNode.Config config) {
-    return config
-        .withRpcHttpApi(new String[] {"ETH,NET,WEB3,ENGINE"})
-        .withDefaultEngineRpcHttpPort()
-        .withEngineHostAllowList(new String[] {"*"})
-        .withMergeSupport(true)
-        .withGenesisFile("besu/preMergeGenesis.json");
   }
 }
