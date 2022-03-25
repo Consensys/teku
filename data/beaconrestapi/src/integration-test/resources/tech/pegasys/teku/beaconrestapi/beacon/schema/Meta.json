@@ -1,0 +1,10 @@
+{
+  "type" : "object",
+  "properties" : {
+    "count" : {
+      "type" : "string",
+      "description" : "Total number of items",
+      "example" : "1"
+    }
+  }
+}

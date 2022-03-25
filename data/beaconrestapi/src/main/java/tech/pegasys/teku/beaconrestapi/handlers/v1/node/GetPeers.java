@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetPeers extends MigratingEndpointAdapter {
@@ -89,10 +90,26 @@ public class GetPeers extends MigratingEndpointAdapter {
                   eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound)
           .build();
 
-  private static final SerializableTypeDefinition<List<Eth2Peer>> PEERS_RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<Eth2Peer>>object()
+  private static final DeserializableTypeDefinition<UInt64> COUNT_TYPE =
+      DeserializableTypeDefinition.string(UInt64.class)
+          .formatter(UInt64::toString)
+          .parser(UInt64::valueOf)
+          .example("1")
+          .description("Total number of items")
+          .format("uint64")
+          .build();
+
+  private static final SerializableTypeDefinition<UInt64> PEERS_META_TYPE =
+      SerializableTypeDefinition.object(UInt64.class)
+          .name("Meta")
+          .withField("count", COUNT_TYPE, Function.identity())
+          .build();
+
+  private static final SerializableTypeDefinition<PeersData> PEERS_RESPONSE_TYPE =
+      SerializableTypeDefinition.<PeersData>object()
           .name("GetPeersResponse")
-          .withField("data", listOf(PEER_DATA_TYPE), Function.identity())
+          .withField("data", listOf(PEER_DATA_TYPE), PeersData::getPeers)
+          .withField("meta", PEERS_META_TYPE, PeersData::getCount)
           .build();
 
   private final NetworkDataProvider network;
@@ -131,6 +148,25 @@ public class GetPeers extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(network.getEth2Peers(), NO_CACHE);
+    final PeersData peersData = new PeersData(network.getEth2Peers());
+    request.respondOk(peersData, NO_CACHE);
+  }
+
+  static class PeersData {
+    private final List<Eth2Peer> peers;
+    private final UInt64 count;
+
+    PeersData(final List<Eth2Peer> peers) {
+      this.peers = peers;
+      this.count = UInt64.valueOf(peers.size());
+    }
+
+    public List<Eth2Peer> getPeers() {
+      return peers;
+    }
+
+    public UInt64 getCount() {
+      return count;
+    }
   }
 }
