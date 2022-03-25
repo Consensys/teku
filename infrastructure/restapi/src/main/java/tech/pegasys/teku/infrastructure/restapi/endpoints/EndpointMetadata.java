@@ -54,6 +54,7 @@ public class EndpointMetadata {
   private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
   private final List<String> tags;
   private final Map<String, DeserializableTypeDefinition<?>> pathParams;
+  private final Map<String, DeserializableTypeDefinition<?>> requiredQueryParams;
   private final Map<String, DeserializableTypeDefinition<?>> queryParams;
 
   private EndpointMetadata(
@@ -68,7 +69,8 @@ public class EndpointMetadata {
       final Optional<DeserializableTypeDefinition<?>> requestBodyType,
       final List<String> tags,
       final Map<String, DeserializableTypeDefinition<?>> pathParams,
-      final Map<String, DeserializableTypeDefinition<?>> queryParams) {
+      final Map<String, DeserializableTypeDefinition<?>> queryParams,
+      final Map<String, DeserializableTypeDefinition<?>> requiredQueryParams) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
@@ -81,6 +83,7 @@ public class EndpointMetadata {
     this.tags = tags;
     this.pathParams = pathParams;
     this.queryParams = queryParams;
+    this.requiredQueryParams = requiredQueryParams;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
@@ -134,9 +137,10 @@ public class EndpointMetadata {
     if (deprecated) {
       gen.writeBooleanField("deprecated", true);
     }
-    if (pathParams.size() > 0 || queryParams.size() > 0) {
+    if (pathParams.size() > 0 || queryParams.size() > 0 || requiredQueryParams.size() > 0) {
       gen.writeArrayFieldStart("parameters");
       writeParameters(gen, pathParams, "path", true);
+      writeParameters(gen, requiredQueryParams, "query", true);
       writeParameters(gen, queryParams, "query", false);
       gen.writeEndArray();
     }
@@ -225,6 +229,8 @@ public class EndpointMetadata {
     private boolean deprecated = false;
     private final Map<String, DeserializableTypeDefinition<?>> pathParams = new LinkedHashMap<>();
     private final Map<String, DeserializableTypeDefinition<?>> queryParams = new LinkedHashMap<>();
+    private final Map<String, DeserializableTypeDefinition<?>> requiredQueryParams =
+        new LinkedHashMap<>();
     private Optional<String> security = Optional.empty();
     private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
@@ -242,13 +248,28 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder pathParam(
         final String param, final DeserializableTypeDefinition<?> pathParameterDefinition) {
+      if (pathParams.containsKey(param)) {
+        throw new IllegalStateException("Path Parameters already contains " + param);
+      }
       pathParams.put(param, pathParameterDefinition);
       return this;
     }
 
     public EndpointMetaDataBuilder queryParam(
         final String param, final DeserializableTypeDefinition<?> queryParameterDefinition) {
+      if (queryParams.containsKey(param) || requiredQueryParams.containsKey(param)) {
+        throw new IllegalStateException("Query parameters already contains " + param);
+      }
       queryParams.put(param, queryParameterDefinition);
+      return this;
+    }
+
+    public EndpointMetaDataBuilder queryParamRequired(
+        final String param, final DeserializableTypeDefinition<?> queryParameterDefinition) {
+      if (queryParams.containsKey(param) || requiredQueryParams.containsKey(param)) {
+        throw new IllegalStateException("Query Parameters already contains " + param);
+      }
+      requiredQueryParams.put(param, queryParameterDefinition);
       return this;
     }
 
@@ -363,7 +384,8 @@ public class EndpointMetadata {
           requestBodyType,
           tags,
           pathParams,
-          queryParams);
+          queryParams,
+          requiredQueryParams);
     }
 
     public EndpointMetaDataBuilder tags(final String... tags) {
