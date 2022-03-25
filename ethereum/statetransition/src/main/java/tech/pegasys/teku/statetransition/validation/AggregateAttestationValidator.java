@@ -89,15 +89,13 @@ public class AggregateAttestationValidator {
         new AsyncBatchBLSSignatureVerifier(this.signatureVerifier);
     return singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
         .thenCompose(
-            result -> {
-              final InternalValidationResult aggregateInternalValidationResult = result.getResult();
-
-              if (aggregateInternalValidationResult.isNotProcessable()) {
+            resultWithState -> {
+              if (resultWithState.getResult().isNotProcessable()) {
                 LOG.trace("Rejecting aggregate because attestation failed validation");
-                return completedFuture(aggregateInternalValidationResult);
+                return completedFuture(resultWithState.getResult());
               }
 
-              final Optional<BeaconState> maybeState = result.getState();
+              final Optional<BeaconState> maybeState = resultWithState.getState();
               if (maybeState.isEmpty()) {
                 // State isn't yet available. We've already handled ignore and reject conditions
                 // as not processable above so need to save for when the state is available
@@ -162,7 +160,7 @@ public class AggregateAttestationValidator {
                         if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
                           return ignore("Ignoring duplicate aggregate based on hash tree root");
                         }
-                        return aggregateInternalValidationResult;
+                        return resultWithState.getResult();
                       });
             });
   }
