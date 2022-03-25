@@ -58,9 +58,8 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() {
     tekuNode.waitForGenesis();
     tekuNode.waitForLogMessageContaining("MERGE is completed");
-    tekuNode.waitForNewFinalization();
-
     tekuNode.waitForNonDefaultExecutionPayload();
+
     tekuNode.waitForNewFinalization();
   }
 
