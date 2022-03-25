@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -63,8 +62,6 @@ class FuzzUtilTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
-  private final SpecConfigBellatrix specConfig =
-      SpecConfigBellatrix.required(specVersion.getConfig());
   private final SchemaDefinitionsBellatrix schemaDefinitions =
       SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions());
   private final BeaconBlockSchema beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
@@ -261,7 +258,7 @@ class FuzzUtilTest {
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    SyncAggregateFuzzInput input = new SyncAggregateFuzzInput(spec, specConfig, preState, data);
+    SyncAggregateFuzzInput input = new SyncAggregateFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzSyncAggregate(rawInput).map(Bytes::wrap);
 

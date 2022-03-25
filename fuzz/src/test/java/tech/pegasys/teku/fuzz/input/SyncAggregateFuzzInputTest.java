@@ -15,7 +15,6 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -24,15 +23,13 @@ public class SyncAggregateFuzzInputTest extends AbstractFuzzInputTest<SyncAggreg
   @Override
   protected SszSchema<SyncAggregateFuzzInput> getInputType() {
     final SpecVersion specVersion = spec.getGenesisSpec();
-    final SpecConfigAltair specConfig = SpecConfigAltair.required(spec.getGenesisSpecConfig());
-    return SyncAggregateFuzzInput.createSchema(specVersion, specConfig);
+    return SyncAggregateFuzzInput.createSchema(specVersion);
   }
 
   @Override
   protected SyncAggregateFuzzInput createInput() {
-    final SpecConfigAltair specConfig = SpecConfigAltair.required(spec.getGenesisSpecConfig());
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final SyncAggregate syncAggregate = dataStructureUtil.randomSyncAggregate();
-    return new SyncAggregateFuzzInput(spec, specConfig, state, syncAggregate);
+    return new SyncAggregateFuzzInput(spec, state, syncAggregate);
   }
 }

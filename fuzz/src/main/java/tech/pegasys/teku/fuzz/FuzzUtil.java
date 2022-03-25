@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -58,7 +57,6 @@ public class FuzzUtil {
   // "FuzzHarness" interface
 
   private final Spec spec;
-  private final SpecConfigBellatrix specConfig;
   private final BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema;
   private final SpecVersion specVersion;
 
@@ -74,7 +72,6 @@ public class FuzzUtil {
             ? TestSpecFactory.createMainnetBellatrix()
             : TestSpecFactory.createMinimalBellatrix();
     specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
-    specConfig = SpecConfigBellatrix.required(specVersion.getConfig());
     beaconBlockBodySchema =
         (BeaconBlockBodySchemaBellatrix<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
@@ -271,7 +268,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzSyncAggregate(final byte[] input) {
     SyncAggregateFuzzInput structuredInput =
-        deserialize(input, SyncAggregateFuzzInput.createSchema(specVersion, specConfig));
+        deserialize(input, SyncAggregateFuzzInput.createSchema(specVersion));
     SyncAggregate syncAggregate = structuredInput.getSyncAggregate();
 
     try {

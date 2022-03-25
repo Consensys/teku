@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -28,7 +27,7 @@ public class SyncAggregateFuzzInput
     extends Container2<SyncAggregateFuzzInput, BeaconState, SyncAggregate> {
 
   public static ContainerSchema2<SyncAggregateFuzzInput, BeaconState, SyncAggregate> createSchema(
-      final SpecVersion spec, final SpecConfigAltair config) {
+      final SpecVersion spec) {
     BeaconBlockBodySchemaAltair<?> beaconBlockBodySchema =
         (BeaconBlockBodySchemaAltair<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     return ContainerSchema2.create(
@@ -44,11 +43,8 @@ public class SyncAggregateFuzzInput
   }
 
   public SyncAggregateFuzzInput(
-      final Spec spec,
-      final SpecConfigAltair config,
-      final BeaconState state,
-      final SyncAggregate syncAggregate) {
-    super(createSchema(spec.atSlot(state.getSlot()), config), state, syncAggregate);
+      final Spec spec, final BeaconState state, final SyncAggregate syncAggregate) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, syncAggregate);
   }
 
   public SyncAggregate getSyncAggregate() {
