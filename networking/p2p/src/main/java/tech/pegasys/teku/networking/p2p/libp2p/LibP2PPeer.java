@@ -89,7 +89,7 @@ public class LibP2PPeer implements Peer {
     getAgentVersionFromIdentity()
         .thenAccept(
             maybeAgent -> {
-              LOG.debug(
+              LOG.trace(
                   "Connected peer id {} ({}) has agent string: {}",
                   peerId,
                   connection.remoteAddress(),
