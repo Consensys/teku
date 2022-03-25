@@ -45,11 +45,14 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     super(specConfig.toVersionAltair().orElseThrow());
     this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
     this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaBellatrixImpl.create(specConfig, getAttesterSlashingSchema());
+        BeaconBlockBodySchemaBellatrixImpl.create(
+            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyBellatrix");
     this.blindedBeaconBlockBodySchema =
-        BlindedBeaconBlockBodySchemaBellatrixImpl.create(specConfig, getAttesterSlashingSchema());
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
-    this.blindedBeaconBlockSchema = new BeaconBlockSchema(blindedBeaconBlockBodySchema);
+        BlindedBeaconBlockBodySchemaBellatrixImpl.create(
+            specConfig, getAttesterSlashingSchema(), "BlindedBlockBodyBellatrix");
+    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockBellatrix");
+    this.blindedBeaconBlockSchema =
+        new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockBellatrix");
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
     this.signedBlindedBeaconBlockSchema = new SignedBeaconBlockSchema(blindedBeaconBlockSchema);
     this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);
@@ -78,6 +81,16 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   @Override
   public BeaconBlockSchema getBeaconBlockSchema() {
     return beaconBlockSchema;
+  }
+
+  @Override
+  public BeaconBlockSchema getBlindedBlockSchema() {
+    return blindedBeaconBlockSchema;
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBlindedBlockBodySchema() {
+    return blindedBeaconBlockBodySchema;
   }
 
   @Override

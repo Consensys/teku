@@ -17,17 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsLong;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.validateQueryParameter;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,90 +31,6 @@ public class SingleQueryParameterUtilsTest {
   public static final String KEY = "any";
   public static final String VALUE = "1";
   public static final Map<String, List<String>> INVALID_DATA = Map.of(KEY, List.of("1.5"));
-
-  @Test
-  public void validateParameters_shouldDetectMissingKey() {
-    Map<String, List<String>> data = Map.of();
-
-    assertThrows(IllegalArgumentException.class, () -> validateQueryParameter(data, KEY));
-  }
-
-  @Test
-  public void validateParameters_shouldDetectEmptyString() {
-    Map<String, List<String>> data = Map.of(KEY, List.of());
-
-    assertThrows(IllegalArgumentException.class, () -> validateQueryParameter(data, KEY));
-  }
-
-  @Test
-  public void validateParameters_shouldDetectMultipleEntries() {
-    Map<String, List<String>> data = Map.of(KEY, List.of("1", "2"));
-
-    assertThrows(IllegalArgumentException.class, () -> validateQueryParameter(data, KEY));
-  }
-
-  @Test
-  public void validateParameters_shouldReturnValue() {
-    Map<String, List<String>> data = Map.of(KEY, List.of(VALUE));
-
-    assertEquals(VALUE, validateQueryParameter(data, KEY));
-  }
-
-  @Test
-  public void getParameterValueAsInt_shouldReturnValue() {
-    Map<String, List<String>> data = Map.of(KEY, List.of(VALUE));
-    assertEquals(1, getParameterValueAsInt(data, KEY));
-  }
-
-  @Test
-  public void getParameterValueAsInt_shouldThrowIllegalArgIfNotIntValue_String() {
-    Map<String, List<String>> data = Map.of(KEY, List.of("not-an-int"));
-    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsInt(data, KEY));
-  }
-
-  @Test
-  public void getParameterValueAsInt_shouldThrowIllegalArgIfNotIntValue_Decimal() {
-    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsInt(INVALID_DATA, KEY));
-  }
-
-  @Test
-  public void getParameterAsUInt64_shouldReturnValue() {
-    Map<String, List<String>> data = Map.of(KEY, List.of("1"));
-    UInt64 result = getParameterValueAsUInt64(data, KEY);
-    assertEquals(UInt64.ONE, result);
-  }
-
-  @Test
-  public void getParameterAsUInt64_shouldThrowIfCannotParse() {
-    assertThrows(
-        IllegalArgumentException.class, () -> getParameterValueAsUInt64(INVALID_DATA, KEY));
-  }
-
-  @Test
-  public void getParameterAsLong_shouldReturnValue() {
-    Map<String, List<String>> data = Map.of(KEY, List.of("1"));
-    long result = getParameterValueAsLong(data, KEY);
-    assertEquals(1L, result);
-  }
-
-  @Test
-  public void getParameterAsLong_shouldThrowIfCannotParse() {
-    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsLong(INVALID_DATA, KEY));
-  }
-
-  @Test
-  public void getParameterAsBytes32_shouldThrowIfCannotParse() {
-    assertThrows(
-        IllegalArgumentException.class, () -> getParameterValueAsBytes32(INVALID_DATA, KEY));
-  }
-
-  @Test
-  public void getParameterAsBytes32_shouldParseHex32String() {
-    Bytes32 bytes32 = Bytes32.random();
-    Map<String, List<String>> data = Map.of(KEY, List.of(bytes32.toHexString()));
-    Bytes32 result = getParameterValueAsBytes32(data, KEY);
-    assertEquals(bytes32, result);
-  }
 
   @Test
   public void getParameterAsBLSSignature_shouldThrowIfCannotParse() {
@@ -134,21 +44,6 @@ public class SingleQueryParameterUtilsTest {
     Map<String, List<String>> data = Map.of(KEY, List.of(signature.toHexString()));
     BLSSignature result = getParameterValueAsBLSSignature(data, KEY);
     assertEquals(signature, result);
-  }
-
-  @Test
-  public void getParameterAsBytes32IfPresent_houldReturnEmptyIfNotPresent() {
-    assertThat(SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent(Map.of(), "t"))
-        .isEmpty();
-  }
-
-  @Test
-  public void getParameterAsBytes32IfPresent_shouldReturnData() {
-    Bytes32 bytes32 = Bytes32.random();
-    assertThat(
-            SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent(
-                Map.of("t", List.of(bytes32.toHexString())), "t"))
-        .isEqualTo(Optional.of(bytes32));
   }
 
   @Test

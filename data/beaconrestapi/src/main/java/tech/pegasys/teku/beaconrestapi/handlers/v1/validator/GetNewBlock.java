@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -26,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
@@ -105,7 +105,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
       final UInt64 slot = UInt64.valueOf(pathParamMap.get(SLOT));
       final BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
       final Optional<Bytes32> graffiti =
-          getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
+          getParameterValueAsBytes32IfPresent(queryParamMap, GRAFFITI);
       ctx.future(
           provider
               .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
@@ -125,15 +125,6 @@ public class GetNewBlock extends AbstractHandler implements Handler {
 
   protected String produceResultString(final BeaconBlock block) throws JsonProcessingException {
     return jsonProvider.objectToJSON(new GetNewBlockResponse(block));
-  }
-
-  private Optional<Bytes32> getOptionalParameterValueAsBytes32(
-      Map<String, List<String>> queryParamMap, final String key) {
-    if (queryParamMap.containsKey(key)) {
-      return Optional.of(getParameterValueAsBytes32(queryParamMap, key));
-    } else {
-      return Optional.empty();
-    }
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
