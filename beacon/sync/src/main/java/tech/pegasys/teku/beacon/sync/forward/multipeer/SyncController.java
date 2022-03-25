@@ -19,14 +19,11 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -41,7 +38,6 @@ public class SyncController {
   private final RecentChainData recentChainData;
   private final SyncTargetSelector syncTargetSelector;
   private final Sync sync;
-  private final SettableGauge isSyncingGauge;
 
   /**
    * The current sync. When empty, no sync has started, otherwise contains the details of the last
@@ -57,19 +53,12 @@ public class SyncController {
       final Executor subscriberExecutor,
       final RecentChainData recentChainData,
       final SyncTargetSelector syncTargetSelector,
-      final Sync sync,
-      final MetricsSystem metricsSystem) {
+      final Sync sync) {
     this.eventThread = eventThread;
     this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
     this.syncTargetSelector = syncTargetSelector;
     this.sync = sync;
-    this.isSyncingGauge =
-        SettableGauge.create(
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "node_syncing_active",
-            "Indicator to show the node sync is currently running.");
   }
 
   /**
@@ -144,7 +133,6 @@ public class SyncController {
   }
 
   private void notifySubscribers(final boolean syncing) {
-    isSyncingGauge.set(syncing ? 1.0 : 0.0);
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
   }
 
