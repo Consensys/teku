@@ -16,7 +16,6 @@ package tech.pegasys.teku.data.publisher;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EXECUTOR;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.VALIDATOR;
 
 import java.util.List;
@@ -101,9 +100,7 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
 
   private void storeObservationIfNeeded(final Observation observation) {
     MetricCategory category = observation.getCategory();
-    if (category.equals(EXECUTOR)) {
-      readExecutorCategoryItem(observation);
-    } else if (category.equals(PROCESS)) {
+    if (category.equals(PROCESS)) {
       readProcessCategoryItem(observation);
     } else if (category.equals(VALIDATOR)) {
       readValidatorCategoryItem(observation);
@@ -126,12 +123,9 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
       case "peer_count":
         peerCount = getIntValue(observation.getValue());
         break;
-    }
-  }
-
-  private void readExecutorCategoryItem(final Observation observation) {
-    if ("sync_thread_active_count".equals(observation.getMetricName())) {
-      isEth2Synced = getLongValue(observation.getValue()) == 0;
+      case "node_syncing_active":
+        isEth2Synced = getIntValue(observation.getValue()) == 0;
+        break;
     }
   }
 
