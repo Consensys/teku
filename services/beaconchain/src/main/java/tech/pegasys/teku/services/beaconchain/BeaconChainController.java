@@ -841,8 +841,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               EVENT_LOG,
               beaconAsyncRunner,
-              importMetrics,
-              metricsSystem);
+              importMetrics);
     } else {
       blockManager =
           new BlockManager(
@@ -853,8 +852,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               blockValidator,
               timeProvider,
               EVENT_LOG,
-              importMetrics,
-              metricsSystem);
+              importMetrics);
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

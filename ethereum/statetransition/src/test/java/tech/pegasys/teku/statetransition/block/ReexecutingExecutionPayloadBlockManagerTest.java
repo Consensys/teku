@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.Optional;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -93,8 +92,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
           timeProvider,
           eventLogger,
           asyncRunner,
-          false,
-          mock(MetricsSystem.class));
+          Optional.empty());
 
   @BeforeAll
   public static void initSession() {

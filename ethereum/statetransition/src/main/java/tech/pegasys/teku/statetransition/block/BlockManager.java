@@ -21,7 +21,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -70,8 +69,7 @@ public class BlockManager extends Service
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final Optional<BlockImportMetrics> blockImportMetrics,
-      final MetricsSystem metricsSystem) {
+      final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;

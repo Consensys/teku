@@ -30,7 +30,6 @@ public class MetricsCountersByIntervalsTest {
   private final ObservableMetricsSystem metricsSystem =
       new PrometheusMetricsSystem(Set.of(CATEGORY), true);
 
-  private static final String HISTOGRAM_NAME = "metric_summary";
   private static final String COUNTER_NAME = "metric_counter";
 
   @Test

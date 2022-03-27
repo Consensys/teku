@@ -121,7 +121,7 @@ public class BlockManagerTest {
           blockValidator,
           timeProvider,
           eventLogger,
-          true);
+          Optional.empty());
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
@@ -262,7 +262,7 @@ public class BlockManagerTest {
             mock(BlockValidator.class),
             timeProvider,
             eventLogger,
-            false);
+            Optional.empty());
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 

@@ -74,25 +74,6 @@ class MetricsHistogramTest {
             entry(key(List.of(MetricsHistogram.LABEL_1)), 80d));
   }
 
-  @Test
-  void shouldReportValuesWithCustomLabels() {
-    final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3, List.of("asd"));
-
-    for (int i = 1; i <= 100; i++) {
-      histogram.recordValue(i, "pippo");
-    }
-    for (int i = 1; i <= 100; i++) {
-      histogram.recordValue(i, "pluto");
-    }
-    final List<List<String>> values =
-        metricsSystem
-            .streamObservations()
-            .filter(ob -> ob.getCategory() == CATEGORY)
-            .map(Observation::getLabels)
-            .collect(Collectors.toUnmodifiableList());
-  }
-
   private static List<String> key(final List<String> labelValues) {
     final List<String> key = new ArrayList<>();
     key.add(MetricsHistogram.QUANTILE_LABEL);

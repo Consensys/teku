@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
@@ -131,7 +132,7 @@ public class SyncingNodeManager {
             blockValidator,
             new SystemTimeProvider(),
             EVENT_LOG,
-            false);
+            Optional.empty());
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
