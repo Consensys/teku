@@ -1,5 +1,4 @@
 * text eol=lf
-* binary !eol
 *.jar -text
 *.bat -text
 *.pcap binary
