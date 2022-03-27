@@ -501,6 +501,7 @@ jobs:
 workflows:
   circleci:
     jobs:
+      - dockerScan
       - assemble:
           filters:
             tags: &filters-release-tags
