@@ -22,6 +22,7 @@ public class JwtConfig {
    * https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md
    */
   public static long TOLERANCE_IN_SECONDS = 5;
+
   /**
    * This constant should be less than {@link #TOLERANCE_IN_SECONDS} for delivery delays/time
    * difference
