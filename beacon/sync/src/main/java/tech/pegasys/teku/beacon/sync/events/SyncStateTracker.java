@@ -18,10 +18,13 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -36,6 +39,7 @@ public class SyncStateTracker extends Service
   private final P2PNetwork<? extends Peer> network;
   private final Subscribers<SyncStateSubscriber> subscribers = Subscribers.create(true);
   private final EventLogger eventLogger;
+  private final SettableGauge isSyncingGauge;
 
   private final Duration startupTimeout;
   private final int startupTargetPeerCount;
@@ -53,8 +57,16 @@ public class SyncStateTracker extends Service
       final ForwardSync syncService,
       final P2PNetwork<? extends Peer> network,
       final int startupTargetPeerCount,
-      final Duration startupTimeout) {
-    this(asyncRunner, syncService, network, startupTargetPeerCount, startupTimeout, EVENT_LOG);
+      final Duration startupTimeout,
+      final MetricsSystem metricsSystem) {
+    this(
+        asyncRunner,
+        syncService,
+        network,
+        startupTargetPeerCount,
+        startupTimeout,
+        EVENT_LOG,
+        metricsSystem);
   }
 
   SyncStateTracker(
@@ -63,13 +75,20 @@ public class SyncStateTracker extends Service
       final P2PNetwork<? extends Peer> network,
       final int startupTargetPeerCount,
       final Duration startupTimeout,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final MetricsSystem metricsSystem) {
     this.asyncRunner = asyncRunner;
     this.syncService = syncService;
     this.network = network;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeout = startupTimeout;
     this.eventLogger = eventLogger;
+    this.isSyncingGauge =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "node_syncing_active",
+            "Indicator to show the node sync is currently running.");
     if (startupTargetPeerCount == 0 || startupTimeout.toMillis() == 0) {
       startingUp = false;
       currentState = SyncState.IN_SYNC;
@@ -77,6 +96,7 @@ public class SyncStateTracker extends Service
       startingUp = true;
       currentState = SyncState.START_UP;
     }
+    this.isSyncingGauge.set(currentState.isSyncing() ? 1.0 : 0.0);
   }
 
   @Override
@@ -121,6 +141,7 @@ public class SyncStateTracker extends Service
     }
 
     if (currentState != previousState) {
+      isSyncingGauge.set(currentState.isSyncing() ? 1.0 : 0.0);
       subscribers.deliver(SyncStateSubscriber::onSyncStateChange, currentState);
     }
   }

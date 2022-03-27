@@ -33,7 +33,7 @@ public class TokenProvider {
     final UInt64 expiry = instantInMillis.plus(expiresInMillis);
     final String jwtToken =
         Jwts.builder()
-            .setIssuedAt(Date.from(Instant.ofEpochMilli(expiry.longValue())))
+            .setIssuedAt(Date.from(Instant.ofEpochMilli(instantInMillis.longValue())))
             .signWith(jwtConfig.getKey(), SignatureAlgorithm.HS256)
             .compact();
     return Optional.of(new Token(jwtToken, expiry));

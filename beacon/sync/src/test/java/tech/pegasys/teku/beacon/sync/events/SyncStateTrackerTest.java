@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,6 +30,8 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -39,6 +42,7 @@ class SyncStateTrackerTest {
   public static final int STARTUP_TARGET_PEER_COUNT = 5;
   public static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(10);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
@@ -54,7 +58,8 @@ class SyncStateTrackerTest {
           network,
           STARTUP_TARGET_PEER_COUNT,
           STARTUP_TIMEOUT,
-          eventLogger);
+          eventLogger,
+          metricsSystem);
   private SyncSubscriber syncSubscriber;
   private PeerConnectedSubscriber<Peer> peerSubscriber;
 
@@ -82,7 +87,8 @@ class SyncStateTrackerTest {
   @Test
   public void shouldStartInSyncWhenTargetPeerCountIsZero() {
     final SyncStateProvider tracker =
-        new SyncStateTracker(asyncRunner, syncService, network, 0, STARTUP_TIMEOUT);
+        new SyncStateTracker(
+            asyncRunner, syncService, network, 0, STARTUP_TIMEOUT, new NoOpMetricsSystem());
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
@@ -90,7 +96,12 @@ class SyncStateTrackerTest {
   public void shouldStartInSyncWhenStartupTimeoutIsZero() {
     final SyncStateProvider tracker =
         new SyncStateTracker(
-            asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(0));
+            asyncRunner,
+            syncService,
+            network,
+            STARTUP_TARGET_PEER_COUNT,
+            Duration.ofSeconds(0),
+            new NoOpMetricsSystem());
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
@@ -167,11 +178,33 @@ class SyncStateTrackerTest {
   }
 
   @Test
+  void shouldUpdateMetricWhenSyncStatusChanges() {
+    assertThat(tracker.getCurrentSyncState().isSyncing()).isFalse();
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "node_syncing_active").getValue())
+        .isEqualTo(0.0);
+
+    syncSubscriber.onSyncingChange(true);
+    assertThat(tracker.getCurrentSyncState().isSyncing()).isTrue();
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "node_syncing_active").getValue())
+        .isEqualTo(1.0);
+
+    syncSubscriber.onSyncingChange(false);
+    assertThat(tracker.getCurrentSyncState().isSyncing()).isFalse();
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "node_syncing_active").getValue())
+        .isEqualTo(0.0);
+  }
+
+  @Test
   void shouldReturnToInSyncAfterSyncCompletesIfStartupModeIsDisabled() {
     reset(syncService);
     final SyncStateTracker tracker =
         new SyncStateTracker(
-            asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(0));
+            asyncRunner,
+            syncService,
+            network,
+            STARTUP_TARGET_PEER_COUNT,
+            Duration.ofSeconds(0),
+            new NoOpMetricsSystem());
     tracker.start().join();
 
     final ArgumentCaptor<SyncSubscriber> syncSubscriberArgumentCaptor =

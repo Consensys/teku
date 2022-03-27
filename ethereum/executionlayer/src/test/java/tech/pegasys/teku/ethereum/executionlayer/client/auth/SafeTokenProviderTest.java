@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer.client.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig.TOLERANCE_IN_SECONDS;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -51,13 +52,14 @@ class SafeTokenProviderTest {
   }
 
   @Test
-  void testGetToken_TokenPreExpiry() {
+  void testGetToken_SameTokenPreExpiry() {
     UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
     final Optional<Token> originalToken = safeTokenProvider.token(timeInMillis);
     validateTokenAtInstant(originalToken, timeInMillis);
     validateJwtTokenAtInstant(jwtSecretKey, originalToken, timeInMillis);
 
-    timeInMillis = timeInMillis.plus(TimeUnit.SECONDS.toMillis(JwtConfig.EXPIRES_IN_SECONDS - 1));
+    timeInMillis =
+        timeInMillis.plus(TimeUnit.SECONDS.toMillis(JwtConfig.EXPIRES_IN_SECONDS)).minus(1);
     final Optional<Token> updatedToken = safeTokenProvider.token(timeInMillis);
     validateTokenAtInstant(updatedToken, timeInMillis);
     validateJwtTokenAtInstant(jwtSecretKey, updatedToken, timeInMillis);
@@ -82,7 +84,9 @@ class SafeTokenProviderTest {
             .parseClaimsJws(optionalToken.get().getJwtToken())
             .getBody()
             .get(Claims.ISSUED_AT, Long.class);
-    assertThat(instantInMillis)
+    assertThat(instantInMillis.plus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))
+        .isGreaterThan(UInt64.valueOf(TimeUnit.SECONDS.toMillis(issuedAtInSeconds)));
+    assertThat(instantInMillis.minus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))
         .isLessThan(UInt64.valueOf(TimeUnit.SECONDS.toMillis(issuedAtInSeconds)));
   }
 }
