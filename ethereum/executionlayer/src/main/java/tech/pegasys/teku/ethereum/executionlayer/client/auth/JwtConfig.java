@@ -19,7 +19,7 @@ public class JwtConfig {
 
   /**
    * EL SHOULD only accept iat timestamps which are within +-5 seconds from the current time.
-   * ttps://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md
+   * https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md
    */
   public static long TOLERANCE_IN_SECONDS = 5;
   /**
