@@ -52,7 +52,6 @@ public class BlockManager extends Service
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
   private final boolean blockImportPerformanceEnabled;
-  private final MetricsSystem metricsSystem;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
@@ -82,10 +81,9 @@ public class BlockManager extends Service
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportPerformanceEnabled = blockImportPerformanceEnabled;
-    this.metricsSystem = metricsSystem;
 
     if (blockImportPerformanceEnabled) {
-      blockImportMetrics = new BlockImportMetrics(metricsSystem);
+      blockImportMetrics = BlockImportMetrics.create(metricsSystem);
     }
   }
 
@@ -176,7 +174,8 @@ public class BlockManager extends Service
         .orElseGet(
             () ->
                 handleBlockImport(block, blockImportPerformance)
-                    .thenPeek(__ -> lateBlockImportCheck(blockImportPerformance, block)))
+                    .thenPeek(
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -284,8 +283,10 @@ public class BlockManager extends Service
 
   private void lateBlockImportCheck(
       final Optional<BlockImportPerformance> maybeBlockImportPerformance,
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block,
+      final BlockImportResult blockImportResult) {
     maybeBlockImportPerformance.ifPresent(
-        blockImportPerformance -> blockImportPerformance.processingComplete(eventLogger, block));
+        blockImportPerformance ->
+            blockImportPerformance.processingComplete(eventLogger, block, blockImportResult));
   }
 }

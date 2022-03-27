@@ -94,7 +94,8 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
             metricsSystem,
             "signature_verifications_batch_size",
             "Histogram of signature verification batch sizes",
-            3);
+            3,
+            List.of());
   }
 
   public AggregatingSignatureVerificationService(

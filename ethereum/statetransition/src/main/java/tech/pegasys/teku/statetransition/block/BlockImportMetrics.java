@@ -13,124 +13,62 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BLOCK_PROCESSED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.IMPORT_COMPLETED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.RECEIVED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TOTAL_PROCESSING_TIME_LABEL;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.metrics.MetricsHistogramWithCounters;
+import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockImportMetrics {
-  private final Map<String, MetricsHistogramWithCounters> eventsToMetric = new HashMap<>();
+  private final MetricsHistogram metricsHistogram;
+  private final MetricsCountersByIntervals metricsCountersByIntervals;
 
-  public BlockImportMetrics(final MetricsSystem metricsSystem) {
-
-    eventsToMetric.put(
-        RECEIVED_EVENT_LABEL,
-        MetricsHistogramWithCounters.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_arrival_delay_summary",
-            "Histogram recording delay in milliseconds from expected time to a block being received",
-            "block_import_arrival_delay_counter",
-            "Block counter recording delay in milliseconds from expected time to a block being received",
-            1,
-            List.of(
-                UInt64.valueOf(500),
-                UInt64.valueOf(1000),
-                UInt64.valueOf(1500),
-                UInt64.valueOf(2000),
-                UInt64.valueOf(3000),
-                UInt64.valueOf(4000),
-                UInt64.valueOf(5000),
-                UInt64.valueOf(8000),
-                UInt64.valueOf(12000))));
-
-    eventsToMetric.put(
-        PRESTATE_RETRIEVED_EVENT_LABEL,
-        MetricsHistogramWithCounters.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_prestate_retrieved_delay_summary",
-            "Histogram recording delay in milliseconds for block prestate retrieval",
-            "block_import_prestate_retrieved_delay_counter",
-            "Block counter recording delay in milliseconds for block prestate retrieval",
-            1,
-            List.of(
-                UInt64.valueOf(50),
-                UInt64.valueOf(100),
-                UInt64.valueOf(250),
-                UInt64.valueOf(500),
-                UInt64.valueOf(1000),
-                UInt64.valueOf(2000))));
-
-    eventsToMetric.put(
-        BLOCK_PROCESSED_EVENT_LABEL,
-        MetricsHistogramWithCounters.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_processing_delay_summary",
-            "Histogram recording delay in milliseconds for block processing",
-            "block_import_processing_delay_counter",
-            "Block counter recording delay in milliseconds for block processing",
-            1,
-            List.of(
-                UInt64.valueOf(50),
-                UInt64.valueOf(100),
-                UInt64.valueOf(250),
-                UInt64.valueOf(500),
-                UInt64.valueOf(1000),
-                UInt64.valueOf(2000))));
-
-    eventsToMetric.put(
-        TRANSACTION_PREPARED_EVENT_LABEL,
-        MetricsHistogramWithCounters.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_transaction_prepared_delay_summary",
-            "Histogram recording delay in milliseconds for block import transaction preparation",
-            "block_import_transaction_prepared_delay_counter",
-            "Block counter recording delay in milliseconds for block import transaction preparation",
-            1,
-            List.of(UInt64.valueOf(10))));
-
-    eventsToMetric.put(
-        TRANSACTION_COMMITTED_EVENT_LABEL,
-        MetricsHistogramWithCounters.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_transaction_committed_delay_summary",
-            "Histogram recording delay in milliseconds for block import committing transaction",
-            "block_import_transaction_committed_delay_counter",
-            "Block counter recording delay in milliseconds for block import committing transaction",
-            1,
-            List.of(UInt64.valueOf(10))));
-
-    eventsToMetric.put(
-        IMPORT_COMPLETED_EVENT_LABEL,
-        MetricsHistogramWithCounters.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_completion_delay_summary",
-            "Histogram recording delay in milliseconds for block import completion",
-            "block_import_completion_delay_counter",
-            "Block counter recording delay in milliseconds for block import completion",
-            1,
-            List.of(UInt64.valueOf(10))));
+  public BlockImportMetrics(
+      final MetricsHistogram metricsHistogram,
+      final MetricsCountersByIntervals metricsCountersByIntervals) {
+    this.metricsHistogram = metricsHistogram;
+    this.metricsCountersByIntervals = metricsCountersByIntervals;
   }
 
-  public void recordEvent(final String eventLabel, final UInt64 duration) {
-    MetricsHistogramWithCounters metric = eventsToMetric.get(eventLabel);
-    if (metric != null) {
-      metric.recordValue(duration);
-    }
+  public static BlockImportMetrics create(final MetricsSystem metricsSystem) {
+
+    final MetricsHistogram metricsHistogram =
+        MetricsHistogram.create(
+            TekuMetricCategory.BEACON,
+            metricsSystem,
+            "block_import_delay_summary",
+            "Histogram recording delay in milliseconds at each stage of block import",
+            1,
+            List.of("stage"));
+
+    final Map<List<String>, List<Long>> eventsAndBoundaries =
+        Map.of(
+            List.of(ARRIVAL_EVENT_LABEL),
+            List.of(500L, 1000L, 1500L, 2000L, 3000L, 4000L, 5000L, 8000L, 12000L),
+            List.of(TOTAL_PROCESSING_TIME_LABEL),
+            List.of(500L, 1000L, 1500L, 2000L, 3000L, 4000L, 5000L, 8000L, 12000L),
+            List.of(), // default
+            List.of(50L, 100L, 250L, 500L, 1000L, 2000L));
+
+    final MetricsCountersByIntervals metricsCountersByIntervals =
+        MetricsCountersByIntervals.create(
+            TekuMetricCategory.BEACON,
+            metricsSystem,
+            "block_import_delay_counter",
+            "Counter of blocks falling in different time frames in each import stages",
+            List.of("stage", "result"),
+            eventsAndBoundaries);
+
+    return new BlockImportMetrics(metricsHistogram, metricsCountersByIntervals);
+  }
+
+  public void recordValue(final UInt64 value, final String stage, final String result) {
+    metricsHistogram.recordValue(value.longValue(), stage);
+    metricsCountersByIntervals.recordValue(value, stage, result);
   }
 }

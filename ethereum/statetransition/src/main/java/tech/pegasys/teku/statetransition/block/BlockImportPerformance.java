@@ -18,21 +18,23 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import it.unimi.dsi.fastutil.Pair;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
-  public static String RECEIVED_EVENT_LABEL = "Received";
-  public static String PRESTATE_RETRIEVED_EVENT_LABEL = "Pre-state retrieved";
-  public static String BLOCK_PROCESSED_EVENT_LABEL = "Block processed";
-  public static String TRANSACTION_PREPARED_EVENT_LABEL = "Transaction prepared";
-  public static String TRANSACTION_COMMITTED_EVENT_LABEL = "Transaction committed";
-  public static String IMPORT_COMPLETED_EVENT_LABEL = "Import complete";
+  public static String ARRIVAL_EVENT_LABEL = "arrival";
+  public static String PRESTATE_RETRIEVED_EVENT_LABEL = "pre-state_retrieved";
+  public static String PROCESSED_EVENT_LABEL = "processed";
+  public static String TRANSACTION_PREPARED_EVENT_LABEL = "transaction_prepared";
+  public static String TRANSACTION_COMMITTED_EVENT_LABEL = "transaction_committed";
+  public static String COMPLETED_EVENT_LABEL = "completed";
 
-  public static String TOTAL_PROCESSING_TIME_LABEL = "Total Processing time";
+  public static String TOTAL_PROCESSING_TIME_LABEL = "total_processing_time";
 
   private final TimeProvider timeProvider;
   private final BlockImportMetrics blockImportMetrics;
@@ -52,7 +54,7 @@ public class BlockImportPerformance {
     timeWarningLimitTimeStamp =
         timeAtSlotStartTimeStamp.plus(
             secondsToMillis(recentChainData.getSpec().getSecondsPerSlot(slot)).dividedBy(3));
-    addEvent(RECEIVED_EVENT_LABEL);
+    addEvent(ARRIVAL_EVENT_LABEL);
   }
 
   public void preStateRetrieved() {
@@ -60,7 +62,7 @@ public class BlockImportPerformance {
   }
 
   public void postStateCreated() {
-    addEvent(BLOCK_PROCESSED_EVENT_LABEL);
+    addEvent(PROCESSED_EVENT_LABEL);
   }
 
   public void transactionReady() {
@@ -71,37 +73,40 @@ public class BlockImportPerformance {
     addEvent(TRANSACTION_COMMITTED_EVENT_LABEL);
   }
 
-  public void processingComplete(final EventLogger eventLogger, final SignedBeaconBlock block) {
-    final UInt64 importCompletedTimestamp = addEvent(IMPORT_COMPLETED_EVENT_LABEL);
+  public void processingComplete(
+      final EventLogger eventLogger,
+      final SignedBeaconBlock block,
+      final BlockImportResult blockImportResult) {
+    final UInt64 importCompletedTimestamp = addEvent(COMPLETED_EVENT_LABEL);
 
-    final List<String> lateBlockEventTimings =
-        importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp)
-            ? new ArrayList<>()
-            : null;
+    final List<String> lateBlockEventTimings = new ArrayList<>();
+    final boolean isLateEvent = importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp);
+
+    final String result =
+        blockImportResult.isSuccessful()
+            ? "success"
+            : blockImportResult.getFailureReason().name().toLowerCase(Locale.ROOT);
 
     UInt64 previousEventTimestamp = timeAtSlotStartTimeStamp;
-    Pair<String, UInt64> lastEvent;
     for (Pair<String, UInt64> event : events) {
 
       // minusMinZero because sometimes time does actually go backwards so be safe.
       final UInt64 stepDuration = event.right().minusMinZero(previousEventTimestamp);
       previousEventTimestamp = event.right();
 
-      blockImportMetrics.recordEvent(event.left(), stepDuration);
+      blockImportMetrics.recordValue(stepDuration, event.left(), result);
 
-      if (lateBlockEventTimings != null) {
+      if (isLateEvent) {
         lateBlockEventTimings.add(
             event.left() + (lateBlockEventTimings.isEmpty() ? " " : " +") + stepDuration + "ms");
       }
-
-      lastEvent = event;
     }
 
-    // if(lastEvent.left().equals(IMPORT_COMPLETED_EVENT_LABEL)) {
-    //   events.get(0).right()
-    // }
+    final UInt64 totalProcessingDuration =
+        importCompletedTimestamp.minusMinZero(events.get(0).right());
+    blockImportMetrics.recordValue(totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, result);
 
-    if (lateBlockEventTimings != null) {
+    if (isLateEvent) {
       final String combinedTimings = String.join(", ", lateBlockEventTimings);
       eventLogger.lateBlockImport(block.getRoot(), block.getSlot(), combinedTimings);
     }
