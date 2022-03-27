@@ -108,9 +108,10 @@ class StoreTransactionUpdates {
         (root) -> {
           store.blocks.remove(root);
           store.states.remove(root);
-          store.checkpointStates.removeIf(
-              slotAndBlockRoot -> slotAndBlockRoot.getBlockRoot().equals(root));
         });
+
+    store.checkpointStates.removeIf(
+        slotAndBlockRoot -> prunedHotBlockRoots.contains(slotAndBlockRoot.getBlockRoot()));
     tx.latestValidFinalizedSlot.ifPresent(value -> store.latestValidFinalizedSlot = value);
 
     if (tx.proposerBoostRootSet) {

@@ -97,7 +97,7 @@ class AttestationManagerIntegrationTest {
           attestationPool,
           attestationValidator,
           new AggregateAttestationValidator(
-              spec, recentChainData, attestationValidator, signatureVerificationService),
+              spec, attestationValidator, signatureVerificationService),
           signatureVerificationService,
           activeValidatorChannel);
 
