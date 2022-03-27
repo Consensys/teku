@@ -51,7 +51,6 @@ public class BlockManager extends Service
   private final BlockValidator validator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
-  private final boolean blockImportPerformanceEnabled;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
@@ -61,7 +60,7 @@ public class BlockManager extends Service
   private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
-  private BlockImportMetrics blockImportMetrics;
+  private final Optional<BlockImportMetrics> blockImportMetrics;
 
   public BlockManager(
       final RecentChainData recentChainData,
@@ -71,7 +70,7 @@ public class BlockManager extends Service
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final boolean blockImportPerformanceEnabled,
+      final Optional<BlockImportMetrics> blockImportMetrics,
       final MetricsSystem metricsSystem) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
@@ -80,11 +79,7 @@ public class BlockManager extends Service
     this.validator = validator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
-    this.blockImportPerformanceEnabled = blockImportPerformanceEnabled;
-
-    if (blockImportPerformanceEnabled) {
-      blockImportMetrics = BlockImportMetrics.create(metricsSystem);
-    }
+    this.blockImportMetrics = blockImportMetrics;
   }
 
   @Override
@@ -109,9 +104,9 @@ public class BlockManager extends Service
 
     final Optional<BlockImportPerformance> blockImportPerformance;
 
-    if (blockImportPerformanceEnabled) {
+    if (blockImportMetrics.isPresent()) {
       final BlockImportPerformance performance =
-          new BlockImportPerformance(timeProvider, blockImportMetrics);
+          new BlockImportPerformance(timeProvider, blockImportMetrics.get());
       performance.arrival(recentChainData, block.getSlot());
       blockImportPerformance = Optional.of(performance);
     } else {
