@@ -156,7 +156,7 @@ public class SyncServiceFactory {
 
   private SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {
     return new SyncStateTracker(
-        asyncRunner, forwardSync, p2pNetwork, getStartupTargetPeerCount, startupTimeout);
+        asyncRunner, forwardSync, p2pNetwork, getStartupTargetPeerCount, startupTimeout, metrics);
   }
 
   private ForwardSyncService createForwardSyncService() {
