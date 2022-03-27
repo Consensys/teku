@@ -25,7 +25,7 @@ import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 
-public class MetricsHistogramWithCountersTest {
+public class MetricsCountersByIntervalsTest {
   private static final TekuMetricCategory CATEGORY = TekuMetricCategory.BEACON;
   private final ObservableMetricsSystem metricsSystem =
       new PrometheusMetricsSystem(Set.of(CATEGORY), true);
@@ -50,11 +50,8 @@ public class MetricsHistogramWithCountersTest {
         MetricsCountersByIntervals.create(
             CATEGORY,
             metricsSystem,
-            HISTOGRAM_NAME,
-            "Histogram help",
             COUNTER_NAME,
             "Counter help",
-            1,
             List.of("label1", "label2"),
             eventsAndBoundaries);
 
@@ -109,11 +106,8 @@ public class MetricsHistogramWithCountersTest {
         MetricsCountersByIntervals.create(
             CATEGORY,
             metricsSystem,
-            HISTOGRAM_NAME,
-            "Histogram help",
             COUNTER_NAME,
             "Counter help",
-            1,
             List.of("label1", "label2"),
             eventsAndBoundaries);
 

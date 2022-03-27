@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.metrics;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,7 +22,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -32,15 +32,15 @@ public class MetricsCountersByIntervals {
   static final String INTERVAL_LABEL = "interval";
 
   private final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels;
-  private final Optional<Pair<Integer, Integer>> minMaxLabels;
+  private final List<Integer> labelValuesListSizes;
   private final LabelledMetric<Counter> labelledMetricCounter;
 
   public MetricsCountersByIntervals(
       final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels,
-      final Optional<Pair<Integer, Integer>> minMaxLabels,
+      final List<Integer> labelValuesListSizes,
       final LabelledMetric<Counter> labelledMetricCounter) {
     this.labelsToBoundariesToIntervalLabels = labelsToBoundariesToIntervalLabels;
-    this.minMaxLabels = minMaxLabels;
+    this.labelValuesListSizes = labelValuesListSizes;
     this.labelledMetricCounter = labelledMetricCounter;
   }
 
@@ -64,15 +64,14 @@ public class MetricsCountersByIntervals {
                         boundariesToIntervalLabels(listListEntry.getValue())))
             .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
 
-    // calculate the minimum and maximum labels that are used to determine a boundary set
-    final Optional<Pair<Integer, Integer>> minMaxLabels =
+    // calculate the labels sizes tests used to determine a boundary set (reverse order do give
+    // priority to the most specific values
+    final List<Integer> labelValuesListSizes =
         labelsValuesToBoundaries.keySet().stream()
-            .map(strings -> Pair.of(strings.size(), strings.size()))
-            .reduce(
-                (minMax1, minMax2) ->
-                    Pair.of(
-                        Integer.min(minMax1.getLeft(), minMax2.getLeft()),
-                        Integer.max(minMax1.getRight(), minMax2.getRight())));
+            .map(List::size)
+            .sorted(Comparator.reverseOrder())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
 
     final String[] labels =
         Stream.concat(customLabelsNames.stream(), Stream.of(INTERVAL_LABEL)).toArray(String[]::new);
@@ -81,7 +80,7 @@ public class MetricsCountersByIntervals {
         metricsSystem.createLabelledCounter(category, counterName, counterHelp, labels);
 
     return new MetricsCountersByIntervals(
-        labelsToBoundariesToIntervalLabels, minMaxLabels, labelledMetricCounter);
+        labelsToBoundariesToIntervalLabels, labelValuesListSizes, labelledMetricCounter);
   }
 
   public void recordValue(final long value, final String... customLabelValues) {
@@ -102,21 +101,18 @@ public class MetricsCountersByIntervals {
    */
   private void updateCounterMetric(final UInt64 value, final String... customLabelValues) {
     final List<String> customLabelValuesList = Arrays.asList(customLabelValues);
-    TreeMap<UInt64, String> intervalLabels = null;
+    Optional<TreeMap<UInt64, String>> intervalLabels =
+        labelValuesListSizes.stream()
+            .map(
+                size ->
+                    Optional.ofNullable(
+                        labelsToBoundariesToIntervalLabels.get(
+                            customLabelValuesList.subList(0, size))))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .findFirst();
 
-    if (minMaxLabels.isPresent()) {
-      final int max = minMaxLabels.get().getRight();
-      final int min = minMaxLabels.get().getLeft();
-      for (int i = max; i >= min; i--) {
-        intervalLabels =
-            labelsToBoundariesToIntervalLabels.get(customLabelValuesList.subList(0, i));
-        if (intervalLabels != null) {
-          break;
-        }
-      }
-    }
-
-    if (intervalLabels == null) {
+    if (intervalLabels.isEmpty()) {
       return;
     }
 
@@ -124,7 +120,7 @@ public class MetricsCountersByIntervals {
         .labels(
             Stream.concat(
                     customLabelValuesList.stream(),
-                    Stream.of(intervalLabels.floorEntry(value).getValue()))
+                    Stream.of(intervalLabels.get().floorEntry(value).getValue()))
                 .toArray(String[]::new))
         .inc();
   }
