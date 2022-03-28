@@ -17,6 +17,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Introduced smarter state selection strategy when validating attestations to reduce required regenerations after a full GC.
+- Improved peer scoring to better handle temporary errors from peers.
 
 ### Bug Fixes
 - Fixed the target database format for the `migrate-database` command.
