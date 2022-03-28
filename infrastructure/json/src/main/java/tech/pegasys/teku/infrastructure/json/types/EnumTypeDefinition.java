@@ -26,13 +26,7 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
 
   @Override
   public T deserialize(final JsonParser parser) throws IOException {
-    final String value = parser.getValueAsString();
-    for (T t : itemType.getEnumConstants()) {
-      if (t.toString().equalsIgnoreCase(value)) {
-        return t;
-      }
-    }
-    throw new IllegalArgumentException("Unknown enum value: " + value);
+    return deserializeFromString(parser.getValueAsString());
   }
 
   @Override
@@ -49,5 +43,15 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   @Override
   public void serialize(final T value, final JsonGenerator gen) throws IOException {
     gen.writeString(value.toString());
+  }
+
+  @Override
+  public T deserializeFromString(final String value) {
+    for (T t : itemType.getEnumConstants()) {
+      if (t.toString().equalsIgnoreCase(value)) {
+        return t;
+      }
+    }
+    throw new IllegalArgumentException("Unknown enum value: " + value);
   }
 }

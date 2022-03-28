@@ -39,4 +39,9 @@ class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
         value <= Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for unsigned byte", value);
     return (byte) value;
   }
+
+  @Override
+  public Byte deserializeFromString(final String value) {
+    return Byte.decode(value);
+  }
 }

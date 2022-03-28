@@ -18,7 +18,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.Optional;
 
-public class BooleanTypeDefinition implements DeserializableTypeDefinition<Boolean> {
+public class BooleanTypeDefinition implements StringValueTypeDefinition<Boolean> {
   private final Optional<String> description;
 
   public BooleanTypeDefinition() {
@@ -35,7 +35,7 @@ public class BooleanTypeDefinition implements DeserializableTypeDefinition<Boole
   }
 
   @Override
-  public DeserializableTypeDefinition<Boolean> withDescription(final String description) {
+  public StringValueTypeDefinition<Boolean> withDescription(final String description) {
     return new BooleanTypeDefinition(description);
   }
 
@@ -52,5 +52,10 @@ public class BooleanTypeDefinition implements DeserializableTypeDefinition<Boole
   @Override
   public void serialize(final Boolean value, final JsonGenerator gen) throws IOException {
     gen.writeBoolean(value);
+  }
+
+  @Override
+  public Boolean deserializeFromString(final String value) {
+    return Boolean.valueOf(value);
   }
 }
