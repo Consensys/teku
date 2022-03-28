@@ -14,12 +14,20 @@
 package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.SUCCESS_RESULT_METRIC_LABEL_VALUE;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TOTAL_PROCESSING_TIME_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
 
+import com.google.common.collect.Streams;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
@@ -71,14 +79,22 @@ public class BlockImportMetrics {
             List.of("stage", "result"),
             eventsAndBoundaries);
 
-    metricsCountersByIntervals.initCounters(
-        List.of(TOTAL_PROCESSING_TIME_LABEL, SUCCESS_RESULT_METRIC_LABEL_VALUE));
-    metricsCountersByIntervals.initCounters(
-        List.of(
-            TOTAL_PROCESSING_TIME_LABEL,
-            FailureReason.UNKNOWN_PARENT.name().toLowerCase(Locale.ROOT)));
-    metricsCountersByIntervals.initCounters(
-        List.of(ARRIVAL_EVENT_LABEL, SUCCESS_RESULT_METRIC_LABEL_VALUE));
+    // init all combinations counters
+    Streams.concat(
+            Arrays.stream(FailureReason.values()).map(FailureReason::name).map(String::toLowerCase),
+            Stream.of(SUCCESS_RESULT_METRIC_LABEL_VALUE))
+        .forEach(
+            result ->
+                List.of(
+                        ARRIVAL_EVENT_LABEL,
+                        PRESTATE_RETRIEVED_EVENT_LABEL,
+                        PROCESSED_EVENT_LABEL,
+                        TRANSACTION_PREPARED_EVENT_LABEL,
+                        TRANSACTION_COMMITTED_EVENT_LABEL,
+                        COMPLETED_EVENT_LABEL,
+                        TOTAL_PROCESSING_TIME_LABEL)
+                    .forEach(
+                        stage -> metricsCountersByIntervals.initCounters(List.of(stage, result))));
 
     return new BlockImportMetrics(metricsHistogram, metricsCountersByIntervals);
   }
