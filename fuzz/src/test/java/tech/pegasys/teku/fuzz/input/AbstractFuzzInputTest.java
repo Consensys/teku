@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractFuzzInputTest<T extends SszData> {
 
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @BeforeEach
