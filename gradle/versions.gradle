@@ -1,8 +1,13 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.2.1'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2'
+
+    // Temporary version overrides to fix issues with 2.13.2.1 release not including
+    // a 2.13.2.1 version for jackson-bom
+    dependency 'com.fasterxml.jackson:jackson-bom:2.13.2'
+
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
@@ -42,7 +47,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.8.9-RELEASE'
-    dependency 'tech.pegasys:jblst:0.3.6-4'
+    dependency 'tech.pegasys:jblst:0.3.7'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 

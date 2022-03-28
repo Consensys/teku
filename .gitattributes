@@ -8,3 +8,4 @@
 *.so binary
 *.gz binary
 *.ssz binary
+*.ssz_snappy binary
