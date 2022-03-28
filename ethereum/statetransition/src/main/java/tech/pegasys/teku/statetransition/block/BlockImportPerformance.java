@@ -36,6 +36,8 @@ public class BlockImportPerformance {
 
   public static String TOTAL_PROCESSING_TIME_LABEL = "total_processing_time";
 
+  public static String SUCCESS_RESULT_METRIC_LABEL_VALUE = "success";
+
   private final TimeProvider timeProvider;
   private final BlockImportMetrics blockImportMetrics;
 
@@ -82,9 +84,9 @@ public class BlockImportPerformance {
     final List<String> lateBlockEventTimings = new ArrayList<>();
     final boolean isLateEvent = importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp);
 
-    final String result =
+    final String resultMetricLabelValue =
         blockImportResult.isSuccessful()
-            ? "success"
+            ? SUCCESS_RESULT_METRIC_LABEL_VALUE
             : blockImportResult.getFailureReason().name().toLowerCase(Locale.ROOT);
 
     UInt64 previousEventTimestamp = timeAtSlotStartTimeStamp;
@@ -94,7 +96,7 @@ public class BlockImportPerformance {
       final UInt64 stepDuration = event.right().minusMinZero(previousEventTimestamp);
       previousEventTimestamp = event.right();
 
-      blockImportMetrics.recordValue(stepDuration, event.left(), result);
+      blockImportMetrics.recordValue(stepDuration, event.left(), resultMetricLabelValue);
 
       if (isLateEvent) {
         lateBlockEventTimings.add(
@@ -104,7 +106,8 @@ public class BlockImportPerformance {
 
     final UInt64 totalProcessingDuration =
         importCompletedTimestamp.minusMinZero(events.get(0).right());
-    blockImportMetrics.recordValue(totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, result);
+    blockImportMetrics.recordValue(
+        totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, resultMetricLabelValue);
 
     if (isLateEvent) {
       final String combinedTimings = String.join(", ", lateBlockEventTimings);

@@ -26,6 +26,12 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -121,7 +127,7 @@ public class BlockManagerTest {
           blockValidator,
           timeProvider,
           eventLogger,
-          Optional.empty());
+          Optional.of(mock(BlockImportMetrics.class)));
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
@@ -573,7 +579,18 @@ public class BlockManagerTest {
         .lateBlockImport(
             block.getRoot(),
             block.getSlot(),
-            "Received 1000ms, Pre-state retrieved +3000ms, Block processed +0ms, Transaction prepared +0ms, Transaction committed +0ms, Import complete +0ms");
+            ARRIVAL_EVENT_LABEL
+                + " 1000ms, "
+                + PRESTATE_RETRIEVED_EVENT_LABEL
+                + " +3000ms, "
+                + PROCESSED_EVENT_LABEL
+                + " +0ms, "
+                + TRANSACTION_PREPARED_EVENT_LABEL
+                + " +0ms, "
+                + TRANSACTION_COMMITTED_EVENT_LABEL
+                + " +0ms, "
+                + COMPLETED_EVENT_LABEL
+                + " +0ms");
   }
 
   @Test

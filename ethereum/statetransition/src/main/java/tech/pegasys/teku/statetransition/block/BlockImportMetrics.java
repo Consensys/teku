@@ -17,12 +17,14 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARR
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TOTAL_PROCESSING_TIME_LABEL;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 
 public class BlockImportMetrics {
   private final MetricsHistogram metricsHistogram;
@@ -48,6 +50,10 @@ public class BlockImportMetrics {
 
     final Map<List<String>, List<Long>> eventsAndBoundaries =
         Map.of(
+            List.of(
+                TOTAL_PROCESSING_TIME_LABEL,
+                FailureReason.UNKNOWN_PARENT.name().toLowerCase(Locale.ROOT)),
+            List.of(50L, 100L, 250L, 500L, 1000L, 2000L),
             List.of(ARRIVAL_EVENT_LABEL),
             List.of(500L, 1000L, 1500L, 2000L, 3000L, 4000L, 5000L, 8000L, 12000L),
             List.of(TOTAL_PROCESSING_TIME_LABEL),
