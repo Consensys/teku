@@ -84,12 +84,12 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   }
 
   @Override
-  public BeaconBlockSchema getBlindedBlockSchema() {
+  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
     return blindedBeaconBlockSchema;
   }
 
   @Override
-  public BeaconBlockBodySchema<?> getBlindedBlockBodySchema() {
+  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
     return blindedBeaconBlockBodySchema;
   }
 

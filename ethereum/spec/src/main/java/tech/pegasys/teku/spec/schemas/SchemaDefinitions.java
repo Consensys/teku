@@ -38,9 +38,9 @@ public interface SchemaDefinitions {
 
   BeaconBlockBodySchema<?> getBeaconBlockBodySchema();
 
-  BeaconBlockSchema getBlindedBlockSchema();
+  BeaconBlockSchema getBlindedBeaconBlockSchema();
 
-  BeaconBlockBodySchema<?> getBlindedBlockBodySchema();
+  BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema();
 
   SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema();
 
