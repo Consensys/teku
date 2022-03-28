@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +26,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -92,8 +90,7 @@ public class RestApiRequest {
         .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
   }
 
-  public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata)
-      throws IOException {
+  public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
     if (!queryParamMap.containsKey(parameterMetadata.getName())) {
       return Optional.empty();
     }
@@ -105,7 +102,7 @@ public class RestApiRequest {
                     queryParamMap, parameterMetadata.getName())));
   }
 
-  public <T> T getQueryParameter(final ParameterMetadata<T> parameterMetadata) throws IOException {
+  public <T> T getQueryParameter(final ParameterMetadata<T> parameterMetadata) {
     return parameterMetadata
         .getType()
         .deserializeFromString(
