@@ -19,6 +19,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - The `/eth/v1/node/peers/{peer_id}` endpoint had field `address` in `data` object, which is not correct according to the spec, changed to `last_seen_p2p_address`
 
 ### Additions and Improvements
+- Introduced smarter state selection strategy when validating attestations to reduce required regenerations after a full GC.
+- Improved peer scoring to better handle temporary errors from peers.
 
 ### Bug Fixes
 - Fixed the target database format for the `migrate-database` command.

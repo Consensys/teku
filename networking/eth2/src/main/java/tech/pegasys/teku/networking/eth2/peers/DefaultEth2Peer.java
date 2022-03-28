@@ -170,6 +170,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
           new IllegalStateException("Unable to generate local status message.  Node is not ready.");
       return SafeFuture.failedFuture(error);
     }
+    LOG.trace("Sending status message {} to {}", statusMessage.get(), getAddress());
 
     return requestSingleItem(rpcMethods.status(), statusMessage.get())
         .thenApply(PeerStatus::fromStatusMessage)

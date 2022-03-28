@@ -84,17 +84,30 @@ public class RestApiRequest {
     context.status(statusCode);
   }
 
-  public String getPathParam(final String pathParameter) {
-    return pathParamMap.get(pathParameter);
+  public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
   }
 
-  public int getQueryParamAsInt(final String queryParameter) {
-    return SingleQueryParameterUtils.getParameterValueAsInt(queryParamMap, queryParameter);
+  public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
+    if (!queryParamMap.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        parameterMetadata
+            .getType()
+            .deserializeFromString(
+                SingleQueryParameterUtils.validateQueryParameter(
+                    queryParamMap, parameterMetadata.getName())));
   }
 
-  public Optional<Integer> getQueryParamAsOptionalInteger(final String queryParameter) {
-    return SingleQueryParameterUtils.getParameterValueAsIntegerIfPresent(
-        queryParamMap, queryParameter);
+  public <T> T getQueryParameter(final ParameterMetadata<T> parameterMetadata) {
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(
+            SingleQueryParameterUtils.validateQueryParameter(
+                queryParamMap, parameterMetadata.getName()));
   }
 
   public <T> void handleOptionalResult(

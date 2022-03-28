@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 
-public abstract class PrimitiveTypeDefinition<T> implements DeserializableTypeDefinition<T> {
+public abstract class PrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T> {
 
   @Override
   public final void serializeOpenApiType(final JsonGenerator gen) throws IOException {
@@ -30,7 +30,7 @@ public abstract class PrimitiveTypeDefinition<T> implements DeserializableTypeDe
   }
 
   @Override
-  public DeserializableTypeDefinition<T> withDescription(final String description) {
+  public StringValueTypeDefinition<T> withDescription(final String description) {
     return new DescribedPrimitiveTypeDefinition<>(this, description);
   }
 }

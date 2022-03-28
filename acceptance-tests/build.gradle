@@ -30,6 +30,7 @@ dependencies {
   testFixturesImplementation 'org.testcontainers:testcontainers'
   testFixturesImplementation 'org.testcontainers:junit-jupiter'
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
+  testFixturesImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml'
   testFixturesImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   testFixturesImplementation 'org.web3j:core'
   testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
