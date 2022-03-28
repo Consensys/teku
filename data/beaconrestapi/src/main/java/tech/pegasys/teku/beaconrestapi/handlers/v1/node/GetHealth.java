@@ -113,7 +113,7 @@ public class GetHealth extends MigratingEndpointAdapter {
   private int getResponseCodeFromQueryParams(final RestApiRequest request) {
     try {
       return request.getOptionalQueryParameter(SYNCING_PARAMETER).orElse(SC_PARTIAL_CONTENT);
-    } catch (IllegalArgumentException | IOException ex) {
+    } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal parameter in GetHealth", ex);
     }
     return SC_PARTIAL_CONTENT;
