@@ -13,24 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 
-public abstract class PrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T> {
+public interface StringValueTypeDefinition<T> extends DeserializableTypeDefinition<T> {
+  T deserializeFromString(String value) throws IOException;
 
   @Override
-  public final void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
-    serializeOpenApiTypeFields(gen);
-    gen.writeEndObject();
-  }
-
-  protected void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
-    gen.writeStringField("type", "number");
-  }
-
-  @Override
-  public StringValueTypeDefinition<T> withDescription(final String description) {
-    return new DescribedPrimitiveTypeDefinition<>(this, description);
-  }
+  StringValueTypeDefinition<T> withDescription(final String description);
 }

@@ -36,6 +36,9 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
 
 class EndpointMetadataTest {
+
+  private final ParameterMetadata<String> STRING_PARAM = new ParameterMetadata<>("t", STRING_TYPE);
+
   @Test
   void shouldGetAllReferencedTypeDefinitions() {
     final DeserializableTypeDefinition<String> describedStringType =
@@ -89,9 +92,10 @@ class EndpointMetadataTest {
   void pathParam_shouldSerializeOpenApiDoc() throws IOException {
     final EndpointMetadata metadata =
         validBuilder()
-            .pathParam("test", STRING_TYPE.withDescription("test2"))
-            .queryParam("qtest", STRING_TYPE)
-            .queryParamRequired("rq", INTEGER_TYPE.withDescription("testing"))
+            .pathParam(new ParameterMetadata<>("test", STRING_TYPE.withDescription("test2")))
+            .queryParam(new ParameterMetadata<>("qtest", STRING_TYPE))
+            .queryParamRequired(
+                new ParameterMetadata<>("rq", INTEGER_TYPE.withDescription("testing")))
             .response(SC_OK, "Success", STRING_TYPE)
             .build();
     final JsonGenerator generator = mock(JsonGenerator.class);
@@ -101,38 +105,34 @@ class EndpointMetadataTest {
 
   @Test
   void queryParam_cannotSpecifyTwice() {
-    assertThatThrownBy(
-            () -> validBuilder().queryParam("t", STRING_TYPE).queryParam("t", STRING_TYPE))
+    assertThatThrownBy(() -> validBuilder().queryParam(STRING_PARAM).queryParam(STRING_PARAM))
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void queryParamRequired_cannotSpecifyTwice() {
     assertThatThrownBy(
-            () ->
-                validBuilder()
-                    .queryParamRequired("t", STRING_TYPE)
-                    .queryParamRequired("t", STRING_TYPE))
+            () -> validBuilder().queryParamRequired(STRING_PARAM).queryParamRequired(STRING_PARAM))
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void queryParamRequired_cannotSpecifyWithQueryParam() {
     assertThatThrownBy(
-            () -> validBuilder().queryParam("t", STRING_TYPE).queryParamRequired("t", STRING_TYPE))
+            () -> validBuilder().queryParam(STRING_PARAM).queryParamRequired(STRING_PARAM))
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void queryParam_cannotSpecifyWithQueryParamRequired() {
     assertThatThrownBy(
-            () -> validBuilder().queryParamRequired("t", STRING_TYPE).queryParam("t", STRING_TYPE))
+            () -> validBuilder().queryParamRequired(STRING_PARAM).queryParam(STRING_PARAM))
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void pathParam_cannotSpecifyTwice() {
-    assertThatThrownBy(() -> validBuilder().pathParam("t", STRING_TYPE).pathParam("t", STRING_TYPE))
+    assertThatThrownBy(() -> validBuilder().pathParam(STRING_PARAM).pathParam(STRING_PARAM))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -140,8 +140,8 @@ class EndpointMetadataTest {
   void pathParam_canSpecifyWithSameNameAsQueryParam() {
     assertThat(
             validBuilder()
-                .pathParam("t", STRING_TYPE)
-                .queryParam("t", STRING_TYPE)
+                .pathParam(STRING_PARAM)
+                .queryParam(STRING_PARAM)
                 .response(SC_OK, "Success", STRING_TYPE)
                 .build())
         .isInstanceOf(EndpointMetadata.class);

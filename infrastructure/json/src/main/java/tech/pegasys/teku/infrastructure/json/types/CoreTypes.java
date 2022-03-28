@@ -23,12 +23,11 @@ import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefin
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CoreTypes {
-  public static final DeserializableTypeDefinition<String> STRING_TYPE = stringBuilder().build();
+  public static final StringValueTypeDefinition<String> STRING_TYPE = stringBuilder().build();
 
-  public static final DeserializableTypeDefinition<Boolean> BOOLEAN_TYPE =
-      new BooleanTypeDefinition();
+  public static final StringValueTypeDefinition<Boolean> BOOLEAN_TYPE = new BooleanTypeDefinition();
 
-  public static final DeserializableTypeDefinition<Byte> BYTE_TYPE = new ByteTypeDefinition();
+  public static final StringValueTypeDefinition<Byte> BYTE_TYPE = new ByteTypeDefinition();
 
   public static final DeserializableTypeDefinition<Bytes32> BYTES32_TYPE =
       DeserializableTypeDefinition.string(Bytes32.class)
@@ -66,8 +65,7 @@ public class CoreTypes {
           .format("uint256")
           .build();
 
-  public static final DeserializableTypeDefinition<Integer> INTEGER_TYPE =
-      new IntegerTypeDefinition();
+  public static final StringValueTypeDefinition<Integer> INTEGER_TYPE = new IntegerTypeDefinition();
 
   public static final SerializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       SerializableTypeDefinition.object(HttpErrorResponse.class)
@@ -80,7 +78,7 @@ public class CoreTypes {
     return stringBuilder().description(description).build();
   }
 
-  public static DeserializableTypeDefinition<String> string(
+  public static StringValueTypeDefinition<String> string(
       final String description, final String example) {
     return stringBuilder().description(description).example(example).build();
   }

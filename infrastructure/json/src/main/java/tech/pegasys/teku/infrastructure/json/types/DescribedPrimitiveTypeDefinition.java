@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
-class DescribedPrimitiveTypeDefinition<T> implements DeserializableTypeDefinition<T> {
+class DescribedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T> {
 
   private final PrimitiveTypeDefinition<T> delegate;
   private final String description;
@@ -55,12 +55,17 @@ class DescribedPrimitiveTypeDefinition<T> implements DeserializableTypeDefinitio
   }
 
   @Override
-  public DeserializableTypeDefinition<T> withDescription(final String description) {
+  public StringValueTypeDefinition<T> withDescription(final String description) {
     return delegate.withDescription(description);
   }
 
   @Override
   public void serialize(final T value, final JsonGenerator gen) throws IOException {
     delegate.serialize(value, gen);
+  }
+
+  @Override
+  public T deserializeFromString(final String value) throws IOException {
+    return delegate.deserializeFromString(value);
   }
 }

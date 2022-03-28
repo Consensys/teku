@@ -33,4 +33,9 @@ class IntegerTypeDefinition extends PrimitiveTypeDefinition<Integer> {
   public Integer deserialize(final JsonParser parser) throws IOException {
     return parser.getIntValue();
   }
+
+  @Override
+  public Integer deserializeFromString(final String value) {
+    return Integer.valueOf(value);
+  }
 }

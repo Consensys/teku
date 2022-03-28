@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 
-public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableTypeDefinition<T> {
+public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T> {
 
   private final Optional<String> name;
   private final Optional<String> title;
@@ -60,15 +60,11 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
 
   @Override
   public T deserialize(final JsonParser parser) throws IOException {
-    try {
-      return objectFromString.apply(parser.getValueAsString());
-    } catch (RuntimeException ex) {
-      throw new BadRequestException(ex.getMessage(), ex);
-    }
+    return deserializeFromString(parser.getValueAsString());
   }
 
   @Override
-  public DeserializableTypeDefinition<T> withDescription(final String description) {
+  public StringValueTypeDefinition<T> withDescription(final String description) {
     return new StringBasedPrimitiveTypeDefinition<>(
         Optional.empty(), // Clear name to ensure custom variant is inlined.
         title,
@@ -116,6 +112,15 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
         .add("format", format)
         .add("pattern", pattern)
         .toString();
+  }
+
+  @Override
+  public T deserializeFromString(final String value) throws IOException {
+    try {
+      return objectFromString.apply(value);
+    } catch (RuntimeException ex) {
+      throw new BadRequestException(ex.getMessage(), ex);
+    }
   }
 
   public static class StringTypeBuilder<T> {
@@ -169,7 +174,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
       return this;
     }
 
-    public DeserializableTypeDefinition<T> build() {
+    public StringValueTypeDefinition<T> build() {
       checkNotNull(parser, "Must specify parser");
       checkNotNull(formatter, "Must specify formatter");
 

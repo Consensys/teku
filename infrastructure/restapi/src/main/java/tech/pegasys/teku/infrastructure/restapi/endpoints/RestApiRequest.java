@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -84,17 +86,36 @@ public class RestApiRequest {
     context.status(statusCode);
   }
 
-  public String getPathParam(final String pathParameter) {
-    return pathParamMap.get(pathParameter);
+  public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata)
+      throws BadRequestException {
+    try {
+      return parameterMetadata
+          .getType()
+          .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
+    } catch (IOException e) {
+      throw new BadRequestException("Failed to get path parameter " + e.getMessage());
+    }
   }
 
-  public int getQueryParamAsInt(final String queryParameter) {
-    return SingleQueryParameterUtils.getParameterValueAsInt(queryParamMap, queryParameter);
+  public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata)
+      throws IOException {
+    if (!queryParamMap.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        parameterMetadata
+            .getType()
+            .deserializeFromString(
+                SingleQueryParameterUtils.validateQueryParameter(
+                    queryParamMap, parameterMetadata.getName())));
   }
 
-  public Optional<Integer> getQueryParamAsOptionalInteger(final String queryParameter) {
-    return SingleQueryParameterUtils.getParameterValueAsIntegerIfPresent(
-        queryParamMap, queryParameter);
+  public <T> T getQueryParameter(final ParameterMetadata<T> parameterMetadata) throws IOException {
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(
+            SingleQueryParameterUtils.validateQueryParameter(
+                queryParamMap, parameterMetadata.getName()));
   }
 
   public <T> void handleOptionalResult(
