@@ -86,15 +86,10 @@ public class RestApiRequest {
     context.status(statusCode);
   }
 
-  public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata)
-      throws BadRequestException {
-    try {
-      return parameterMetadata
-          .getType()
-          .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
-    } catch (IOException e) {
-      throw new BadRequestException("Failed to get path parameter " + e.getMessage());
-    }
+  public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
   }
 
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata)

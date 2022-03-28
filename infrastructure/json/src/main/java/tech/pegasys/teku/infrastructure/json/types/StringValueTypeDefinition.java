@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
-import java.io.IOException;
-
 public interface StringValueTypeDefinition<T> extends DeserializableTypeDefinition<T> {
-  T deserializeFromString(String value) throws IOException;
+  T deserializeFromString(String value);
 
   @Override
   StringValueTypeDefinition<T> withDescription(final String description);

@@ -21,7 +21,6 @@ import com.google.common.base.MoreObjects;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 
 public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T> {
 
@@ -115,11 +114,11 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
   }
 
   @Override
-  public T deserializeFromString(final String value) throws IOException {
+  public T deserializeFromString(final String value) {
     try {
       return objectFromString.apply(value);
     } catch (RuntimeException ex) {
-      throw new BadRequestException(ex.getMessage(), ex);
+      throw new IllegalArgumentException(ex.getMessage(), ex);
     }
   }
 

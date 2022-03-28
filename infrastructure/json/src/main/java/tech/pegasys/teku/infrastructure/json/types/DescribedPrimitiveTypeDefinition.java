@@ -65,7 +65,7 @@ class DescribedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T
   }
 
   @Override
-  public T deserializeFromString(final String value) throws IOException {
+  public T deserializeFromString(final String value) {
     return delegate.deserializeFromString(value);
   }
 }
