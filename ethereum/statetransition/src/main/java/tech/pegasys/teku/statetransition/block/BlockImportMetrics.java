@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.SUCCESS_RESULT_METRIC_LABEL_VALUE;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TOTAL_PROCESSING_TIME_LABEL;
 
 import java.util.List;
@@ -69,6 +70,15 @@ public class BlockImportMetrics {
             "Counter of blocks falling in different time frames in each import stages",
             List.of("stage", "result"),
             eventsAndBoundaries);
+
+    metricsCountersByIntervals.initCounters(
+        List.of(TOTAL_PROCESSING_TIME_LABEL, SUCCESS_RESULT_METRIC_LABEL_VALUE));
+    metricsCountersByIntervals.initCounters(
+        List.of(
+            TOTAL_PROCESSING_TIME_LABEL,
+            FailureReason.UNKNOWN_PARENT.name().toLowerCase(Locale.ROOT)));
+    metricsCountersByIntervals.initCounters(
+        List.of(ARRIVAL_EVENT_LABEL, SUCCESS_RESULT_METRIC_LABEL_VALUE));
 
     return new BlockImportMetrics(metricsHistogram, metricsCountersByIntervals);
   }

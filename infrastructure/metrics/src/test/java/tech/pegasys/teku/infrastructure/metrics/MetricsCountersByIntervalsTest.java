@@ -121,4 +121,28 @@ public class MetricsCountersByIntervalsTest {
 
     assertThat(values).containsOnly(entry(List.of("label1Val1", "label2UnknownVal", "[0,∞)"), 1d));
   }
+
+  @Test
+  void shouldInitCounters() {
+    final Map<List<String>, List<Long>> eventsAndBoundaries = Map.of(List.of(), List.of());
+
+    final MetricsCountersByIntervals metric =
+        MetricsCountersByIntervals.create(
+            CATEGORY,
+            metricsSystem,
+            COUNTER_NAME,
+            "Counter help",
+            List.of("label1", "label2"),
+            eventsAndBoundaries);
+
+    metric.initCounters(List.of("a", "b"));
+
+    final Map<List<String>, Object> values =
+        metricsSystem
+            .streamObservations(CATEGORY)
+            .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
+            .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+
+    assertThat(values).containsOnly(entry(List.of("a", "b", "[0,∞)"), 0d));
+  }
 }

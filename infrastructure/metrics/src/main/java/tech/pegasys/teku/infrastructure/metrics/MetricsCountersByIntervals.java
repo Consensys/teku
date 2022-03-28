@@ -53,8 +53,11 @@ public class MetricsCountersByIntervals {
       final Map<List<String>, List<Long>> labelsValuesToBoundaries) {
 
     // calculate listOfValues -> treeMapOfBoundariesToIntervalLabels
-    // i.e. ("val1","val2") -> [0->"[0,10),10->"[10,20)",...], ("val3") ->
-    // [0->"[0,50),50->"[50,120)",...]
+    // i.e.
+    // [
+    //   ("val1","val2") -> [0->"[0,10),10->"[10,20)",...],
+    //   ("val3") -> [0->"[0,50),50->"[50,120)",...]
+    // ]
     final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels =
         labelsValuesToBoundaries.entrySet().stream()
             .map(
@@ -101,16 +104,8 @@ public class MetricsCountersByIntervals {
    */
   private void updateCounterMetric(final UInt64 value, final String... customLabelValues) {
     final List<String> customLabelValuesList = Arrays.asList(customLabelValues);
-    Optional<TreeMap<UInt64, String>> intervalLabels =
-        labelValuesListSizes.stream()
-            .map(
-                size ->
-                    Optional.ofNullable(
-                        labelsToBoundariesToIntervalLabels.get(
-                            customLabelValuesList.subList(0, size))))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .findFirst();
+    final Optional<TreeMap<UInt64, String>> intervalLabels =
+        lookupIntervalLabels(customLabelValuesList);
 
     if (intervalLabels.isEmpty()) {
       return;
@@ -123,6 +118,36 @@ public class MetricsCountersByIntervals {
                     Stream.of(intervalLabels.get().floorEntry(value).getValue()))
                 .toArray(String[]::new))
         .inc();
+  }
+
+  public void initCounters(final List<String> customLabelValuesList) {
+    final Optional<TreeMap<UInt64, String>> intervalLabels =
+        lookupIntervalLabels(customLabelValuesList);
+
+    if (intervalLabels.isEmpty()) {
+      return;
+    }
+
+    intervalLabels
+        .get()
+        .values()
+        .forEach(
+            s ->
+                labelledMetricCounter.labels(
+                    Stream.concat(customLabelValuesList.stream(), Stream.of(s))
+                        .toArray(String[]::new)));
+  }
+
+  private Optional<TreeMap<UInt64, String>> lookupIntervalLabels(
+      final List<String> customLabelValuesList) {
+    return labelValuesListSizes.stream()
+        .map(
+            size ->
+                Optional.ofNullable(
+                    labelsToBoundariesToIntervalLabels.get(customLabelValuesList.subList(0, size))))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst();
   }
 
   protected static TreeMap<UInt64, String> boundariesToIntervalLabels(final List<Long> boundaries) {
