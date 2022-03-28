@@ -832,11 +832,7 @@ public final class DataStructureUtil {
 
   public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
     BeaconBlockBodySchema<?> schema =
-        spec.atSlot(slotNum)
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getBlindedBeaconBlockBodySchema();
+        spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
 
     return schema.createBlockBody(
         builder ->
