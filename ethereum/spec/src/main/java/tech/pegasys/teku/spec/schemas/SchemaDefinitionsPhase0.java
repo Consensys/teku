@@ -68,6 +68,11 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   }
 
   @Override
+  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
+    return getSignedBeaconBlockSchema();
+  }
+
+  @Override
   public MetadataMessageSchemaPhase0 getMetadataMessageSchema() {
     return metadataMessageSchema;
   }

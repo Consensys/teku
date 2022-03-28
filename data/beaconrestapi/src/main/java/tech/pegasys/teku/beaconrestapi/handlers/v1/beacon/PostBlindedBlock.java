@@ -115,7 +115,7 @@ public class PostBlindedBlock implements Handler {
       ctx.status(SC_BAD_REQUEST);
       ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     } catch (final Exception ex) {
-      LOG.error("Failed to post block due to internal error", ex);
+      LOG.error("Failed to post blinded block due to internal error", ex);
       ctx.status(SC_INTERNAL_SERVER_ERROR);
       ctx.json(BadRequest.internalError(jsonProvider, ex.getMessage()));
     }

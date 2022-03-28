@@ -42,6 +42,8 @@ public interface SchemaDefinitions {
 
   BeaconBlockBodySchema<?> getBlindedBlockBodySchema();
 
+  SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema();
+
   MetadataMessageSchema<?> getMetadataMessageSchema();
 
   SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema();
