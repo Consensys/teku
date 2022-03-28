@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Meta {
   @JsonProperty("count")
-  @Schema(type = "string", description = "Total number of items", example = "1")
+  @Schema(type = "number", description = "Total number of items")
   public final UInt64 count;
 
   @JsonCreator

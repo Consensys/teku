@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetPeers extends MigratingEndpointAdapter {
@@ -90,17 +90,11 @@ public class GetPeers extends MigratingEndpointAdapter {
                   eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound)
           .build();
 
-  private static final DeserializableTypeDefinition<UInt64> COUNT_TYPE =
-      DeserializableTypeDefinition.string(UInt64.class)
-          .formatter(UInt64::toString)
-          .parser(UInt64::valueOf)
-          .example("1")
-          .description("Total number of items")
-          .format("uint64")
-          .build();
+  private static final DeserializableTypeDefinition<Integer> COUNT_TYPE =
+      INTEGER_TYPE.withDescription("Total number of items");
 
-  private static final SerializableTypeDefinition<UInt64> PEERS_META_TYPE =
-      SerializableTypeDefinition.object(UInt64.class)
+  private static final SerializableTypeDefinition<Integer> PEERS_META_TYPE =
+      SerializableTypeDefinition.object(Integer.class)
           .name("Meta")
           .withField("count", COUNT_TYPE, Function.identity())
           .build();
@@ -154,18 +148,18 @@ public class GetPeers extends MigratingEndpointAdapter {
 
   static class PeersData {
     private final List<Eth2Peer> peers;
-    private final UInt64 count;
+    private final Integer count;
 
     PeersData(final List<Eth2Peer> peers) {
       this.peers = peers;
-      this.count = UInt64.valueOf(peers.size());
+      this.count = peers.size();
     }
 
     public List<Eth2Peer> getPeers() {
       return peers;
     }
 
-    public UInt64 getCount() {
+    public Integer getCount() {
       return count;
     }
   }

@@ -4,10 +4,8 @@
   "required" : [ "count" ],
   "properties" : {
     "count" : {
-      "type" : "string",
-      "description" : "Total number of items",
-      "example" : "1",
-      "format" : "uint64"
+      "type" : "number",
+      "description" : "Total number of items"
     }
   }
 }
