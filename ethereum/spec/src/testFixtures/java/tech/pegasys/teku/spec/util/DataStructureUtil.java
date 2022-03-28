@@ -530,6 +530,16 @@ public final class DataStructureUtil {
         slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
+  public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
+    return new AttestationData(
+        slot,
+        randomUInt64(),
+        blockRoot,
+        // Make checkpoint epochs realistic
+        randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1)),
+        randomCheckpoint(spec.computeEpochAtSlot(slot)));
+  }
+
   public Attestation randomAttestation() {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
