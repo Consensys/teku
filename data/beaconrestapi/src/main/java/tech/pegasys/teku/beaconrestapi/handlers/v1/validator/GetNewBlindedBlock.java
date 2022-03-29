@@ -186,7 +186,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                                     .equals(SpecMilestone.PHASE0),
                             schemaDefinitionCache
                                 .getSchemaDefinition(SpecMilestone.PHASE0)
-                                .getBlindedBlockSchema()
+                                .getBlindedBeaconBlockSchema()
                                 .getJsonTypeDefinition())
                         .withType(
                             block ->
@@ -195,7 +195,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                                     .equals(SpecMilestone.ALTAIR),
                             schemaDefinitionCache
                                 .getSchemaDefinition(SpecMilestone.ALTAIR)
-                                .getBlindedBlockSchema()
+                                .getBlindedBeaconBlockSchema()
                                 .getJsonTypeDefinition())
                         .withType(
                             block ->
@@ -204,7 +204,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                                     .equals(SpecMilestone.BELLATRIX),
                             schemaDefinitionCache
                                 .getSchemaDefinition(SpecMilestone.BELLATRIX)
-                                .getBlindedBlockSchema()
+                                .getBlindedBeaconBlockSchema()
                                 .getJsonTypeDefinition())
                         .build(),
                     Function.identity())
