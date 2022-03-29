@@ -92,7 +92,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
           timeProvider,
           eventLogger,
           asyncRunner,
-          false);
+          Optional.empty());
 
   @BeforeAll
   public static void initSession() {

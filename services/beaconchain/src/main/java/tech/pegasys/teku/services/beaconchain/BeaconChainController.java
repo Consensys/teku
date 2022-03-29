@@ -84,6 +84,7 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
@@ -824,7 +825,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
-    BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
+    final BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
+    final Optional<BlockImportMetrics> importMetrics =
+        beaconConfig.getMetricsConfig().isBlockPerformanceEnabled()
+            ? Optional.of(BlockImportMetrics.create(metricsSystem))
+            : Optional.empty();
+
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =
           new ReexecutingExecutionPayloadBlockManager(
@@ -836,7 +842,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               EVENT_LOG,
               beaconAsyncRunner,
-              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
+              importMetrics);
     } else {
       blockManager =
           new BlockManager(
@@ -847,7 +853,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               blockValidator,
               timeProvider,
               EVENT_LOG,
-              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
+              importMetrics);
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

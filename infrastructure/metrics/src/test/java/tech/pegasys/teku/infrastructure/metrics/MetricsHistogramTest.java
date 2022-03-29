@@ -35,7 +35,7 @@ class MetricsHistogramTest {
   @Test
   void shouldReportValuesWithNoSpecifiedUpperLimit() {
     final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3);
+        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3, List.of());
 
     for (int i = 1; i <= 100; i++) {
       histogram.recordValue(i);
@@ -47,16 +47,16 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
     assertThat(values)
         .containsOnly(
-            entry(key(MetricsHistogram.LABEL_50), 50d),
-            entry(key(MetricsHistogram.LABEL_95), 95d),
-            entry(key(MetricsHistogram.LABEL_99), 99d),
-            entry(key(MetricsHistogram.LABEL_1), 100d));
+            entry(key(List.of(MetricsHistogram.LABEL_50)), 50d),
+            entry(key(List.of(MetricsHistogram.LABEL_95)), 95d),
+            entry(key(List.of(MetricsHistogram.LABEL_99)), 99d),
+            entry(key(List.of(MetricsHistogram.LABEL_1)), 100d));
   }
 
   @Test
   void shouldReportValuesWithUpperLimit() {
     final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 2, 80);
+        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 2, 80, List.of());
 
     for (int i = 1; i <= 100; i++) {
       histogram.recordValue(i);
@@ -68,14 +68,15 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
     assertThat(values)
         .containsOnly(
-            entry(key(MetricsHistogram.LABEL_50), 50d),
-            entry(key(MetricsHistogram.LABEL_95), 80d),
-            entry(key(MetricsHistogram.LABEL_99), 80d),
-            entry(key(MetricsHistogram.LABEL_1), 80d));
+            entry(key(List.of(MetricsHistogram.LABEL_50)), 50d),
+            entry(key(List.of(MetricsHistogram.LABEL_95)), 80d),
+            entry(key(List.of(MetricsHistogram.LABEL_99)), 80d),
+            entry(key(List.of(MetricsHistogram.LABEL_1)), 80d));
   }
 
   private static List<String> key(final List<String> labelValues) {
-    final List<String> key = new ArrayList<>(MetricsHistogram.LABELS);
+    final List<String> key = new ArrayList<>();
+    key.add(MetricsHistogram.QUANTILE_LABEL);
     key.addAll(labelValues);
     return key;
   }
