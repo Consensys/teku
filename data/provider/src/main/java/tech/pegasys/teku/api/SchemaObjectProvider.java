@@ -51,6 +51,14 @@ public class SchemaObjectProvider {
         getBeaconBlock(internalBlock.getMessage()), new BLSSignature(internalBlock.getSignature()));
   }
 
+  public SignedBeaconBlock getSignedBlindedBeaconBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+
+    return new SignedBeaconBlock(
+        getBlindedBlock(internalBlock.getMessage()),
+        new BLSSignature(internalBlock.getSignature()));
+  }
+
   public BeaconBlock getBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block) {
     return getBeaconBlock(block, spec.atSlot(block.getSlot()).getMilestone());

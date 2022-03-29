@@ -197,6 +197,21 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
+  void parseBlock_shouldParseBlindedBlocks() throws JsonProcessingException {
+    final SignedBeaconBlock internalSignedBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(ONE);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
+        schemaProvider.getSignedBlindedBeaconBlock(internalSignedBlock);
+    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
+
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
+        provider.parseBlindedBlock(jsonProvider, signedBlockJson);
+
+    assertThat(parsedBlock).isEqualTo(signedBlock);
+    assertThat(parsedBlock).isInstanceOf(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
+  }
+
+  @TestTemplate
   void parseBlock_shouldParseMilestoneSpecificBlocks(SpecContext specContext)
       throws JsonProcessingException {
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
