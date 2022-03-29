@@ -42,6 +42,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -52,7 +53,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
@@ -83,70 +83,15 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
 
   private final SerializableTypeDefinition<BeaconBlock> BLINDED_BLOCK_RESPONSE_TYPE;
 
-  public GetNewBlindedBlock(final DataProvider dataProvider, final Spec spec) {
-    this(dataProvider.getValidatorDataProvider(), spec);
+  public GetNewBlindedBlock(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
   @SuppressWarnings("unchecked")
-  public GetNewBlindedBlock(final ValidatorDataProvider provider, final Spec spec) {
-    super(
-        EndpointMetadata.get(ROUTE)
-            .operationId("getNewBlindedBlock")
-            .summary("Produce unsigned blinded block")
-            .description(
-                "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. "
-                    + "A blinded block is a block with only a transactions root, rather than a full transactions list.\n\n"
-                    + "Metadata in the response indicates the type of block produced, and the supported types of block "
-                    + "will be added to as forks progress.\n\n"
-                    + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
-            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
-            .pathParam(PARAM_SLOT)
-            .queryParamRequired(PARAM_RANDAO)
-            .queryParam(PARAM_GRAFFITI)
-            .response(
-                SC_OK,
-                "Request successful",
-                SerializableTypeDefinition.<BeaconBlock>object()
-                    .name("GetNewBlindedBlockResponse")
-                    .withField(
-                        "data",
-                        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>()
-                            .title("BlindedBlock")
-                            .withType(
-                                block ->
-                                    spec.atSlot(block.getSlot())
-                                        .getMilestone()
-                                        .equals(SpecMilestone.PHASE0),
-                                spec.forMilestoneOrDefault(SpecMilestone.PHASE0)
-                                    .getSchemaDefinitions()
-                                    .getBlindedBlockSchema()
-                                    .getJsonTypeDefinition())
-                            .withType(
-                                block ->
-                                    spec.atSlot(block.getSlot())
-                                        .getMilestone()
-                                        .equals(SpecMilestone.ALTAIR),
-                                spec.forMilestoneOrDefault(SpecMilestone.ALTAIR)
-                                    .getSchemaDefinitions()
-                                    .getBlindedBlockSchema()
-                                    .getJsonTypeDefinition())
-                            .withType(
-                                block ->
-                                    spec.atSlot(block.getSlot())
-                                        .getMilestone()
-                                        .equals(SpecMilestone.BELLATRIX),
-                                spec.forMilestoneOrDefault(SpecMilestone.BELLATRIX)
-                                    .getSchemaDefinitions()
-                                    .getBlindedBlockSchema()
-                                    .getJsonTypeDefinition())
-                            .build(),
-                        Function.identity())
-                    .withField(
-                        "version",
-                        SPEC_VERSION,
-                        block -> spec.atSlot(block.getSlot()).getMilestone())
-                    .build())
-            .build());
+  public GetNewBlindedBlock(
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    super(getEndpointMetaData(schemaDefinitionCache));
     this.provider = provider;
 
     BLINDED_BLOCK_RESPONSE_TYPE =
@@ -198,5 +143,66 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
             Bytes.fromHexString(request.getQueryParameter(PARAM_RANDAO)));
     final Optional<Bytes32> grafitti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
     throw new IllegalArgumentException("Not implemented");
+  }
+
+  private static EndpointMetadata getEndpointMetaData(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return EndpointMetadata.get(ROUTE)
+        .operationId("getNewBlindedBlock")
+        .summary("Produce unsigned blinded block")
+        .description(
+            "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. "
+                + "A blinded block is a block with only a transactions root, rather than a full transactions list.\n\n"
+                + "Metadata in the response indicates the type of block produced, and the supported types of block "
+                + "will be added to as forks progress.\n\n"
+                + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
+        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
+        .pathParam(PARAM_SLOT)
+        .queryParamRequired(PARAM_RANDAO)
+        .queryParam(PARAM_GRAFFITI)
+        .response(
+            SC_OK,
+            "Request successful",
+            SerializableTypeDefinition.<BeaconBlock>object()
+                .name("GetNewBlindedBlockResponse")
+                .withField(
+                    "data",
+                    new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>()
+                        .title("BlindedBlock")
+                        .withType(
+                            block ->
+                                schemaDefinitionCache
+                                    .milestoneAtSlot(block.getSlot())
+                                    .equals(SpecMilestone.PHASE0),
+                            schemaDefinitionCache
+                                .getSchemaDefinition(SpecMilestone.PHASE0)
+                                .getBlindedBlockSchema()
+                                .getJsonTypeDefinition())
+                        .withType(
+                            block ->
+                                schemaDefinitionCache
+                                    .milestoneAtSlot(block.getSlot())
+                                    .equals(SpecMilestone.ALTAIR),
+                            schemaDefinitionCache
+                                .getSchemaDefinition(SpecMilestone.ALTAIR)
+                                .getBlindedBlockSchema()
+                                .getJsonTypeDefinition())
+                        .withType(
+                            block ->
+                                schemaDefinitionCache
+                                    .milestoneAtSlot(block.getSlot())
+                                    .equals(SpecMilestone.BELLATRIX),
+                            schemaDefinitionCache
+                                .getSchemaDefinition(SpecMilestone.BELLATRIX)
+                                .getBlindedBlockSchema()
+                                .getJsonTypeDefinition())
+                        .build(),
+                    Function.identity())
+                .withField(
+                    "version",
+                    SPEC_VERSION,
+                    block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
+                .build())
+        .build();
   }
 }
