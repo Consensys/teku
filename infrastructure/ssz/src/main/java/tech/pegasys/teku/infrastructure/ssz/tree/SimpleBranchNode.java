@@ -57,8 +57,10 @@ class SimpleBranchNode implements BranchNode, TreeNode {
 
   @Override
   public Bytes32 hashTreeRoot() {
+    Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
       cachedHash = BranchNode.super.hashTreeRoot();
+      this.cachedHash = cachedHash;
     }
     return cachedHash;
   }

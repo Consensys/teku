@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PeersData;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -53,6 +54,7 @@ public class GetPeersTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldReturnListOfPeers() throws Exception {
     List<Eth2Peer> data = List.of(peer1, peer2);
+    GetPeers.PeersData peersData = new PeersData(data);
 
     final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
     when(networkDataProvider.getEth2Peers()).thenReturn(data);
@@ -60,6 +62,6 @@ public class GetPeersTest extends AbstractBeaconHandlerTest {
     GetPeers handler = new GetPeers(networkDataProvider);
     final RestApiRequest request = mock(RestApiRequest.class);
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(data), eq(CacheLength.NO_CACHE));
+    verify(request).respondOk(refEq(peersData), eq(CacheLength.NO_CACHE));
   }
 }

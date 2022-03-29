@@ -74,7 +74,7 @@ public class GetPeerByIdTest extends AbstractBeaconHandlerTest {
   private void checkResponse(String peerId, String address, String state, String direction) {
     final String expectedResponse =
         String.format(
-            "{\"data\":{\"peer_id\":\"%s\",\"address\":\"%s\",\"state\":\"%s\",\"direction\":\"%s\"}}",
+            "{\"data\":{\"peer_id\":\"%s\",\"last_seen_p2p_address\":\"%s\",\"state\":\"%s\",\"direction\":\"%s\"}}",
             peerId, address, state, direction);
 
     verify(context).result(args.capture());

@@ -15,8 +15,6 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Suppliers;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -49,7 +47,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   private final int depth;
   private final SszNodeTemplate elementTemplate;
   private final Bytes ssz;
-  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calcHashTreeRoot);
+  private volatile Bytes32 cachedHash;
 
   public SszSuperNode(int depth, SszNodeTemplate elementTemplate, Bytes ssz) {
     this.depth = depth;
@@ -69,7 +67,12 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
 
   @Override
   public Bytes32 hashTreeRoot() {
-    return hashTreeRoot.get();
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      cachedHash = calcHashTreeRoot();
+      this.cachedHash = cachedHash;
+    }
+    return cachedHash;
   }
 
   private Bytes32 calcHashTreeRoot() {

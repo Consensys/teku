@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -52,7 +53,8 @@ public class DutyMetrics {
             metricsSystem,
             "attestation_publication_delay",
             "Histogram recording delay in milliseconds from scheduled time to an attestation being published",
-            1);
+            1,
+            List.of());
     return new DutyMetrics(timeProvider, recentChainData, attestationHistogram, spec);
   }
 
