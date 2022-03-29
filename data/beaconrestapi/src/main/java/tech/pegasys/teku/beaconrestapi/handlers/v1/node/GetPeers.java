@@ -90,13 +90,11 @@ public class GetPeers extends MigratingEndpointAdapter {
                   eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound)
           .build();
 
-  private static final DeserializableTypeDefinition<Integer> COUNT_TYPE =
-      INTEGER_TYPE.withDescription("Total number of items");
-
   private static final SerializableTypeDefinition<Integer> PEERS_META_TYPE =
       SerializableTypeDefinition.object(Integer.class)
           .name("Meta")
-          .withField("count", COUNT_TYPE, Function.identity())
+          .withField(
+              "count", INTEGER_TYPE.withDescription("Total number of items"), Function.identity())
           .build();
 
   private static final SerializableTypeDefinition<PeersData> PEERS_RESPONSE_TYPE =
