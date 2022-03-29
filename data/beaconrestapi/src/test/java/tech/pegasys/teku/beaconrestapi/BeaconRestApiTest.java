@@ -29,7 +29,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -47,8 +46,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JettyServer server = mock(JettyServer.class);

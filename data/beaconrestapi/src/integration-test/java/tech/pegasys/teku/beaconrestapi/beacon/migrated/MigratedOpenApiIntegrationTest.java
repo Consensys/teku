@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class MigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private JsonNode currentJsonNodes;
@@ -30,7 +29,7 @@ public class MigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIInt
 
   @BeforeEach
   public void setup() throws IOException {
-    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
+    startRestAPIAtGenesis();
     currentJsonNodes = util.parseSwagger(beaconRestApi.getMigratedOpenApi());
   }
 
