@@ -106,7 +106,7 @@ public class PostBlindedBlock implements Handler {
       final SignedBeaconBlock signedBlindedBlock =
           validatorDataProvider.parseBlindedBlock(jsonProvider, ctx.body());
 
-      LOG.debug("parsed block is from slot: " + signedBlindedBlock.getMessage().slot);
+      LOG.debug("parsed block is from slot: {}", signedBlindedBlock.getMessage().slot);
 
       ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
       ctx.json(BadRequest.badRequest(jsonProvider, "Blinded blocks not implemented"));
