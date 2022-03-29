@@ -39,16 +39,18 @@ public class Peer {
           "Ethereum node record. Not currently populated. "
               + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
       example =
-          "example: enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
+          "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
               + "Tfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYp"
               + "Ma2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8")
   public final String enr;
 
-  @JsonProperty("address")
+  @JsonProperty("last_seen_p2p_address")
   @Schema(
       type = "string",
       example = "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N",
-      description = "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)")
+      description =
+          "Multiaddr used in last peer connection. "
+              + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)")
   public final String address;
 
   @JsonProperty("state")
@@ -61,7 +63,7 @@ public class Peer {
   public Peer(
       @JsonProperty("peer_id") final String peerId,
       @JsonProperty("enr") final String enr,
-      @JsonProperty("address") final String address,
+      @JsonProperty("last_seen_p2p_address") final String address,
       @JsonProperty("state") final State state,
       @JsonProperty("direction") final Direction direction) {
     this.peerId = peerId;

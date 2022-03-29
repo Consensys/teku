@@ -1,0 +1,9 @@
+{
+  "type" : "object",
+  "properties" : {
+    "count" : {
+      "type" : "number",
+      "description" : "Total number of items"
+    }
+  }
+}

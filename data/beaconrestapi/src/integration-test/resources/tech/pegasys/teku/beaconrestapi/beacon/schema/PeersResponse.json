@@ -6,6 +6,9 @@
       "items" : {
         "$ref" : "#/components/schemas/Peer"
       }
+    },
+    "meta" : {
+      "$ref" : "#/components/schemas/Meta"
     }
   }
 }
