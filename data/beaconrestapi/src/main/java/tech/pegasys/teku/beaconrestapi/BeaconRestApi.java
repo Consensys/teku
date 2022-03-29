@@ -108,6 +108,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -125,7 +126,8 @@ public class BeaconRestApi {
       final DataProvider dataProvider,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final Spec spec) {
     final Info applicationInfo = createApplicationInfo();
     openApiDocBuilder =
         new OpenApiDocBuilder()
@@ -156,7 +158,7 @@ public class BeaconRestApi {
     addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
-    addStandardApiHandlers(dataProvider, eventChannels, asyncRunner, configuration);
+    addStandardApiHandlers(dataProvider, eventChannels, asyncRunner, configuration, spec);
     addTekuSpecificHandlers(dataProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
@@ -169,11 +171,12 @@ public class BeaconRestApi {
       final DataProvider dataProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
-      final BeaconRestApiConfig configuration) {
+      final BeaconRestApiConfig configuration,
+      final Spec spec) {
     addBeaconHandlers(dataProvider);
     addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
     addNodeHandlers(dataProvider);
-    addValidatorHandlers(dataProvider);
+    addValidatorHandlers(dataProvider, spec);
     addConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
     addDebugHandlers(dataProvider);
   }
@@ -243,7 +246,8 @@ public class BeaconRestApi {
       final DataProvider dataProvider,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final Spec spec) {
     this.app =
         Javalin.create(
             config -> {
@@ -261,7 +265,7 @@ public class BeaconRestApi {
                 }
               }
             });
-    initialize(dataProvider, configuration, eventChannels, asyncRunner);
+    initialize(dataProvider, configuration, eventChannels, asyncRunner, spec);
   }
 
   BeaconRestApi(
@@ -269,9 +273,10 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
-      final Javalin app) {
+      final Javalin app,
+      final Spec spec) {
     this.app = app;
-    initialize(dataProvider, configuration, eventChannels, asyncRunner);
+    initialize(dataProvider, configuration, eventChannels, asyncRunner, spec);
   }
 
   public void start() {
@@ -347,7 +352,7 @@ public class BeaconRestApi {
     openApiDocBuilder.endpoint(endpoint);
   }
 
-  private void addValidatorHandlers(final DataProvider dataProvider) {
+  private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
     app.get(
@@ -358,7 +363,8 @@ public class BeaconRestApi {
         tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock(
             dataProvider, jsonProvider));
-    app.get(GetNewBlindedBlock.ROUTE, new GetNewBlindedBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec));
+    //    app.get(GetNewBlindedBlock.ROUTE, new GetNewBlindedBlock(dataProvider, jsonProvider));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));

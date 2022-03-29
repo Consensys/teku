@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -26,29 +27,131 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIM
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
-public class GetNewBlindedBlock extends GetNewBlock implements Handler {
+@SuppressWarnings("unused")
+public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/validator/blinded_blocks/:slot";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  private final ValidatorDataProvider provider;
 
-  public GetNewBlindedBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(dataProvider, jsonProvider);
+  private static final ParameterMetadata<UInt64> PARAM_SLOT =
+      new ParameterMetadata<>(
+          SLOT,
+          CoreTypes.UINT64_TYPE.withDescription(
+              "The slot for which the block should be proposed."));
+
+  // todo would be nice to not have to get this from string
+  private static final ParameterMetadata<String> PARAM_RANDAO =
+      new ParameterMetadata<>(
+          RestApiConstants.RANDAO_REVEAL,
+          CoreTypes.STRING_TYPE.withDescription(
+              "`BLSSignature Hex` BLS12-381 signature for the current epoch."));
+
+  private static final ParameterMetadata<Bytes32> PARAM_GRAFFITI =
+      new ParameterMetadata<>(
+          GRAFFITI, CoreTypes.BYTES32_TYPE.withDescription("`Bytes32 Hex` Graffiti."));
+  private static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION =
+      DeserializableTypeDefinition.enumOf(SpecMilestone.class);
+
+  private final SerializableTypeDefinition<BeaconBlock> BLINDED_BLOCK_RESPONSE_TYPE;
+
+  public GetNewBlindedBlock(final DataProvider dataProvider, final Spec spec) {
+    this(dataProvider.getValidatorDataProvider(), spec);
   }
 
-  public GetNewBlindedBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    super(provider, jsonProvider);
+  @SuppressWarnings("unchecked")
+  public GetNewBlindedBlock(final ValidatorDataProvider provider, final Spec spec) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getNewBlindedBlock")
+            .summary("Produce unsigned blinded block")
+            .description(
+                "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. "
+                    + "A blinded block is a block with only a transactions root, rather than a full transactions list.\n\n"
+                    + "Metadata in the response indicates the type of block produced, and the supported types of block "
+                    + "will be added to as forks progress.\n\n"
+                    + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
+            .pathParam(PARAM_SLOT)
+            .queryParamRequired(PARAM_RANDAO)
+            .queryParam(PARAM_GRAFFITI)
+            .response(
+                SC_OK,
+                "Request successful",
+                SerializableTypeDefinition.<BeaconBlock>object()
+                    .name("GetNewBlindedBlockResponse")
+                    .withField(
+                        "data",
+                        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>()
+                            .title("BlindedBlock")
+                            .withType(
+                                block ->
+                                    spec.atSlot(block.getSlot())
+                                        .getMilestone()
+                                        .equals(SpecMilestone.PHASE0),
+                                spec.forMilestoneOrDefault(SpecMilestone.PHASE0)
+                                    .getSchemaDefinitions()
+                                    .getBlindedBlockSchema()
+                                    .getJsonTypeDefinition())
+                            .withType(
+                                block ->
+                                    spec.atSlot(block.getSlot())
+                                        .getMilestone()
+                                        .equals(SpecMilestone.ALTAIR),
+                                spec.forMilestoneOrDefault(SpecMilestone.ALTAIR)
+                                    .getSchemaDefinitions()
+                                    .getBlindedBlockSchema()
+                                    .getJsonTypeDefinition())
+                            .withType(
+                                block ->
+                                    spec.atSlot(block.getSlot())
+                                        .getMilestone()
+                                        .equals(SpecMilestone.BELLATRIX),
+                                spec.forMilestoneOrDefault(SpecMilestone.BELLATRIX)
+                                    .getSchemaDefinitions()
+                                    .getBlindedBlockSchema()
+                                    .getJsonTypeDefinition())
+                            .build(),
+                        Function.identity())
+                    .withField(
+                        "version",
+                        SPEC_VERSION,
+                        block -> spec.atSlot(block.getSlot()).getMilestone())
+                    .build())
+            .build());
+    this.provider = provider;
+
+    BLINDED_BLOCK_RESPONSE_TYPE =
+        (SerializableTypeDefinition<BeaconBlock>)
+            getMetadata().getResponseType(SC_OK, "application/json");
   }
 
   @OpenApi(
@@ -84,7 +187,16 @@ public class GetNewBlindedBlock extends GetNewBlock implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.status(SC_BAD_REQUEST);
-    ctx.json(BadRequest.badRequest(jsonProvider, "Blinded blocks not implemented"));
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    final UInt64 slot = request.getPathParameter(PARAM_SLOT);
+    final BLSSignature signature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromHexString(request.getQueryParameter(PARAM_RANDAO)));
+    final Optional<Bytes32> grafitti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
+    throw new IllegalArgumentException("Not implemented");
   }
 }

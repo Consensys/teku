@@ -111,6 +111,14 @@ public class Spec {
     return specVersions.get(milestone);
   }
 
+  public SpecVersion forMilestoneOrDefault(final SpecMilestone milestone) {
+    SpecVersion specVersion = specVersions.get(milestone);
+    if (specVersion != null) {
+      return specVersion;
+    }
+    return SpecVersion.create(milestone, getGenesisSpecConfig()).orElseThrow();
+  }
+
   public SpecVersion atEpoch(final UInt64 epoch) {
     return specVersions.get(forkSchedule.getSpecMilestoneAtEpoch(epoch));
   }
