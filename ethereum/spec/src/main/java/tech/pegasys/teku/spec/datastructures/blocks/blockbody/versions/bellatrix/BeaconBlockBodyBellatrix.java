@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
@@ -24,11 +22,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 public interface BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
   static BeaconBlockBodyBellatrix required(final BeaconBlockBody body) {
-    checkArgument(
-        body instanceof BeaconBlockBodyBellatrix,
-        "Expected bellatrix block body but got %s",
-        body.getClass());
-    return (BeaconBlockBodyBellatrix) body;
+    return body.toVersionBellatrix()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected bellatrix block body but got " + body.getClass().getSimpleName()));
   }
 
   ExecutionPayload getExecutionPayload();

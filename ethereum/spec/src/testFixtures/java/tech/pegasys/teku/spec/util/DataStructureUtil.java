@@ -637,6 +637,16 @@ public final class DataStructureUtil {
     return signedBlock(beaconBlock);
   }
 
+  public SignedBeaconBlock randomSignedBlindedBeaconBlock(long slotNum) {
+    final BeaconBlock beaconBlock = randomBlindedBeaconBlock(UInt64.valueOf(slotNum));
+    return signedBlock(beaconBlock);
+  }
+
+  public SignedBeaconBlock randomSignedBlindedBeaconBlock(UInt64 slotNum) {
+    final BeaconBlock beaconBlock = randomBlindedBeaconBlock(slotNum);
+    return signedBlock(beaconBlock);
+  }
+
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
     return randomSignedBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -709,11 +719,7 @@ public final class DataStructureUtil {
     BeaconBlockBody body = randomBlindedBeaconBlockBody(slotNum);
 
     return new BeaconBlock(
-        spec.atSlot(slotNum)
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getBlindedBeaconBlockSchema(),
+        spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockSchema(),
         slotNum,
         proposer_index,
         previous_root,
@@ -826,11 +832,7 @@ public final class DataStructureUtil {
 
   public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
     BeaconBlockBodySchema<?> schema =
-        spec.atSlot(slotNum)
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getBlindedBeaconBlockBodySchema();
+        spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
 
     return schema.createBlockBody(
         builder ->

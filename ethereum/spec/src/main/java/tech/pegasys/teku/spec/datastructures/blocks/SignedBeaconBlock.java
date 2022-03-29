@@ -40,9 +40,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
         message.getBody().isBlinded()
             ? spec.atSlot(message.getSlot())
                 .getSchemaDefinitions()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getSignedBlindedBeaconBlockBodySchema()
+                .getSignedBlindedBeaconBlockSchema()
             : spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema();
     return new SignedBeaconBlock(signedBeaconBlockSchema, message, signature);
   }
