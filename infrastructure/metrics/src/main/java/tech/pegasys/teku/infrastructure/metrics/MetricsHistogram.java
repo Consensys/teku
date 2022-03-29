@@ -13,10 +13,18 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.prometheus.client.Collector;
+import io.prometheus.client.Collector.MetricFamilySamples;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.HdrHistogram.Histogram;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.HdrHistogram.SynchronizedHistogram;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -32,16 +40,26 @@ import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
  * @see <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram docs</a>
  */
 public class MetricsHistogram {
-  static final List<String> LABELS = Collections.singletonList("quantile");
-  static final List<String> LABEL_50 = Collections.singletonList("0.5");
-  static final List<String> LABEL_95 = Collections.singletonList("0.95");
-  static final List<String> LABEL_99 = Collections.singletonList("0.99");
-  static final List<String> LABEL_1 = Collections.singletonList("1");
+  static final String QUANTILE_LABEL = "quantile";
+  static final String LABEL_50 = "0.5";
+  static final String LABEL_95 = "0.95";
+  static final String LABEL_99 = "0.99";
+  static final String LABEL_1 = "1";
 
-  private final Histogram histogram;
+  private final Map<List<String>, SynchronizedHistogram> histogramMap = new ConcurrentHashMap<>();
+  private final List<String> labels;
+  private final Optional<Long> highestTrackableValue;
+  private final int numberOfSignificantValueDigits;
 
-  private MetricsHistogram(final Histogram histogram) {
-    this.histogram = histogram;
+  protected MetricsHistogram(
+      final int numberOfSignificantValueDigits,
+      final Optional<Long> highestTrackableValue,
+      final List<String> customLabelsNames) {
+    this.numberOfSignificantValueDigits = numberOfSignificantValueDigits;
+    this.highestTrackableValue = highestTrackableValue;
+    this.labels =
+        Stream.concat(customLabelsNames.stream(), Stream.of(QUANTILE_LABEL))
+            .collect(Collectors.toUnmodifiableList());
   }
 
   /**
@@ -60,10 +78,17 @@ public class MetricsHistogram {
       final MetricsSystem metricsSystem,
       final String name,
       final String help,
-      final int numberOfSignificantValueDigits) {
-    final SynchronizedHistogram histogram =
-        new SynchronizedHistogram(numberOfSignificantValueDigits);
-    return createMetric(category, metricsSystem, name, help, histogram);
+      final int numberOfSignificantValueDigits,
+      final List<String> customLabelsNames) {
+
+    return createMetric(
+        category,
+        metricsSystem,
+        name,
+        help,
+        numberOfSignificantValueDigits,
+        Optional.empty(),
+        customLabelsNames);
   }
 
   /**
@@ -87,10 +112,17 @@ public class MetricsHistogram {
       final String name,
       final String help,
       final int numberOfSignificantValueDigits,
-      final long highestTrackableValue) {
-    final SynchronizedHistogram histogram =
-        new SynchronizedHistogram(highestTrackableValue, numberOfSignificantValueDigits);
-    return createMetric(category, metricsSystem, name, help, histogram);
+      final long highestTrackableValue,
+      final List<String> customLabelsNames) {
+
+    return createMetric(
+        category,
+        metricsSystem,
+        name,
+        help,
+        numberOfSignificantValueDigits,
+        Optional.of(highestTrackableValue),
+        customLabelsNames);
   }
 
   private static MetricsHistogram createMetric(
@@ -98,8 +130,13 @@ public class MetricsHistogram {
       final MetricsSystem metricsSystem,
       final String name,
       final String help,
-      final SynchronizedHistogram histogram1) {
-    final MetricsHistogram histogram = new MetricsHistogram(histogram1);
+      final int numberOfSignificantValueDigits,
+      final Optional<Long> highestTrackableValue,
+      final List<String> customLabelsNames) {
+
+    final MetricsHistogram histogram =
+        new MetricsHistogram(
+            numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
     if (metricsSystem instanceof PrometheusMetricsSystem) {
       ((PrometheusMetricsSystem) metricsSystem)
           .addCollector(category, () -> histogram.histogramToCollector(category, name, help));
@@ -107,7 +144,19 @@ public class MetricsHistogram {
     return histogram;
   }
 
-  public void recordValue(final long value) {
+  public void recordValue(final long value, final String... customLabelValues) {
+    checkArgument(
+        labels.size() == customLabelValues.length + 1,
+        "customLabelsNames and customLabelsValues must have the same size");
+
+    final SynchronizedHistogram histogram =
+        histogramMap.computeIfAbsent(
+            Arrays.asList(customLabelValues),
+            __ ->
+                highestTrackableValue
+                    .map(aLong -> new SynchronizedHistogram(aLong, numberOfSignificantValueDigits))
+                    .orElseGet(() -> new SynchronizedHistogram(numberOfSignificantValueDigits)));
+
     if (histogram.isAutoResize()) {
       histogram.recordValue(value);
     } else {
@@ -115,7 +164,7 @@ public class MetricsHistogram {
     }
   }
 
-  private Collector histogramToCollector(
+  protected Collector histogramToCollector(
       final MetricCategory metricCategory, final String name, final String help) {
     return new Collector() {
       final String metricName =
@@ -123,19 +172,56 @@ public class MetricsHistogram {
 
       @Override
       public List<MetricFamilySamples> collect() {
+
         final List<MetricFamilySamples.Sample> samples =
-            List.of(
-                new MetricFamilySamples.Sample(
-                    metricName, LABELS, LABEL_50, histogram.getValueAtPercentile(50)),
-                new MetricFamilySamples.Sample(
-                    metricName, LABELS, LABEL_95, histogram.getValueAtPercentile(95d)),
-                new MetricFamilySamples.Sample(
-                    metricName, LABELS, LABEL_99, histogram.getValueAtPercentile(99d)),
-                new MetricFamilySamples.Sample(
-                    metricName, LABELS, LABEL_1, histogram.getMaxValueAsDouble()));
+            histogramMap.entrySet().stream()
+                .map(
+                    labelsValuesToHistogram ->
+                        List.of(
+                            createSample(
+                                metricName,
+                                LABEL_50,
+                                labelsValuesToHistogram.getKey(),
+                                50d,
+                                labelsValuesToHistogram.getValue()),
+                            createSample(
+                                metricName,
+                                LABEL_95,
+                                labelsValuesToHistogram.getKey(),
+                                95d,
+                                labelsValuesToHistogram.getValue()),
+                            createSample(
+                                metricName,
+                                LABEL_99,
+                                labelsValuesToHistogram.getKey(),
+                                99d,
+                                labelsValuesToHistogram.getValue()),
+                            createSample(
+                                metricName,
+                                LABEL_1,
+                                labelsValuesToHistogram.getKey(),
+                                labelsValuesToHistogram.getValue().getMaxValueAsDouble(),
+                                labelsValuesToHistogram.getValue())))
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
+
         return Collections.singletonList(
             new MetricFamilySamples(metricName, Type.SUMMARY, help, samples));
       }
     };
+  }
+
+  private MetricFamilySamples.Sample createSample(
+      final String metricName,
+      final String quantileLabelValue,
+      final List<String> labelValues,
+      double percentile,
+      final SynchronizedHistogram histogram) {
+    return new MetricFamilySamples.Sample(
+        metricName,
+        labels,
+        Stream.concat(labelValues.stream(), Stream.of(quantileLabelValue))
+            .collect(Collectors.toUnmodifiableList()),
+        histogram.getValueAtPercentile(percentile));
   }
 }
