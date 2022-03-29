@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -68,11 +69,22 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
           CoreTypes.UINT64_TYPE.withDescription(
               "The slot for which the block should be proposed."));
 
-  // todo would be nice to not have to get this from string
-  private static final ParameterMetadata<String> PARAM_RANDAO =
+  private static final StringValueTypeDefinition<BLSSignature> SIGNATURE_TYPE =
+      DeserializableTypeDefinition.string(BLSSignature.class)
+          .formatter(BLSSignature::toString)
+          .parser(value -> BLSSignature.fromBytesCompressed(Bytes.fromHexString(value)))
+          .example(
+              "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+                  + "cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc"
+                  + "1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505")
+          .description("`BLSSignature Hex` BLS12-381 signature for the current epoch.")
+          .format("byte")
+          .build();
+
+  private static final ParameterMetadata<BLSSignature> PARAM_RANDAO =
       new ParameterMetadata<>(
           RestApiConstants.RANDAO_REVEAL,
-          CoreTypes.STRING_TYPE.withDescription(
+          SIGNATURE_TYPE.withDescription(
               "`BLSSignature Hex` BLS12-381 signature for the current epoch."));
 
   private static final ParameterMetadata<Bytes32> PARAM_GRAFFITI =
@@ -138,9 +150,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getPathParameter(PARAM_SLOT);
-    final BLSSignature signature =
-        BLSSignature.fromBytesCompressed(
-            Bytes.fromHexString(request.getQueryParameter(PARAM_RANDAO)));
+    final BLSSignature signature = request.getQueryParameter(PARAM_RANDAO);
     final Optional<Bytes32> grafitti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
     throw new IllegalArgumentException("Not implemented");
   }
