@@ -100,7 +100,7 @@ public class TreeUtil {
       checkArgument(defaultNodesCount == 1);
       return defaultNode;
     } else {
-      long leftNodesCount = Math.min(defaultNodesCount, 1 << (depth - 1));
+      long leftNodesCount = Math.min(defaultNodesCount, 1L << (depth - 1));
       long rightNodesCount = defaultNodesCount - leftNodesCount;
       TreeNode lTree = createTree(defaultNode, leftNodesCount, depth - 1);
       TreeNode rTree =

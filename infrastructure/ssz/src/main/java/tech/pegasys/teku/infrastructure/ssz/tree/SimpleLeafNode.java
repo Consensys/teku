@@ -49,8 +49,10 @@ class SimpleLeafNode implements LeafNode, TreeNode {
 
   @Override
   public Bytes32 hashTreeRoot() {
+    Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
       cachedHash = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+      this.cachedHash = cachedHash;
     }
     return cachedHash;
   }
