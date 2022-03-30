@@ -46,7 +46,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
-
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -93,7 +92,13 @@ class BeaconRestApiTest {
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .build();
-    new BeaconRestApi(dataProvider, beaconRestApiConfig, eventChannels, new StubAsyncRunner(), app);
+    new BeaconRestApi(
+        dataProvider,
+        beaconRestApiConfig,
+        eventChannels,
+        new StubAsyncRunner(),
+        app,
+        storageClient.getSpec());
   }
 
   @Test

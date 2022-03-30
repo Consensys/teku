@@ -795,7 +795,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   dataProvider,
                   beaconConfig.beaconRestApiConfig(),
                   eventChannels,
-                  eventAsyncRunner));
+                  eventAsyncRunner,
+                  spec));
 
       if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
         final int initialValidatorsCount =
