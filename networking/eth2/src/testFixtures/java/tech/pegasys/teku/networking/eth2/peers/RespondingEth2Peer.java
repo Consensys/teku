@@ -93,7 +93,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   private static PeerStatus createStatus(final StateAndBlockSummary head) {
-    final Checkpoint finalizedCheckpoint = head.getState().getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = head.getState().getFinalizedCheckpoint();
     return new PeerStatus(
         FORK_DIGEST,
         finalizedCheckpoint.getRoot(),

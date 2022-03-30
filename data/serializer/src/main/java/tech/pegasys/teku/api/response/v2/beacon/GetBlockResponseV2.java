@@ -27,6 +27,7 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 
+@SuppressWarnings("JavaCase")
 public class GetBlockResponseV2 {
   private final Version version;
 

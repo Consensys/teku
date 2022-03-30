@@ -448,8 +448,7 @@ public class Spec {
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
     // Attestations must both be from the same epoch or will wind up being rejected by any version
-    final UInt64 epoch =
-        computeEpochAtSlot(attesterSlashing.getAttestation_1().getData().getSlot());
+    final UInt64 epoch = computeEpochAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
     return atEpoch(epoch)
         .getOperationValidator()
         .validateAttesterSlashing(fork(epoch), state, attesterSlashing);
@@ -661,7 +660,7 @@ public class Spec {
 
   private UInt64 getProposerSlashingEpoch(final ProposerSlashing proposerSlashing) {
     // Slashable blocks must be from same slot
-    return computeEpochAtSlot(proposerSlashing.getHeader_1().getMessage().getSlot());
+    return computeEpochAtSlot(proposerSlashing.getHeader1().getMessage().getSlot());
   }
 
   @Override

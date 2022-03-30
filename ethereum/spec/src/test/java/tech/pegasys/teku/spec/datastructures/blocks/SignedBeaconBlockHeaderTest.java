@@ -24,17 +24,16 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedBeaconBlockHeaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UInt64 slot = dataStructureUtil.randomUInt64();
-  private UInt64 proposer_index = dataStructureUtil.randomUInt64();
-  private Bytes32 previous_block_root = dataStructureUtil.randomBytes32();
-  private Bytes32 state_root = dataStructureUtil.randomBytes32();
-  private Bytes32 block_body_root = dataStructureUtil.randomBytes32();
-  private BLSSignature signature = dataStructureUtil.randomSignature();
+  private final UInt64 slot = dataStructureUtil.randomUInt64();
+  private final UInt64 proposerIndex = dataStructureUtil.randomUInt64();
+  private final Bytes32 previousBlockRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 blockBodyRoot = dataStructureUtil.randomBytes32();
+  private final BLSSignature signature = dataStructureUtil.randomSignature();
 
-  private SignedBeaconBlockHeader signedBlockHeader =
+  private final SignedBeaconBlockHeader signedBlockHeader =
       new SignedBeaconBlockHeader(
-          new BeaconBlockHeader(
-              slot, proposer_index, previous_block_root, state_root, block_body_root),
+          new BeaconBlockHeader(slot, proposerIndex, previousBlockRoot, stateRoot, blockBodyRoot),
           signature);
 
   @Test

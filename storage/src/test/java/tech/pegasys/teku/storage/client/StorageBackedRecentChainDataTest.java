@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class StorageBackedRecentChainDataTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final BeaconState INITIAL_STATE =
+  private final BeaconState initialState =
       new DataStructureUtil(3, spec).randomBeaconState(UInt64.ZERO);
 
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
@@ -96,7 +96,7 @@ public class StorageBackedRecentChainDataTest {
             spec,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
-            AnchorPoint.fromGenesisState(spec, INITIAL_STATE),
+            AnchorPoint.fromGenesisState(spec, initialState),
             UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
@@ -145,11 +145,11 @@ public class StorageBackedRecentChainDataTest {
                 spec,
                 BlockProvider.NOOP,
                 StateAndBlockSummaryProvider.NOOP,
-                AnchorPoint.fromGenesisState(spec, INITIAL_STATE),
+                AnchorPoint.fromGenesisState(spec, initialState),
                 UInt64.ZERO)
             .storeConfig(storeConfig)
             .build();
-    client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
+    client.get().initializeFromGenesis(initialState, UInt64.ZERO);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStore);
@@ -191,7 +191,7 @@ public class StorageBackedRecentChainDataTest {
             spec,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
-            AnchorPoint.fromGenesisState(spec, INITIAL_STATE),
+            AnchorPoint.fromGenesisState(spec, initialState),
             UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
@@ -241,7 +241,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE, UInt64.ZERO))
+    assertThatThrownBy(() -> client.initializeFromGenesis(initialState, UInt64.ZERO))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "Failed to initialize from state: store has already been initialized");

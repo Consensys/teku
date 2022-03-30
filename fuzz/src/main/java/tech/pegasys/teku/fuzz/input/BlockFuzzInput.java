@@ -40,11 +40,11 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
   }
 
   public BlockFuzzInput(
-      final Spec spec, final BeaconState state, final SignedBeaconBlock signed_block) {
-    super(createSchema(spec.atSlot(state.getSlot())), state, signed_block);
+      final Spec spec, final BeaconState state, final SignedBeaconBlock signedBlock) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, signedBlock);
   }
 
-  public SignedBeaconBlock getSigned_block() {
+  public SignedBeaconBlock getSignedBlock() {
     return getField1();
   }
 

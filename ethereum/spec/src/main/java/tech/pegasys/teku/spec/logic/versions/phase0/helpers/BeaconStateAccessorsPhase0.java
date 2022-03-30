@@ -33,6 +33,6 @@ public class BeaconStateAccessorsPhase0 extends BeaconStateAccessors {
     final int absoluteMax =
         Math.toIntExact(
             state.getBeaconStateSchema().getPreviousEpochAttestationsSchema().getMaxLength());
-    return absoluteMax - state.getPrevious_epoch_attestations().size();
+    return absoluteMax - state.getPreviousEpochAttestations().size();
   }
 }

@@ -36,7 +36,7 @@ public class GenesisValidityTestExecutor implements TestExecutor {
     final int activeValidatorCount =
         testDefinition.getSpec().countActiveValidators(state, SpecConfig.GENESIS_EPOCH);
     final boolean result =
-        beaconStateUtil.isValidGenesisState(state.getGenesis_time(), activeValidatorCount);
+        beaconStateUtil.isValidGenesisState(state.getGenesisTime(), activeValidatorCount);
     assertThat(result).isEqualTo(expectedValidity);
   }
 }

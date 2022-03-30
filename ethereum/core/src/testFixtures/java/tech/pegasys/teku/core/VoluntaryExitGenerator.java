@@ -82,7 +82,7 @@ public class VoluntaryExitGenerator {
     if (state
             .getValidators()
             .get(validatorIndex)
-            .getActivation_epoch()
+            .getActivationEpoch()
             .plus(spec.getSpecConfig(spec.getCurrentEpoch(state)).getShardCommitteePeriod())
             .compareTo(spec.computeEpochAtSlot(state.getSlot()))
         >= 0) {

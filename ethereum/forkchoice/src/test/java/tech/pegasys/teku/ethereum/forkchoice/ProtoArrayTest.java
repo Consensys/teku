@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ProtoArrayTest {
-  private final Checkpoint GENESIS_CHECKPOINT = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+  private static final Checkpoint GENESIS_CHECKPOINT = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalPhase0());

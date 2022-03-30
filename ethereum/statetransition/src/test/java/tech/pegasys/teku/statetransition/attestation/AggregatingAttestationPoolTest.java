@@ -404,7 +404,7 @@ class AggregatingAttestationPoolTest {
         new AttestationData(
             attestationData1.getSlot(),
             attestationData1.getIndex().plus(1),
-            attestationData1.getBeacon_block_root(),
+            attestationData1.getBeaconBlockRoot(),
             attestationData1.getSource(),
             attestationData1.getTarget());
     Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
@@ -422,7 +422,7 @@ class AggregatingAttestationPoolTest {
         new AttestationData(
             attestationData1.getSlot().plus(1),
             attestationData1.getIndex(),
-            attestationData1.getBeacon_block_root(),
+            attestationData1.getBeaconBlockRoot(),
             attestationData1.getSource(),
             attestationData1.getTarget());
     Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);

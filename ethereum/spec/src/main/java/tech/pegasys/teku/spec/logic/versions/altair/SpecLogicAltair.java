@@ -186,7 +186,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
 
     final Bytes32 expectedAttestationTarget =
         startSlot.compareTo(currentSlot) == 0 || currentSlot.compareTo(startSlot) <= 0
-            ? state.getLatest_block_header().getRoot()
+            ? state.getLatestBlockHeader().getRoot()
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
 
     final UInt64 oldestWorthySlotForSourceReward =

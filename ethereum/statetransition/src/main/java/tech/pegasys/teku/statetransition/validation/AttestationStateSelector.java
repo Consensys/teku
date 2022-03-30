@@ -44,7 +44,7 @@ public class AttestationStateSelector {
     }
     final ChainHead chainHead = maybeChainHead.get();
 
-    final Bytes32 targetBlockRoot = attestationData.getBeacon_block_root();
+    final Bytes32 targetBlockRoot = attestationData.getBeaconBlockRoot();
     final UInt64 attestationSlot = attestationData.getSlot();
     final UInt64 attestationEpoch = attestationData.getTarget().getEpoch();
 
@@ -120,7 +120,7 @@ public class AttestationStateSelector {
    */
   private SafeFuture<Optional<BeaconState>> resolveStateForAttestation(
       final AttestationData attestationData, final BeaconState blockState) {
-    final Bytes32 blockRoot = attestationData.getBeacon_block_root();
+    final Bytes32 blockRoot = attestationData.getBeaconBlockRoot();
     final Checkpoint targetEpoch = attestationData.getTarget();
     final UInt64 earliestSlot =
         spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(targetEpoch.getEpoch());

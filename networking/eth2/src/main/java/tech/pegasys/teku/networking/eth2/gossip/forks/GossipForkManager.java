@@ -180,7 +180,7 @@ public class GossipForkManager {
 
   public void publishProposerSlashing(final ProposerSlashing message) {
     publishMessage(
-        message.getHeader_1().getMessage().getSlot(),
+        message.getHeader1().getMessage().getSlot(),
         message,
         "proposer slashing",
         GossipForkSubscriptions::publishProposerSlashing);
@@ -188,7 +188,7 @@ public class GossipForkManager {
 
   public void publishAttesterSlashing(final AttesterSlashing message) {
     publishMessage(
-        message.getAttestation_1().getData().getSlot(),
+        message.getAttestation1().getData().getSlot(),
         message,
         "attester slashing",
         GossipForkSubscriptions::publishAttesterSlashing);

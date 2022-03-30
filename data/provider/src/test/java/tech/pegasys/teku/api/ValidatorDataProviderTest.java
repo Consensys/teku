@@ -250,7 +250,7 @@ public class ValidatorDataProviderTest {
     tech.pegasys.teku.api.schema.AttestationData data = result.join().orElseThrow();
     assertThat(data.index).isEqualTo(internalData.getIndex());
     assertThat(data.slot).isEqualTo(internalData.getSlot());
-    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeacon_block_root());
+    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeaconBlockRoot());
   }
 
   @TestTemplate

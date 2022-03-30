@@ -32,15 +32,15 @@ class BeaconBlockTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 slot = dataStructureUtil.randomUInt64();
-  private final UInt64 proposer_index = dataStructureUtil.randomUInt64();
-  private final Bytes32 previous_root = dataStructureUtil.randomBytes32();
-  private final Bytes32 state_root = dataStructureUtil.randomBytes32();
+  private final UInt64 proposerIndex = dataStructureUtil.randomUInt64();
+  private final Bytes32 previousRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
   private final BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
   private final BeaconBlockSchema blockSchema =
       spec.getGenesisSchemaDefinitions().getBeaconBlockSchema();
 
   private final BeaconBlock beaconBlock =
-      new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root, body);
+      new BeaconBlock(blockSchema, slot, proposerIndex, previousRoot, stateRoot, body);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -52,7 +52,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root, body);
+        new BeaconBlock(blockSchema, slot, proposerIndex, previousRoot, stateRoot, body);
 
     assertEquals(beaconBlock, testBeaconBlock);
   }
@@ -61,7 +61,7 @@ class BeaconBlockTest {
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            blockSchema, slot.plus(UInt64.ONE), proposer_index, previous_root, state_root, body);
+            blockSchema, slot.plus(UInt64.ONE), proposerIndex, previousRoot, stateRoot, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -70,7 +70,7 @@ class BeaconBlockTest {
   void equalsReturnsFalseWhenProposersAreDifferent() {
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            blockSchema, slot, proposer_index.plus(UInt64.ONE), previous_root, state_root, body);
+            blockSchema, slot, proposerIndex.plus(UInt64.ONE), previousRoot, stateRoot, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -78,7 +78,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenParentRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(blockSchema, slot, proposer_index, previous_root.not(), state_root, body);
+        new BeaconBlock(blockSchema, slot, proposerIndex, previousRoot.not(), stateRoot, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -86,7 +86,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root.not(), body);
+        new BeaconBlock(blockSchema, slot, proposerIndex, previousRoot, stateRoot.not(), body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -102,7 +102,7 @@ class BeaconBlockTest {
     }
 
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root, otherBody);
+        new BeaconBlock(blockSchema, slot, proposerIndex, previousRoot, stateRoot, otherBody);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }

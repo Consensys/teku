@@ -63,13 +63,13 @@ class MiscHelpersTest {
 
     when(specConfig.getShuffleRoundCount()).thenReturn(10);
     Bytes32 seed = Bytes32.ZERO;
-    int index_count = 3333;
-    int[] indices = IntStream.range(0, index_count).toArray();
+    int indexCount = 3333;
+    int[] indices = IntStream.range(0, indexCount).toArray();
 
     miscHelpers.shuffleList(indices, seed);
     assertThat(indices)
         .isEqualTo(
-            IntStream.range(0, index_count)
+            IntStream.range(0, indexCount)
                 .map(i -> miscHelpers.computeShuffledIndex(i, indices.length, seed))
                 .toArray());
   }
@@ -81,12 +81,12 @@ class MiscHelpersTest {
 
     when(specConfig.getShuffleRoundCount()).thenReturn(10);
     Bytes32 seed = Bytes32.ZERO;
-    int index_count = 3333;
+    int indexCount = 3333;
 
-    int[] indices = IntStream.range(0, index_count).toArray();
+    int[] indices = IntStream.range(0, indexCount).toArray();
     miscHelpers.shuffleList(indices, seed);
 
-    IntList indexList = IntList.of(IntStream.range(0, index_count).toArray());
+    IntList indexList = IntList.of(IntStream.range(0, indexCount).toArray());
     final List<Integer> result = miscHelpers.shuffleList(indexList, seed);
 
     assertThat(result)

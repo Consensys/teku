@@ -60,7 +60,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
               }
 
               if (receivedValidSlashingForProposerSet.add(
-                  slashing.getHeader_1().getMessage().getProposerIndex())) {
+                  slashing.getHeader1().getMessage().getProposerIndex())) {
                 return InternalValidationResult.ACCEPT;
               } else {
                 LOG.trace(
@@ -97,7 +97,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
 
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
     return !receivedValidSlashingForProposerSet.contains(
-        slashing.getHeader_1().getMessage().getProposerIndex());
+        slashing.getHeader1().getMessage().getProposerIndex());
   }
 
   private SafeFuture<BeaconState> getState() {

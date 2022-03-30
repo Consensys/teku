@@ -138,14 +138,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     votesLock.writeLock().lock();
     try {
       attestation
-          .getAttesting_indices()
+          .getAttestingIndices()
           .streamUnboxed()
           .forEach(
               validatorIndex ->
                   processAttestation(
                       voteUpdater,
                       validatorIndex,
-                      attestation.getData().getBeacon_block_root(),
+                      attestation.getData().getBeaconBlockRoot(),
                       attestation.getData().getTarget().getEpoch()));
     } finally {
       votesLock.writeLock().unlock();

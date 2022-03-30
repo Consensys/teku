@@ -225,6 +225,7 @@ public class SszListHintsTest {
     }
   }
 
+  @SuppressWarnings("JavaCase")
   <TElement extends SszData> void testList(
       SszListSchema<TElement, ?> type,
       Supplier<TElement> listElementsFactory,

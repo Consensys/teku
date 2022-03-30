@@ -97,33 +97,33 @@ public class TreeTest {
   @Test
   public void testUpdated() {
     TreeNode zeroTree = TreeUtil.createDefaultTree(8, LeafNode.EMPTY_LEAF);
-    TreeNode t1 = zeroTree.updated(8 + 0, newTestLeaf(111));
-    TreeNode t1_ = zeroTree.updated(8 + 0, newTestLeaf(111));
-    assertThat(t1).isNotSameAs(t1_);
-    assertThat(t1.get(8 + 0)).isEqualTo(newTestLeaf(111));
-    assertThat(IntStream.range(1, 8).mapToObj(idx -> t1.get(8 + idx)))
+    TreeNode t1a = zeroTree.updated(8 + 0, newTestLeaf(111));
+    TreeNode t1b = zeroTree.updated(8 + 0, newTestLeaf(111));
+    assertThat(t1a).isNotSameAs(t1b);
+    assertThat(t1a.get(8 + 0)).isEqualTo(newTestLeaf(111));
+    assertThat(IntStream.range(1, 8).mapToObj(idx -> t1a.get(8 + idx)))
         .containsOnly(LeafNode.EMPTY_LEAF);
-    assertThat(t1.hashTreeRoot()).isEqualTo(t1_.hashTreeRoot());
+    assertThat(t1a.hashTreeRoot()).isEqualTo(t1b.hashTreeRoot());
 
-    TreeNode t2 = t1.updated(8 + 3, newTestLeaf(222));
-    TreeNode t2_ =
+    TreeNode t2a = t1a.updated(8 + 3, newTestLeaf(222));
+    TreeNode t2b =
         zeroTree.updated(
             new TreeUpdates(
                 List.of(new Update(8 + 0, newTestLeaf(111)), new Update(8 + 3, newTestLeaf(222)))));
-    assertThat(t2).isNotSameAs(t2_);
-    assertThat(t2.get(8 + 0)).isEqualTo(newTestLeaf(111));
-    assertThat(t2.get(8 + 3)).isEqualTo(newTestLeaf(222));
-    assertThat(IntStream.of(1, 2, 4, 5, 6, 7).mapToObj(idx -> t2.get(8 + idx)))
+    assertThat(t2a).isNotSameAs(t2b);
+    assertThat(t2a.get(8 + 0)).isEqualTo(newTestLeaf(111));
+    assertThat(t2a.get(8 + 3)).isEqualTo(newTestLeaf(222));
+    assertThat(IntStream.of(1, 2, 4, 5, 6, 7).mapToObj(idx -> t2a.get(8 + idx)))
         .containsOnly(LeafNode.EMPTY_LEAF);
-    assertThat(t2.hashTreeRoot()).isEqualTo(t2_.hashTreeRoot());
+    assertThat(t2a.hashTreeRoot()).isEqualTo(t2b.hashTreeRoot());
 
-    TreeNode zeroTree_ =
-        t2.updated(
+    TreeNode zeroTreeB =
+        t2a.updated(
             new TreeUpdates(
                 List.of(
                     new Update(8 + 0, LeafNode.EMPTY_LEAF),
                     new Update(8 + 3, LeafNode.EMPTY_LEAF))));
-    assertThat(zeroTree.hashTreeRoot()).isEqualTo(zeroTree_.hashTreeRoot());
+    assertThat(zeroTree.hashTreeRoot()).isEqualTo(zeroTreeB.hashTreeRoot());
   }
 
   @Test
@@ -133,7 +133,7 @@ public class TreeTest {
     // since the hash can be calculated lazily and cached inside TreeNode there are
     // potential threading issues
     TreeNode tree = TreeUtil.createDefaultTree(32 * 1024, newTestLeaf(111));
-    List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(() -> tree.hashTreeRoot(), 512);
+    List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(tree::hashTreeRoot, 512);
     assertThat(TestUtil.waitAll(hasheFuts)).containsOnly(tree.hashTreeRoot());
   }
 

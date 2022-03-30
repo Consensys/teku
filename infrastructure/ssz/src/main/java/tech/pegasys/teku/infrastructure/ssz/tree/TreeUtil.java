@@ -53,7 +53,7 @@ public class TreeUtil {
 
   @VisibleForTesting public static final TreeNode[] ZERO_TREES;
 
-  public static ImmutableMap<Bytes32, TreeNode> ZERO_TREES_BY_ROOT;
+  public static final ImmutableMap<Bytes32, TreeNode> ZERO_TREES_BY_ROOT;
 
   static {
     ZERO_TREES = new TreeNode[64];

@@ -17,14 +17,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
+@SuppressWarnings("JavaCase")
 public class ProposerSlashing {
   public final SignedBeaconBlockHeader signed_header_1;
   public final SignedBeaconBlockHeader signed_header_2;
 
   public ProposerSlashing(
       tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing proposerSlashing) {
-    signed_header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
-    signed_header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
+    signed_header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader1());
+    signed_header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader2());
   }
 
   @JsonCreator

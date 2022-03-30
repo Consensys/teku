@@ -34,8 +34,8 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
   }
 
   @Override
-  protected UInt64 calculateProposerReward(final UInt64 whistleblower_reward) {
-    return whistleblower_reward.times(PROPOSER_WEIGHT).dividedBy(WEIGHT_DENOMINATOR);
+  protected UInt64 calculateProposerReward(final UInt64 whistleblowerReward) {
+    return whistleblowerReward.times(PROPOSER_WEIGHT).dividedBy(WEIGHT_DENOMINATOR);
   }
 
   @Override

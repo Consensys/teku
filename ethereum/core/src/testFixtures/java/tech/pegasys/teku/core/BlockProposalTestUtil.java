@@ -244,7 +244,7 @@ public class BlockProposalTestUtil {
           newSlot,
           previousState,
           parentBlockSigningRoot,
-          eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
+          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
           attestations.orElse(blockBodyLists.createAttestations()),
           blockBodyLists.createProposerSlashings(),
           deposits.orElse(blockBodyLists.createDeposits()),
@@ -258,7 +258,7 @@ public class BlockProposalTestUtil {
         newSlot,
         previousState,
         parentBlockSigningRoot,
-        eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
+        eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
         attestations.orElse(blockBodyLists.createAttestations()),
         blockBodyLists.createProposerSlashings(),
         deposits.orElse(blockBodyLists.createDeposits()),
@@ -268,13 +268,13 @@ public class BlockProposalTestUtil {
         executionPayload);
   }
 
-  private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
+  private Eth1Data getEth1DataStub(BeaconState state, UInt64 currentEpoch) {
     final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
     final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
-    UInt64 votingPeriod = current_epoch.dividedBy(epochsPerPeriod);
+    UInt64 votingPeriod = currentEpoch.dividedBy(epochsPerPeriod);
     return new Eth1Data(
         Hash.sha256(SSZ.encodeUInt64(epochsPerPeriod)),
-        state.getEth1_deposit_index(),
+        state.getEth1DepositIndex(),
         Hash.sha256(Hash.sha256(SSZ.encodeUInt64(votingPeriod.longValue()))));
   }
 

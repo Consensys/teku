@@ -83,8 +83,8 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
     return new ValidatorStatus(
         validator.isSlashed(),
-        validator.getWithdrawable_epoch().isLessThanOrEqualTo(currentEpoch),
-        validator.getEffective_balance(),
+        validator.getWithdrawableEpoch().isLessThanOrEqualTo(currentEpoch),
+        validator.getEffectiveBalance(),
         predicates.isActiveValidator(validator, currentEpoch),
         predicates.isActiveValidator(validator, previousEpoch));
   }

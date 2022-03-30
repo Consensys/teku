@@ -69,7 +69,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
 
               state.setFork(
                   new Fork(
-                      preState.getFork().getCurrent_version(),
+                      preState.getFork().getCurrentVersion(),
                       specConfig.getAltairForkVersion(),
                       epoch));
               state.getPreviousEpochParticipation().setAll(SszByte.ZERO, validatorCount);
@@ -78,7 +78,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
 
               // Fill in previous epoch participation from the pre state's pending attestations
               translateParticipation(
-                  state, BeaconStatePhase0.required(preState).getPrevious_epoch_attestations());
+                  state, BeaconStatePhase0.required(preState).getPreviousEpochAttestations());
 
               // Fill in sync committees
               // Note: A duplicate committee is assigned for the current and next committee at the
@@ -93,7 +93,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
       final MutableBeaconStateAltair state, final SszList<PendingAttestation> pendingAttestations) {
     for (PendingAttestation attestation : pendingAttestations) {
       final AttestationData data = attestation.getData();
-      final UInt64 inclusionDelay = attestation.getInclusion_delay();
+      final UInt64 inclusionDelay = attestation.getInclusionDelay();
 
       // Translate attestation inclusion info to flag indices
       final List<Integer> participationFlagIndices =
@@ -102,7 +102,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
       // Apply flags to all attesting validators
       final SszMutableList<SszByte> epochParticipation = state.getPreviousEpochParticipation();
       attestationUtil
-          .streamAttestingIndices(state, data, attestation.getAggregation_bits())
+          .streamAttestingIndices(state, data, attestation.getAggregationBits())
           .forEach(
               index -> {
                 final byte previousFlags = epochParticipation.get(index).get();

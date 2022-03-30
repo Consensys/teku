@@ -87,25 +87,25 @@ abstract class AbstractBeaconStateBuilder<
         getEmptyState()
             .updated(
                 state -> {
-                  state.setGenesis_time(genesisTime);
-                  state.setGenesis_validators_root(genesisValidatorsRoot);
+                  state.setGenesisTime(genesisTime);
+                  state.setGenesisValidatorsRoot(genesisValidatorsRoot);
                   state.setSlot(slot);
                   state.setFork(fork);
-                  state.setLatest_block_header(latestBlockHeader);
-                  state.getBlock_roots().setAll(blockRoots);
-                  state.getState_roots().setAll(stateRoots);
-                  state.getHistorical_roots().setAll(historicalRoots);
-                  state.setEth1_data(eth1Data);
-                  state.getEth1_data_votes().setAll(eth1DataVotes);
-                  state.setEth1_deposit_index(eth1DepositIndex);
+                  state.setLatestBlockHeader(latestBlockHeader);
+                  state.getBlockRoots().setAll(blockRoots);
+                  state.getStateRoots().setAll(stateRoots);
+                  state.getHistoricalRoots().setAll(historicalRoots);
+                  state.setEth1Data(eth1Data);
+                  state.getEth1DataVotes().setAll(eth1DataVotes);
+                  state.setEth1DepositIndex(eth1DepositIndex);
                   state.getValidators().setAll(validators);
                   state.getBalances().setAll(balances);
-                  state.getRandao_mixes().setAll(randaoMixes);
+                  state.getRandaoMixes().setAll(randaoMixes);
                   state.getSlashings().setAll(slashings);
-                  state.setJustification_bits(justificationBits);
-                  state.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
-                  state.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
-                  state.setFinalized_checkpoint(finalizedCheckpoint);
+                  state.setJustificationBits(justificationBits);
+                  state.setPreviousJustifiedCheckpoint(previousJustifiedCheckpoint);
+                  state.setCurrentJustifiedCheckpoint(currentJustifiedCheckpoint);
+                  state.setFinalizedCheckpoint(finalizedCheckpoint);
 
                   setUniqueFields((TStateMutable) state);
                 });

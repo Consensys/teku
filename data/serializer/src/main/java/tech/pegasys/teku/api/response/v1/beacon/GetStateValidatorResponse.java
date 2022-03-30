@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@SuppressWarnings("JavaCase")
 public class GetStateValidatorResponse {
   @JsonProperty("execution_optimistic")
   @JsonInclude(Include.NON_NULL)

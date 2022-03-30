@@ -258,15 +258,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     previousActiveValidators.set(
         spec.getActiveValidatorIndices(state, spec.getPreviousEpoch(state)).size());
 
-    final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = state.getFinalizedCheckpoint();
     finalizedEpoch.set(finalizedCheckpoint.getEpoch().longValue());
     finalizedRoot.set(getLongFromRoot(finalizedCheckpoint.getRoot()));
 
-    final Checkpoint currentJustifiedCheckpoint = state.getCurrent_justified_checkpoint();
+    final Checkpoint currentJustifiedCheckpoint = state.getCurrentJustifiedCheckpoint();
     currentJustifiedEpoch.set(currentJustifiedCheckpoint.getEpoch().longValue());
     currentJustifiedRoot.set(getLongFromRoot(currentJustifiedCheckpoint.getRoot()));
 
-    final Checkpoint previousJustifiedCheckpoint = state.getPrevious_justified_checkpoint();
+    final Checkpoint previousJustifiedCheckpoint = state.getPreviousJustifiedCheckpoint();
     previousJustifiedEpoch.set(previousJustifiedCheckpoint.getEpoch().longValue());
     previousJustifiedRoot.set(getLongFromRoot(previousJustifiedCheckpoint.getRoot()));
 

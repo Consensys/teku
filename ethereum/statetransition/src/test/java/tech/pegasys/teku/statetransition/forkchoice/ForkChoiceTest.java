@@ -122,7 +122,7 @@ class ForkChoiceTest {
 
     storageSystem
         .chainUpdater()
-        .setTime(genesis.getState().getGenesis_time().plus(10L * spec.getSecondsPerSlot(ZERO)));
+        .setTime(genesis.getState().getGenesisTime().plus(10L * spec.getSecondsPerSlot(ZERO)));
 
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(optimisticSyncStateTracker);
   }
@@ -341,7 +341,7 @@ class ForkChoiceTest {
 
     // Set the time to be the start of epoch 3 so all the blocks we need are valid
     chainUpdater.setTime(
-        spec.getSlotStartTime(epoch4StartSlot, genesis.getState().getGenesis_time()));
+        spec.getSlotStartTime(epoch4StartSlot, genesis.getState().getGenesisTime()));
 
     justifyEpoch(chainUpdater, 2);
 
@@ -770,7 +770,7 @@ class ForkChoiceTest {
     final UInt64 epochPlus2StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch).plus(2));
 
     chainUpdater.setTime(
-        spec.getSlotStartTime(epochPlus2StartSlot, genesis.getState().getGenesis_time()));
+        spec.getSlotStartTime(epochPlus2StartSlot, genesis.getState().getGenesisTime()));
 
     justifyEpoch(chainUpdater, epoch);
 
@@ -829,7 +829,7 @@ class ForkChoiceTest {
                 targetBlock.getSlot(),
                 spec.computeEpochAtSlot(targetBlock.getSlot()),
                 targetBlock.getRoot(),
-                targetBlock.getState().getCurrent_justified_checkpoint(),
+                targetBlock.getState().getCurrentJustifiedCheckpoint(),
                 targetCheckpoint),
             BLSSignature.empty());
     final SafeFuture<AttestationProcessingResult> result =

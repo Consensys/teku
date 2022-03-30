@@ -180,7 +180,7 @@ class DiscoveryNetworkTest {
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
             currentForkInfo.getForkDigest(spec),
-            currentForkInfo.getFork().getCurrent_version(),
+            currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
   }
@@ -191,9 +191,7 @@ class DiscoveryNetworkTest {
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
-            nextFork.getCurrent_version(),
-            nextFork.getEpoch());
+            currentForkInfo.getForkDigest(spec), nextFork.getCurrentVersion(), nextFork.getEpoch());
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
   }
 
@@ -205,7 +203,7 @@ class DiscoveryNetworkTest {
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
             currentForkInfo.getForkDigest(spec),
-            currentForkInfo.getFork().getCurrent_version(),
+            currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
     verify(discoveryService).updateCustomENRField("eth2", encodedForkId);
@@ -237,7 +235,7 @@ class DiscoveryNetworkTest {
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
             currentForkInfo.getForkDigest(spec),
-            currentForkInfo.getFork().getCurrent_version(),
+            currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
     verify(discoveryService).updateCustomENRField("eth2", encodedForkId);
@@ -255,7 +253,7 @@ class DiscoveryNetworkTest {
     final EnrForkId enrForkId =
         new EnrForkId(
             currentForkInfo.getForkDigest(spec),
-            currentForkInfo.getFork().getCurrent_version(),
+            currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =
         ArgumentCaptor.forClass(Predicate.class);

@@ -40,11 +40,11 @@ public class ProposerSlashingFuzzInput
   }
 
   public ProposerSlashingFuzzInput(
-      final Spec spec, final BeaconState state, final ProposerSlashing proposer_slashing) {
-    super(createType(spec.atSlot(state.getSlot())), state, proposer_slashing);
+      final Spec spec, final BeaconState state, final ProposerSlashing proposerSlashing) {
+    super(createType(spec.atSlot(state.getSlot())), state, proposerSlashing);
   }
 
-  public ProposerSlashing getProposer_slashing() {
+  public ProposerSlashing getProposerSlashing() {
     return getField1();
   }
 

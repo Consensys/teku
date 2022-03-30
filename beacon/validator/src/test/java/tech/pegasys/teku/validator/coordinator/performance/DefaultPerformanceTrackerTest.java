@@ -369,7 +369,7 @@ public class DefaultPerformanceTrackerTest {
         .filter(
             a ->
                 a.getData()
-                    .getBeacon_block_root()
+                    .getBeaconBlockRoot()
                     .equals(chainBuilder.getBlockAtSlot(vouchingForBlockAtSlot).getRoot()))
         .findFirst()
         .orElseThrow();

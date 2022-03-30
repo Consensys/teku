@@ -97,12 +97,12 @@ class RecentChainDataTest {
 
   @BeforeAll
   public static void disableDepositBlsVerification() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
-  public static void EnableDepositBlsVerification() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+  public static void enableDepositBlsVerification() {
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @Test
@@ -111,7 +111,7 @@ class RecentChainDataTest {
     generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
-    assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
+    assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesisTime());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(GENESIS_SLOT);
     assertThat(recentChainData.getBestState()).isPresent();
     assertThat(recentChainData.getBestState().get()).isCompletedWithValue(genesisState);

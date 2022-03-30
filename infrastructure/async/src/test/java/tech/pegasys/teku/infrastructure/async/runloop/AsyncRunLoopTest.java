@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
 class AsyncRunLoopTest {
-  private final Duration RETRY_DELAY = Duration.ofSeconds(10);
+  private static final Duration RETRY_DELAY = Duration.ofSeconds(10);
   private final RunLoopLogic logic = mock(RunLoopLogic.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(100_000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
