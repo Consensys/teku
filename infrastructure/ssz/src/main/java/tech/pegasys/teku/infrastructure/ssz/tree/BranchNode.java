@@ -16,10 +16,10 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.security.MessageDigest;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.NodeRelation;
 
 /**
@@ -62,7 +62,19 @@ public interface BranchNode extends TreeNode {
 
   @Override
   default Bytes32 hashTreeRoot() {
-    return Hash.sha256(left().hashTreeRoot(), right().hashTreeRoot());
+    final MessageDigest messageDigest = left().hashTreeRootDigest();
+    right().updateDigest(messageDigest);
+    return Bytes32.wrap(messageDigest.digest());
+  }
+
+  @Override
+  default MessageDigest hashTreeRootDigest() {
+    final MessageDigest messageDigest = left().hashTreeRootDigest();
+    right().updateDigest(messageDigest);
+    final Bytes32 hashTreeRoot = Bytes32.wrap(messageDigest.digest());
+    messageDigest.reset();
+    hashTreeRoot.update(messageDigest);
+    return messageDigest;
   }
 
   @NotNull
