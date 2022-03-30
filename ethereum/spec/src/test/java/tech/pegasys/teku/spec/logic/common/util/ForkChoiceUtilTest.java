@@ -33,6 +33,9 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.spec.util.RandomChainBuilder;
 import tech.pegasys.teku.spec.util.RandomChainBuilderForkChoiceStrategy;
 
@@ -40,7 +43,8 @@ class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final RandomChainBuilder chainBuilder = new RandomChainBuilder(spec);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final RandomChainBuilder chainBuilder = new RandomChainBuilder(dataStructureUtil);
   private final RandomChainBuilderForkChoiceStrategy forkChoiceStrategy =
       new RandomChainBuilderForkChoiceStrategy(chainBuilder);
 
@@ -194,6 +198,68 @@ class ForkChoiceUtilTest {
     forkChoiceUtil.onTick(store, UInt64.valueOf(4000));
 
     verify(store, never()).setTime(any());
+  }
+
+  @Test
+  void canOptimisticallyImport_shouldBeFalseWhenBlockToImportIsTheMergeBlock() {
+    final SignedBeaconBlock blockToImport = dataStructureUtil.randomSignedBeaconBlock(9);
+    final ReadOnlyStore store = mockStore(10, blockToImport.getRoot());
+
+    assertThat(forkChoiceUtil.canOptimisticallyImport(store, blockToImport)).isFalse();
+  }
+
+  @Test
+  void canOptimisticallyImport_shouldBeTrueWhenParentBlockHasRealPayload() {
+    final SignedBeaconBlock blockToImport = dataStructureUtil.randomSignedBeaconBlock(11);
+    final ReadOnlyStore store =
+        mockStore(15, blockToImport.getParentRoot(), blockToImport.getRoot());
+    assertThat(forkChoiceUtil.canOptimisticallyImport(store, blockToImport)).isTrue();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeFalseWhenBlockIsMergeButNotOldEnough() {
+    final int blockSlot = 11;
+    final SignedBeaconBlock blockToImport = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
+    final ReadOnlyStore store =
+        mockStore(blockSlot + getSafeSyncDistance() - 1, blockToImport.getRoot());
+
+    assertThat(forkChoiceUtil.canOptimisticallyImport(store, blockToImport)).isFalse();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeTrueWhenBlockIsMergeAndIsOldEnough() {
+    final int blockSlot = 11;
+    final SignedBeaconBlock blockToImport = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
+    final ReadOnlyStore store =
+        mockStore(blockSlot + getSafeSyncDistance(), blockToImport.getRoot());
+
+    assertThat(forkChoiceUtil.canOptimisticallyImport(store, blockToImport)).isTrue();
+  }
+
+  private ReadOnlyStore mockStore(
+      final long currentSlot, final Bytes32... blocksWithNonDefaultPayloads) {
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = mock(ReadOnlyForkChoiceStrategy.class);
+    when(store.getForkChoiceStrategy()).thenReturn(forkChoiceStrategy);
+
+    when(forkChoiceStrategy.executionBlockHash(any())).thenReturn(Optional.of(Bytes32.ZERO));
+    for (Bytes32 blocksWithNonDefaultPayload : blocksWithNonDefaultPayloads) {
+      when(forkChoiceStrategy.executionBlockHash(blocksWithNonDefaultPayload))
+          .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
+    }
+
+    final UInt64 genesisTime = UInt64.valueOf(1982239L);
+    when(store.getTime())
+        .thenReturn(spec.getSlotStartTime(UInt64.valueOf(currentSlot), genesisTime));
+    when(store.getGenesisTime()).thenReturn(genesisTime);
+    return store;
+  }
+
+  private int getSafeSyncDistance() {
+    return spec.getGenesisSpecConfig()
+        .toVersionBellatrix()
+        .orElseThrow()
+        .getSafeSlotsToImportOptimistically();
   }
 
   private Map<UInt64, Bytes32> getRootsForBlocks(final int... blockNumbers) {

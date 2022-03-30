@@ -21,6 +21,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -438,5 +439,34 @@ public class ForkChoiceUtil {
     return getAncestor(forkChoiceStrategy, root, slot)
         .map(ancestorAtSlot -> ancestorAtSlot.equals(ancestorRoot))
         .orElse(false);
+  }
+
+  public boolean canOptimisticallyImport(final ReadOnlyStore store, final SignedBeaconBlock block) {
+    // A block can be optimistically imported either if it's parent contains a non-default payload
+    // or if it is at least `SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY` before the current slot.
+    // This is to avoid the merge block referencing a non-existent eth1 parent block and causing
+    // all nodes to switch to optimistic sync mode.
+    if (isExecutionBlock(store, block.getParentRoot())) {
+      return true;
+    }
+    return isBellatrixBlockOld(store, block.getSlot());
+  }
+
+  private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
+    final Optional<SpecConfigBellatrix> maybeConfig = specConfig.toVersionBellatrix();
+    if (maybeConfig.isEmpty()) {
+      return false;
+    }
+    return blockSlot
+        .plus(maybeConfig.get().getSafeSlotsToImportOptimistically())
+        .isLessThanOrEqualTo(getCurrentSlot(store));
+  }
+
+  private boolean isExecutionBlock(final ReadOnlyStore store, final Bytes32 blockRoot) {
+    final Optional<Bytes32> parentExecutionRoot =
+        store.getForkChoiceStrategy().executionBlockHash(blockRoot);
+    final boolean isExecutionBlock =
+        parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
+    return isExecutionBlock;
   }
 }

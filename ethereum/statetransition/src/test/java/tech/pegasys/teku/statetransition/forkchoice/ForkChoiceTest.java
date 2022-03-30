@@ -407,15 +407,11 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotOptimisticallyImportBeforeMergeBlockJustifiedELSyncing() {
-    doMerge();
-    UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
-
+  void onBlock_shouldNotOptimisticallyImportRecentMergeBlock() {
+    final SignedBlockAndState epoch4Block = generateMergeBlock();
     // make EL returning SYNCING
     executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
 
-    // generate block which finalize epoch 2
-    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
   }
 
@@ -789,6 +785,17 @@ class ForkChoiceTest {
   }
 
   private void doMerge(final boolean optimistic) {
+    final SignedBlockAndState epoch4Block = generateMergeBlock();
+
+    if (optimistic) {
+      storageSystem.chainUpdater().saveOptimisticBlock(epoch4Block);
+    } else {
+      storageSystem.chainUpdater().saveBlock(epoch4Block);
+    }
+    storageSystem.chainUpdater().updateBestBlock(epoch4Block);
+  }
+
+  private SignedBlockAndState generateMergeBlock() {
     final UInt256 terminalTotalDifficulty =
         spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
     final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
@@ -805,14 +812,8 @@ class ForkChoiceTest {
     final SignedBlockAndState epoch4Block =
         chainBuilder.generateBlockAtSlot(
             storageSystem.chainUpdater().getHeadSlot().plus(1),
-            ChainBuilder.BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
-
-    if (optimistic) {
-      storageSystem.chainUpdater().saveOptimisticBlock(epoch4Block);
-    } else {
-      storageSystem.chainUpdater().saveBlock(epoch4Block);
-    }
-    storageSystem.chainUpdater().updateBestBlock(epoch4Block);
+            BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
+    return epoch4Block;
   }
 
   @Test

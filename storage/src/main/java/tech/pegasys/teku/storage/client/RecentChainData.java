@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -549,33 +548,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public UInt64 getLatestValidFinalizedSlot() {
     return store == null ? UInt64.ZERO : store.getLatestValidFinalizedSlot();
-  }
-
-  public boolean isOptimisticSyncPossible(final UInt64 blockSlot) {
-    if (store == null) {
-      return false;
-    }
-    final Bytes32 justifiedRoot = store.getJustifiedCheckpoint().getRoot();
-    return isExecutionBlock(justifiedRoot) || isBellatrixBlockOld(blockSlot);
-  }
-
-  private boolean isBellatrixBlockOld(final UInt64 blockSlot) {
-    final Optional<SpecConfigBellatrix> maybeConfig =
-        getCurrentSpec().getConfig().toVersionBellatrix();
-    if (maybeConfig.isEmpty()) {
-      return false;
-    }
-    return blockSlot
-        .plus(maybeConfig.get().getSafeSlotsToImportOptimistically())
-        .isLessThanOrEqualTo(spec.getCurrentSlot(store));
-  }
-
-  private boolean isExecutionBlock(final Bytes32 blockRoot) {
-    return !store
-        .getForkChoiceStrategy()
-        .executionBlockHash(blockRoot)
-        .map(Bytes32::isZero)
-        .orElse(true);
   }
 
   /**
