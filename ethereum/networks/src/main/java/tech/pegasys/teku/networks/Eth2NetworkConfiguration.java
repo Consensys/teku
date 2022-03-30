@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
+  public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
 
   private final Spec spec;
   private final String constants;
@@ -186,7 +187,7 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
-    private boolean proposerBoostEnabled = false;
+    private boolean proposerBoostEnabled = DEFAULT_PROPOSER_BOOST_ENABLED;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
