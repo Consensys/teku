@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
@@ -36,7 +37,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -49,7 +49,6 @@ import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -69,18 +68,6 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
           CoreTypes.UINT64_TYPE.withDescription(
               "The slot for which the block should be proposed."));
 
-  private static final StringValueTypeDefinition<BLSSignature> SIGNATURE_TYPE =
-      DeserializableTypeDefinition.string(BLSSignature.class)
-          .formatter(BLSSignature::toString)
-          .parser(value -> BLSSignature.fromBytesCompressed(Bytes.fromHexString(value)))
-          .example(
-              "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-                  + "cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc"
-                  + "1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505")
-          .description("`BLSSignature Hex` BLS12-381 signature for the current epoch.")
-          .format("byte")
-          .build();
-
   private static final ParameterMetadata<BLSSignature> PARAM_RANDAO =
       new ParameterMetadata<>(
           RestApiConstants.RANDAO_REVEAL,
@@ -93,22 +80,15 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   private static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION =
       DeserializableTypeDefinition.enumOf(SpecMilestone.class);
 
-  private final SerializableTypeDefinition<BeaconBlock> BLINDED_BLOCK_RESPONSE_TYPE;
-
   public GetNewBlindedBlock(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
-  @SuppressWarnings("unchecked")
   public GetNewBlindedBlock(
       final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(getEndpointMetaData(schemaDefinitionCache));
     this.provider = provider;
-
-    BLINDED_BLOCK_RESPONSE_TYPE =
-        (SerializableTypeDefinition<BeaconBlock>)
-            getMetadata().getResponseType(SC_OK, "application/json");
   }
 
   @OpenApi(

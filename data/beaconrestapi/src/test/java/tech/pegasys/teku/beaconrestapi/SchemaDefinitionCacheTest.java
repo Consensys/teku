@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -22,6 +21,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -29,13 +30,12 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 
 public class SchemaDefinitionCacheTest {
 
-  @Test
-  void shouldGetSchemasForAllMilestones() {
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void shouldGetSchemasForAllMilestones(final SpecMilestone specMilestone) {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
-    assertThat(cache.getSchemaDefinition(SpecMilestone.PHASE0)).isNotNull();
-    assertThat(cache.getSchemaDefinition(SpecMilestone.ALTAIR)).isNotNull();
-    assertThat(cache.getSchemaDefinition(SpecMilestone.BELLATRIX)).isNotNull();
+    assertThat(cache.getSchemaDefinition(specMilestone)).isNotNull();
   }
 
   @Test
@@ -51,13 +51,21 @@ public class SchemaDefinitionCacheTest {
     verifyNoMoreInteractions(spec);
   }
 
-  @Test
-  void shouldGetSpecMilestoneFromSpecObject() {
-    final Spec spec = mock(Spec.class);
-    when(spec.atSlot(any()))
-        .thenReturn(TestSpecFactory.createMinimalAltair().forMilestone(SpecMilestone.ALTAIR));
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void shouldGetSpecMilestoneFromSpecObject(final SpecMilestone specMilestone) {
+    final Spec spec = TestSpecFactory.createMinimal(specMilestone);
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
-    assertThat(cache.milestoneAtSlot(UInt64.ONE)).isEqualTo(SpecMilestone.ALTAIR);
-    verify(spec).atSlot(any());
+    assertThat(cache.milestoneAtSlot(UInt64.ONE)).isSameAs(specMilestone);
+    assertThat(cache.getSchemaDefinition(specMilestone))
+        .isSameAs(spec.forMilestone(specMilestone).getSchemaDefinitions());
+  }
+
+  @Test
+  void shouldCreateSchemaIfMilestoneRequired() {
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
+    final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
+    assertThat(spec.forMilestone(SpecMilestone.BELLATRIX)).isNull();
+    assertThat(cache.getSchemaDefinition(SpecMilestone.BELLATRIX)).isNotNull();
   }
 }
