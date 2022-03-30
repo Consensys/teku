@@ -59,7 +59,7 @@ public class MiscHelpers {
       int flip = Math.floorMod(pivot + index_count - indexRet, index_count);
       int position = Math.max(indexRet, flip);
 
-      Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256), 4);
+      Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256L), 4);
       Bytes hashBytes = Hash.sha256(seed, roundAsByte, positionDiv256);
 
       int bitIndex = position & 0xff;
@@ -82,7 +82,7 @@ public class MiscHelpers {
     while (true) {
       int candidate_index = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha256(seed, uint64ToBytes(Math.floorDiv(i, 32)));
+        hash = Hash.sha256(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();

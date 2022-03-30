@@ -172,6 +172,7 @@ public abstract class BeaconStateAccessors {
     return getCommitteeCountPerSlot(activeValidatorIndices.size());
   }
 
+  @SuppressWarnings("MathTargetType")
   public UInt64 getCommitteeCountPerSlot(final int activeValidatorCount) {
     return UInt64.valueOf(
         Math.max(
