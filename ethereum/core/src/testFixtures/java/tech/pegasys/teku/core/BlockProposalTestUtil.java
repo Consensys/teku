@@ -104,7 +104,8 @@ public class BlockProposalTestUtil {
                             executionPayload.orElseGet(
                                 () ->
                                     createExecutionPayload(
-                                        newSlot, state, transactions, terminalBlock))));
+                                        newSlot, state, transactions, terminalBlock))),
+            false);
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();

@@ -418,7 +418,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE, dataStructureUtil.randomSignature(), Optional.empty());
+            ONE, dataStructureUtil.randomSignature(), Optional.empty(), false);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -435,7 +435,7 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, dataStructureUtil.randomSignature(), Optional.empty());
+            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), false);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -451,14 +451,15 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
-    when(blockFactory.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty()))
+    when(blockFactory.createUnsignedBlock(
+            blockSlotState, newSlot, randaoReveal, Optional.empty(), false))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty());
+        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty(), false);
 
     verify(blockFactory)
-        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty());
+        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty(), false);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
