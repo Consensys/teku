@@ -47,12 +47,11 @@ import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class ValidatorKeystores {
   private static final Logger LOG = LogManager.getLogger();
-  final List<ValidatorKeys> validatorKeys;
+  private static final String KEYS_DIRECTORY_NAME = "keys";
+  private static final String PASSWORDS_DIRECTORY_NAME = "passwords";
+  private static final String VALIDATOR_KEYS_PASSWORD = "0xdeadbeef";
   private final SecureRandom secureRandom = SecureRandomProvider.createSecureRandom();
-
-  final String KEYS_DIRECTORY_NAME = "keys";
-  final String PASSWORDS_DIRECTORY_NAME = "passwords";
-  final String VALIDATOR_KEYS_PASSWORD = "0xdeadbeef";
+  private final List<ValidatorKeys> validatorKeys;
 
   Optional<File> maybeTarball = Optional.empty();
 

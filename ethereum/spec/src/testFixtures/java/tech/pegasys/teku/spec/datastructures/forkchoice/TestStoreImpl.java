@@ -37,9 +37,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected UInt64 time;
   protected UInt64 genesisTime;
   protected final Optional<Checkpoint> initialCheckpoint;
-  protected Checkpoint justified_checkpoint;
-  protected Checkpoint finalized_checkpoint;
-  protected Checkpoint best_justified_checkpoint;
+  protected Checkpoint justifiedCheckpoint;
+  protected Checkpoint finalizedCheckpoint;
+  protected Checkpoint bestJustifiedCheckpoint;
   protected Map<Bytes32, SignedBeaconBlock> blocks;
   protected Map<Bytes32, BeaconState> blockStates;
   protected Map<Checkpoint, BeaconState> checkpointStates;
@@ -63,9 +63,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.time = time;
     this.genesisTime = genesisTime;
     this.initialCheckpoint = initialCheckpoint;
-    this.justified_checkpoint = justifiedCheckpoint;
-    this.finalized_checkpoint = finalizedCheckpoint;
-    this.best_justified_checkpoint = bestJustifiedCheckpoint;
+    this.justifiedCheckpoint = justifiedCheckpoint;
+    this.finalizedCheckpoint = finalizedCheckpoint;
+    this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.blockStates = blockStates;
     this.checkpointStates = checkpointStates;
@@ -90,24 +90,24 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public Checkpoint getJustifiedCheckpoint() {
-    return justified_checkpoint;
+    return justifiedCheckpoint;
   }
 
   @Override
   public Checkpoint getFinalizedCheckpoint() {
-    return finalized_checkpoint;
+    return finalizedCheckpoint;
   }
 
   @Override
   public UInt64 getLatestFinalizedBlockSlot() {
-    return blocks.get(finalized_checkpoint.getRoot()).getSlot();
+    return blocks.get(finalizedCheckpoint.getRoot()).getSlot();
   }
 
   @Override
   public AnchorPoint getLatestFinalized() {
-    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
-    final BeaconState state = getBlockState(finalized_checkpoint.getRoot());
-    return AnchorPoint.create(spec, finalized_checkpoint, block, state);
+    final SignedBeaconBlock block = getSignedBlock(finalizedCheckpoint.getRoot());
+    final BeaconState state = getBlockState(finalizedCheckpoint.getRoot());
+    return AnchorPoint.create(spec, finalizedCheckpoint, block, state);
   }
 
   @Override
@@ -117,7 +117,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
-    return best_justified_checkpoint;
+    return bestJustifiedCheckpoint;
   }
 
   @Override
@@ -219,10 +219,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
-    final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
-    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
+    final BeaconState state = getCheckpointState(finalizedCheckpoint).orElseThrow();
+    final SignedBeaconBlock block = getSignedBlock(finalizedCheckpoint.getRoot());
     return SafeFuture.completedFuture(
-        CheckpointState.create(spec, finalized_checkpoint, block, state));
+        CheckpointState.create(spec, finalizedCheckpoint, block, state));
   }
 
   @Override
@@ -264,18 +264,18 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public void setJustifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
-    this.justified_checkpoint = justifiedCheckpoint;
+    this.justifiedCheckpoint = justifiedCheckpoint;
   }
 
   @Override
   public void setFinalizedCheckpoint(
       final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
-    this.finalized_checkpoint = finalizedCheckpoint;
+    this.finalizedCheckpoint = finalizedCheckpoint;
   }
 
   @Override
   public void setBestJustifiedCheckpoint(final Checkpoint bestJustifiedCheckpoint) {
-    this.best_justified_checkpoint = bestJustifiedCheckpoint;
+    this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
   }
 
   @Override

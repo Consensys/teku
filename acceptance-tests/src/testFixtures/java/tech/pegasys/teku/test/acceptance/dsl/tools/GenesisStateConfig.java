@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl.tools;
 import java.util.Objects;
 
 public class GenesisStateConfig {
-  private static String DEFAULT_LOCATION = "/config/genesis-state.bin";
+  private static final String DEFAULT_LOCATION = "/config/genesis-state.bin";
   private final int numValidators;
   private final long genesisTime;
 

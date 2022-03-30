@@ -58,8 +58,8 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-public class ForkChoiceTestExecutor {
-  private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+public class ForkChoiceIntegrationTest {
+  private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
   private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
 
   public static Stream<Arguments> loadForkChoiceTests() {
@@ -75,7 +75,7 @@ public class ForkChoiceTestExecutor {
     final BeaconStateSchema<?, ?> beaconStateSchema = schemaDefinitions.getBeaconStateSchema();
     try {
       @SuppressWarnings("rawtypes")
-      Map content = mapper.readValue(file, Map.class);
+      Map content = MAPPER.readValue(file, Map.class);
 
       if (content.containsKey("steps")) {
         BeaconState genesisState =
@@ -157,7 +157,7 @@ public class ForkChoiceTestExecutor {
           if (path.endsWith(".ssz")) {
             return type.sszDeserialize(Bytes.wrap(Files.readAllBytes(partPath)));
           } else {
-            return mapper.readValue(partPath.toFile(), clazz);
+            return MAPPER.readValue(partPath.toFile(), clazz);
           }
         } catch (IOException e) {
           throw new IllegalArgumentException("Couldn't resolve " + path + ": " + e.getMessage());
@@ -284,6 +284,7 @@ public class ForkChoiceTestExecutor {
     return blockImportResult.isSuccessful();
   }
 
+  @SuppressWarnings("JavaCase")
   public enum ForkChoiceTestStep {
     slot,
     block,

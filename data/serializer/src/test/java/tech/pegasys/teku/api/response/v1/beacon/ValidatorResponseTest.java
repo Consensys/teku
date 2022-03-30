@@ -28,12 +28,12 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorResponseTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  final Bytes48 key = dataStructureUtil.randomPublicKeyBytes();
-  final Bytes32 creds = dataStructureUtil.randomBytes32();
-  final Spec spec = TestSpecFactory.createMinimalPhase0();
-  final UInt64 ONE_HUNDRED = UInt64.valueOf(100);
-  final UInt64 TWO_HUNDRED = UInt64.valueOf(200);
+  private static final UInt64 ONE_HUNDRED = UInt64.valueOf(100);
+  private static final UInt64 TWO_HUNDRED = UInt64.valueOf(200);
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final Bytes48 key = dataStructureUtil.randomPublicKeyBytes();
+  private final Bytes32 creds = dataStructureUtil.randomBytes32();
 
   @Test
   void status_shouldBePendingInitialised() {
@@ -102,28 +102,28 @@ public class ValidatorResponseTest {
         .isEqualTo(ValidatorStatus.withdrawal_done);
   }
 
-  private Validator withdrawalValidator(final UInt64 balance, final UInt64 withdrawable_epoch) {
-    return createValidator(balance, false, ZERO, ZERO, ZERO, withdrawable_epoch);
+  private Validator withdrawalValidator(final UInt64 balance, final UInt64 withdrawableEpoch) {
+    return createValidator(balance, false, ZERO, ZERO, ZERO, withdrawableEpoch);
   }
 
   private Validator exitedValidator(
-      final UInt64 exit_epoch, final UInt64 withdrawable_epoch, final boolean slashed) {
+      final UInt64 exitEpoch, final UInt64 withdrawableEpoch, final boolean slashed) {
     return createValidator(
-        UInt64.valueOf("32000000000"), slashed, ZERO, ZERO, exit_epoch, withdrawable_epoch);
+        UInt64.valueOf("32000000000"), slashed, ZERO, ZERO, exitEpoch, withdrawableEpoch);
   }
 
-  private Validator activeValidator(final UInt64 exit_epoch, final boolean slashed) {
+  private Validator activeValidator(final UInt64 exitEpoch, final boolean slashed) {
     return createValidator(
-        UInt64.valueOf("32000000000"), slashed, ZERO, ZERO, exit_epoch, FAR_FUTURE_EPOCH);
+        UInt64.valueOf("32000000000"), slashed, ZERO, ZERO, exitEpoch, FAR_FUTURE_EPOCH);
   }
 
   private Validator pendingValidator(
-      final UInt64 activation_epoch, final UInt64 activation_eligibility_epoch) {
+      final UInt64 activationEpoch, final UInt64 activationEligibilityEpoch) {
     return createValidator(
         UInt64.valueOf("32000000000"),
         false,
-        activation_eligibility_epoch,
-        activation_epoch,
+        activationEligibilityEpoch,
+        activationEpoch,
         FAR_FUTURE_EPOCH,
         FAR_FUTURE_EPOCH);
   }
@@ -131,18 +131,18 @@ public class ValidatorResponseTest {
   private Validator createValidator(
       final UInt64 balance,
       final boolean slashed,
-      final UInt64 activation_eligibility_epoch,
-      final UInt64 activation_epoch,
-      final UInt64 exit_epoch,
-      final UInt64 withdrawable_epoch) {
+      final UInt64 activationEligibilityEpoch,
+      final UInt64 activationEpoch,
+      final UInt64 exitEpoch,
+      final UInt64 withdrawableEpoch) {
     return new Validator(
         key,
         creds,
         balance,
         slashed,
-        activation_eligibility_epoch,
-        activation_epoch,
-        exit_epoch,
-        withdrawable_epoch);
+        activationEligibilityEpoch,
+        activationEpoch,
+        exitEpoch,
+        withdrawableEpoch);
   }
 }

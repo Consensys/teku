@@ -121,11 +121,11 @@ public class GetStateFork extends MigratingEndpointAdapter {
   }
 
   static class StateForkData {
-    public final Boolean execution_optimistic;
+    public final Boolean executionOptimistic;
     public final Fork data;
 
     public StateForkData(final Boolean executionOptimistic, final Fork data) {
-      this.execution_optimistic = executionOptimistic;
+      this.executionOptimistic = executionOptimistic;
       this.data = data;
     }
 

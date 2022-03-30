@@ -30,9 +30,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class JsonProviderTest {
+  private static final String Q = "\"";
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final JsonProvider jsonProvider = new JsonProvider();
-  private static final String Q = "\"";
 
   @Test
   public void bytes32ShouldSerializeToJsonAndBack() throws JsonProcessingException {
@@ -97,13 +97,13 @@ class JsonProviderTest {
 
   @Test
   public void bitVectorShouldSerializeAndDeserialize() throws JsonProcessingException {
-    final int BITVECTOR_SIZE = 40;
-    final SszBitvector data = dataStructureUtil.randomSszBitvector(BITVECTOR_SIZE);
+    final int bitvectorSize = 40;
+    final SszBitvector data = dataStructureUtil.randomSszBitvector(bitvectorSize);
     final String asJson = jsonProvider.objectToJSON(data);
     final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
 
     assertThat(data).isEqualTo(asData);
-    assertThat(asData.size()).isEqualTo(BITVECTOR_SIZE);
+    assertThat(asData.size()).isEqualTo(bitvectorSize);
   }
 
   @Test

@@ -51,7 +51,7 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 class SyncCommitteeAggregationDutyTest {
-  private final String TYPE = "sync_aggregate";
+  private static final String TYPE = "sync_aggregate";
 
   private final Spec spec = TestSpecFactory.createAltair(createSpecConfig());
   private final SyncCommitteeUtil syncCommitteeUtil =

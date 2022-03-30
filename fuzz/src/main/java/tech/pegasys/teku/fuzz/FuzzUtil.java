@@ -229,19 +229,19 @@ public class FuzzUtil {
     // int[] shuffled = BeaconStateUtil.shuffle(count, seed);
 
     // NOTE: although compute_shuffled_index returns an int, we save as a long for consistency
-    ByteBuffer result_bb = ByteBuffer.allocate(count * OUTPUT_INDEX_BYTES);
+    ByteBuffer resultBuffer = ByteBuffer.allocate(count * OUTPUT_INDEX_BYTES);
     // Convert to little endian bytes
-    result_bb.order(ByteOrder.LITTLE_ENDIAN);
+    resultBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
     for (int i = 0; i < count; i++) {
       // NOTE: shuffle returns an int (int32), but should be uint64 to be fully consistent with spec
       // (java long is int64)
       // no risk of inconsistency for this particular fuzzing as we only count <= 100
       // inconsistencies would require a validator count > MAX_INT32
-      result_bb.putLong(
+      resultBuffer.putLong(
           spec.atSlot(UInt64.ZERO).miscHelpers().computeShuffledIndex(i, count, seed));
     }
-    return Optional.of(result_bb.array());
+    return Optional.of(resultBuffer.array());
   }
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {

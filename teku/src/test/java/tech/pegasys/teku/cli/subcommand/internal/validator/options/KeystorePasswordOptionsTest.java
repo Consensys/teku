@@ -116,13 +116,13 @@ class KeystorePasswordOptionsTest {
   @Test
   void nonExistentEnvironmentVariableThrowsException() {
     final CommandLine commandLine = mock(CommandLine.class);
-    final String TEST_ENV = "NOT_VALID";
+    final String testEnv = "NOT_VALID";
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(
             () ->
                 KeystorePasswordOptions.readFromEnvironmentVariable(
-                    commandLine, ENV_SUPPLIER, TEST_ENV))
-        .withMessage(EXPECTED_ENV_ERROR, TEST_ENV);
+                    commandLine, ENV_SUPPLIER, testEnv))
+        .withMessage(EXPECTED_ENV_ERROR, testEnv);
   }
 
   @Test
