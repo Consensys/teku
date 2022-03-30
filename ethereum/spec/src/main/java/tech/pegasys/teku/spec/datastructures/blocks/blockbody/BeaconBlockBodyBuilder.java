@@ -55,5 +55,9 @@ public interface BeaconBlockBodyBuilder {
   BeaconBlockBodyBuilder executionPayloadHeader(
       Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier);
 
+  default Boolean isBlinded() {
+    return false;
+  }
+
   BeaconBlockBody build();
 }

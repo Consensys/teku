@@ -137,12 +137,13 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
-    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
     SafeFuture<Optional<BeaconBlock>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty());
-    verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal, Optional.empty());
+    verify(validatorApiChannel)
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
     assertThat(data).isCompleted();
     assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
   }

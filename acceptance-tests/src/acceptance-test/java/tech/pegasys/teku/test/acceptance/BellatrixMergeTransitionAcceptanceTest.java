@@ -25,7 +25,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
-  private final String NETWORK_NAME = "less-swift";
+  private static final String NETWORK_NAME = "less-swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode eth1Node;
@@ -40,9 +40,9 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
             config -> config.withMergeSupport(true).withGenesisFile("besu/preMergeGenesis.json"));
     eth1Node.start();
 
-    final int TOTAL_VALIDATORS = 4;
+    final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(NETWORK_NAME).sendValidatorDeposits(eth1Node, TOTAL_VALIDATORS);
+        createTekuDepositSender(NETWORK_NAME).sendValidatorDeposits(eth1Node, totalValidators);
 
     tekuNode =
         createTekuNode(
