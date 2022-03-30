@@ -58,12 +58,16 @@ public class BlockProposalUtil {
         blockSlotState.getSlot());
 
     // Create block body
-    final BeaconBlockBody beaconBlockBody = createBeaconBlockBody(bodyBuilder);
+    final BeaconBlockBody beaconBlockBody;
+    final BeaconBlockSchema beaconBlockSchema;
 
-    final BeaconBlockSchema beaconBlockSchema =
-        blinded
-            ? schemaDefinitions.getBlindedBeaconBlockSchema()
-            : schemaDefinitions.getBeaconBlockSchema();
+    if (blinded) {
+      beaconBlockBody = createBlindedBeaconBlockBody(bodyBuilder);
+      beaconBlockSchema = schemaDefinitions.getBlindedBeaconBlockSchema();
+    } else {
+      beaconBlockBody = createBeaconBlockBody(bodyBuilder);
+      beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
+    }
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
@@ -98,5 +102,10 @@ public class BlockProposalUtil {
   private BeaconBlockBody createBeaconBlockBody(
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
     return schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
+  }
+
+  private BeaconBlockBody createBlindedBeaconBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    return schemaDefinitions.getBlindedBeaconBlockBodySchema().createBlockBody(bodyBuilder);
   }
 }

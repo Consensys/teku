@@ -14,7 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -27,27 +29,28 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   private BeaconBlockBodySchemaBellatrixImpl schema;
   private BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema;
-  protected boolean blinded = false;
+  protected Optional<Boolean> blinded = Optional.empty();
   protected ExecutionPayload executionPayload;
   protected ExecutionPayloadHeader executionPayloadHeader;
 
   public BeaconBlockBodyBuilderBellatrix schema(final BeaconBlockBodySchemaBellatrixImpl schema) {
     this.schema = schema;
-    this.blinded = false;
+    this.blinded = Optional.of(false);
     return this;
   }
 
   public BeaconBlockBodyBuilderBellatrix blindedSchema(
       final BlindedBeaconBlockBodySchemaBellatrixImpl schema) {
     this.blindedSchema = schema;
-    this.blinded = true;
+    this.blinded = Optional.of(true);
+    ;
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayload(
       Supplier<ExecutionPayload> executionPayloadSupplier) {
-    if (!blinded) {
+    if (!isBlinded()) {
       this.executionPayload = executionPayloadSupplier.get();
     }
     return this;
@@ -56,7 +59,7 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
       Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
-    if (blinded) {
+    if (isBlinded()) {
       this.executionPayloadHeader = executionPayloadHeaderSupplier.get();
     }
     return this;
@@ -64,17 +67,13 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
 
   @Override
   protected void validateSchema() {
-    if (blinded) {
-      checkNotNull(blindedSchema, "schema must be specified");
-    } else {
-      checkNotNull(schema, "schema must be specified");
-    }
+    checkState(schema != null || blindedSchema != null, "schema or blindedSchema must be set");
   }
 
   @Override
   protected void validate() {
     super.validate();
-    if (blinded) {
+    if (isBlinded()) {
       checkNotNull(executionPayloadHeader, "executionPayloadHeader must be specified");
     } else {
       checkNotNull(executionPayload, "executionPayload must be specified");
@@ -82,9 +81,17 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   }
 
   @Override
+  public Boolean isBlinded() {
+    return blinded.orElseThrow(
+        () ->
+            new IllegalStateException(
+                "schema or blindedSchema must be set before interacting with the builder"));
+  }
+
+  @Override
   public BeaconBlockBody build() {
     validate();
-    if (blinded) {
+    if (isBlinded()) {
       return new BlindedBeaconBlockBodyBellatrixImpl(
           blindedSchema,
           new SszSignature(randaoReveal),

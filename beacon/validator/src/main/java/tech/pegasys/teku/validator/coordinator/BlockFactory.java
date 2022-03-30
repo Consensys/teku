@@ -57,7 +57,7 @@ public class BlockFactory {
             blockSlotState,
             parentRoot,
             operationSelector.createSelector(
-                parentRoot, blockSlotState, randaoReveal, optionalGraffiti, blinded),
+                parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
         .getBlock();
   }

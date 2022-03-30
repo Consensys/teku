@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
@@ -86,8 +89,7 @@ public class BlockOperationSelectorFactory {
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti,
-      final boolean blinded) {
+      final Optional<Bytes32> optionalGraffiti) {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
@@ -132,36 +134,46 @@ public class BlockOperationSelectorFactory {
           .syncAggregate(
               () ->
                   contributionPool.createSyncAggregateForBlock(
-                      blockSlotState.getSlot(), parentRoot))
-          .executionPayload(
+                      blockSlotState.getSlot(), parentRoot));
+
+      // execution Payload handling
+      if (bodyBuilder.isBlinded()) {
+        if (isMevBoostEnabled) {
+          bodyBuilder.executionPayloadHeader(
               payloadProvider(
                   parentRoot,
                   blockSlotState,
                   () ->
                       SchemaDefinitionsBellatrix.required(
                               spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                          .getExecutionPayloadSchema()
+                          .getExecutionPayloadHeaderSchema()
                           .getDefault(),
                   (payloadId) ->
                       executionEngineChannel
-                          .getPayload(payloadId, blockSlotState.getSlot())
+                          .getPayloadHeader(payloadId, blockSlotState.getSlot())
                           .join()));
+          return;
+        }
 
-      if (isMevBoostEnabled || blinded) {
-        bodyBuilder.executionPayloadHeader(
-            payloadProvider(
-                parentRoot,
-                blockSlotState,
-                () ->
-                    SchemaDefinitionsBellatrix.required(
-                            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                        .getExecutionPayloadHeaderSchema()
-                        .getDefault(),
-                (payloadId) ->
-                    executionEngineChannel
-                        .getPayloadHeader(payloadId, blockSlotState.getSlot())
-                        .join()));
+        throw new UnsupportedOperationException(
+            "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
       }
+
+      if (isMevBoostEnabled) {
+        LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
+      }
+
+      bodyBuilder.executionPayload(
+          payloadProvider(
+              parentRoot,
+              blockSlotState,
+              () ->
+                  SchemaDefinitionsBellatrix.required(
+                          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                      .getExecutionPayloadSchema()
+                      .getDefault(),
+              (payloadId) ->
+                  executionEngineChannel.getPayload(payloadId, blockSlotState.getSlot()).join()));
     };
   }
 
