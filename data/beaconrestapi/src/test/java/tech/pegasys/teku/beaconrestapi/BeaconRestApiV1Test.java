@@ -151,7 +151,13 @@ public class BeaconRestApiV1Test {
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .build();
-    new BeaconRestApi(dataProvider, beaconRestApiConfig, eventChannels, new StubAsyncRunner(), app);
+    new BeaconRestApi(
+        dataProvider,
+        beaconRestApiConfig,
+        eventChannels,
+        new StubAsyncRunner(),
+        app,
+        storageClient.getSpec());
   }
 
   @ParameterizedTest(name = "{0}")
