@@ -53,9 +53,9 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
 
     final FinalityCheckpointsResponse expectedResponse =
         new FinalityCheckpointsResponse(
-            new Checkpoint(state.getPrevious_justified_checkpoint()),
-            new Checkpoint(state.getCurrent_justified_checkpoint()),
-            new Checkpoint(state.getFinalized_checkpoint()));
+            new Checkpoint(state.getPreviousJustifiedCheckpoint()),
+            new Checkpoint(state.getCurrentJustifiedCheckpoint()),
+            new Checkpoint(state.getFinalizedCheckpoint()));
 
     final GetStateFinalityCheckpointsResponse response =
         getResponseFromFuture(GetStateFinalityCheckpointsResponse.class);

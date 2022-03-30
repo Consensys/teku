@@ -148,7 +148,7 @@ public class BeaconStateUtil {
                     .map(
                         validator ->
                             predicates.isActiveValidator(validator, epoch)
-                                ? validator.getEffective_balance()
+                                ? validator.getEffectiveBalance()
                                 : UInt64.ZERO)
                     .collect(toUnmodifiableList()));
   }
@@ -185,7 +185,7 @@ public class BeaconStateUtil {
         .getBeaconCommittee(state, slot, committeeIndex)
         .intStream()
         .mapToObj(
-            validatorIndex -> state.getValidators().get(validatorIndex).getEffective_balance());
+            validatorIndex -> state.getValidators().get(validatorIndex).getEffectiveBalance());
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {

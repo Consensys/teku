@@ -71,9 +71,10 @@ public abstract class AbstractBeaconStateTest<
   }
 
   @SuppressWarnings("unchecked")
+  @Test
   public void equals_shouldReturnTrue() {
     final T state = randomState();
-    final T stateCopy = (T) state.updated(__ -> {});
+    final Object stateCopy = state.getSchema().createFromBackingNode(state.getBackingNode());
 
     assertThat(state == stateCopy).isFalse();
     assertThat(state).isEqualTo(stateCopy);
@@ -81,6 +82,7 @@ public abstract class AbstractBeaconStateTest<
   }
 
   @SuppressWarnings("unchecked")
+  @Test
   public void equals_shouldReturnFalse() {
     final T state = randomState();
     final T stateCopy = (T) state.updated(s -> s.setSlot(s.getSlot().plus(1)));

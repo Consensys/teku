@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class ChainHeadV2 {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;

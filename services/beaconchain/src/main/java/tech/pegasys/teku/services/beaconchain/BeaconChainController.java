@@ -947,7 +947,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
-          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
+          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesisTime());
           wsInitializer.validateInitialAnchor(anchor, currentSlot, spec);
         });
 
@@ -958,7 +958,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         EVENT_LOG.genesisEvent(
             anchor.getStateRoot(),
             recentChainData.getBestBlockRoot().orElseThrow(),
-            anchor.getState().getGenesis_time());
+            anchor.getState().getGenesisTime());
       }
     } else if (beaconConfig.interopConfig().isInteropEnabled()) {
       setupInteropState();
@@ -981,7 +981,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(),
         recentChainData.getBestBlockRoot().orElseThrow(),
-        genesisState.getGenesis_time());
+        genesisState.getGenesisTime());
   }
 
   protected void onStoreInitialized() {

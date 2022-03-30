@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
+@SuppressWarnings("JavaCase")
 public class BeaconBlockBodyAltair extends BeaconBlockBody {
   @JsonProperty("sync_aggregate")
   public final SyncAggregate syncAggregate;

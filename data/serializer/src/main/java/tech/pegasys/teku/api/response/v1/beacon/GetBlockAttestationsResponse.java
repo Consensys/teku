@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.api.schema.Attestation;
 
+@SuppressWarnings("JavaCase")
 public class GetBlockAttestationsResponse {
   @JsonProperty("execution_optimistic")
   @JsonInclude(Include.NON_NULL)

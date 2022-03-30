@@ -58,8 +58,8 @@ public class BlstBLS12381 implements BLS12381 {
     P2 p2 = new P2();
     p2.hash_to(message.toArrayUnsafe(), dst, new byte[0]).sign_with(secretKey.getKey());
 
-    P2_Affine p2_affine = p2.to_affine();
-    return new BlstSignature(p2_affine);
+    P2_Affine p2Affine = p2.to_affine();
+    return new BlstSignature(p2Affine);
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {

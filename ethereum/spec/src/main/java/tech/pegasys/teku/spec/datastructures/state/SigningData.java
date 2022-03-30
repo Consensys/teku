@@ -44,8 +44,8 @@ public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32>
     super(type, backingNode);
   }
 
-  public SigningData(Bytes32 object_root, Bytes32 domain) {
-    super(SSZ_SCHEMA, SszBytes32.of(object_root), SszBytes32.of(domain));
+  public SigningData(Bytes32 objectRoot, Bytes32 domain) {
+    super(SSZ_SCHEMA, SszBytes32.of(objectRoot), SszBytes32.of(domain));
   }
 
   public Bytes32 getObjectRoot() {

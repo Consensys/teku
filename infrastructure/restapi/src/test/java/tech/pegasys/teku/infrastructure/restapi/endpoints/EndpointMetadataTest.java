@@ -37,7 +37,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.Endpo
 
 class EndpointMetadataTest {
 
-  private final ParameterMetadata<String> STRING_PARAM = new ParameterMetadata<>("t", STRING_TYPE);
+  private static final ParameterMetadata<String> STRING_PARAM =
+      new ParameterMetadata<>("t", STRING_TYPE);
 
   @Test
   void shouldGetAllReferencedTypeDefinitions() {

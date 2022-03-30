@@ -90,7 +90,7 @@ class DepositTransactionSender {
         depositContract
             .deposit(
                 depositData.getPubkey().toBytesCompressed().toArray(),
-                depositData.getWithdrawal_credentials().toArray(),
+                depositData.getWithdrawalCredentials().toArray(),
                 depositData.getSignature().toSSZBytes().toArray(),
                 depositData.hashTreeRoot().toArray(),
                 new BigInteger(depositData.getAmount() + "000000000"))

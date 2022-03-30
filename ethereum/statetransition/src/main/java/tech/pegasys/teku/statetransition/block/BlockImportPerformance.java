@@ -27,16 +27,16 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
-  public static String ARRIVAL_EVENT_LABEL = "arrival";
-  public static String PRESTATE_RETRIEVED_EVENT_LABEL = "pre-state_retrieved";
-  public static String PROCESSED_EVENT_LABEL = "processed";
-  public static String TRANSACTION_PREPARED_EVENT_LABEL = "transaction_prepared";
-  public static String TRANSACTION_COMMITTED_EVENT_LABEL = "transaction_committed";
-  public static String COMPLETED_EVENT_LABEL = "completed";
+  public static final String ARRIVAL_EVENT_LABEL = "arrival";
+  public static final String PRESTATE_RETRIEVED_EVENT_LABEL = "pre-state_retrieved";
+  public static final String PROCESSED_EVENT_LABEL = "processed";
+  public static final String TRANSACTION_PREPARED_EVENT_LABEL = "transaction_prepared";
+  public static final String TRANSACTION_COMMITTED_EVENT_LABEL = "transaction_committed";
+  public static final String COMPLETED_EVENT_LABEL = "completed";
 
-  public static String TOTAL_PROCESSING_TIME_LABEL = "total_processing_time";
+  public static final String TOTAL_PROCESSING_TIME_LABEL = "total_processing_time";
 
-  public static String SUCCESS_RESULT_METRIC_LABEL_VALUE = "success";
+  public static final String SUCCESS_RESULT_METRIC_LABEL_VALUE = "success";
 
   private final TimeProvider timeProvider;
   private final BlockImportMetrics blockImportMetrics;

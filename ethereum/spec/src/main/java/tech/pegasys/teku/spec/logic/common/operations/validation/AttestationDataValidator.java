@@ -79,11 +79,11 @@ public class AttestationDataValidator
         () -> {
           if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
             return check(
-                data.getSource().equals(state.getCurrent_justified_checkpoint()),
+                data.getSource().equals(state.getCurrentJustifiedCheckpoint()),
                 AttestationInvalidReason.INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT);
           } else {
             return check(
-                data.getSource().equals(state.getPrevious_justified_checkpoint()),
+                data.getSource().equals(state.getPreviousJustifiedCheckpoint()),
                 AttestationInvalidReason.INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT);
           }
         });

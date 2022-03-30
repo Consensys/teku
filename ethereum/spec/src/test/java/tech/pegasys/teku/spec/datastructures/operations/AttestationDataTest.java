@@ -34,12 +34,12 @@ class AttestationDataTest {
   private final UInt64 slot = dataStructureUtil.randomUInt64();
   private final UInt64 index = dataStructureUtil.randomUInt64();
   private final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
-  private final UInt64 source_epoch = dataStructureUtil.randomUInt64();
-  private final Bytes32 source_root = dataStructureUtil.randomBytes32();
-  private final UInt64 target_epoch = dataStructureUtil.randomUInt64();
-  private final Bytes32 target_root = dataStructureUtil.randomBytes32();
-  private final Checkpoint source = new Checkpoint(source_epoch, source_root);
-  private final Checkpoint target = new Checkpoint(target_epoch, target_root);
+  private final UInt64 sourceEpoch = dataStructureUtil.randomUInt64();
+  private final Bytes32 sourceRoot = dataStructureUtil.randomBytes32();
+  private final UInt64 targetEpoch = dataStructureUtil.randomUInt64();
+  private final Bytes32 targetRoot = dataStructureUtil.randomBytes32();
+  private final Checkpoint source = new Checkpoint(sourceEpoch, sourceRoot);
+  private final Checkpoint target = new Checkpoint(targetEpoch, targetRoot);
 
   private final AttestationData attestationData =
       new AttestationData(slot, index, beaconBlockRoot, source, target);

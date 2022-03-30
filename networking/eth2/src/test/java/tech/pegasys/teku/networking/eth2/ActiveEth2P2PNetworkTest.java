@@ -92,7 +92,7 @@ public class ActiveEth2P2PNetworkTest {
     assertThat(network.start()).isCompleted();
 
     final ForkInfo expectedFork =
-        new ForkInfo(phase0Fork, genesis.getState().getGenesis_validators_root());
+        new ForkInfo(phase0Fork, genesis.getState().getGenesisValidatorsRoot());
     verify(discoveryNetwork).setForkInfo(expectedFork, Optional.of(altairFork));
   }
 
@@ -238,11 +238,11 @@ public class ActiveEth2P2PNetworkTest {
     // Set fork info
     phase0Fork = spec.getForkSchedule().getFork(UInt64.ZERO);
     altairFork = spec.getForkSchedule().getFork(altairForkEpoch);
-    genesisValidatorsRoot = genesis.getState().getGenesis_validators_root();
+    genesisValidatorsRoot = genesis.getState().getGenesisValidatorsRoot();
 
     // Verify assumptions
-    assertThat(phase0Fork.getCurrent_version()).isNotEqualTo(altairFork.getCurrent_version());
-    assertThat(altairFork.getPrevious_version()).isEqualTo(phase0Fork.getCurrent_version());
+    assertThat(phase0Fork.getCurrentVersion()).isNotEqualTo(altairFork.getCurrentVersion());
+    assertThat(altairFork.getPreviousVersion()).isEqualTo(phase0Fork.getCurrentVersion());
     assertThat(altairFork.getEpoch()).isEqualTo(altairForkEpoch);
   }
 

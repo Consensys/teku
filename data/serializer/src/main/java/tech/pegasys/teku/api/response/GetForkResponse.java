@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
+@SuppressWarnings("JavaCase")
 public class GetForkResponse {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES4)
   public Bytes4 previous_version;
@@ -53,8 +54,8 @@ public class GetForkResponse {
   public GetForkResponse(final ForkInfo forkInfo) {
     final Fork fork = forkInfo.getFork();
     if (fork != null) {
-      this.previous_version = fork.getPrevious_version();
-      this.current_version = fork.getCurrent_version();
+      this.previous_version = fork.getPreviousVersion();
+      this.current_version = fork.getCurrentVersion();
       this.epoch = fork.getEpoch();
     }
     genesis_validators_root = forkInfo.getGenesisValidatorsRoot();

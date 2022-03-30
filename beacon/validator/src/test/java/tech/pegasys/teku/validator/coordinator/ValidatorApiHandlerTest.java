@@ -925,10 +925,10 @@ class ValidatorApiHandlerTest {
                     i,
                     validator ->
                         validator
-                            .withActivation_eligibility_epoch(ZERO)
-                            .withActivation_epoch(ZERO)
-                            .withExit_epoch(SpecConfig.FAR_FUTURE_EPOCH)
-                            .withWithdrawable_epoch(SpecConfig.FAR_FUTURE_EPOCH));
+                            .withActivationEligibilityEpoch(ZERO)
+                            .withActivationEpoch(ZERO)
+                            .withExitEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+                            .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
               }
             });
   }

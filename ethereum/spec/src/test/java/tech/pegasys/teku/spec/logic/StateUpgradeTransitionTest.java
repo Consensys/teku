@@ -120,6 +120,6 @@ public class StateUpgradeTransitionTest {
     }
     final BeaconState initialState =
         spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
-    return initialState.updated(state -> state.setGenesis_time(UInt64.ZERO));
+    return initialState.updated(state -> state.setGenesisTime(UInt64.ZERO));
   }
 }

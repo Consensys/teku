@@ -62,7 +62,7 @@ public class VoluntaryExitValidator
                 ExitInvalidReason.validatorInactive()),
         () ->
             check(
-                getValidator(state, exit).getExit_epoch().equals(FAR_FUTURE_EPOCH),
+                getValidator(state, exit).getExitEpoch().equals(FAR_FUTURE_EPOCH),
                 ExitInvalidReason.exitInitiated()),
         () ->
             check(
@@ -71,7 +71,7 @@ public class VoluntaryExitValidator
         () -> {
           UInt64 exitEpoch =
               getValidator(state, exit)
-                  .getActivation_epoch()
+                  .getActivationEpoch()
                   .plus(specConfig.getShardCommitteePeriod());
           return check(
               beaconStateAccessors.getCurrentEpoch(state).isGreaterThanOrEqualTo(exitEpoch),

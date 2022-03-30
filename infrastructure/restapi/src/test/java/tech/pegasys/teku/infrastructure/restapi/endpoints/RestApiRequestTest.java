@@ -28,13 +28,15 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class RestApiRequestTest {
-  private final Context context = mock(Context.class);
-  private final ParameterMetadata<String> STR_PARAM = new ParameterMetadata<>("str", STRING_TYPE);
-  private final ParameterMetadata<Integer> INT_PARAM = new ParameterMetadata<>("int", INTEGER_TYPE);
-  private final ParameterMetadata<Boolean> BOOL_PARAM =
+  private static final ParameterMetadata<String> STR_PARAM =
+      new ParameterMetadata<>("str", STRING_TYPE);
+  private static final ParameterMetadata<Integer> INT_PARAM =
+      new ParameterMetadata<>("int", INTEGER_TYPE);
+  private static final ParameterMetadata<Boolean> BOOL_PARAM =
       new ParameterMetadata<>("bool", BOOLEAN_TYPE);
-  private final ParameterMetadata<Byte> BYTE_PARAM = new ParameterMetadata<>("byte", BYTE_TYPE);
-  private final EndpointMetadata metadata =
+  private static final ParameterMetadata<Byte> BYTE_PARAM =
+      new ParameterMetadata<>("byte", BYTE_TYPE);
+  private static final EndpointMetadata METADATA =
       EndpointMetadata.get("/foo/:bool/:int/:str/:byte")
           .operationId("foo")
           .summary("Foo Summary")
@@ -50,11 +52,13 @@ public class RestApiRequestTest {
           .queryParam(STR_PARAM)
           .build();
 
+  private final Context context = mock(Context.class);
+
   @Test
   void shouldDeserializeStringFromParameters() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("str", "byeWorld"));
     when(context.queryParamMap()).thenReturn(Map.of("str", List.of("helloWorld")));
-    final RestApiRequest request = new RestApiRequest(context, metadata);
+    final RestApiRequest request = new RestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(STR_PARAM)).isEqualTo("byeWorld");
     assertThat(request.getQueryParameter(STR_PARAM)).isEqualTo("helloWorld");
   }
@@ -63,7 +67,7 @@ public class RestApiRequestTest {
   void shouldDeserializeIntegerFromParameters() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("int", "1234"));
     when(context.queryParamMap()).thenReturn(Map.of("int", List.of("4321")));
-    final RestApiRequest request = new RestApiRequest(context, metadata);
+    final RestApiRequest request = new RestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(INT_PARAM)).isEqualTo(1234);
     assertThat(request.getQueryParameter(INT_PARAM)).isEqualTo(4321);
   }
@@ -72,7 +76,7 @@ public class RestApiRequestTest {
   void shouldDeserializeBooleanFromParameters() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("bool", "true"));
     when(context.queryParamMap()).thenReturn(Map.of("bool", List.of("false")));
-    final RestApiRequest request = new RestApiRequest(context, metadata);
+    final RestApiRequest request = new RestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(BOOL_PARAM)).isEqualTo(true);
     assertThat(request.getQueryParameter(BOOL_PARAM)).isEqualTo(false);
   }
@@ -83,7 +87,7 @@ public class RestApiRequestTest {
     final byte b2 = 1;
     when(context.pathParamMap()).thenReturn(Map.of("byte", "0x7f"));
     when(context.queryParamMap()).thenReturn(Map.of("byte", List.of("0x01")));
-    final RestApiRequest request = new RestApiRequest(context, metadata);
+    final RestApiRequest request = new RestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(BYTE_PARAM)).isEqualTo(b1);
     assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(b2);
   }

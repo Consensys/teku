@@ -36,16 +36,16 @@ public class BeaconBlock
   public BeaconBlock(
       BeaconBlockSchema type,
       UInt64 slot,
-      UInt64 proposer_index,
-      Bytes32 parent_root,
-      Bytes32 state_root,
+      UInt64 proposerIndex,
+      Bytes32 parentRoot,
+      Bytes32 stateRoot,
       BeaconBlockBody body) {
     super(
         type,
         SszUInt64.of(slot),
-        SszUInt64.of(proposer_index),
-        SszBytes32.of(parent_root),
-        SszBytes32.of(state_root),
+        SszUInt64.of(proposerIndex),
+        SszBytes32.of(parentRoot),
+        SszBytes32.of(stateRoot),
         body);
   }
 

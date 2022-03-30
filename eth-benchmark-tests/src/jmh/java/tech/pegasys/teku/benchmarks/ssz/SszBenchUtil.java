@@ -36,9 +36,9 @@ public class SszBenchUtil {
   private static final Spec SPEC = TestSpecFactory.createDefault();
 
   public static void iterateData(PendingAttestation pa, Blackhole bh) {
-    bh.consume(pa.getAggregation_bits());
-    bh.consume(pa.getInclusion_delay());
-    bh.consume(pa.getProposer_index());
+    bh.consume(pa.getAggregationBits());
+    bh.consume(pa.getInclusionDelay());
+    bh.consume(pa.getProposerIndex());
     iterateData(pa.getData(), bh);
   }
 
@@ -70,7 +70,7 @@ public class SszBenchUtil {
 
   public static void iterateData(DepositData data, Blackhole bh) {
     bh.consume(data.getPubkey());
-    bh.consume(data.getWithdrawal_credentials());
+    bh.consume(data.getWithdrawalCredentials());
     bh.consume(data.getAmount());
     bh.consume(data.getSignature());
   }
@@ -82,19 +82,19 @@ public class SszBenchUtil {
   }
 
   public static void iterateData(AttesterSlashing s, Blackhole bh) {
-    iterateData(s.getAttestation_1(), bh);
-    iterateData(s.getAttestation_2(), bh);
+    iterateData(s.getAttestation1(), bh);
+    iterateData(s.getAttestation2(), bh);
   }
 
   public static void iterateData(IndexedAttestation a, Blackhole bh) {
-    a.getAttesting_indices().forEach(bh::consume);
+    a.getAttestingIndices().forEach(bh::consume);
     bh.consume(a.getSignature());
     iterateData(a.getData(), bh);
   }
 
   public static void iterateData(ProposerSlashing s, Blackhole bh) {
-    iterateData(s.getHeader_1(), bh);
-    iterateData(s.getHeader_2(), bh);
+    iterateData(s.getHeader1(), bh);
+    iterateData(s.getHeader2(), bh);
   }
 
   public static void iterateData(SignedBeaconBlockHeader h, Blackhole bh) {
@@ -111,9 +111,9 @@ public class SszBenchUtil {
   }
 
   public static void iterateData(Eth1Data ed, Blackhole bh) {
-    bh.consume(ed.getDeposit_root());
-    bh.consume(ed.getDeposit_count());
-    bh.consume(ed.getBlock_hash());
+    bh.consume(ed.getDepositRoot());
+    bh.consume(ed.getDepositCount());
+    bh.consume(ed.getBlockHash());
   }
 
   public static void iterateData(AttestationData ad, Blackhole bh) {

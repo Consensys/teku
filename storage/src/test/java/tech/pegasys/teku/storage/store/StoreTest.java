@@ -156,7 +156,7 @@ class StoreTest extends AbstractStoreTest {
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
     final BeaconState checkpointState = result.join().orElseThrow();
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot(spec));
-    assertThat(checkpointState.getLatest_block_header().hashTreeRoot())
+    assertThat(checkpointState.getLatestBlockHeader().hashTreeRoot())
         .isEqualTo(checkpoint.getRoot());
   }
 
@@ -185,7 +185,7 @@ class StoreTest extends AbstractStoreTest {
     final BeaconState result = resultFuture.join().orElseThrow();
     assertThat(result.getSlot()).isGreaterThan(baseState.getSlot());
     assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot(spec));
-    assertThat(result.getLatest_block_header().hashTreeRoot()).isEqualTo(checkpoint.getRoot());
+    assertThat(result.getLatestBlockHeader().hashTreeRoot()).isEqualTo(checkpoint.getRoot());
   }
 
   @Test

@@ -102,10 +102,9 @@ public class BlockOperationSelectorFactory {
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
               slashing ->
-                  !exitedValidators.contains(
-                      slashing.getHeader_1().getMessage().getProposerIndex()),
+                  !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex()),
               slashing ->
-                  exitedValidators.add(slashing.getHeader_1().getMessage().getProposerIndex()));
+                  exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
       // Collect exits to include
       final SszList<SignedVoluntaryExit> voluntaryExits =

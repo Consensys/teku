@@ -480,7 +480,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Failed to send signed attestation for slot "
                       + attestation.getData().getSlot()
                       + ", block "
-                      + attestation.getData().getBeacon_block_root();
+                      + attestation.getData().getBeaconBlockRoot();
               LOG.debug(errorText, error);
               return AttestationProcessingResult.invalid(errorText);
             });

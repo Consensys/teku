@@ -19,7 +19,7 @@ import java.util.Objects;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class StoreConfig {
-  public static int MAX_CACHE_SIZE = 10_000;
+  public static final int MAX_CACHE_SIZE = 10_000;
 
   public static final int DEFAULT_STATE_CACHE_SIZE = 32 * 5;
   // Max block size is about 20x smaller than the minimum state size

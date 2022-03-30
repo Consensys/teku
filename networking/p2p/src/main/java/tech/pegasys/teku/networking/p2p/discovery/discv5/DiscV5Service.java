@@ -51,7 +51,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private static final Logger LOG = LogManager.getLogger();
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
   private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(2);
-  public static NodeRecordConverter DEFAULT_NODE_RECORD_CONVERTER = new NodeRecordConverter();
+  public static final NodeRecordConverter DEFAULT_NODE_RECORD_CONVERTER = new NodeRecordConverter();
 
   public static DiscoverySystemBuilder createDefaultDiscoverySystemBuilder() {
     return new DiscoverySystemBuilder();
