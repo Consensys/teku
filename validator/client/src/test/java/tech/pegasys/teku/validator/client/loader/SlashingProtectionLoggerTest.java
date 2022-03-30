@@ -52,7 +52,7 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 
 public class SlashingProtectionLoggerTest {
-  private final Duration TIMEOUT = Duration.ofMillis(500);
+  private static final Duration TIMEOUT = Duration.ofMillis(500);
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

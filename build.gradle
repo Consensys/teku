@@ -175,6 +175,9 @@ allprojects {
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
+      // Force strict compliance with Java naming conventions
+      check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+
       // these checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)

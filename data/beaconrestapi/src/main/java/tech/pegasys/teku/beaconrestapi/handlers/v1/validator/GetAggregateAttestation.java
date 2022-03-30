@@ -108,12 +108,12 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
         throw new IllegalArgumentException(
             String.format("Please specify both %s and %s", ATTESTATION_DATA_ROOT, SLOT));
       }
-      Bytes32 beacon_block_root = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
+      Bytes32 beaconBlockRoot = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
       final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
 
       ctx.future(
           provider
-              .createAggregate(slot, beacon_block_root)
+              .createAggregate(slot, beaconBlockRoot)
               .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {

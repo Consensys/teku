@@ -54,7 +54,7 @@ public class RpcDecoderTestBase {
   protected static final AsyncRunner ASYNC_RUNNER = new StubAsyncRunner();
   protected static final PeerLookup PEER_LOOKUP = mock(PeerLookup.class);
 
-  protected static RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
+  protected static final RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
       RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
   protected static final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes>
       RESPONSE_DECODER = RpcResponseDecoder.create(ENCODING, CONTEXT_ENCODER);

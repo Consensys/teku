@@ -231,14 +231,14 @@ public class ExternalValidatorSourceTest {
   private void createRemoteKeyFile(
       DataDirLayout dataDirLayout, BLSPublicKey publicKey, Optional<URL> url) throws IOException {
     final String urlContent = url.map(value -> ",\"url\":\"" + value + "\"").orElse("");
-    final String CONTENT = "{\"pubkey\":\"" + publicKey + "\"" + urlContent + "}";
+    final String content = "{\"pubkey\":\"" + publicKey + "\"" + urlContent + "}";
 
     final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
     directory.toFile().mkdirs();
 
     final Path tempFile =
         createTempFile(directory, publicKey.toBytesCompressed().toUnprefixedHexString(), ".json");
-    Files.writeString(tempFile, CONTENT, StandardCharsets.UTF_8);
+    Files.writeString(tempFile, content, StandardCharsets.UTF_8);
   }
 
   private void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)

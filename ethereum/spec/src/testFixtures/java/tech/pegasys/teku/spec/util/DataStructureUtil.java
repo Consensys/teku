@@ -699,16 +699,16 @@ public final class DataStructureUtil {
 
   public BeaconBlock randomBeaconBlock(UInt64 slotNum) {
     final UInt64 proposerIndex = randomUInt64();
-    Bytes32 previous_root = randomBytes32();
-    Bytes32 state_root = randomBytes32();
+    Bytes32 previousRoot = randomBytes32();
+    Bytes32 stateRoot = randomBytes32();
     BeaconBlockBody body = randomBeaconBlockBody();
 
     return new BeaconBlock(
         spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema(),
         slotNum,
         proposerIndex,
-        previous_root,
-        state_root,
+        previousRoot,
+        stateRoot,
         body);
   }
 
@@ -935,15 +935,15 @@ public final class DataStructureUtil {
     BLSPublicKey pubkey = keyPair.getPublicKey();
     Bytes32 withdrawalCredentials = randomBytes32();
 
-    DepositMessage proof_of_possession_data =
+    DepositMessage proofOfPossessionData =
         new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
 
     final Bytes32 domain = computeDomain();
-    final Bytes signing_root = getSigningRoot(proof_of_possession_data, domain);
+    final Bytes signingRoot = getSigningRoot(proofOfPossessionData, domain);
 
-    BLSSignature proofOfPossession = BLS.sign(keyPair.getSecretKey(), signing_root);
+    BLSSignature proofOfPossession = BLS.sign(keyPair.getSecretKey(), signingRoot);
 
-    return new DepositData(proof_of_possession_data, proofOfPossession);
+    return new DepositData(proofOfPossessionData, proofOfPossession);
   }
 
   public DepositWithIndex randomDepositWithIndex() {

@@ -32,18 +32,18 @@ public class ValidatorPerformanceMetricsTest {
   public final ValidatorPerformanceMetrics validatorPerformanceMetrics =
       new ValidatorPerformanceMetrics(metricsSystem);
 
-  private final int NUMBER_OF_EXPECTED_ATTESTATIONS = 55;
-  private final int NUMBER_OF_PRODUCED_ATTESTATIONS = 50;
-  private final int NUMBER_OF_INCLUDED_ATTESTATIONS = 30;
-  private final int INCLUSION_DISTANCE_MAX = 15;
-  private final int INCLUSION_DISTANCE_MIN = 1;
-  private final double INCLUSION_DISTANCE_AVERAGE = 1.14;
-  private final int CORRECT_TARGET_COUNT = 20;
-  private final int CORRECT_HEAD_BLOCK_COUNT = 14;
+  private static final int NUMBER_OF_EXPECTED_ATTESTATIONS = 55;
+  private static final int NUMBER_OF_PRODUCED_ATTESTATIONS = 50;
+  private static final int NUMBER_OF_INCLUDED_ATTESTATIONS = 30;
+  private static final int INCLUSION_DISTANCE_MAX = 15;
+  private static final int INCLUSION_DISTANCE_MIN = 1;
+  private static final double INCLUSION_DISTANCE_AVERAGE = 1.14;
+  private static final int CORRECT_TARGET_COUNT = 20;
+  private static final int CORRECT_HEAD_BLOCK_COUNT = 14;
 
-  private final int NUMBER_OF_EXPECTED_BLOCKS = 51;
-  private final int NUMBER_OF_PRODUCED_BLOCKS = 5;
-  private final int NUMBER_OF_INCLUDED_BLOCKS = 3;
+  private static final int NUMBER_OF_EXPECTED_BLOCKS = 51;
+  private static final int NUMBER_OF_PRODUCED_BLOCKS = 5;
+  private static final int NUMBER_OF_INCLUDED_BLOCKS = 3;
 
   private final AttestationPerformance attestationPerformance =
       new AttestationPerformance(
