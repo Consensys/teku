@@ -46,17 +46,17 @@ public class HistoricalBatchTest {
 
   @Test
   void roundTripViaSsz() {
-    SszMutableBytes32Vector block_roots =
+    SszMutableBytes32Vector blockRoots =
         schema.getBlockRootsSchema().getDefault().createWritableCopy();
-    SszMutableBytes32Vector state_roots =
+    SszMutableBytes32Vector stateRoots =
         schema.getStateRootsSchema().getDefault().createWritableCopy();
     IntStream.range(0, SPEC.getGenesisSpecConfig().getSlotsPerHistoricalRoot())
         .forEach(
             i -> {
-              block_roots.setElement(i, dataStructureUtil.randomBytes32());
-              state_roots.setElement(i, dataStructureUtil.randomBytes32());
+              blockRoots.setElement(i, dataStructureUtil.randomBytes32());
+              stateRoots.setElement(i, dataStructureUtil.randomBytes32());
             });
-    HistoricalBatch batch = schema.create(block_roots, state_roots);
+    HistoricalBatch batch = schema.create(blockRoots, stateRoots);
     Bytes serialized = batch.sszSerialize();
     HistoricalBatch result = schema.sszDeserialize(serialized);
     assertEquals(batch, result);

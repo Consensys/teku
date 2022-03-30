@@ -60,8 +60,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
         ProtoArray.builder()
-            .finalizedCheckpoint(latestState.getFinalized_checkpoint())
-            .justifiedCheckpoint(latestState.getCurrent_justified_checkpoint())
+            .finalizedCheckpoint(latestState.getFinalizedCheckpoint())
+            .justifiedCheckpoint(latestState.getCurrentJustifiedCheckpoint())
             .build();
     addBlocksFromBuilder(chainBuilder, protoArray);
 
@@ -82,8 +82,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getRoot(),
                     blockAndState.getParentRoot(),
                     blockAndState.getStateRoot(),
-                    blockAndState.getState().getCurrent_justified_checkpoint().getEpoch(),
-                    blockAndState.getState().getFinalized_checkpoint().getEpoch(),
+                    blockAndState.getState().getCurrentJustifiedCheckpoint().getEpoch(),
+                    blockAndState.getState().getFinalizedCheckpoint().getEpoch(),
                     blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
   }
@@ -114,8 +114,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ProtoArray protoArray =
         ProtoArray.builder()
             .initialCheckpoint(Optional.of(anchor.getCheckpoint()))
-            .justifiedCheckpoint(anchorState.getCurrent_justified_checkpoint())
-            .finalizedCheckpoint(anchorState.getFinalized_checkpoint())
+            .justifiedCheckpoint(anchorState.getCurrentJustifiedCheckpoint())
+            .finalizedCheckpoint(anchorState.getFinalizedCheckpoint())
             .build();
     protoArray.onBlock(
         anchor.getBlockSlot(),

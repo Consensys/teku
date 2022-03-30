@@ -88,7 +88,7 @@ public class Eth1DataCacheTest {
   void shouldUseDepositFromPreviousBlockWhenNoDepositBlockAddedBetweenDeposits() {
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
     final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT + 1);
-    final Eth1Data eth1Data2 = createEth1Data(eth1Data1.getDeposit_count());
+    final Eth1Data eth1Data2 = createEth1Data(eth1Data1.getDepositCount());
     final Eth1Data emptyBlockData = eth1Data1.withBlockHash(emptyBlockHash);
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2);
@@ -104,7 +104,7 @@ public class Eth1DataCacheTest {
     eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
 
     final BeaconState beaconState = createBeaconStateWithVotes();
-    when(beaconState.getEth1_data()).thenReturn(new Eth1Data(Bytes32.ZERO, ZERO, Bytes32.ZERO));
+    when(beaconState.getEth1Data()).thenReturn(new Eth1Data(Bytes32.ZERO, ZERO, Bytes32.ZERO));
 
     final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(beaconState);
     assertThat(eth1Vote).isEqualTo(new Eth1Data(Eth1Data.EMPTY_DEPOSIT_ROOT, ZERO, emptyBlockHash));
@@ -290,9 +290,9 @@ public class Eth1DataCacheTest {
         SszListSchema.create(Eth1Data.SSZ_SCHEMA, votes.length).of(votes);
     final BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getSlot()).thenReturn(SLOT);
-    when(beaconState.getGenesis_time()).thenReturn(GENESIS_TIME);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    when(beaconState.getEth1_data()).thenReturn(stateEth1Data);
+    when(beaconState.getGenesisTime()).thenReturn(GENESIS_TIME);
+    when(beaconState.getEth1DataVotes()).thenReturn(eth1DataVotes);
+    when(beaconState.getEth1Data()).thenReturn(stateEth1Data);
     return beaconState;
   }
 

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
+@SuppressWarnings("JavaCase")
 public class GetBlockHeadersResponse {
   @JsonProperty("execution_optimistic")
   @JsonInclude(Include.NON_NULL)

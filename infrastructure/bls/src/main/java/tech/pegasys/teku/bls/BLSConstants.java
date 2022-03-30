@@ -27,13 +27,13 @@ public class BLSConstants {
   static final BigInteger CURVE_ORDER_BI =
       CURVE_ORDER_BYTES.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
 
-  public static boolean VERIFICATION_DISABLED = false;
+  public static boolean verificationDisabled = false;
 
   public static void disableBLSVerification() {
-    VERIFICATION_DISABLED = true;
+    verificationDisabled = true;
   }
 
   public static void enableBLSVerification() {
-    VERIFICATION_DISABLED = false;
+    verificationDisabled = false;
   }
 }

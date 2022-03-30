@@ -171,7 +171,7 @@ public class AttestationProductionDuty implements Duty {
         .thenApply(
             attestation ->
                 ProductionResult.success(
-                    validator.getPublicKey(), attestationData.getBeacon_block_root(), attestation));
+                    validator.getPublicKey(), attestationData.getBeaconBlockRoot(), attestation));
   }
 
   private Attestation createSignedAttestation(

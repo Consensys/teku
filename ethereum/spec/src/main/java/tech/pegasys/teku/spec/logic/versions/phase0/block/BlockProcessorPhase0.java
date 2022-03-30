@@ -81,9 +81,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
                 UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
 
     if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
-      state.getCurrent_epoch_attestations().append(pendingAttestation);
+      state.getCurrentEpochAttestations().append(pendingAttestation);
     } else {
-      state.getPrevious_epoch_attestations().append(pendingAttestation);
+      state.getPreviousEpochAttestations().append(pendingAttestation);
     }
   }
 

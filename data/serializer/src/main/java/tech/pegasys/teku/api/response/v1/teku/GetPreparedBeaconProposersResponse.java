@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("JavaCase")
 public class GetPreparedBeaconProposersResponse {
   @ArraySchema(schema = @Schema(implementation = ProposerInfoSchema.class))
   private final List<Map<String, Object>> data;

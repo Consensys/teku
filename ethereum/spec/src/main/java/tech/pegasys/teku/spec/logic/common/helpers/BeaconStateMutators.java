@@ -68,28 +68,28 @@ public class BeaconStateMutators {
   public void initiateValidatorExit(MutableBeaconState state, int index) {
     Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
-    if (!validator.getExit_epoch().equals(FAR_FUTURE_EPOCH)) {
+    if (!validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
       return;
     }
 
     // Compute exit queue epoch
-    List<UInt64> exit_epochs =
+    List<UInt64> exitEpochs =
         state.getValidators().stream()
-            .map(Validator::getExit_epoch)
+            .map(Validator::getExitEpoch)
             .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
             .collect(toList());
-    exit_epochs.add(
+    exitEpochs.add(
         miscHelpers.computeActivationExitEpoch(beaconStateAccessors.getCurrentEpoch(state)));
-    UInt64 exit_queue_epoch = Collections.max(exit_epochs);
-    final UInt64 final_exit_queue_epoch = exit_queue_epoch;
-    UInt64 exit_queue_churn =
+    UInt64 exitQueueEpoch = Collections.max(exitEpochs);
+    final UInt64 finalExitQueueEpoch = exitQueueEpoch;
+    UInt64 exitQueueChurn =
         UInt64.valueOf(
             state.getValidators().stream()
-                .filter(v -> v.getExit_epoch().equals(final_exit_queue_epoch))
+                .filter(v -> v.getExitEpoch().equals(finalExitQueueEpoch))
                 .count());
 
-    if (exit_queue_churn.compareTo(beaconStateAccessors.getValidatorChurnLimit(state)) >= 0) {
-      exit_queue_epoch = exit_queue_epoch.plus(UInt64.ONE);
+    if (exitQueueChurn.compareTo(beaconStateAccessors.getValidatorChurnLimit(state)) >= 0) {
+      exitQueueEpoch = exitQueueEpoch.plus(UInt64.ONE);
     }
 
     // Set validator exit epoch and withdrawable epoch
@@ -98,13 +98,13 @@ public class BeaconStateMutators {
         .set(
             index,
             validator
-                .withExit_epoch(exit_queue_epoch)
-                .withWithdrawable_epoch(
-                    exit_queue_epoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
+                .withExitEpoch(exitQueueEpoch)
+                .withWithdrawableEpoch(
+                    exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
   }
 
-  public void slashValidator(MutableBeaconState state, int slashed_index) {
-    slashValidator(state, slashed_index, -1);
+  public void slashValidator(MutableBeaconState state, int slashedIndex) {
+    slashValidator(state, slashedIndex, -1);
   }
 
   private void slashValidator(MutableBeaconState state, int slashedIndex, int whistleblowerIndex) {
@@ -119,36 +119,36 @@ public class BeaconStateMutators {
             slashedIndex,
             validator
                 .withSlashed(true)
-                .withWithdrawable_epoch(
+                .withWithdrawableEpoch(
                     validator
-                        .getWithdrawable_epoch()
+                        .getWithdrawableEpoch()
                         .max(epoch.plus(specConfig.getEpochsPerSlashingsVector()))));
 
     int index = epoch.mod(specConfig.getEpochsPerSlashingsVector()).intValue();
     state
         .getSlashings()
         .setElement(
-            index, state.getSlashings().getElement(index).plus(validator.getEffective_balance()));
+            index, state.getSlashings().getElement(index).plus(validator.getEffectiveBalance()));
     decreaseBalance(
         state,
         slashedIndex,
-        validator.getEffective_balance().dividedBy(getMinSlashingPenaltyQuotient()));
+        validator.getEffectiveBalance().dividedBy(getMinSlashingPenaltyQuotient()));
 
     // Apply proposer and whistleblower rewards
-    int proposer_index = beaconStateAccessors.getBeaconProposerIndex(state);
+    int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
     if (whistleblowerIndex == -1) {
-      whistleblowerIndex = proposer_index;
+      whistleblowerIndex = proposerIndex;
     }
 
-    UInt64 whistleblower_reward =
-        validator.getEffective_balance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
-    UInt64 proposer_reward = calculateProposerReward(whistleblower_reward);
-    increaseBalance(state, proposer_index, proposer_reward);
-    increaseBalance(state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
+    UInt64 whistleblowerReward =
+        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+    UInt64 proposerReward = calculateProposerReward(whistleblowerReward);
+    increaseBalance(state, proposerIndex, proposerReward);
+    increaseBalance(state, whistleblowerIndex, whistleblowerReward.minus(proposerReward));
   }
 
-  protected UInt64 calculateProposerReward(final UInt64 whistleblower_reward) {
-    return whistleblower_reward.dividedBy(specConfig.getProposerRewardQuotient());
+  protected UInt64 calculateProposerReward(final UInt64 whistleblowerReward) {
+    return whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
   }
 
   protected int getMinSlashingPenaltyQuotient() {

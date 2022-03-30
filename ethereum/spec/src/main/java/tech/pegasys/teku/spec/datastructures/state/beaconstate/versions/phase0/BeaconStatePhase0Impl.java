@@ -72,7 +72,7 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
 
   static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStatePhase0 state) {
     stringBuilder
-        .add("previous_epoch_attestations", state.getPrevious_epoch_attestations())
-        .add("current_epoch_attestations", state.getCurrent_epoch_attestations());
+        .add("previous_epoch_attestations", state.getPreviousEpochAttestations())
+        .add("current_epoch_attestations", state.getCurrentEpochAttestations());
   }
 }

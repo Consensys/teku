@@ -24,6 +24,7 @@ import java.util.Objects;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class Fork {
   @Schema(type = "string", pattern = PATTERN_BYTES4, description = DESCRIPTION_BYTES4)
   public Bytes4 previous_version;
@@ -45,8 +46,8 @@ public class Fork {
   }
 
   public Fork(final tech.pegasys.teku.spec.datastructures.state.Fork fork) {
-    this.previous_version = fork.getPrevious_version();
-    this.current_version = fork.getCurrent_version();
+    this.previous_version = fork.getPreviousVersion();
+    this.current_version = fork.getCurrentVersion();
     this.epoch = fork.getEpoch();
   }
 

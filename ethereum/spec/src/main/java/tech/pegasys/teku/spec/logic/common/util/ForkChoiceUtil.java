@@ -172,16 +172,16 @@ public class ForkChoiceUtil {
     if (store.getTime().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
       return;
     }
-    UInt64 previous_slot = getCurrentSlot(store);
+    UInt64 previousSlot = getCurrentSlot(store);
 
     // Update store time
     store.setTime(time);
 
-    UInt64 current_slot = getCurrentSlot(store);
+    UInt64 currentSlot = getCurrentSlot(store);
 
     // Not a new epoch, return
-    if (!(current_slot.compareTo(previous_slot) > 0
-        && computeSlotsSinceEpochStart(current_slot).equals(UInt64.ZERO))) {
+    if (!(currentSlot.compareTo(previousSlot) > 0
+        && computeSlotsSinceEpochStart(currentSlot).equals(UInt64.ZERO))) {
       return;
     }
 
@@ -252,7 +252,7 @@ public class ForkChoiceUtil {
     }
 
     final Optional<UInt64> blockSlot =
-        forkChoiceStrategy.blockSlot(attestationData.getBeacon_block_root());
+        forkChoiceStrategy.blockSlot(attestationData.getBeaconBlockRoot());
     if (blockSlot.isEmpty()) {
       // Attestations must be for a known block. If block is unknown, delay consideration until the
       // block is found
@@ -266,7 +266,7 @@ public class ForkChoiceUtil {
 
     // LMD vote must be consistent with FFG vote target
     final UInt64 targetSlot = miscHelpers.computeStartSlotAtEpoch(target.getEpoch());
-    if (getAncestor(forkChoiceStrategy, attestationData.getBeacon_block_root(), targetSlot)
+    if (getAncestor(forkChoiceStrategy, attestationData.getBeaconBlockRoot(), targetSlot)
         .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
         .orElse(true)) {
       return AttestationProcessingResult.invalid(
@@ -308,7 +308,7 @@ public class ForkChoiceUtil {
     store.putBlockAndState(signedBlock, postState);
 
     // Update justified checkpoint
-    final Checkpoint justifiedCheckpoint = postState.getCurrent_justified_checkpoint();
+    final Checkpoint justifiedCheckpoint = postState.getCurrentJustifiedCheckpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
       if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
           > 0) {
@@ -321,21 +321,21 @@ public class ForkChoiceUtil {
     }
 
     // Update finalized checkpoint
-    final Checkpoint finalizedCheckpoint = postState.getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = postState.getFinalizedCheckpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
       store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
 
       // Potentially update justified if different from store
-      if (!store.getJustifiedCheckpoint().equals(postState.getCurrent_justified_checkpoint())) {
+      if (!store.getJustifiedCheckpoint().equals(postState.getCurrentJustifiedCheckpoint())) {
         // Update justified if new justified is later than store justified
         // or if store justified is not in chain with finalized checkpoint
         if (postState
-                    .getCurrent_justified_checkpoint()
+                    .getCurrentJustifiedCheckpoint()
                     .getEpoch()
                     .compareTo(store.getJustifiedCheckpoint().getEpoch())
                 > 0
             || !isFinalizedAncestorOfJustified(store)) {
-          store.setJustifiedCheckpoint(postState.getCurrent_justified_checkpoint());
+          store.setJustifiedCheckpoint(postState.getCurrentJustifiedCheckpoint());
         }
       }
     }

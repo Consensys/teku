@@ -201,9 +201,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     // Set data that depends on the genesis state
     this.genesisTime = this.store.getGenesisTime();
     final BeaconState anchorState = store.getLatestFinalized().getState();
-    final Bytes32 genesisValidatorsRoot = anchorState.getGenesis_validators_root();
+    final Bytes32 genesisValidatorsRoot = anchorState.getGenesisValidatorsRoot();
     this.genesisData =
-        Optional.of(new GenesisData(anchorState.getGenesis_time(), genesisValidatorsRoot));
+        Optional.of(new GenesisData(anchorState.getGenesisTime(), genesisValidatorsRoot));
     spec.getForkSchedule()
         .getActiveMilestones()
         .forEach(

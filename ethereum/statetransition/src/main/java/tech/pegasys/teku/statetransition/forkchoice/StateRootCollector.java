@@ -30,8 +30,8 @@ public class StateRootCollector {
       final Spec spec, final BeaconState blockSlotState, final StoreTransaction transaction) {
     final UInt64 newBlockSlot = blockSlotState.getSlot();
     final int slotsPerHistoricalRoot = spec.getSpecConfig(newBlockSlot).getSlotsPerHistoricalRoot();
-    final SszBytes32Vector blockRoots = blockSlotState.getBlock_roots();
-    final SszBytes32Vector stateRoots = blockSlotState.getState_roots();
+    final SszBytes32Vector blockRoots = blockSlotState.getBlockRoots();
+    final SszBytes32Vector stateRoots = blockSlotState.getStateRoots();
     final UInt64 minimumSlot = newBlockSlot.minusMinZero(slotsPerHistoricalRoot);
     // Get the parent block root from the state as the genesis block root is recorded as 0
     final Bytes32 parentBlockRoot =

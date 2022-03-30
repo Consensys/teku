@@ -32,8 +32,8 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
           .name("Fork")
           .description(
               "The [Fork](https://github.com/ethereum/consensus-specs/blob/v1.0.1/specs/phase0/beacon-chain.md#fork) object from the Eth2.0 spec.")
-          .withField("previous_version", BYTES4_TYPE, Fork::getPrevious_version)
-          .withField("current_version", BYTES4_TYPE, Fork::getCurrent_version)
+          .withField("previous_version", BYTES4_TYPE, Fork::getPreviousVersion)
+          .withField("current_version", BYTES4_TYPE, Fork::getCurrentVersion)
           .withField("epoch", UINT64_TYPE, Fork::getEpoch)
           .build();
 
@@ -59,19 +59,19 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
     super(type, backingNode);
   }
 
-  public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
+  public Fork(Bytes4 previousVersion, Bytes4 currentVersion, UInt64 epoch) {
     super(
         SSZ_SCHEMA,
-        SszBytes4.of(previous_version),
-        SszBytes4.of(current_version),
+        SszBytes4.of(previousVersion),
+        SszBytes4.of(currentVersion),
         SszUInt64.of(epoch));
   }
 
-  public Bytes4 getPrevious_version() {
+  public Bytes4 getPreviousVersion() {
     return getField0().get();
   }
 
-  public Bytes4 getCurrent_version() {
+  public Bytes4 getCurrentVersion() {
     return getField1().get();
   }
 

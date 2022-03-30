@@ -43,15 +43,15 @@ public class ProposerSlashing
     super(type, backingNode);
   }
 
-  public ProposerSlashing(SignedBeaconBlockHeader header_1, SignedBeaconBlockHeader header_2) {
-    super(SSZ_SCHEMA, header_1, header_2);
+  public ProposerSlashing(SignedBeaconBlockHeader header1, SignedBeaconBlockHeader header2) {
+    super(SSZ_SCHEMA, header1, header2);
   }
 
-  public SignedBeaconBlockHeader getHeader_1() {
+  public SignedBeaconBlockHeader getHeader1() {
     return getField0();
   }
 
-  public SignedBeaconBlockHeader getHeader_2() {
+  public SignedBeaconBlockHeader getHeader2() {
     return getField1();
   }
 }

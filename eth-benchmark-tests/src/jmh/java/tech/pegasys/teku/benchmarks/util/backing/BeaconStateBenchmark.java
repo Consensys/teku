@@ -51,10 +51,10 @@ public class BeaconStateBenchmark {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator.isSlashed());
       bh.consume(validator.getPubkeyBytes());
-      bh.consume(validator.getEffective_balance());
-      bh.consume(validator.getActivation_epoch());
-      bh.consume(validator.getExit_epoch());
-      bh.consume(validator.getWithdrawable_epoch());
+      bh.consume(validator.getEffectiveBalance());
+      bh.consume(validator.getActivationEpoch());
+      bh.consume(validator.getExitEpoch());
+      bh.consume(validator.getWithdrawableEpoch());
     }
   }
 

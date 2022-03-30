@@ -169,7 +169,7 @@ public class ValidateableAttestation {
     return attestation.getDependentBlockRoots();
   }
 
-  public Bytes32 hash_tree_root() {
+  public Bytes32 hashTreeRoot() {
     return hashTreeRoot.get();
   }
 

@@ -51,13 +51,13 @@ public class LoggingConfigurator {
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
   private static final AtomicBoolean COLOR = new AtomicBoolean();
 
-  private static LoggingDestination DESTINATION;
-  private static boolean INCLUDE_EVENTS;
-  private static boolean INCLUDE_VALIDATOR_DUTIES;
-  private static boolean INCLUDE_P2P_WARNINGS;
-  private static String FILE;
-  private static String FILE_PATTERN;
-  private static Level ROOT_LOG_LEVEL = Level.INFO;
+  private static LoggingDestination destination;
+  private static boolean includeEvents;
+  private static boolean includeValidatorDuties;
+  private static boolean includeP2pWarnings;
+  private static String file;
+  private static String filePattern;
+  private static Level rootLogLevel = Level.INFO;
   private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   public static boolean isColorEnabled() {
@@ -65,7 +65,7 @@ public class LoggingConfigurator {
   }
 
   public static boolean isIncludeP2pWarnings() {
-    return INCLUDE_P2P_WARNINGS;
+    return includeP2pWarnings;
   }
 
   public static synchronized void setColorEnabled(final boolean isEnabled) {
@@ -75,7 +75,7 @@ public class LoggingConfigurator {
   public static synchronized void setAllLevels(final Level level) {
     STATUS_LOG.info("Setting logging level to {}", level.name());
     Configurator.setAllLevels("", level);
-    ROOT_LOG_LEVEL = level;
+    rootLogLevel = level;
   }
 
   public static synchronized void setAllLevels(final String filter, final Level level) {
@@ -94,12 +94,12 @@ public class LoggingConfigurator {
   public static synchronized void update(final LoggingConfig configuration) {
     configuration.getLogLevel().ifPresent(LoggingConfigurator::setAllLevels);
     COLOR.set(configuration.isColorEnabled());
-    DESTINATION = configuration.getDestination();
-    INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
-    INCLUDE_VALIDATOR_DUTIES = configuration.isIncludeValidatorDutiesEnabled();
-    INCLUDE_P2P_WARNINGS = configuration.isIncludeP2pWarningsEnabled();
-    FILE = configuration.getLogFile();
-    FILE_PATTERN = configuration.getLogFileNamePattern();
+    destination = configuration.getDestination();
+    includeEvents = configuration.isIncludeEventsEnabled();
+    includeValidatorDuties = configuration.isIncludeValidatorDutiesEnabled();
+    includeP2pWarnings = configuration.isIncludeP2pWarningsEnabled();
+    file = configuration.getLogFile();
+    filePattern = configuration.getLogFileNamePattern();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggers((AbstractConfiguration) ctx.getConfiguration());
@@ -132,7 +132,7 @@ public class LoggingConfigurator {
     Appender consoleAppender;
     Appender fileAppender;
 
-    switch (DESTINATION) {
+    switch (destination) {
       case CONSOLE:
         consoleAppender = consoleAppender(configuration, false);
 
@@ -171,18 +171,18 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
     }
-    STATUS_LOG.info("Include P2P warnings set to: {}", INCLUDE_P2P_WARNINGS);
+    STATUS_LOG.info("Include P2P warnings set to: {}", includeP2pWarnings);
     configuration.getLoggerContext().updateLoggers();
   }
 
   private static void displayProgrammaticLoggingConfiguration() {
-    switch (DESTINATION) {
+    switch (destination) {
       case CONSOLE:
         STATUS_LOG.info("Configuring logging for destination: console");
         break;
       case FILE:
         STATUS_LOG.info("Configuring logging for destination: file");
-        STATUS_LOG.info("Logging file location: {}", FILE);
+        STATUS_LOG.info("Logging file location: {}", file);
         break;
       default:
         // fall through
@@ -190,12 +190,12 @@ public class LoggingConfigurator {
         // fall through
       case BOTH:
         STATUS_LOG.info("Configuring logging for destination: console and file");
-        STATUS_LOG.info("Logging file location: {}", FILE);
+        STATUS_LOG.info("Logging file location: {}", file);
         break;
     }
 
-    STATUS_LOG.info("Logging includes events: {}", INCLUDE_EVENTS);
-    STATUS_LOG.info("Logging includes validator duties: {}", INCLUDE_VALIDATOR_DUTIES);
+    STATUS_LOG.info("Logging includes events: {}", includeEvents);
+    STATUS_LOG.info("Logging includes validator duties: {}", includeValidatorDuties);
     STATUS_LOG.info("Logging includes color: {}", COLOR);
   }
 
@@ -211,29 +211,29 @@ public class LoggingConfigurator {
   private static void displayUnknownDestinationConfigured() {
     STATUS_LOG.warn(
         "Unknown logging destination: {}, applying default: {}",
-        DESTINATION,
+        destination,
         LoggingDestination.BOTH);
   }
 
   private static boolean isUninitialized() {
-    return DESTINATION == null;
+    return destination == null;
   }
 
   @VisibleForTesting
   // returns the original destination
   static LoggingDestination setDestination(final LoggingDestination destination) {
-    final LoggingDestination original = DESTINATION;
-    DESTINATION = destination;
+    final LoggingDestination original = LoggingConfigurator.destination;
+    LoggingConfigurator.destination = destination;
     return original;
   }
 
   private static boolean isProgrammaticLoggingDisabled() {
-    return DESTINATION == LoggingDestination.CUSTOM;
+    return destination == LoggingDestination.CUSTOM;
   }
 
   private static boolean isProgrammaticLoggingRedundant() {
-    return (DESTINATION == LoggingDestination.DEFAULT_BOTH
-            || DESTINATION == LoggingDestination.CUSTOM)
+    return (destination == LoggingDestination.DEFAULT_BOTH
+            || destination == LoggingDestination.CUSTOM)
         && isCustomLog4jConfigFileProvided();
   }
 
@@ -254,26 +254,26 @@ public class LoggingConfigurator {
   }
 
   private static LoggerConfig setUpEventsLogger(final Appender appender) {
-    final Level eventsLogLevel = INCLUDE_EVENTS ? ROOT_LOG_LEVEL : Level.OFF;
+    final Level eventsLogLevel = includeEvents ? rootLogLevel : Level.OFF;
     final LoggerConfig logger = new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, true);
     logger.addAppender(appender, eventsLogLevel, null);
     return logger;
   }
 
   private static LoggerConfig setUpStatusLogger(final Appender appender) {
-    final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, ROOT_LOG_LEVEL, true);
-    logger.addAppender(appender, ROOT_LOG_LEVEL, null);
+    final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, rootLogLevel, true);
+    logger.addAppender(appender, rootLogLevel, null);
     return logger;
   }
 
   private static LoggerConfig setUpValidatorLogger(final Appender appender) {
     // Don't disable validator error logs unless the root log level disables error.
     final Level validatorLogLevel =
-        INCLUDE_VALIDATOR_DUTIES || ROOT_LOG_LEVEL.isMoreSpecificThan(Level.ERROR)
-            ? ROOT_LOG_LEVEL
+        includeValidatorDuties || rootLogLevel.isMoreSpecificThan(Level.ERROR)
+            ? rootLogLevel
             : Level.ERROR;
     final LoggerConfig logger = new LoggerConfig(VALIDATOR_LOGGER_NAME, validatorLogLevel, true);
-    logger.addAppender(appender, ROOT_LOG_LEVEL, null);
+    logger.addAppender(appender, rootLogLevel, null);
     return logger;
   }
 
@@ -289,7 +289,7 @@ public class LoggingConfigurator {
         .withConfiguration(configuration)
         .withPatternSelector(
             new ConsolePatternSelector(
-                configuration, omitStackTraces, LoggingDestination.CONSOLE.equals(DESTINATION)))
+                configuration, omitStackTraces, LoggingDestination.CONSOLE.equals(destination)))
         .build();
   }
 
@@ -326,8 +326,8 @@ public class LoggingConfigurator {
             .setName(FILE_APPENDER_NAME)
             .withAppend(true)
             .setLayout(layout)
-            .withFileName(FILE)
-            .withFilePattern(FILE_PATTERN)
+            .withFileName(file)
+            .withFilePattern(filePattern)
             .withPolicy(
                 CompositeTriggeringPolicy.createPolicy(
                     TimeBasedTriggeringPolicy.newBuilder()

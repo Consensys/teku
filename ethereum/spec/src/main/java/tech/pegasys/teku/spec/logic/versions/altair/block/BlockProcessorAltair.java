@@ -128,7 +128,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
     UInt64 proposerRewardNumerator = UInt64.ZERO;
     final SszUInt64List attestingIndices =
-        indexedAttestationProvider.getIndexedAttestation(attestation).getAttesting_indices();
+        indexedAttestationProvider.getIndexedAttestation(attestation).getAttestingIndices();
     for (SszUInt64 attestingIndex : attestingIndices) {
       final int index = attestingIndex.get().intValue();
       byte participationFlags = epochParticipation.get(index).get();

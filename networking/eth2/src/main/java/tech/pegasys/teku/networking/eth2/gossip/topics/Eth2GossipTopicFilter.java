@@ -60,7 +60,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
                 spec.atEpoch(futureFork.getEpoch())
                     .miscHelpers()
                     .computeForkDigest(
-                        futureFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot()))
+                        futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot()))
         .forEach(futureForkDigest -> topics.addAll(getAllTopics(gossipEncoding, futureForkDigest)));
     return topics;
   }

@@ -49,7 +49,7 @@ public class Generator {
   public void generateBlocks() throws Exception {
     final Spec spec = TestSpecFactory.createMainnetAltair();
 
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
 
     System.out.println("Generating keypairs...");
     int validatorsCount = 32 * 1024;

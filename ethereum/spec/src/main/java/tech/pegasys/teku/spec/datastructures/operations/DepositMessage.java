@@ -52,11 +52,11 @@ public class DepositMessage
   }
 
   public DepositMessage(
-      final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        SszBytes32.of(withdrawal_credentials),
+        SszBytes32.of(withdrawalCredentials),
         SszUInt64.of(amount));
   }
 
@@ -64,7 +64,7 @@ public class DepositMessage
     return getField0().getBLSPublicKey();
   }
 
-  public Bytes32 getWithdrawal_credentials() {
+  public Bytes32 getWithdrawalCredentials() {
     return getField1().get();
   }
 

@@ -75,7 +75,7 @@ class GenesisGeneratorTest {
         new DepositWithIndex(
             new DepositData(
                 depositData.getPubkey(),
-                depositData.getWithdrawal_credentials(),
+                depositData.getWithdrawalCredentials(),
                 depositData.getAmount(),
                 BLSSignature.empty()),
             deposit.getIndex());
@@ -133,28 +133,28 @@ class GenesisGeneratorTest {
   public void shouldActivateToppedUpValidator() {
     MockStartDepositGenerator mockStartDepositGenerator =
         new MockStartDepositGenerator(spec, new DepositGenerator(spec, true));
-    DepositData PARTIAL_DEPOSIT_DATA =
+    DepositData partialDepositData =
         mockStartDepositGenerator
             .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(1000000000L))
             .get(0);
 
-    DepositData TOP_UP_DEPOSIT_DATA =
+    DepositData topUpDepositData =
         mockStartDepositGenerator
             .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(31000000000L))
             .get(0);
 
-    List<DepositData> INITIAL_DEPOSIT_DATA = List.of(PARTIAL_DEPOSIT_DATA, TOP_UP_DEPOSIT_DATA);
+    List<DepositData> initialDepositData = List.of(partialDepositData, topUpDepositData);
 
-    List<Deposit> INITIAL_DEPOSITS =
-        IntStream.range(0, INITIAL_DEPOSIT_DATA.size())
+    List<Deposit> initialDeposits =
+        IntStream.range(0, initialDepositData.size())
             .mapToObj(
                 index -> {
-                  final DepositData data = INITIAL_DEPOSIT_DATA.get(index);
+                  final DepositData data = initialDepositData.get(index);
                   return new DepositWithIndex(data, UInt64.valueOf(index));
                 })
             .collect(toList());
 
-    genesisGenerator.updateCandidateState(Bytes32.ZERO, UInt64.ZERO, INITIAL_DEPOSITS);
+    genesisGenerator.updateCandidateState(Bytes32.ZERO, UInt64.ZERO, initialDeposits);
 
     final BeaconState state = genesisGenerator.getGenesisState();
     Assertions.<Integer>assertThat(spec.getActiveValidatorIndices(state, GENESIS_EPOCH)).hasSize(1);
@@ -170,7 +170,7 @@ class GenesisGeneratorTest {
     final DepositData invalidData =
         new DepositData(
             validData.getPubkey(),
-            validData.getWithdrawal_credentials(),
+            validData.getWithdrawalCredentials(),
             validData.getAmount(),
             BLSSignature.empty());
     deposits.add(0, new Deposit(invalidData));
@@ -178,7 +178,7 @@ class GenesisGeneratorTest {
     genesisGenerator.updateCandidateState(Bytes32.ZERO, UInt64.ZERO, deposits);
     final BeaconState state = genesisGenerator.getGenesisState();
     // All deposits were processed
-    assertThat(state.getEth1_deposit_index()).isEqualTo(UInt64.valueOf(deposits.size()));
+    assertThat(state.getEth1DepositIndex()).isEqualTo(UInt64.valueOf(deposits.size()));
     // But one didn't result in a new validator
     assertThat(state.getValidators()).hasSize(deposits.size() - 1);
     assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(deposits.size() - 1);

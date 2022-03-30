@@ -305,8 +305,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                   correctTargetCount++;
 
                   // Check if the attestation had correct head block root
-                  Bytes32 attestationHeadBlockRoot =
-                      sentAttestation.getData().getBeacon_block_root();
+                  Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
                   if (attestationHeadBlockRoot.equals(
                       spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
                     correctHeadBlockCount++;

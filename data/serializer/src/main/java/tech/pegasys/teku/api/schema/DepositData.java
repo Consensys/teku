@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class DepositData {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
   public final BLSPubKey pubkey;
@@ -39,7 +40,7 @@ public class DepositData {
 
   public DepositData(tech.pegasys.teku.spec.datastructures.operations.DepositData depositData) {
     this.pubkey = new BLSPubKey(depositData.getPubkey().toSSZBytes());
-    this.withdrawal_credentials = depositData.getWithdrawal_credentials();
+    this.withdrawal_credentials = depositData.getWithdrawalCredentials();
     this.amount = depositData.getAmount();
     this.signature = new BLSSignature(depositData.getSignature());
   }

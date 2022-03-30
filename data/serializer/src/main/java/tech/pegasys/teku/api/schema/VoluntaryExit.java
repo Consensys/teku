@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
   public final UInt64 epoch;
