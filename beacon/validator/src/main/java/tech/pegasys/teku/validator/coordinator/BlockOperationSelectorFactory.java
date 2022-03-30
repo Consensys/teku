@@ -139,6 +139,9 @@ public class BlockOperationSelectorFactory {
       // execution Payload handling
       if (bodyBuilder.isBlinded()) {
         if (isMevBoostEnabled) {
+
+          // mev-boost is enabled and a blinded block has been requested
+          // we can call builder api to get a payload header
           bodyBuilder.executionPayloadHeader(
               payloadProvider(
                   parentRoot,
@@ -155,10 +158,12 @@ public class BlockOperationSelectorFactory {
           return;
         }
 
+        // blinded block has been requested but mev-boost is not enabled
         throw new UnsupportedOperationException(
             "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
       }
 
+      // non-blinded block requested
       if (isMevBoostEnabled) {
         LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
       }
