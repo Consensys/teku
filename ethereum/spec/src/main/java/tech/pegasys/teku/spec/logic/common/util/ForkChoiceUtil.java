@@ -465,8 +465,6 @@ public class ForkChoiceUtil {
   private boolean isExecutionBlock(final ReadOnlyStore store, final Bytes32 blockRoot) {
     final Optional<Bytes32> parentExecutionRoot =
         store.getForkChoiceStrategy().executionBlockHash(blockRoot);
-    final boolean isExecutionBlock =
-        parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
-    return isExecutionBlock;
+    return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 }

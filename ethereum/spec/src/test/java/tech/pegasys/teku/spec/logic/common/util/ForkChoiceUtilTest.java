@@ -217,7 +217,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void isOptimisticSyncPossible_shouldBeFalseWhenBlockIsMergeButNotOldEnough() {
+  void canOptimisticallyImport_shouldBeFalseWhenBlockIsMergeButNotOldEnough() {
     final int blockSlot = 11;
     final SignedBeaconBlock blockToImport = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
     final ReadOnlyStore store =
@@ -227,7 +227,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void isOptimisticSyncPossible_shouldBeTrueWhenBlockIsMergeAndIsOldEnough() {
+  void canOptimisticallyImport_shouldBeTrueWhenBlockIsMergeAndIsOldEnough() {
     final int blockSlot = 11;
     final SignedBeaconBlock blockToImport = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
     final ReadOnlyStore store =
