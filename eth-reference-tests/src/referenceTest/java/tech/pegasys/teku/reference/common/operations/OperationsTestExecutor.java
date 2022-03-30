@@ -52,7 +52,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     EXECUTION_PAYLOAD
   }
 
-  public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
+  public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "operations/attester_slashing",
