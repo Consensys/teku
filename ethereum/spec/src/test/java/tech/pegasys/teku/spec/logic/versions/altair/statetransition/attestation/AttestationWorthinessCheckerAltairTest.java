@@ -86,7 +86,7 @@ public class AttestationWorthinessCheckerAltairTest {
     return new AttestationData(
         slot,
         referenceAttestationData.getIndex(),
-        referenceAttestationData.getBeacon_block_root(),
+        referenceAttestationData.getBeaconBlockRoot(),
         referenceAttestationData.getSource(),
         target);
   }

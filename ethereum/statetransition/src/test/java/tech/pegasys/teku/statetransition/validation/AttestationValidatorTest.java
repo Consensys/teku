@@ -108,12 +108,12 @@ class AttestationValidatorTest {
 
   @BeforeAll
   public static void init() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void reset() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach
@@ -320,7 +320,7 @@ class AttestationValidatorTest {
                             data.getSlot(),
                             spec.getCommitteeCountPerSlot(
                                 blockAndState.getState(), data.getTarget().getEpoch()),
-                            data.getBeacon_block_root(),
+                            data.getBeaconBlockRoot(),
                             data.getSource(),
                             data.getTarget()),
                         attestation.getAggregateSignature()),
@@ -344,7 +344,7 @@ class AttestationValidatorTest {
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),
-                            data.getBeacon_block_root(),
+                            data.getBeaconBlockRoot(),
                             data.getSource(),
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
                         attestation.getAggregateSignature()),
@@ -379,7 +379,7 @@ class AttestationValidatorTest {
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),
-                            data.getBeacon_block_root(),
+                            data.getBeaconBlockRoot(),
                             data.getSource(),
                             checkpoint),
                         attestation.getAggregateSignature()),

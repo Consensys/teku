@@ -40,11 +40,11 @@ public class AttesterSlashingFuzzInput
   }
 
   public AttesterSlashingFuzzInput(
-      final Spec spec, final BeaconState state, final AttesterSlashing attester_slashing) {
-    super(createType(spec.atSlot(state.getSlot())), state, attester_slashing);
+      final Spec spec, final BeaconState state, final AttesterSlashing attesterSlashing) {
+    super(createType(spec.atSlot(state.getSlot())), state, attesterSlashing);
   }
 
-  public AttesterSlashing getAttester_slashing() {
+  public AttesterSlashing getAttesterSlashing() {
     return getField1();
   }
 

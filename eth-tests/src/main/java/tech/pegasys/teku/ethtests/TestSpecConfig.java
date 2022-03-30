@@ -14,6 +14,6 @@
 package tech.pegasys.teku.ethtests;
 
 public class TestSpecConfig {
-  public static String MINIMAL = "minimal";
-  public static String MAINNET = "mainnet";
+  public static final String MINIMAL = "minimal";
+  public static final String MAINNET = "mainnet";
 }

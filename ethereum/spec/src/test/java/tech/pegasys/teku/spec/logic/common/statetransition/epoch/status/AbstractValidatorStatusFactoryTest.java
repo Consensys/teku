@@ -59,7 +59,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
   @Test
   void createValidatorStatus_shouldBeWithdrawableWhenWithdrawalEpochBeforeCurrentEpoch() {
     final Validator validator =
-        dataStructureUtil.randomValidator().withWithdrawable_epoch(UInt64.valueOf(7));
+        dataStructureUtil.randomValidator().withWithdrawableEpoch(UInt64.valueOf(7));
     assertThat(
             validatorStatusFactory
                 .createValidatorStatus(validator, UInt64.valueOf(7), UInt64.valueOf(8))
@@ -70,7 +70,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
   @Test
   void createValidatorStatus_shouldBeWithdrawableWhenWithdrawalEpochEqualToCurrentEpoch() {
     final Validator validator =
-        dataStructureUtil.randomValidator().withWithdrawable_epoch(UInt64.valueOf(7));
+        dataStructureUtil.randomValidator().withWithdrawableEpoch(UInt64.valueOf(7));
     assertThat(
             validatorStatusFactory
                 .createValidatorStatus(validator, UInt64.valueOf(6), UInt64.valueOf(7))
@@ -81,7 +81,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
   @Test
   void createValidatorStatus_shouldNotBeWithdrawableWhenWithdrawalEpochAfterCurrentEpoch() {
     final Validator validator =
-        dataStructureUtil.randomValidator().withWithdrawable_epoch(UInt64.valueOf(7));
+        dataStructureUtil.randomValidator().withWithdrawableEpoch(UInt64.valueOf(7));
     assertThat(
             validatorStatusFactory
                 .createValidatorStatus(validator, UInt64.valueOf(5), UInt64.valueOf(6))
@@ -94,7 +94,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
   void createValidatorStatus_shouldSetEffectiveBalanceCorrectly(final long balance) {
     final UInt64 effectiveBalance = UInt64.valueOf(balance);
     final Validator validator =
-        dataStructureUtil.randomValidator().withEffective_balance(effectiveBalance);
+        dataStructureUtil.randomValidator().withEffectiveBalance(effectiveBalance);
     assertThat(
             validatorStatusFactory
                 .createValidatorStatus(validator, UInt64.ZERO, UInt64.ZERO)
@@ -112,8 +112,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
     final Validator validator =
         dataStructureUtil
             .randomValidator()
-            .withActivation_epoch(activationEpoch)
-            .withExit_epoch(exitEpoch);
+            .withActivationEpoch(activationEpoch)
+            .withExitEpoch(exitEpoch);
     final ValidatorStatus validatorStatus =
         validatorStatusFactory.createValidatorStatus(
             validator, currentEpoch.minusMinZero(1), currentEpoch);
@@ -130,8 +130,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
     final Validator validator =
         dataStructureUtil
             .randomValidator()
-            .withActivation_epoch(activationEpoch)
-            .withExit_epoch(exitEpoch);
+            .withActivationEpoch(activationEpoch)
+            .withExitEpoch(exitEpoch);
     final ValidatorStatus validatorStatus =
         validatorStatusFactory.createValidatorStatus(
             validator, previousEpoch, previousEpoch.plus(1));

@@ -85,25 +85,25 @@ public class TestStoreFactory {
     final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
 
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
-    Map<Bytes32, BeaconState> block_states = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    Map<Bytes32, BeaconState> blockStates = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
 
     blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
-    block_states.put(anchorRoot, anchorState);
-    checkpoint_states.put(anchorCheckpoint, anchorState);
+    blockStates.put(anchorRoot, anchorState);
+    checkpointStates.put(anchorCheckpoint, anchorState);
 
     return new TestStoreImpl(
         spec,
-        spec.getSlotStartTime(anchorState.getSlot(), anchorState.getGenesis_time()),
-        anchorState.getGenesis_time(),
+        spec.getSlotStartTime(anchorState.getSlot(), anchorState.getGenesisTime()),
+        anchorState.getGenesisTime(),
         Optional.of(anchorCheckpoint),
         anchorCheckpoint,
         anchorCheckpoint,
         anchorCheckpoint,
         blocks,
-        block_states,
-        checkpoint_states,
+        blockStates,
+        checkpointStates,
         votes);
   }
 

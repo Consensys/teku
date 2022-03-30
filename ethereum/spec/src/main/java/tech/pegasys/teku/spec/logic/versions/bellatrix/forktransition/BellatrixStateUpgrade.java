@@ -58,7 +58,7 @@ public class BellatrixStateUpgrade implements StateUpgrade<BeaconStateBellatrix>
 
               state.setFork(
                   new Fork(
-                      preState.getFork().getCurrent_version(),
+                      preState.getFork().getCurrentVersion(),
                       specConfig.getBellatrixForkVersion(),
                       epoch));
 

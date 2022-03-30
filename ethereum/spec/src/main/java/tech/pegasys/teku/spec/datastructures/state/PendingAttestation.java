@@ -82,7 +82,7 @@ public class PendingAttestation
     return (PendingAttestationSchema) super.getSchema();
   }
 
-  public SszBitlist getAggregation_bits() {
+  public SszBitlist getAggregationBits() {
     return getField0();
   }
 
@@ -90,11 +90,11 @@ public class PendingAttestation
     return getField1();
   }
 
-  public UInt64 getInclusion_delay() {
+  public UInt64 getInclusionDelay() {
     return getField2().get();
   }
 
-  public UInt64 getProposer_index() {
+  public UInt64 getProposerIndex() {
     return getField3().get();
   }
 }

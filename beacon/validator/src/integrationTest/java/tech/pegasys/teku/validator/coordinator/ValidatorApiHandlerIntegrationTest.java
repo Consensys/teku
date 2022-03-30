@@ -118,7 +118,7 @@ public class ValidatorApiHandlerIntegrationTest {
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
-    final Checkpoint genesisCheckpoint = genesis.getState().getFinalized_checkpoint();
+    final Checkpoint genesisCheckpoint = genesis.getState().getFinalizedCheckpoint();
 
     SignedBlockAndState latestBlock = null;
     SignedBlockAndState epochBoundaryBlock = null;
@@ -138,7 +138,7 @@ public class ValidatorApiHandlerIntegrationTest {
         handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
     final AttestationData attestation = result.join().orElseThrow();
-    assertThat(attestation.getBeacon_block_root()).isEqualTo(latestBlock.getRoot());
+    assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);
   }
@@ -152,7 +152,7 @@ public class ValidatorApiHandlerIntegrationTest {
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
-    final Checkpoint genesisCheckpoint = genesis.getState().getFinalized_checkpoint();
+    final Checkpoint genesisCheckpoint = genesis.getState().getFinalizedCheckpoint();
 
     SignedBlockAndState latestBlock = null;
     while (chainUpdater.getHeadSlot().compareTo(latestSlot) < 0) {
@@ -168,7 +168,7 @@ public class ValidatorApiHandlerIntegrationTest {
         handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
     final AttestationData attestation = result.join().orElseThrow();
-    assertThat(attestation.getBeacon_block_root()).isEqualTo(latestBlock.getRoot());
+    assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);
   }

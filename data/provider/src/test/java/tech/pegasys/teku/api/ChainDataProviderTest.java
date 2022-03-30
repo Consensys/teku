@@ -127,7 +127,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void getGenesisTime_shouldReturnValueIfStoreAvailable() {
-    final UInt64 genesis = beaconStateInternal.getGenesis_time();
+    final UInt64 genesis = beaconStateInternal.getGenesisTime();
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
@@ -145,8 +145,8 @@ public class ChainDataProviderTest {
 
   @Test
   public void getGenesisData_shouldReturnValueIfStoreAvailable() {
-    final UInt64 genesisTime = beaconStateInternal.getGenesis_time();
-    final Bytes32 genesisValidatorsRoot = beaconStateInternal.getGenesis_validators_root();
+    final UInt64 genesisTime = beaconStateInternal.getGenesisTime();
+    final Bytes32 genesisValidatorsRoot = beaconStateInternal.getGenesisValidatorsRoot();
     final Bytes4 genesisForkVersion = spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
 
     final ChainDataProvider provider =
@@ -370,10 +370,10 @@ public class ChainDataProviderTest {
     final FinalityCheckpointsResponse expected =
         new FinalityCheckpointsResponse(
             new tech.pegasys.teku.api.schema.Checkpoint(
-                internalState.getPrevious_justified_checkpoint()),
+                internalState.getPreviousJustifiedCheckpoint()),
             new tech.pegasys.teku.api.schema.Checkpoint(
-                internalState.getCurrent_justified_checkpoint()),
-            new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalized_checkpoint()));
+                internalState.getCurrentJustifiedCheckpoint()),
+            new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalizedCheckpoint()));
 
     when(mockCombinedChainDataClient.getChainHead())
         .thenReturn(Optional.of(tech.pegasys.teku.storage.client.ChainHead.create(blockAndState)));

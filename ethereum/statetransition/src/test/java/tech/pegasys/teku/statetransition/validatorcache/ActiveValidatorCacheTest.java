@@ -37,13 +37,13 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 
 public class ActiveValidatorCacheTest {
+  private static final UInt64 TWO = UInt64.valueOf(2);
+  private static final UInt64 THREE = UInt64.valueOf(3);
+  private static final UInt64 FOUR = UInt64.valueOf(4);
+  private static final UInt64 FIVE = UInt64.valueOf(5);
+  private static final UInt64 SIX = UInt64.valueOf(6);
   final Spec spec = TestSpecFactory.createMinimalAltair();
   final ActiveValidatorCache cache = new ActiveValidatorCache(spec, 10);
-  private final UInt64 TWO = UInt64.valueOf(2);
-  private final UInt64 THREE = UInt64.valueOf(3);
-  private final UInt64 FOUR = UInt64.valueOf(4);
-  private final UInt64 FIVE = UInt64.valueOf(5);
-  private final UInt64 SIX = UInt64.valueOf(6);
 
   @Test
   void shouldCreateActiveValidatorCache() {
@@ -133,7 +133,7 @@ public class ActiveValidatorCacheTest {
 
     final SszUInt64List validators =
         SszUInt64ListSchema.create(2).of(UInt64.valueOf(11), UInt64.valueOf(21));
-    when(indexedAttestation.getAttesting_indices()).thenReturn(validators);
+    when(indexedAttestation.getAttestingIndices()).thenReturn(validators);
 
     // each attestation will have 2 validators.
     // getSlot will return 8, then 16, then 24; and each validator will be processed

@@ -18,27 +18,23 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public abstract class EmptyStoreResults {
 
-  public static SafeFuture<Optional<SignedBeaconBlock>> EMPTY_SIGNED_BLOCK_FUTURE =
+  public static final SafeFuture<Optional<SignedBeaconBlock>> EMPTY_SIGNED_BLOCK_FUTURE =
       SafeFuture.completedFuture(Optional.empty());
 
-  public static SafeFuture<Optional<BeaconBlock>> EMPTY_BLOCK_FUTURE =
+  public static final SafeFuture<Optional<BeaconBlock>> EMPTY_BLOCK_FUTURE =
       SafeFuture.completedFuture(Optional.empty());
 
-  public static SafeFuture<Optional<BeaconState>> EMPTY_STATE_FUTURE =
+  public static final SafeFuture<Optional<BeaconState>> EMPTY_STATE_FUTURE =
       SafeFuture.completedFuture(Optional.empty());
 
-  public static SafeFuture<Optional<SignedBlockAndState>> EMPTY_BLOCK_AND_STATE_FUTURE =
-      SafeFuture.completedFuture(Optional.empty());
+  public static final SafeFuture<Optional<StateAndBlockSummary>>
+      EMPTY_STATE_AND_BLOCK_SUMMARY_FUTURE = SafeFuture.completedFuture(Optional.empty());
 
-  public static SafeFuture<Optional<StateAndBlockSummary>> EMPTY_STATE_AND_BLOCK_SUMMARY_FUTURE =
-      SafeFuture.completedFuture(Optional.empty());
-
-  public static SafeFuture<Optional<StateGenerationTask>> EMPTY_STATE_GENERATION_TASK =
+  public static final SafeFuture<Optional<StateGenerationTask>> EMPTY_STATE_GENERATION_TASK =
       SafeFuture.completedFuture(Optional.empty());
 }

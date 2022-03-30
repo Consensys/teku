@@ -200,27 +200,26 @@ public class AttestationManager extends Service
 
               switch (result.getStatus()) {
                 case SUCCESSFUL:
-                  LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
+                  LOG.trace("Processed attestation {} successfully", attestation::hashTreeRoot);
                   aggregatingAttestationPool.add(attestation);
                   sendToSubscribersIfProducedLocally(attestation);
                   break;
                 case UNKNOWN_BLOCK:
                   LOG.trace(
                       "Deferring attestation {} as required block is not yet present",
-                      attestation::hash_tree_root);
+                      attestation::hashTreeRoot);
                   pendingAttestations.add(attestation);
                   break;
                 case DEFER_FORK_CHOICE_PROCESSING:
                   LOG.trace(
-                      "Defer fork choice processing of attestation {}",
-                      attestation::hash_tree_root);
+                      "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);
                   sendToSubscribersIfProducedLocally(attestation);
                   aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);
                   break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
-                      "Deferring attestation {} until a future slot", attestation::hash_tree_root);
+                      "Deferring attestation {} until a future slot", attestation::hashTreeRoot);
                   aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);
                   break;

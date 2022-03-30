@@ -71,7 +71,7 @@ public class PendingPoolFactory {
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         DEFAULT_MAX_ITEMS,
-        ValidateableAttestation::hash_tree_root,
+        ValidateableAttestation::hashTreeRoot,
         ValidateableAttestation::getDependentBlockRoots,
         ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   }

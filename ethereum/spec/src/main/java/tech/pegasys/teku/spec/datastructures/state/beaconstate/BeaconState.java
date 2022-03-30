@@ -42,12 +42,12 @@ public interface BeaconState extends SszContainer, ValidatorStats {
 
   BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState> getBeaconStateSchema();
 
-  default UInt64 getGenesis_time() {
+  default UInt64 getGenesisTime() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME);
     return ((SszUInt64) get(fieldIndex)).get();
   }
 
-  default Bytes32 getGenesis_validators_root() {
+  default Bytes32 getGenesisValidatorsRoot() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_VALIDATORS_ROOT);
     return ((SszBytes32) get(fieldIndex)).get();
   }
@@ -63,42 +63,42 @@ public interface BeaconState extends SszContainer, ValidatorStats {
   }
 
   default ForkInfo getForkInfo() {
-    return new ForkInfo(getFork(), getGenesis_validators_root());
+    return new ForkInfo(getFork(), getGenesisValidatorsRoot());
   }
 
   // History
-  default BeaconBlockHeader getLatest_block_header() {
+  default BeaconBlockHeader getLatestBlockHeader() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.LATEST_BLOCK_HEADER);
     return getAny(fieldIndex);
   }
 
-  default SszBytes32Vector getBlock_roots() {
+  default SszBytes32Vector getBlockRoots() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BLOCK_ROOTS);
     return getAny(fieldIndex);
   }
 
-  default SszBytes32Vector getState_roots() {
+  default SszBytes32Vector getStateRoots() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.STATE_ROOTS);
     return getAny(fieldIndex);
   }
 
-  default SszPrimitiveList<Bytes32, SszBytes32> getHistorical_roots() {
+  default SszPrimitiveList<Bytes32, SszBytes32> getHistoricalRoots() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS);
     return getAny(fieldIndex);
   }
 
   // Eth1
-  default Eth1Data getEth1_data() {
+  default Eth1Data getEth1Data() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA);
     return getAny(fieldIndex);
   }
 
-  default SszList<Eth1Data> getEth1_data_votes() {
+  default SszList<Eth1Data> getEth1DataVotes() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES);
     return getAny(fieldIndex);
   }
 
-  default UInt64 getEth1_deposit_index() {
+  default UInt64 getEth1DepositIndex() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DEPOSIT_INDEX);
     return ((SszUInt64) get(fieldIndex)).get();
   }
@@ -114,7 +114,7 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return getAny(fieldIndex);
   }
 
-  default SszBytes32Vector getRandao_mixes() {
+  default SszBytes32Vector getRandaoMixes() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.RANDAO_MIXES);
     return getAny(fieldIndex);
   }
@@ -126,24 +126,24 @@ public interface BeaconState extends SszContainer, ValidatorStats {
   }
 
   // Finality
-  default SszBitvector getJustification_bits() {
+  default SszBitvector getJustificationBits() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS);
     return getAny(fieldIndex);
   }
 
-  default Checkpoint getPrevious_justified_checkpoint() {
+  default Checkpoint getPreviousJustifiedCheckpoint() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT);
     return getAny(fieldIndex);
   }
 
-  default Checkpoint getCurrent_justified_checkpoint() {
+  default Checkpoint getCurrentJustifiedCheckpoint() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_JUSTIFIED_CHECKPOINT);
     return getAny(fieldIndex);
   }
 
-  default Checkpoint getFinalized_checkpoint() {
+  default Checkpoint getFinalizedCheckpoint() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FINALIZED_CHECKPOINT);
     return getAny(fieldIndex);
   }

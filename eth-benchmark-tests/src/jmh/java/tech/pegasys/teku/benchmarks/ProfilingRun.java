@@ -62,7 +62,7 @@ public class ProfilingRun {
   @Test
   public void importBlocks() throws Exception {
 
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
 
     int validatorsCount = 32 * 1024;
     int iterationBlockLimit = 1024;
@@ -151,7 +151,7 @@ public class ProfilingRun {
   @Test
   public void importBlocksMemProfiling() throws Exception {
 
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
 
     int validatorsCount = 32 * 1024;
 
@@ -256,7 +256,7 @@ public class ProfilingRun {
         BeaconState state = stateSchema.sszDeserialize(bytes);
         blackHole.accept(state);
         for (Validator validator : state.getValidators()) {
-          sum += validator.getEffective_balance().longValue();
+          sum += validator.getEffectiveBalance().longValue();
         }
       }
       System.out.println("Time: " + (System.currentTimeMillis() - s) + ", sum = " + sum);

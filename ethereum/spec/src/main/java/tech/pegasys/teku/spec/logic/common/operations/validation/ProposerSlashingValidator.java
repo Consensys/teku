@@ -42,8 +42,8 @@ public class ProposerSlashingValidator
   @Override
   public Optional<OperationInvalidReason> validate(
       final Fork fork, final BeaconState state, final ProposerSlashing proposerSlashing) {
-    final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
-    final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
+    final BeaconBlockHeader header1 = proposerSlashing.getHeader1().getMessage();
+    final BeaconBlockHeader header2 = proposerSlashing.getHeader2().getMessage();
     return firstOf(
         () ->
             check(

@@ -54,7 +54,7 @@ public class DepositEventsAccessor {
         new DepositContract.DepositEventEventResponse();
     typedResponse.log = log;
     typedResponse.pubkey = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-    typedResponse.withdrawal_credentials =
+    typedResponse.withdrawalCredentials =
         (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
     typedResponse.amount = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
     typedResponse.signature = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();

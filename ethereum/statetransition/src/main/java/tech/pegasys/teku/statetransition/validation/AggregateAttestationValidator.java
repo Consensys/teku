@@ -65,7 +65,7 @@ public class AggregateAttestationValidator {
   }
 
   public void addSeenAggregate(final ValidateableAttestation attestation) {
-    receivedValidAggregations.add(attestation.hash_tree_root());
+    receivedValidAggregations.add(attestation.hashTreeRoot());
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
@@ -81,7 +81,7 @@ public class AggregateAttestationValidator {
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
-    if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
+    if (receivedValidAggregations.contains(attestation.hashTreeRoot())) {
       return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
     }
 
@@ -116,7 +116,7 @@ public class AggregateAttestationValidator {
                   aggregateSlot,
                   state,
                   aggregatorPublicKey.get(),
-                  aggregateAndProof.getSelection_proof())) {
+                  aggregateAndProof.getSelectionProof())) {
                 return SafeFuture.completedFuture(
                     reject("Rejecting aggregate with incorrect selection proof"));
               }
@@ -128,7 +128,7 @@ public class AggregateAttestationValidator {
                   specVersion.getValidatorsUtil().getAggregatorModulo(beaconCommittee.size());
               if (!specVersion
                   .getValidatorsUtil()
-                  .isAggregator(aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
+                  .isAggregator(aggregateAndProof.getSelectionProof(), aggregatorModulo)) {
                 return SafeFuture.completedFuture(
                     reject(
                         "Rejecting aggregate because selection proof does not select validator as aggregator"));
@@ -157,7 +157,7 @@ public class AggregateAttestationValidator {
                         if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
                           return ignore("Ignoring duplicate aggregate");
                         }
-                        if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
+                        if (!receivedValidAggregations.add(attestation.hashTreeRoot())) {
                           return ignore("Ignoring duplicate aggregate based on hash tree root");
                         }
                         return resultWithState.getResult();
@@ -176,7 +176,7 @@ public class AggregateAttestationValidator {
             Domain.AGGREGATE_AND_PROOF,
             spec.computeEpochAtSlot(aggregateAndProof.getAggregate().getData().getSlot()),
             state.getFork(),
-            state.getGenesis_validators_root());
+            state.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(aggregateAndProof, domain);
     return signatureVerifier.verify(
         aggregatorPublicKey, signingRoot, signedAggregate.getSignature());
@@ -193,7 +193,7 @@ public class AggregateAttestationValidator {
             Domain.SELECTION_PROOF,
             spec.computeEpochAtSlot(aggregateSlot),
             state.getFork(),
-            state.getGenesis_validators_root());
+            state.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(aggregateSlot, domain);
     return signatureVerifier.verify(aggregatorPublicKey, signingRoot, selectionProof);
   }

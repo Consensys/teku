@@ -33,7 +33,7 @@ public class DatabaseNetworkTest {
   public void shouldCreateNetworkFile(@TempDir final File tempDir) throws IOException {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
-    final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
+    final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     assertThat(DatabaseNetwork.init(networkFile, fork, eth1Address))
         .isEqualTo(
@@ -46,10 +46,10 @@ public class DatabaseNetworkTest {
   public void shouldThrowIfForkDiffers(@TempDir final File tempDir) throws IOException {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
-    final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
+    final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     DatabaseNetwork.init(
-        networkFile, dataStructureUtil.randomFork().getCurrent_version(), eth1Address);
+        networkFile, dataStructureUtil.randomFork().getCurrentVersion(), eth1Address);
 
     assertThatThrownBy(() -> DatabaseNetwork.init(networkFile, fork, eth1Address))
         .isInstanceOf(DatabaseStorageException.class)
@@ -60,7 +60,7 @@ public class DatabaseNetworkTest {
   public void shouldThrowIfDepositContractDiffers(@TempDir final File tempDir) throws IOException {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
-    final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
+    final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     DatabaseNetwork.init(networkFile, fork, dataStructureUtil.randomEth1Address());
 
@@ -73,7 +73,7 @@ public class DatabaseNetworkTest {
   public void shouldNotThrowIfForkAndContractMatch(@TempDir final File tempDir) throws IOException {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
-    final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
+    final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     DatabaseNetwork.init(networkFile, fork, eth1Address);
 

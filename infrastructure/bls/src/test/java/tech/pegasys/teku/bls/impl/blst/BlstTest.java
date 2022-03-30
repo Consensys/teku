@@ -29,7 +29,7 @@ import tech.pegasys.teku.bls.impl.BLS12381;
 public class BlstTest extends AbstractBLS12381Test {
   private static final Random RANDOM = new Random(1);
 
-  private static BLS12381 BLS;
+  private static BLS12381 bls;
 
   static BlstSignature notInG2() {
     // A point on the curve but not in the G2 group
@@ -43,12 +43,12 @@ public class BlstTest extends AbstractBLS12381Test {
 
   @BeforeAll
   static void setup() {
-    BLS = BlstLoader.INSTANCE.orElseThrow();
+    bls = BlstLoader.INSTANCE.orElseThrow();
   }
 
   @Override
   protected BLS12381 getBls() {
-    return BLS;
+    return bls;
   }
 
   @Test
@@ -61,9 +61,9 @@ public class BlstTest extends AbstractBLS12381Test {
     BlstSignature blstSignature = BlstBLS12381.sign(blstSK, msg);
 
     BatchSemiAggregate semiAggregate =
-        BLS.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
+        bls.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
 
-    boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate));
+    boolean blstRes = bls.completeBatchVerify(List.of(semiAggregate));
     assertThat(blstRes).isTrue();
   }
 
@@ -82,11 +82,11 @@ public class BlstTest extends AbstractBLS12381Test {
     BlstSignature blstSignature2 = BlstBLS12381.sign(blstSK2, msg2);
 
     BatchSemiAggregate semiAggregate1 =
-        BLS.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
+        bls.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
     BatchSemiAggregate semiAggregate2 =
-        BLS.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
+        bls.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
 
-    boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
+    boolean blstRes = bls.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
     assertThat(blstRes).isTrue();
   }
 
@@ -99,6 +99,6 @@ public class BlstTest extends AbstractBLS12381Test {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> BLS.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature));
+        () -> bls.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature));
   }
 }

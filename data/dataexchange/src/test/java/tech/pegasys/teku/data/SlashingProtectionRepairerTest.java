@@ -37,9 +37,9 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SlashingProtectionRepairerTest {
+  private static final UInt64 TWO = UInt64.valueOf(2);
   final ValidatorSigningRecord validatorSigningRecord =
       new ValidatorSigningRecord(null, ONE, ONE, ONE);
-  private final UInt64 TWO = UInt64.valueOf(2);
   private SyncDataAccessor syncDataAccessor;
   private final SubCommandLogger subCommandLogger = mock(SubCommandLogger.class);
   final Spec spec = TestSpecFactory.createMinimalPhase0();

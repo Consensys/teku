@@ -66,7 +66,7 @@ public class FuzzUtil {
   private final BLSSignatureVerifier signatureVerifier;
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
-  public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
+  public FuzzUtil(final boolean useMainnetConfig, final boolean disableBls) {
     spec =
         useMainnetConfig
             ? TestSpecFactory.createMainnetBellatrix()
@@ -75,12 +75,12 @@ public class FuzzUtil {
     beaconBlockBodySchema =
         (BeaconBlockBodySchemaBellatrix<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
-    initialize(disable_bls);
-    this.signatureVerifier = disable_bls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+    initialize(disableBls);
+    this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
   }
 
-  public static void initialize(final boolean disable_bls) {
-    if (disable_bls) {
+  public static void initialize(final boolean disableBls) {
+    if (disableBls) {
       BLSConstants.disableBLSVerification();
     }
   }
@@ -113,7 +113,7 @@ public class FuzzUtil {
     SszList<AttesterSlashing> slashings =
         beaconBlockBodySchema
             .getAttesterSlashingsSchema()
-            .of(structuredInput.getAttester_slashing());
+            .of(structuredInput.getAttesterSlashing());
 
     // process and return post state
     try {
@@ -139,7 +139,7 @@ public class FuzzUtil {
       BeaconState postState =
           spec.processBlock(
               structuredInput.getState(),
-              structuredInput.getSigned_block(),
+              structuredInput.getSignedBlock(),
               signatureVerifier,
               OptimisticExecutionPayloadExecutor.NOOP);
       Bytes output = postState.sszSerialize();
@@ -197,7 +197,7 @@ public class FuzzUtil {
     SszList<ProposerSlashing> proposerSlashings =
         beaconBlockBodySchema
             .getProposerSlashingsSchema()
-            .of(structuredInput.getProposer_slashing());
+            .of(structuredInput.getProposerSlashing());
 
     // process and return post state
     try {

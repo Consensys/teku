@@ -154,7 +154,7 @@ public class AggregationDuty implements Duty {
                         signature ->
                             ProductionResult.success(
                                 aggregator.validator.getPublicKey(),
-                                aggregateAndProof.getAggregate().getData().getBeacon_block_root(),
+                                aggregateAndProof.getAggregate().getData().getBeaconBlockRoot(),
                                 schemaDefinitions
                                     .getSignedAggregateAndProofSchema()
                                     .create(aggregateAndProof, signature))));

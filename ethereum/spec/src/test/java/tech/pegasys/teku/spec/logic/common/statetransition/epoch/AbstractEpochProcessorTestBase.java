@@ -45,8 +45,8 @@ abstract class AbstractEpochProcessorTestBase {
   void shouldNotUpdateEffectiveBalanceWhenAlreadyAtMaxValue() {
     final UInt64 maxEffectiveBalance = spec.getGenesisSpecConfig().getMaxEffectiveBalance();
     final Validator validator =
-        spy(dataStructureUtil.randomValidator().withEffective_balance(maxEffectiveBalance));
-    when(validator.getEffective_balance()).thenReturn(maxEffectiveBalance);
+        spy(dataStructureUtil.randomValidator().withEffectiveBalance(maxEffectiveBalance));
+    when(validator.getEffectiveBalance()).thenReturn(maxEffectiveBalance);
     final BeaconStatePhase0 state =
         dataStructureUtil
             .stateBuilderPhase0(1, 1)
@@ -54,6 +54,6 @@ abstract class AbstractEpochProcessorTestBase {
             .validators(validator)
             .build();
     state.updated(processor::processEffectiveBalanceUpdates);
-    verify(validator, never()).withEffective_balance(any());
+    verify(validator, never()).withEffectiveBalance(any());
   }
 }

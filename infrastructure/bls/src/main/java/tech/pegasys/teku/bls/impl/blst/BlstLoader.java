@@ -35,7 +35,7 @@ public class BlstLoader {
   private static final String LIBRARY_NAME = System.mapLibraryName("blst");
   private static final String OS_NAME = System.getProperty("os.name").replaceFirst(" .*", "");
 
-  public static Optional<BLS12381> INSTANCE = loadBlst();
+  public static final Optional<BLS12381> INSTANCE = loadBlst();
 
   private static Optional<BLS12381> loadBlst() {
     try {

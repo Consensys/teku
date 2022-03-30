@@ -85,28 +85,28 @@ public class StateTransition {
 
   private BeaconState processSlot(final SpecVersion spec, final BeaconState preState) {
     // Cache state root
-    Bytes32 previous_state_root = preState.hashTreeRoot();
+    Bytes32 previousStateRoot = preState.hashTreeRoot();
     return preState.updated(
         state -> {
           int index = state.getSlot().mod(spec.getSlotsPerHistoricalRoot()).intValue();
-          state.getState_roots().setElement(index, previous_state_root);
+          state.getStateRoots().setElement(index, previousStateRoot);
 
           // Cache latest block header state root
-          BeaconBlockHeader latest_block_header = state.getLatest_block_header();
-          if (latest_block_header.getStateRoot().equals(Bytes32.ZERO)) {
-            BeaconBlockHeader latest_block_header_new =
+          BeaconBlockHeader latestBlockHeader = state.getLatestBlockHeader();
+          if (latestBlockHeader.getStateRoot().equals(Bytes32.ZERO)) {
+            BeaconBlockHeader latestBlockHeaderNew =
                 new BeaconBlockHeader(
-                    latest_block_header.getSlot(),
-                    latest_block_header.getProposerIndex(),
-                    latest_block_header.getParentRoot(),
-                    previous_state_root,
-                    latest_block_header.getBodyRoot());
-            state.setLatest_block_header(latest_block_header_new);
+                    latestBlockHeader.getSlot(),
+                    latestBlockHeader.getProposerIndex(),
+                    latestBlockHeader.getParentRoot(),
+                    previousStateRoot,
+                    latestBlockHeader.getBodyRoot());
+            state.setLatestBlockHeader(latestBlockHeaderNew);
           }
 
           // Cache block root
-          Bytes32 previous_block_root = state.getLatest_block_header().hashTreeRoot();
-          state.getBlock_roots().setElement(index, previous_block_root);
+          Bytes32 previousBlockRoot = state.getLatestBlockHeader().hashTreeRoot();
+          state.getBlockRoots().setElement(index, previousBlockRoot);
         });
   }
 

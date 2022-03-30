@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 
+@SuppressWarnings("JavaCase")
 public class PendingAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
   public final Bytes aggregation_bits;
@@ -48,10 +49,10 @@ public class PendingAttestation {
 
   public PendingAttestation(
       final tech.pegasys.teku.spec.datastructures.state.PendingAttestation pendingAttestation) {
-    this.aggregation_bits = pendingAttestation.getAggregation_bits().sszSerialize();
+    this.aggregation_bits = pendingAttestation.getAggregationBits().sszSerialize();
     this.data = new AttestationData(pendingAttestation.getData());
-    this.inclusion_delay = pendingAttestation.getInclusion_delay();
-    this.proposer_index = pendingAttestation.getProposer_index();
+    this.inclusion_delay = pendingAttestation.getInclusionDelay();
+    this.proposer_index = pendingAttestation.getProposerIndex();
   }
 
   public tech.pegasys.teku.spec.datastructures.state.PendingAttestation

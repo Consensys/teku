@@ -88,7 +88,7 @@ public class Attestation
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
-    return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeacon_block_root());
+    return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
   }
 
   public SszBitlist getAggregationBits() {

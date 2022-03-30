@@ -29,7 +29,7 @@ public class CoreTypes {
 
   public static final StringValueTypeDefinition<Byte> BYTE_TYPE = new ByteTypeDefinition();
 
-  public static final DeserializableTypeDefinition<Bytes32> BYTES32_TYPE =
+  public static final StringValueTypeDefinition<Bytes32> BYTES32_TYPE =
       DeserializableTypeDefinition.string(Bytes32.class)
           .formatter(Bytes32::toHexString)
           .parser(Bytes32::fromHexString)
@@ -47,7 +47,7 @@ public class CoreTypes {
           .format("byte")
           .build();
 
-  public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
+  public static final StringValueTypeDefinition<UInt64> UINT64_TYPE =
       DeserializableTypeDefinition.string(UInt64.class)
           .formatter(UInt64::toString)
           .parser(UInt64::valueOf)

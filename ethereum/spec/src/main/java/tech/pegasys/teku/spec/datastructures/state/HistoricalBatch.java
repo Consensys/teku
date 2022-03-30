@@ -37,8 +37,8 @@ public class HistoricalBatch
       return new HistoricalBatch(this, node);
     }
 
-    public HistoricalBatch create(SszBytes32Vector block_roots, SszBytes32Vector state_roots) {
-      return new HistoricalBatch(this, block_roots, state_roots);
+    public HistoricalBatch create(SszBytes32Vector blockRoots, SszBytes32Vector stateRoots) {
+      return new HistoricalBatch(this, blockRoots, stateRoots);
     }
 
     public SszBytes32VectorSchema<?> getBlockRootsSchema() {
@@ -55,8 +55,8 @@ public class HistoricalBatch
   }
 
   private HistoricalBatch(
-      HistoricalBatchSchema type, SszBytes32Vector block_roots, SszBytes32Vector state_roots) {
-    super(type, block_roots, state_roots);
+      HistoricalBatchSchema type, SszBytes32Vector blockRoots, SszBytes32Vector stateRoots) {
+    super(type, blockRoots, stateRoots);
   }
 
   public SszBytes32Vector getBlockRoots() {

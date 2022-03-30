@@ -31,8 +31,8 @@ public class Predicates {
    *     </a>
    */
   public boolean isActiveValidator(Validator validator, UInt64 epoch) {
-    return validator.getActivation_epoch().compareTo(epoch) <= 0
-        && epoch.compareTo(validator.getExit_epoch()) < 0;
+    return validator.getActivationEpoch().compareTo(epoch) <= 0
+        && epoch.compareTo(validator.getExitEpoch()) < 0;
   }
 
   public boolean isValidMerkleBranch(
@@ -60,7 +60,7 @@ public class Predicates {
    */
   public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
     return !validator.isSlashed()
-        && (validator.getActivation_epoch().compareTo(epoch) <= 0
-            && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
+        && (validator.getActivationEpoch().compareTo(epoch) <= 0
+            && epoch.compareTo(validator.getWithdrawableEpoch()) < 0);
   }
 }

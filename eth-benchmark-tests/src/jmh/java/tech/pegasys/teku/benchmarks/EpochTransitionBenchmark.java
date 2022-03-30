@@ -87,7 +87,7 @@ public class EpochTransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
