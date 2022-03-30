@@ -45,12 +45,24 @@ public class ValidatorProposerOptions {
   private boolean proposerConfigRefreshEnabled =
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
+  @Option(
+      names = {"--Xvalidators-proposer-mev-boost-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable MEV boost when proposing blocks.",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private boolean proposerMevBoostEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
             config
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
-                .refreshProposerConfigFromSource(proposerConfigRefreshEnabled));
+                .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
+                .proposerMevBoostEnabled(proposerMevBoostEnabled));
   }
 }

@@ -15,28 +15,27 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 /** Helper to build a random (not consistent with state-transition rules) sequence of blocks */
 public class RandomChainBuilder {
-  private final DataStructureUtil datastructureUtil;
+  private final DataStructureUtil dataStructureUtil;
   private final NavigableMap<UInt64, SignedBlockAndState> chain = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
-  public RandomChainBuilder(final Spec spec) {
-    this.datastructureUtil = new DataStructureUtil(spec);
+  public RandomChainBuilder(final DataStructureUtil dataStructureUtil) {
+    this.dataStructureUtil = dataStructureUtil;
   }
 
   public Optional<SignedBlockAndState> getChainHead() {
@@ -72,7 +71,7 @@ public class RandomChainBuilder {
   }
 
   public List<SignedBlockAndState> getChain() {
-    return chain.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList());
+    return new ArrayList<>(chain.values());
   }
 
   public void generateBlocksUpToSlot(final int slot) {
@@ -84,7 +83,7 @@ public class RandomChainBuilder {
     checkArgument(slot.isGreaterThan(parent.getSlot()));
 
     final int count = slot.minusMinZero(parent.getSlot()).intValue();
-    datastructureUtil
+    dataStructureUtil
         .randomSignedBlockAndStateSequence(parent.getBlock(), count, false)
         .forEach(this::putBlock);
   }
@@ -98,7 +97,7 @@ public class RandomChainBuilder {
     checkArgument(slot.isGreaterThan(parent.getSlot()));
 
     final SignedBlockAndState newBlock =
-        datastructureUtil.randomSignedBlockAndState(slot, parent.getRoot());
+        dataStructureUtil.randomSignedBlockAndState(slot, parent.getRoot());
     putBlock(newBlock);
   }
 
@@ -108,7 +107,7 @@ public class RandomChainBuilder {
 
   private SignedBlockAndState generateGenesis() {
     final SignedBlockAndState genesis =
-        datastructureUtil.randomSignedBlockAndState(SpecConfig.GENESIS_SLOT);
+        dataStructureUtil.randomSignedBlockAndState(SpecConfig.GENESIS_SLOT);
     putBlock(genesis);
     return genesis;
   }

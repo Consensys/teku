@@ -188,7 +188,7 @@ class MetricRecordingValidatorApiChannelTest {
             new GenesisData(dataStructureUtil.randomUInt64(), Bytes32.random())),
         requestDataTest(
             "createUnsignedBlock",
-            channel -> channel.createUnsignedBlock(slot, signature, Optional.empty()),
+            channel -> channel.createUnsignedBlock(slot, signature, Optional.empty(), false),
             MetricRecordingValidatorApiChannel.UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomBeaconBlock(slot)),
         requestDataTest(

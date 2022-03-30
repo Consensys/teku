@@ -177,7 +177,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
+    apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -198,7 +198,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    assertThat(apiClient.createUnsignedBlock(slot, blsSignature, graffiti)).isEmpty();
+    assertThat(apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false)).isEmpty();
   }
 
   @Test
@@ -209,7 +209,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> apiClient.createUnsignedBlock(slot, blsSignature, graffiti))
+    assertThatThrownBy(() -> apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -225,7 +225,8 @@ class OkHttpValidatorRestApiClientTest {
             .setResponseCode(SC_OK)
             .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.PHASE0, expectedBeaconBlock))));
 
-    Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
+    Optional<BeaconBlock> beaconBlock =
+        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
 
     assertThat(beaconBlock).isPresent();
     assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
@@ -243,7 +244,8 @@ class OkHttpValidatorRestApiClientTest {
             .setResponseCode(SC_OK)
             .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.ALTAIR, expectedBeaconBlock))));
 
-    Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
+    Optional<BeaconBlock> beaconBlock =
+        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
 
     assertThat(beaconBlock).isPresent();
     assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);

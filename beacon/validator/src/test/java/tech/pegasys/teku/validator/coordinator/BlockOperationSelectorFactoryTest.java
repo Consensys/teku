@@ -125,7 +125,11 @@ class BlockOperationSelectorFactoryTest {
           .getExecutionPayloadSchema()
           .getDefault();
 
-  private final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder();
+  private final CapturingBeaconBlockBodyBuilder bodyBuilder =
+      new CapturingBeaconBlockBodyBuilder(false);
+
+  private final CapturingBeaconBlockBodyBuilder blindedBodyBuilder =
+      new CapturingBeaconBlockBodyBuilder(true);
 
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(
@@ -139,7 +143,23 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionEngine);
+          executionEngine,
+          false);
+
+  private final BlockOperationSelectorFactory factoryWithMevBoost =
+      new BlockOperationSelectorFactory(
+          spec,
+          attestationPool,
+          attesterSlashingPool,
+          proposerSlashingPool,
+          voluntaryExitPool,
+          contributionPool,
+          depositProvider,
+          eth1DataCache,
+          defaultGraffiti,
+          forkChoiceNotifier,
+          executionEngine,
+          true);
 
   @BeforeEach
   void setUp() {
@@ -296,7 +316,51 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
 
+  @Test
+  void shouldIncludeExecutionPayloadHeaderIfMevBoostEnabledAndBlindedBlockRequested() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayloadHeader randomExecutionPayloadHeader =
+        dataStructureUtil.randomExecutionPayloadHeader();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
+    when(executionEngine.getPayloadHeader(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
+
+    factoryWithMevBoost
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(blindedBodyBuilder);
+
+    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
+  }
+
+  @Test
+  void shouldIncludeExecutionPayloadIfMevBoostEnabledButNoBlindedBlockRequested() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
+    when(executionEngine.getPayload(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+
+    factoryWithMevBoost
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
+    private final boolean blinded;
 
     protected BLSSignature randaoReveal;
     protected Bytes32 graffiti;
@@ -306,6 +370,15 @@ class BlockOperationSelectorFactoryTest {
     protected SyncAggregate syncAggregate;
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
+
+    public CapturingBeaconBlockBodyBuilder(boolean blinded) {
+      this.blinded = blinded;
+    }
+
+    @Override
+    public Boolean isBlinded() {
+      return blinded;
+    }
 
     @Override
     public BeaconBlockBodyBuilder randaoReveal(final BLSSignature randaoReveal) {
