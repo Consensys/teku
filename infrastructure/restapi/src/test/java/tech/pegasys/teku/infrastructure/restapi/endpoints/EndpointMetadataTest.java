@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
 
@@ -222,6 +223,38 @@ class EndpointMetadataTest {
             .build();
 
     assertThat(metadata.getRequestBodyType("{\"value1\":\"FOO\"}")).isEqualTo(TYPE_A);
+  }
+
+  @Test
+  void requestBody_shouldGetBodyAsObject() throws JsonProcessingException {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, this::selector)
+            .response(SC_OK, "Success")
+            .build();
+    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
+  }
+
+  @Test
+  void requestBody_shouldMatchSameType() throws JsonProcessingException {
+    final EndpointMetadata metadata =
+        validBuilder().requestBodyType(TYPE_A).response(SC_OK, "Success").build();
+
+    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
+  }
+
+  @Test
+  void requestBodyType_shouldErrorIfSelectorDeterminesUndocumentedResult() {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, (__) -> STRING_TYPE)
+            .response(SC_OK, "Success")
+            .build();
+
+    assertThatThrownBy(() -> metadata.getRequestBody("{\"value1\":\"FOO\"}"))
+        .isInstanceOf(IllegalStateException.class);
   }
 
   private <T> DeserializableTypeDefinition<?> selector(final String jsonData) {
