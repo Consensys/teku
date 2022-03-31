@@ -63,14 +63,14 @@ public interface BranchNode extends TreeNode {
   @Override
   default Bytes32 hashTreeRoot() {
     final MessageDigest messageDigest = left().hashTreeRootDigest();
-    right().updateDigest(messageDigest);
+    right().updateDigestWithHashTreeRoot(messageDigest);
     return Bytes32.wrap(messageDigest.digest());
   }
 
   @Override
   default MessageDigest hashTreeRootDigest() {
     final MessageDigest messageDigest = left().hashTreeRootDigest();
-    right().updateDigest(messageDigest);
+    right().updateDigestWithHashTreeRoot(messageDigest);
     final Bytes32 hashTreeRoot = Bytes32.wrap(messageDigest.digest());
     messageDigest.reset();
     hashTreeRoot.update(messageDigest);

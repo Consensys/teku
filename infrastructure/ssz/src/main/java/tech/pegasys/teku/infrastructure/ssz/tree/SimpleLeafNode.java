@@ -59,7 +59,7 @@ class SimpleLeafNode implements LeafNode, TreeNode {
   }
 
   @Override
-  public void updateDigest(MessageDigest messageDigest) {
+  public void updateDigestWithHashTreeRoot(MessageDigest messageDigest) {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash != null) {
       cachedHash.update(messageDigest);

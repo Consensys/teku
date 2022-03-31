@@ -44,7 +44,8 @@ public interface TreeNode {
     return digest;
   }
 
-  default void updateDigest(MessageDigest messageDigest) {
+  /** update a given digest with `hash_tree_root` */
+  default void updateDigestWithHashTreeRoot(MessageDigest messageDigest) {
     hashTreeRoot().update(messageDigest);
   }
 
