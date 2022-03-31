@@ -142,15 +142,15 @@ allprojects {
 
   tasks.withType(JavaCompile) {
     options.compilerArgs += [
-      '-Xlint:unchecked',
+      '-Werror',
       '-Xlint:cast',
-      '-Xlint:rawtypes',
-      '-Xlint:overloads',
+      '-Xlint:deprecation',
       '-Xlint:divzero',
       '-Xlint:finally',
+      '-Xlint:overloads',
+      '-Xlint:rawtypes',
       '-Xlint:static',
-      '-Werror',
-      '-Xlint:deprecation'
+      '-Xlint:unchecked',
     ]
     options.forkOptions.jvmArgs += [
         '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
