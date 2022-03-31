@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORI
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.util.Collection;
@@ -36,6 +37,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
@@ -101,6 +104,31 @@ public class EndpointMetadata {
 
   public static EndpointMetaDataBuilder delete(final String path) {
     return new EndpointMetaDataBuilder().method(HandlerType.DELETE).path(path);
+  }
+
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  public <T> T getRequestBody(final String body) throws JsonProcessingException {
+    checkArgument(requestBodyType.isPresent(), "requestBodyType has not been defined");
+    checkArgument(
+        requestBodyTypeSelector.isPresent(), "requestBodyTypeSelector has not been defined");
+
+    final DeserializableTypeDefinition<T> bodySchema =
+        (DeserializableTypeDefinition<T>) getRequestBodyType(body);
+
+    if (bodySchema == null) {
+      throw new MissingRequestBodyException();
+    }
+
+    if (!getRequestBodyType().getSelfAndReferencedTypeDefinitions().contains(bodySchema)) {
+      throw new IllegalStateException(
+          "schema determined for parsing request body is not listed in requestBodyTypes");
+    }
+
+    final T result = JsonUtil.parse(body, bodySchema);
+    if (result == null) {
+      throw new MissingRequestBodyException();
+    }
+    return result;
   }
 
   public interface BodyTypeSelector<T> {
@@ -242,11 +270,11 @@ public class EndpointMetadata {
         .collect(Collectors.toSet());
   }
 
-  public OpenApiTypeDefinition getRequestBodyType() {
+  OpenApiTypeDefinition getRequestBodyType() {
     return requestBodyType.orElseThrow();
   }
 
-  public DeserializableTypeDefinition<?> getRequestBodyType(final String json) {
+  DeserializableTypeDefinition<?> getRequestBodyType(final String json) {
     final BodyTypeSelector<?> selector = requestBodyTypeSelector.orElseThrow();
     return selector.selectType(json);
   }
