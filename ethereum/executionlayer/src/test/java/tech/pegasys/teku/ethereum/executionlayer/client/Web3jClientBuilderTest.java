@@ -38,7 +38,7 @@ public class Web3jClientBuilderTest {
   @Test
   public void shouldFailBuildWithUnsupportedEndpointScheme() {
     Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder.timeProvider(mock(TimeProvider.class)).endpoint("https://localhost");
+    builder.timeProvider(mock(TimeProvider.class)).endpoint("abc://localhost");
     assertThatThrownBy(builder::build).isInstanceOf(InvalidConfigurationException.class);
   }
 
@@ -51,10 +51,34 @@ public class Web3jClientBuilderTest {
   }
 
   @Test
+  public void shouldBuildHttpClientWithHttpsEndpoint() {
+    Web3jClientBuilder builder = new Web3jClientBuilder();
+    builder.timeProvider(mock(TimeProvider.class)).endpoint("https://localhost");
+    Web3JClient client = builder.build();
+    assertThat(client).isInstanceOf(Web3jHttpClient.class);
+  }
+
+  @Test
   public void shouldBuildWebsocketClientWithWsEndpoint() {
     Web3jClientBuilder builder = new Web3jClientBuilder();
     builder.timeProvider(mock(TimeProvider.class)).endpoint("ws://localhost");
     Web3JClient client = builder.build();
     assertThat(client).isInstanceOf(Web3jWebsocketClient.class);
+  }
+
+  @Test
+  public void shouldBuildWebsocketClientWithWssEndpoint() {
+    Web3jClientBuilder builder = new Web3jClientBuilder();
+    builder.timeProvider(mock(TimeProvider.class)).endpoint("wss://localhost");
+    Web3JClient client = builder.build();
+    assertThat(client).isInstanceOf(Web3jWebsocketClient.class);
+  }
+
+  @Test
+  public void shouldBuildIpcClientWithFileEndpoint() {
+    Web3jClientBuilder builder = new Web3jClientBuilder();
+    builder.timeProvider(mock(TimeProvider.class)).endpoint("file:/some/path");
+    Web3JClient client = builder.build();
+    assertThat(client).isInstanceOf(Web3jIpcClient.class);
   }
 }

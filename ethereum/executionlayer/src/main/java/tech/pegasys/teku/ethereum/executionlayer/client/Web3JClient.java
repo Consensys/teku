@@ -15,11 +15,13 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
@@ -30,7 +32,8 @@ public abstract class Web3JClient {
   private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
   private static final int NO_ERROR_TIME = -1;
   private final TimeProvider timeProvider;
-  private final Web3jService web3jService;
+  private Web3jService web3jService;
+  private Web3j eth1Web3j;
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
   private final List<
           Function<
@@ -38,9 +41,8 @@ public abstract class Web3JClient {
               Request<?, ? extends org.web3j.protocol.core.Response<?>>>>
       requestAdapters = new ArrayList<>();
 
-  protected Web3JClient(TimeProvider timeProvider, Web3jService web3jService) {
+  protected Web3JClient(TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
-    this.web3jService = web3jService;
   }
 
   public void addRequestAdapter(
@@ -51,7 +53,6 @@ public abstract class Web3JClient {
     requestAdapters.add(requestAdapter);
   }
 
-  @SuppressWarnings("unchecked")
   protected <T> Request<?, ? extends org.web3j.protocol.core.Response<T>> applyRequestAdapters(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> request) {
     return (Request<?, ? extends org.web3j.protocol.core.Response<T>>)
@@ -103,7 +104,16 @@ public abstract class Web3JClient {
     }
   }
 
-  protected Web3jService getWeb3jService() {
+  Web3jService getWeb3jService() {
     return web3jService;
+  }
+
+  Web3j getEth1Web3j() {
+    return eth1Web3j;
+  }
+
+  void initWeb3jService(Web3jService web3jService) {
+    this.web3jService = web3jService;
+    this.eth1Web3j = Web3j.build(web3jService);
   }
 }
