@@ -126,7 +126,7 @@ public class Eth2NetworkOptions {
       arity = "0..1",
       fallbackValue = "false",
       hidden = true)
-  private Boolean proposerBoostEnabled = null;
+  private Boolean proposerBoostEnabled = Eth2NetworkConfiguration.DEFAULT_PROPOSER_BOOST_ENABLED;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
