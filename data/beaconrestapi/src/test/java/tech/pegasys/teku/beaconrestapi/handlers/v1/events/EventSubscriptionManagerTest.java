@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
 import java.io.IOException;
@@ -34,23 +35,18 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.response.v1.BlockEvent;
-import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
-import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
-import tech.pegasys.teku.api.response.v1.HeadEvent;
-import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -60,7 +56,6 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 public class EventSubscriptionManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -99,9 +94,8 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
-  private final Attestation sampleAttestation = new Attestation(data.randomAttestation(0));
-  private final SignedVoluntaryExit sampleVoluntaryExit =
-      new SignedVoluntaryExit(data.randomSignedVoluntaryExit());
+  private final Attestation sampleAttestation = data.randomAttestation(0);
+  private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -124,7 +118,6 @@ public class EventSubscriptionManagerTest {
         new EventSubscriptionManager(
             nodeDataProvider,
             chainDataProvider,
-            jsonProvider,
             syncDataProvider,
             configProvider,
             asyncRunner,
@@ -139,13 +132,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerReorgEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: chain_reorg\n");
-    final ChainReorgEvent event =
-        jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), ChainReorgEvent.class);
-
-    assertThat(event).isEqualTo(chainReorgEvent);
+    checkEvent("chain_reorg", chainReorgEvent);
   }
 
   @Test
@@ -154,12 +141,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerHeadEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: head\n");
-    final HeadEvent event =
-        jsonProvider.jsonToObject(eventString.substring(eventString.indexOf("{")), HeadEvent.class);
-
-    assertThat(event).isEqualTo(headEvent);
+    checkEvent("head", headEvent);
   }
 
   @Test
@@ -197,17 +179,11 @@ public class EventSubscriptionManagerTest {
   void shouldPropagateFinalizedCheckpointMessages() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=finalized_checkpoint");
     manager.registerClient(client1);
-    when(chainDataProvider.getStateRootFromBlockRoot(sampleCheckpointEvent.block))
-        .thenReturn(Optional.of(sampleCheckpointEvent.state));
+    when(chainDataProvider.getStateRootFromBlockRoot(sampleCheckpointEvent.getData().block))
+        .thenReturn(Optional.of(sampleCheckpointEvent.getData().state));
 
     triggerFinalizedCheckpointEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: finalized_checkpoint\n");
-    final FinalizedCheckpointEvent event =
-        jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), FinalizedCheckpointEvent.class);
-
-    assertThat(event).isEqualTo(sampleCheckpointEvent);
+    checkEvent("finalized_checkpoint", sampleCheckpointEvent);
   }
 
   @Test
@@ -216,13 +192,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerSyncStateEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: sync_state\n");
-    final SyncStateChangeEvent event =
-        jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), SyncStateChangeEvent.class);
-
-    assertThat(event).isEqualTo(new SyncStateChangeEvent(sampleSyncState.name()));
+    checkEvent("sync_state", new SyncStateChangeEvent(sampleSyncState.name()));
   }
 
   @Test
@@ -231,15 +201,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlockEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: block\n");
-    final BlockEvent event =
-        jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), BlockEvent.class);
-
-    assertThat(event)
-        .isEqualTo(
-            BlockEvent.fromSignedBeaconBlock(sampleBlock.asInternalSignedBeaconBlock(spec), null));
+    checkEvent("block", new BlockEvent(sampleBlock.asInternalSignedBeaconBlock(spec), null));
   }
 
   @Test
@@ -248,13 +210,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerAttestationEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: attestation\n");
-    final Attestation event =
-        jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), Attestation.class);
-
-    assertThat(event).isEqualTo(sampleAttestation);
+    checkEvent("attestation", new AttestationEvent(sampleAttestation));
   }
 
   @Test
@@ -263,13 +219,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerVoluntaryExitEvent();
-    final String eventString = outputStream.getString();
-    assertThat(eventString).contains("event: voluntary_exit\n");
-    final SignedVoluntaryExit event =
-        jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), SignedVoluntaryExit.class);
-
-    assertThat(event).isEqualTo(sampleVoluntaryExit);
+    checkEvent("voluntary_exit", new VoluntaryExitEvent(sampleVoluntaryExit));
   }
 
   @Test
@@ -326,16 +276,12 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerVoluntaryExitEvent() {
-    manager.onNewVoluntaryExit(
-        sampleVoluntaryExit.asInternalSignedVoluntaryExit(),
-        InternalValidationResult.ACCEPT,
-        false);
+    manager.onNewVoluntaryExit(sampleVoluntaryExit, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
   }
 
   private void triggerAttestationEvent() {
-    manager.onNewAttestation(
-        ValidateableAttestation.from(spec, sampleAttestation.asInternalAttestation(spec)));
+    manager.onNewAttestation(ValidateableAttestation.from(spec, sampleAttestation));
     asyncRunner.executeQueuedActions();
   }
 
@@ -351,38 +297,40 @@ public class EventSubscriptionManagerTest {
 
   private void triggerFinalizedCheckpointEvent() {
     manager.onNewFinalizedCheckpoint(
-        new Checkpoint(sampleCheckpointEvent.epoch, sampleCheckpointEvent.block), false);
+        new Checkpoint(
+            sampleCheckpointEvent.getData().epoch, sampleCheckpointEvent.getData().block),
+        false);
     asyncRunner.executeQueuedActions();
   }
 
   private void triggerReorgEvent() {
     manager.chainHeadUpdated(
-        chainReorgEvent.slot,
-        chainReorgEvent.newHeadState,
-        chainReorgEvent.newHeadBlock,
-        chainReorgEvent.slot.mod(specConfig.getSlotsPerEpoch()).equals(UInt64.ZERO),
+        chainReorgEvent.getData().getSlot(),
+        chainReorgEvent.getData().getNewHeadState(),
+        chainReorgEvent.getData().getNewHeadBlock(),
+        chainReorgEvent.getData().getSlot().mod(specConfig.getSlotsPerEpoch()).equals(UInt64.ZERO),
         false,
-        headEvent.previousDutyDependentRoot,
-        headEvent.currentDutyDependentRoot,
+        headEvent.getData().getPreviousDutyDependentRoot(),
+        headEvent.getData().getCurrentDutyDependentRoot(),
         Optional.of(
             new ReorgContext(
-                chainReorgEvent.oldHeadBlock,
+                chainReorgEvent.getData().getOldHeadBlock(),
                 UInt64.ZERO,
-                chainReorgEvent.oldHeadState,
-                chainReorgEvent.slot.minus(depth),
+                chainReorgEvent.getData().getOldHeadState(),
+                chainReorgEvent.getData().getSlot().minus(depth),
                 Bytes32.ZERO)));
     asyncRunner.executeQueuedActions();
   }
 
   private void triggerHeadEvent() {
     manager.chainHeadUpdated(
-        headEvent.slot,
-        headEvent.state,
-        headEvent.block,
+        headEvent.getData().getSlot(),
+        headEvent.getData().getState(),
+        headEvent.getData().getBlock(),
         false,
         false,
-        headEvent.previousDutyDependentRoot,
-        headEvent.currentDutyDependentRoot,
+        headEvent.getData().getPreviousDutyDependentRoot(),
+        headEvent.getData().getCurrentDutyDependentRoot(),
         Optional.empty());
     asyncRunner.executeQueuedActions();
   }
@@ -391,5 +339,16 @@ public class EventSubscriptionManagerTest {
     manager.onSyncCommitteeContribution(
         contributionAndProof, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
+  }
+
+  private <T, E extends Event<T>> void checkEvent(String eventType, E event)
+      throws JsonProcessingException {
+    final String eventString = outputStream.getString();
+    assertThat(eventString).contains(String.format("event: %s\n", eventType));
+
+    String expected =
+        eventString.substring(eventString.indexOf("{"), eventString.lastIndexOf("}") + 1);
+    String result = JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition());
+    assertThat(expected).isEqualTo(result);
   }
 }

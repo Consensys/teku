@@ -428,7 +428,7 @@ public class BeaconRestApi {
         GetEvents.ROUTE,
         new GetEvents(
             dataProvider,
-            jsonProvider,
+            //            jsonProvider,
             eventChannels,
             asyncRunner,
             configuration.getMaxPendingEvents()));

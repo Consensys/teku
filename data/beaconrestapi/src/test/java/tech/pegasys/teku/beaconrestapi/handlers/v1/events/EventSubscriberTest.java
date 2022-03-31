@@ -37,7 +37,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class EventSubscriberTest {
   private static final int MAX_PENDING_EVENTS = 10;
@@ -47,7 +46,6 @@ public class EventSubscriberTest {
   private final Runnable onCloseCallback = mock(Runnable.class);
   private final ServletResponse servletResponse = mock(ServletResponse.class);
   private final TestServletOutputStream outputStream = new TestServletOutputStream();
-  private final JsonProvider jsonProvider = new JsonProvider();
 
   private final Context context = new Context(req, res, Collections.emptyMap());
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -191,7 +189,7 @@ public class EventSubscriberTest {
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
   }
 
-  private EventSource event(final String message) {
-    return new EventSource(jsonProvider, message);
+  private EventSource<String> event(final String message) {
+    return new EventSource<>(new TestEvent(message));
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,23 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
-@SuppressWarnings("JavaCase")
-public enum EventType { // TODO move logic outside of here?
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg,
-  sync_state,
-  contribution_and_proof;
+public abstract class Event<T> {
 
-  public static List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+  final SerializableTypeDefinition<T> EVENT_TYPE;
+  final T data;
+
+  Event(SerializableTypeDefinition<T> type, T data) {
+    this.EVENT_TYPE = type;
+    this.data = data;
+  }
+
+  public SerializableTypeDefinition<T> getJsonTypeDefinition() {
+    return EVENT_TYPE;
+  }
+
+  public T getData() {
+    return data;
   }
 }
