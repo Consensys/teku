@@ -49,7 +49,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected StorageSystem storageSystem;
-  protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater;
   protected CombinedChainDataClient client;
 

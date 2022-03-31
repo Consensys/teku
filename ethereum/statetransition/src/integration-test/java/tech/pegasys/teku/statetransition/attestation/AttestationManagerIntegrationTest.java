@@ -68,6 +68,8 @@ class AttestationManagerIntegrationTest {
       new AggregatingAttestationPool(spec, new NoOpMetricsSystem());
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+
+  @SuppressWarnings("deprecation")
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,

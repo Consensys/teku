@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -36,10 +37,10 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AttesterSlashingGossipIntegrationTest {
 
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -91,6 +92,6 @@ public class AttesterSlashingGossipIntegrationTest {
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
-    return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
+    return NodeManager.create(spec, networkFactory, validatorKeys, networkBuilder);
   }
 }

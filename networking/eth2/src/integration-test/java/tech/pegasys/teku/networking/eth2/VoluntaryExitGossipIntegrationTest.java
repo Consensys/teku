@@ -107,6 +107,6 @@ public class VoluntaryExitGossipIntegrationTest {
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
-    return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
+    return NodeManager.create(spec, networkFactory, validatorKeys, networkBuilder);
   }
 }
