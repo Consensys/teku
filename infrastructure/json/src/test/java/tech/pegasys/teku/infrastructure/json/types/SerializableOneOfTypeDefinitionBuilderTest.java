@@ -14,47 +14,32 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.SERIALIZABLE_ONE_OF_TYPE_DEFINITION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class SerializableOneOfTypeDefinitionBuilderTest {
-  private static final SerializableTypeDefinition<TestObjA> TYPE_A =
-      SerializableTypeDefinition.object(TestObjA.class)
-          .name("TA")
-          .withField("value1", STRING_TYPE, TestType::getName)
-          .build();
-  private static final SerializableTypeDefinition<TestObjB> TYPE_B =
-      SerializableTypeDefinition.object(TestObjB.class)
-          .name("TB")
-          .withField("value2", STRING_TYPE, TestType::getName)
-          .build();
-
-  SerializableOneOfTypeDefinition<TestType> definition =
-      new SerializableOneOfTypeDefinitionBuilder<TestType>()
-          .description("meaningful description")
-          .withType(TestObjA.isInstance, TYPE_A)
-          .withType(TestObjB.isInstance, TYPE_B)
-          .build();
 
   @Test
   void serialize_shouldWrite() throws JsonProcessingException {
-    final String json = JsonUtil.serialize(new TestObjA("FOO"), definition);
+    final String json =
+        JsonUtil.serialize(
+            new OneOfTypeTestTypeDefinition.TestObjA("FOO"), SERIALIZABLE_ONE_OF_TYPE_DEFINITION);
     assertThat(json).isEqualTo("{\"value1\":\"FOO\"}");
   }
 
   @SuppressWarnings("unchecked")
   @Test
   void openapiType() throws Exception {
-    final String json = JsonUtil.serialize(definition::serializeOpenApiTypeOrReference);
+    final String json =
+        JsonUtil.serialize(SERIALIZABLE_ONE_OF_TYPE_DEFINITION::serializeOpenApiTypeOrReference);
     final Map<String, Object> swaggerDocumentMap = JsonTestUtil.parse(json);
     final List<Map<String, String>> oneOf =
         (ArrayList<Map<String, String>>) swaggerDocumentMap.get("oneOf");
@@ -63,39 +48,5 @@ public class SerializableOneOfTypeDefinitionBuilderTest {
     final List<String> refs =
         oneOf.stream().map(element -> element.get("$ref")).collect(Collectors.toList());
     assertThat(refs).containsOnly("#/components/schemas/TA", "#/components/schemas/TB");
-  }
-
-  interface TestType {
-    String getName();
-  }
-
-  static class TestObjA implements TestType {
-    private final String name;
-
-    public TestObjA(final String name) {
-      this.name = name;
-    }
-
-    @Override
-    public String getName() {
-      return name;
-    }
-
-    static Predicate<TestType> isInstance = testType -> testType instanceof TestObjA;
-  }
-
-  static class TestObjB implements TestType {
-    private final String name;
-
-    public TestObjB(final String name) {
-      this.name = name;
-    }
-
-    @Override
-    public String getName() {
-      return name;
-    }
-
-    static Predicate<TestType> isInstance = testType -> testType instanceof TestObjB;
   }
 }
