@@ -40,9 +40,22 @@ public abstract class Web3JClient {
               Request<?, ? extends org.web3j.protocol.core.Response<?>>,
               Request<?, ? extends org.web3j.protocol.core.Response<?>>>>
       requestAdapters = new ArrayList<>();
+  private boolean initialized = false;
 
   protected Web3JClient(TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
+  }
+
+  protected synchronized void initWeb3jService(final Web3jService web3jService) {
+    this.web3jService = web3jService;
+    this.eth1Web3j = Web3j.build(web3jService);
+    this.initialized = true;
+  }
+
+  private void throwIfNotInitialized() {
+    if (!initialized) {
+      throw new RuntimeException("Web3JClient is not initialized");
+    }
   }
 
   public void addRequestAdapter(
@@ -61,6 +74,7 @@ public abstract class Web3JClient {
   }
 
   protected <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
+    throwIfNotInitialized();
     return SafeFuture.of(web3Request)
         .catchAndRethrow(this::handleError)
         .thenPeek(__ -> handleSuccess());
@@ -68,6 +82,7 @@ public abstract class Web3JClient {
 
   protected <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
+    throwIfNotInitialized();
     CompletableFuture<Response<T>> responseFuture =
         applyRequestAdapters(web3jRequest)
             .sendAsync()
@@ -105,16 +120,13 @@ public abstract class Web3JClient {
     }
   }
 
-  Web3jService getWeb3jService() {
+  protected synchronized Web3jService getWeb3jService() {
+    throwIfNotInitialized();
     return web3jService;
   }
 
-  Web3j getEth1Web3j() {
+  protected synchronized Web3j getEth1Web3j() {
+    throwIfNotInitialized();
     return eth1Web3j;
-  }
-
-  void initWeb3jService(Web3jService web3jService) {
-    this.web3jService = web3jService;
-    this.eth1Web3j = Web3j.build(web3jService);
   }
 }

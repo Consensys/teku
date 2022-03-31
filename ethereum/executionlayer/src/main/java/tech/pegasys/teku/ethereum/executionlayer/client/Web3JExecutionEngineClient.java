@@ -22,7 +22,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.ObjectMapperFactory;
-import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -43,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
-  private final Web3j eth1Web3j;
   private final Web3JClient web3JClient;
 
   static {
@@ -63,13 +61,16 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .build();
-    this.eth1Web3j = Web3j.build(web3JClient.getWeb3jService());
   }
 
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
     return web3JClient
-        .doWeb3JRequest(eth1Web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
+        .doWeb3JRequest(
+            web3JClient
+                .getEth1Web3j()
+                .ethGetBlockByHash(blockHash.toHexString(), false)
+                .sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock)
         .thenApply(Optional::ofNullable);
@@ -79,7 +80,10 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<PowBlock> getPowChainHead() {
     return web3JClient
         .doWeb3JRequest(
-            eth1Web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
+            web3JClient
+                .getEth1Web3j()
+                .ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
+                .sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
