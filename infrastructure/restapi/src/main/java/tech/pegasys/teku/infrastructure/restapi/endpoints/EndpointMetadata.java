@@ -119,7 +119,7 @@ public class EndpointMetadata {
       throw new MissingRequestBodyException();
     }
 
-    if (!getRequestBodyType().getSelfAndReferencedTypeDefinitions().contains(bodySchema)) {
+    if (!getRequestBodyType().isEquivalentToDeserializableType(bodySchema)) {
       throw new IllegalStateException(
           "schema determined for parsing request body is not listed in requestBodyTypes");
     }

@@ -226,13 +226,22 @@ class EndpointMetadataTest {
   }
 
   @Test
-  void requestBodyType_shouldGetBodyAsObject() throws JsonProcessingException {
+  void requestBody_shouldGetBodyAsObject() throws JsonProcessingException {
     final EndpointMetadata metadata =
         validBuilder()
             .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, this::selector)
             .response(SC_OK, "Success")
             .build();
-    OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
+  }
+
+  @Test
+  void requestBody_shouldMatchSameType() throws JsonProcessingException {
+    final EndpointMetadata metadata =
+        validBuilder().requestBodyType(TYPE_A).response(SC_OK, "Success").build();
+
+    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
     assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
   }
 
@@ -240,7 +249,7 @@ class EndpointMetadataTest {
   void requestBodyType_shouldErrorIfSelectorDeterminesUndocumentedResult() {
     final EndpointMetadata metadata =
         validBuilder()
-            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, (__) -> CoreTypes.UINT256_TYPE)
+            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, (__) -> STRING_TYPE)
             .response(SC_OK, "Success")
             .build();
 
