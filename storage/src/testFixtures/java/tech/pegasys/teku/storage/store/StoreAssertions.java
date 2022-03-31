@@ -20,8 +20,8 @@ public class StoreAssertions {
   public static void assertStoresMatch(
       final UpdatableStore actualState, final UpdatableStore expectedState) {
     assertThat(actualState)
-        .isEqualToIgnoringGivenFields(
-            expectedState,
+        .usingRecursiveComparison()
+        .ignoringFields(
             "time",
             "stateCountGauge",
             "blockCountGauge",
@@ -41,7 +41,10 @@ public class StoreAssertions {
             "states",
             "stateProvider",
             "checkpointStates",
-            "forkChoiceStrategy");
+            "forkChoiceStrategy",
+            "finalizedAnchor.state.backingNode")
+        .ignoringFieldsMatchingRegexes("(?i).*cache.*")
+        .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());
   }

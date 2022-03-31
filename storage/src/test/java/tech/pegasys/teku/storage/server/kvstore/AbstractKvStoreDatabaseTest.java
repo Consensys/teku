@@ -34,6 +34,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -174,7 +175,8 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
     try (final KvStoreEth1Dao.Eth1Updater updater =
         ((KvStoreDatabase) database).eth1Dao.eth1Updater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =

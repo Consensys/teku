@@ -31,10 +31,12 @@ public class ProtoArrayIndices {
     rootIndices.put(blockRoot, nodeIndex);
   }
 
+  @SuppressWarnings("deprecation")
   public Optional<Integer> get(final Bytes32 root) {
     return Optional.ofNullable(rootIndices.getOrDefault(root, null));
   }
 
+  @SuppressWarnings("deprecation")
   public void remove(final Bytes32 root) {
     rootIndices.remove(root);
   }

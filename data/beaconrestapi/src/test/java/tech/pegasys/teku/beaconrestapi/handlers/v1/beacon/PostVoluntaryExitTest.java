@@ -28,11 +28,13 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class PostVoluntaryExitTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private Context context = mock(Context.class);
   private NodeDataProvider provider = mock(NodeDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();

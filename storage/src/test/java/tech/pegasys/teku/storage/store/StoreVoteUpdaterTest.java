@@ -21,13 +21,15 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 class StoreVoteUpdaterTest extends AbstractStoreTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   final VoteUpdateChannel voteUpdateChannel = mock(VoteUpdateChannel.class);
 
   private final UpdatableStore store = createGenesisStore();

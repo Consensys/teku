@@ -17,10 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class MinGenesisTimeBlockEventSerializerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final MinGenesisTimeBlockEventSerializer serializer =
       new MinGenesisTimeBlockEventSerializer();
 
@@ -34,6 +36,9 @@ public class MinGenesisTimeBlockEventSerializerTest {
     final byte[] serialized = serializer.serialize(original);
     final MinGenesisTimeBlockEvent deserialized = serializer.deserialize(serialized);
 
-    assertThat(deserialized).isEqualToComparingFieldByField(original);
+    assertThat(deserialized)
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(original);
   }
 }

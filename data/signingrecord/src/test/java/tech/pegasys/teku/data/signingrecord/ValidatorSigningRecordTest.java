@@ -81,7 +81,7 @@ class ValidatorSigningRecordTest {
     final ValidatorSigningRecord record = new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT);
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
-    assertThat(result).isEqualToComparingFieldByField(record);
+    assertThat(result).usingRecursiveComparison().isEqualTo(record);
   }
 
   @Test
@@ -91,7 +91,7 @@ class ValidatorSigningRecordTest {
             GENESIS_VALIDATORS_ROOT, UInt64.valueOf(10), UInt64.valueOf(20), UInt64.valueOf(30));
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
-    assertThat(result).isEqualToComparingFieldByField(record);
+    assertThat(result).usingRecursiveComparison().isEqualTo(record);
   }
 
   @ParameterizedTest(name = "signBlock({0})")

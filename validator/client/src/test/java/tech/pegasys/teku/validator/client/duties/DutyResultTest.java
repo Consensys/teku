@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
@@ -33,7 +34,8 @@ class DutyResultTest {
 
   private static final UInt64 SLOT = UInt64.valueOf(323);
   private static final String TYPE = "type";
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
   private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
   private final Set<String> validatorId = Set.of(validatorKey.toAbbreviatedString());

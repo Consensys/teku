@@ -49,10 +49,14 @@ public class ProposerSlashingValidatorTest {
   private final Spec mockSpec = mock(Spec.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RecentChainData recentChainData;
+
+  @SuppressWarnings("deprecation")
   private BeaconChainUtil beaconChainUtil;
+
   private ProposerSlashingValidator proposerSlashingValidator;
 
   @BeforeEach
+  @SuppressWarnings("deprecation")
   void beforeEach() {
     recentChainData = MemoryOnlyRecentChainData.builder().specProvider(spec).build();
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);

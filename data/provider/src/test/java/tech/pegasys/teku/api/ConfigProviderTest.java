@@ -32,6 +32,9 @@ class ConfigProviderTest {
     final GetSpecResponse response = configProvider.getConfig();
     final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(response.data);
     final SpecConfig expectedConfig = spec.getGenesisSpecConfig();
-    assertThat(specConfig).isEqualToComparingFieldByField(expectedConfig);
+    assertThat(specConfig)
+        .usingRecursiveComparison()
+        .ignoringFields("specConfig.specConfig.rawConfig")
+        .isEqualTo(expectedConfig);
   }
 }

@@ -41,6 +41,7 @@ public class OpenApiTestUtil<TObject> {
   private final Class<TObject> clazz;
   private final String path;
 
+  @SuppressWarnings("deprecation")
   public OpenApiTestUtil(final Class<TObject> clazz) {
     this.mapper = new ObjectMapper();
     mapper

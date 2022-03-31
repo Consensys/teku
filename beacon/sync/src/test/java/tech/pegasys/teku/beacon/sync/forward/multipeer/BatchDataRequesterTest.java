@@ -29,13 +29,15 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BatchDataRequesterTest {
   private static final UInt64 BATCH_SIZE = UInt64.valueOf(50);
   private static final int MAX_PENDING_BATCHES = 5;
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final InlineEventThread eventThread = new InlineEventThread();
   private final BatchChain batchChain = new BatchChain();
   private final StubBatchFactory batchFactory = new StubBatchFactory(eventThread, false);

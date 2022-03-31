@@ -123,6 +123,7 @@ public class MultiThreadedStoreTest {
         .build();
   }
 
+  @SuppressWarnings("deprecation")
   private StorageSystem createStorageSystemInternal(
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,

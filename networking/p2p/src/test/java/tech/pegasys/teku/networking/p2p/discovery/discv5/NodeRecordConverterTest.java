@@ -220,7 +220,8 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldConvertEnrForkId() {
-    EnrForkId enrForkId = new DataStructureUtil().randomEnrForkId();
+    EnrForkId enrForkId =
+        new DataStructureUtil(TestSpecFactory.createMinimalPhase0()).randomEnrForkId();
     Bytes encodedForkId = enrForkId.sszSerialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(

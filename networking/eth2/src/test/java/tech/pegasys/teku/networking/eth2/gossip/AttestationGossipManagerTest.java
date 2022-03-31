@@ -45,6 +45,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+@SuppressWarnings("deprecation")
 public class AttestationGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();

@@ -49,6 +49,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   protected BeaconChainUtil createBeaconChainUtil() {
     return BeaconChainUtil.create(spec, 5, recentChainData);
   }

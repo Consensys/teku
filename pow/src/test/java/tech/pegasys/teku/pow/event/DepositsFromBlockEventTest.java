@@ -22,10 +22,12 @@ import tech.pegasys.teku.ethereum.pow.api.Deposit;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockEventTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
 
   @Test
   public void create_withOutOfOrderDeposits() {

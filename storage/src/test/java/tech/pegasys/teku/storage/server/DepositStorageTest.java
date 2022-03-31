@@ -114,7 +114,10 @@ public class DepositStorageTest {
     assertThat(future).isCompleted();
 
     assertThat(eventsChannel.getOrderedList()).containsExactly(genesis100, postGenesisDeposits);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis())
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(genesis100);
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(postGenesisDeposits.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
@@ -201,7 +204,10 @@ public class DepositStorageTest {
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList())
         .containsExactly(block99, block100, genesis100, block101);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis())
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block101.getBlockNumber().bigIntegerValue());
@@ -297,7 +303,10 @@ public class DepositStorageTest {
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList()).containsExactly(block99, block100, genesis100);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis())
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis100.getBlockNumber().bigIntegerValue());
@@ -318,7 +327,10 @@ public class DepositStorageTest {
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList()).containsExactly(genesis100);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis())
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis100.getBlockNumber().bigIntegerValue());
@@ -339,7 +351,10 @@ public class DepositStorageTest {
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList()).containsExactly(block99, genesis100);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis())
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis100.getBlockNumber().bigIntegerValue());

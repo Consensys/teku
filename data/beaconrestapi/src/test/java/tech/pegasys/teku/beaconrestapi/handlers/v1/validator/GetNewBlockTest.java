@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetNewBlockTest {
@@ -58,7 +59,8 @@ public class GetNewBlockTest {
   protected final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   protected final JsonProvider jsonProvider = new JsonProvider();
   private GetNewBlock handler;
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
 
   @SuppressWarnings("unchecked")

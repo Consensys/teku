@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class LocalSlashingProtectorTest {
@@ -40,7 +41,8 @@ class LocalSlashingProtectorTest {
   private static final UInt64 ATTESTATION_TEST_BLOCK_SLOT = UInt64.valueOf(3);
   private static final UInt64 BLOCK_TEST_SOURCE_EPOCH = UInt64.valueOf(12);
   private static final UInt64 BLOCK_TEST_TARGET_EPOCH = UInt64.valueOf(15);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
 
   private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
   private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);

@@ -18,12 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockSerializerTest {
   private final DepositsFromBlockEventSerializer serializer =
       new DepositsFromBlockEventSerializer();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
 
   @Test
   public void shouldEncodeAndDecodeWithMultipleDeposits() {
@@ -38,7 +40,18 @@ public class DepositsFromBlockSerializerTest {
                 dataStructureUtil.randomDepositEvent(5)));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
-    assertThat(result).isEqualToComparingFieldByField(event);
+    assertThat(result)
+        .usingRecursiveComparison()
+        .ignoringFields(
+            "blockHash.bytes",
+            "blockHash.offset",
+            "deposits.pubkey.bytesCompressed",
+            "deposits.pubkey.publicKey",
+            "deposits.signature.bytesCompressed",
+            "deposits.signature.signature",
+            "deposits.withdrawal_credentials.bytes",
+            "deposits.withdrawal_credentials.offset")
+        .isEqualTo(event);
   }
 
   @Test
@@ -51,6 +64,17 @@ public class DepositsFromBlockSerializerTest {
             Stream.of(dataStructureUtil.randomDepositEvent()));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
-    assertThat(result).isEqualToComparingFieldByField(event);
+    assertThat(result)
+        .usingRecursiveComparison()
+        .ignoringFields(
+            "blockHash.bytes",
+            "blockHash.offset",
+            "deposits.pubkey.bytesCompressed",
+            "deposits.pubkey.publicKey",
+            "deposits.signature.bytesCompressed",
+            "deposits.signature.signature",
+            "deposits.withdrawal_credentials.bytes",
+            "deposits.withdrawal_credentials.offset")
+        .isEqualTo(event);
   }
 }

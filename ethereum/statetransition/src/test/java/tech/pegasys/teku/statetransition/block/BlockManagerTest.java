@@ -99,6 +99,8 @@ public class BlockManagerTest {
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionEngineChannel.NOOP);
+
+  @SuppressWarnings("deprecation")
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,

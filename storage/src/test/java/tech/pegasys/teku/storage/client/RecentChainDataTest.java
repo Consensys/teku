@@ -798,7 +798,9 @@ class RecentChainDataTest {
   @Test
   public void getAncestorsOnFork() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
+    final ChainBuilder chainBuilder =
+        ChainBuilder.create(
+            TestSpecFactory.createMinimalPhase0(), BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
 
@@ -839,7 +841,9 @@ class RecentChainDataTest {
   @Test
   public void getAncestorsOnFork_unknownRoot() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
+    final ChainBuilder chainBuilder =
+        ChainBuilder.create(
+            TestSpecFactory.createMinimalPhase0(), BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(recentChainData.getAncestorsOnFork(UInt64.valueOf(1), Bytes32.ZERO)).isEmpty();

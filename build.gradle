@@ -150,6 +150,7 @@ allprojects {
       '-Xlint:finally',
       '-Xlint:static',
       '-Werror',
+      '-Xlint:deprecation'
     ]
     options.forkOptions.jvmArgs += [
         '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
@@ -177,6 +178,9 @@ allprojects {
 
       // Force strict compliance with Java naming conventions
       check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+
+      // With deprecation checks, this is not required.
+      check('DoNotUseDeprecatedFastutilMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // these checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)

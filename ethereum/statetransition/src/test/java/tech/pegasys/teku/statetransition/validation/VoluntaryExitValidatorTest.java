@@ -48,11 +48,14 @@ public class VoluntaryExitValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private RecentChainData recentChainData;
+
+  @SuppressWarnings("deprecation")
   private BeaconChainUtil beaconChainUtil;
 
   private VoluntaryExitValidator voluntaryExitValidator;
 
   @BeforeEach
+  @SuppressWarnings("deprecation")
   void beforeEach() {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);

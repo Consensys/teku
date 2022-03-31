@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -50,7 +51,8 @@ public abstract class AbstractDutySchedulerTest {
   final ForkProvider forkProvider = mock(ForkProvider.class);
   final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   final ForkInfo fork = dataStructureUtil.randomForkInfo();
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 

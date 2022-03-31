@@ -82,6 +82,8 @@ public class BlockImporterTest {
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+
+  @SuppressWarnings("deprecation")
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,
@@ -89,10 +91,14 @@ public class BlockImporterTest {
           recentChainData,
           forkChoiceNotifier,
           transitionBlockValidator);
+
+  @SuppressWarnings("deprecation")
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
 
   private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create();
+
+  @SuppressWarnings("deprecation")
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
@@ -426,6 +432,7 @@ public class BlockImporterTest {
   public void importBlock_runWSPChecks() throws Exception {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    @SuppressWarnings("deprecation")
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -469,6 +476,7 @@ public class BlockImporterTest {
   public void importBlock_nonFinalizingChain_runWSPChecks() throws Exception {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    @SuppressWarnings("deprecation")
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -520,6 +528,7 @@ public class BlockImporterTest {
   public void importBlock_nonFinalizingChain_skipWSPChecks() throws Exception {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     storageSystem.chainUpdater().initializeGenesis();
+    @SuppressWarnings("deprecation")
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -563,6 +572,7 @@ public class BlockImporterTest {
   @Test
   public void getLatestCheckpointState_initialCall() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    @SuppressWarnings("deprecation")
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -594,6 +604,7 @@ public class BlockImporterTest {
   @Test
   public void getLatestCheckpointState_shouldPullUpdatedFinalizedCheckpoint() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    @SuppressWarnings("deprecation")
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,

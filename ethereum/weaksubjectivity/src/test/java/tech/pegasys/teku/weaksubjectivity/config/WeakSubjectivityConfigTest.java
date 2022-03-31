@@ -27,7 +27,7 @@ public class WeakSubjectivityConfigTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final WeakSubjectivityConfig config =
       WeakSubjectivityConfig.builder().specProvider(spec).build();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
   @Test
@@ -66,7 +66,7 @@ public class WeakSubjectivityConfigTest {
     WeakSubjectivityConfig configB = configA.updated((__) -> {});
 
     assertThat(configA).isEqualTo(configB);
-    assertThat(configA).isEqualToComparingFieldByField(configB);
+    assertThat(configA).usingRecursiveComparison().isEqualTo(configB);
   }
 
   @Test

@@ -126,6 +126,7 @@ class BlockFactoryTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
     final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
+    @SuppressWarnings("deprecation")
     final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 1, recentChainData);
     final SszList<Deposit> deposits = blockBodyLists.createDeposits();
     final SszList<Attestation> attestations = blockBodyLists.createAttestations();

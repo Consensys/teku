@@ -63,6 +63,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
+@SuppressWarnings("deprecation")
 public class SyncingNodeManager {
   private final EventChannels eventChannels;
   private final RecentChainData storageClient;

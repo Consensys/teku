@@ -42,6 +42,7 @@ public class ProtoArrayScoreCalculatorTest {
   private UInt64 newProposerBoostAmount = ZERO;
   private VoteUpdater store = createStoreToManipulateVotes();
 
+  @SuppressWarnings("deprecation")
   private Optional<Integer> getIndex(final Bytes32 root) {
     return Optional.ofNullable(indices.get(root));
   }

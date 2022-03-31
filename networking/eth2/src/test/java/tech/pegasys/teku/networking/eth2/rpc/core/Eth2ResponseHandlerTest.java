@@ -30,6 +30,7 @@ public class Eth2ResponseHandlerTest {
   private final RuntimeException error = new RuntimeException("oops");
 
   @Test
+  @SuppressWarnings("deprecation")
   public void expectMultipleResponses_successful() {
     final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
@@ -48,6 +49,7 @@ public class Eth2ResponseHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void expectMultipleResponses_partiallySuccessful() {
     final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =

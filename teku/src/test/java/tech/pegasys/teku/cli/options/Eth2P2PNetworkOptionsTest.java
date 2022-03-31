@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
+  @SuppressWarnings("deprecation")
   public void shouldReadFromConfigurationFile() {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         Eth2NetworkConfiguration.builder("prater").build();
@@ -132,6 +133,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void usingNetworkFromUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/cli/options/constants.yaml");

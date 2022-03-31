@@ -31,6 +31,7 @@ public class Eth2NetworkConfigurationTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getDefinedNetworks")
+  @SuppressWarnings("deprecation")
   public void build_shouldBuildKnownNetworks(
       final Eth2Network network, final NetworkDefinition networkDefinition) {
     final Eth2NetworkConfiguration networkConfig =
@@ -44,6 +45,7 @@ public class Eth2NetworkConfigurationTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void builder_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
@@ -54,6 +56,7 @@ public class Eth2NetworkConfigurationTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void constants_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");

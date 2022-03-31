@@ -531,7 +531,10 @@ public abstract class AbstractDatabaseTest {
 
     final Optional<MinGenesisTimeBlockEvent> fetch = database.getMinGenesisTimeBlock();
     assertThat(fetch.isPresent()).isTrue();
-    assertThat(fetch.get()).isEqualToComparingFieldByField(event);
+    assertThat(fetch.get())
+        .usingRecursiveComparison()
+        .ignoringFields("blockHash.bytes", "blockHash.offset")
+        .isEqualTo(event);
   }
 
   @Test

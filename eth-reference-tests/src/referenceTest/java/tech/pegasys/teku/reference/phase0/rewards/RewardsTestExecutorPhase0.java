@@ -113,6 +113,7 @@ public class RewardsTestExecutorPhase0 implements TestExecutor {
     final RewardAndPenaltyDeltas actualDeltas = function.get();
     assertThat(actualDeltas)
         .describedAs(expectedResultsFileName)
-        .isEqualToComparingFieldByField(expectedDeltas);
+        .usingRecursiveComparison()
+        .isEqualTo(expectedDeltas);
   }
 }

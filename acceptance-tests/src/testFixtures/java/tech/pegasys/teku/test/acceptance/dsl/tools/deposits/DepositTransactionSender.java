@@ -111,6 +111,7 @@ class DepositTransactionSender {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public BigInteger getGasPrice() {
       try {
         return web3j.ethGasPrice().send().getGasPrice();
@@ -125,6 +126,7 @@ class DepositTransactionSender {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public BigInteger getGasLimit() {
       return BigInteger.valueOf(200_000L);
     }

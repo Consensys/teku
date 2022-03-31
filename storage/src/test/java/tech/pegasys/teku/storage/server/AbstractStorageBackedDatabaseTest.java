@@ -46,6 +46,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final boolean storeNonCanonicalBlocks);
 
   @Override
+  @SuppressWarnings("deprecation")
   protected StorageSystem createStorageSystemInternal(
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,

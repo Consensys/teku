@@ -36,6 +36,8 @@ public abstract class AbstractTopicHandlerTest<T> {
   protected final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   protected final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+
+  @SuppressWarnings("deprecation")
   protected final BeaconChainUtil beaconChainUtil = createBeaconChainUtil();
 
   @SuppressWarnings("unchecked")
@@ -53,6 +55,7 @@ public abstract class AbstractTopicHandlerTest<T> {
 
   protected abstract Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest);
 
+  @SuppressWarnings("deprecation")
   protected BeaconChainUtil createBeaconChainUtil() {
     return BeaconChainUtil.create(spec, 2, recentChainData);
   }

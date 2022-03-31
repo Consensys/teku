@@ -57,6 +57,7 @@ public class AttestationSubnetSubscriptionsTest {
   private AttestationSubnetSubscriptions subnetSubscriptions;
 
   @BeforeEach
+  @SuppressWarnings("deprecation")
   void setUp() {
     BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
     subnetSubscriptions =

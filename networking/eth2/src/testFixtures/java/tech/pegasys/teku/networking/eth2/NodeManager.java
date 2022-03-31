@@ -36,9 +36,13 @@ public class NodeManager {
 
   private final BlockGossipChannel blockGossipChannel;
   private final RecentChainData storageClient;
+
+  @SuppressWarnings("deprecation")
   private final BeaconChainUtil chainUtil;
+
   private final Eth2P2PNetwork eth2P2PNetwork;
 
+  @SuppressWarnings("deprecation")
   private NodeManager(
       final BlockGossipChannel blockGossipChannel,
       final RecentChainData storageClient,
@@ -76,6 +80,7 @@ public class NodeManager {
             ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
     final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
 
+    @SuppressWarnings("deprecation")
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
     chainUtil.initializeStorage();
 
@@ -101,6 +106,7 @@ public class NodeManager {
     return eth2P2PNetwork.connect(peerAddress);
   }
 
+  @SuppressWarnings("deprecation")
   public BeaconChainUtil chainUtil() {
     return chainUtil;
   }

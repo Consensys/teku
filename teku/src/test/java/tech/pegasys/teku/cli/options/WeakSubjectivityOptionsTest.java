@@ -21,13 +21,15 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void weakSubjectivityCheckpoint_shouldAcceptValue() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     final String checkpointParam = checkpoint.getRoot().toHexString() + ":" + checkpoint.getEpoch();
 
@@ -77,7 +79,8 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void weakSubjectivityCheckpoint_handleBadValue() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     final String checkpointParam = checkpoint.getRoot().toHexString() + ":";
     final String[] args = {"--ws-checkpoint", checkpointParam};
