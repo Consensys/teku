@@ -178,6 +178,7 @@ public class ForkChoiceIntegrationTest {
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(SPEC, storageClient, ExecutionEngineChannel.NOOP);
+    @SuppressWarnings("deprecation")
     ForkChoice forkChoice =
         new ForkChoice(
             SPEC,
