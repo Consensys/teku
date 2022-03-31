@@ -40,7 +40,7 @@ class MultipeerCommonAncestorFinderTest {
   private static final UInt64 FINALIZED_EPOCH = UInt64.valueOf(10);
   final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
+      new DataStructureUtil(spec);
   private final CommonAncestor commonAncestor = mock(CommonAncestor.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final InlineEventThread eventThread = new InlineEventThread();
