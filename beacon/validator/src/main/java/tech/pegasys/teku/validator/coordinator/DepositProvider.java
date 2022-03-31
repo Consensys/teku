@@ -98,7 +98,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     recentChainData
         .retrieveBlockState(checkpoint.getRoot())
         .thenAccept(
@@ -107,7 +108,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                 LOG.error("Finalized checkpoint state not found.");
                 return;
               }
-              final UInt64 depositIndex = finalizedState.get().getEth1_deposit_index();
+              final UInt64 depositIndex = finalizedState.get().getEth1DepositIndex();
               pruneDeposits(depositIndex);
             })
         .reportExceptions();
@@ -128,12 +129,12 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UInt64 eth1DepositCount;
     if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
-      eth1DepositCount = eth1Data.getDeposit_count();
+      eth1DepositCount = eth1Data.getDepositCount();
     } else {
-      eth1DepositCount = state.getEth1_data().getDeposit_count();
+      eth1DepositCount = state.getEth1Data().getDepositCount();
     }
 
-    UInt64 eth1DepositIndex = state.getEth1_deposit_index();
+    UInt64 eth1DepositIndex = state.getEth1DepositIndex();
 
     // We need to have all the deposits that can be included in the state available to ensure
     // the generated proofs are valid

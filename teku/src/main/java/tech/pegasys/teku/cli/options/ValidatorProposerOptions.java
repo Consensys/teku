@@ -13,38 +13,48 @@
 
 package tech.pegasys.teku.cli.options;
 
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorProposerOptions {
   @Option(
-      names = {"--Xvalidators-proposer-default-fee-recipient"},
+      names = {"--validators-proposer-default-fee-recipient"},
       paramLabel = "<ADDRESS>",
       description =
           "Default fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
-      arity = "0..1",
-      hidden = true)
+      arity = "0..1")
   private String proposerDefaultFeeRecipient = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-config"},
+      names = {"--validators-proposer-config"},
       paramLabel = "<STRING>",
       description = "remote URL or local file path to load proposer configuration from",
-      arity = "0..1",
-      hidden = true)
+      arity = "0..1")
   private String proposerConfig = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-config-refresh-enabled"},
+      names = {"--validators-proposer-config-refresh-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description =
           "Enable the proposer configuration reload on every proposer preparation (once per epoch)",
       arity = "0..1",
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private boolean proposerConfigRefreshEnabled =
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
+
+  @Option(
+      names = {"--Xvalidators-proposer-mev-boost-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable MEV boost when proposing blocks.",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private boolean proposerMevBoostEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
@@ -52,6 +62,7 @@ public class ValidatorProposerOptions {
             config
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
-                .refreshProposerConfigFromSource(proposerConfigRefreshEnabled));
+                .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
+                .proposerMevBoostEnabled(proposerMevBoostEnabled));
   }
 }

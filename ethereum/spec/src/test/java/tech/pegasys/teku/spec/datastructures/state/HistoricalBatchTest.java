@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
@@ -31,32 +31,32 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
 
-  private static final Spec spec = TestSpecFactory.createMainnetPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private static final Spec SPEC = TestSpecFactory.createMainnetPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   private final HistoricalBatchSchema schema =
-      spec.getGenesisSchemaDefinitions().getHistoricalBatchSchema();
+      SPEC.getGenesisSchemaDefinitions().getHistoricalBatchSchema();
 
   @Test
   void vectorLengthsTest() {
-    final int slotsPerHistoricalRoot = spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
-    List<Integer> vectorLengths = List.of(slotsPerHistoricalRoot, slotsPerHistoricalRoot);
+    final int slotsPerHistoricalRoot = SPEC.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
+    IntList vectorLengths = IntList.of(slotsPerHistoricalRoot, slotsPerHistoricalRoot);
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(schema));
   }
 
   @Test
   void roundTripViaSsz() {
-    SszMutableBytes32Vector block_roots =
+    SszMutableBytes32Vector blockRoots =
         schema.getBlockRootsSchema().getDefault().createWritableCopy();
-    SszMutableBytes32Vector state_roots =
+    SszMutableBytes32Vector stateRoots =
         schema.getStateRootsSchema().getDefault().createWritableCopy();
-    IntStream.range(0, spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot())
+    IntStream.range(0, SPEC.getGenesisSpecConfig().getSlotsPerHistoricalRoot())
         .forEach(
             i -> {
-              block_roots.setElement(i, dataStructureUtil.randomBytes32());
-              state_roots.setElement(i, dataStructureUtil.randomBytes32());
+              blockRoots.setElement(i, dataStructureUtil.randomBytes32());
+              stateRoots.setElement(i, dataStructureUtil.randomBytes32());
             });
-    HistoricalBatch batch = schema.create(block_roots, state_roots);
+    HistoricalBatch batch = schema.create(blockRoots, stateRoots);
     Bytes serialized = batch.sszSerialize();
     HistoricalBatch result = schema.sszDeserialize(serialized);
     assertEquals(batch, result);

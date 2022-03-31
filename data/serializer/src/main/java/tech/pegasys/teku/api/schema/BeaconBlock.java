@@ -20,12 +20,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlindedBlock;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 
-public class BeaconBlock implements UnsignedBlock {
+@SuppressWarnings("JavaCase")
+public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
 
@@ -82,8 +84,12 @@ public class BeaconBlock implements UnsignedBlock {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof BeaconBlock)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BeaconBlock)) {
+      return false;
+    }
     BeaconBlock that = (BeaconBlock) o;
     return Objects.equals(slot, that.slot)
         && Objects.equals(proposer_index, that.proposer_index)

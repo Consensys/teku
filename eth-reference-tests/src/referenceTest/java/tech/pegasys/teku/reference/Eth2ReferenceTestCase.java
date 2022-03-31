@@ -31,11 +31,10 @@ import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_generic.SszGenericTests;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
-import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutorDeprecated;
 
 public abstract class Eth2ReferenceTestCase {
 
-  private final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
+  private static final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(BlsTests.BLS_TEST_TYPES)
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
@@ -46,23 +45,22 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(SszGenericTests.SSZ_GENERIC_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
-          .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
           .put("merkle/single_proof", TestExecutor.IGNORE_TESTS)
           .build();
 
-  private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
+  private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
           .build();
 
-  private final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =
+  private static final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
-  private final ImmutableMap<String, TestExecutor> BELLATRIX_TEST_TYPES =
+  private static final ImmutableMap<String, TestExecutor> BELLATRIX_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)

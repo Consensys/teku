@@ -15,13 +15,8 @@ package tech.pegasys.teku.infrastructure.ssz.collections;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 
 public interface SszByteList extends SszPrimitiveList<Byte, SszByte> {
-
-  static SszByteList fromBytes(Bytes byteVector) {
-    return SszByteListSchema.create(byteVector.size()).fromBytes(byteVector);
-  }
 
   default Bytes getBytes() {
     byte[] data = new byte[size()];

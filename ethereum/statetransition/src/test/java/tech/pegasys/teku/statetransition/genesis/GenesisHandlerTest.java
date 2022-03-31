@@ -58,7 +58,7 @@ public class GenesisHandlerTest {
                 final DepositData data = initialDepositData.get(index);
                 return new Deposit(
                     data.getPubkey(),
-                    data.getWithdrawal_credentials(),
+                    data.getWithdrawalCredentials(),
                     data.getSignature(),
                     data.getAmount(),
                     UInt64.valueOf(index));

@@ -43,8 +43,8 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SigningRootUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -62,7 +62,7 @@ class LocalValidatorSourceTest {
   private static final String EXPECTED_PASSWORD = "testpassword";
   private static final Bytes32 BLS_PRIVATE_KEY =
       Bytes32.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
-  private static BLSPublicKey PBKDF2_PUBKEY =
+  private static final BLSPublicKey PBKDF2_PUBKEY =
       BLSPublicKey.fromSSZBytes(
           Bytes.fromHexString(
               "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07"));

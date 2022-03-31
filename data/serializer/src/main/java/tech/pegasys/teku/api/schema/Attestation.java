@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 
+@SuppressWarnings("JavaCase")
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
   public final Bytes aggregation_bits;
@@ -67,8 +68,12 @@ public class Attestation {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Attestation)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Attestation)) {
+      return false;
+    }
     Attestation that = (Attestation) o;
     return Objects.equals(aggregation_bits, that.aggregation_bits)
         && Objects.equals(data, that.data)

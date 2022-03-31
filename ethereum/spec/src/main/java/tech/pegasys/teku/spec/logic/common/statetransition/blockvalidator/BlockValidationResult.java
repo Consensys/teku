@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 
 /** Represents block validation result which may contain reason exception in case of a failure */
 public class BlockValidationResult {
-  public static BlockValidationResult SUCCESSFUL = new BlockValidationResult(true);
+  public static final BlockValidationResult SUCCESSFUL = new BlockValidationResult(true);
 
   private final boolean isValid;
   private final String failureReason;

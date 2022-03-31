@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
@@ -92,7 +92,7 @@ public abstract class AbstractSyncTest {
 
   protected PeerStatus withPeerHeadSlot(
       final UInt64 peerHeadSlot, final UInt64 peerFinalizedEpoch, final Bytes32 peerHeadBlockRoot) {
-    final PeerStatus peer_status =
+    final PeerStatus peerStatus =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
                 Bytes4.leftPad(Bytes.EMPTY),
@@ -101,7 +101,7 @@ public abstract class AbstractSyncTest {
                 peerHeadBlockRoot,
                 peerHeadSlot));
 
-    when(peer.getStatus()).thenReturn(peer_status);
-    return peer_status;
+    when(peer.getStatus()).thenReturn(peerStatus);
+    return peerStatus;
   }
 }

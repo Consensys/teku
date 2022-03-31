@@ -34,7 +34,7 @@ class BlstPublicKey implements PublicKey {
               + "00000000000000000000000000000000"
               + "00000000000000000000000000000000");
 
-  private static final BlstPublicKey infinitePublicKey = fromBytes(INFINITY_COMPRESSED_BYTES);
+  private static final BlstPublicKey INFINITE_PUBLIC_KEY = fromBytes(INFINITY_COMPRESSED_BYTES);
 
   public static BlstPublicKey fromBytes(Bytes48 compressed) {
     try {
@@ -61,7 +61,7 @@ class BlstPublicKey implements PublicKey {
     if (maybeInvalidPubkey.isPresent()) {
       // Points not in the group and the point at infinity are not valid public keys. Aggregating
       // with other points should result in a non-valid pubkey, the point at infinity.
-      return infinitePublicKey;
+      return INFINITE_PUBLIC_KEY;
     }
 
     // At this point, we know that the public keys are in the G1 group, so we use `blst.P1.add()`

@@ -20,6 +20,7 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
@@ -39,6 +40,11 @@ public class NoOpKeyManager implements KeyManager {
   public DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath) {
     return new DeleteKeysResponse(Collections.emptyList(), "");
+  }
+
+  @Override
+  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
+    return new DeleteRemoteKeysResponse(Collections.emptyList());
   }
 
   @Override

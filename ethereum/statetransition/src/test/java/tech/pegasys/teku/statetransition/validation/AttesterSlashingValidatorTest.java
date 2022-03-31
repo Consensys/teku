@@ -67,7 +67,7 @@ public class AttesterSlashingValidatorTest {
   public void shouldIgnoreAttesterSlashingForTheSameAttesters() {
     AttesterSlashing slashing1 = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing slashing2 =
-        slashing1.getSchema().create(slashing1.getAttestation_1(), slashing1.getAttestation_2());
+        slashing1.getSchema().create(slashing1.getAttestation1(), slashing1.getAttestation2());
     when(mockSpec.validateAttesterSlashing(eq(bestState), any())).thenReturn(Optional.empty());
     assertThat(attesterSlashingValidator.validateFully(slashing1))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);

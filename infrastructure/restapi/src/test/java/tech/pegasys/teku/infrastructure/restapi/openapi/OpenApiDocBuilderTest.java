@@ -16,17 +16,17 @@ package tech.pegasys.teku.infrastructure.restapi.openapi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
-import static tech.pegasys.teku.infrastructure.restapi.JsonTestUtil.getObject;
-import static tech.pegasys.teku.infrastructure.restapi.JsonTestUtil.parse;
+import static tech.pegasys.teku.infrastructure.json.JsonTestUtil.getObject;
+import static tech.pegasys.teku.infrastructure.json.JsonTestUtil.parse;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 
 class OpenApiDocBuilderTest {
 
@@ -170,7 +170,7 @@ class OpenApiDocBuilderTest {
   private RestApiEndpoint endpoint(final EndpointMetadata metadata) {
     return new RestApiEndpoint(metadata) {
       @Override
-      public void handle(final RestApiRequest request) {}
+      public void handleRequest(final RestApiRequest request) {}
     };
   }
 }

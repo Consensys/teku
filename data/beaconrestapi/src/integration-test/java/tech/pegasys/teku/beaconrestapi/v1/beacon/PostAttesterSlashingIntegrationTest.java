@@ -59,7 +59,7 @@ public class PostAttesterSlashingIntegrationTest extends AbstractDataBackedRestA
 
     final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
 
-    doThrow(new RuntimeException()).when(attesterSlashingPool).add(slashing);
+    doThrow(new RuntimeException()).when(attesterSlashingPool).addLocal(slashing);
 
     Response response = post(PostAttesterSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
     assertThat(response.code()).isEqualTo(500);
@@ -72,12 +72,12 @@ public class PostAttesterSlashingIntegrationTest extends AbstractDataBackedRestA
 
     final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
 
-    when(attesterSlashingPool.add(slashing))
+    when(attesterSlashingPool.addLocal(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     Response response = post(PostAttesterSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
 
-    verify(attesterSlashingPool).add(slashing);
+    verify(attesterSlashingPool).addLocal(slashing);
 
     assertThat(response.code()).isEqualTo(200);
   }

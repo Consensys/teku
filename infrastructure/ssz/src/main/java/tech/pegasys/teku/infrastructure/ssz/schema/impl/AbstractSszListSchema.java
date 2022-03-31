@@ -19,6 +19,8 @@ import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -47,6 +49,7 @@ public abstract class AbstractSszListSchema<
     implements SszListSchema<ElementDataT, SszListT> {
   private final SszVectorSchemaImpl<ElementDataT> compatibleVectorSchema;
   private final SszLengthBounds sszLengthBounds;
+  private final DeserializableTypeDefinition<SszListT> jsonTypeDefinition;
 
   protected AbstractSszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
     this(elementSchema, maxLength, SszSchemaHints.none());
@@ -58,6 +61,9 @@ public abstract class AbstractSszListSchema<
     this.compatibleVectorSchema =
         new SszVectorSchemaImpl<>(elementSchema, getMaxLength(), true, getHints());
     this.sszLengthBounds = computeSszLengthBounds(elementSchema, maxLength);
+    this.jsonTypeDefinition =
+        new DeserializableArrayTypeDefinition<>(
+            getElementSchema().getJsonTypeDefinition(), this::createFromElements);
   }
 
   @Override
@@ -309,6 +315,11 @@ public abstract class AbstractSszListSchema<
     return maxLenBounds
         .addBits(elementSchema == SszPrimitiveSchemas.BIT_SCHEMA ? 1 : 0)
         .ceilToBytes();
+  }
+
+  @Override
+  public DeserializableTypeDefinition<SszListT> getJsonTypeDefinition() {
+    return jsonTypeDefinition;
   }
 
   @Override

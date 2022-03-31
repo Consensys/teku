@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.state;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.spec.Spec;
 
 public class ForkInfo {
@@ -37,7 +37,7 @@ public class ForkInfo {
   }
 
   public Bytes4 getForkDigest(final Spec spec) {
-    return spec.computeForkDigest(fork.getCurrent_version(), genesisValidatorsRoot);
+    return spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
   }
 
   /**

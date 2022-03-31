@@ -37,8 +37,8 @@ import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -78,12 +78,12 @@ class ForkChoiceNotifierTest {
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach

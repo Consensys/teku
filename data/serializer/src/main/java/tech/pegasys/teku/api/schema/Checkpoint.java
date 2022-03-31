@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Checkpoint {
-  public static Checkpoint EMPTY = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+  public static final Checkpoint EMPTY = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
 
   @Schema(type = "string", format = "uint64")
   public final UInt64 epoch;
@@ -50,8 +50,12 @@ public class Checkpoint {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Checkpoint)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Checkpoint)) {
+      return false;
+    }
     Checkpoint that = (Checkpoint) o;
     return Objects.equal(epoch, that.epoch) && Objects.equal(root, that.root);
   }

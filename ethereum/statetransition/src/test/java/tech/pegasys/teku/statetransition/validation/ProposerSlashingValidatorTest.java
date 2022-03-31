@@ -102,7 +102,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 =
-        new ProposerSlashing(slashing1.getHeader_1(), slashing1.getHeader_2());
+        new ProposerSlashing(slashing1.getHeader1(), slashing1.getHeader2());
     when(mockSpec.validateProposerSlashing(eq(getBestState()), any())).thenReturn(Optional.empty());
     when(mockSpec.verifyProposerSlashingSignature(
             eq(getBestState()), any(), eq(BLSSignatureVerifier.SIMPLE)))

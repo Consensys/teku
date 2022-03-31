@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
+@SuppressWarnings("JavaCase")
 public class SyncStateChangeEvent {
   @JsonProperty("sync_state")
   public final String sync_state;
@@ -28,8 +29,12 @@ public class SyncStateChangeEvent {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof SyncStateChangeEvent)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SyncStateChangeEvent)) {
+      return false;
+    }
     SyncStateChangeEvent that = (SyncStateChangeEvent) o;
     return Objects.equals(sync_state, that.sync_state);
   }

@@ -46,20 +46,20 @@ class LevelDbInstanceTest {
 
   private static final IntSerializer INT_SERIALIZER = new IntSerializer();
 
-  private static final KvStoreVariable<Integer> variable1 =
+  private static final KvStoreVariable<Integer> VARIABLE_1 =
       KvStoreVariable.create(0, INT_SERIALIZER);
-  private static final KvStoreVariable<Integer> variable2 =
+  private static final KvStoreVariable<Integer> VARIABLE_2 =
       KvStoreVariable.create(1, INT_SERIALIZER);
-  private static final KvStoreVariable<UInt64> variable3 =
+  private static final KvStoreVariable<UInt64> VARIABLE_3 =
       KvStoreVariable.create(2, UINT64_SERIALIZER);
 
-  private static final KvStoreColumn<Integer, Integer> column1 =
+  private static final KvStoreColumn<Integer, Integer> COLUMN_1 =
       KvStoreColumn.create(1, INT_SERIALIZER, INT_SERIALIZER);
-  private static final KvStoreColumn<Integer, Integer> column2 =
+  private static final KvStoreColumn<Integer, Integer> COLUMN_2 =
       KvStoreColumn.create(2, INT_SERIALIZER, INT_SERIALIZER);
-  private static final KvStoreColumn<Integer, Integer> column3 =
+  private static final KvStoreColumn<Integer, Integer> COLUMN_3 =
       KvStoreColumn.create(3, INT_SERIALIZER, INT_SERIALIZER);
-  private static final KvStoreColumn<UInt64, UInt64> column4 =
+  private static final KvStoreColumn<UInt64, UInt64> COLUMN_4 =
       KvStoreColumn.create(4, UINT64_SERIALIZER, UINT64_SERIALIZER);
 
   private KvStoreAccessor instance;
@@ -78,7 +78,7 @@ class LevelDbInstanceTest {
             new NoOpMetricsSystem(),
             TekuMetricCategory.STORAGE,
             KvStoreConfiguration.v6SingleDefaults().withDatabaseDir(tempDir),
-            List.of(column1, column2, column3));
+            List.of(COLUMN_1, COLUMN_2, COLUMN_3));
   }
 
   @AfterEach
@@ -89,37 +89,37 @@ class LevelDbInstanceTest {
   @Test
   void shouldStoreAndLoadSimpleKey() {
     try (final KvStoreTransaction update = instance.startTransaction()) {
-      update.put(column1, 0, 0);
-      update.put(column1, 1, 1);
-      update.put(column2, 1, 2);
-      update.put(column3, 0, 3);
+      update.put(COLUMN_1, 0, 0);
+      update.put(COLUMN_1, 1, 1);
+      update.put(COLUMN_2, 1, 2);
+      update.put(COLUMN_3, 0, 3);
       update.commit();
     }
 
-    assertThat(instance.get(column1, 0)).contains(0);
-    assertThat(instance.get(column1, 1)).contains(1);
-    assertThat(instance.get(column1, 2)).isEmpty();
+    assertThat(instance.get(COLUMN_1, 0)).contains(0);
+    assertThat(instance.get(COLUMN_1, 1)).contains(1);
+    assertThat(instance.get(COLUMN_1, 2)).isEmpty();
 
-    assertThat(instance.get(column2, 0)).isEmpty();
-    assertThat(instance.get(column2, 1)).contains(2);
+    assertThat(instance.get(COLUMN_2, 0)).isEmpty();
+    assertThat(instance.get(COLUMN_2, 1)).contains(2);
 
-    assertThat(instance.get(column3, 0)).contains(3);
-    assertThat(instance.get(column3, 1)).isEmpty();
+    assertThat(instance.get(COLUMN_3, 0)).contains(3);
+    assertThat(instance.get(COLUMN_3, 1)).isEmpty();
   }
 
   @Test
   void shouldStoreAndLoadVariables() {
-    assertThat(instance.get(variable1)).isEmpty();
-    assertThat(instance.get(variable2)).isEmpty();
+    assertThat(instance.get(VARIABLE_1)).isEmpty();
+    assertThat(instance.get(VARIABLE_2)).isEmpty();
 
     try (final KvStoreTransaction update = instance.startTransaction()) {
-      update.put(variable1, 0);
-      update.put(variable2, 1);
+      update.put(VARIABLE_1, 0);
+      update.put(VARIABLE_2, 1);
       update.commit();
     }
 
-    assertThat(instance.get(variable1)).contains(0);
-    assertThat(instance.get(variable2)).contains(1);
+    assertThat(instance.get(VARIABLE_1)).contains(0);
+    assertThat(instance.get(VARIABLE_2)).contains(1);
   }
 
   @Test
@@ -127,11 +127,11 @@ class LevelDbInstanceTest {
     update(
         tx -> {
           for (int i = 0; i < 10; i++) {
-            tx.put(column1, i, i);
+            tx.put(COLUMN_1, i, i);
           }
         });
 
-    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(column1, 2, 8)) {
+    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(COLUMN_1, 2, 8)) {
       assertThat(stream)
           .containsExactly(
               ColumnEntry.create(2, 2),
@@ -149,11 +149,11 @@ class LevelDbInstanceTest {
     update(
         tx -> {
           for (int i = 0; i < 10; i++) {
-            tx.put(column1, i, i);
+            tx.put(COLUMN_1, i, i);
           }
         });
 
-    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(column1, 0, 9)) {
+    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(COLUMN_1, 0, 9)) {
       assertThat(stream)
           .containsExactly(
               ColumnEntry.create(0, 0),
@@ -174,11 +174,11 @@ class LevelDbInstanceTest {
     update(
         tx -> {
           for (int i = 2; i < 8; i++) {
-            tx.put(column1, i, i);
+            tx.put(COLUMN_1, i, i);
           }
         });
 
-    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(column1, 0, 10)) {
+    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(COLUMN_1, 0, 10)) {
       assertThat(stream)
           .containsExactly(
               ColumnEntry.create(2, 2),
@@ -194,18 +194,18 @@ class LevelDbInstanceTest {
   void stream_includeAllValuesFromMiddleColumn_startAndEndBeyondRange() {
     update(
         tx -> {
-          tx.put(column1, 5, 5);
-          tx.put(column1, 6, 6);
+          tx.put(COLUMN_1, 5, 5);
+          tx.put(COLUMN_1, 6, 6);
           for (int i = 2; i < 8; i++) {
-            tx.put(column2, i, i);
+            tx.put(COLUMN_2, i, i);
           }
-          tx.put(column3, 0, 0);
-          tx.put(column3, 8, 8);
-          tx.put(variable1, 6);
-          tx.put(variable2, 7);
+          tx.put(COLUMN_3, 0, 0);
+          tx.put(COLUMN_3, 8, 8);
+          tx.put(VARIABLE_1, 6);
+          tx.put(VARIABLE_2, 7);
         });
 
-    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(column2, 0, 10)) {
+    try (final Stream<ColumnEntry<Integer, Integer>> stream = instance.stream(COLUMN_2, 0, 10)) {
       assertThat(stream)
           .containsExactly(
               ColumnEntry.create(2, 2),
@@ -222,7 +222,7 @@ class LevelDbInstanceTest {
     update(
         tx -> {
           for (int i = 499; i <= 655; i++) {
-            tx.put(column4, UInt64.valueOf(i), UInt64.valueOf(i));
+            tx.put(COLUMN_4, UInt64.valueOf(i), UInt64.valueOf(i));
           }
         });
 
@@ -235,7 +235,7 @@ class LevelDbInstanceTest {
             .mapToObj(UInt64::valueOf)
             .collect(toList());
     try (final Stream<ColumnEntry<UInt64, UInt64>> stream =
-        instance.stream(column4, UInt64.valueOf(startInclusive), UInt64.valueOf(endInclusive))) {
+        instance.stream(COLUMN_4, UInt64.valueOf(startInclusive), UInt64.valueOf(endInclusive))) {
       assertThat(stream.map(ColumnEntry::getKey)).containsExactlyElementsOf(expectedKeys);
     }
   }
@@ -245,9 +245,9 @@ class LevelDbInstanceTest {
     // random data is fine, but must not have signed bit set because of the 'valueOf' logic
     final Bytes byteData = Bytes.random(8).and(Bytes.fromHexString("0x7FFFFFFFFFFFFFFF"));
     final UInt64 data = UInt64.valueOf(byteData.toLong());
-    update(tx -> tx.putRaw(variable3, byteData));
-    assertThat(instance.get(variable3)).contains(data);
-    assertThat(instance.getRaw(variable3)).contains(byteData);
+    update(tx -> tx.putRaw(VARIABLE_3, byteData));
+    assertThat(instance.get(VARIABLE_3)).contains(data);
+    assertThat(instance.getRaw(VARIABLE_3)).contains(byteData);
   }
 
   @Test
@@ -255,10 +255,10 @@ class LevelDbInstanceTest {
     // random data is fine, but must not have signed bit set because of the 'valueOf' logic
     final Bytes byteData = Bytes.random(8).and(Bytes.fromHexString("0x7FFFFFFFFFFFFFFF"));
     final UInt64 data = UInt64.valueOf(byteData.toLong());
-    update(tx -> tx.put(column4, UInt64.ZERO, data));
+    update(tx -> tx.put(COLUMN_4, UInt64.ZERO, data));
 
-    assertThat(instance.get(column4, UInt64.ZERO)).contains(data);
-    try (final Stream<ColumnEntry<Bytes, Bytes>> stream = instance.streamRaw(column4)) {
+    assertThat(instance.get(COLUMN_4, UInt64.ZERO)).contains(data);
+    try (final Stream<ColumnEntry<Bytes, Bytes>> stream = instance.streamRaw(COLUMN_4)) {
       assertThat(stream)
           .containsExactly(ColumnEntry.create(Bytes.fromHexString("0x0000000000000000"), byteData));
     }
@@ -268,74 +268,74 @@ class LevelDbInstanceTest {
   void getFloorEntry_shouldGetMatchingEntryWhenKeyExists() {
     update(
         tx -> {
-          tx.put(column1, 1, 1);
-          tx.put(column1, 2, 2);
-          tx.put(column1, 3, 3);
-          tx.put(column1, 4, 4);
+          tx.put(COLUMN_1, 1, 1);
+          tx.put(COLUMN_1, 2, 2);
+          tx.put(COLUMN_1, 3, 3);
+          tx.put(COLUMN_1, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 3)).contains(ColumnEntry.create(3, 3));
+    assertThat(instance.getFloorEntry(COLUMN_1, 3)).contains(ColumnEntry.create(3, 3));
   }
 
   @Test
   void getFloorEntry_shouldGetClosestPriorEntryWhenKeyDoesNotExist() {
     update(
         tx -> {
-          tx.put(column1, 1, 1);
-          tx.put(column1, 4, 4);
+          tx.put(COLUMN_1, 1, 1);
+          tx.put(COLUMN_1, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 3)).contains(ColumnEntry.create(1, 1));
+    assertThat(instance.getFloorEntry(COLUMN_1, 3)).contains(ColumnEntry.create(1, 1));
   }
 
   @Test
   void getFloorEntry_shouldBeEmptyWhenNoPriorKey() {
     update(
         tx -> {
-          tx.put(column1, 3, 3);
-          tx.put(column1, 4, 4);
+          tx.put(COLUMN_1, 3, 3);
+          tx.put(COLUMN_1, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 2)).isEmpty();
+    assertThat(instance.getFloorEntry(COLUMN_1, 2)).isEmpty();
   }
 
   @Test
   void getFloorEntry_shouldBeEmptyWhenNoPriorKeyInColumn() {
     update(
         tx -> {
-          tx.put(column1, 1, 1);
-          tx.put(column1, 4, 4);
+          tx.put(COLUMN_1, 1, 1);
+          tx.put(COLUMN_1, 4, 4);
 
-          tx.put(column2, 3, 3);
-          tx.put(column2, 4, 4);
+          tx.put(COLUMN_2, 3, 3);
+          tx.put(COLUMN_2, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column2, 2)).isEmpty();
+    assertThat(instance.getFloorEntry(COLUMN_2, 2)).isEmpty();
   }
 
   @Test
   void getFloorEntry_shouldBeEmptyWhenKeyAfterLastEntryInColumn() {
     update(
         tx -> {
-          tx.put(column1, 1, 1);
-          tx.put(column1, 4, 4);
+          tx.put(COLUMN_1, 1, 1);
+          tx.put(COLUMN_1, 4, 4);
 
-          tx.put(column2, 3, 3);
-          tx.put(column2, 4, 4);
+          tx.put(COLUMN_2, 3, 3);
+          tx.put(COLUMN_2, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4, 4));
+    assertThat(instance.getFloorEntry(COLUMN_1, 5)).contains(ColumnEntry.create(4, 4));
   }
 
   @Test
   void getFloorEntry_shouldBeEmptyWhenKeyAfterLastEntryInDatabase() {
     update(
         tx -> {
-          tx.put(column1, 1, 1);
-          tx.put(column1, 4, 4);
+          tx.put(COLUMN_1, 1, 1);
+          tx.put(COLUMN_1, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4, 4));
+    assertThat(instance.getFloorEntry(COLUMN_1, 5)).contains(ColumnEntry.create(4, 4));
   }
 
   private void update(final Consumer<KvStoreTransaction> updater) {

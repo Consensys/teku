@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -128,7 +128,7 @@ public class ChainUpdater {
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setFinalizedCheckpoint(checkpoint);
+    tx.setFinalizedCheckpoint(checkpoint, false);
     assertThat(tx.commit()).isDone();
 
     return blockAndState;
@@ -152,7 +152,7 @@ public class ChainUpdater {
       saveBlock(newChainHead);
       updateBestBlock(newChainHead);
     }
-    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalizedCheckpoint();
     assertThat(finalizedCheckpoint.getEpoch())
         .describedAs("Failed to finalize epoch %s", finalizeEpoch)
         .isEqualTo(finalizeEpoch);
@@ -191,16 +191,16 @@ public class ChainUpdater {
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    final Checkpoint justifiedCheckpoint = bestBlock.getState().getCurrent_justified_checkpoint();
+    final Checkpoint justifiedCheckpoint = bestBlock.getState().getCurrentJustifiedCheckpoint();
     if (justifiedCheckpoint
         .getEpoch()
         .isGreaterThan(recentChainData.getJustifiedCheckpoint().orElseThrow().getEpoch())) {
       tx.setJustifiedCheckpoint(justifiedCheckpoint);
       tx.setBestJustifiedCheckpoint(justifiedCheckpoint);
     }
-    final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalizedCheckpoint();
     if (finalizedCheckpoint.getEpoch().isGreaterThan(recentChainData.getFinalizedEpoch())) {
-      tx.setFinalizedCheckpoint(finalizedCheckpoint);
+      tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     }
     assertThat(tx.commit()).isCompleted();
   }

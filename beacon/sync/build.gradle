@@ -25,6 +25,7 @@ dependencies {
     testImplementation project(':ethereum:weaksubjectivity')
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:time'))
+    testImplementation testFixtures(project(':infrastructure:metrics'))
     testImplementation testFixtures(project('::networking:eth2'))
     testImplementation testFixtures(project('::networking:p2p'))
     testImplementation 'org.hyperledger.besu.internal:metrics-core'
@@ -35,6 +36,7 @@ dependencies {
     integrationTestImplementation testFixtures(project(':beacon:sync'))
 
     testFixturesImplementation project(':infrastructure:serviceutils')
+    testFixturesImplementation project(':infrastructure:metrics')
     testFixturesImplementation project(':ethereum:statetransition')
     testFixturesImplementation project(':ethereum:weaksubjectivity')
 
@@ -48,6 +50,7 @@ dependencies {
     testFixturesImplementation testFixtures(project('::networking:eth2'))
     testFixturesImplementation testFixtures(project('::networking:p2p'))
     testFixturesImplementation testFixtures(project('::infrastructure:events'))
+    testFixturesImplementation testFixtures(project(':infrastructure:logging'))
 
     testFixturesImplementation 'org.mockito:mockito-core'
     testFixturesImplementation 'org.hyperledger.besu:plugin-api'

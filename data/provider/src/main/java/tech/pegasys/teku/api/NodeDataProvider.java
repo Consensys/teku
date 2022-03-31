@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -116,18 +116,18 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
-    return voluntaryExitPool.add(exit.asInternalSignedVoluntaryExit());
+    return voluntaryExitPool.addLocal(exit.asInternalSignedVoluntaryExit());
   }
 
   public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
-    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing(spec));
+    return attesterSlashingPool.addLocal(slashing.asInternalAttesterSlashing(spec));
   }
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
-    return proposerSlashingPool.add(slashing.asInternalProposerSlashing());
+    return proposerSlashingPool.addLocal(slashing.asInternalProposerSlashing());
   }
 
-  public void subscribeToReceivedBlocks(ReceivedBlockListener listener) {
+  public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 

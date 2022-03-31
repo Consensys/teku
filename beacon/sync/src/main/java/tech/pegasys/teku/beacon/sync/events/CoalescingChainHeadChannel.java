@@ -41,6 +41,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
@@ -59,6 +60,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
           stateRoot,
           bestBlockRoot,
           epochTransition,
+          executionOptimistic,
           previousDutyDependentRoot,
           currentDutyDependentRoot,
           optionalReorgContext);
@@ -72,6 +74,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                           stateRoot,
                           bestBlockRoot,
                           epochTransition,
+                          executionOptimistic,
                           previousDutyDependentRoot,
                           currentDutyDependentRoot,
                           optionalReorgContext))
@@ -83,6 +86,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                               stateRoot,
                               bestBlockRoot,
                               epochTransition,
+                              executionOptimistic,
                               previousDutyDependentRoot,
                               currentDutyDependentRoot,
                               optionalReorgContext)));
@@ -103,6 +107,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     private Bytes32 stateRoot;
     private Bytes32 bestBlockRoot;
     private boolean epochTransition;
+    private boolean executionOptimistic;
     private Bytes32 previousDutyDependentRoot;
     private Bytes32 currentDutyDependentRoot;
     private Optional<ReorgContext> reorgContext;
@@ -112,6 +117,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final boolean executionOptimistic,
         final Bytes32 previousDutyDependentRoot,
         final Bytes32 currentDutyDependentRoot,
         final Optional<ReorgContext> reorgContext) {
@@ -119,6 +125,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       this.stateRoot = stateRoot;
       this.bestBlockRoot = bestBlockRoot;
       this.epochTransition = epochTransition;
+      this.executionOptimistic = executionOptimistic;
       this.previousDutyDependentRoot = previousDutyDependentRoot;
       this.currentDutyDependentRoot = currentDutyDependentRoot;
       this.reorgContext = reorgContext;
@@ -130,6 +137,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
           stateRoot,
           bestBlockRoot,
           epochTransition,
+          executionOptimistic,
           previousDutyDependentRoot,
           currentDutyDependentRoot,
           reorgContext);
@@ -140,6 +148,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final boolean executionOptimistic,
         final Bytes32 previousDutyDependentRoot,
         final Bytes32 currentDutyDependentRoot,
         final Optional<ReorgContext> reorgContext) {
@@ -149,6 +158,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       if (epochTransition) {
         this.epochTransition = true;
       }
+      this.executionOptimistic = executionOptimistic;
       this.previousDutyDependentRoot = previousDutyDependentRoot;
       this.currentDutyDependentRoot = currentDutyDependentRoot;
       if (reorgContext.isPresent() && hasEarlierCommonAncestor(reorgContext)) {

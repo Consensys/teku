@@ -21,9 +21,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class Fork {
   @Schema(type = "string", pattern = PATTERN_BYTES4, description = DESCRIPTION_BYTES4)
   public Bytes4 previous_version;
@@ -45,8 +46,8 @@ public class Fork {
   }
 
   public Fork(final tech.pegasys.teku.spec.datastructures.state.Fork fork) {
-    this.previous_version = fork.getPrevious_version();
-    this.current_version = fork.getCurrent_version();
+    this.previous_version = fork.getPreviousVersion();
+    this.current_version = fork.getCurrentVersion();
     this.epoch = fork.getEpoch();
   }
 
@@ -57,8 +58,12 @@ public class Fork {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Fork fork = (Fork) o;
     return Objects.equals(previous_version, fork.previous_version)
         && Objects.equals(current_version, fork.current_version)

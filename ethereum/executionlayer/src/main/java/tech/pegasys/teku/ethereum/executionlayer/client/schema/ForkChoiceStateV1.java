@@ -59,8 +59,12 @@ public class ForkChoiceStateV1 {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ForkChoiceStateV1 that = (ForkChoiceStateV1) o;
     return Objects.equals(headBlockHash, that.headBlockHash)
         && Objects.equals(safeBlockHash, that.safeBlockHash)

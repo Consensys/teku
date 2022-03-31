@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
-public enum BlockBodyFields {
+import java.util.Locale;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
+
+public enum BlockBodyFields implements SszFieldName {
   RANDAO_REVEAL,
   ETH1_DATA,
   GRAFFITI,
@@ -23,5 +26,17 @@ public enum BlockBodyFields {
   DEPOSITS,
   VOLUNTARY_EXITS,
   SYNC_AGGREGATE,
-  EXECUTION_PAYLOAD
+  EXECUTION_PAYLOAD,
+  EXECUTION_PAYLOAD_HEADER;
+
+  private final String sszFieldName;
+
+  BlockBodyFields() {
+    this.sszFieldName = name().toLowerCase(Locale.ROOT);
+  }
+
+  @Override
+  public String getSszFieldName() {
+    return sszFieldName;
+  }
 }

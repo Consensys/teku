@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ListQueryParameterUtils {
   public static final String MISSING_QUERY_PARAMETER = "Query parameter %s not found";
-  public static final Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
+  public static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
   private static List<String> validateQueryParameter(
       final Map<String, List<String>> parameterMap, final String key)
@@ -43,6 +43,6 @@ public class ListQueryParameterUtils {
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     final String list = String.join(",", validateQueryParameter(parameterMap, key));
-    return splitter.splitToStream(list).distinct().map(String::trim).collect(Collectors.toList());
+    return SPLITTER.splitToStream(list).distinct().map(String::trim).collect(Collectors.toList());
   }
 }

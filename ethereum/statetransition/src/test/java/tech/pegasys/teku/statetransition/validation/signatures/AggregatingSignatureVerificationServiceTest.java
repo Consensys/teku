@@ -16,6 +16,10 @@ package tech.pegasys.teku.statetransition.validation.signatures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import it.unimi.dsi.fastutil.booleans.BooleanList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +44,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService.SignatureTask;
 
 public class AggregatingSignatureVerificationServiceTest {
-  private static List<BLSKeyPair> KEYS = BLSKeyGenerator.generateKeyPairs(50);
+  private static List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(50);
 
   private final int queueCapacity = 50;
   private final int batchSize = 25;
@@ -133,8 +137,8 @@ public class AggregatingSignatureVerificationServiceTest {
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
     for (int i = 0; i < batchSize; i += 5) {
-      final List<Integer> indices = new ArrayList<>();
-      final List<Boolean> useValidSignatures = new ArrayList<>();
+      final IntList indices = new IntArrayList();
+      final BooleanList useValidSignatures = new BooleanArrayList();
       for (int j = 0; j < 5; j++) {
         useValidSignatures.add(true);
         indices.add(i);
@@ -157,8 +161,8 @@ public class AggregatingSignatureVerificationServiceTest {
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
     for (int i = 0; i < batchSize; i += 5) {
-      final List<Integer> indices = new ArrayList<>();
-      final List<Boolean> useValidSignatures = new ArrayList<>();
+      final IntList indices = new IntArrayList();
+      final BooleanList useValidSignatures = new BooleanArrayList();
       // batch 1 contains i: 5-9, and the second signature will be invalid
       for (int j = 0; j < 5; j++) {
         useValidSignatures.add(i != 5 || j != 1);
@@ -362,7 +366,7 @@ public class AggregatingSignatureVerificationServiceTest {
 
   private SafeFuture<Boolean> executeVerify(
       final int keypairIndex, final int data, final boolean useValidSignature) {
-    final BLSKeyPair keypair = KEYS.get(keypairIndex);
+    final BLSKeyPair keypair = keys.get(keypairIndex);
     final Bytes message = Bytes.of(data);
     final BLSSignature signature =
         useValidSignature ? BLS.sign(keypair.getSecretKey(), message) : BLSSignature.empty();
@@ -370,18 +374,16 @@ public class AggregatingSignatureVerificationServiceTest {
   }
 
   private SafeFuture<Boolean> executeListVerify(
-      final List<Integer> keyIndices,
-      final List<Integer> data,
-      final List<Boolean> useValidSignatures) {
+      final IntList keyIndices, final IntList data, final BooleanList useValidSignatures) {
     final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
     final List<Bytes> messages = new ArrayList<>();
     final List<BLSSignature> signatures = new ArrayList<>();
     for (int i = 0; i < keyIndices.size(); i++) {
-      publicKeys.add(List.of(KEYS.get(i).getPublicKey()));
-      messages.add(Bytes.of(data.get(i)));
+      publicKeys.add(List.of(keys.get(i).getPublicKey()));
+      messages.add(Bytes.of(data.getInt(i)));
       signatures.add(
-          useValidSignatures.get(i)
-              ? BLS.sign(KEYS.get(i).getSecretKey(), messages.get(i))
+          useValidSignatures.getBoolean(i)
+              ? BLS.sign(keys.get(i).getSecretKey(), messages.get(i))
               : BLSSignature.empty());
     }
     return service.verify(publicKeys, messages, signatures);

@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -49,7 +49,7 @@ public class BeaconStateTestBuilder {
 
   public BeaconStateTestBuilder validator(final Validator validator) {
     validators.add(validator);
-    balances.add(validator.getEffective_balance());
+    balances.add(validator.getEffectiveBalance());
     return this;
   }
 
@@ -57,9 +57,9 @@ public class BeaconStateTestBuilder {
     validators.add(
         dataStructureUtil
             .randomValidator()
-            .withEffective_balance(effectiveBalance)
-            .withActivation_epoch(UInt64.ZERO)
-            .withExit_epoch(FAR_FUTURE_EPOCH));
+            .withEffectiveBalance(effectiveBalance)
+            .withActivationEpoch(UInt64.ZERO)
+            .withExitEpoch(FAR_FUTURE_EPOCH));
     return this;
   }
 

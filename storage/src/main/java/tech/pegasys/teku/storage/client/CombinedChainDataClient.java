@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -38,8 +38,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -169,6 +172,26 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
+      final UInt64 slot, final Bytes32 chainHead) {
+    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot, chainHead);
+    if (recentBlockRoot.isPresent()) {
+      return getStore()
+          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .thenCompose(
+              maybeState ->
+                  maybeState.isPresent()
+                      ? SafeFuture.completedFuture(maybeState)
+                      // Check if we can get it from historical state
+                      : regenerateStateAndSlotExact(slot));
+    }
+    if (isFinalized(slot)) {
+      return regenerateStateAndSlotExact(slot);
+    } else {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+  }
+
   private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {
     return getBlockAndStateInEffectAtSlot(slot)
         .thenApplyChecked(
@@ -271,6 +294,7 @@ public class CombinedChainDataClient {
       LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
       return STATE_NOT_AVAILABLE;
     }
+
     return historicalChainData
         .getSlotAndBlockRootByStateRoot(stateRoot)
         .thenCompose(
@@ -347,6 +371,10 @@ public class CombinedChainDataClient {
 
   public Optional<ChainHead> getChainHead() {
     return recentChainData.getChainHead();
+  }
+
+  public boolean isChainHeadOptimistic() {
+    return recentChainData.isChainHeadOptimistic();
   }
 
   public boolean isStoreAvailable() {
@@ -439,16 +467,6 @@ public class CombinedChainDataClient {
     return slot.compareTo(finalizedSlot) >= 0;
   }
 
-  public SafeFuture<Optional<UInt64>> getSlotByStateRoot(final Bytes32 stateRoot) {
-    return getStateByStateRoot(stateRoot)
-        .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
-  }
-
-  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(final Bytes32 blockRoot) {
-    return getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
-  }
-
   public Optional<SignedBeaconBlock> getFinalizedBlock() {
     if (recentChainData.isPreGenesis()) {
       return Optional.empty();
@@ -457,12 +475,8 @@ public class CombinedChainDataClient {
     return getStore().getLatestFinalized().getSignedBeaconBlock();
   }
 
-  public Optional<BeaconState> getFinalizedState() {
-    if (recentChainData.isPreGenesis()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(getStore().getLatestFinalized().getState());
+  public Optional<AnchorPoint> getLatestFinalized() {
+    return Optional.ofNullable(getStore()).map(ReadOnlyStore::getLatestFinalized);
   }
 
   public SafeFuture<Optional<BeaconState>> getJustifiedState() {
@@ -470,6 +484,11 @@ public class CombinedChainDataClient {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return getStore().retrieveCheckpointState(getStore().getJustifiedCheckpoint());
+  }
+
+  public Optional<Checkpoint> getJustifiedCheckpoint() {
+    return Optional.ofNullable(recentChainData.getStore())
+        .map(ReadOnlyStore::getJustifiedCheckpoint);
   }
 
   public Optional<GenesisData> getGenesisData() {
@@ -489,37 +508,102 @@ public class CombinedChainDataClient {
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> GetAllBlocksAtSlot(final UInt64 slot) {
+  public SafeFuture<List<BlockAndMetaData>> getAllBlocksAtSlot(
+      final UInt64 slot, final ChainHead chainHead) {
     if (isFinalized(slot)) {
       return historicalChainData
           .getNonCanonicalBlocksBySlot(slot)
-          .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
+          .thenCombine(
+              getBlockAtSlotExact(slot),
+              (blocks, canonicalBlock) ->
+                  mergeNonCanonicalAndCanonicalBlocks(blocks, chainHead, canonicalBlock));
     }
-    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot));
+
+    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot), chainHead);
   }
 
-  @SuppressWarnings("unchecked")
-  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
-    final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
-        blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
-    return SafeFuture.collectAll(futures)
-        .thenApply(
-            optionalBlocks ->
-                optionalBlocks.stream().flatMap(Optional::stream).collect(Collectors.toSet()));
-  }
-
-  Set<SignedBeaconBlock> mergeNonCanonicalAndCanonicalBlocks(
-      final Set<SignedBeaconBlock> signedBeaconBlocks,
-      final Optional<SignedBeaconBlock> canonicalBlock) {
-    verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
-    canonicalBlock.ifPresent(signedBeaconBlocks::add);
-    return signedBeaconBlocks;
+  public boolean isCanonicalBlock(
+      final UInt64 slot, final Bytes32 blockRoot, final Bytes32 chainHeadRoot) {
+    if (isFinalized(slot)) {
+      return true;
+    }
+    return isCanonicalBlockCalculated(slot, blockRoot, chainHeadRoot);
   }
 
   public boolean isOptimisticBlock(final Bytes32 blockRoot) {
     return recentChainData
         .getForkChoiceStrategy()
-        .map(forkChoice -> forkChoice.isOptimistic(blockRoot))
+        .map(forkChoice -> isOptimistic(blockRoot, forkChoice))
+        // Can't be optimistically imported if we don't have a Store yet.
         .orElse(false);
+  }
+
+  private boolean isCanonicalBlockCalculated(
+      final UInt64 slot, final Bytes32 blockRoot, final Bytes32 chainHeadRoot) {
+    return spec.getAncestor(
+            recentChainData.getForkChoiceStrategy().orElseThrow(), chainHeadRoot, slot)
+        .map(ancestor -> ancestor.equals(blockRoot))
+        .orElse(false);
+  }
+
+  @SuppressWarnings("unchecked")
+  private SafeFuture<List<BlockAndMetaData>> getBlocksByRoots(
+      final List<Bytes32> blockRoots, final ChainHead chainHead) {
+
+    final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
+        blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
+    return SafeFuture.collectAll(futures)
+        .thenApply(
+            optionalBlocks ->
+                optionalBlocks.stream()
+                    .flatMap(Optional::stream)
+                    .map(
+                        block ->
+                            toBlockAndMetaData(
+                                block,
+                                chainHead,
+                                isCanonicalBlockCalculated(
+                                    block.getSlot(), block.getRoot(), chainHead.getRoot())))
+                    .collect(Collectors.toList()));
+  }
+
+  List<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
+      final List<SignedBeaconBlock> signedBeaconBlocks,
+      final ChainHead chainHead,
+      final Optional<SignedBeaconBlock> canonicalBlock) {
+    verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
+    final List<BlockAndMetaData> result =
+        signedBeaconBlocks.stream()
+            .map(block -> toBlockAndMetaData(block, chainHead, false))
+            .collect(Collectors.toList());
+    canonicalBlock.ifPresent(block -> result.add(toBlockAndMetaData(block, chainHead, true)));
+    return result;
+  }
+
+  private BlockAndMetaData toBlockAndMetaData(
+      final SignedBeaconBlock signedBeaconBlock,
+      final ChainHead chainHead,
+      final boolean canonical) {
+    return new BlockAndMetaData(
+        signedBeaconBlock,
+        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone(),
+        chainHead.isOptimistic() || isOptimisticBlock(signedBeaconBlock.getRoot()),
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        canonical);
+  }
+
+  private boolean isOptimistic(
+      final Bytes32 blockRoot, final ReadOnlyForkChoiceStrategy forkChoice) {
+    return forkChoice
+        .isOptimistic(blockRoot)
+        // If the block root is unknown, use the optimistic state of the finalized checkpoint
+        // As the block is either canonical and finalized or may have been rejected because it
+        // didn't descend from the finalized root. In either case, if the finalized checkpoint is
+        // optimistic the status of the block is affected by the optimistic sync
+        .orElseGet(
+            () ->
+                forkChoice
+                    .isOptimistic(recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot())
+                    .orElseThrow());
   }
 }

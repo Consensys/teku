@@ -27,9 +27,9 @@ import tech.pegasys.teku.bls.impl.AbstractBLS12381Test;
 import tech.pegasys.teku.bls.impl.BLS12381;
 
 public class BlstTest extends AbstractBLS12381Test {
-  private static final Random random = new Random(1);
+  private static final Random RANDOM = new Random(1);
 
-  private static BLS12381 BLS;
+  private static BLS12381 bls;
 
   static BlstSignature notInG2() {
     // A point on the curve but not in the G2 group
@@ -43,27 +43,27 @@ public class BlstTest extends AbstractBLS12381Test {
 
   @BeforeAll
   static void setup() {
-    BLS = BlstLoader.INSTANCE.orElseThrow();
+    bls = BlstLoader.INSTANCE.orElseThrow();
   }
 
   @Override
   protected BLS12381 getBls() {
-    return BLS;
+    return bls;
   }
 
   @Test
   void testBatchVerifySingleSig() {
     Bytes msg = Bytes32.ZERO;
 
-    BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK = blstSK.derivePublicKey();
 
     BlstSignature blstSignature = BlstBLS12381.sign(blstSK, msg);
 
     BatchSemiAggregate semiAggregate =
-        BLS.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
+        bls.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
 
-    boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate));
+    boolean blstRes = bls.completeBatchVerify(List.of(semiAggregate));
     assertThat(blstRes).isTrue();
   }
 
@@ -71,34 +71,34 @@ public class BlstTest extends AbstractBLS12381Test {
   void testBatchVerifyCoupleSigs() {
     Bytes msg1 = Bytes32.fromHexString("123456");
 
-    BlstSecretKey blstSK1 = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK1 = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK1 = blstSK1.derivePublicKey();
     BlstSignature blstSignature1 = BlstBLS12381.sign(blstSK1, msg1);
 
     Bytes msg2 = Bytes32.fromHexString("654321");
 
-    BlstSecretKey blstSK2 = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK2 = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK2 = blstSK2.derivePublicKey();
     BlstSignature blstSignature2 = BlstBLS12381.sign(blstSK2, msg2);
 
     BatchSemiAggregate semiAggregate1 =
-        BLS.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
+        bls.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
     BatchSemiAggregate semiAggregate2 =
-        BLS.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
+        bls.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
 
-    boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
+    boolean blstRes = bls.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
     assertThat(blstRes).isTrue();
   }
 
   @Test
   void succeedsWhenPrepareBatchVerifyNotInG2ThrowsException() {
     Bytes msg = Bytes32.fromHexString("123456");
-    BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
+    BlstSecretKey blstSK = BlstSecretKey.generateNew(RANDOM);
     BlstPublicKey blstPK = blstSK.derivePublicKey();
     BlstSignature blstSignature = notInG2();
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> BLS.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature));
+        () -> bls.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature));
   }
 }

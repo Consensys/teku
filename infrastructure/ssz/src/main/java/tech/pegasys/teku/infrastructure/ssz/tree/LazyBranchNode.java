@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class LazyBranchNode implements BranchNode {
-  private final Supplier<Bytes32> hashTreeRoot;
+  private volatile Bytes32 cachedHash;
   private final Bytes32 leftRoot;
   private final Bytes32 rightRoot;
 
@@ -33,7 +33,7 @@ public class LazyBranchNode implements BranchNode {
       final Bytes32 rightRoot,
       final Supplier<TreeNode> leftLoader,
       final Supplier<TreeNode> rightLoader) {
-    this.hashTreeRoot = () -> hashTreeRoot;
+    this.cachedHash = hashTreeRoot;
     this.leftRoot = leftRoot;
     this.rightRoot = rightRoot;
 
@@ -46,7 +46,6 @@ public class LazyBranchNode implements BranchNode {
       final Bytes32 rightRoot,
       final Supplier<TreeNode> leftLoader,
       final Supplier<TreeNode> rightLoader) {
-    this.hashTreeRoot = Suppliers.memoize(() -> Hash.sha256(leftRoot, rightRoot));
     this.leftRoot = leftRoot;
     this.rightRoot = rightRoot;
     this.leftLoader = leftLoader;
@@ -93,7 +92,12 @@ public class LazyBranchNode implements BranchNode {
 
   @Override
   public Bytes32 hashTreeRoot() {
-    return hashTreeRoot.get();
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      cachedHash = Hash.sha256(leftRoot, rightRoot);
+      this.cachedHash = cachedHash;
+    }
+    return cachedHash;
   }
 
   @Override

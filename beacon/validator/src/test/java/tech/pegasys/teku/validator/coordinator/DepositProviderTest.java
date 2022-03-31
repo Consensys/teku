@@ -122,7 +122,7 @@ public class DepositProviderTest {
         Stream.generate(() -> newEth1Data)
             .limit(enoughVoteCount)
             .collect(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 50).collector());
-    when(state.getEth1_data_votes()).thenReturn(et1hDataVotes);
+    when(state.getEth1DataVotes()).thenReturn(et1hDataVotes);
 
     SszList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
     assertThat(deposits).hasSize(25);
@@ -154,7 +154,7 @@ public class DepositProviderTest {
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
-    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot));
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
   }
@@ -289,15 +289,15 @@ public class DepositProviderTest {
 
   private void mockEth1DataDepositCount(int n) {
     Eth1Data eth1Data = mock(Eth1Data.class);
-    when(state.getEth1_data()).thenReturn(eth1Data);
-    when(eth1Data.getDeposit_count()).thenReturn(UInt64.valueOf(n));
+    when(state.getEth1Data()).thenReturn(eth1Data);
+    when(eth1Data.getDepositCount()).thenReturn(UInt64.valueOf(n));
   }
 
   private void mockStateEth1DepositIndex(int n) {
-    when(state.getEth1_deposit_index()).thenReturn(UInt64.valueOf(n));
+    when(state.getEth1DepositIndex()).thenReturn(UInt64.valueOf(n));
   }
 
   private void mockStateEth1DataVotes() {
-    when(state.getEth1_data_votes()).thenReturn(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 0).of());
+    when(state.getEth1DataVotes()).thenReturn(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 0).of());
   }
 }

@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 
+@SuppressWarnings("JavaCase")
 public class AggregateAndProof {
 
   @Schema(type = "string", format = "uint64")
@@ -46,7 +47,7 @@ public class AggregateAndProof {
       tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof aggregateAndProof) {
     aggregator_index = aggregateAndProof.getIndex();
     aggregate = new Attestation(aggregateAndProof.getAggregate());
-    selection_proof = new BLSSignature(aggregateAndProof.getSelection_proof());
+    selection_proof = new BLSSignature(aggregateAndProof.getSelectionProof());
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof

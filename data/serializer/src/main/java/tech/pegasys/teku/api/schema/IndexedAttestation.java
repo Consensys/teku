@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
+@SuppressWarnings("JavaCase")
 public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> attesting_indices;
@@ -39,7 +40,7 @@ public class IndexedAttestation {
   public IndexedAttestation(
       tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
     this.attesting_indices =
-        indexedAttestation.getAttesting_indices().streamUnboxed().collect(Collectors.toList());
+        indexedAttestation.getAttestingIndices().streamUnboxed().collect(Collectors.toList());
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
   }
@@ -71,8 +72,12 @@ public class IndexedAttestation {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof IndexedAttestation)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof IndexedAttestation)) {
+      return false;
+    }
     IndexedAttestation that = (IndexedAttestation) o;
     return Objects.equals(attesting_indices, that.attesting_indices)
         && Objects.equals(data, that.data)

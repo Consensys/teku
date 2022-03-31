@@ -194,7 +194,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock);
-    transaction.setFinalizedCheckpoint(newCheckpoint);
+    transaction.setFinalizedCheckpoint(newCheckpoint, false);
     transaction.commit().reportExceptions();
     // Close db
     database.close();

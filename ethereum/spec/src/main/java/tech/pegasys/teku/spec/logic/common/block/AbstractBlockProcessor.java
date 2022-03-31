@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,10 +31,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -83,7 +81,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization
    */
-  public static boolean BLS_VERIFY_DEPOSIT = true;
+  public static boolean blsVerifyDeposit = true;
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -235,10 +233,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     if (proposerPublicKey.isEmpty()) {
       return BlockValidationResult.failed("Public key not found for validator " + proposerIndex);
     }
-    final Bytes signing_root =
+    final Bytes signingRoot =
         miscHelpers.computeSigningRoot(
             block.getMessage(), getDomain(state, Domain.BEACON_PROPOSER));
-    if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
+    if (!signatureVerifier.verify(proposerPublicKey.get(), signingRoot, block.getSignature())) {
       return BlockValidationResult.failed("Invalid block signature: " + block);
     }
     return BlockValidationResult.SUCCESSFUL;
@@ -328,14 +326,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                   == beaconStateAccessors.getBeaconProposerIndex(state),
               "process_block_header: Verify that proposer index is the correct index");
           checkArgument(
-              blockHeader.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
+              blockHeader.getParentRoot().equals(state.getLatestBlockHeader().hashTreeRoot()),
               "process_block_header: Verify that the parent matches");
           checkArgument(
-              blockHeader.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
+              blockHeader.getSlot().compareTo(state.getLatestBlockHeader().getSlot()) > 0,
               "process_block_header: Verify that the block is newer than latest block header");
 
           // Cache the current block as the new latest block
-          state.setLatest_block_header(
+          state.setLatestBlockHeader(
               new BeaconBlockHeader(
                   blockHeader.getSlot(),
                   blockHeader.getProposerIndex(),
@@ -362,7 +360,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                   .getRandaoMix(state, epoch)
                   .xor(Hash.sha256(body.getRandaoReveal().toSSZBytes()));
           int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
-          state.getRandao_mixes().setElement(index, mix);
+          state.getRandaoMixes().setElement(index, mix);
         });
   }
 
@@ -373,18 +371,18 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes32 domain = getDomain(state, Domain.RANDAO);
-    final Bytes signing_root = miscHelpers.computeSigningRoot(epoch, domain);
-    if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandaoReveal())) {
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(epoch, domain);
+    if (!bls.verify(proposerPublicKey, signingRoot, block.getBody().getRandaoReveal())) {
       return BlockValidationResult.failed("Randao reveal is invalid.");
     }
     return BlockValidationResult.SUCCESSFUL;
   }
 
   protected void processEth1Data(final MutableBeaconState state, final BeaconBlockBody body) {
-    state.getEth1_data_votes().append(body.getEth1Data());
-    long vote_count = getVoteCount(state, body.getEth1Data());
-    if (isEnoughVotesToUpdateEth1Data(vote_count)) {
-      state.setEth1_data(body.getEth1Data());
+    state.getEth1DataVotes().append(body.getEth1Data());
+    long voteCount = getVoteCount(state, body.getEth1Data());
+    if (isEnoughVotesToUpdateEth1Data(voteCount)) {
+      state.setEth1Data(body.getEth1Data());
     }
   }
 
@@ -396,7 +394,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public long getVoteCount(final BeaconState state, final Eth1Data eth1Data) {
-    return state.getEth1_data_votes().stream().filter(item -> item.equals(eth1Data)).count();
+    return state.getEth1DataVotes().stream().filter(item -> item.equals(eth1Data)).count();
   }
 
   protected void processOperationsNoValidation(
@@ -406,16 +404,17 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
+          final int expectedDepositCount =
+              Math.min(
+                  specConfig.getMaxDeposits(),
+                  toIntExact(
+                      state
+                          .getEth1Data()
+                          .getDepositCount()
+                          .minus(state.getEth1DepositIndex())
+                          .longValue()));
           checkArgument(
-              body.getDeposits().size()
-                  == Math.min(
-                      specConfig.getMaxDeposits(),
-                      toIntExact(
-                          state
-                              .getEth1_data()
-                              .getDeposit_count()
-                              .minus(state.getEth1_deposit_index())
-                              .longValue())),
+              body.getDeposits().size() == expectedDepositCount,
               "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
           processProposerSlashingsNoValidation(state, body.getProposerSlashings());
@@ -459,7 +458,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             beaconStateMutators.slashValidator(
                 state,
                 toIntExact(
-                    proposerSlashing.getHeader_1().getMessage().getProposerIndex().longValue()));
+                    proposerSlashing.getHeader1().getMessage().getProposerIndex().longValue()));
           }
         });
   }
@@ -619,8 +618,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             deposit.getData().hashTreeRoot(),
             deposit.getProof(),
             specConfig.getDepositContractTreeDepth() + 1, // Add 1 for the List length mix-in
-            toIntExact(state.getEth1_deposit_index().longValue()),
-            state.getEth1_data().getDeposit_root()),
+            toIntExact(state.getEth1DepositIndex().longValue()),
+            state.getEth1Data().getDepositRoot()),
         "process_deposit: Verify the Merkle branch");
 
     processDepositWithoutCheckingMerkleProof(state, deposit, null);
@@ -633,25 +632,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Object2IntMap<BLSPublicKey> pubKeyToIndexMap) {
     final BLSPublicKey pubkey = deposit.getData().getPubkey();
 
-    state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UInt64.ONE));
+    state.setEth1DepositIndex(state.getEth1DepositIndex().plus(UInt64.ONE));
 
     // Find the validator index associated with this deposit, if it exists
     OptionalInt existingIndex;
     if (pubKeyToIndexMap != null) {
       if (pubKeyToIndexMap.containsKey(pubkey)) {
-        existingIndex = OptionalInt.of(pubKeyToIndexMap.get(pubkey));
+        existingIndex = OptionalInt.of(pubKeyToIndexMap.getInt(pubkey));
       } else {
         pubKeyToIndexMap.put(pubkey, state.getValidators().size());
         existingIndex = OptionalInt.empty();
       }
     } else {
-      Function<Integer, BLSPublicKey> validatorPubkey =
-          index ->
-              beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
-      existingIndex =
-          IntStream.range(0, state.getValidators().size())
-              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
-              .findFirst();
+      final Optional<Integer> validatorIndex = validatorsUtil.getValidatorIndex(state, pubkey);
+      existingIndex = validatorIndex.map(OptionalInt::of).orElseGet(OptionalInt::empty);
     }
 
     if (existingIndex.isEmpty()) {
@@ -684,23 +678,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
     if (pubKeyToIndexMap != null) {
       // The validator won't be created so the calculated index won't be correct
-      pubKeyToIndexMap.remove(pubkey);
+      pubKeyToIndexMap.removeInt(pubkey);
     }
   }
 
   private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
-    if (!BLS_VERIFY_DEPOSIT) {
+    if (!blsVerifyDeposit) {
       return true;
     }
 
     final UInt64 amount = deposit.getData().getAmount();
-    final DepositMessage deposit_message =
-        new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+    final DepositMessage depositMessage =
+        new DepositMessage(pubkey, deposit.getData().getWithdrawalCredentials(), amount);
     final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
-    final Bytes signing_root = miscHelpers.computeSigningRoot(deposit_message, domain);
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(depositMessage, domain);
     // Note that this can't use batch signature verification as invalid deposits can be included
     // in blocks and processing differs based on whether the signature is valid or not.
-    return BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
+    return BLS.verify(pubkey, signingRoot, deposit.getData().getSignature());
   }
 
   protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
@@ -717,7 +711,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             .min(specConfig.getMaxEffectiveBalance());
     return new Validator(
         deposit.getData().getPubkey(),
-        deposit.getData().getWithdrawal_credentials(),
+        deposit.getData().getWithdrawalCredentials(),
         effectiveBalance,
         false,
         FAR_FUTURE_EPOCH,

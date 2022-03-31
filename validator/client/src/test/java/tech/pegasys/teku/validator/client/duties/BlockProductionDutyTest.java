@@ -77,7 +77,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
@@ -107,7 +107,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
@@ -118,7 +118,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.empty()));
 
     performAndReportDuty();
@@ -139,7 +139,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(failedFuture(error));
 

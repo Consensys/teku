@@ -39,7 +39,7 @@ class GetKeysTest {
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
 
     verify(request).respondOk(activeValidatorList);
   }
@@ -50,7 +50,7 @@ class GetKeysTest {
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
-    endpoint.handle(request);
+    endpoint.handleRequest(request);
 
     verify(request).respondOk(activeValidatorList);
   }

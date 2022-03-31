@@ -15,7 +15,8 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -51,8 +52,8 @@ public abstract class AbstractSszMutableComposite<
 
   protected AbstractSszComposite<SszChildT> backingImmutableData;
   private Consumer<SszMutableData> invalidator;
-  private final Map<Integer, ChildChangeRecord<SszChildT, SszMutableChildT>> childrenChanges =
-      new HashMap<>();
+  private final Int2ObjectMap<ChildChangeRecord<SszChildT, SszMutableChildT>> childrenChanges =
+      new Int2ObjectOpenHashMap<ChildChangeRecord<SszChildT, SszMutableChildT>>();
   private Integer sizeCache;
   private final SszCompositeSchema<?> cachedSchema;
 
@@ -166,7 +167,7 @@ public abstract class AbstractSszMutableComposite<
     } else {
       IntCache<SszChildT> cache = backingImmutableData.transferCache();
       Stream<Map.Entry<Integer, SszChildT>> changesList =
-          childrenChanges.entrySet().stream()
+          childrenChanges.int2ObjectEntrySet().stream()
               .map(
                   entry -> {
                     ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = entry.getValue();

@@ -108,10 +108,12 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
 
+    final Boolean executionOptimisticForApi = getExecutionOptimisticForApi(executionOptimistic);
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -122,7 +124,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   bestBlockRoot,
                   context.getOldBestStateRoot(),
                   stateRoot,
-                  configProvider.computeEpochAtSlot(slot));
+                  configProvider.computeEpochAtSlot(slot),
+                  executionOptimisticForApi);
           notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
@@ -132,6 +135,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             bestBlockRoot,
             stateRoot,
             epochTransition,
+            executionOptimisticForApi,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
@@ -139,7 +143,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
 
   protected void onNewVoluntaryExit(
       final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit,
-      final InternalValidationResult result) {
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
     final SignedVoluntaryExit voluntaryExitEvent = new SignedVoluntaryExit(exit);
     notifySubscribersOfEvent(EventType.voluntary_exit, voluntaryExitEvent);
   }
@@ -148,7 +153,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final tech.pegasys.teku.spec.datastructures.operations.versions.altair
               .SignedContributionAndProof
           proof,
-      final InternalValidationResult result) {
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
     if (result.isAccept()) {
       final SignedContributionAndProof signedContributionAndProof =
           new SignedContributionAndProof(proof);
@@ -162,18 +168,24 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   protected void onNewBlock(
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block) {
-    final BlockEvent blockEvent = BlockEvent.fromSignedBeaconBlock(block);
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block,
+      final boolean executionOptimistic) {
+    final BlockEvent blockEvent =
+        BlockEvent.fromSignedBeaconBlock(block, getExecutionOptimisticForApi(executionOptimistic));
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
-    final FinalizedCheckpointEvent checkpointString =
+    final FinalizedCheckpointEvent event =
         new FinalizedCheckpointEvent(
-            checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch());
-    notifySubscribersOfEvent(EventType.finalized_checkpoint, checkpointString);
+            checkpoint.getRoot(),
+            stateRoot.orElse(Bytes32.ZERO),
+            checkpoint.getEpoch(),
+            getExecutionOptimisticForApi(fromOptimisticBlock));
+    notifySubscribersOfEvent(EventType.finalized_checkpoint, event);
   }
 
   protected void onSyncStateChange(final SyncState syncState) {
@@ -189,6 +201,10 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     } catch (final JsonProcessingException e) {
       LOG.error("Failed to serialize event", e);
     }
+  }
+
+  private Boolean getExecutionOptimisticForApi(final boolean executionOptimistic) {
+    return provider.isBellatrixEnabled() ? executionOptimistic : null;
   }
 
   public static class EventSource {

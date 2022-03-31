@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema14;
@@ -26,7 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 
@@ -48,6 +48,8 @@ public class ExecutionPayloadHeaderSchema
         SszBytes32,
         SszBytes32> {
 
+  private final ExecutionPayloadHeader defaultExecutionPayloadHeader;
+
   public ExecutionPayloadHeaderSchema(final SpecConfigBellatrix specConfig) {
     super(
         "ExecutionPayloadHeader",
@@ -65,6 +67,8 @@ public class ExecutionPayloadHeaderSchema
         namedSchema("base_fee_per_gas", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
+
+    this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
 
   public SszByteListSchema<?> getExtraDataSchema() {
@@ -107,5 +111,10 @@ public class ExecutionPayloadHeaderSchema
         SszUInt256.of(baseFeePerGas),
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot));
+  }
+
+  @Override
+  public ExecutionPayloadHeader getDefault() {
+    return defaultExecutionPayloadHeader;
   }
 }

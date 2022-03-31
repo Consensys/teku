@@ -57,7 +57,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldUseBellatrixForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--Xnetwork-bellatrix-fork-epoch", "120000", "--Xee-endpoint", "someEndpoint");
+            "--Xnetwork-bellatrix-fork-epoch", "120000", "--ee-endpoint", "someEndpoint");
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(119999)))
         .isEqualTo(SpecMilestone.ALTAIR);
@@ -78,7 +78,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments(
             "--Xnetwork-bellatrix-fork-epoch",
             "120000",
-            "--Xee-endpoint",
+            "--ee-endpoint",
             "someEndpoint",
             "--Xnetwork-safe-slots-to-import-optimistically",
             "256");

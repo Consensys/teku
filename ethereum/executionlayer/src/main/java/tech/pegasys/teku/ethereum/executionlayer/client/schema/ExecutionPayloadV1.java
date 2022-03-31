@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.schema;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -25,75 +23,15 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Deserializer;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Serializer;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesSerializer;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsHexDeserializer;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsHexSerializer;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
-public class ExecutionPayloadV1 {
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 parentHash;
-
-  @JsonSerialize(using = Bytes20Serializer.class)
-  @JsonDeserialize(using = Bytes20Deserializer.class)
-  public final Bytes20 feeRecipient;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 stateRoot;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 receiptsRoot;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = BytesDeserializer.class)
-  public final Bytes logsBloom;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 prevRandao;
-
-  @JsonSerialize(using = UInt64AsHexSerializer.class)
-  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 blockNumber;
-
-  @JsonSerialize(using = UInt64AsHexSerializer.class)
-  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 gasLimit;
-
-  @JsonSerialize(using = UInt64AsHexSerializer.class)
-  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 gasUsed;
-
-  @JsonSerialize(using = UInt64AsHexSerializer.class)
-  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 timestamp;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = BytesDeserializer.class)
-  public final Bytes extraData;
-
-  @JsonSerialize(using = UInt256AsHexSerializer.class)
-  @JsonDeserialize(using = UInt256AsHexDeserializer.class)
-  public final UInt256 baseFeePerGas;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 blockHash;
-
+public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
   @JsonSerialize(contentUsing = BytesSerializer.class)
   @JsonDeserialize(contentUsing = BytesDeserializer.class)
   public final List<Bytes> transactions;
@@ -113,32 +51,20 @@ public class ExecutionPayloadV1 {
       @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
-    checkNotNull(parentHash, "parentHash");
-    checkNotNull(feeRecipient, "feeRecipient");
-    checkNotNull(stateRoot, "stateRoot");
-    checkNotNull(receiptsRoot, "receiptsRoot");
-    checkNotNull(logsBloom, "logsBloom");
-    checkNotNull(prevRandao, "prevRandao");
-    checkNotNull(blockNumber, "blockNumber");
-    checkNotNull(gasLimit, "gasLimit");
-    checkNotNull(gasUsed, "gasUsed");
-    checkNotNull(timestamp, "timestamp");
-    checkNotNull(extraData, "extraData");
-    checkNotNull(baseFeePerGas, "baseFeePerGas");
-    checkNotNull(blockHash, "blockHash");
-    this.parentHash = parentHash;
-    this.feeRecipient = feeRecipient;
-    this.stateRoot = stateRoot;
-    this.receiptsRoot = receiptsRoot;
-    this.logsBloom = logsBloom;
-    this.prevRandao = prevRandao;
-    this.blockNumber = blockNumber;
-    this.gasLimit = gasLimit;
-    this.gasUsed = gasUsed;
-    this.timestamp = timestamp;
-    this.extraData = extraData;
-    this.baseFeePerGas = baseFeePerGas;
-    this.blockHash = blockHash;
+    super(
+        parentHash,
+        feeRecipient,
+        stateRoot,
+        receiptsRoot,
+        logsBloom,
+        prevRandao,
+        blockNumber,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        extraData,
+        baseFeePerGas,
+        blockHash);
     this.transactions = transactions != null ? transactions : List.of();
   }
 
@@ -189,40 +115,16 @@ public class ExecutionPayloadV1 {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+    if (!super.equals(o)) {
+      return false;
+    }
     final ExecutionPayloadV1 that = (ExecutionPayloadV1) o;
-    return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(feeRecipient, that.feeRecipient)
-        && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(receiptsRoot, that.receiptsRoot)
-        && Objects.equals(logsBloom, that.logsBloom)
-        && Objects.equals(prevRandao, that.prevRandao)
-        && Objects.equals(blockNumber, that.blockNumber)
-        && Objects.equals(gasLimit, that.gasLimit)
-        && Objects.equals(gasUsed, that.gasUsed)
-        && Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(extraData, that.extraData)
-        && Objects.equals(baseFeePerGas, that.baseFeePerGas)
-        && Objects.equals(blockHash, that.blockHash)
-        && Objects.equals(transactions, that.transactions);
+    return Objects.equals(transactions, that.transactions);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        parentHash,
-        feeRecipient,
-        stateRoot,
-        receiptsRoot,
-        logsBloom,
-        prevRandao,
-        blockNumber,
-        gasLimit,
-        gasUsed,
-        timestamp,
-        extraData,
-        baseFeePerGas,
-        blockHash,
-        transactions);
+    return Objects.hash(super.hashCode(), transactions);
   }
 
   @Override

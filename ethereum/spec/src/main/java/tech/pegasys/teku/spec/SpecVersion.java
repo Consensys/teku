@@ -43,7 +43,8 @@ public class SpecVersion extends DelegatingSpecLogic {
     this.schemaDefinitions = schemaDefinitions;
   }
 
-  static Optional<SpecVersion> create(final SpecMilestone milestone, final SpecConfig specConfig) {
+  public static Optional<SpecVersion> create(
+      final SpecMilestone milestone, final SpecConfig specConfig) {
     switch (milestone) {
       case PHASE0:
         return Optional.of(createPhase0(specConfig));

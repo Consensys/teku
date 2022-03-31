@@ -46,8 +46,9 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaAltairImpl.create(specConfig, getAttesterSlashingSchema());
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
+        BeaconBlockBodySchemaAltairImpl.create(
+            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyAltair");
+    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
     this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);
     this.contributionAndProofSchema =
@@ -85,6 +86,21 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
+  }
+
+  @Override
+  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
+    return getBeaconBlockSchema();
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
+    return getBeaconBlockBodySchema();
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
+    return getSignedBeaconBlockSchema();
   }
 
   @Override

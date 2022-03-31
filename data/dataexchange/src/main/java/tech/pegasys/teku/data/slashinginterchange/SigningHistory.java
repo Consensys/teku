@@ -62,8 +62,12 @@ public class SigningHistory {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SigningHistory that = (SigningHistory) o;
     return Objects.equals(pubkey, that.pubkey)
         && Objects.equals(signedBlocks, that.signedBlocks)

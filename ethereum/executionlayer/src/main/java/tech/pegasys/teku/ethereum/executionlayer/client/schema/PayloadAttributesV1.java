@@ -28,7 +28,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Des
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesSerializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 
@@ -69,8 +69,12 @@ public class PayloadAttributesV1 {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PayloadAttributesV1 that = (PayloadAttributesV1) o;
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)

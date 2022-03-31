@@ -31,7 +31,7 @@ public class OpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegration
   @BeforeEach
   public void setup() throws IOException {
     startRestAPIAtGenesis();
-    currentJsonNodes = util.parseSwagger(getOpanApiDoc().body().string());
+    currentJsonNodes = util.parseSwagger(getOpenApiDoc().body().string());
   }
 
   @Test
@@ -52,7 +52,7 @@ public class OpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegration
     util.compareToKnownDefinitions(tempDir, "paths", paths);
   }
 
-  public Response getOpanApiDoc() throws IOException {
+  public Response getOpenApiDoc() throws IOException {
     return getResponse("/swagger-docs");
   }
 }

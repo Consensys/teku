@@ -24,10 +24,13 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 /**
  * Takes objects from Internal layers and converts to an appropriate schema object.
@@ -48,10 +51,58 @@ public class SchemaObjectProvider {
         getBeaconBlock(internalBlock.getMessage()), new BLSSignature(internalBlock.getSignature()));
   }
 
+  public SignedBeaconBlock getSignedBlindedBeaconBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+
+    return new SignedBeaconBlock(
+        getBlindedBlock(internalBlock.getMessage()),
+        new BLSSignature(internalBlock.getSignature()));
+  }
+
   public BeaconBlock getBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block) {
-    final UInt64 slot = block.getSlot();
-    switch (spec.atSlot(slot).getMilestone()) {
+    return getBeaconBlock(block, spec.atSlot(block.getSlot()).getMilestone());
+  }
+
+  public BeaconBlock getBlindedBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block) {
+    return getBlindedBlock(block, spec.atSlot(block.getSlot()).getMilestone());
+  }
+
+  public BeaconBlock getBlindedBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block,
+      final SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        return new BeaconBlockPhase0(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            new BeaconBlockBody(block.getBody()));
+      case ALTAIR:
+        return new BeaconBlockAltair(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBeaconBlockBodyAltair(block.getBody()));
+      case BELLATRIX:
+        return new BlindedBlockBellatrix(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBlindedBlockBodyBellatrix(block.getBody()));
+      default:
+        throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
+    }
+  }
+
+  public BeaconBlock getBeaconBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block,
+      final SpecMilestone milestone) {
+    switch (milestone) {
       case PHASE0:
         return new BeaconBlockPhase0(
             block.getSlot(),
@@ -74,7 +125,7 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyBellatrix(block.getBody()));
       default:
-        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
+        throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
   }
 
@@ -90,6 +141,13 @@ public class SchemaObjectProvider {
     return new BeaconBlockBodyBellatrix(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
             .BeaconBlockBodyBellatrix.required(body));
+  }
+
+  private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BlindedBeaconBlockBodyBellatrix(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
+            .BlindedBeaconBlockBodyBellatrix.required(body));
   }
 
   public BeaconState getBeaconState(

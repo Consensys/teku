@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
+@SuppressWarnings("JavaCase")
 public class BeaconStatePhase0 extends BeaconState implements State {
   public final List<PendingAttestation> previous_epoch_attestations;
   public final List<PendingAttestation> current_epoch_attestations;
@@ -99,11 +100,11 @@ public class BeaconStatePhase0 extends BeaconState implements State {
               .BeaconStatePhase0
           genesisState = maybePhase0State.get();
       this.previous_epoch_attestations =
-          genesisState.getPrevious_epoch_attestations().stream()
+          genesisState.getPreviousEpochAttestations().stream()
               .map(PendingAttestation::new)
               .collect(Collectors.toList());
       this.current_epoch_attestations =
-          genesisState.getCurrent_epoch_attestations().stream()
+          genesisState.getCurrentEpochAttestations().stream()
               .map(PendingAttestation::new)
               .collect(Collectors.toList());
     } else {
@@ -121,7 +122,7 @@ public class BeaconStatePhase0 extends BeaconState implements State {
               final PendingAttestationSchema pendingAttestationSchema =
                   mutableState.getBeaconStateSchema().getPendingAttestationSchema();
               mutableState
-                  .getPrevious_epoch_attestations()
+                  .getPreviousEpochAttestations()
                   .setAll(
                       previous_epoch_attestations.stream()
                           .map(
@@ -130,7 +131,7 @@ public class BeaconStatePhase0 extends BeaconState implements State {
                                       pendingAttestationSchema))
                           .collect(Collectors.toList()));
               mutableState
-                  .getCurrent_epoch_attestations()
+                  .getCurrentEpochAttestations()
                   .setAll(
                       current_epoch_attestations.stream()
                           .map(
@@ -143,8 +144,12 @@ public class BeaconStatePhase0 extends BeaconState implements State {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final BeaconStatePhase0 that = (BeaconStatePhase0) o;
     return Objects.equals(previous_epoch_attestations, that.previous_epoch_attestations)
         && Objects.equals(current_epoch_attestations, that.current_epoch_attestations);

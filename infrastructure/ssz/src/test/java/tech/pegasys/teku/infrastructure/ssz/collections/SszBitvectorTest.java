@@ -34,11 +34,11 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVectorTestBase {
 
-  private static final Random random = new Random(1);
+  private static final Random RANDOM = new Random(1);
 
   private static SszBitvector random(SszBitvectorSchema<?> schema) {
     return schema.ofBits(
-        IntStream.range(0, schema.getLength()).filter(__ -> random.nextBoolean()).toArray());
+        IntStream.range(0, schema.getLength()).filter(__ -> RANDOM.nextBoolean()).toArray());
   }
 
   @Override

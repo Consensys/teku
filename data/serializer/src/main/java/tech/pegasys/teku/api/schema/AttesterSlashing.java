@@ -20,14 +20,15 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 
+@SuppressWarnings("JavaCase")
 public class AttesterSlashing {
   public final IndexedAttestation attestation_1;
   public final IndexedAttestation attestation_2;
 
   public AttesterSlashing(
       tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
-    this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation_1());
-    this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation_2());
+    this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation1());
+    this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation2());
   }
 
   @JsonCreator
@@ -54,8 +55,12 @@ public class AttesterSlashing {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof AttesterSlashing)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof AttesterSlashing)) {
+      return false;
+    }
     AttesterSlashing that = (AttesterSlashing) o;
     return Objects.equals(attestation_1, that.attestation_1)
         && Objects.equals(attestation_2, that.attestation_2);

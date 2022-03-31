@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -49,6 +50,14 @@ public interface BeaconBlockBodyBuilder {
 
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
   BeaconBlockBodyBuilder executionPayload(Supplier<ExecutionPayload> executionPayloadSupplier);
+
+  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
+  BeaconBlockBodyBuilder executionPayloadHeader(
+      Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier);
+
+  default Boolean isBlinded() {
+    return false;
+  }
 
   BeaconBlockBody build();
 }

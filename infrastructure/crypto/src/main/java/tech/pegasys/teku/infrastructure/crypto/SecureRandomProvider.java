@@ -20,11 +20,11 @@ import java.security.SecureRandom;
  * SecureRandom instance
  */
 public class SecureRandomProvider {
-  private static final SecureRandom publicSecureRandom = secureRandom();
+  private static final SecureRandom PUBLIC_SECURE_RANDOM = secureRandom();
 
   // Returns a shared instance of secure random intended to be used where the value is used publicly
   public static SecureRandom publicSecureRandom() {
-    return publicSecureRandom;
+    return PUBLIC_SECURE_RANDOM;
   }
 
   public static SecureRandom createSecureRandom() {

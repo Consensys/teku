@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -31,13 +32,22 @@ class JwtSecretKeyLoaderTest {
   @Test
   void testGetSecretKey_ReadSecretFromProvidedFilePath(@TempDir final Path tempDir)
       throws IOException {
-    final Path jwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.JWT_SECRET_FILE_NAME);
-    final SecretKeySpec jwtSecret = JwtTestHelper.generateJwtSecret();
-    Files.writeString(jwtSecretFile, Bytes.wrap(jwtSecret.getEncoded()).toHexString());
-    final JwtSecretKeyLoader keyLoader =
-        new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);
-    final Key loadedSecret = keyLoader.getSecretKey();
-    assertSecretEquals(jwtSecret, loadedSecret);
+    verifyReadSecretFromProvidedFile(
+        tempDir, jwtSecret -> Bytes.wrap(jwtSecret.getEncoded()).toHexString());
+  }
+
+  @Test
+  void testGetSecretKey_ReadUnprefixedSecretFromProvidedFilePath(@TempDir final Path tempDir)
+      throws IOException {
+    verifyReadSecretFromProvidedFile(
+        tempDir, jwtSecret -> Bytes.wrap(jwtSecret.getEncoded()).toUnprefixedHexString());
+  }
+
+  @Test
+  void testGetSecretKey_ReadSecretWithBlanksFromProvidedFilePath(@TempDir final Path tempDir)
+      throws IOException {
+    verifyReadSecretFromProvidedFile(
+        tempDir, jwtSecret -> " \n " + Bytes.wrap(jwtSecret.getEncoded()).toHexString() + " \n ");
   }
 
   @Test
@@ -53,5 +63,17 @@ class JwtSecretKeyLoaderTest {
     final Key loadedSecret = fileKeyLoader.getSecretKey();
     assertThat(loadedSecret).isNotNull();
     assertThat(Bytes.wrap(loadedSecret.getEncoded()).toHexString()).isNotBlank();
+  }
+
+  void verifyReadSecretFromProvidedFile(
+      final Path tempDir, final Function<SecretKeySpec, String> jwtSecretToString)
+      throws IOException {
+    final Path jwtSecretFile = tempDir.resolve(JwtSecretKeyLoader.JWT_SECRET_FILE_NAME);
+    final SecretKeySpec jwtSecret = JwtTestHelper.generateJwtSecret();
+    Files.writeString(jwtSecretFile, jwtSecretToString.apply(jwtSecret));
+    final JwtSecretKeyLoader keyLoader =
+        new JwtSecretKeyLoader(Optional.of(jwtSecretFile.toString()), tempDir);
+    final Key loadedSecret = keyLoader.getSecretKey();
+    assertSecretEquals(jwtSecret, loadedSecret);
   }
 }

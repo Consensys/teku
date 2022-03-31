@@ -54,18 +54,18 @@ public class AttestationData
   }
 
   public AttestationData(
-      UInt64 slot, UInt64 index, Bytes32 beacon_block_root, Checkpoint source, Checkpoint target) {
+      UInt64 slot, UInt64 index, Bytes32 beaconBlockRoot, Checkpoint source, Checkpoint target) {
     super(
         SSZ_SCHEMA,
         SszUInt64.of(slot),
         SszUInt64.of(index),
-        SszBytes32.of(beacon_block_root),
+        SszBytes32.of(beaconBlockRoot),
         source,
         target);
   }
 
   public AttestationData(UInt64 slot, AttestationData data) {
-    this(slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
+    this(slot, data.getIndex(), data.getBeaconBlockRoot(), data.getSource(), data.getTarget());
   }
 
   public UInt64 getEarliestSlotForForkChoice(final Spec spec) {
@@ -82,7 +82,7 @@ public class AttestationData
     return getField1().get();
   }
 
-  public Bytes32 getBeacon_block_root() {
+  public Bytes32 getBeaconBlockRoot() {
     return getField2().get();
   }
 

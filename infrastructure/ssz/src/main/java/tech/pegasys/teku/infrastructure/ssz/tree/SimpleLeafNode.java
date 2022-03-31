@@ -22,25 +22,39 @@ import org.apache.tuweni.bytes.Bytes32;
 
 class SimpleLeafNode implements LeafNode, TreeNode {
 
-  private final byte[] data;
+  private final Bytes data;
+  private volatile Bytes32 cachedHash;
 
   public SimpleLeafNode(Bytes data) {
     checkArgument(data.size() <= MAX_BYTE_SIZE);
-    this.data = data.toArrayUnsafe();
+    if (data.size() == MAX_BYTE_SIZE) {
+      // if data is Bytes32, it will pass throw with no object creation
+      // otherwise translate types to Bytes32
+      this.cachedHash = Bytes32.wrap(data.copy());
+      this.data = cachedHash;
+      return;
+    }
+    // If we store data as is, some Bytes instances (ie ConcatenatedBytes) will
+    // perform worse during serialization. So we want to translate them to a
+    // single array-backed Bytes
+    //
+    // in this case, the following seems to perform better than Bytes.wrap(data.copy())
+    this.data = Bytes.wrap(data.toArrayUnsafe());
   }
 
   @Override
   public Bytes getData() {
-    return Bytes.wrap(data);
+    return data;
   }
 
   @Override
   public Bytes32 hashTreeRoot() {
-    if (data.length == MAX_BYTE_SIZE) {
-      return Bytes32.wrap(data);
-    } else {
-      return Bytes32.wrap(Arrays.copyOf(data, MAX_BYTE_SIZE));
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      cachedHash = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+      this.cachedHash = cachedHash;
     }
+    return cachedHash;
   }
 
   @Override

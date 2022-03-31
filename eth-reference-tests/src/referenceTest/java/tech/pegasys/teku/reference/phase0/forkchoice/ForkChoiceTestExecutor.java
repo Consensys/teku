@@ -94,7 +94,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     recentChainData.initializeFromAnchorPoint(
         AnchorPoint.fromInitialBlockAndState(
             spec, new SignedBlockAndState(anchorBlock, anchorState)),
-        spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesis_time()));
+        spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
@@ -215,7 +215,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getRoot(),
         block.getSlot(),
         block.getParentRoot());
-    final SafeFuture<BlockImportResult> result = forkChoice.onBlock(block, executionEngine);
+    final SafeFuture<BlockImportResult> result =
+        forkChoice.onBlock(block, Optional.empty(), executionEngine);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = result.join();
     assertThat(importResult)

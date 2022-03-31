@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class Web3jWebsocketClientTest {
   private final TimeProvider timeProvider = mock(TimeProvider.class);
   private final WebSocketService webSocketService = mock(WebSocketService.class);
-  private static final URI endpoint = URI.create("");
+  private final URI endpoint = URI.create("");
   private Web3jWebsocketClient web3jWebsocketClient;
 
   @BeforeEach

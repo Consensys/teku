@@ -24,8 +24,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -75,9 +77,12 @@ class AttestationManagerIntegrationTest {
           transitionBlockValidator);
 
   private final PendingPool<ValidateableAttestation> pendingAttestations =
-      PendingPool.createForAttestations(spec);
+      new PendingPoolFactory(storageSystem.getMetricsSystem()).createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(
+          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+          mock(SettableLabelledGauge.class),
+          "attestations");
   private final SignatureVerificationService signatureVerificationService =
       SignatureVerificationService.createSimple();
   private final AttestationValidator attestationValidator =
@@ -92,15 +97,14 @@ class AttestationManagerIntegrationTest {
           attestationPool,
           attestationValidator,
           new AggregateAttestationValidator(
-              spec, recentChainData, attestationValidator, signatureVerificationService),
+              spec, attestationValidator, signatureVerificationService),
           signatureVerificationService,
           activeValidatorChannel);
 
   // Version of forks with same fork version for previous and current
   // Guarantees that's the version used for signing regardless of slot
-  private final Fork altairFork = createForkWithVersion(spec.fork(UInt64.ONE).getCurrent_version());
-  private final Fork phase0Fork =
-      createForkWithVersion(spec.fork(UInt64.ZERO).getCurrent_version());
+  private final Fork altairFork = createForkWithVersion(spec.fork(UInt64.ONE).getCurrentVersion());
+  private final Fork phase0Fork = createForkWithVersion(spec.fork(UInt64.ZERO).getCurrentVersion());
 
   @BeforeEach
   public void setup() {
@@ -221,7 +225,7 @@ class AttestationManagerIntegrationTest {
             attestationSlot, targetBlockAndState.getState(), targetBlockAndState, COMMITTEE_INDEX);
 
     final ForkInfo forkInfo =
-        new ForkInfo(fork, targetBlockAndState.getState().getGenesis_validators_root());
+        new ForkInfo(fork, targetBlockAndState.getState().getGenesisValidatorsRoot());
     final BLSSignature signature =
         storageSystem
             .chainBuilder()

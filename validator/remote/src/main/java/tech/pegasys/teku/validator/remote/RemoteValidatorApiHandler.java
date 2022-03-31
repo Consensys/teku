@@ -255,14 +255,17 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final boolean blinded) {
     return sendRequest(
         () -> {
           final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
               new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
 
           return apiClient
-              .createUnsignedBlock(slot, schemaBLSSignature, graffiti)
+              .createUnsignedBlock(slot, schemaBLSSignature, graffiti, blinded)
               .map(block -> block.asInternalBeaconBlock(spec));
         });
   }
@@ -394,8 +397,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                 new tech.pegasys.teku.api.schema.altair
                                     .SyncCommitteeSubnetSubscription(
                                     UInt64.valueOf(subscription.getValidatorIndex()),
-                                    subscription.getSyncCommitteeIndices().stream()
-                                        .map(UInt64::valueOf)
+                                    subscription
+                                        .getSyncCommitteeIndices()
+                                        .intStream()
+                                        .mapToObj(UInt64::valueOf)
                                         .collect(toList()),
                                     subscription.getUntilEpoch()))
                         .collect(toList())))

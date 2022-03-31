@@ -23,7 +23,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.Test;
 
 class VersionProviderTest {
-  private final String TEKU = "/teku";
+  private static final String TEKU = "/teku";
 
   @Test
   void defaultStoragePath_shouldHandleWindowsPath() {

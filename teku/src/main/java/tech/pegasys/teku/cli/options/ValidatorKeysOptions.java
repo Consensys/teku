@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -107,7 +109,7 @@ public class ValidatorKeysOptions {
         config ->
             config
                 .validatorKeys(validatorKeys)
-                .validatorExternalSignerPublicKeySources(validatorExternalSignerPublicKeys)
+                .validatorExternalSignerPublicKeySources(parseValidatorExternalKeys())
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerConcurrentRequestLimit(
                     validatorExternalSignerConcurrentRequestLimit)
@@ -118,6 +120,12 @@ public class ValidatorKeysOptions {
                 .validatorExternalSignerTruststore(convertToPath(validatorExternalSignerTruststore))
                 .validatorExternalSignerTruststorePasswordFile(
                     convertToPath(validatorExternalSignerTruststorePasswordFile)));
+  }
+
+  private List<String> parseValidatorExternalKeys() {
+    return validatorExternalSignerPublicKeys.stream()
+        .filter(StringUtils::isNotBlank)
+        .collect(Collectors.toList());
   }
 
   private URL parseValidatorExternalSignerUrl() {

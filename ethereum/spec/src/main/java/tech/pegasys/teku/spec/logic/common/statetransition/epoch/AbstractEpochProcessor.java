@@ -129,51 +129,51 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final UInt64 totalActiveBalance,
       final UInt64 previousEpochTargetBalance,
       final UInt64 currentEpochTargetBalance) {
-    Checkpoint oldPreviousJustifiedCheckpoint = state.getPrevious_justified_checkpoint();
-    Checkpoint oldCurrentJustifiedCheckpoint = state.getCurrent_justified_checkpoint();
+    Checkpoint oldPreviousJustifiedCheckpoint = state.getPreviousJustifiedCheckpoint();
+    Checkpoint oldCurrentJustifiedCheckpoint = state.getCurrentJustifiedCheckpoint();
 
     // Process justifications
-    state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-    SszBitvector justificationBits = state.getJustification_bits().rightShift(1);
+    state.setPreviousJustifiedCheckpoint(state.getCurrentJustifiedCheckpoint());
+    SszBitvector justificationBits = state.getJustificationBits().rightShift(1);
 
     if (previousEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
       UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
       Checkpoint newCheckpoint =
           new Checkpoint(previousEpoch, beaconStateAccessors.getBlockRoot(state, previousEpoch));
-      state.setCurrent_justified_checkpoint(newCheckpoint);
+      state.setCurrentJustifiedCheckpoint(newCheckpoint);
       justificationBits = justificationBits.withBit(1);
     }
 
     if (currentEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
       Checkpoint newCheckpoint =
           new Checkpoint(currentEpoch, beaconStateAccessors.getBlockRoot(state, currentEpoch));
-      state.setCurrent_justified_checkpoint(newCheckpoint);
+      state.setCurrentJustifiedCheckpoint(newCheckpoint);
       justificationBits = justificationBits.withBit(0);
     }
 
-    state.setJustification_bits(justificationBits);
+    state.setJustificationBits(justificationBits);
 
     // Process finalizations
 
     // The 2nd/3rd/4th most recent epochs are justified, the 2nd using the 4th as source
     if (beaconStateUtil.all(justificationBits, 1, 4)
         && oldPreviousJustifiedCheckpoint.getEpoch().plus(3).equals(currentEpoch)) {
-      state.setFinalized_checkpoint(oldPreviousJustifiedCheckpoint);
+      state.setFinalizedCheckpoint(oldPreviousJustifiedCheckpoint);
     }
     // The 2nd/3rd most recent epochs are justified, the 2nd using the 3rd as source
     if (beaconStateUtil.all(justificationBits, 1, 3)
         && oldPreviousJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
-      state.setFinalized_checkpoint(oldPreviousJustifiedCheckpoint);
+      state.setFinalizedCheckpoint(oldPreviousJustifiedCheckpoint);
     }
     // The 1st/2nd/3rd most recent epochs are justified, the 1st using the 3rd as source
     if (beaconStateUtil.all(justificationBits, 0, 3)
         && oldCurrentJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
-      state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
+      state.setFinalizedCheckpoint(oldCurrentJustifiedCheckpoint);
     }
     // The 1st/2nd most recent epochs are justified, the 1st using the 2nd as source
     if (beaconStateUtil.all(justificationBits, 0, 2)
         && oldCurrentJustifiedCheckpoint.getEpoch().plus(1).equals(currentEpoch)) {
-      state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
+      state.setFinalizedCheckpoint(oldCurrentJustifiedCheckpoint);
     }
   }
 
@@ -234,9 +234,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                 .getCurrentEpochEffectiveBalance()
                 .equals(specConfig.getMaxEffectiveBalance())) {
           final Validator validator = validators.get(index);
-          if (validator.getActivation_eligibility_epoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+          if (validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
             validators.set(
-                index, validator.withActivation_eligibility_epoch(currentEpoch.plus(UInt64.ONE)));
+                index, validator.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
           }
         }
 
@@ -265,12 +265,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                         state
                             .getValidators()
                             .get(index1)
-                            .getActivation_eligibility_epoch()
+                            .getActivationEligibilityEpoch()
                             .compareTo(
-                                state
-                                    .getValidators()
-                                    .get(index2)
-                                    .getActivation_eligibility_epoch());
+                                state.getValidators().get(index2).getActivationEligibilityEpoch());
                     if (comparisonResult == 0) {
                       return index1.compareTo(index2);
                     } else {
@@ -288,7 +285,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             .update(
                 index,
                 validator ->
-                    validator.withActivation_epoch(
+                    validator.withActivationEpoch(
                         miscHelpers.computeActivationExitEpoch(currentEpoch)));
       }
     } catch (IllegalArgumentException e) {
@@ -314,11 +311,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (validator.isSlashed()
           && epoch
               .plus(specConfig.getEpochsPerSlashingsVector() / 2)
-              .equals(validator.getWithdrawable_epoch())) {
+              .equals(validator.getWithdrawableEpoch())) {
         UInt64 increment = specConfig.getEffectiveBalanceIncrement();
         UInt64 penaltyNumerator =
             validator
-                .getEffective_balance()
+                .getEffectiveBalance()
                 .dividedBy(increment)
                 .times(adjustedTotalSlashingBalance);
         UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
@@ -336,7 +333,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset eth1 data votes
     if (nextEpoch.mod(specConfig.getEpochsPerEth1VotingPeriod()).equals(UInt64.ZERO)) {
-      state.getEth1_data_votes().clear();
+      state.getEth1DataVotes().clear();
     }
   }
 
@@ -351,7 +348,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
       final UInt64 hysteresisIncrement =
           specConfig.getEffectiveBalanceIncrement().dividedBy(specConfig.getHysteresisQuotient());
-      final UInt64 currentEffectiveBalance = validator.getEffective_balance();
+      final UInt64 currentEffectiveBalance = validator.getEffectiveBalance();
       if (shouldDecreaseEffectiveBalance(balance, hysteresisIncrement, currentEffectiveBalance)
           || shouldIncreaseEffectiveBalance(
               balance, hysteresisIncrement, currentEffectiveBalance)) {
@@ -359,7 +356,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             balance
                 .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
                 .min(specConfig.getMaxEffectiveBalance());
-        validators.set(index, validator.withEffective_balance(newEffectiveBalance));
+        validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
       }
     }
   }
@@ -400,7 +397,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     // Set randao mix
     final int randaoIndex = nextEpoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
     state
-        .getRandao_mixes()
+        .getRandaoMixes()
         .setElement(randaoIndex, beaconStateAccessors.getRandaoMix(state, currentEpoch));
   }
 
@@ -414,8 +411,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       HistoricalBatch historicalBatch =
           schemaDefinitions
               .getHistoricalBatchSchema()
-              .create(state.getBlock_roots(), state.getState_roots());
-      state.getHistorical_roots().appendElement(historicalBatch.hashTreeRoot());
+              .create(state.getBlockRoots(), state.getStateRoots());
+      state.getHistoricalRoots().appendElement(historicalBatch.hashTreeRoot());
     }
   }
 }

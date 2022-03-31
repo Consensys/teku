@@ -79,13 +79,27 @@ public class AcceptanceTestBase {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 
+  protected Web3SignerNode createWeb3SignerNode(
+      final Consumer<Web3SignerNode.Config> configOptions) {
+    return Web3SignerNode.create(network, configOptions);
+  }
+
   protected TekuDepositSender createTekuDepositSender(final String networkName) {
     final Spec spec = SpecFactory.create(networkName);
     return addNode(new TekuDepositSender(network, spec));
   }
 
   protected BesuNode createBesuNode() {
-    return addNode(new BesuNode(network));
+    return createBesuNode(config -> {});
+  }
+
+  protected BesuNode createBesuNode(final Consumer<BesuNode.Config> configOptions) {
+    return createBesuNode(BesuDockerVersion.V21_10_9, configOptions);
+  }
+
+  protected BesuNode createBesuNode(
+      final BesuDockerVersion version, final Consumer<BesuNode.Config> configOptions) {
+    return addNode(BesuNode.create(network, version, configOptions));
   }
 
   private <T extends Node> T addNode(final T node) {

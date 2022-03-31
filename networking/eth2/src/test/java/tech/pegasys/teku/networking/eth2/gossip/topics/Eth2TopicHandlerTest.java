@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
@@ -250,7 +250,7 @@ public class Eth2TopicHandlerTest {
   private static class MockEth2TopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     private final Bytes4 forkDigest;
     private Deserializer<SignedBeaconBlock> deserializer;
-    private static final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private static final GossipEncoding GOSSIP_ENCODING = GossipEncoding.SSZ_SNAPPY;
 
     protected MockEth2TopicHandler(
         final RecentChainData recentChainData,
@@ -261,7 +261,7 @@ public class Eth2TopicHandlerTest {
           recentChainData,
           asyncRunner,
           processor,
-          gossipEncoding,
+          GOSSIP_ENCODING,
           recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow(),
           "test",
           spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
@@ -291,7 +291,7 @@ public class Eth2TopicHandlerTest {
 
     @Override
     public GossipEncoding getGossipEncoding() {
-      return gossipEncoding;
+      return GOSSIP_ENCODING;
     }
   }
 

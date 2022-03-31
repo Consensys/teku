@@ -107,13 +107,13 @@ public class Eth1DataCache {
 
   public Eth1Data getEth1Vote(BeaconState state) {
     NavigableMap<UInt64, Eth1Data> votesToConsider =
-        getVotesToConsider(state.getSlot(), state.getGenesis_time(), state.getEth1_data());
+        getVotesToConsider(state.getSlot(), state.getGenesisTime(), state.getEth1Data());
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> validBlocks = new HashSet<>(votesToConsider.values());
     final Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     Eth1Data defaultVote =
-        votesToConsider.isEmpty() ? state.getEth1_data() : votesToConsider.lastEntry().getValue();
+        votesToConsider.isEmpty() ? state.getEth1Data() : votesToConsider.lastEntry().getValue();
 
     Optional<Eth1Data> vote =
         votes.entrySet().stream()
@@ -125,15 +125,15 @@ public class Eth1DataCache {
   }
 
   public void updateMetrics(final BeaconState state) {
-    final Eth1Data currentEth1Data = state.getEth1_data();
+    final Eth1Data currentEth1Data = state.getEth1Data();
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> knownBlocks =
         new HashSet<>(
-            getVotesToConsider(state.getSlot(), state.getGenesis_time(), currentEth1Data).values());
+            getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data).values());
     Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     currentPeriodVotesMax.set(eth1VotingPeriod.getTotalSlotsInVotingPeriod(state.getSlot()));
-    currentPeriodVotesTotal.set(state.getEth1_data_votes().size());
+    currentPeriodVotesTotal.set(state.getEth1DataVotes().size());
     currentPeriodVotesUnknown.set(
         votes.keySet().stream().filter(votedBlock -> !knownBlocks.contains(votedBlock)).count());
     currentPeriodVotesCurrent.set(
@@ -149,7 +149,7 @@ public class Eth1DataCache {
   private Map<Eth1Data, Eth1Vote> countVotes(final BeaconState state) {
     Map<Eth1Data, Eth1Vote> votes = new HashMap<>();
     int i = 0;
-    for (Eth1Data eth1Data : state.getEth1_data_votes()) {
+    for (Eth1Data eth1Data : state.getEth1DataVotes()) {
       final int currentIndex = i;
       votes.computeIfAbsent(eth1Data, key -> new Eth1Vote(currentIndex)).incrementVotes();
       i++;
@@ -165,7 +165,7 @@ public class Eth1DataCache {
             true,
             eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
             true),
-        eth1Data -> eth1Data.getDeposit_count().compareTo(dataFromState.getDeposit_count()) >= 0);
+        eth1Data -> eth1Data.getDepositCount().compareTo(dataFromState.getDepositCount()) >= 0);
   }
 
   private void prune(final UInt64 latestBlockTimestamp) {

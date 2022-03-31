@@ -45,8 +45,8 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsH
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
@@ -67,13 +67,13 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload) {
-    Request<?, NewPayloadWeb3jResponse> web3jRequest =
+    Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_executePayloadV1",
             Collections.singletonList(
                 KintsugiExecutionPayloadV1.fromExecutionPayloadV1(executionPayload)),
             getWeb3JClient().getWeb3jService(),
-            NewPayloadWeb3jResponse.class);
+            PayloadStatusV1Web3jResponse.class);
     return getWeb3JClient().doRequest(web3jRequest);
   }
 
@@ -157,8 +157,12 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       final KintsugiForkChoiceUpdatedResult that = (KintsugiForkChoiceUpdatedResult) o;
       return Objects.equals(status, that.status) && Objects.equals(payloadId, that.payloadId);
     }
@@ -421,8 +425,12 @@ public class KintsugiWeb3JExecutionEngineClient extends KilnV1Web3JExecutionEngi
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       final KitsugiPayloadAttributesV1 that = (KitsugiPayloadAttributesV1) o;
       return Objects.equals(timestamp, that.timestamp)
           && Objects.equals(random, that.random)

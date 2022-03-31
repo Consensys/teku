@@ -48,8 +48,12 @@ public class PostKeyResult {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PostKeyResult that = (PostKeyResult) o;
     return importStatus == that.importStatus && Objects.equals(message, that.message);
   }

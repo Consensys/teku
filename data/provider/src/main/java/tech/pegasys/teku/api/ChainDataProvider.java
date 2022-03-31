@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -22,12 +23,11 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -43,11 +43,11 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.debug.ChainHead;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -63,7 +63,11 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -88,8 +92,12 @@ public class ChainDataProvider {
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
-    this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
-    this.defaultStateSelectorFactory = new StateSelectorFactory(combinedChainDataClient);
+    this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
+    this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
+  }
+
+  public boolean isBellatrixEnabled() {
+    return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
   }
 
   public UInt64 getGenesisTime() {
@@ -111,85 +119,70 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
+      final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+        .getBlock()
+        .thenApply(
+            maybeBlockAndMetadata ->
+                maybeBlockAndMetadata.map(
+                    blockAndMetaData ->
+                        blockAndMetaData.map(
+                            block -> new BlockHeader(block, blockAndMetaData.isCanonical()))));
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
-  }
-
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockV2(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
+      final String slotParameter) {
+    return fromBlock(slotParameter, schemaObjectProvider::getSignedBeaconBlock);
   }
 
   public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
+        .getBlock()
         .thenApply(
             maybeBlock ->
-                maybeBlock.map(
-                    block ->
-                        new SszResponse(
-                            new ByteArrayInputStream(block.sszSerialize().toArrayUnsafe()),
-                            block.hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(block.getSlot()).getMilestone())));
+                maybeBlock
+                    .map(BlockAndMetaData::getData)
+                    .map(
+                        blockData ->
+                            new SszResponse(
+                                new ByteArrayInputStream(blockData.sszSerialize().toArrayUnsafe()),
+                                blockData.hashTreeRoot().toUnprefixedHexString(),
+                                spec.atSlot(blockData.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
+  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
+    return fromBlock(slotParameter, block -> new Root(block.getRoot()));
   }
 
-  public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getSingleBlock()
-        .thenApply(
-            maybeBlock ->
-                maybeBlock.map(
-                    block ->
-                        block.getMessage().getBody().getAttestations().stream()
-                            .map(Attestation::new)
-                            .collect(toList())));
+  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
+      final String slotParameter) {
+    return fromBlock(
+        slotParameter,
+        block ->
+            block.getMessage().getBody().getAttestations().stream()
+                .map(Attestation::new)
+                .collect(toList()));
   }
 
   public boolean isStoreAvailable() {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpoints(
+  public SafeFuture<Optional<ObjectAndMetaData<FinalityCheckpointsResponse>>>
+      getStateFinalityCheckpoints(final String stateIdParam) {
+    return fromState(stateIdParam, FinalityCheckpointsResponse::fromState);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getStateRoot(final String stateIdParam) {
+    return fromState(stateIdParam, state -> new Root(state.hashTreeRoot()));
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getBeaconState(
       final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
-  }
-
-  public SafeFuture<Optional<Root>> getStateRoot(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(maybeState -> maybeState.map(state -> new Root(state.hashTreeRoot())));
-  }
-
-  public SafeFuture<Optional<BeaconState>> getBeaconState(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(maybeState -> maybeState.map(schemaObjectProvider::getBeaconState));
+    return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
   }
 
   public SafeFuture<Optional<SszResponse>> getBeaconStateSsz(final String stateIdParam) {
@@ -198,12 +191,14 @@ public class ChainDataProvider {
         .getState()
         .thenApply(
             maybeState ->
-                maybeState.map(
-                    state ->
-                        new SszResponse(
-                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                            state.hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(state.getSlot()).getMilestone())));
+                maybeState
+                    .map(ObjectAndMetaData::getData)
+                    .map(
+                        state ->
+                            new SszResponse(
+                                new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                                state.hashTreeRoot().toUnprefixedHexString(),
+                                spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public SafeFuture<GetAllBlocksAtSlotResponse> getAllBlocksAtSlot(final String slot) {
@@ -213,11 +208,12 @@ public class ChainDataProvider {
     } else {
       return defaultBlockSelectorFactory
           .nonCanonicalBlocksSelector(UInt64.valueOf(slot))
-          .getBlock()
+          .getBlocks()
           .thenApply(
               blockList -> {
                 final Set<SignedBeaconBlockWithRoot> blocks =
                     blockList.stream()
+                        .map(ObjectAndMetaData::getData)
                         .map(SignedBeaconBlockWithRoot::new)
                         .collect(Collectors.toSet());
 
@@ -234,19 +230,21 @@ public class ChainDataProvider {
         .getState()
         .thenApply(
             maybeState ->
-                maybeState.map(
-                    state ->
-                        new SszResponse(
-                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                            state.hashTreeRoot().toUnprefixedHexString(),
-                            spec.atSlot(state.getSlot()).getMilestone())));
+                maybeState
+                    .map(ObjectAndMetaData::getData)
+                    .map(
+                        state ->
+                            new SszResponse(
+                                new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                                state.hashTreeRoot().toUnprefixedHexString(),
+                                spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public List<Map<String, Object>> getProtoArrayData() {
     return recentChainData
         .getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getNodeData)
-        .orElse(Collections.emptyList());
+        .orElse(emptyList());
   }
 
   private Optional<Integer> validatorParameterToIndex(
@@ -296,21 +294,19 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<Fork>> getStateFork(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
+  public SafeFuture<Optional<ObjectAndMetaData<Fork>>> getStateFork(final String stateIdParam) {
+    return fromState(stateIdParam, state -> new Fork(state.getFork()));
   }
 
-  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getStateValidatorBalances(
-      final String stateIdParam, final List<String> validators) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(
-            maybeState ->
-                maybeState.map(state -> getValidatorBalancesFromState(state, validators)));
+  public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.spec.datastructures.state.Fork>>>
+      getFork(final String stateIdParam) {
+    return fromState(
+        stateIdParam, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState::getFork);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorBalanceResponse>>>>
+      getStateValidatorBalances(final String stateIdParam, final List<String> validators) {
+    return fromState(stateIdParam, state -> getValidatorBalancesFromState(state, validators));
   }
 
   @VisibleForTesting
@@ -330,33 +326,45 @@ public class ChainDataProvider {
         .map(Merkleizable::hashTreeRoot);
   }
 
-  public SafeFuture<List<BlockHeader>> getBlockHeaders(
+  public SafeFuture<GetBlockHeadersResponse> getBlockHeaders(
       final Optional<Bytes32> parentRoot, final Optional<UInt64> slot) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
+    final boolean bellatrixEnabled = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     if (parentRoot.isPresent()) {
-      return SafeFuture.completedFuture(List.of());
+      return SafeFuture.completedFuture(
+          new GetBlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
     }
 
     return defaultBlockSelectorFactory
-        .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
-        .getBlock()
+        .nonCanonicalBlocksSelector(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .getBlocks()
         .thenApply(
-            blockList ->
-                blockList.stream().map(block -> new BlockHeader(block, true)).collect(toList()));
+            blockAndMetadataList -> {
+              final Boolean executionOptimistic =
+                  bellatrixEnabled
+                      ? blockAndMetadataList.stream()
+                          .anyMatch(BlockAndMetaData::isExecutionOptimistic)
+                      : null;
+              final List<BlockHeader> headers =
+                  blockAndMetadataList.stream()
+                      .map(
+                          blockAndMetaData ->
+                              new BlockHeader(
+                                  blockAndMetaData.getData(), blockAndMetaData.isCanonical()))
+                      .collect(toList());
+              return new GetBlockHeadersResponse(
+                  bellatrixEnabled ? executionOptimistic : null, headers);
+            });
   }
 
-  public SafeFuture<Optional<List<ValidatorResponse>>> getStateValidators(
+  public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorResponse>>>> getStateValidators(
       final String stateIdParam,
       final List<String> validators,
       final Set<ValidatorStatus> statusFilter) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(
-            maybeState ->
-                maybeState.map(state -> getFilteredValidatorList(state, validators, statusFilter)));
+    return fromState(
+        stateIdParam, state -> getFilteredValidatorList(state, validators, statusFilter));
   }
 
   @VisibleForTesting
@@ -372,42 +380,38 @@ public class ChainDataProvider {
         .collect(toList());
   }
 
-  public SafeFuture<Optional<ValidatorResponse>> getStateValidator(
+  public SafeFuture<Optional<ObjectAndMetaData<ValidatorResponse>>> getStateValidator(
       final String stateIdParam, final String validatorIdParam) {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
-        .thenApply(maybeState -> getValidatorFromState(maybeState, validatorIdParam));
+        .thenApply(maybeStateData -> getValidatorFromState(maybeStateData, validatorIdParam));
   }
 
-  private Optional<ValidatorResponse> getValidatorFromState(
-      final Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
-          maybeState,
-      final String validatorIdParam) {
+  private Optional<ObjectAndMetaData<ValidatorResponse>> getValidatorFromState(
+      final Optional<StateAndMetaData> maybeState, final String validatorIdParam) {
     if (maybeState.isEmpty()) {
       return Optional.empty();
     }
+    final StateAndMetaData stateData = maybeState.get();
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        maybeState.get();
+        stateData.getData();
     final UInt64 epoch = spec.getCurrentEpoch(state);
-    return getValidatorSelector(state, List.of(validatorIdParam))
-        .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
-        .flatMap(Optional::stream)
-        .findFirst();
+    final Optional<ValidatorResponse> maybeValidator =
+        getValidatorSelector(state, List.of(validatorIdParam))
+            .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
+            .flatMap(Optional::stream)
+            .findFirst();
+    return maybeValidator.map(validatorResponse -> stateData.map(__ -> validatorResponse));
   }
 
-  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getStateCommittees(
+  public SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> getStateCommittees(
       final String stateIdParameter,
       final Optional<UInt64> epoch,
       final Optional<UInt64> committeeIndex,
       final Optional<UInt64> slot) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParameter)
-        .getState()
-        .thenApply(
-            maybeState ->
-                maybeState.map(
-                    state -> getCommitteesFromState(state, epoch, committeeIndex, slot)));
+    return fromState(
+        stateIdParameter, state -> getCommitteesFromState(state, epoch, committeeIndex, slot));
   }
 
   public Optional<UInt64> getCurrentEpoch() {
@@ -466,20 +470,15 @@ public class ChainDataProvider {
                     validatorParameterToIndex(state, validatorParameter).stream().mapToInt(a -> a));
   }
 
-  public SafeFuture<Optional<List<ChainHead>>> getChainHeads() {
-    List<ChainHead> result = new ArrayList<>();
-    recentChainData.getChainHeads().forEach((k, v) -> result.add(new ChainHead(v, k)));
-
-    if (result.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    return SafeFuture.completedFuture(Optional.of(result));
+  public List<ProtoNodeData> getChainHeads() {
+    return recentChainData.getChainHeads();
   }
 
   // Returns false
   //  - if Altair milestone is not supported,
   //  - if a slot is specified and that slot is a phase 0 slot
   // otherwise true will be returned
+
   public boolean stateParameterMaySupportAltair(final String epochParam) {
     if (!spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       return false;
@@ -493,12 +492,9 @@ public class ChainDataProvider {
     return true;
   }
 
-  public SafeFuture<Optional<StateSyncCommittees>> getStateSyncCommittees(
+  public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> getStateSyncCommittees(
       final String stateIdParam, final Optional<UInt64> epoch) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(maybeState -> maybeState.map(state -> getSyncCommitteesFromState(state, epoch)));
+    return fromState(stateIdParam, state -> getSyncCommitteesFromState(state, epoch));
   }
 
   private StateSyncCommittees getSyncCommitteesFromState(
@@ -536,5 +532,24 @@ public class ChainDataProvider {
 
   public Version getVersionAtSlot(final UInt64 slot) {
     return Version.fromMilestone(spec.atSlot(slot).getMilestone());
+  }
+
+  private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
+      final String slotParameter,
+      final Function<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock, T> mapper) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getBlock()
+        .thenApply(maybeBlockData -> maybeBlockData.map(blockData -> blockData.map(mapper)));
+  }
+
+  private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromState(
+      final String stateIdParam,
+      final Function<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState, T>
+          mapper) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(maybeStateData -> maybeStateData.map(blockData -> blockData.map(mapper)));
   }
 }

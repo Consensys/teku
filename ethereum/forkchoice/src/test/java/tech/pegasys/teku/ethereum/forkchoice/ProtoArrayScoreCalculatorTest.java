@@ -76,7 +76,7 @@ public class ProtoArrayScoreCalculatorTest {
 
   @Test
   void computeDeltas_allVotedTheSame() {
-    final UInt64 BALANCE = UInt64.valueOf(42);
+    final UInt64 balance = UInt64.valueOf(42);
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
@@ -84,8 +84,8 @@ public class ProtoArrayScoreCalculatorTest {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
       VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(0), vote.getNextEpoch());
       store.putVote(UInt64.valueOf(i), newVote);
-      oldBalances.add(BALANCE);
-      newBalances.add(BALANCE);
+      oldBalances.add(balance);
+      newBalances.add(balance);
     }
 
     List<Long> deltas =
@@ -105,7 +105,7 @@ public class ProtoArrayScoreCalculatorTest {
       long delta = deltas.get(i);
       if (i == 0) {
         // Zero'th root should have a delta
-        assertThat(delta).isEqualTo(BALANCE.longValue() * Integer.toUnsignedLong(validatorCount));
+        assertThat(delta).isEqualTo(balance.longValue() * Integer.toUnsignedLong(validatorCount));
       } else {
         // All other deltas should be zero
         assertThat(delta).isEqualTo(0L);
@@ -117,7 +117,7 @@ public class ProtoArrayScoreCalculatorTest {
 
   @Test
   void computeDeltas_differentVotes() {
-    final UInt64 BALANCE = UInt64.valueOf(42);
+    final UInt64 balance = UInt64.valueOf(42);
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
@@ -125,8 +125,8 @@ public class ProtoArrayScoreCalculatorTest {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
       VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(i), vote.getNextEpoch());
       store.putVote(UInt64.valueOf(i), newVote);
-      oldBalances.add(BALANCE);
-      newBalances.add(BALANCE);
+      oldBalances.add(balance);
+      newBalances.add(balance);
     }
 
     List<Long> deltas =
@@ -143,14 +143,14 @@ public class ProtoArrayScoreCalculatorTest {
     assertThat(deltas).hasSize(validatorCount);
 
     // Each root should have the same delta
-    assertThat(deltas).containsOnly(BALANCE.longValue());
+    assertThat(deltas).containsOnly(balance.longValue());
 
     votesShouldBeUpdated(store);
   }
 
   @Test
   void computeDeltas_movingVotes() {
-    final UInt64 BALANCE = UInt64.valueOf(42);
+    final UInt64 balance = UInt64.valueOf(42);
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
@@ -158,8 +158,8 @@ public class ProtoArrayScoreCalculatorTest {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
       VoteTracker newVote = new VoteTracker(getHash(0), getHash(1), vote.getNextEpoch());
       store.putVote(UInt64.valueOf(i), newVote);
-      oldBalances.add(BALANCE);
-      newBalances.add(BALANCE);
+      oldBalances.add(balance);
+      newBalances.add(balance);
     }
 
     List<Long> deltas =
@@ -175,7 +175,7 @@ public class ProtoArrayScoreCalculatorTest {
             newProposerBoostAmount);
 
     assertThat(deltas).hasSize(validatorCount);
-    long totalDelta = BALANCE.longValue() * Integer.toUnsignedLong(validatorCount);
+    long totalDelta = balance.longValue() * Integer.toUnsignedLong(validatorCount);
 
     for (int i = 0; i < deltas.size(); i++) {
       long delta = deltas.get(i);
@@ -196,14 +196,14 @@ public class ProtoArrayScoreCalculatorTest {
 
   @Test
   void computeDeltas_moveOutOfTree() {
-    final UInt64 BALANCE = UInt64.valueOf(42);
+    final UInt64 balance = UInt64.valueOf(42);
 
     // There is only one block.
     indices.put(getHash(1), 0);
 
     // There are two validators.
-    oldBalances = Collections.nCopies(2, BALANCE);
-    newBalances = Collections.nCopies(2, BALANCE);
+    oldBalances = Collections.nCopies(2, balance);
+    newBalances = Collections.nCopies(2, balance);
 
     // One validator moves their vote from the block to the zero hash.
     VoteTracker validator1vote = store.getVote(UInt64.valueOf(0));
@@ -230,7 +230,7 @@ public class ProtoArrayScoreCalculatorTest {
     assertThat(deltas).hasSize(1);
 
     // The block should have lost both balances
-    assertThat(deltas.get(0)).isEqualTo(-BALANCE.longValue() * 2);
+    assertThat(deltas.get(0)).isEqualTo(-balance.longValue() * 2);
 
     votesShouldBeUpdated(store);
   }
@@ -238,8 +238,8 @@ public class ProtoArrayScoreCalculatorTest {
   @Test
   void computeDeltas_changingBalances() {
 
-    final UInt64 OLD_BALANCE = UInt64.valueOf(42);
-    final UInt64 NEW_BALANCE = OLD_BALANCE.times(2);
+    final UInt64 oldBalance = UInt64.valueOf(42);
+    final UInt64 newBalance = oldBalance.times(2);
 
     int validatorCount = 16;
 
@@ -248,8 +248,8 @@ public class ProtoArrayScoreCalculatorTest {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
       VoteTracker newVote = new VoteTracker(getHash(0), getHash(1), vote.getNextEpoch());
       store.putVote(UInt64.valueOf(i), newVote);
-      oldBalances.add(OLD_BALANCE);
-      newBalances.add(NEW_BALANCE);
+      oldBalances.add(oldBalance);
+      newBalances.add(newBalance);
     }
 
     List<Long> deltas =
@@ -269,10 +269,10 @@ public class ProtoArrayScoreCalculatorTest {
       long delta = deltas.get(i);
       if (i == 0) {
         // Zero'th root should have a negative delta
-        assertThat(delta).isEqualTo(-OLD_BALANCE.longValue() * validatorCount);
+        assertThat(delta).isEqualTo(-oldBalance.longValue() * validatorCount);
       } else if (i == 1) {
         // First root should have positive delta
-        assertThat(delta).isEqualTo(NEW_BALANCE.longValue() * validatorCount);
+        assertThat(delta).isEqualTo(newBalance.longValue() * validatorCount);
       } else {
         // All other deltas should be zero
         assertThat(delta).isEqualTo(0L);
@@ -284,17 +284,17 @@ public class ProtoArrayScoreCalculatorTest {
 
   @Test
   void computeDeltas_validatorAppears() {
-    final UInt64 BALANCE = UInt64.valueOf(42);
+    final UInt64 balance = UInt64.valueOf(42);
 
     // There are two blocks.
     indices.put(getHash(1), 0);
     indices.put(getHash(2), 1);
 
     // There is only one validator in the old balances.
-    oldBalances.add(BALANCE);
+    oldBalances.add(balance);
 
     // There are two validators in the new balances.
-    newBalances.addAll(List.of(BALANCE, BALANCE));
+    newBalances.addAll(List.of(balance, balance));
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
@@ -317,27 +317,27 @@ public class ProtoArrayScoreCalculatorTest {
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have only lost one balance
-    assertThat(deltas.get(0)).isEqualTo(-BALANCE.longValue());
+    assertThat(deltas.get(0)).isEqualTo(-balance.longValue());
 
     // Block 2 should have gained two balances
-    assertThat(deltas.get(1)).isEqualTo(2 * BALANCE.longValue());
+    assertThat(deltas.get(1)).isEqualTo(2 * balance.longValue());
 
     votesShouldBeUpdated(store);
   }
 
   @Test
   void computeDeltas_validatorDisappears() {
-    final UInt64 BALANCE = UInt64.valueOf(42);
+    final UInt64 balance = UInt64.valueOf(42);
 
     // There are two blocks.
     indices.put(getHash(1), 0);
     indices.put(getHash(2), 1);
 
     // There is only one validator in the old balances.
-    oldBalances.addAll(List.of(BALANCE, BALANCE));
+    oldBalances.addAll(List.of(balance, balance));
 
     // There are two validators in the new balances.
-    newBalances.add(BALANCE);
+    newBalances.add(balance);
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
@@ -360,10 +360,10 @@ public class ProtoArrayScoreCalculatorTest {
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have lost both balances
-    assertThat(deltas.get(0)).isEqualTo(-BALANCE.longValue() * 2);
+    assertThat(deltas.get(0)).isEqualTo(-balance.longValue() * 2);
 
     // Block 2 should have only gained one balance
-    assertThat(deltas.get(1)).isEqualTo(BALANCE.longValue());
+    assertThat(deltas.get(1)).isEqualTo(balance.longValue());
 
     votesShouldBeUpdated(store);
   }

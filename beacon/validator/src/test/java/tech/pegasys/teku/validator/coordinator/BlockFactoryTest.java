@@ -25,8 +25,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -75,25 +76,27 @@ class BlockFactoryTest {
   final DepositProvider depositProvider = mock(DepositProvider.class);
   final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   ExecutionPayload executionPayload;
+  ExecutionPayloadHeader executionPayloadHeader;
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
-    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0());
+    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, false);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0());
+    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false, false);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0());
+    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false, false);
   }
 
   @Test
   void shouldIncludeSyncAggregateWhenAltairIsActive() throws Exception {
-    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalAltair());
+    final BeaconBlock block =
+        assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, false);
     final SyncAggregate result = getSyncAggregate(block);
     assertThatSyncAggregate(result).isNotNull();
     verify(syncCommitteeContributionPool)
@@ -102,7 +105,8 @@ class BlockFactoryTest {
 
   @Test
   void shouldIncludeExecutionPayloadWhenBellatrixIsActive() throws Exception {
-    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix());
+    final BeaconBlock block =
+        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), false, false);
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
   }
@@ -115,7 +119,8 @@ class BlockFactoryTest {
     return BeaconBlockBodyBellatrix.required(block.getBody()).getExecutionPayload();
   }
 
-  private BeaconBlock assertBlockCreated(final int blockSlot, final Spec spec)
+  private BeaconBlock assertBlockCreated(
+      final int blockSlot, final Spec spec, final boolean isMevBoostEnabled, final boolean blinded)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -133,8 +138,14 @@ class BlockFactoryTest {
           SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
               .getExecutionPayloadSchema()
               .getDefault();
+
+      executionPayloadHeader =
+          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+              .getExecutionPayloadHeaderSchema()
+              .getDefault();
     } else {
       executionPayload = null;
+      executionPayloadHeader = null;
     }
 
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
@@ -152,7 +163,8 @@ class BlockFactoryTest {
                 eth1DataCache,
                 graffiti,
                 forkChoiceNotifier,
-                executionEngine));
+                executionEngine,
+                isMevBoostEnabled));
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any(), any())).thenReturn(attestations);
@@ -164,6 +176,8 @@ class BlockFactoryTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
     when(executionEngine.getPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
+    when(executionEngine.getPayloadHeader(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
     beaconChainUtil.initializeStorage();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
@@ -178,7 +192,8 @@ class BlockFactoryTest {
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty());
+        blockFactory.createUnsignedBlock(
+            blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded);
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);

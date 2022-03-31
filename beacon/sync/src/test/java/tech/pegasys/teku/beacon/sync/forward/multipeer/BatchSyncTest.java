@@ -56,7 +56,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class BatchSyncTest {
-  private final UInt64 BATCH_SIZE = UInt64.valueOf(25);
+  private static final UInt64 BATCH_SIZE = UInt64.valueOf(25);
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final InlineEventThread eventThread = new InlineEventThread();

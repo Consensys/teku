@@ -1,11 +1,12 @@
 {
-  "title": "PostKeysResponse",
-  "type": "object",
-  "properties": {
-    "data": {
-      "type": "array",
-      "items": {
-        "$ref": "#/components/schemas/PostKeyResult"
+  "title" : "PostKeysResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/PostKeyResult"
       }
     }
   }

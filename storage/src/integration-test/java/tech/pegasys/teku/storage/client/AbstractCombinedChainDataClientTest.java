@@ -275,6 +275,74 @@ public abstract class AbstractCombinedChainDataClientTest {
   }
 
   @Test
+  public void isCanonicalBlock_shouldHandleCanonicalBlock() {
+    chainUpdater.initializeGenesis();
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
+    chainUpdater.saveBlock(targetBlock);
+    final SignedBlockAndState bestBlock =
+        chainUpdater.advanceChain(targetBlock.getSlot().plus(UInt64.ONE));
+    chainUpdater.updateBestBlock(bestBlock);
+
+    assertThat(
+            client.isCanonicalBlock(
+                targetBlock.getSlot(),
+                targetBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isTrue();
+  }
+
+  @Test
+  public void isCanonicalBlock_shouldHandleHeadBlock() {
+    chainUpdater.initializeGenesis();
+
+    final SignedBlockAndState bestBlock = chainUpdater.advanceChain(UInt64.ONE);
+    chainUpdater.updateBestBlock(bestBlock);
+
+    assertThat(
+            client.isCanonicalBlock(
+                bestBlock.getSlot(),
+                bestBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isTrue();
+  }
+
+  @Test
+  public void isCanonicalBlock_shouldHandleMissingBlock() {
+    chainUpdater.initializeGenesis();
+
+    final SignedBlockAndState bestBlock = chainUpdater.advanceChain(UInt64.ONE);
+    chainUpdater.updateBestBlock(bestBlock);
+    final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
+
+    assertThat(
+            client.isCanonicalBlock(
+                targetBlock.getSlot(),
+                targetBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isFalse();
+  }
+
+  @Test
+  public void isCanonicalBlock_shouldHandleNonCanonicalBlock() {
+    chainUpdater.initializeGenesis();
+
+    final SignedBlockAndState parentBlock = chainBuilder.generateNextBlock();
+    chainUpdater.saveBlock(parentBlock);
+    final ChainBuilder fork = chainBuilder.fork();
+    final SignedBlockAndState orphanBlock = fork.generateNextBlock();
+    final SignedBlockAndState bestBlock = chainUpdater.advanceChain(parentBlock.getSlot().plus(2));
+    chainUpdater.updateBestBlock(bestBlock);
+
+    assertThat(
+            client.isCanonicalBlock(
+                orphanBlock.getSlot(),
+                orphanBlock.getRoot(),
+                client.getChainHead().orElseThrow().getRoot()))
+        .isFalse();
+  }
+
+  @Test
   public void getCheckpointStateAtEpoch_recentEpochWithSkippedBoundarySlot() {
     final UInt64 epoch = UInt64.valueOf(3);
     final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);

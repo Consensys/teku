@@ -54,10 +54,10 @@ public class AttesterSlashing
           () ->
               Sets.intersection(
                   new TreeSet<>(
-                      getAttestation_1()
-                          .getAttesting_indices()
+                      getAttestation1()
+                          .getAttestingIndices()
                           .asListUnboxed()), // TreeSet as must be sorted
-                  new HashSet<>(getAttestation_2().getAttesting_indices().asListUnboxed())));
+                  new HashSet<>(getAttestation2().getAttestingIndices().asListUnboxed())));
 
   private AttesterSlashing(AttesterSlashingSchema type, TreeNode backingNode) {
     super(type, backingNode);
@@ -79,11 +79,11 @@ public class AttesterSlashing
     return intersectingIndices.get();
   }
 
-  public IndexedAttestation getAttestation_1() {
+  public IndexedAttestation getAttestation1() {
     return getField0();
   }
 
-  public IndexedAttestation getAttestation_2() {
+  public IndexedAttestation getAttestation2() {
     return getField1();
   }
 }

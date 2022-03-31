@@ -21,6 +21,7 @@ import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class BeaconBlockPhase0 extends BeaconBlock implements UnsignedBlock {
   public BeaconBlockPhase0(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     super(

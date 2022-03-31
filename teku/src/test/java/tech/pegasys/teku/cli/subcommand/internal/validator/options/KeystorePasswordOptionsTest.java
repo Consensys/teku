@@ -31,7 +31,7 @@ class KeystorePasswordOptionsTest {
   private static final String PASSWORD = "testpassword";
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
   private static final String SPACE_ENV_VARIABLE = "SPACE_ENV";
-  private static final Function<String, String> envSupplier =
+  private static final Function<String, String> ENV_SUPPLIER =
       envVariable -> {
         switch (envVariable) {
           case EXPECTED_ENV_VARIABLE:
@@ -109,20 +109,20 @@ class KeystorePasswordOptionsTest {
     final CommandLine commandLine = mock(CommandLine.class);
     final String actualPassword =
         KeystorePasswordOptions.readFromEnvironmentVariable(
-            commandLine, envSupplier, EXPECTED_ENV_VARIABLE);
+            commandLine, ENV_SUPPLIER, EXPECTED_ENV_VARIABLE);
     assertThat(actualPassword).isEqualTo(PASSWORD);
   }
 
   @Test
   void nonExistentEnvironmentVariableThrowsException() {
     final CommandLine commandLine = mock(CommandLine.class);
-    final String TEST_ENV = "NOT_VALID";
+    final String testEnv = "NOT_VALID";
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(
             () ->
                 KeystorePasswordOptions.readFromEnvironmentVariable(
-                    commandLine, envSupplier, TEST_ENV))
-        .withMessage(EXPECTED_ENV_ERROR, TEST_ENV);
+                    commandLine, ENV_SUPPLIER, testEnv))
+        .withMessage(EXPECTED_ENV_ERROR, testEnv);
   }
 
   @Test
@@ -132,7 +132,7 @@ class KeystorePasswordOptionsTest {
         .isThrownBy(
             () ->
                 KeystorePasswordOptions.readFromEnvironmentVariable(
-                    commandLine, envSupplier, SPACE_ENV_VARIABLE))
+                    commandLine, ENV_SUPPLIER, SPACE_ENV_VARIABLE))
         .withMessage(EXPECTED_ENV_ERROR, SPACE_ENV_VARIABLE);
   }
 }

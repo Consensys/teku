@@ -31,6 +31,7 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
@@ -40,19 +41,19 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
             stateRoot,
             bestBlockRoot,
             epochTransition,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot));
     optionalReorgContext.ifPresent(
-        context -> {
-          reorgEvents.add(
-              new ReorgEvent(
-                  bestBlockRoot,
-                  slot,
-                  stateRoot,
-                  context.getOldBestBlockRoot(),
-                  context.getOldBestStateRoot(),
-                  context.getCommonAncestorSlot()));
-        });
+        context ->
+            reorgEvents.add(
+                new ReorgEvent(
+                    bestBlockRoot,
+                    slot,
+                    stateRoot,
+                    context.getOldBestBlockRoot(),
+                    context.getOldBestStateRoot(),
+                    context.getCommonAncestorSlot())));
   }
 
   public List<HeadEvent> getHeadEvents() {
@@ -68,6 +69,7 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
     private final Bytes32 stateRoot;
     private final Bytes32 bestBlockRoot;
     private final boolean epochTransition;
+    private final boolean executionOptimistic;
     private final Bytes32 previousDutyDependentRoot;
     private final Bytes32 currentDutyDependentRoot;
 
@@ -76,12 +78,14 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final boolean executionOptimistic,
         final Bytes32 previousDutyDependentRoot,
         final Bytes32 currentDutyDependentRoot) {
       this.slot = slot;
       this.stateRoot = stateRoot;
       this.bestBlockRoot = bestBlockRoot;
       this.epochTransition = epochTransition;
+      this.executionOptimistic = executionOptimistic;
       this.previousDutyDependentRoot = previousDutyDependentRoot;
       this.currentDutyDependentRoot = currentDutyDependentRoot;
     }
@@ -108,6 +112,7 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
       }
       final HeadEvent headEvent = (HeadEvent) o;
       return epochTransition == headEvent.epochTransition
+          && executionOptimistic == headEvent.executionOptimistic
           && Objects.equals(slot, headEvent.slot)
           && Objects.equals(stateRoot, headEvent.stateRoot)
           && Objects.equals(bestBlockRoot, headEvent.bestBlockRoot)
@@ -122,6 +127,7 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
           stateRoot,
           bestBlockRoot,
           epochTransition,
+          executionOptimistic,
           previousDutyDependentRoot,
           currentDutyDependentRoot);
     }
@@ -133,8 +139,9 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
           .add("stateRoot", stateRoot)
           .add("bestBlockRoot", bestBlockRoot)
           .add("epochTransition", epochTransition)
-          .add("currentTargetRoot", previousDutyDependentRoot)
-          .add("previousTargetRoot", currentDutyDependentRoot)
+          .add("executionOptimistic", executionOptimistic)
+          .add("previousDutyDependentRoot", previousDutyDependentRoot)
+          .add("currentDutyDependentRoot", currentDutyDependentRoot)
           .toString();
     }
   }
@@ -176,8 +183,12 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       final ReorgEvent that = (ReorgEvent) o;
       return Objects.equals(newBestBlockRoot, that.newBestBlockRoot)
           && Objects.equals(bestSlot, that.bestSlot)

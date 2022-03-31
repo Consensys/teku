@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import java.time.Duration;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -269,7 +269,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
         final double firstMessageDeliveryDecay,
         final Optional<MessageDeliveriesOptions> messageDeliveryOptions) {
       final double timeInMeshCap =
-          (double) Math.max(1, Duration.ofHours(1).dividedBy(scoringConfig.getSlotDuration()));
+          Math.max(1., Duration.ofHours(1).dividedBy(scoringConfig.getSlotDuration()));
       final double firstMessageDeliveriesCap =
           scoringConfig.calculateDecayConvergence(
               firstMessageDeliveryDecay, 2.0 * expectedMessageRate / scoringConfig.getD());

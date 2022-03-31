@@ -35,7 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.OngoingStubbing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
@@ -548,7 +548,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   private void withPeerFinalizedEpoch(final UInt64 finalizedEpoch) {
     final UInt64 headSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(2L * slotsPerEpoch);
-    final PeerStatus peer_status =
+    final PeerStatus peerStatus =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
                 Bytes4.leftPad(Bytes.EMPTY),
@@ -557,6 +557,6 @@ public class PeerSyncTest extends AbstractSyncTest {
                 PEER_HEAD_BLOCK_ROOT,
                 headSlot));
 
-    when(peer.getStatus()).thenReturn(peer_status);
+    when(peer.getStatus()).thenReturn(peerStatus);
   }
 }

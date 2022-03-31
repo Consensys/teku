@@ -50,6 +50,7 @@ import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
@@ -125,7 +126,8 @@ public class ValidatorDataProvider {
         .createUnsignedBlock(
             slot,
             tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
-            graffiti)
+            graffiti,
+            false)
         .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getBeaconBlock));
   }
 
@@ -182,6 +184,29 @@ public class ValidatorDataProvider {
         throw new IllegalArgumentException("Could not determine milestone for slot " + slot);
     }
     return signedBeaconBlock;
+  }
+
+  public SignedBeaconBlock parseBlindedBlock(
+      final JsonProvider jsonProvider, final String jsonBlock) throws JsonProcessingException {
+    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    final JsonNode jsonNode = mapper.readTree(jsonBlock);
+    final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
+    final SignedBeaconBlock signedBlindedBlock;
+    checkNotNull(slot, "Slot was not found in json block");
+    switch (spec.atSlot(slot).getMilestone()) {
+      case PHASE0:
+        signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockPhase0.class);
+        break;
+      case ALTAIR:
+        signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
+        break;
+      case BELLATRIX:
+        signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockBellatrix.class);
+        break;
+      default:
+        throw new IllegalArgumentException("Could not determine milestone for slot " + slot);
+    }
+    return signedBlindedBlock;
   }
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(

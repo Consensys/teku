@@ -13,46 +13,55 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.libp2p.core.PeerId;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.api.response.v1.node.Direction;
-import tech.pegasys.teku.api.response.v1.node.Peer;
-import tech.pegasys.teku.api.response.v1.node.PeersResponse;
-import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PeersData;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 
 public class GetPeersTest extends AbstractBeaconHandlerTest {
-  final String peerId1 = PeerId.random().toBase58();
-  final Peer peer1 =
-      new Peer(
-          peerId1,
-          null,
-          "/ip4/7.7.7.7/tcp/4242/p2p/" + peerId1,
-          State.connected,
-          Direction.inbound);
-  final String peerId2 = PeerId.random().toBase58();
-  final Peer peer2 =
-      new Peer(
-          peerId2,
-          null,
-          "/ip4/8.8.8.8/tcp/4243/p2p/" + peerId2,
-          State.connected,
-          Direction.outbound);
+  final MockNodeId peerId1 = new MockNodeId(123456);
+  final Eth2Peer peer1 = mock(Eth2Peer.class);
+
+  final MockNodeId peerId2 = new MockNodeId(789123);
+  final Eth2Peer peer2 = mock(Eth2Peer.class);
+
+  @BeforeEach
+  void setup() {
+    when(peer1.getId()).thenReturn(peerId1);
+    when(peer1.getAddress()).thenReturn(new PeerAddress(peerId1));
+    when(peer1.isConnected()).thenReturn(true);
+    when(peer1.connectionInitiatedLocally()).thenReturn(false);
+
+    when(peer2.getId()).thenReturn(peerId2);
+    when(peer2.getAddress()).thenReturn(new PeerAddress(peerId2));
+    when(peer2.isConnected()).thenReturn(true);
+    when(peer2.connectionInitiatedLocally()).thenReturn(true);
+  }
 
   @Test
   public void shouldReturnListOfPeers() throws Exception {
-    final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
-    GetPeers handler = new GetPeers(networkDataProvider, jsonProvider);
-    when(networkDataProvider.getPeers()).thenReturn(List.of(peer1, peer2));
-    handler.handle(context);
+    List<Eth2Peer> data = List.of(peer1, peer2);
+    GetPeers.PeersData peersData = new PeersData(data);
 
-    PeersResponse response = getResponseObject(PeersResponse.class);
-    assertThat(response.data).containsExactlyInAnyOrder(peer1, peer2);
+    final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
+    when(networkDataProvider.getEth2Peers()).thenReturn(data);
+
+    GetPeers handler = new GetPeers(networkDataProvider);
+    final RestApiRequest request = mock(RestApiRequest.class);
+    handler.handleRequest(request);
+    verify(request).respondOk(refEq(peersData), eq(CacheLength.NO_CACHE));
   }
 }

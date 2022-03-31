@@ -31,19 +31,20 @@ public class Predicates {
    *     </a>
    */
   public boolean isActiveValidator(Validator validator, UInt64 epoch) {
-    return validator.getActivation_epoch().compareTo(epoch) <= 0
-        && epoch.compareTo(validator.getExit_epoch()) < 0;
+    return validator.getActivationEpoch().compareTo(epoch) <= 0
+        && epoch.compareTo(validator.getExitEpoch()) < 0;
   }
 
   public boolean isValidMerkleBranch(
       Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
-      if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
+      if ((index & 1) == 1) {
         value = Hash.sha256(branch.getElement(i), value);
       } else {
         value = Hash.sha256(value, branch.getElement(i));
       }
+      index >>>= 1;
     }
     return value.equals(root);
   }
@@ -59,7 +60,7 @@ public class Predicates {
    */
   public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
     return !validator.isSlashed()
-        && (validator.getActivation_epoch().compareTo(epoch) <= 0
-            && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
+        && (validator.getActivationEpoch().compareTo(epoch) <= 0
+            && epoch.compareTo(validator.getWithdrawableEpoch()) < 0);
   }
 }

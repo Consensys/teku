@@ -14,11 +14,9 @@
 package tech.pegasys.teku.spec.util;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -84,22 +82,29 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public Set<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
+  public List<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
     final Optional<Bytes32> maybeRoot = getBlock(slot).map(SignedBeaconBlock::getRoot);
     if (maybeRoot.isEmpty()) {
-      return Collections.emptySet();
+      return Collections.emptyList();
     }
-    final Set<Bytes32> output = new HashSet<>();
-    output.add(maybeRoot.get());
-    return output;
+    return List.of(maybeRoot.get());
   }
 
   @Override
-  public Map<Bytes32, UInt64> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads() {
     return chainBuilder
         .getChainHead()
-        .map(h -> Map.of(h.getRoot(), h.getSlot()))
-        .orElse(Collections.emptyMap());
+        .map(
+            h ->
+                List.of(
+                    new ProtoNodeData(
+                        h.getSlot(),
+                        h.getRoot(),
+                        h.getParentRoot(),
+                        h.getStateRoot(),
+                        h.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                        false)))
+        .orElse(Collections.emptyList());
   }
 
   @Override
@@ -118,8 +123,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public boolean isOptimistic(final Bytes32 blockRoot) {
-    return false;
+  public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
+    return Optional.of(false);
   }
 
   @Override

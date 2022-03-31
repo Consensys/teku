@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 
 public class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
 
-  public static SszByte ZERO = SszByte.of(0);
+  public static final SszByte ZERO = SszByte.of(0);
 
   public static SszByte of(int value) {
     return new SszByte((byte) value);

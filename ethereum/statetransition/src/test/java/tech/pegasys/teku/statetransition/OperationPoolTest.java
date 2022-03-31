@@ -91,7 +91,7 @@ public class OperationPoolTest {
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
-      pool.add(dataStructureUtil.randomSignedVoluntaryExit());
+      pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
     assertThat(pool.getItemsForBlock(state)).hasSize(maxVoluntaryExits);
   }
@@ -111,7 +111,7 @@ public class OperationPoolTest {
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 10; i++) {
-      pool.add(dataStructureUtil.randomSignedVoluntaryExit());
+      pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
     // Didn't find any applicable items but tried them all
     assertThat(pool.getItemsForBlock(state, filter, operation -> {})).isEmpty();
@@ -153,11 +153,11 @@ public class OperationPoolTest {
 
     when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
 
-    pool.add(slashing1);
-    pool.add(slashing2);
+    pool.addLocal(slashing1);
+    pool.addLocal(slashing2);
 
     when(validator.validateForStateTransition(any(), eq(slashing1)))
-        .thenReturn(Optional.of(ExitInvalidReason.SUBMITTED_TOO_EARLY));
+        .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
     when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(Optional.empty());
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
@@ -175,7 +175,8 @@ public class OperationPoolTest {
 
     // Set up subscriber
     final Map<ProposerSlashing, InternalValidationResult> addedSlashings = new HashMap<>();
-    OperationAddedSubscriber<ProposerSlashing> subscriber = addedSlashings::put;
+    OperationAddedSubscriber<ProposerSlashing> subscriber =
+        (key, value, fromNetwork) -> addedSlashings.put(key, value);
     pool.subscribeOperationAdded(subscriber);
 
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
@@ -189,10 +190,10 @@ public class OperationPoolTest {
         .thenReturn(completedFuture(InternalValidationResult.reject("Nah")));
     when(validator.validateFully(slashing4)).thenReturn(completedFuture(IGNORE));
 
-    pool.add(slashing1);
-    pool.add(slashing2);
-    pool.add(slashing3);
-    pool.add(slashing4);
+    pool.addLocal(slashing1);
+    pool.addLocal(slashing2);
+    pool.addLocal(slashing3);
+    pool.addLocal(slashing4);
 
     assertThat(addedSlashings.size()).isEqualTo(2);
     assertThat(addedSlashings).containsKey(slashing1);

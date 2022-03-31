@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 
+@SuppressWarnings("JavaCase")
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature randao_reveal;
@@ -128,8 +129,12 @@ public class BeaconBlockBody {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof BeaconBlockBody)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BeaconBlockBody)) {
+      return false;
+    }
     BeaconBlockBody that = (BeaconBlockBody) o;
     return Objects.equals(randao_reveal, that.randao_reveal)
         && Objects.equals(eth1_data, that.eth1_data)

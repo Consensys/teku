@@ -24,10 +24,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.FailedBlockImportResult;
@@ -46,26 +48,36 @@ public class BlockManager extends Service
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator validator;
+  private final TimeProvider timeProvider;
+  private final EventLogger eventLogger;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
   // and will not require any further retry. Descendants of these blocks will be considered invalid
   // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.create(500);
-  private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
+  private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
+
+  private final Optional<BlockImportMetrics> blockImportMetrics;
 
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
-      final BlockValidator validator) {
+      final BlockValidator validator,
+      final TimeProvider timeProvider,
+      final EventLogger eventLogger,
+      final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.validator = validator;
+    this.timeProvider = timeProvider;
+    this.eventLogger = eventLogger;
+    this.blockImportMetrics = blockImportMetrics;
   }
 
   @Override
@@ -81,22 +93,36 @@ public class BlockManager extends Service
   @Override
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", () -> formatBlock(block.getSlot(), block.getRoot()));
-    return doImportBlock(block);
+    return doImportBlock(block, Optional.empty());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
+
+    final Optional<BlockImportPerformance> blockImportPerformance;
+
+    if (blockImportMetrics.isPresent()) {
+      final BlockImportPerformance performance =
+          new BlockImportPerformance(timeProvider, blockImportMetrics.get());
+      performance.arrival(recentChainData, block.getSlot());
+      blockImportPerformance = Optional.of(performance);
+    } else {
+      blockImportPerformance = Optional.empty();
+    }
+
     if (propagateInvalidity(block).isPresent()) {
       return SafeFuture.completedFuture(
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
+
     SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            importBlock(block).finish(err -> LOG.error("Failed to process received block.", err));
+            doImportBlock(block, blockImportPerformance)
+                .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
     return validationResult;
@@ -109,12 +135,14 @@ public class BlockManager extends Service
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 
-  public void subscribeToReceivedBlocks(ReceivedBlockListener receivedBlockListener) {
-    receivedBlockSubscribers.subscribe(receivedBlockListener);
+  public void subscribeToReceivedBlocks(ImportedBlockListener importedBlockListener) {
+    receivedBlockSubscribers.subscribe(importedBlockListener);
   }
 
-  private void notifyReceivedBlockSubscribers(SignedBeaconBlock signedBeaconBlock) {
-    receivedBlockSubscribers.forEach(s -> s.accept(signedBeaconBlock));
+  private void notifyReceivedBlockSubscribers(
+      final SignedBeaconBlock signedBeaconBlock, final boolean executionOptimistic) {
+    receivedBlockSubscribers.forEach(
+        s -> s.onBlockImported(signedBeaconBlock, executionOptimistic));
   }
 
   @Override
@@ -128,17 +156,25 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block).reportExceptions();
+    doImportBlock(block, Optional.empty()).reportExceptions();
   }
 
-  private SafeFuture<BlockImportResult> doImportBlock(final SignedBeaconBlock block) {
+  private SafeFuture<BlockImportResult> doImportBlock(
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance) {
     return handleInvalidBlock(block)
-        .or(
-            () -> {
-              notifyReceivedBlockSubscribers(block);
-              return handleKnownBlock(block);
-            })
-        .orElseGet(() -> handleBlockImport(block));
+        .or(() -> handleKnownBlock(block))
+        .orElseGet(
+            () ->
+                handleBlockImport(block, blockImportPerformance)
+                    .thenPeek(
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
+        .thenPeek(
+            result -> {
+              if (result.isSuccessful()) {
+                notifyReceivedBlockSubscribers(block, result.isImportedOptimistically());
+              }
+            });
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
@@ -163,17 +199,22 @@ public class BlockManager extends Service
   }
 
   private Optional<SafeFuture<BlockImportResult>> handleKnownBlock(final SignedBeaconBlock block) {
-    if (pendingBlocks.contains(block)
-        || futureBlocks.contains(block)
-        || recentChainData.containsBlock(block.getRoot())) {
-      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
+    if (pendingBlocks.contains(block) || futureBlocks.contains(block)) {
+      // Pending and future blocks can't have been executed yet so must be marked optimistic
+      return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, true)));
     }
-    return Optional.empty();
+    return recentChainData
+        .isBlockOptimistic(block.getRoot())
+        .map(
+            isOptimistic ->
+                SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
-  private SafeFuture<BlockImportResult> handleBlockImport(final SignedBeaconBlock block) {
+  private SafeFuture<BlockImportResult> handleBlockImport(
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance) {
     return blockImporter
-        .importBlock(block)
+        .importBlock(block, blockImportPerformance)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -231,5 +272,14 @@ public class BlockManager extends Service
                   BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
               pendingBlocks.remove(blockToDrop);
             });
+  }
+
+  private void lateBlockImportCheck(
+      final Optional<BlockImportPerformance> maybeBlockImportPerformance,
+      final SignedBeaconBlock block,
+      final BlockImportResult blockImportResult) {
+    maybeBlockImportPerformance.ifPresent(
+        blockImportPerformance ->
+            blockImportPerformance.processingComplete(eventLogger, block, blockImportResult));
   }
 }

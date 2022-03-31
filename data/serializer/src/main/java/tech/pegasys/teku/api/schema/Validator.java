@@ -28,6 +28,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class Validator {
   @Schema(
       type = "string",
@@ -95,13 +96,13 @@ public class Validator {
 
   public Validator(final tech.pegasys.teku.spec.datastructures.state.Validator validator) {
     this.pubkey = new BLSPubKey(validator.getPubkeyBytes());
-    this.withdrawal_credentials = validator.getWithdrawal_credentials();
-    this.effective_balance = validator.getEffective_balance();
+    this.withdrawal_credentials = validator.getWithdrawalCredentials();
+    this.effective_balance = validator.getEffectiveBalance();
     this.slashed = validator.isSlashed();
-    this.activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
-    this.activation_epoch = validator.getActivation_epoch();
-    this.exit_epoch = validator.getExit_epoch();
-    this.withdrawable_epoch = validator.getWithdrawable_epoch();
+    this.activation_eligibility_epoch = validator.getActivationEligibilityEpoch();
+    this.activation_epoch = validator.getActivationEpoch();
+    this.exit_epoch = validator.getExitEpoch();
+    this.withdrawable_epoch = validator.getWithdrawableEpoch();
   }
 
   public tech.pegasys.teku.spec.datastructures.state.Validator asInternalValidator() {
@@ -118,8 +119,12 @@ public class Validator {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Validator validator = (Validator) o;
     return slashed == validator.slashed
         && Objects.equals(pubkey, validator.pubkey)

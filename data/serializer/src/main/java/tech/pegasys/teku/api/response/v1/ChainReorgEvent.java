@@ -15,8 +15,11 @@ package tech.pegasys.teku.api.response.v1;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +47,11 @@ public class ChainReorgEvent {
   @JsonProperty("epoch")
   public final UInt64 epoch;
 
+  @JsonProperty("execution_optimistic")
+  @JsonInclude(Include.NON_NULL)
+  @Schema(hidden = true)
+  public final Boolean executionOptimistic;
+
   @JsonCreator
   public ChainReorgEvent(
       @JsonProperty(value = "slot", required = true) final UInt64 slot,
@@ -52,7 +60,8 @@ public class ChainReorgEvent {
       @JsonProperty("new_head_block") final Bytes32 newHeadBlock,
       @JsonProperty("old_head_state") final Bytes32 oldHeadState,
       @JsonProperty("new_head_state") final Bytes32 newHeadState,
-      @JsonProperty("epoch") final UInt64 epoch) {
+      @JsonProperty("epoch") final UInt64 epoch,
+      @JsonProperty("execution_optimistic") final Boolean executionOptimistic) {
     this.slot = slot;
     this.depth = depth;
     this.oldHeadBlock = oldHeadBlock;
@@ -60,12 +69,17 @@ public class ChainReorgEvent {
     this.oldHeadState = oldHeadState;
     this.newHeadState = newHeadState;
     this.epoch = epoch;
+    this.executionOptimistic = executionOptimistic;
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final ChainReorgEvent that = (ChainReorgEvent) o;
     return Objects.equals(slot, that.slot)
         && Objects.equals(depth, that.depth)
@@ -73,12 +87,21 @@ public class ChainReorgEvent {
         && Objects.equals(newHeadBlock, that.newHeadBlock)
         && Objects.equals(oldHeadState, that.oldHeadState)
         && Objects.equals(newHeadState, that.newHeadState)
-        && Objects.equals(epoch, that.epoch);
+        && Objects.equals(epoch, that.epoch)
+        && Objects.equals(executionOptimistic, that.executionOptimistic);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, depth, oldHeadBlock, newHeadBlock, oldHeadState, newHeadState, epoch);
+    return Objects.hash(
+        slot,
+        depth,
+        oldHeadBlock,
+        newHeadBlock,
+        oldHeadState,
+        newHeadState,
+        epoch,
+        executionOptimistic);
   }
 
   @Override
@@ -91,6 +114,7 @@ public class ChainReorgEvent {
         .add("oldHeadState", oldHeadState)
         .add("newHeadState", newHeadState)
         .add("epoch", epoch)
+        .add("executionOptimistic", executionOptimistic)
         .toString();
   }
 }

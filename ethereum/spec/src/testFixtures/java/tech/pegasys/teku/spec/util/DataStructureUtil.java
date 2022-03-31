@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,9 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
@@ -56,9 +60,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -371,12 +372,12 @@ public final class DataStructureUtil {
     return getSyncAggregateSchema(specVersionAltair).createEmpty();
   }
 
-  public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
+  public SyncAggregate randomSyncAggregate(final int... participantIndices) {
     SpecVersion specVersionAltair =
         Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
 
     return getSyncAggregateSchema(specVersionAltair)
-        .create(List.of(participantIndices), randomSignature());
+        .create(IntList.of(participantIndices), randomSignature());
   }
 
   private SyncAggregateSchema getSyncAggregateSchema(SpecVersion specVersionAltair) {
@@ -529,6 +530,16 @@ public final class DataStructureUtil {
         slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
+  public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
+    return new AttestationData(
+        slot,
+        randomUInt64(),
+        blockRoot,
+        // Make checkpoint epochs realistic
+        randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1)),
+        randomCheckpoint(spec.computeEpochAtSlot(slot)));
+  }
+
   public Attestation randomAttestation() {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
@@ -621,6 +632,21 @@ public final class DataStructureUtil {
     return blocks;
   }
 
+  public SignedBeaconBlock randomSignedBlindedBeaconBlock() {
+    final BeaconBlock beaconBlock = randomBlindedBeaconBlock(randomUInt64());
+    return signedBlock(beaconBlock);
+  }
+
+  public SignedBeaconBlock randomSignedBlindedBeaconBlock(long slotNum) {
+    final BeaconBlock beaconBlock = randomBlindedBeaconBlock(UInt64.valueOf(slotNum));
+    return signedBlock(beaconBlock);
+  }
+
+  public SignedBeaconBlock randomSignedBlindedBeaconBlock(UInt64 slotNum) {
+    final BeaconBlock beaconBlock = randomBlindedBeaconBlock(slotNum);
+    return signedBlock(beaconBlock);
+  }
+
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
     return randomSignedBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -672,17 +698,32 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlock randomBeaconBlock(UInt64 slotNum) {
-    final UInt64 proposer_index = randomUInt64();
-    Bytes32 previous_root = randomBytes32();
-    Bytes32 state_root = randomBytes32();
+    final UInt64 proposerIndex = randomUInt64();
+    Bytes32 previousRoot = randomBytes32();
+    Bytes32 stateRoot = randomBytes32();
     BeaconBlockBody body = randomBeaconBlockBody();
 
     return new BeaconBlock(
         spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema(),
         slotNum,
-        proposer_index,
-        previous_root,
-        state_root,
+        proposerIndex,
+        previousRoot,
+        stateRoot,
+        body);
+  }
+
+  public BeaconBlock randomBlindedBeaconBlock(UInt64 slotNum) {
+    final UInt64 proposerIndex = randomUInt64();
+    Bytes32 previousRoot = randomBytes32();
+    Bytes32 stateRoot = randomBytes32();
+    BeaconBlockBody body = randomBlindedBeaconBlockBody(slotNum);
+
+    return new BeaconBlock(
+        spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockSchema(),
+        slotNum,
+        proposerIndex,
+        previousRoot,
+        stateRoot,
         body);
   }
 
@@ -729,16 +770,16 @@ public final class DataStructureUtil {
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final UInt64 proposer_index = randomUInt64();
+    final UInt64 proposerIndex = randomUInt64();
     final BeaconBlockHeader latestHeader =
-        new BeaconBlockHeader(slot, proposer_index, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
+        new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
-    final BeaconState matchingState = state.updated(s -> s.setLatest_block_header(latestHeader));
+    final BeaconState matchingState = state.updated(s -> s.setLatestBlockHeader(latestHeader));
     final BeaconBlock block =
         new BeaconBlock(
             spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
             slot,
-            proposer_index,
+            proposerIndex,
             parentRoot,
             matchingState.hashTreeRoot(),
             body);
@@ -754,13 +795,13 @@ public final class DataStructureUtil {
       long slotNum, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
     UInt64 slot = UInt64.valueOf(slotNum);
 
-    final UInt64 proposer_index = randomUInt64();
+    final UInt64 proposerIndex = randomUInt64();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
     return new BeaconBlock(
         spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
         slot,
-        proposer_index,
+        proposerIndex,
         parentRoot,
         stateRoot,
         body);
@@ -787,6 +828,33 @@ public final class DataStructureUtil {
   public BeaconBlockHeader randomBeaconBlockHeader(final UInt64 slot, final UInt64 proposerIndex) {
     return new BeaconBlockHeader(
         slot, proposerIndex, randomBytes32(), randomBytes32(), randomBytes32());
+  }
+
+  public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
+    BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
+
+    return schema.createBlockBody(
+        builder ->
+            builder
+                .randaoReveal(randomSignature())
+                .eth1Data(randomEth1Data())
+                .graffiti(Bytes32.ZERO)
+                .proposerSlashings(
+                    randomSszList(
+                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                .attesterSlashings(
+                    randomSszList(
+                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                .attestations(
+                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                .deposits(
+                    randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                .voluntaryExits(
+                    randomSszList(
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                .executionPayloadHeader(this::randomExecutionPayloadHeader));
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
@@ -853,29 +921,29 @@ public final class DataStructureUtil {
     return randomIndexedAttestation(randomUInt64(), randomUInt64(), randomUInt64());
   }
 
-  public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndices) {
+  public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndicesInput) {
     final IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
-    SszUInt64List attesting_indices =
-        indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndices);
+    SszUInt64List attestingIndices =
+        indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
     return indexedAttestationSchema.create(
-        attesting_indices, randomAttestationData(), randomSignature());
+        attestingIndices, randomAttestationData(), randomSignature());
   }
 
   public DepositData randomDepositData() {
     BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
     BLSPublicKey pubkey = keyPair.getPublicKey();
-    Bytes32 withdrawal_credentials = randomBytes32();
+    Bytes32 withdrawalCredentials = randomBytes32();
 
-    DepositMessage proof_of_possession_data =
-        new DepositMessage(pubkey, withdrawal_credentials, getMaxEffectiveBalance());
+    DepositMessage proofOfPossessionData =
+        new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
 
     final Bytes32 domain = computeDomain();
-    final Bytes signing_root = getSigningRoot(proof_of_possession_data, domain);
+    final Bytes signingRoot = getSigningRoot(proofOfPossessionData, domain);
 
-    BLSSignature proof_of_possession = BLS.sign(keyPair.getSecretKey(), signing_root);
+    BLSSignature proofOfPossession = BLS.sign(keyPair.getSecretKey(), signingRoot);
 
-    return new DepositData(proof_of_possession_data, proof_of_possession);
+    return new DepositData(proofOfPossessionData, proofOfPossession);
   }
 
   public DepositWithIndex randomDepositWithIndex() {
@@ -1106,7 +1174,7 @@ public final class DataStructureUtil {
             schemaDefinitions.getBeaconBlockSchema(),
             anchorState.getSlot(),
             UInt64.ZERO,
-            anchorState.getLatest_block_header().getParentRoot(),
+            anchorState.getLatestBlockHeader().getParentRoot(),
             anchorState.hashTreeRoot(),
             spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
     final SignedBeaconBlock signedAnchorBlock =

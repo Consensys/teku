@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
+@SuppressWarnings("JavaCase")
 public abstract class BeaconState implements State {
   @Schema(type = "string", format = "uint64")
   public final UInt64 genesis_time;
@@ -129,29 +130,28 @@ public abstract class BeaconState implements State {
 
   protected BeaconState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconState) {
-    this.genesis_time = beaconState.getGenesis_time();
-    this.genesis_validators_root = beaconState.getGenesis_validators_root();
+    this.genesis_time = beaconState.getGenesisTime();
+    this.genesis_validators_root = beaconState.getGenesisValidatorsRoot();
     this.slot = beaconState.getSlot();
     this.fork = new Fork(beaconState.getFork());
-    this.latest_block_header = new BeaconBlockHeader(beaconState.getLatest_block_header());
-    this.block_roots = beaconState.getBlock_roots().asListUnboxed();
-    this.state_roots = beaconState.getState_roots().asListUnboxed();
-    this.historical_roots = beaconState.getHistorical_roots().asListUnboxed();
-    this.eth1_data = new Eth1Data(beaconState.getEth1_data());
+    this.latest_block_header = new BeaconBlockHeader(beaconState.getLatestBlockHeader());
+    this.block_roots = beaconState.getBlockRoots().asListUnboxed();
+    this.state_roots = beaconState.getStateRoots().asListUnboxed();
+    this.historical_roots = beaconState.getHistoricalRoots().asListUnboxed();
+    this.eth1_data = new Eth1Data(beaconState.getEth1Data());
     this.eth1_data_votes =
-        beaconState.getEth1_data_votes().stream().map(Eth1Data::new).collect(Collectors.toList());
-    this.eth1_deposit_index = beaconState.getEth1_deposit_index();
+        beaconState.getEth1DataVotes().stream().map(Eth1Data::new).collect(Collectors.toList());
+    this.eth1_deposit_index = beaconState.getEth1DepositIndex();
     this.validators =
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
     this.balances = beaconState.getBalances().asListUnboxed();
-    this.randao_mixes = beaconState.getRandao_mixes().asListUnboxed();
+    this.randao_mixes = beaconState.getRandaoMixes().asListUnboxed();
     this.slashings = beaconState.getSlashings().asListUnboxed();
-    this.justification_bits = beaconState.getJustification_bits();
+    this.justification_bits = beaconState.getJustificationBits();
     this.previous_justified_checkpoint =
-        new Checkpoint(beaconState.getPrevious_justified_checkpoint());
-    this.current_justified_checkpoint =
-        new Checkpoint(beaconState.getCurrent_justified_checkpoint());
-    this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
+        new Checkpoint(beaconState.getPreviousJustifiedCheckpoint());
+    this.current_justified_checkpoint = new Checkpoint(beaconState.getCurrentJustifiedCheckpoint());
+    this.finalized_checkpoint = new Checkpoint(beaconState.getFinalizedCheckpoint());
   }
 
   public tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState asInternalBeaconState(
@@ -162,22 +162,22 @@ public abstract class BeaconState implements State {
         .createEmpty()
         .updated(
             state -> {
-              state.setGenesis_time(genesis_time);
-              state.setGenesis_validators_root(genesis_validators_root);
+              state.setGenesisTime(genesis_time);
+              state.setGenesisValidatorsRoot(genesis_validators_root);
               state.setSlot(slot);
               state.setFork(fork.asInternalFork());
-              state.setLatest_block_header(latest_block_header.asInternalBeaconBlockHeader());
-              state.getBlock_roots().setAllElements(block_roots);
-              state.getState_roots().setAllElements(state_roots);
-              state.getHistorical_roots().setAllElements(historical_roots);
-              state.setEth1_data(eth1_data.asInternalEth1Data());
+              state.setLatestBlockHeader(latest_block_header.asInternalBeaconBlockHeader());
+              state.getBlockRoots().setAllElements(block_roots);
+              state.getStateRoots().setAllElements(state_roots);
+              state.getHistoricalRoots().setAllElements(historical_roots);
+              state.setEth1Data(eth1_data.asInternalEth1Data());
               state
-                  .getEth1_data_votes()
+                  .getEth1DataVotes()
                   .setAll(
                       eth1_data_votes.stream()
                           .map(Eth1Data::asInternalEth1Data)
                           .collect(Collectors.toList()));
-              state.setEth1_deposit_index(eth1_deposit_index);
+              state.setEth1DepositIndex(eth1_deposit_index);
               state
                   .getValidators()
                   .setAll(
@@ -185,16 +185,16 @@ public abstract class BeaconState implements State {
                           .map(Validator::asInternalValidator)
                           .collect(Collectors.toList()));
               state.getBalances().setAllElements(balances);
-              state.getRandao_mixes().setAllElements(randao_mixes);
+              state.getRandaoMixes().setAllElements(randao_mixes);
               state.getSlashings().setAllElements(slashings);
               SszBitvector newJustificationBits =
                   schema.getJustificationBitsSchema().ofBits(justification_bits.getAllSetBits());
-              state.setJustification_bits(newJustificationBits);
-              state.setPrevious_justified_checkpoint(
+              state.setJustificationBits(newJustificationBits);
+              state.setPreviousJustifiedCheckpoint(
                   previous_justified_checkpoint.asInternalCheckpoint());
-              state.setCurrent_justified_checkpoint(
+              state.setCurrentJustifiedCheckpoint(
                   current_justified_checkpoint.asInternalCheckpoint());
-              state.setFinalized_checkpoint(finalized_checkpoint.asInternalCheckpoint());
+              state.setFinalizedCheckpoint(finalized_checkpoint.asInternalCheckpoint());
 
               applyAdditionalFields(state);
             });

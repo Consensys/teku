@@ -56,6 +56,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> genesisTime = Optional.empty();
   Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
   Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
+  boolean finalizedCheckpointOptimistic = false;
   Optional<Checkpoint> bestJustifiedCheckpoint = Optional.empty();
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   boolean proposerBoostRootSet = false;
@@ -113,18 +114,19 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
-    this.justifiedCheckpoint = Optional.of(justified_checkpoint);
+  public void setJustifiedCheckpoint(Checkpoint justifiedCheckpoint) {
+    this.justifiedCheckpoint = Optional.of(justifiedCheckpoint);
   }
 
   @Override
-  public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
-    this.finalizedCheckpoint = Optional.of(finalized_checkpoint);
+  public void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock) {
+    this.finalizedCheckpoint = Optional.of(finalizedCheckpoint);
+    this.finalizedCheckpointOptimistic = fromOptimisticBlock;
   }
 
   @Override
-  public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
-    this.bestJustifiedCheckpoint = Optional.of(best_justified_checkpoint);
+  public void setBestJustifiedCheckpoint(Checkpoint bestJustifiedCheckpoint) {
+    this.bestJustifiedCheckpoint = Optional.of(bestJustifiedCheckpoint);
   }
 
   @Override
@@ -179,7 +181,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                         }
 
                         // Signal back changes to the handler
-                        finalizedCheckpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                        finalizedCheckpoint.ifPresent(
+                            checkpoint ->
+                                updateHandler.onNewFinalizedCheckpoint(
+                                    checkpoint, finalizedCheckpointOptimistic));
                       });
             });
   }

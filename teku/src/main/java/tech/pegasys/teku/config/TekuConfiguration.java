@@ -92,7 +92,8 @@ public class TekuConfiguration {
             powchainConfiguration,
             storeConfig,
             spec,
-            beaconChainControllerFactory);
+            beaconChainControllerFactory,
+            metricsConfig);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(
             validatorConfig, interopConfig, validatorRestApiConfig, spec);

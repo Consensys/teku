@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final GetStateCommittees handler =
       new GetStateCommittees(chainDataProvider, jsonProvider);
   private final EpochCommitteeResponse epochCommitteeResponse =
@@ -55,7 +55,8 @@ public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
                 "epoch", List.of(epoch.toString())));
     when(chainDataProvider.getStateCommittees(
             "head", Optional.of(epoch), Optional.of(UInt64.ONE), Optional.of(slot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(epochCommitteeResponse))));
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(withMetaData(List.of(epochCommitteeResponse)))));
     handler.handle(context);
     GetStateCommitteesResponse response = getResponseFromFuture(GetStateCommitteesResponse.class);
     assertThat(response.data).isEqualTo(List.of(epochCommitteeResponse));
@@ -64,7 +65,7 @@ public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
   @ParameterizedTest
   @MethodSource("getParameters")
   public void shouldFailIfEpochInvalid(
-      final String queryParameter, final String queryParameterValue) throws Exception {
+      final String queryParameter, final String queryParameterValue) {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of(queryParameter, List.of(queryParameterValue)));
     assertThrows(BadRequestException.class, () -> handler.handle(context));

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +31,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -38,6 +43,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -45,17 +51,20 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ReexecutingExecutionPayloadBlockManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final EventLogger eventLogger = mock(EventLogger.class);
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      PendingPool.createForBlocks(
-          spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+      new PendingPoolFactory(metricsSystem)
+          .createForBlocks(spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
-      FutureItems.create(SignedBeaconBlock::getSlot);
+      FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
 
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
@@ -80,16 +89,19 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
           pendingBlocks,
           futureBlocks,
           mock(BlockValidator.class),
-          asyncRunner);
+          timeProvider,
+          eventLogger,
+          asyncRunner,
+          Optional.empty());
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach
@@ -110,7 +122,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // syncing
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING));
@@ -118,7 +130,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
     // communication error
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
@@ -126,12 +138,12 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
     asyncRunner.executeQueuedActions();
 
     // successful imported now
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(nextBlock)));
 
     asyncRunner.executeQueuedActions();
 
-    verify(blockImporter, times(3)).importBlock(nextBlock);
+    verify(blockImporter, times(3)).importBlock(nextBlock, Optional.empty());
 
     // should be dequeued now, so no more interactions
     asyncRunner.executeQueuedActions();
@@ -144,14 +156,14 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // invalid
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.failedStateTransition(new IllegalStateException("invalid"))));
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
-    verify(blockImporter, times(1)).importBlock(nextBlock);
+    verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
     // should not bw queued
     asyncRunner.executeQueuedActions();
@@ -164,14 +176,14 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // syncing
-    when(blockImporter.importBlock(nextBlock))
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING));
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
-    verify(blockImporter, times(1)).importBlock(nextBlock);
+    verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
     blockManager.onSlot(currentSlot.plus(3));
 

@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
   public final UInt64 epoch;
@@ -47,8 +48,12 @@ public class VoluntaryExit {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof VoluntaryExit)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof VoluntaryExit)) {
+      return false;
+    }
     VoluntaryExit that = (VoluntaryExit) o;
     return Objects.equals(epoch, that.epoch)
         && Objects.equals(validator_index, that.validator_index);

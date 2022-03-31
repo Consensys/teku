@@ -45,6 +45,7 @@ import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateValidatorBalances extends AbstractHandler implements Handler {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/validator_balances";
@@ -93,13 +94,17 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
         queryParameters.containsKey(PARAM_ID)
             ? ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID)
             : Collections.emptyList();
-    final SafeFuture<Optional<List<ValidatorBalanceResponse>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<List<ValidatorBalanceResponse>>>> future =
         chainDataProvider.getStateValidatorBalances(pathParamMap.get(PARAM_STATE_ID), validators);
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<ValidatorBalanceResponse> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<ValidatorBalanceResponse>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorBalancesResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateValidatorBalancesResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

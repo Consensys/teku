@@ -23,6 +23,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class BeaconBlockHeader {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
@@ -70,8 +71,12 @@ public class BeaconBlockHeader {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final BeaconBlockHeader that = (BeaconBlockHeader) o;
     return Objects.equals(slot, that.slot)
         && Objects.equals(proposer_index, that.proposer_index)

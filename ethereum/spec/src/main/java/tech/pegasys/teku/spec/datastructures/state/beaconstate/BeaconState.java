@@ -40,112 +40,111 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.B
 
 public interface BeaconState extends SszContainer, ValidatorStats {
 
-  BeaconStateSchema<?, ?> getBeaconStateSchema();
+  BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState> getBeaconStateSchema();
 
-  default UInt64 getGenesis_time() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME.name());
+  default UInt64 getGenesisTime() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME);
     return ((SszUInt64) get(fieldIndex)).get();
   }
 
-  default Bytes32 getGenesis_validators_root() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.GENESIS_VALIDATORS_ROOT.name());
+  default Bytes32 getGenesisValidatorsRoot() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_VALIDATORS_ROOT);
     return ((SszBytes32) get(fieldIndex)).get();
   }
 
   default UInt64 getSlot() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLOT.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLOT);
     return ((SszUInt64) get(fieldIndex)).get();
   }
 
   default Fork getFork() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FORK.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FORK);
     return getAny(fieldIndex);
   }
 
   default ForkInfo getForkInfo() {
-    return new ForkInfo(getFork(), getGenesis_validators_root());
+    return new ForkInfo(getFork(), getGenesisValidatorsRoot());
   }
 
   // History
-  default BeaconBlockHeader getLatest_block_header() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.LATEST_BLOCK_HEADER.name());
+  default BeaconBlockHeader getLatestBlockHeader() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.LATEST_BLOCK_HEADER);
     return getAny(fieldIndex);
   }
 
-  default SszBytes32Vector getBlock_roots() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BLOCK_ROOTS.name());
+  default SszBytes32Vector getBlockRoots() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BLOCK_ROOTS);
     return getAny(fieldIndex);
   }
 
-  default SszBytes32Vector getState_roots() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.STATE_ROOTS.name());
+  default SszBytes32Vector getStateRoots() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.STATE_ROOTS);
     return getAny(fieldIndex);
   }
 
-  default SszPrimitiveList<Bytes32, SszBytes32> getHistorical_roots() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS.name());
+  default SszPrimitiveList<Bytes32, SszBytes32> getHistoricalRoots() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS);
     return getAny(fieldIndex);
   }
 
   // Eth1
-  default Eth1Data getEth1_data() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA.name());
+  default Eth1Data getEth1Data() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA);
     return getAny(fieldIndex);
   }
 
-  default SszList<Eth1Data> getEth1_data_votes() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES.name());
+  default SszList<Eth1Data> getEth1DataVotes() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES);
     return getAny(fieldIndex);
   }
 
-  default UInt64 getEth1_deposit_index() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DEPOSIT_INDEX.name());
+  default UInt64 getEth1DepositIndex() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DEPOSIT_INDEX);
     return ((SszUInt64) get(fieldIndex)).get();
   }
 
   // Registry
   default SszList<Validator> getValidators() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.VALIDATORS.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.VALIDATORS);
     return getAny(fieldIndex);
   }
 
   default SszUInt64List getBalances() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BALANCES.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BALANCES);
     return getAny(fieldIndex);
   }
 
-  default SszBytes32Vector getRandao_mixes() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.RANDAO_MIXES.name());
+  default SszBytes32Vector getRandaoMixes() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.RANDAO_MIXES);
     return getAny(fieldIndex);
   }
 
   // Slashings
   default SszPrimitiveVector<UInt64, SszUInt64> getSlashings() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLASHINGS.name());
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLASHINGS);
     return getAny(fieldIndex);
   }
 
   // Finality
-  default SszBitvector getJustification_bits() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name());
+  default SszBitvector getJustificationBits() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS);
     return getAny(fieldIndex);
   }
 
-  default Checkpoint getPrevious_justified_checkpoint() {
+  default Checkpoint getPreviousJustifiedCheckpoint() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT.name());
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT);
     return getAny(fieldIndex);
   }
 
-  default Checkpoint getCurrent_justified_checkpoint() {
+  default Checkpoint getCurrentJustifiedCheckpoint() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_JUSTIFIED_CHECKPOINT.name());
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_JUSTIFIED_CHECKPOINT);
     return getAny(fieldIndex);
   }
 
-  default Checkpoint getFinalized_checkpoint() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FINALIZED_CHECKPOINT.name());
+  default Checkpoint getFinalizedCheckpoint() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FINALIZED_CHECKPOINT);
     return getAny(fieldIndex);
   }
 

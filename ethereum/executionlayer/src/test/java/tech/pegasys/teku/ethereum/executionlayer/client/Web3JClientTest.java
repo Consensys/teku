@@ -36,48 +36,48 @@ import org.web3j.protocol.websocket.WebSocketService;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3JClientTest {
-  private static final TimeProvider timeProvider = mock(TimeProvider.class);
-  private static final Web3jService web3jService = mock(Web3jService.class);
-  private static final Web3JClient web3JClient = new Web3JClientImpl(timeProvider);
-  private static final URI endpoint = URI.create("");
-  private static final Web3jHttpClient web3jHttpClient =
-      new Web3jHttpClient(endpoint, timeProvider, Optional.empty());
-  private static final WebSocketService webSocketService = mock(WebSocketService.class);
-  private static final Web3jWebsocketClient web3jWebsocketClient =
-      new Web3jWebsocketClient(endpoint, timeProvider, Optional.empty());
-  private static final Web3jIpcClient web3jIpcClient =
-      new Web3jIpcClient(URI.create("file:/a"), timeProvider, Optional.empty());
+  private static final TimeProvider TIME_PROVIDER = mock(TimeProvider.class);
+  private static final Web3jService WEB3J_SERVICE = mock(Web3jService.class);
+  private static final Web3JClient WEB3J_CLIENT = new Web3JClientImpl(TIME_PROVIDER);
+  private static final URI ENDPOINT = URI.create("");
+  private static final Web3jHttpClient WEB3J_HTTP_CLIENT =
+      new Web3jHttpClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
+  private static final WebSocketService WEB_SOCKET_SERVICE = mock(WebSocketService.class);
+  private static final Web3jWebsocketClient WEB3J_WEBSOCKET_CLIENT =
+      new Web3jWebsocketClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
+  private static final Web3jIpcClient WEB3J_IPC_CLIENT =
+      new Web3jIpcClient(URI.create("file:/a"), TIME_PROVIDER, Optional.empty());
 
   static class Web3JClientImpl extends Web3JClient {
     protected Web3JClientImpl(TimeProvider timeProvider) {
       super(timeProvider);
-      initWeb3jService(web3jService);
+      initWeb3jService(WEB3J_SERVICE);
     }
   }
 
   @BeforeAll
   static void setup() {
-    web3jHttpClient.initWeb3jService(web3jService);
-    web3jWebsocketClient.initWeb3jService(webSocketService);
+    WEB3J_HTTP_CLIENT.initWeb3jService(WEB3J_SERVICE);
+    WEB3J_WEBSOCKET_CLIENT.initWeb3jService(WEB_SOCKET_SERVICE);
   }
 
   @Test
   public void shouldModifyRequestWithApplyModifiers() {
-    web3JClient.addRequestAdapter(
+    WEB3J_CLIENT.addRequestAdapter(
         request -> {
           request.setId(123);
           return request;
         });
     Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), web3jService, VoidResponse.class);
+        new Request<>("test", new ArrayList<>(), WEB3J_SERVICE, VoidResponse.class);
     request.setId(1);
-    Request<?, ?> actualRequest = web3JClient.applyRequestAdapters(request);
+    Request<?, ?> actualRequest = WEB3J_CLIENT.applyRequestAdapters(request);
     assertThat(actualRequest.getId()).isEqualTo(123);
   }
 
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
-    return Stream.of(web3JClient, web3jHttpClient, web3jWebsocketClient, web3jIpcClient)
+    return Stream.of(WEB3J_CLIENT, WEB3J_HTTP_CLIENT, WEB3J_WEBSOCKET_CLIENT, WEB3J_IPC_CLIENT)
         .map(Arguments::of);
   }
 
@@ -90,12 +90,12 @@ public class Web3JClientTest {
           return request;
         });
     Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), web3jService, VoidResponse.class);
+        new Request<>("test", new ArrayList<>(), WEB3J_SERVICE, VoidResponse.class);
     request.setId(1);
-    when(web3jService.sendAsync(request, VoidResponse.class))
+    when(WEB3J_SERVICE.sendAsync(request, VoidResponse.class))
         .thenReturn(CompletableFuture.completedFuture(new VoidResponse()));
     client.doRequest(request).finish(ex -> {});
-    verify(web3jService, times(1)).sendAsync(request, VoidResponse.class);
+    verify(WEB3J_SERVICE, times(1)).sendAsync(request, VoidResponse.class);
     assertThat(request.getId()).isEqualTo(123);
   }
 }

@@ -20,12 +20,12 @@ import java.util.Optional;
 
 public class InternalValidationResult {
 
-  public static InternalValidationResult ACCEPT =
+  public static final InternalValidationResult ACCEPT =
       InternalValidationResult.create(ValidationResultCode.ACCEPT);
-  public static InternalValidationResult IGNORE =
+  public static final InternalValidationResult IGNORE =
       InternalValidationResult.create(ValidationResultCode.IGNORE);
 
-  public static InternalValidationResult SAVE_FOR_FUTURE =
+  public static final InternalValidationResult SAVE_FOR_FUTURE =
       InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE);
 
   private final ValidationResultCode validationResultCode;
@@ -68,8 +68,12 @@ public class InternalValidationResult {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final InternalValidationResult that = (InternalValidationResult) o;
     return validationResultCode == that.validationResultCode
         && Objects.equals(description, that.description);

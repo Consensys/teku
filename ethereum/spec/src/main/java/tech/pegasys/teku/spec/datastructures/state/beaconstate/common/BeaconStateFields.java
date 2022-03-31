@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants.SLOT_FIELD;
 
 import java.util.List;
+import java.util.Locale;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
@@ -33,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
-public enum BeaconStateFields {
+public enum BeaconStateFields implements SszFieldName {
   GENESIS_TIME,
   GENESIS_VALIDATORS_ROOT,
   SLOT,
@@ -64,81 +66,90 @@ public enum BeaconStateFields {
   // Bellatrix fields
   LATEST_EXECUTION_PAYLOAD_HEADER;
 
+  private final String sszFieldName;
+
+  BeaconStateFields() {
+    this.sszFieldName = name().toLowerCase(Locale.ROOT);
+  }
+
+  @Override
+  public String getSszFieldName() {
+    return sszFieldName;
+  }
+
   public static void copyCommonFieldsFromSource(
       final MutableBeaconState state, final BeaconState source) {
     // Version
-    state.setGenesis_time(source.getGenesis_time());
-    state.setGenesis_validators_root(source.getGenesis_validators_root());
+    state.setGenesisTime(source.getGenesisTime());
+    state.setGenesisValidatorsRoot(source.getGenesisValidatorsRoot());
     state.setSlot(source.getSlot());
     state.setFork(source.getFork());
     // History
-    state.setLatest_block_header(source.getLatest_block_header());
-    state.setBlock_roots(source.getBlock_roots());
-    state.setState_roots(source.getState_roots());
-    state.setHistorical_roots(source.getHistorical_roots());
+    state.setLatestBlockHeader(source.getLatestBlockHeader());
+    state.setBlockRoots(source.getBlockRoots());
+    state.setStateRoots(source.getStateRoots());
+    state.setHistoricalRoots(source.getHistoricalRoots());
     // Eth1
-    state.setEth1_data(source.getEth1_data());
-    state.setEth1_data_votes(source.getEth1_data_votes());
-    state.setEth1_deposit_index(source.getEth1_deposit_index());
+    state.setEth1Data(source.getEth1Data());
+    state.setEth1DataVotes(source.getEth1DataVotes());
+    state.setEth1DepositIndex(source.getEth1DepositIndex());
     // Registry
     state.setValidators(source.getValidators());
     state.setBalances(source.getBalances());
     // Randomness
-    state.setRandao_mixes(source.getRandao_mixes());
+    state.setRandaoMixes(source.getRandaoMixes());
     // Slashings
     state.setSlashings(source.getSlashings());
     // Finality
-    state.setJustification_bits(source.getJustification_bits());
-    state.setPrevious_justified_checkpoint(source.getPrevious_justified_checkpoint());
-    state.setCurrent_justified_checkpoint(source.getCurrent_justified_checkpoint());
-    state.setFinalized_checkpoint(source.getFinalized_checkpoint());
+    state.setJustificationBits(source.getJustificationBits());
+    state.setPreviousJustifiedCheckpoint(source.getPreviousJustifiedCheckpoint());
+    state.setCurrentJustifiedCheckpoint(source.getCurrentJustifiedCheckpoint());
+    state.setFinalizedCheckpoint(source.getFinalizedCheckpoint());
   }
 
   static List<SszField> getCommonFields(final SpecConfig specConfig) {
-    SszField fork_field = new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
+    SszField forkField = new SszField(3, BeaconStateFields.FORK, Fork.SSZ_SCHEMA);
     final BeaconBlockHeader.BeaconBlockHeaderSchema blockHeaderSchema =
         BeaconBlockHeader.SSZ_SCHEMA;
     SszField latestBlockHeaderField =
-        new SszField(4, BeaconStateFields.LATEST_BLOCK_HEADER.name(), blockHeaderSchema);
+        new SszField(4, BeaconStateFields.LATEST_BLOCK_HEADER, blockHeaderSchema);
     SszField blockRootsField =
         new SszField(
             5,
-            BeaconStateFields.BLOCK_ROOTS.name(),
+            BeaconStateFields.BLOCK_ROOTS,
             () ->
                 SszVectorSchema.create(
                     SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getSlotsPerHistoricalRoot()));
     SszField stateRootsField =
         new SszField(
             6,
-            BeaconStateFields.STATE_ROOTS.name(),
+            BeaconStateFields.STATE_ROOTS,
             () ->
                 SszVectorSchema.create(
                     SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getSlotsPerHistoricalRoot()));
     SszField historicalRootsField =
         new SszField(
             7,
-            BeaconStateFields.HISTORICAL_ROOTS.name(),
+            BeaconStateFields.HISTORICAL_ROOTS,
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getHistoricalRootsLimit()));
-    SszField eth1DataField =
-        new SszField(8, BeaconStateFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA);
+    SszField eth1DataField = new SszField(8, BeaconStateFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA);
     SszField eth1DataVotesField =
         new SszField(
             9,
-            BeaconStateFields.ETH1_DATA_VOTES.name(),
+            BeaconStateFields.ETH1_DATA_VOTES,
             () ->
                 SszListSchema.create(
                     Eth1Data.SSZ_SCHEMA,
                     (long) specConfig.getEpochsPerEth1VotingPeriod()
                         * specConfig.getSlotsPerEpoch()));
     SszField eth1DepositIndexField =
-        new SszField(
-            10, BeaconStateFields.ETH1_DEPOSIT_INDEX.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
+        new SszField(10, BeaconStateFields.ETH1_DEPOSIT_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA);
     SszField validatorsField =
         new SszField(
             11,
-            BeaconStateFields.VALIDATORS.name(),
+            BeaconStateFields.VALIDATORS,
             () ->
                 SszListSchema.create(
                     Validator.SSZ_SCHEMA,
@@ -147,43 +158,41 @@ public enum BeaconStateFields {
     SszField balancesField =
         new SszField(
             12,
-            BeaconStateFields.BALANCES.name(),
+            BeaconStateFields.BALANCES,
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.UINT64_SCHEMA, specConfig.getValidatorRegistryLimit()));
     SszField randaoMixesField =
         new SszField(
             13,
-            BeaconStateFields.RANDAO_MIXES.name(),
+            BeaconStateFields.RANDAO_MIXES,
             () ->
                 SszVectorSchema.create(
                     SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getEpochsPerHistoricalVector()));
     SszField slashingsField =
         new SszField(
             14,
-            BeaconStateFields.SLASHINGS.name(),
+            BeaconStateFields.SLASHINGS,
             () ->
                 SszVectorSchema.create(
                     SszPrimitiveSchemas.UINT64_SCHEMA, specConfig.getEpochsPerSlashingsVector()));
     SszField justificationBitsField =
         new SszField(
             17,
-            BeaconStateFields.JUSTIFICATION_BITS.name(),
+            BeaconStateFields.JUSTIFICATION_BITS,
             () -> SszBitvectorSchema.create(specConfig.getJustificationBitsLength()));
     SszField previousJustifiedCheckpointField =
-        new SszField(
-            18, BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);
+        new SszField(18, BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT, Checkpoint.SSZ_SCHEMA);
     SszField currentJustifiedCheckpointField =
-        new SszField(
-            19, BeaconStateFields.CURRENT_JUSTIFIED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);
+        new SszField(19, BeaconStateFields.CURRENT_JUSTIFIED_CHECKPOINT, Checkpoint.SSZ_SCHEMA);
     SszField finalizedCheckpointField =
-        new SszField(20, BeaconStateFields.FINALIZED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);
+        new SszField(20, BeaconStateFields.FINALIZED_CHECKPOINT, Checkpoint.SSZ_SCHEMA);
 
     return List.of(
         GENESIS_TIME_FIELD,
         GENESIS_VALIDATORS_ROOT_FIELD,
         SLOT_FIELD,
-        fork_field,
+        forkField,
         latestBlockHeaderField,
         blockRootsField,
         stateRootsField,
@@ -199,5 +208,10 @@ public enum BeaconStateFields {
         previousJustifiedCheckpointField,
         currentJustifiedCheckpointField,
         finalizedCheckpointField);
+  }
+
+  @Override
+  public String toString() {
+    return getSszFieldName();
   }
 }

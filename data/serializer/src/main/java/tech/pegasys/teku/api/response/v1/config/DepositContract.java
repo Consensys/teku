@@ -15,10 +15,14 @@ package tech.pegasys.teku.api.response.v1.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class DepositContract {
+  @Schema(type = "string", format = "uint64")
   public final UInt64 chain_id;
+
   public final String address;
 
   @JsonCreator

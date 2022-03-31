@@ -125,8 +125,8 @@ public class LocalSigner implements Signer {
     return Optional.empty();
   }
 
-  private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
+  private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
     return asyncRunner.runAsync(
-        () -> SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root)));
+        () -> SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signingRoot)));
   }
 }

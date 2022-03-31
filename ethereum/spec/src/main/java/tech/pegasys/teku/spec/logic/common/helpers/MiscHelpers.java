@@ -22,28 +22,31 @@ import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 
 public class MiscHelpers {
+
+  // Math.pow(2, 8) - 1;
+  public static final UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255);
+
   protected final SpecConfig specConfig;
 
   public MiscHelpers(final SpecConfig specConfig) {
     this.specConfig = specConfig;
   }
 
-  public int computeShuffledIndex(int index, int index_count, Bytes32 seed) {
-    checkArgument(index < index_count, "CommitteeUtil.computeShuffledIndex1");
+  public int computeShuffledIndex(int index, int indexCount, Bytes32 seed) {
+    checkArgument(index < indexCount, "CommitteeUtil.computeShuffledIndex1");
 
     int indexRet = index;
     final int shuffleRoundCount = specConfig.getShuffleRoundCount();
@@ -55,12 +58,12 @@ public class MiscHelpers {
       // This needs to be unsigned modulo.
       int pivot =
           bytesToUInt64(Hash.sha256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
-              .mod(index_count)
+              .mod(indexCount)
               .intValue();
-      int flip = Math.floorMod(pivot + index_count - indexRet, index_count);
+      int flip = Math.floorMod(pivot + indexCount - indexRet, indexCount);
       int position = Math.max(indexRet, flip);
 
-      Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256), 4);
+      Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256L), 4);
       Bytes hashBytes = Hash.sha256(seed, roundAsByte, positionDiv256);
 
       int bitIndex = position & 0xff;
@@ -76,21 +79,20 @@ public class MiscHelpers {
 
   public int computeProposerIndex(BeaconState state, IntList indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
-    UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
     final int total = indices.size();
     Bytes32 hash = null;
     while (true) {
-      int candidate_index = indices.getInt(computeShuffledIndex(i % total, total, seed));
+      int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha256(seed, uint64ToBytes(Math.floorDiv(i, 32)));
+        hash = Hash.sha256(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
-      int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
-      UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
-      if (effective_balance
+      int randomByte = UnsignedBytes.toInt(hash.get(i % 32));
+      UInt64 effectiveBalance = state.getValidators().get(candidateIndex).getEffectiveBalance();
+      if (effectiveBalance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(random_byte))) {
-        return candidate_index;
+          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(randomByte))) {
+        return candidateIndex;
       }
       i++;
     }
@@ -106,7 +108,7 @@ public class MiscHelpers {
 
   public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
     UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
-    return state.getGenesis_time().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
+    return state.getGenesisTime().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
   }
 
   public boolean isSlotAtNthEpochBoundary(
@@ -243,10 +245,6 @@ public class MiscHelpers {
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
-    return false;
-  }
-
-  public boolean isMergeTransitionComplete(final SignedBeaconBlock block) {
     return false;
   }
 }

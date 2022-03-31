@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -39,52 +40,49 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
   T createEmpty();
 
   default SszBytes32VectorSchema<?> getBlockRootsSchema() {
-    return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.BLOCK_ROOTS.name()));
+    return (SszBytes32VectorSchema<?>) getChildSchema(getFieldIndex(BeaconStateFields.BLOCK_ROOTS));
   }
 
   default SszBytes32VectorSchema<?> getStateRootsSchema() {
-    return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.STATE_ROOTS.name()));
+    return (SszBytes32VectorSchema<?>) getChildSchema(getFieldIndex(BeaconStateFields.STATE_ROOTS));
   }
 
   @SuppressWarnings("unchecked")
   default SszPrimitiveListSchema<Bytes32, SszBytes32, ?> getHistoricalRootsSchema() {
     return (SszPrimitiveListSchema<Bytes32, SszBytes32, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS));
   }
 
   @SuppressWarnings("unchecked")
   default SszListSchema<Eth1Data, ?> getEth1DataVotesSchema() {
     return (SszListSchema<Eth1Data, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES));
   }
 
   @SuppressWarnings("unchecked")
   default SszListSchema<Validator, ?> getValidatorsSchema() {
     return (SszListSchema<Validator, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.VALIDATORS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.VALIDATORS));
   }
 
   default SszUInt64ListSchema<?> getBalancesSchema() {
-    return (SszUInt64ListSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.BALANCES.name()));
+    return (SszUInt64ListSchema<?>) getChildSchema(getFieldIndex(BeaconStateFields.BALANCES));
   }
 
   default SszBytes32VectorSchema<?> getRandaoMixesSchema() {
     return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.RANDAO_MIXES.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.RANDAO_MIXES));
   }
 
   @SuppressWarnings("unchecked")
   default SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> getSlashingsSchema() {
     return (SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.SLASHINGS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.SLASHINGS));
   }
 
   default SszBitvectorSchema<?> getJustificationBitsSchema() {
     return (SszBitvectorSchema<?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name()));
+        getChildSchema(getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS));
   }
 
   default SyncCommitteeSchema getCurrentSyncCommitteeSchemaOrThrow() {
@@ -95,14 +93,10 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
     return (SyncCommitteeSchema) getSchemaOrThrow(BeaconStateFields.NEXT_SYNC_COMMITTEE);
   }
 
-  private SszSchema<?> getSchemaOrThrow(final BeaconStateFields field) {
-    final String fieldName = field.name();
-    final int fieldIndex = getFieldIndex(fieldName);
+  private SszSchema<?> getSchemaOrThrow(final SszFieldName field) {
+    final int fieldIndex = getFieldIndex(field);
     checkArgument(
-        fieldIndex >= 0,
-        "Expected a %s field in schema %s but was not found",
-        fieldName,
-        getClass());
+        fieldIndex >= 0, "Expected a %s field in schema %s but was not found", field, getClass());
     return getChildSchema(fieldIndex);
   }
 }

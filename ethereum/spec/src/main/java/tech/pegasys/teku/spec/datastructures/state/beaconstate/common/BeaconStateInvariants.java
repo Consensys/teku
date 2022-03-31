@@ -37,12 +37,11 @@ public class BeaconStateInvariants {
   static final SszSchema<SszUInt64> SLOT_SCHEMA = SszPrimitiveSchemas.UINT64_SCHEMA;
 
   // Fields
-  static SszField GENESIS_TIME_FIELD =
-      new SszField(0, BeaconStateFields.GENESIS_TIME.name(), GENESIS_TIME_SCHEMA);
-  static SszField GENESIS_VALIDATORS_ROOT_FIELD =
-      new SszField(
-          1, BeaconStateFields.GENESIS_VALIDATORS_ROOT.name(), GENESIS_VALIDATORS_ROOT_SCHEMA);
-  static SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT.name(), SLOT_SCHEMA);
+  static final SszField GENESIS_TIME_FIELD =
+      new SszField(0, BeaconStateFields.GENESIS_TIME, GENESIS_TIME_SCHEMA);
+  static final SszField GENESIS_VALIDATORS_ROOT_FIELD =
+      new SszField(1, BeaconStateFields.GENESIS_VALIDATORS_ROOT, GENESIS_VALIDATORS_ROOT_SCHEMA);
+  static final SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT, SLOT_SCHEMA);
 
   // Return list of invariant fields
   static List<SszField> getInvariantFields() {
@@ -97,25 +96,25 @@ public class BeaconStateInvariants {
   static String toString(BeaconState state, final Consumer<ToStringHelper> modifier) {
     final ToStringHelper builder =
         MoreObjects.toStringHelper(state)
-            .add("genesis_time", state.getGenesis_time())
-            .add("genesis_validators_root", state.getGenesis_validators_root())
+            .add("genesis_time", state.getGenesisTime())
+            .add("genesis_validators_root", state.getGenesisValidatorsRoot())
             .add("slot", state.getSlot())
             .add("fork", state.getFork())
-            .add("latest_block_header", state.getLatest_block_header())
-            .add("block_roots", state.getBlock_roots())
-            .add("state_roots", state.getState_roots())
-            .add("historical_roots", state.getHistorical_roots())
-            .add("eth1_data", state.getEth1_data())
-            .add("eth1_data_votes", state.getEth1_data_votes())
-            .add("eth1_deposit_index", state.getEth1_deposit_index())
+            .add("latest_block_header", state.getLatestBlockHeader())
+            .add("block_roots", state.getBlockRoots())
+            .add("state_roots", state.getStateRoots())
+            .add("historical_roots", state.getHistoricalRoots())
+            .add("eth1_data", state.getEth1Data())
+            .add("eth1_data_votes", state.getEth1DataVotes())
+            .add("eth1_deposit_index", state.getEth1DepositIndex())
             .add("validators", state.getValidators())
             .add("balances", state.getBalances())
-            .add("randao_mixes", state.getRandao_mixes())
+            .add("randao_mixes", state.getRandaoMixes())
             .add("slashings", state.getSlashings())
-            .add("justification_bits", state.getJustification_bits())
-            .add("previous_justified_checkpoint", state.getPrevious_justified_checkpoint())
-            .add("current_justified_checkpoint", state.getCurrent_justified_checkpoint())
-            .add("finalized_checkpoint", state.getFinalized_checkpoint());
+            .add("justification_bits", state.getJustificationBits())
+            .add("previous_justified_checkpoint", state.getPreviousJustifiedCheckpoint())
+            .add("current_justified_checkpoint", state.getCurrentJustifiedCheckpoint())
+            .add("finalized_checkpoint", state.getFinalizedCheckpoint());
 
     modifier.accept(builder);
     return builder.toString();

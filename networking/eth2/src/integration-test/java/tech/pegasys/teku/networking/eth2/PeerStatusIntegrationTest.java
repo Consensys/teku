@@ -24,7 +24,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
@@ -49,12 +49,12 @@ public class PeerStatusIntegrationTest {
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @AfterEach
@@ -115,8 +115,7 @@ public class PeerStatusIntegrationTest {
         .isEqualTo(recentChainData2.getFinalizedCheckpoint());
 
     assertThat(recentChainData1.getFinalizedCheckpoint())
-        .contains(
-            safeJoin(recentChainData1.getBestState().orElseThrow()).getFinalized_checkpoint());
+        .contains(safeJoin(recentChainData1.getBestState().orElseThrow()).getFinalizedCheckpoint());
 
     final Eth2P2PNetwork network1 =
         networkFactory
@@ -221,8 +220,8 @@ public class PeerStatusIntegrationTest {
     assertStatus(
         status,
         storageClient.getCurrentForkInfo().orElseThrow().getForkDigest(spec),
-        state.getFinalized_checkpoint().getRoot(),
-        state.getFinalized_checkpoint().getEpoch(),
+        state.getFinalizedCheckpoint().getRoot(),
+        state.getFinalizedCheckpoint().getEpoch(),
         storageClient.getBestBlockRoot().orElseThrow(),
         storageClient.getHeadSlot());
   }

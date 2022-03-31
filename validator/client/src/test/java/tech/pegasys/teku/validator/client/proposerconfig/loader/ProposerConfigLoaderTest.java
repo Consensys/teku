@@ -20,7 +20,7 @@ import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 

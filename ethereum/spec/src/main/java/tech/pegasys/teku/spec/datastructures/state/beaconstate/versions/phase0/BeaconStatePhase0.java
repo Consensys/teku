@@ -36,15 +36,13 @@ public interface BeaconStatePhase0 extends BeaconState {
   }
 
   // Attestations
-  default SszList<PendingAttestation> getPrevious_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
+  default SszList<PendingAttestation> getPreviousEpochAttestations() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS);
     return getAny(fieldIndex);
   }
 
-  default SszList<PendingAttestation> getCurrent_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
+  default SszList<PendingAttestation> getCurrentEpochAttestations() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS);
     return getAny(fieldIndex);
   }
 

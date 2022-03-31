@@ -52,6 +52,6 @@ public class MockStartBeaconStateGenerator {
     }
     final BeaconState initialState =
         spec.initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits, payloadHeader);
-    return initialState.updated(state -> state.setGenesis_time(genesisTime));
+    return initialState.updated(state -> state.setGenesisTime(genesisTime));
   }
 }

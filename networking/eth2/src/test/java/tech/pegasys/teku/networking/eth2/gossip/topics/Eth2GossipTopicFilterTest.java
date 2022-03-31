@@ -27,7 +27,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,7 +48,7 @@ class Eth2GossipTopicFilterTest {
   private final Bytes4 nextForkDigest =
       spec.atEpoch(nextFork.getEpoch())
           .miscHelpers()
-          .computeForkDigest(nextFork.getCurrent_version(), genesisValidatorsRoot);
+          .computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
 
   private final Eth2GossipTopicFilter filter =
       new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);

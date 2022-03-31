@@ -15,9 +15,9 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.parse;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import java.io.File;
 import java.io.IOException;
@@ -144,10 +144,14 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     try {
       String content = Files.readString(file.toPath());
       ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
+      URL externalSignerUrl =
+          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl());
+
+      externalValidatorSourceMap.put(externalValidator.getPublicKey(), externalSignerUrl);
       return new ExternalValidatorProvider(
           spec,
           externalSignerHttpClientFactory,
-          externalValidator.getUrl().orElse(config.getValidatorExternalSignerUrl()),
+          externalSignerUrl,
           externalValidator.getPublicKey(),
           config.getValidatorExternalSignerTimeout(),
           externalSignerTaskQueue,
@@ -161,8 +165,32 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
 
   @Override
   public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
-    throw new UnsupportedOperationException(
-        "Cannot delete validator from external validator source.");
+    if (!canUpdateValidators()) {
+      return DeleteKeyResult.error(
+          "Cannot delete validator from read-only external validator source.");
+    }
+
+    if (!externalValidatorSourceMap.containsKey(publicKey)) {
+      return DeleteKeyResult.notFound();
+    }
+
+    return delete(publicKey);
+  }
+
+  private DeleteKeyResult delete(BLSPublicKey publicKey) {
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
+    final Path path =
+        ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout).resolve(fileName + ".json");
+    try {
+      ensureDirectoryExists(ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout));
+      Files.delete(path);
+      externalValidatorSourceMap.remove(publicKey);
+      return DeleteKeyResult.success();
+
+    } catch (IOException e) {
+      return DeleteKeyResult.error(e.toString());
+    }
   }
 
   @Override

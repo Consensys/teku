@@ -49,6 +49,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateCommittees extends AbstractHandler implements Handler {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/committees";
@@ -97,15 +98,19 @@ public class GetStateCommittees extends AbstractHandler implements Handler {
     final Optional<UInt64> slot =
         SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
 
-    SafeFuture<Optional<List<EpochCommitteeResponse>>> future =
+    SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> future =
         chainDataProvider.getStateCommittees(
             pathParams.get(PARAM_STATE_ID), epoch, committeeIndex, slot);
 
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final List<EpochCommitteeResponse> response)
+  private Optional<String> handleResult(
+      Context ctx, final ObjectAndMetaData<List<EpochCommitteeResponse>> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateCommitteesResponse(response)));
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateCommitteesResponse(
+                response.isExecutionOptimisticForApi(), response.getData())));
   }
 }

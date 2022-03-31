@@ -15,15 +15,17 @@ package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class UInt16PrimitiveSchema extends AbstractSszPrimitiveSchema<Integer, SszUInt16> {
 
-  public static AbstractSszPrimitiveSchema<Integer, SszUInt16> UINT16_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Integer, SszUInt16> UINT16_SCHEMA =
       new UInt16PrimitiveSchema();
 
   private UInt16PrimitiveSchema() {
@@ -52,6 +54,11 @@ public class UInt16PrimitiveSchema extends AbstractSszPrimitiveSchema<Integer, S
   @Override
   public TreeNode getDefaultTree() {
     return LeafNode.ZERO_LEAVES[16];
+  }
+
+  @Override
+  public DeserializableTypeDefinition<SszUInt16> getJsonTypeDefinition() {
+    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "hex encoding");
   }
 
   @Override

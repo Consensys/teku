@@ -53,6 +53,7 @@ public abstract class Web3JClient {
     requestAdapters.add(requestAdapter);
   }
 
+  @SuppressWarnings("unchecked")
   protected <T> Request<?, ? extends org.web3j.protocol.core.Response<T>> applyRequestAdapters(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> request) {
     return (Request<?, ? extends org.web3j.protocol.core.Response<T>>)

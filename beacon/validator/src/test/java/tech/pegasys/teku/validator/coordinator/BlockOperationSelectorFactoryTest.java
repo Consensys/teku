@@ -29,10 +29,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -124,7 +125,11 @@ class BlockOperationSelectorFactoryTest {
           .getExecutionPayloadSchema()
           .getDefault();
 
-  private final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder();
+  private final CapturingBeaconBlockBodyBuilder bodyBuilder =
+      new CapturingBeaconBlockBodyBuilder(false);
+
+  private final CapturingBeaconBlockBodyBuilder blindedBodyBuilder =
+      new CapturingBeaconBlockBodyBuilder(true);
 
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(
@@ -138,7 +143,23 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionEngine);
+          executionEngine,
+          false);
+
+  private final BlockOperationSelectorFactory factoryWithMevBoost =
+      new BlockOperationSelectorFactory(
+          spec,
+          attestationPool,
+          attesterSlashingPool,
+          proposerSlashingPool,
+          voluntaryExitPool,
+          contributionPool,
+          depositProvider,
+          eth1DataCache,
+          defaultGraffiti,
+          forkChoiceNotifier,
+          executionEngine,
+          true);
 
   @BeforeEach
   void setUp() {
@@ -185,7 +206,7 @@ class BlockOperationSelectorFactoryTest {
     addToPool(voluntaryExitPool, voluntaryExit);
     addToPool(proposerSlashingPool, proposerSlashing);
     addToPool(attesterSlashingPool, attesterSlashing);
-    assertThat(contributionPool.add(contribution)).isCompletedWithValue(ACCEPT);
+    assertThat(contributionPool.addLocal(contribution)).isCompletedWithValue(ACCEPT);
 
     factory
         .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
@@ -203,7 +224,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private <T extends SszData> void addToPool(final OperationPool<T> pool, final T operation) {
-    assertThat(pool.add(operation)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(operation)).isCompletedWithValue(ACCEPT);
   }
 
   @Test
@@ -239,12 +260,12 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing1);
     addToPool(attesterSlashingPool, attesterSlashing2);
     addToPool(attesterSlashingPool, attesterSlashing3);
-    assertThat(contributionPool.add(contribution)).isCompletedWithValue(ACCEPT);
+    assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
 
     when(proposerSlashingValidator.validateForStateTransition(blockSlotState, proposerSlashing2))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE));
     when(voluntaryExitValidator.validateForStateTransition(blockSlotState, voluntaryExit2))
-        .thenReturn(Optional.of(ExitInvalidReason.INVALID_SIGNATURE));
+        .thenReturn(Optional.of(ExitInvalidReason.invalidSignature()));
     when(attesterSlashingValidator.validateForStateTransition(blockSlotState, attesterSlashing2))
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
 
@@ -295,7 +316,51 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
 
+  @Test
+  void shouldIncludeExecutionPayloadHeaderIfMevBoostEnabledAndBlindedBlockRequested() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayloadHeader randomExecutionPayloadHeader =
+        dataStructureUtil.randomExecutionPayloadHeader();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
+    when(executionEngine.getPayloadHeader(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
+
+    factoryWithMevBoost
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(blindedBodyBuilder);
+
+    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
+  }
+
+  @Test
+  void shouldIncludeExecutionPayloadIfMevBoostEnabledButNoBlindedBlockRequested() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
+    when(executionEngine.getPayload(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+
+    factoryWithMevBoost
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
+    private final boolean blinded;
 
     protected BLSSignature randaoReveal;
     protected Bytes32 graffiti;
@@ -304,6 +369,16 @@ class BlockOperationSelectorFactoryTest {
     protected SszList<SignedVoluntaryExit> voluntaryExits;
     protected SyncAggregate syncAggregate;
     protected ExecutionPayload executionPayload;
+    protected ExecutionPayloadHeader executionPayloadHeader;
+
+    public CapturingBeaconBlockBodyBuilder(boolean blinded) {
+      this.blinded = blinded;
+    }
+
+    @Override
+    public Boolean isBlinded() {
+      return blinded;
+    }
 
     @Override
     public BeaconBlockBodyBuilder randaoReveal(final BLSSignature randaoReveal) {
@@ -364,6 +439,13 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder executionPayload(
         Supplier<ExecutionPayload> executionPayloadSupplier) {
       this.executionPayload = executionPayloadSupplier.get();
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder executionPayloadHeader(
+        Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
+      this.executionPayloadHeader = executionPayloadHeaderSupplier.get();
       return this;
     }
 

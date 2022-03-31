@@ -53,7 +53,7 @@ public interface ValidatorRestApiClient {
   Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 
   Optional<BeaconBlock> createUnsignedBlock(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
 
   SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 
@@ -61,7 +61,7 @@ public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 
-  void sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
+  Optional<PostDataFailureResponse> sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 
   Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 

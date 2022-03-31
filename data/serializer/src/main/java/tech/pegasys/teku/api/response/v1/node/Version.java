@@ -34,8 +34,12 @@ public class Version {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final Version version1 = (Version) o;
     return Objects.equals(version, version1.version);
   }

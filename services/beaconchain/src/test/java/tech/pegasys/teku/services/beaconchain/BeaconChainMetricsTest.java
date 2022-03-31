@@ -94,10 +94,10 @@ class BeaconChainMetricsTest {
             .build()
             .updated(
                 s -> {
-                  s.setFinalized_checkpoint(finalizedCheckpoint);
-                  s.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
-                  s.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
-                  s.getBlock_roots().setAllElements(blockRootsList);
+                  s.setFinalizedCheckpoint(finalizedCheckpoint);
+                  s.setCurrentJustifiedCheckpoint(currentJustifiedCheckpoint);
+                  s.setPreviousJustifiedCheckpoint(previousJustifiedCheckpoint);
+                  s.getBlockRoots().setAllElements(blockRootsList);
                 });
     chainHead = dataStructureUtil.randomSignedBlockAndState(state);
 
@@ -112,7 +112,7 @@ class BeaconChainMetricsTest {
   }
 
   private void setBlockRoots(List<Bytes32> newBlockRoots) {
-    updateState(s -> s.getBlock_roots().setAllElements(newBlockRoots));
+    updateState(s -> s.getBlockRoots().setAllElements(newBlockRoots));
   }
 
   @Test
@@ -163,7 +163,7 @@ class BeaconChainMetricsTest {
     when(recentChainData.isPreGenesis()).thenReturn(false);
     assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "finalized_epoch").getValue())
-        .isEqualTo(chainHead.getState().getFinalized_checkpoint().getEpoch().longValue());
+        .isEqualTo(chainHead.getState().getFinalizedCheckpoint().getEpoch().longValue());
   }
 
   @Test
@@ -201,7 +201,7 @@ class BeaconChainMetricsTest {
     assertThat(metricsSystem.getGauge(BEACON, "finalized_root").getValue())
         .isEqualTo(
             BeaconChainMetrics.getLongFromRoot(
-                chainHead.getState().getFinalized_checkpoint().getRoot()));
+                chainHead.getState().getFinalizedCheckpoint().getRoot()));
   }
 
   @Test
@@ -216,7 +216,7 @@ class BeaconChainMetricsTest {
     assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
 
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_epoch").getValue())
-        .isEqualTo(chainHead.getState().getPrevious_justified_checkpoint().getEpoch().longValue());
+        .isEqualTo(chainHead.getState().getPreviousJustifiedCheckpoint().getEpoch().longValue());
   }
 
   @Test
@@ -233,7 +233,7 @@ class BeaconChainMetricsTest {
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_root").getValue())
         .isEqualTo(
             BeaconChainMetrics.getLongFromRoot(
-                chainHead.getState().getPrevious_justified_checkpoint().getRoot()));
+                chainHead.getState().getPreviousJustifiedCheckpoint().getRoot()));
   }
 
   @Test
@@ -249,7 +249,7 @@ class BeaconChainMetricsTest {
     assertThat(metricsSystem.getGauge(BEACON, "current_justified_root").getValue())
         .isEqualTo(
             BeaconChainMetrics.getLongFromRoot(
-                chainHead.getState().getCurrent_justified_checkpoint().getRoot()));
+                chainHead.getState().getCurrentJustifiedCheckpoint().getRoot()));
   }
 
   @Test
@@ -263,7 +263,7 @@ class BeaconChainMetricsTest {
   void getJustifiedEpochValue_shouldReturnValueWhenStoreIsPresent() {
     assertThat(beaconChainMetrics.updateMetrics()).isCompleted();
     assertThat(metricsSystem.getGauge(BEACON, "current_justified_epoch").getValue())
-        .isEqualTo(chainHead.getState().getCurrent_justified_checkpoint().getEpoch().longValue());
+        .isEqualTo(chainHead.getState().getCurrentJustifiedCheckpoint().getEpoch().longValue());
   }
 
   @Test
@@ -469,9 +469,9 @@ class BeaconChainMetricsTest {
       final int slotAsInt, final List<PendingAttestation> attestations) {
     updateState(
         s -> {
-          s.getPrevious_epoch_attestations().setAll(attestations);
+          s.getPreviousEpochAttestations().setAll(attestations);
 
-          s.getCurrent_epoch_attestations().clear();
+          s.getCurrentEpochAttestations().clear();
           s.setSlot(UInt64.valueOf(slotAsInt));
         });
   }
@@ -482,12 +482,12 @@ class BeaconChainMetricsTest {
       final List<Validator> validatorsList) {
     updateState(
         s -> {
-          s.getCurrent_epoch_attestations().clear();
+          s.getCurrentEpochAttestations().clear();
           if (attestations.size() > 0) {
-            s.getCurrent_epoch_attestations().setAll(attestations);
+            s.getCurrentEpochAttestations().setAll(attestations);
           }
 
-          s.getPrevious_epoch_attestations().clear();
+          s.getPreviousEpochAttestations().clear();
           s.setSlot(slot);
 
           s.getValidators().clear();

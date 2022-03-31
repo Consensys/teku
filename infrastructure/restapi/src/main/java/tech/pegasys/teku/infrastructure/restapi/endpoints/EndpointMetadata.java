@@ -21,9 +21,10 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
-import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.util.Collection;
@@ -36,11 +37,15 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
-import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class EndpointMetadata {
   private final HandlerType method;
@@ -49,9 +54,14 @@ public class EndpointMetadata {
   private final String summary;
   private final Optional<String> security;
   private final String description;
+  private final boolean deprecated;
   private final Map<String, OpenApiResponse> responses;
-  private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
+  private final Optional<OpenApiTypeDefinition> requestBodyType;
+  private final Optional<BodyTypeSelector<?>> requestBodyTypeSelector;
   private final List<String> tags;
+  private final Map<String, StringValueTypeDefinition<?>> pathParams;
+  private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
+  private final Map<String, StringValueTypeDefinition<?>> queryParams;
 
   private EndpointMetadata(
       final HandlerType method,
@@ -60,18 +70,28 @@ public class EndpointMetadata {
       final String summary,
       final Optional<String> security,
       final String description,
+      final boolean deprecated,
       final Map<String, OpenApiResponse> responses,
-      final Optional<DeserializableTypeDefinition<?>> requestBodyType,
-      final List<String> tags) {
+      final Optional<OpenApiTypeDefinition> requestBodyType,
+      final Optional<BodyTypeSelector<?>> requestBodyTypeSelector,
+      final List<String> tags,
+      final Map<String, StringValueTypeDefinition<?>> pathParams,
+      final Map<String, StringValueTypeDefinition<?>> queryParams,
+      final Map<String, StringValueTypeDefinition<?>> requiredQueryParams) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
     this.summary = summary;
     this.security = security;
     this.description = description;
+    this.deprecated = deprecated;
     this.responses = responses;
     this.requestBodyType = requestBodyType;
+    this.requestBodyTypeSelector = requestBodyTypeSelector;
     this.tags = tags;
+    this.pathParams = pathParams;
+    this.queryParams = queryParams;
+    this.requiredQueryParams = requiredQueryParams;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
@@ -84,6 +104,35 @@ public class EndpointMetadata {
 
   public static EndpointMetaDataBuilder delete(final String path) {
     return new EndpointMetaDataBuilder().method(HandlerType.DELETE).path(path);
+  }
+
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  public <T> T getRequestBody(final String body) throws JsonProcessingException {
+    checkArgument(requestBodyType.isPresent(), "requestBodyType has not been defined");
+    checkArgument(
+        requestBodyTypeSelector.isPresent(), "requestBodyTypeSelector has not been defined");
+
+    final DeserializableTypeDefinition<T> bodySchema =
+        (DeserializableTypeDefinition<T>) getRequestBodyType(body);
+
+    if (bodySchema == null) {
+      throw new MissingRequestBodyException();
+    }
+
+    if (!getRequestBodyType().isEquivalentToDeserializableType(bodySchema)) {
+      throw new IllegalStateException(
+          "schema determined for parsing request body is not listed in requestBodyTypes");
+    }
+
+    final T result = JsonUtil.parse(body, bodySchema);
+    if (result == null) {
+      throw new MissingRequestBodyException();
+    }
+    return result;
+  }
+
+  public interface BodyTypeSelector<T> {
+    DeserializableTypeDefinition<?> selectType(final String jsonContent);
   }
 
   public HandlerType getMethod() {
@@ -100,6 +149,23 @@ public class EndpointMetadata {
 
   public List<String> getTags() {
     return tags;
+  }
+
+  public StringValueTypeDefinition<?> getPathParameterDefinition(final String parameterName) {
+    checkArgument(
+        pathParams.containsKey(parameterName),
+        "Path parameter " + parameterName + " was not found in endpoint metadata");
+    return pathParams.get(parameterName);
+  }
+
+  public StringValueTypeDefinition<?> getQueryParameterDefinition(final String parameterName) {
+    checkArgument(
+        requiredQueryParams.containsKey(parameterName) || queryParams.containsKey(parameterName),
+        "Query parameter " + parameterName + " was not found in endpoint metadata");
+    if (requiredQueryParams.containsKey(parameterName)) {
+      return requiredQueryParams.get(parameterName);
+    }
+    return queryParams.get(parameterName);
   }
 
   public SerializableTypeDefinition<?> getResponseType(
@@ -122,9 +188,19 @@ public class EndpointMetadata {
     gen.writeStringField("operationId", operationId);
     gen.writeStringField("summary", summary);
     gen.writeStringField("description", description);
+    if (deprecated) {
+      gen.writeBooleanField("deprecated", true);
+    }
+    if (pathParams.size() > 0 || queryParams.size() > 0 || requiredQueryParams.size() > 0) {
+      gen.writeArrayFieldStart("parameters");
+      writeParameters(gen, pathParams, "path", true);
+      writeParameters(gen, requiredQueryParams, "query", true);
+      writeParameters(gen, queryParams, "query", false);
+      gen.writeEndArray();
+    }
 
     if (requestBodyType.isPresent()) {
-      final DeserializableTypeDefinition<?> content = requestBodyType.get();
+      final OpenApiTypeDefinition content = requestBodyType.get();
       gen.writeObjectFieldStart("requestBody");
       gen.writeObjectFieldStart("content");
       gen.writeObjectFieldStart(JSON_CONTENT_TYPE);
@@ -154,6 +230,25 @@ public class EndpointMetadata {
     gen.writeEndObject();
   }
 
+  private void writeParameters(
+      final JsonGenerator gen,
+      final Map<String, StringValueTypeDefinition<?>> fields,
+      final String parameterUsedIn,
+      final boolean isMandatoryField)
+      throws IOException {
+    for (Map.Entry<String, StringValueTypeDefinition<?>> entry : fields.entrySet()) {
+      gen.writeStartObject();
+      gen.writeObjectField("name", entry.getKey());
+      if (isMandatoryField) {
+        gen.writeObjectField("required", true);
+      }
+      gen.writeObjectField("in", parameterUsedIn);
+      gen.writeFieldName("schema");
+      entry.getValue().serializeOpenApiTypeOrReference(gen);
+      gen.writeEndObject();
+    }
+  }
+
   private void writeTags(final JsonGenerator gen) throws IOException {
     if (tags.isEmpty()) {
       return;
@@ -175,8 +270,13 @@ public class EndpointMetadata {
         .collect(Collectors.toSet());
   }
 
-  public DeserializableTypeDefinition<?> getRequestBodyType() {
+  OpenApiTypeDefinition getRequestBodyType() {
     return requestBodyType.orElseThrow();
+  }
+
+  DeserializableTypeDefinition<?> getRequestBodyType(final String json) {
+    final BodyTypeSelector<?> selector = requestBodyTypeSelector.orElseThrow();
+    return selector.selectType(json);
   }
 
   public static class EndpointMetaDataBuilder {
@@ -185,8 +285,14 @@ public class EndpointMetadata {
     private String operationId;
     private String summary;
     private String description;
+    private boolean deprecated = false;
+    private final Map<String, StringValueTypeDefinition<?>> pathParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> queryParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
+        new LinkedHashMap<>();
     private Optional<String> security = Optional.empty();
-    private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
+    private Optional<OpenApiTypeDefinition> requestBodyType = Optional.empty();
+    private Optional<BodyTypeSelector<?>> bodyTypeSelector = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
     private List<String> tags = Collections.emptyList();
 
@@ -197,6 +303,34 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder path(final String path) {
       this.path = path;
+      return this;
+    }
+
+    public EndpointMetaDataBuilder pathParam(final ParameterMetadata<?> parameterMetadata) {
+      if (pathParams.containsKey(parameterMetadata.getName())) {
+        throw new IllegalStateException(
+            "Path Parameters already contains " + parameterMetadata.getName());
+      }
+      pathParams.put(parameterMetadata.getName(), parameterMetadata.getType());
+      return this;
+    }
+
+    public EndpointMetaDataBuilder queryParam(final ParameterMetadata<?> parameterMetadata) {
+      final String param = parameterMetadata.getName();
+      if (queryParams.containsKey(param) || requiredQueryParams.containsKey(param)) {
+        throw new IllegalStateException("Query parameters already contains " + param);
+      }
+      queryParams.put(parameterMetadata.getName(), parameterMetadata.getType());
+      return this;
+    }
+
+    public EndpointMetaDataBuilder queryParamRequired(
+        final ParameterMetadata<?> parameterMetadata) {
+      final String param = parameterMetadata.getName();
+      if (queryParams.containsKey(param) || requiredQueryParams.containsKey(param)) {
+        throw new IllegalStateException("Query parameters already contains " + param);
+      }
+      requiredQueryParams.put(parameterMetadata.getName(), parameterMetadata.getType());
       return this;
     }
 
@@ -224,6 +358,11 @@ public class EndpointMetadata {
       return this;
     }
 
+    public EndpointMetaDataBuilder deprecated(final boolean deprecated) {
+      this.deprecated = deprecated;
+      return this;
+    }
+
     public EndpointMetaDataBuilder response(final int responseCode, final String description) {
       return response(responseCode, description, emptyMap());
     }
@@ -231,6 +370,15 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder requestBodyType(
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyType = Optional.of(requestBodyType);
+      this.bodyTypeSelector = Optional.of((__) -> requestBodyType);
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableOneOfTypeDefinition<T> requestBodyType,
+        final BodyTypeSelector<T> bodyTypeSelector) {
+      this.requestBodyType = Optional.of(requestBodyType);
+      this.bodyTypeSelector = Optional.of(bodyTypeSelector);
       return this;
     }
 
@@ -258,8 +406,9 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder withInternalErrorResponse() {
-      return response(
+      response(
           SC_INTERNAL_SERVER_ERROR, "Internal server error", CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+      return this;
     }
 
     public EndpointMetaDataBuilder withBadRequestResponse(Optional<String> maybeMessage) {
@@ -301,9 +450,14 @@ public class EndpointMetadata {
           summary,
           security,
           description,
+          deprecated,
           responses,
           requestBodyType,
-          tags);
+          bodyTypeSelector,
+          tags,
+          pathParams,
+          queryParams,
+          requiredQueryParams);
     }
 
     public EndpointMetaDataBuilder tags(final String... tags) {

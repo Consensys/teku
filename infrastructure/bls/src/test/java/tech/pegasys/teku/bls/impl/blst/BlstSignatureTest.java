@@ -25,16 +25,16 @@ import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.BlsException;
 
 public class BlstSignatureTest extends AbstractSignatureTest {
-  private static BLS12381 BLS;
+  private static BLS12381 bls;
 
   @BeforeAll
   static void setup() {
-    BLS = BlstLoader.INSTANCE.orElseThrow();
+    bls = BlstLoader.INSTANCE.orElseThrow();
   }
 
   @Override
   protected BLS12381 getBls() {
-    return BLS;
+    return bls;
   }
 
   private static final Bytes INFINITY_BYTES =

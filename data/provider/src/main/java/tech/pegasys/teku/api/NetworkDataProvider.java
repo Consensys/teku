@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.api.response.v1.teku.PeerScore;
-import tech.pegasys.teku.api.schema.Metadata;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
   private final Eth2P2PNetwork network;
@@ -76,12 +76,16 @@ public class NetworkDataProvider {
     return discoveryAddressOptional.map(List::of).orElseGet(List::of);
   }
 
-  public Metadata getMetadata() {
-    return new Metadata(network.getMetadata());
+  public MetadataMessage getMetadata() {
+    return network.getMetadata();
   }
 
   public List<tech.pegasys.teku.api.response.v1.node.Peer> getPeers() {
     return network.streamPeers().map(this::toPeer).collect(Collectors.toList());
+  }
+
+  public List<Eth2Peer> getEth2Peers() {
+    return network.streamPeers().collect(Collectors.toList());
   }
 
   public List<PeerScore> getPeerScores() {
@@ -91,6 +95,11 @@ public class NetworkDataProvider {
   public Optional<tech.pegasys.teku.api.response.v1.node.Peer> getPeerById(final String peerId) {
     final NodeId nodeId = network.parseNodeId(peerId);
     return network.getPeer(nodeId).map(this::toPeer);
+  }
+
+  public Optional<Eth2Peer> getEth2PeerById(final String peerId) {
+    final NodeId nodeId = network.parseNodeId(peerId);
+    return network.getPeer(nodeId);
   }
 
   private <R> tech.pegasys.teku.api.response.v1.node.Peer toPeer(final Eth2Peer eth2Peer) {

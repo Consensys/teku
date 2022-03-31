@@ -1,0 +1,16 @@
+{
+  "title" : "GetPeersResponse",
+  "type" : "object",
+  "required" : [ "data", "meta" ],
+  "properties" : {
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Peer"
+      }
+    },
+    "meta" : {
+      "$ref" : "#/components/schemas/Meta"
+    }
+  }
+}

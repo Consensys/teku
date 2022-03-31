@@ -20,6 +20,7 @@ import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 public class GetStateResponse {
+
   public final BeaconStatePhase0 data;
 
   @JsonCreator

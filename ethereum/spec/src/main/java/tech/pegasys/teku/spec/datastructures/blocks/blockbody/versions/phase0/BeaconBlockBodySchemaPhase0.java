@@ -50,6 +50,7 @@ public class BeaconBlockBodySchemaPhase0
     implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
 
   private BeaconBlockBodySchemaPhase0(
+      final String containerName,
       NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
@@ -59,7 +60,7 @@ public class BeaconBlockBodySchemaPhase0
       NamedSchema<SszList<Deposit>> depositsSchema,
       NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
     super(
-        "BeaconBlockBody",
+        containerName,
         randaoRevealSchema,
         eth1DataSchema,
         graffitiSchema,
@@ -71,27 +72,30 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   public static BeaconBlockBodySchemaPhase0 create(
-      final SpecConfig specConfig, final AttesterSlashingSchema attesterSlashingSchema) {
+      final SpecConfig specConfig,
+      final AttesterSlashingSchema attesterSlashingSchema,
+      final String containerName) {
     return new BeaconBlockBodySchemaPhase0(
-        namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
-        namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
-        namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
+        containerName,
+        namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
+        namedSchema(BlockBodyFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA),
+        namedSchema(BlockBodyFields.GRAFFITI, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
-            BlockBodyFields.PROPOSER_SLASHINGS.name(),
+            BlockBodyFields.PROPOSER_SLASHINGS,
             SszListSchema.create(
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
-            BlockBodyFields.ATTESTER_SLASHINGS.name(),
+            BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
         namedSchema(
-            BlockBodyFields.ATTESTATIONS.name(),
+            BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
                 new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
         namedSchema(
-            BlockBodyFields.DEPOSITS.name(),
+            BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
         namedSchema(
-            BlockBodyFields.VOLUNTARY_EXITS.name(),
+            BlockBodyFields.VOLUNTARY_EXITS,
             SszListSchema.create(
                 SignedVoluntaryExit.SSZ_SCHEMA, specConfig.getMaxVoluntaryExits())));
   }

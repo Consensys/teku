@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -176,10 +177,15 @@ public class ForkChoice {
 
   /** Import a block to the store. */
   public SafeFuture<BlockImportResult> onBlock(
-      final SignedBeaconBlock block, final ExecutionEngineChannel executionEngine) {
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance,
+      final ExecutionEngineChannel executionEngine) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-        .thenCompose(blockSlotState -> onBlock(block, blockSlotState, executionEngine));
+        .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
+        .thenCompose(
+            blockSlotState ->
+                onBlock(block, blockSlotState, blockImportPerformance, executionEngine));
   }
 
   /**
@@ -189,6 +195,7 @@ public class ForkChoice {
   private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
+      final Optional<BlockImportPerformance> blockImportPerformance,
       final ExecutionEngineChannel executionEngine) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
@@ -224,6 +231,7 @@ public class ForkChoice {
       reportInvalidBlock(block, result);
       return SafeFuture.completedFuture(result);
     }
+    blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
     return payloadExecutor
         .getExecutionResult()
@@ -232,6 +240,7 @@ public class ForkChoice {
                 importBlockAndState(
                     block,
                     blockSlotState.get(),
+                    blockImportPerformance,
                     forkChoiceUtil,
                     indexedAttestationCache,
                     postState,
@@ -242,6 +251,7 @@ public class ForkChoice {
   private BlockImportResult importBlockAndState(
       final SignedBeaconBlock block,
       final BeaconState blockSlotState,
+      final Optional<BlockImportPerformance> blockImportPerformance,
       final ForkChoiceUtil forkChoiceUtil,
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
@@ -264,7 +274,9 @@ public class ForkChoice {
     }
 
     if (payloadResult.hasNotValidatedStatus()
-        && !recentChainData.isOptimisticSyncPossible(block.getSlot())) {
+        && !spec.atSlot(block.getSlot())
+            .getForkChoiceUtil()
+            .canOptimisticallyImport(recentChainData.getStore(), block)) {
       return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
     }
 
@@ -284,7 +296,8 @@ public class ForkChoice {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
-    forkChoiceUtil.applyBlockToStore(transaction, block, postState);
+    forkChoiceUtil.applyBlockToStore(
+        transaction, block, postState, payloadResult.hasNotValidatedStatus());
 
     if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final int secondsPerSlot = spec.getSecondsPerSlot(block.getSlot());
@@ -304,8 +317,10 @@ public class ForkChoice {
       }
     }
 
+    blockImportPerformance.ifPresent(BlockImportPerformance::transactionReady);
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
+    blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));

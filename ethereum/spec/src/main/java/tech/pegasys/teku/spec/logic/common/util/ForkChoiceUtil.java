@@ -21,6 +21,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -171,16 +172,16 @@ public class ForkChoiceUtil {
     if (store.getTime().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
       return;
     }
-    UInt64 previous_slot = getCurrentSlot(store);
+    UInt64 previousSlot = getCurrentSlot(store);
 
     // Update store time
     store.setTime(time);
 
-    UInt64 current_slot = getCurrentSlot(store);
+    UInt64 currentSlot = getCurrentSlot(store);
 
     // Not a new epoch, return
-    if (!(current_slot.compareTo(previous_slot) > 0
-        && computeSlotsSinceEpochStart(current_slot).equals(UInt64.ZERO))) {
+    if (!(currentSlot.compareTo(previousSlot) > 0
+        && computeSlotsSinceEpochStart(currentSlot).equals(UInt64.ZERO))) {
       return;
     }
 
@@ -251,7 +252,7 @@ public class ForkChoiceUtil {
     }
 
     final Optional<UInt64> blockSlot =
-        forkChoiceStrategy.blockSlot(attestationData.getBeacon_block_root());
+        forkChoiceStrategy.blockSlot(attestationData.getBeaconBlockRoot());
     if (blockSlot.isEmpty()) {
       // Attestations must be for a known block. If block is unknown, delay consideration until the
       // block is found
@@ -265,7 +266,7 @@ public class ForkChoiceUtil {
 
     // LMD vote must be consistent with FFG vote target
     final UInt64 targetSlot = miscHelpers.computeStartSlotAtEpoch(target.getEpoch());
-    if (getAncestor(forkChoiceStrategy, attestationData.getBeacon_block_root(), targetSlot)
+    if (getAncestor(forkChoiceStrategy, attestationData.getBeaconBlockRoot(), targetSlot)
         .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
         .orElse(true)) {
       return AttestationProcessingResult.invalid(
@@ -299,12 +300,15 @@ public class ForkChoiceUtil {
   }
 
   public void applyBlockToStore(
-      final MutableStore store, final SignedBeaconBlock signedBlock, final BeaconState postState) {
+      final MutableStore store,
+      final SignedBeaconBlock signedBlock,
+      final BeaconState postState,
+      final boolean isBlockOptimistic) {
     // Add new block to store
     store.putBlockAndState(signedBlock, postState);
 
     // Update justified checkpoint
-    final Checkpoint justifiedCheckpoint = postState.getCurrent_justified_checkpoint();
+    final Checkpoint justifiedCheckpoint = postState.getCurrentJustifiedCheckpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
       if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
           > 0) {
@@ -317,21 +321,21 @@ public class ForkChoiceUtil {
     }
 
     // Update finalized checkpoint
-    final Checkpoint finalizedCheckpoint = postState.getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = postState.getFinalizedCheckpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      store.setFinalizedCheckpoint(finalizedCheckpoint);
+      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
 
       // Potentially update justified if different from store
-      if (!store.getJustifiedCheckpoint().equals(postState.getCurrent_justified_checkpoint())) {
+      if (!store.getJustifiedCheckpoint().equals(postState.getCurrentJustifiedCheckpoint())) {
         // Update justified if new justified is later than store justified
         // or if store justified is not in chain with finalized checkpoint
         if (postState
-                    .getCurrent_justified_checkpoint()
+                    .getCurrentJustifiedCheckpoint()
                     .getEpoch()
                     .compareTo(store.getJustifiedCheckpoint().getEpoch())
                 > 0
             || !isFinalizedAncestorOfJustified(store)) {
-          store.setJustifiedCheckpoint(postState.getCurrent_justified_checkpoint());
+          store.setJustifiedCheckpoint(postState.getCurrentJustifiedCheckpoint());
         }
       }
     }
@@ -435,5 +439,32 @@ public class ForkChoiceUtil {
     return getAncestor(forkChoiceStrategy, root, slot)
         .map(ancestorAtSlot -> ancestorAtSlot.equals(ancestorRoot))
         .orElse(false);
+  }
+
+  public boolean canOptimisticallyImport(final ReadOnlyStore store, final SignedBeaconBlock block) {
+    // A block can be optimistically imported either if it's parent contains a non-default payload
+    // or if it is at least `SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY` before the current slot.
+    // This is to avoid the merge block referencing a non-existent eth1 parent block and causing
+    // all nodes to switch to optimistic sync mode.
+    if (isExecutionBlock(store, block.getParentRoot())) {
+      return true;
+    }
+    return isBellatrixBlockOld(store, block.getSlot());
+  }
+
+  private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
+    final Optional<SpecConfigBellatrix> maybeConfig = specConfig.toVersionBellatrix();
+    if (maybeConfig.isEmpty()) {
+      return false;
+    }
+    return blockSlot
+        .plus(maybeConfig.get().getSafeSlotsToImportOptimistically())
+        .isLessThanOrEqualTo(getCurrentSlot(store));
+  }
+
+  private boolean isExecutionBlock(final ReadOnlyStore store, final Bytes32 blockRoot) {
+    final Optional<Bytes32> parentExecutionRoot =
+        store.getForkChoiceStrategy().executionBlockHash(blockRoot);
+    return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 }

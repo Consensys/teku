@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecConfigAltair {
@@ -132,8 +132,12 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final SpecConfigAltairImpl that = (SpecConfigAltairImpl) o;
     return Objects.equals(specConfig, that.specConfig)
         && minSlashingPenaltyQuotientAltair == that.minSlashingPenaltyQuotientAltair

@@ -6,20 +6,22 @@
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
+- The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
 - The commandline option `--validators-performance-tracking-enabled` has been deprecated in favour of `--validators-performance-tracking-mode`
  
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
-- Support for the Pyrmont testnet has been removed. The Prater testnet should be used instead.
+
+### Breaking Changes
+- The `/eth/v1/node/peers` endpoint had field `address` in `data` object, which is not correct according to the spec, changed to `last_seen_p2p_address`. Also `meta` object with `count` added
+- The `/eth/v1/node/peers/{peer_id}` endpoint had field `address` in `data` object, which is not correct according to the spec, changed to `last_seen_p2p_address`
+
 ### Additions and Improvements
-- Added support for exporting metrics to an external consumer with `--metrics-publish-endpoint`.
+- Introduced smarter state selection strategy when validating attestations to reduce required regenerations after a full GC.
+- Improved peer scoring to better handle temporary errors from peers.
+- Enabled fork choice proposer boost by default.
 
 ### Bug Fixes
- - Improved handling of the http accept header used to determine whether to send SSZ data or json for states and blocks.
- - Updated discovery library with improved performance.
- - Updated libp2p library to respect message list limits when sending messages.
- - Fixed issue on custom testnets with two forks in sequential epochs where the maximum gossip topic subscription limits were exceeded.
- - Fixed issue where `/eth/v1/beacon/headers` and `/eth/v1/beacon/headers/:block_id` would incorrectly return the block root in the `body_root` field.
- - Simplified chain head updates to resolve `Skipping head block update to avoid potential rollback of the chain head` warnings. 
+- Fixed the target database format for the `migrate-database` command.

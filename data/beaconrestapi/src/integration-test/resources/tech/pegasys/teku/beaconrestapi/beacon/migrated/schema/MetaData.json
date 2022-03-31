@@ -1,0 +1,25 @@
+{
+  "title" : "MetaData",
+  "type" : "object",
+  "required" : [ "seq_number", "attnets" ],
+  "properties" : {
+    "seq_number" : {
+      "type" : "string",
+      "description" : "Uint64 starting at 0 used to version the node's metadata. If any other field in the local MetaData changes, the node MUST increment seq_number by 1.",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "attnets" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "Bitvector representing the node's persistent attestation subnet subscriptions.",
+      "format" : "bytes"
+    },
+    "syncnets" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "Bitvector representing the node's persistent sync committee subnet subscriptions.",
+      "format" : "bytes"
+    }
+  }
+}

@@ -52,55 +52,61 @@ public class VoluntaryExitValidator
     return firstOf(
         () ->
             check(
-                UInt64.valueOf(state.getValidators().size()).compareTo(exit.getValidatorIndex())
-                    > 0,
-                ExitInvalidReason.INVALID_VALIDATOR_INDEX),
+                UInt64.valueOf(state.getValidators().size())
+                    .isGreaterThan(exit.getValidatorIndex()),
+                ExitInvalidReason.invalidValidatorIndex()),
         () ->
             check(
                 predicates.isActiveValidator(
                     getValidator(state, exit), beaconStateAccessors.getCurrentEpoch(state)),
-                ExitInvalidReason.VALIDATOR_INACTIVE),
+                ExitInvalidReason.validatorInactive()),
         () ->
             check(
-                getValidator(state, exit).getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
-                ExitInvalidReason.EXIT_INITIATED),
+                getValidator(state, exit).getExitEpoch().equals(FAR_FUTURE_EPOCH),
+                ExitInvalidReason.exitInitiated()),
         () ->
             check(
-                beaconStateAccessors.getCurrentEpoch(state).compareTo(exit.getEpoch()) >= 0,
-                ExitInvalidReason.SUBMITTED_TOO_EARLY),
-        () ->
-            check(
-                beaconStateAccessors
-                        .getCurrentEpoch(state)
-                        .compareTo(
-                            getValidator(state, exit)
-                                .getActivation_epoch()
-                                .plus(specConfig.getShardCommitteePeriod()))
-                    >= 0,
-                ExitInvalidReason.VALIDATOR_TOO_YOUNG));
+                beaconStateAccessors.getCurrentEpoch(state).isGreaterThanOrEqualTo(exit.getEpoch()),
+                ExitInvalidReason.submittedTooEarly()),
+        () -> {
+          UInt64 exitEpoch =
+              getValidator(state, exit)
+                  .getActivationEpoch()
+                  .plus(specConfig.getShardCommitteePeriod());
+          return check(
+              beaconStateAccessors.getCurrentEpoch(state).isGreaterThanOrEqualTo(exitEpoch),
+              ExitInvalidReason.validatorTooYoung(exitEpoch));
+        });
   }
 
   private Validator getValidator(BeaconState state, VoluntaryExit exit) {
     return state.getValidators().get(toIntExact(exit.getValidatorIndex().longValue()));
   }
 
-  public enum ExitInvalidReason implements OperationInvalidReason {
-    INVALID_VALIDATOR_INDEX("Invalid validator index"),
-    VALIDATOR_INACTIVE("Validator is not active"),
-    EXIT_INITIATED("Validator has already initiated exit"),
-    SUBMITTED_TOO_EARLY("Specified exit epoch is still in the future"),
-    VALIDATOR_TOO_YOUNG("Validator has not been active long enough"),
-    INVALID_SIGNATURE("Signature is invalid");
+  public static class ExitInvalidReason {
 
-    private final String description;
-
-    ExitInvalidReason(final String description) {
-      this.description = description;
+    public static OperationInvalidReason invalidValidatorIndex() {
+      return () -> "Invalid validator index";
     }
 
-    @Override
-    public String describe() {
-      return description;
+    public static OperationInvalidReason validatorInactive() {
+      return () -> "Validator is not active";
+    }
+
+    public static OperationInvalidReason exitInitiated() {
+      return () -> "Validator has already initiated exit";
+    }
+
+    public static OperationInvalidReason submittedTooEarly() {
+      return () -> "Specified exit epoch is still in the future";
+    }
+
+    public static OperationInvalidReason validatorTooYoung(UInt64 exitEpoch) {
+      return () -> "Validator cannot exit until epoch " + exitEpoch;
+    }
+
+    public static OperationInvalidReason invalidSignature() {
+      return () -> "Signature is invalid";
     }
   }
 }

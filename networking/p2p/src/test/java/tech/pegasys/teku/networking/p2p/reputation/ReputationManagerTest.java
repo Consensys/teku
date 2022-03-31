@@ -19,7 +19,10 @@ import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.L
 import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.metrics.StubGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -30,8 +33,9 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 class ReputationManagerTest {
 
-  private static final int MORE_THAN_DISALLOW_PERIOD =
-      ReputationManager.FAILURE_BAN_PERIOD.intValue() + 1;
+  private static final int MORE_THAN_COOLDOWN_PERIOD =
+      ReputationManager.COOLDOWN_PERIOD.intValue() + 1;
+  private static final int MORE_THAN_BAN_PERIOD = ReputationManager.BAN_PERIOD.intValue() + 1;
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final PeerAddress peerAddress = new PeerAddress(new MockNodeId(1));
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -62,7 +66,7 @@ class ReputationManagerTest {
   public void shouldAllowConnectionInitiationAfterTimePasses() {
     reputationManager.reportInitiatedConnectionFailed(peerAddress);
 
-    timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
 
     assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
   }
@@ -94,7 +98,7 @@ class ReputationManagerTest {
   void shouldAllowConnectionAfterDisconnectAfterTimePasses() {
     reputationManager.reportDisconnection(peerAddress, Optional.empty(), true);
 
-    timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
 
     assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
         .isTrue();
@@ -105,26 +109,62 @@ class ReputationManagerTest {
     reputationManager.reportDisconnection(
         peerAddress, Optional.of(DisconnectReason.UNRESPONSIVE), true);
 
-    timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
 
     assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
         .isTrue();
   }
 
-  @Test
-  void shouldNeverAllowReconnectionForPermanentDisconnectReasons() {
-    reputationManager.reportDisconnection(
-        peerAddress, Optional.of(DisconnectReason.IRRELEVANT_NETWORK), true);
+  @ParameterizedTest(name = "reason={0}")
+  @MethodSource("getNoBanDisconnectReasons")
+  void shouldNotBanForNonFatalReasons(final DisconnectReason disconnectReason) {
+    reputationManager.reportDisconnection(peerAddress, Optional.of(disconnectReason), true);
 
-    timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
+  }
 
-    assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
-        .isFalse();
+  static Stream<DisconnectReason> getNoBanDisconnectReasons() {
+    return Stream.of(
+        DisconnectReason.TOO_MANY_PEERS,
+        DisconnectReason.UNRESPONSIVE,
+        DisconnectReason.SHUTTING_DOWN,
+        DisconnectReason.RATE_LIMITING);
+  }
+
+  @ParameterizedTest(name = "reason={0}")
+  @MethodSource("getBanDisconnectReasons")
+  void shouldAllowReconnectionForBanDisconnectReasonAfterBanIsOver(
+      final DisconnectReason disconnectReason) {
+    reputationManager.reportDisconnection(peerAddress, Optional.of(disconnectReason), true);
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_BAN_PERIOD);
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
+  }
+
+  static Stream<DisconnectReason> getBanDisconnectReasons() {
+    return Stream.of(
+        DisconnectReason.IRRELEVANT_NETWORK,
+        DisconnectReason.UNABLE_TO_VERIFY_NETWORK,
+        DisconnectReason.REMOTE_FAULT);
   }
 
   @Test
   void shouldDisconnectIfFirstAdjustmentIsALargePenalty() {
     assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+  }
+
+  @Test
+  void shouldBanAfterScoreDropsBelowThreshold() {
+    reputationManager.adjustReputation(peerAddress, LARGE_PENALTY);
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_BAN_PERIOD);
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
   }
 
   @Test

@@ -46,10 +46,10 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPass
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
 
 class SendDepositsCommandTest {
-  private static final Consumer<Integer> shutdownFunction = status -> {};
+  private static final Consumer<Integer> SHUTDOWN_FUNCTION = status -> {};
   private static final String PASSWORD = "testpassword";
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
-  private static final Function<String, String> envSupplier =
+  private static final Function<String, String> ENV_SUPPLIER =
       s -> EXPECTED_ENV_VARIABLE.equals(s) ? PASSWORD : null;
   private static final Bytes BLS_PRIVATE_KEY =
       Bytes.fromHexString("0x19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 32);
@@ -95,8 +95,8 @@ class SendDepositsCommandTest {
 
     final SendDepositsCommand sendDepositsCommand =
         new SendDepositsCommand(
-            shutdownFunction,
-            envSupplier,
+            SHUTDOWN_FUNCTION,
+            ENV_SUPPLIER,
             commandSpec,
             depositOptions,
             validatorKeyOptions,
@@ -117,8 +117,8 @@ class SendDepositsCommandTest {
 
     final SendDepositsCommand sendDepositsCommand =
         new SendDepositsCommand(
-            shutdownFunction,
-            envSupplier,
+            SHUTDOWN_FUNCTION,
+            ENV_SUPPLIER,
             commandSpec,
             depositOptions,
             validatorKeyOptions,

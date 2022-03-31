@@ -35,11 +35,11 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setGenesisTime(UInt64 genesisTime);
 
-  void setJustifiedCheckpoint(Checkpoint justified_checkpoint);
+  void setJustifiedCheckpoint(Checkpoint justifiedCheckpoint);
 
-  void setFinalizedCheckpoint(Checkpoint finalized_checkpoint);
+  void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock);
 
-  void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
+  void setBestJustifiedCheckpoint(Checkpoint bestJustifiedCheckpoint);
 
   void setProposerBoostRoot(Bytes32 boostedBlockRoot);
 

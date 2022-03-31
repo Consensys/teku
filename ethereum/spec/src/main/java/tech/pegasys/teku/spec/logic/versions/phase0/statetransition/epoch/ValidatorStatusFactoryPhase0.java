@@ -51,8 +51,8 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
     final BeaconStatePhase0 state = BeaconStatePhase0.required(genericState);
 
     Stream.concat(
-            state.getPrevious_epoch_attestations().stream(),
-            state.getCurrent_epoch_attestations().stream())
+            state.getPreviousEpochAttestations().stream(),
+            state.getCurrentEpochAttestations().stream())
         .forEach(
             attestation -> {
               final AttestationData data = attestation.getData();
@@ -69,7 +69,7 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
                 updates.inclusionInfo =
                     Optional.of(
                         new InclusionInfo(
-                            attestation.getInclusion_delay(), attestation.getProposer_index()));
+                            attestation.getInclusionDelay(), attestation.getProposerIndex()));
 
                 if (matchesEpochStartBlock(state, previousEpoch, target.getRoot())) {
                   updates.previousEpochTargetAttester = true;
@@ -77,13 +77,13 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
                   updates.previousEpochHeadAttester =
                       beaconStateAccessors
                           .getBlockRootAtSlot(state, data.getSlot())
-                          .equals(data.getBeacon_block_root());
+                          .equals(data.getBeaconBlockRoot());
                 }
               }
 
               // Apply flags to attestingIndices
               attestationUtil
-                  .streamAttestingIndices(state, data, attestation.getAggregation_bits())
+                  .streamAttestingIndices(state, data, attestation.getAggregationBits())
                   .mapToObj(statuses::get)
                   .forEach(updates::apply);
             });

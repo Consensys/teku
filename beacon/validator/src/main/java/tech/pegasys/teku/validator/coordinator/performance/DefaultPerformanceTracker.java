@@ -305,8 +305,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                   correctTargetCount++;
 
                   // Check if the attestation had correct head block root
-                  Bytes32 attestationHeadBlockRoot =
-                      sentAttestation.getData().getBeacon_block_root();
+                  Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
                   if (attestationHeadBlockRoot.equals(
                       spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
                     correctHeadBlockCount++;
@@ -315,7 +314,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
               }
 
               IntSummaryStatistics inclusionDistanceStatistics =
-                  inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
+                  inclusionDistances.intStream().summaryStatistics();
 
               // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
               // is empty.

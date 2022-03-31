@@ -14,7 +14,10 @@
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatLongCollection;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,33 +97,33 @@ public class TreeTest {
   @Test
   public void testUpdated() {
     TreeNode zeroTree = TreeUtil.createDefaultTree(8, LeafNode.EMPTY_LEAF);
-    TreeNode t1 = zeroTree.updated(8 + 0, newTestLeaf(111));
-    TreeNode t1_ = zeroTree.updated(8 + 0, newTestLeaf(111));
-    assertThat(t1).isNotSameAs(t1_);
-    assertThat(t1.get(8 + 0)).isEqualTo(newTestLeaf(111));
-    assertThat(IntStream.range(1, 8).mapToObj(idx -> t1.get(8 + idx)))
+    TreeNode t1a = zeroTree.updated(8 + 0, newTestLeaf(111));
+    TreeNode t1b = zeroTree.updated(8 + 0, newTestLeaf(111));
+    assertThat(t1a).isNotSameAs(t1b);
+    assertThat(t1a.get(8 + 0)).isEqualTo(newTestLeaf(111));
+    assertThat(IntStream.range(1, 8).mapToObj(idx -> t1a.get(8 + idx)))
         .containsOnly(LeafNode.EMPTY_LEAF);
-    assertThat(t1.hashTreeRoot()).isEqualTo(t1_.hashTreeRoot());
+    assertThat(t1a.hashTreeRoot()).isEqualTo(t1b.hashTreeRoot());
 
-    TreeNode t2 = t1.updated(8 + 3, newTestLeaf(222));
-    TreeNode t2_ =
+    TreeNode t2a = t1a.updated(8 + 3, newTestLeaf(222));
+    TreeNode t2b =
         zeroTree.updated(
             new TreeUpdates(
                 List.of(new Update(8 + 0, newTestLeaf(111)), new Update(8 + 3, newTestLeaf(222)))));
-    assertThat(t2).isNotSameAs(t2_);
-    assertThat(t2.get(8 + 0)).isEqualTo(newTestLeaf(111));
-    assertThat(t2.get(8 + 3)).isEqualTo(newTestLeaf(222));
-    assertThat(IntStream.of(1, 2, 4, 5, 6, 7).mapToObj(idx -> t2.get(8 + idx)))
+    assertThat(t2a).isNotSameAs(t2b);
+    assertThat(t2a.get(8 + 0)).isEqualTo(newTestLeaf(111));
+    assertThat(t2a.get(8 + 3)).isEqualTo(newTestLeaf(222));
+    assertThat(IntStream.of(1, 2, 4, 5, 6, 7).mapToObj(idx -> t2a.get(8 + idx)))
         .containsOnly(LeafNode.EMPTY_LEAF);
-    assertThat(t2.hashTreeRoot()).isEqualTo(t2_.hashTreeRoot());
+    assertThat(t2a.hashTreeRoot()).isEqualTo(t2b.hashTreeRoot());
 
-    TreeNode zeroTree_ =
-        t2.updated(
+    TreeNode zeroTreeB =
+        t2a.updated(
             new TreeUpdates(
                 List.of(
                     new Update(8 + 0, LeafNode.EMPTY_LEAF),
                     new Update(8 + 3, LeafNode.EMPTY_LEAF))));
-    assertThat(zeroTree.hashTreeRoot()).isEqualTo(zeroTree_.hashTreeRoot());
+    assertThat(zeroTree.hashTreeRoot()).isEqualTo(zeroTreeB.hashTreeRoot());
   }
 
   @Test
@@ -130,7 +133,7 @@ public class TreeTest {
     // since the hash can be calculated lazily and cached inside TreeNode there are
     // potential threading issues
     TreeNode tree = TreeUtil.createDefaultTree(32 * 1024, newTestLeaf(111));
-    List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(() -> tree.hashTreeRoot(), 512);
+    List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(tree::hashTreeRoot, 512);
     assertThat(TestUtil.waitAll(hasheFuts)).containsOnly(tree.hashTreeRoot());
   }
 
@@ -175,7 +178,7 @@ public class TreeTest {
   void testTreeNodeIterator() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateAll(
         (node, idx) -> {
           assertThat(root.get(idx)).isSameAs(node);
@@ -183,7 +186,7 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices)
+    assertThatLongCollection(iteratedIndices)
         .containsExactly(
             0b1L, 0b10L, 0b100L, 0b1000L, 0b1001L, 0b101L, 0b1010L, 0b1011L, 0b11L, 0b110L, 0b111L);
   }
@@ -192,7 +195,7 @@ public class TreeTest {
   void testTreeNodeIteratorWithRange() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateRange(
         0b101,
         0b110,
@@ -202,7 +205,7 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices)
+    assertThatLongCollection(iteratedIndices)
         .containsExactly(0b1L, 0b10L, 0b101L, 0b1010L, 0b1011L, 0b11L, 0b110L);
   }
 
@@ -210,7 +213,7 @@ public class TreeTest {
   void testTreeNodeIteratorWithDegenerateRange() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateRange(
         0b100000,
         0b100001,
@@ -220,14 +223,14 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices).containsExactly(0b1L, 0b10L, 0b100L, 0b1000L);
+    assertThatLongCollection(iteratedIndices).containsExactly(0b1L, 0b10L, 0b100L, 0b1000L);
   }
 
   @Test
   void testTreeNodeIteratorWithEqualStartEndNodes() {
     BranchNode root = createNonPlainTree();
 
-    List<Long> iteratedIndices = new ArrayList<>();
+    LongList iteratedIndices = new LongArrayList();
     root.iterateRange(
         0b11,
         0b11,
@@ -237,7 +240,7 @@ public class TreeTest {
           return true;
         });
 
-    assertThat(iteratedIndices).containsExactly(0b1L, 0b11L, 0b110L, 0b111L);
+    assertThatLongCollection(iteratedIndices).containsExactly(0b1L, 0b11L, 0b110L, 0b111L);
   }
 
   static List<LeafNode> collectLeaves(TreeNode n, long from, long to) {

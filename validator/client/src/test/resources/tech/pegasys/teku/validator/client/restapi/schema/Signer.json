@@ -1,4 +1,5 @@
 {
   "type" : "string",
-  "title" : "Signer"
+  "title" : "Signer",
+  "description" : "URL of the remote signer to use for this validator"
 }

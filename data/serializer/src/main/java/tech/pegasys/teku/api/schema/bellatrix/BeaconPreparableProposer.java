@@ -20,9 +20,10 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class BeaconPreparableProposer {
   @JsonProperty("validator_index")
   @Schema(type = "string", format = "uint64", example = EXAMPLE_UINT64)
