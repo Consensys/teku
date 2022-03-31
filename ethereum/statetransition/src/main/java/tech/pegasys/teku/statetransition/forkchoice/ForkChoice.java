@@ -274,7 +274,9 @@ public class ForkChoice {
     }
 
     if (payloadResult.hasNotValidatedStatus()
-        && !recentChainData.isOptimisticSyncPossible(block.getSlot())) {
+        && !spec.atSlot(block.getSlot())
+            .getForkChoiceUtil()
+            .canOptimisticallyImport(recentChainData.getStore(), block)) {
       return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
     }
 
