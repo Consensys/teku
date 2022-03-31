@@ -22,8 +22,14 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.SERIALIZABLE_ONE_OF_TYPE_DEFINITION;
+import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TYPE_A;
+import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TYPE_B;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.util.Map;
@@ -32,6 +38,7 @@ import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
 
@@ -205,6 +212,65 @@ class EndpointMetadataTest {
     final SerializableTypeDefinition<String> type = STRING_TYPE;
     final EndpointMetadata metadata = validBuilder().response(SC_OK, "Success", type).build();
     assertThat(metadata.getResponseType(SC_OK, JSON_CONTENT_TYPE)).isSameAs(type);
+  }
+
+  @Test
+  void requestBodyType_shouldDetermineOneOf() {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, this::selector)
+            .response(SC_OK, "Success")
+            .build();
+
+    assertThat(metadata.getRequestBodyType("{\"value1\":\"FOO\"}")).isEqualTo(TYPE_A);
+  }
+
+  @Test
+  void requestBody_shouldGetBodyAsObject() throws JsonProcessingException {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, this::selector)
+            .response(SC_OK, "Success")
+            .build();
+    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
+  }
+
+  @Test
+  void requestBody_shouldMatchSameType() throws JsonProcessingException {
+    final EndpointMetadata metadata =
+        validBuilder().requestBodyType(TYPE_A).response(SC_OK, "Success").build();
+
+    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
+  }
+
+  @Test
+  void requestBodyType_shouldErrorIfSelectorDeterminesUndocumentedResult() {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, (__) -> STRING_TYPE)
+            .response(SC_OK, "Success")
+            .build();
+
+    assertThatThrownBy(() -> metadata.getRequestBody("{\"value1\":\"FOO\"}"))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  private <T> DeserializableTypeDefinition<?> selector(final String jsonData) {
+    final ObjectMapper mapper = new ObjectMapper();
+    try {
+      final JsonNode jsonNode = mapper.readTree(jsonData);
+      if (jsonNode.has("value1")) {
+        return TYPE_A;
+      }
+      if (jsonNode.has("value2")) {
+        return TYPE_B;
+      }
+    } catch (JsonProcessingException e) {
+      throw new IllegalArgumentException("Could not parse object to find one-of type information");
+    }
+    throw new IllegalStateException("Object type not found in one-of selector");
   }
 
   private EndpointMetaDataBuilder validBuilder() {

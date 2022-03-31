@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORI
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.util.Collection;
@@ -36,9 +37,12 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
@@ -52,7 +56,8 @@ public class EndpointMetadata {
   private final String description;
   private final boolean deprecated;
   private final Map<String, OpenApiResponse> responses;
-  private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
+  private final Optional<OpenApiTypeDefinition> requestBodyType;
+  private final Optional<BodyTypeSelector<?>> requestBodyTypeSelector;
   private final List<String> tags;
   private final Map<String, StringValueTypeDefinition<?>> pathParams;
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
@@ -67,7 +72,8 @@ public class EndpointMetadata {
       final String description,
       final boolean deprecated,
       final Map<String, OpenApiResponse> responses,
-      final Optional<DeserializableTypeDefinition<?>> requestBodyType,
+      final Optional<OpenApiTypeDefinition> requestBodyType,
+      final Optional<BodyTypeSelector<?>> requestBodyTypeSelector,
       final List<String> tags,
       final Map<String, StringValueTypeDefinition<?>> pathParams,
       final Map<String, StringValueTypeDefinition<?>> queryParams,
@@ -81,6 +87,7 @@ public class EndpointMetadata {
     this.deprecated = deprecated;
     this.responses = responses;
     this.requestBodyType = requestBodyType;
+    this.requestBodyTypeSelector = requestBodyTypeSelector;
     this.tags = tags;
     this.pathParams = pathParams;
     this.queryParams = queryParams;
@@ -97,6 +104,35 @@ public class EndpointMetadata {
 
   public static EndpointMetaDataBuilder delete(final String path) {
     return new EndpointMetaDataBuilder().method(HandlerType.DELETE).path(path);
+  }
+
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  public <T> T getRequestBody(final String body) throws JsonProcessingException {
+    checkArgument(requestBodyType.isPresent(), "requestBodyType has not been defined");
+    checkArgument(
+        requestBodyTypeSelector.isPresent(), "requestBodyTypeSelector has not been defined");
+
+    final DeserializableTypeDefinition<T> bodySchema =
+        (DeserializableTypeDefinition<T>) getRequestBodyType(body);
+
+    if (bodySchema == null) {
+      throw new MissingRequestBodyException();
+    }
+
+    if (!getRequestBodyType().isEquivalentToDeserializableType(bodySchema)) {
+      throw new IllegalStateException(
+          "schema determined for parsing request body is not listed in requestBodyTypes");
+    }
+
+    final T result = JsonUtil.parse(body, bodySchema);
+    if (result == null) {
+      throw new MissingRequestBodyException();
+    }
+    return result;
+  }
+
+  public interface BodyTypeSelector<T> {
+    DeserializableTypeDefinition<?> selectType(final String jsonContent);
   }
 
   public HandlerType getMethod() {
@@ -164,7 +200,7 @@ public class EndpointMetadata {
     }
 
     if (requestBodyType.isPresent()) {
-      final DeserializableTypeDefinition<?> content = requestBodyType.get();
+      final OpenApiTypeDefinition content = requestBodyType.get();
       gen.writeObjectFieldStart("requestBody");
       gen.writeObjectFieldStart("content");
       gen.writeObjectFieldStart(JSON_CONTENT_TYPE);
@@ -234,8 +270,13 @@ public class EndpointMetadata {
         .collect(Collectors.toSet());
   }
 
-  public DeserializableTypeDefinition<?> getRequestBodyType() {
+  OpenApiTypeDefinition getRequestBodyType() {
     return requestBodyType.orElseThrow();
+  }
+
+  DeserializableTypeDefinition<?> getRequestBodyType(final String json) {
+    final BodyTypeSelector<?> selector = requestBodyTypeSelector.orElseThrow();
+    return selector.selectType(json);
   }
 
   public static class EndpointMetaDataBuilder {
@@ -250,7 +291,8 @@ public class EndpointMetadata {
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private Optional<String> security = Optional.empty();
-    private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
+    private Optional<OpenApiTypeDefinition> requestBodyType = Optional.empty();
+    private Optional<BodyTypeSelector<?>> bodyTypeSelector = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
     private List<String> tags = Collections.emptyList();
 
@@ -328,6 +370,15 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder requestBodyType(
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyType = Optional.of(requestBodyType);
+      this.bodyTypeSelector = Optional.of((__) -> requestBodyType);
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableOneOfTypeDefinition<T> requestBodyType,
+        final BodyTypeSelector<T> bodyTypeSelector) {
+      this.requestBodyType = Optional.of(requestBodyType);
+      this.bodyTypeSelector = Optional.of(bodyTypeSelector);
       return this;
     }
 
@@ -402,6 +453,7 @@ public class EndpointMetadata {
           deprecated,
           responses,
           requestBodyType,
+          bodyTypeSelector,
           tags,
           pathParams,
           queryParams,
