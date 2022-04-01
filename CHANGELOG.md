@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Introduced smarter state selection strategy when validating attestations to reduce required regenerations after a full GC.
 - Improved peer scoring to better handle temporary errors from peers.
 - Enabled fork choice proposer boost by default.
+- Added Websockets and IPC protocols support for execution client’s Engine JSON RPC API.
 
 ### Bug Fixes
 - Fixed the target database format for the `migrate-database` command.
