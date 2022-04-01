@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.reference.common.operations;
 
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -103,10 +105,11 @@ public class DefaultOperationProcessor implements OperationProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      final ExecutionPayload executionPayload,
+      ExecutionPayloadHeader payloadHeader,
+      Optional<ExecutionPayload> payload,
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionPayload(state, executionPayload, payloadExecutor);
+        .processExecutionPayload(state, payloadHeader, payload, payloadExecutor);
   }
 }

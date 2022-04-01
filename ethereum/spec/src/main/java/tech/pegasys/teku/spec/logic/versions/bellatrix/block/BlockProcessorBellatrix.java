@@ -89,23 +89,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final ExecutionPayload executionPayload =
           blockBody.getOptionalExecutionPayload().orElseThrow();
       executionPayloadHeader =
-          schemaDefinitions
-              .getExecutionPayloadHeaderSchema()
-              .create(
-                  executionPayload.getParentHash(),
-                  executionPayload.getFeeRecipient(),
-                  executionPayload.getStateRoot(),
-                  executionPayload.getReceiptsRoot(),
-                  executionPayload.getLogsBloom(),
-                  executionPayload.getPrevRandao(),
-                  executionPayload.getBlockNumber(),
-                  executionPayload.getGasLimit(),
-                  executionPayload.getGasUsed(),
-                  executionPayload.getTimestamp(),
-                  executionPayload.getExtraData(),
-                  executionPayload.getBaseFeePerGas(),
-                  executionPayload.getBlockHash(),
-                  executionPayload.getTransactions().hashTreeRoot());
+          schemaDefinitions.getExecutionPayloadHeaderSchema().createFrom(executionPayload);
     }
 
     processBlockHeader(state, block);

@@ -86,7 +86,7 @@ public class ExecutionPayloadHeaderSchema
       Bytes32 stateRoot,
       Bytes32 receiptsRoot,
       Bytes logsBloom,
-      Bytes32 random,
+      Bytes32 prevRandao,
       UInt64 blockNumber,
       UInt64 gasLimit,
       UInt64 gasUsed,
@@ -102,7 +102,7 @@ public class ExecutionPayloadHeaderSchema
         SszBytes32.of(stateRoot),
         SszBytes32.of(receiptsRoot),
         SszByteVector.fromBytes(logsBloom),
-        SszBytes32.of(random),
+        SszBytes32.of(prevRandao),
         SszUInt64.of(blockNumber),
         SszUInt64.of(gasLimit),
         SszUInt64.of(gasUsed),
@@ -111,6 +111,25 @@ public class ExecutionPayloadHeaderSchema
         SszUInt256.of(baseFeePerGas),
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot));
+  }
+
+  public ExecutionPayloadHeader createFrom(final ExecutionPayload executionPayload) {
+    return new ExecutionPayloadHeader(
+        this,
+        SszBytes32.of(executionPayload.getParentHash()),
+        SszByteVector.fromBytes(executionPayload.getFeeRecipient().getWrappedBytes()),
+        SszBytes32.of(executionPayload.getStateRoot()),
+        SszBytes32.of(executionPayload.getReceiptsRoot()),
+        SszByteVector.fromBytes(executionPayload.getLogsBloom()),
+        SszBytes32.of(executionPayload.getPrevRandao()),
+        SszUInt64.of(executionPayload.getBlockNumber()),
+        SszUInt64.of(executionPayload.getGasLimit()),
+        SszUInt64.of(executionPayload.getGasUsed()),
+        SszUInt64.of(executionPayload.getTimestamp()),
+        getExtraDataSchema().fromBytes(executionPayload.getExtraData()),
+        SszUInt256.of(executionPayload.getBaseFeePerGas()),
+        SszBytes32.of(executionPayload.getBlockHash()),
+        SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()));
   }
 
   @Override
