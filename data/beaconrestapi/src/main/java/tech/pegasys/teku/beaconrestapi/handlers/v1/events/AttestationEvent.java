@@ -30,7 +30,7 @@ public class AttestationEvent extends Event<Attestation> {
           .withField("root", BYTES32_TYPE, Checkpoint::getRoot)
           .build();
 
-  private static final SerializableTypeDefinition<AttestationData> DATA_TYPE =
+  private static final SerializableTypeDefinition<AttestationData> ATTESTATION_DATA_TYPE =
       SerializableTypeDefinition.object(AttestationData.class)
           .withField("slot", UINT64_TYPE, AttestationData::getSlot)
           .withField("index", UINT64_TYPE, AttestationData::getIndex)
@@ -49,7 +49,7 @@ public class AttestationEvent extends Event<Attestation> {
               "signature",
               BYTES_TYPE,
               attestation -> attestation.getAggregateSignature().toBytesCompressed())
-          .withField("data", DATA_TYPE, Attestation::getData)
+          .withField("data", ATTESTATION_DATA_TYPE, Attestation::getData)
           .build();
 
   AttestationEvent(Attestation attestation) {
