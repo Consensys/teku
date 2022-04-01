@@ -130,7 +130,8 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.KILN, (NetworkDefinition) b -> b.applyKilnNetworkDefaults()),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
-            Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()));
+            Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
+        Arguments.of(Eth2Network.GNOSIS, (NetworkDefinition) b -> b.applyGnosisNetworkDefaults()));
   }
 
   private List<NodeRecord> parseBootnodes(List<String> bootnodes) {
