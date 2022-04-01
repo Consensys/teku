@@ -122,8 +122,8 @@ public interface BlockProcessor {
 
   void processExecutionPayload(
       MutableBeaconState state,
-      ExecutionPayloadHeader payloadHeader,
-      Optional<ExecutionPayload> payload,
+      ExecutionPayloadHeader executionPayloadHeader,
+      Optional<ExecutionPayload> executionPayload,
       OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException;
 

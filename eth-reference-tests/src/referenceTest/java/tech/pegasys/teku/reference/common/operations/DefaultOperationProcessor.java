@@ -105,11 +105,11 @@ public class DefaultOperationProcessor implements OperationProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      ExecutionPayloadHeader payloadHeader,
-      Optional<ExecutionPayload> payload,
+      ExecutionPayloadHeader executionPayloadHeader,
+      Optional<ExecutionPayload> executionPayload,
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionPayload(state, payloadHeader, payload, payloadExecutor);
+        .processExecutionPayload(state, executionPayloadHeader, executionPayload, payloadExecutor);
   }
 }

@@ -109,13 +109,13 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState genericState,
-      final ExecutionPayloadHeader payloadHeader,
-      final Optional<ExecutionPayload> payload,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> executionPayload,
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     if (miscHelpersBellatrix.isMergeTransitionComplete(state)) {
-      if (!payloadHeader
+      if (!executionPayloadHeader
           .getParentHash()
           .equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
         throw new BlockProcessingException(
@@ -125,27 +125,27 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     if (!beaconStateAccessors
         .getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state))
-        .equals(payloadHeader.getPrevRandao())) {
+        .equals(executionPayloadHeader.getPrevRandao())) {
       throw new BlockProcessingException("Execution payload random does not match state randao");
     }
 
     if (!miscHelpersBellatrix
         .computeTimeAtSlot(state, state.getSlot())
-        .equals(payloadHeader.getTimestamp())) {
+        .equals(executionPayloadHeader.getTimestamp())) {
       throw new BlockProcessingException(
           "Execution payload timestamp does not match time for state slot");
     }
 
-    if (payload.isPresent()) {
+    if (executionPayload.isPresent()) {
       final boolean optimisticallyAccept =
           payloadExecutor.optimisticallyExecute(
-              state.getLatestExecutionPayloadHeader(), payload.get());
+              state.getLatestExecutionPayloadHeader(), executionPayload.get());
       if (!optimisticallyAccept) {
         throw new BlockProcessingException("Execution payload was not optimistically accepted");
       }
     }
 
-    state.setLatestExecutionPayloadHeader(payloadHeader);
+    state.setLatestExecutionPayloadHeader(executionPayloadHeader);
   }
 
   @Override

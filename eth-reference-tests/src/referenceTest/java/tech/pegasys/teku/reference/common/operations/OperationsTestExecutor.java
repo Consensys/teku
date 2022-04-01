@@ -211,21 +211,21 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 .getGenesisSchemaDefinitions()
                 .toVersionBellatrix()
                 .orElseThrow();
-        final ExecutionPayload payload =
+        final ExecutionPayload executionPayload =
             loadSsz(
                 testDefinition,
                 dataFileName,
                 schemaDefinitionsBellatrix.getExecutionPayloadSchema());
 
-        final ExecutionPayloadHeader payloadHeader =
+        final ExecutionPayloadHeader executionPayloadHeader =
             schemaDefinitionsBellatrix
                 .getExecutionPayloadHeaderSchema()
-                .createFromExecutionPayload(payload);
+                .createFromExecutionPayload(executionPayload);
 
         processor.processExecutionPayload(
             state,
-            payloadHeader,
-            Optional.of(payload),
+            executionPayloadHeader,
+            Optional.of(executionPayload),
             (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid);
         break;
     }
