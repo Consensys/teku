@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -606,13 +607,37 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
+          final boolean depositSignaturesAreAllGood = batchVerifyDepositSignatures(deposits);
           for (Deposit deposit : deposits) {
-            processDeposit(state, deposit);
+            processDeposit(state, deposit, depositSignaturesAreAllGood);
           }
         });
   }
 
-  public void processDeposit(MutableBeaconState state, Deposit deposit) {
+  private boolean batchVerifyDepositSignatures(SszList<? extends Deposit> deposits) {
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
+    final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
+    final List<Bytes> messages = new ArrayList<>();
+    final List<BLSSignature> signatures = new ArrayList<>();
+    for (Deposit deposit : deposits) {
+      final BLSPublicKey pubkey = deposit.getData().getPubkey();
+      final Bytes signingRoot =
+          miscHelpers.computeSigningRoot(
+              new DepositMessage(
+                  pubkey,
+                  deposit.getData().getWithdrawalCredentials(),
+                  deposit.getData().getAmount()),
+              domain);
+      publicKeys.add(List.of(pubkey));
+      messages.add(signingRoot);
+      signatures.add(deposit.getData().getSignature());
+    }
+    // Overwhelmingly often we expect all the deposit signatures to be good
+    return BLS.batchVerify(publicKeys, messages, signatures);
+  }
+
+  public void processDeposit(
+      MutableBeaconState state, Deposit deposit, boolean signatureAlreadyVerified) {
     checkArgument(
         predicates.isValidMerkleBranch(
             deposit.getData().hashTreeRoot(),
@@ -622,14 +647,15 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             state.getEth1Data().getDepositRoot()),
         "process_deposit: Verify the Merkle branch");
 
-    processDepositWithoutCheckingMerkleProof(state, deposit, null);
+    processDepositWithoutCheckingMerkleProof(state, deposit, null, signatureAlreadyVerified);
   }
 
   @Override
   public void processDepositWithoutCheckingMerkleProof(
       final MutableBeaconState state,
       final Deposit deposit,
-      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap) {
+      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap,
+      final boolean signatureAlreadyVerified) {
     final BLSPublicKey pubkey = deposit.getData().getPubkey();
 
     state.setEth1DepositIndex(state.getEth1DepositIndex().plus(UInt64.ONE));
@@ -652,7 +678,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // This is a new validator
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
-      if (depositSignatureIsValid(deposit, pubkey)) {
+      if (signatureAlreadyVerified || depositSignatureIsValid(deposit, pubkey)) {
         processNewValidator(state, deposit);
       } else {
         handleInvalidDeposit(deposit, pubkey, pubKeyToIndexMap);
