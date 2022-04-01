@@ -40,6 +40,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFa
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -253,7 +254,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   }
 
   private List<SignedBeaconBlock> largeBlockSequence(final int count) {
-    DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(TestSpecFactory.createDefault());
     final SignedBeaconBlock parent = peerStorage.chainBuilder().getLatestBlockAndState().getBlock();
     List<SignedBlockAndState> newBlocks =
         dataStructureUtil.randomSignedBlockAndStateSequence(parent, count, true);
