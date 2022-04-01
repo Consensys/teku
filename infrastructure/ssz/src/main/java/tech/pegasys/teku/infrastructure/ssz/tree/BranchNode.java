@@ -61,20 +61,12 @@ public interface BranchNode extends TreeNode {
   BranchNode rebind(boolean left, TreeNode newNode);
 
   @Override
-  default Bytes32 hashTreeRoot() {
-    final MessageDigest messageDigest = left().hashTreeRootDigest();
-    right().updateDigestWithHashTreeRoot(messageDigest);
+  default Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+    final Bytes32 leftRoot = left().hashTreeRoot(messageDigest);
+    final Bytes32 rightRoot = right().hashTreeRoot(messageDigest);
+    leftRoot.update(messageDigest);
+    rightRoot.update(messageDigest);
     return Bytes32.wrap(messageDigest.digest());
-  }
-
-  @Override
-  default MessageDigest hashTreeRootDigest() {
-    final MessageDigest messageDigest = left().hashTreeRootDigest();
-    right().updateDigestWithHashTreeRoot(messageDigest);
-    final Bytes32 hashTreeRoot = Bytes32.wrap(messageDigest.digest());
-    messageDigest.reset();
-    hashTreeRoot.update(messageDigest);
-    return messageDigest;
   }
 
   @NotNull

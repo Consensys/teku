@@ -35,19 +35,12 @@ public interface TreeNode {
    * Calculates (if necessary) and returns `hash_tree_root` of this tree node. Worth to mention that
    * `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content
    */
-  Bytes32 hashTreeRoot();
-
-  /** Provide a MessageDigest and updates it with the node `hash_tree_root` */
-  default MessageDigest hashTreeRootDigest() {
+  default Bytes32 hashTreeRoot() {
     final MessageDigest digest = MessageDigestFactory.createSha256();
-    hashTreeRoot().update(digest);
-    return digest;
+    return hashTreeRoot(digest);
   }
 
-  /** update a given digest with `hash_tree_root` */
-  default void updateDigestWithHashTreeRoot(MessageDigest messageDigest) {
-    hashTreeRoot().update(messageDigest);
-  }
+  Bytes32 hashTreeRoot(MessageDigest messageDigest);
 
   /**
    * Gets this node descendant by its 'generalized index'

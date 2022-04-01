@@ -16,9 +16,8 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 import java.security.MessageDigest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
 
-class SimpleBranchNode implements BranchNode {
+class SimpleBranchNode implements BranchNode, TreeNode {
 
   private final TreeNode left;
   private final TreeNode right;
@@ -68,14 +67,13 @@ class SimpleBranchNode implements BranchNode {
   }
 
   @Override
-  public MessageDigest hashTreeRootDigest() {
+  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
-      return BranchNode.super.hashTreeRootDigest();
+      cachedHash = BranchNode.super.hashTreeRoot(messageDigest);
+      this.cachedHash = cachedHash;
     }
-    final MessageDigest digest = MessageDigestFactory.createSha256();
-    cachedHash.update(digest);
-    return digest;
+    return cachedHash;
   }
 
   @Override
