@@ -20,12 +20,12 @@ import okhttp3.Interceptor;
 import okhttp3.Response;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class JwtAuthInterceptor implements Interceptor {
+public class JwtAuthHttpInterceptor implements Interceptor {
   private final SafeTokenProvider tokenProvider;
 
   private final TimeProvider timeProvider;
 
-  public JwtAuthInterceptor(final JwtConfig jwtConfig, final TimeProvider timeProvider) {
+  public JwtAuthHttpInterceptor(final JwtConfig jwtConfig, final TimeProvider timeProvider) {
     this.tokenProvider = new SafeTokenProvider(new TokenProvider(jwtConfig));
     this.timeProvider = timeProvider;
   }
