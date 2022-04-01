@@ -107,12 +107,12 @@ public class BlockImporterTest {
 
   @BeforeAll
   public static void init() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void dispose() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach

@@ -86,15 +86,14 @@ public abstract class AbstractBeaconStateSchemaTest<
     BeaconState s1 = getSchema(modifiedConfig).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
-    assertThat(s1.getBlock_roots().getSchema()).isNotEqualTo(s2.getBlock_roots().getSchema());
-    assertThat(s1.getState_roots().getSchema()).isNotEqualTo(s2.getState_roots().getSchema());
-    assertThat(s1.getHistorical_roots().getSchema())
-        .isNotEqualTo(s2.getHistorical_roots().getSchema());
-    assertThat(s1.getEth1_data_votes().getSchema())
-        .isNotEqualTo(s2.getEth1_data_votes().getSchema());
+    assertThat(s1.getBlockRoots().getSchema()).isNotEqualTo(s2.getBlockRoots().getSchema());
+    assertThat(s1.getStateRoots().getSchema()).isNotEqualTo(s2.getStateRoots().getSchema());
+    assertThat(s1.getHistoricalRoots().getSchema())
+        .isNotEqualTo(s2.getHistoricalRoots().getSchema());
+    assertThat(s1.getEth1DataVotes().getSchema()).isNotEqualTo(s2.getEth1DataVotes().getSchema());
     assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
     assertThat(s1.getBalances().getSchema()).isNotEqualTo(s2.getBalances().getSchema());
-    assertThat(s1.getRandao_mixes().getSchema()).isNotEqualTo(s2.getRandao_mixes().getSchema());
+    assertThat(s1.getRandaoMixes().getSchema()).isNotEqualTo(s2.getRandaoMixes().getSchema());
     assertThat(s1.getSlashings().getSchema()).isNotEqualTo(s2.getSlashings().getSchema());
   }
 

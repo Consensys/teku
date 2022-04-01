@@ -20,5 +20,5 @@ public enum StateStorageMode {
   // No historical state is available to query in mode "prune"
   PRUNE;
 
-  public static StateStorageMode DEFAULT_MODE = PRUNE;
+  public static final StateStorageMode DEFAULT_MODE = PRUNE;
 }

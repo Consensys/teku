@@ -65,7 +65,7 @@ public class StoreBuilder {
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor,
       final UInt64 currentTime) {
-    final UInt64 genesisTime = anchor.getState().getGenesis_time();
+    final UInt64 genesisTime = anchor.getState().getGenesisTime();
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot))).max(currentTime);
 

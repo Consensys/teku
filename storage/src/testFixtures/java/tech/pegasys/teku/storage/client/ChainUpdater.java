@@ -152,7 +152,7 @@ public class ChainUpdater {
       saveBlock(newChainHead);
       updateBestBlock(newChainHead);
     }
-    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalizedCheckpoint();
     assertThat(finalizedCheckpoint.getEpoch())
         .describedAs("Failed to finalize epoch %s", finalizeEpoch)
         .isEqualTo(finalizeEpoch);
@@ -191,14 +191,14 @@ public class ChainUpdater {
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    final Checkpoint justifiedCheckpoint = bestBlock.getState().getCurrent_justified_checkpoint();
+    final Checkpoint justifiedCheckpoint = bestBlock.getState().getCurrentJustifiedCheckpoint();
     if (justifiedCheckpoint
         .getEpoch()
         .isGreaterThan(recentChainData.getJustifiedCheckpoint().orElseThrow().getEpoch())) {
       tx.setJustifiedCheckpoint(justifiedCheckpoint);
       tx.setBestJustifiedCheckpoint(justifiedCheckpoint);
     }
-    final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = bestBlock.getState().getFinalizedCheckpoint();
     if (finalizedCheckpoint.getEpoch().isGreaterThan(recentChainData.getFinalizedEpoch())) {
       tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     }

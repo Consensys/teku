@@ -30,13 +30,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SigningHistoryTest {
+  private static final Bytes32 GENESIS_ROOT =
+      Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000123456");
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ObjectMapper mapper = jsonProvider.getObjectMapper();
   private final BLSPubKey blsPubKey =
       BLSPubKey.fromHexString(
           "0xb845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed");
-  private final Bytes32 GENESIS_ROOT =
-      Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000123456");
 
   @Test
   public void shouldReadMetadataFromCompleteJson() throws IOException {

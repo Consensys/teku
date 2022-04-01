@@ -63,7 +63,7 @@ public class AttestationGenerator {
 
   public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
     return new AttestationData(
-        slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
+        slot, data.getIndex(), data.getBeaconBlockRoot(), data.getSource(), data.getTarget());
   }
 
   /**

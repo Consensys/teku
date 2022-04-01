@@ -54,12 +54,12 @@ public class BlockValidatorTest {
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach
@@ -215,10 +215,10 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
-    List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(4);
+    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
 
     StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-    ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+    ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
     ChainUpdater chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
     BlockValidator blockValidator = new BlockValidator(spec, storageSystem.recentChainData());

@@ -33,10 +33,10 @@ public class SszPendingAttestationBenchmark
   private static final PendingAttestation aPendingAttestation =
       dataStructureUtil.randomPendingAttestation();
 
-  private static final SszBitlist aggregation_bits = aPendingAttestation.getAggregation_bits();
+  private static final SszBitlist aggregation_bits = aPendingAttestation.getAggregationBits();
   private static final AttestationData attestationData = aPendingAttestation.getData();
-  private static final UInt64 inclusion_delay = aPendingAttestation.getInclusion_delay();
-  private static final UInt64 proposer_index = aPendingAttestation.getProposer_index();
+  private static final UInt64 inclusion_delay = aPendingAttestation.getInclusionDelay();
+  private static final UInt64 proposer_index = aPendingAttestation.getProposerIndex();
   private final PendingAttestationSchema schema =
       BeaconStateSchemaPhase0.required(spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
           .getPendingAttestationSchema();

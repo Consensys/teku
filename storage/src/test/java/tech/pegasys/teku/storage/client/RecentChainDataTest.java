@@ -97,12 +97,12 @@ class RecentChainDataTest {
 
   @BeforeAll
   public static void disableDepositBlsVerification() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
-  public static void EnableDepositBlsVerification() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+  public static void enableDepositBlsVerification() {
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @Test
@@ -111,7 +111,7 @@ class RecentChainDataTest {
     generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
-    assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
+    assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesisTime());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(GENESIS_SLOT);
     assertThat(recentChainData.getBestState()).isPresent();
     assertThat(recentChainData.getBestState().get()).isCompletedWithValue(genesisState);
@@ -843,89 +843,6 @@ class RecentChainDataTest {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(recentChainData.getAncestorsOnFork(UInt64.valueOf(1), Bytes32.ZERO)).isEmpty();
-  }
-
-  @Test
-  void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockDoesNotExistAndBlockTooRecent() {
-    initPostGenesis();
-    assertThat(recentChainData.isOptimisticSyncPossible(recentChainData.getHeadSlot())).isFalse();
-  }
-
-  @Test
-  void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockNotJustifiedAndBlockTooRecent() {
-    initPostGenesis();
-    storageSystem
-        .chainUpdater()
-        .saveBlock(
-            chainBuilder.generateBlockAtSlot(
-                recentChainData.getHeadSlot().plus(1),
-                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
-    assertThat(recentChainData.isOptimisticSyncPossible(recentChainData.getHeadSlot())).isFalse();
-  }
-
-  @Test
-  void isOptimisticSyncPossible_shouldBeTrueWhenGenesisIsPostMerge() {
-    initPreGenesis();
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
-    assertThat(recentChainData.isOptimisticSyncPossible(recentChainData.getHeadSlot())).isTrue();
-  }
-
-  @Test
-  void isOptimisticSyncPossible_shouldBeTrueWhenMergeBlockNotJustifiedAndBlockOldEnough() {
-    initPostGenesis();
-    final int safeSyncDistance = getSafeSyncDistance();
-    final UInt64 mergeBlockSlot = recentChainData.getHeadSlot().plus(1);
-    final UInt64 importBlockSlot = mergeBlockSlot.plus(1);
-    storageSystem
-        .chainUpdater()
-        .saveBlock(
-            chainBuilder.generateBlockAtSlot(
-                mergeBlockSlot,
-                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
-
-    storageSystem.chainUpdater().setCurrentSlot(importBlockSlot.plus(safeSyncDistance));
-    assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isTrue();
-  }
-
-  @Test
-  void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockIsOldButImportingBlockIsRecent() {
-    initPostGenesis();
-    final int safeSyncDistance = getSafeSyncDistance();
-    final UInt64 mergeBlockSlot = recentChainData.getHeadSlot().plus(1);
-    final UInt64 importBlockSlot = mergeBlockSlot.plus(1).plus(safeSyncDistance);
-    storageSystem
-        .chainUpdater()
-        .saveBlock(
-            chainBuilder.generateBlockAtSlot(
-                mergeBlockSlot,
-                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
-
-    storageSystem.chainUpdater().setCurrentSlot(importBlockSlot.plus(1));
-    assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isFalse();
-  }
-
-  private int getSafeSyncDistance() {
-    return spec.getGenesisSpecConfig()
-        .toVersionBellatrix()
-        .orElseThrow()
-        .getSafeSlotsToImportOptimistically();
-  }
-
-  @Test
-  void isOptimisticSyncPossible_shouldBeTrueWhenMergeBlockJustified() {
-    initPostGenesis();
-    final UInt64 mergeBlockSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(1));
-    final UInt64 importBlockSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2));
-    storageSystem
-        .chainUpdater()
-        .saveBlock(
-            chainBuilder.generateBlockAtSlot(
-                mergeBlockSlot,
-                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
-    storageSystem.chainUpdater().justifyEpoch(1);
-
-    storageSystem.chainUpdater().setCurrentSlot(importBlockSlot);
-    assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isTrue();
   }
 
   /**

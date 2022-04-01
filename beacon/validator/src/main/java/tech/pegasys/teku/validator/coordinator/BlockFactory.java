@@ -37,7 +37,8 @@ public class BlockFactory {
       final BeaconState blockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti)
+      final Optional<Bytes32> optionalGraffiti,
+      final boolean blinded)
       throws StateTransitionException {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -56,7 +57,8 @@ public class BlockFactory {
             blockSlotState,
             parentRoot,
             operationSelector.createSelector(
-                parentRoot, blockSlotState, randaoReveal, optionalGraffiti))
+                parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
+            blinded)
         .getBlock();
   }
 }

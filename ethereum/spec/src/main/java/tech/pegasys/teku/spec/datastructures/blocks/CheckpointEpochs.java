@@ -30,8 +30,8 @@ public class CheckpointEpochs {
   public static CheckpointEpochs fromBlockAndState(final StateAndBlockSummary blockAndState) {
     final BeaconState state = blockAndState.getState();
     return new CheckpointEpochs(
-        state.getCurrent_justified_checkpoint().getEpoch(),
-        state.getFinalized_checkpoint().getEpoch());
+        state.getCurrentJustifiedCheckpoint().getEpoch(),
+        state.getFinalizedCheckpoint().getEpoch());
   }
 
   public UInt64 getJustifiedEpoch() {

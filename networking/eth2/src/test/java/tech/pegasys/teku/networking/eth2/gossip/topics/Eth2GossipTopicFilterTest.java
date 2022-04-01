@@ -48,7 +48,7 @@ class Eth2GossipTopicFilterTest {
   private final Bytes4 nextForkDigest =
       spec.atEpoch(nextFork.getEpoch())
           .miscHelpers()
-          .computeForkDigest(nextFork.getCurrent_version(), genesisValidatorsRoot);
+          .computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
 
   private final Eth2GossipTopicFilter filter =
       new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);

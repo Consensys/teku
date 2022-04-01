@@ -109,7 +109,7 @@ public class AttestationValidator {
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
-    if (!recentChainData.containsBlock(data.getBeacon_block_root())) {
+    if (!recentChainData.containsBlock(data.getBeaconBlockRoot())) {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
     }
 
@@ -169,7 +169,7 @@ public class AttestationValidator {
                         // LMD vote
                         if (!spec.getAncestor(
                                 recentChainData.getForkChoiceStrategy().orElseThrow(),
-                                data.getBeacon_block_root(),
+                                data.getBeaconBlockRoot(),
                                 spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()))
                             .map(
                                 ancestorOfLMDVote ->

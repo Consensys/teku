@@ -67,18 +67,18 @@ public class DepositContract extends Contract {
 
   public RemoteFunctionCall<TransactionReceipt> deposit(
       byte[] pubkey,
-      byte[] withdrawal_credentials,
+      byte[] withdrawalCredentials,
       byte[] signature,
-      byte[] deposit_data_root,
+      byte[] depositDataRoot,
       BigInteger weiValue) {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_DEPOSIT,
             Arrays.<Type>asList(
                 new org.web3j.abi.datatypes.DynamicBytes(pubkey),
-                new org.web3j.abi.datatypes.DynamicBytes(withdrawal_credentials),
+                new org.web3j.abi.datatypes.DynamicBytes(withdrawalCredentials),
                 new org.web3j.abi.datatypes.DynamicBytes(signature),
-                new org.web3j.abi.datatypes.generated.Bytes32(deposit_data_root)),
+                new org.web3j.abi.datatypes.generated.Bytes32(depositDataRoot)),
             Collections.<TypeReference<?>>emptyList());
     return executeRemoteCallTransaction(function, weiValue);
   }
@@ -94,7 +94,7 @@ public class DepositContract extends Contract {
   public static class DepositEventEventResponse extends BaseEventResponse {
     public byte[] pubkey;
 
-    public byte[] withdrawal_credentials;
+    public byte[] withdrawalCredentials;
 
     public byte[] amount;
 
@@ -105,7 +105,7 @@ public class DepositContract extends Contract {
     public Deposit toDeposit() {
       return new Deposit(
           BLSPublicKey.fromBytesCompressed(Bytes48.wrap(pubkey)),
-          Bytes32.wrap(withdrawal_credentials),
+          Bytes32.wrap(withdrawalCredentials),
           BLSSignature.fromBytesCompressed(Bytes.wrap(signature)),
           UInt64.valueOf(Bytes.wrap(amount).reverse().toLong()),
           UInt64.valueOf(Bytes.wrap(index).reverse().toLong()));

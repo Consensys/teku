@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
 
-  public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
+  public static final ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
           .put(

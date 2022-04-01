@@ -73,7 +73,7 @@ public class IndexedAttestation
     return (IndexedAttestationSchema) super.getSchema();
   }
 
-  public SszUInt64List getAttesting_indices() {
+  public SszUInt64List getAttestingIndices() {
     return getField0();
   }
 

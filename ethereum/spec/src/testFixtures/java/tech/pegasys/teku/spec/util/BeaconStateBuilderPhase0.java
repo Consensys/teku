@@ -44,8 +44,8 @@ public class BeaconStateBuilderPhase0
 
   @Override
   protected void setUniqueFields(final MutableBeaconStatePhase0 state) {
-    state.getPrevious_epoch_attestations().setAll(previousEpochAttestations);
-    state.getCurrent_epoch_attestations().setAll(currentEpochAttestations);
+    state.getPreviousEpochAttestations().setAll(previousEpochAttestations);
+    state.getCurrentEpochAttestations().setAll(currentEpochAttestations);
   }
 
   public static BeaconStateBuilderPhase0 create(

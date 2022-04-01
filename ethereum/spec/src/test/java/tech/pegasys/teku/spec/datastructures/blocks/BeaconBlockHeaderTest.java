@@ -24,14 +24,14 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BeaconBlockHeaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UInt64 slot = dataStructureUtil.randomUInt64();
-  private UInt64 proposer_index = dataStructureUtil.randomUInt64();
-  private Bytes32 previous_block_root = dataStructureUtil.randomBytes32();
-  private Bytes32 state_root = dataStructureUtil.randomBytes32();
-  private Bytes32 block_body_root = dataStructureUtil.randomBytes32();
+  private final UInt64 slot = dataStructureUtil.randomUInt64();
+  private final UInt64 proposerIndex = dataStructureUtil.randomUInt64();
+  private final Bytes32 previousBlockRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 blockBodyRoot = dataStructureUtil.randomBytes32();
 
-  private BeaconBlockHeader beaconBlockHeader =
-      new BeaconBlockHeader(slot, proposer_index, previous_block_root, state_root, block_body_root);
+  private final BeaconBlockHeader beaconBlockHeader =
+      new BeaconBlockHeader(slot, proposerIndex, previousBlockRoot, stateRoot, blockBodyRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -43,8 +43,7 @@ class BeaconBlockHeaderTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockHeader testBeaconBlockHeader =
-        new BeaconBlockHeader(
-            slot, proposer_index, previous_block_root, state_root, block_body_root);
+        new BeaconBlockHeader(slot, proposerIndex, previousBlockRoot, stateRoot, blockBodyRoot);
 
     assertEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -54,10 +53,10 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
             slot.plus(dataStructureUtil.randomUInt64()),
-            proposer_index,
-            previous_block_root,
-            state_root,
-            block_body_root);
+            proposerIndex,
+            previousBlockRoot,
+            stateRoot,
+            blockBodyRoot);
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -67,10 +66,10 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
             slot,
-            proposer_index.plus(dataStructureUtil.randomUInt64()),
-            previous_block_root,
-            state_root,
-            block_body_root);
+            proposerIndex.plus(dataStructureUtil.randomUInt64()),
+            previousBlockRoot,
+            stateRoot,
+            blockBodyRoot);
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -79,7 +78,7 @@ class BeaconBlockHeaderTest {
   void equalsReturnsFalseWhenPreviousBlockRootsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
-            slot, proposer_index, previous_block_root.not(), state_root, block_body_root);
+            slot, proposerIndex, previousBlockRoot.not(), stateRoot, blockBodyRoot);
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -88,7 +87,7 @@ class BeaconBlockHeaderTest {
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
-            slot, proposer_index, previous_block_root, state_root.not(), block_body_root);
+            slot, proposerIndex, previousBlockRoot, stateRoot.not(), blockBodyRoot);
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -97,7 +96,7 @@ class BeaconBlockHeaderTest {
   void equalsReturnsFalseWhenBlockBodyRootsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
-            slot, proposer_index, previous_block_root, state_root, block_body_root.not());
+            slot, proposerIndex, previousBlockRoot, stateRoot, blockBodyRoot.not());
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }

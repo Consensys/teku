@@ -153,6 +153,8 @@ allprojects {
     ]
     options.forkOptions.jvmArgs += [
         '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+        '--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
+        '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED'
     ]
 
     options.errorprone {
@@ -174,6 +176,9 @@ allprojects {
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+
+      // Force strict compliance with Java naming conventions
+      check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
       // these checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)

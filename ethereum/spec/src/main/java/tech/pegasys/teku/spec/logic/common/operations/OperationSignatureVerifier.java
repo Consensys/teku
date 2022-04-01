@@ -48,8 +48,8 @@ public class OperationSignatureVerifier {
       ProposerSlashing proposerSlashing,
       BLSSignatureVerifier signatureVerifier) {
 
-    final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
-    final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
+    final BeaconBlockHeader header1 = proposerSlashing.getHeader1().getMessage();
+    final BeaconBlockHeader header2 = proposerSlashing.getHeader2().getMessage();
 
     Optional<BLSPublicKey> maybePublicKey =
         beaconStateAccessors.getValidatorPubKey(state, header1.getProposerIndex());
@@ -66,8 +66,8 @@ public class OperationSignatureVerifier {
                 Domain.BEACON_PROPOSER,
                 miscHelpers.computeEpochAtSlot(header1.getSlot()),
                 fork,
-                state.getGenesis_validators_root())),
-        proposerSlashing.getHeader_1().getSignature())) {
+                state.getGenesisValidatorsRoot())),
+        proposerSlashing.getHeader1().getSignature())) {
       LOG.trace("Header1 signature is invalid {}", header1);
       return false;
     }
@@ -80,8 +80,8 @@ public class OperationSignatureVerifier {
                 Domain.BEACON_PROPOSER,
                 miscHelpers.computeEpochAtSlot(header2.getSlot()),
                 fork,
-                state.getGenesis_validators_root())),
-        proposerSlashing.getHeader_2().getSignature())) {
+                state.getGenesisValidatorsRoot())),
+        proposerSlashing.getHeader2().getSignature())) {
       LOG.trace("Header2 signature is invalid {}", header1);
       return false;
     }
@@ -103,8 +103,8 @@ public class OperationSignatureVerifier {
 
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            Domain.VOLUNTARY_EXIT, exit.getEpoch(), fork, state.getGenesis_validators_root());
-    final Bytes signing_root = miscHelpers.computeSigningRoot(exit, domain);
-    return signatureVerifier.verify(maybePublicKey.get(), signing_root, signedExit.getSignature());
+            Domain.VOLUNTARY_EXIT, exit.getEpoch(), fork, state.getGenesisValidatorsRoot());
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(exit, domain);
+    return signatureVerifier.verify(maybePublicKey.get(), signingRoot, signedExit.getSignature());
   }
 }

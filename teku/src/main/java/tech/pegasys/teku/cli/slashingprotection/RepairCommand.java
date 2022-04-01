@@ -116,7 +116,7 @@ public class RepairCommand implements Runnable {
 
       return suppliedSlot;
     } else if (initialAnchor.isPresent()) {
-      final UInt64 genesisTime = initialAnchor.get().getState().getGenesis_time();
+      final UInt64 genesisTime = initialAnchor.get().getState().getGenesisTime();
       final int secondsPerEpoch =
           spec.getGenesisSpec().getSlotsPerEpoch()
               * spec.getGenesisSpec().getConfig().getSecondsPerSlot();

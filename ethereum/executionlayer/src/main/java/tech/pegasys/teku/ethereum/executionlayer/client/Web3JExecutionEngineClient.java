@@ -13,29 +13,18 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.ObjectMapperFactory;
-import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.http.HttpService;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthInterceptor;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
@@ -53,14 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
-  private static final Logger LOG = LogManager.getLogger();
-
-  private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
-  private static final int NO_ERROR_TIME = -1;
-  private final Web3j eth1Web3j;
-  protected final HttpService eeWeb3jService;
-  private final TimeProvider timeProvider;
-  private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
+  private final Web3JClient web3JClient;
 
   static {
     SimpleModule module = new SimpleModule("TekuEESsz", new Version(1, 0, 0, null, null, null));
@@ -72,26 +54,23 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       final String eeEndpoint,
       final TimeProvider timeProvider,
       final Optional<JwtConfig> jwtConfig) {
-    this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient(jwtConfig, timeProvider));
-    this.eth1Web3j = Web3j.build(eeWeb3jService);
-    this.timeProvider = timeProvider;
-  }
-
-  private static OkHttpClient createOkHttpClient(
-      final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
-    if (LOG.isTraceEnabled()) {
-      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
-      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-      builder.addInterceptor(logging);
-    }
-    jwtConfig.ifPresent(jwt -> builder.addInterceptor(new JwtAuthInterceptor(jwt, timeProvider)));
-    return builder.build();
+    Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
+    this.web3JClient =
+        web3JClientBuilder
+            .endpoint(eeEndpoint)
+            .jwtConfigOpt(jwtConfig)
+            .timeProvider(timeProvider)
+            .build();
   }
 
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
-    return doWeb3JRequest(eth1Web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
+    return web3JClient
+        .doWeb3JRequest(
+            web3JClient
+                .getEth1Web3j()
+                .ethGetBlockByHash(blockHash.toHexString(), false)
+                .sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock)
         .thenApply(Optional::ofNullable);
@@ -99,8 +78,12 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<PowBlock> getPowChainHead() {
-    return doWeb3JRequest(
-            eth1Web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
+    return web3JClient
+        .doWeb3JRequest(
+            web3JClient
+                .getEth1Web3j()
+                .ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
+                .sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
@@ -120,9 +103,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_getPayloadV1",
             Collections.singletonList(payloadId.toHexString()),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest);
   }
 
   @Override
@@ -131,9 +114,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_newPayloadV1",
             Collections.singletonList(executionPayload),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
-    return doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest);
   }
 
   @Override
@@ -143,9 +126,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_forkchoiceUpdatedV1",
             list(forkChoiceState, payloadAttributes.orElse(null)),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             ForkChoiceUpdatedResultWeb3jResponse.class);
-    return doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest);
   }
 
   @Override
@@ -155,9 +138,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_exchangeTransitionConfigurationV1",
             Collections.singletonList(transitionConfiguration),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             TransitionConfigurationV1Web3jResponse.class);
-    return doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest);
   }
 
   @Override
@@ -166,9 +149,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "builder_getPayloadHeaderV1",
             Collections.singletonList(payloadId.toHexString()),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             ExecutionPayloadHeaderV1Web3jResponse.class);
-    return doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest);
   }
 
   @Override
@@ -178,54 +161,13 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "builder_proposeBlindedBlockV1",
             Collections.singletonList(signedBlindedBeaconBlock),
-            eeWeb3jService,
+            web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest);
   }
 
-  private void handleError(Throwable error) {
-    final long errorTime = lastError.get();
-    if (errorTime == NO_ERROR_TIME
-        || timeProvider.getTimeInMillis().longValue() - errorTime > ERROR_REPEAT_DELAY_MILLIS) {
-      if (lastError.compareAndSet(errorTime, timeProvider.getTimeInMillis().longValue())) {
-        EVENT_LOG.executionClientIsOffline(error);
-      }
-    }
-  }
-
-  private void handleSuccess() {
-    if (lastError.getAndUpdate(x -> NO_ERROR_TIME) != NO_ERROR_TIME) {
-      EVENT_LOG.executionClientIsOnline();
-    }
-  }
-
-  private <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
-    return SafeFuture.of(web3Request)
-        .catchAndRethrow(this::handleError)
-        .thenPeek(__ -> handleSuccess());
-  }
-
-  protected <T> SafeFuture<Response<T>> doRequest(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
-    CompletableFuture<Response<T>> responseFuture =
-        web3jRequest
-            .sendAsync()
-            .handle(
-                (response, exception) -> {
-                  if (exception != null) {
-                    handleError(exception);
-                    return new Response<>(exception.getMessage());
-                  } else if (response.hasError()) {
-                    final String errorMessage =
-                        response.getError().getCode() + ": " + response.getError().getMessage();
-                    handleError(new Error(errorMessage));
-                    return new Response<>(errorMessage);
-                  } else {
-                    handleSuccess();
-                    return new Response<>(response.getResult());
-                  }
-                });
-    return SafeFuture.of(responseFuture);
+  protected Web3JClient getWeb3JClient() {
+    return web3JClient;
   }
 
   static class ExecutionPayloadV1Web3jResponse

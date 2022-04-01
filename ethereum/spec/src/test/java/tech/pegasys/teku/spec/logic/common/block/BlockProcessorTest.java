@@ -59,7 +59,7 @@ public abstract class BlockProcessorTest {
 
   @Test
   void ensureVerifyDepositDefaultsToTrue() {
-    assertThat(AbstractBlockProcessor.BLS_VERIFY_DEPOSIT).isTrue();
+    assertThat(AbstractBlockProcessor.blsVerifyDeposit).isTrue();
   }
 
   @Test
@@ -68,7 +68,7 @@ public abstract class BlockProcessorTest {
     // Create a deposit
     DepositData depositInput = dataStructureUtil.randomDepositData();
     BLSPublicKey pubkey = depositInput.getPubkey();
-    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawalCredentials();
     UInt64 amount = depositInput.getAmount();
 
     BeaconState preState = createBeaconState();
@@ -98,7 +98,7 @@ public abstract class BlockProcessorTest {
     // Create a deposit
     DepositData depositInput = dataStructureUtil.randomDepositData();
     BLSPublicKey pubkey = depositInput.getPubkey();
-    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawalCredentials();
     UInt64 amount = depositInput.getAmount();
 
     Validator knownValidator = makeValidator(pubkey, withdrawalCredentials);
@@ -218,7 +218,7 @@ public abstract class BlockProcessorTest {
     beaconState =
         beaconState.updated(
             state ->
-                state.setEth1_data(
+                state.setEth1Data(
                     new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
     SszListSchema<Deposit, ?> schema =

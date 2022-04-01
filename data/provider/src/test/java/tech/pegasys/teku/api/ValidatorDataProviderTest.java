@@ -137,12 +137,13 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
-    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
     SafeFuture<Optional<BeaconBlock>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty());
-    verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal, Optional.empty());
+    verify(validatorApiChannel)
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
     assertThat(data).isCompleted();
     assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
   }
@@ -197,6 +198,21 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
+  void parseBlock_shouldParseBlindedBlocks() throws JsonProcessingException {
+    final SignedBeaconBlock internalSignedBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(ONE);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
+        schemaProvider.getSignedBlindedBeaconBlock(internalSignedBlock);
+    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
+
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
+        provider.parseBlindedBlock(jsonProvider, signedBlockJson);
+
+    assertThat(parsedBlock).isEqualTo(signedBlock);
+    assertThat(parsedBlock).isInstanceOf(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
+  }
+
+  @TestTemplate
   void parseBlock_shouldParseMilestoneSpecificBlocks(SpecContext specContext)
       throws JsonProcessingException {
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
@@ -235,7 +251,7 @@ public class ValidatorDataProviderTest {
     tech.pegasys.teku.api.schema.AttestationData data = result.join().orElseThrow();
     assertThat(data.index).isEqualTo(internalData.getIndex());
     assertThat(data.slot).isEqualTo(internalData.getSlot());
-    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeacon_block_root());
+    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeaconBlockRoot());
   }
 
   @TestTemplate

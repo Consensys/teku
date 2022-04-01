@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 
 public class WeakSubjectivityConfig {
-  public static UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
+  public static final UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
 
   private final Spec spec;
   private final UInt64 safetyDecay;

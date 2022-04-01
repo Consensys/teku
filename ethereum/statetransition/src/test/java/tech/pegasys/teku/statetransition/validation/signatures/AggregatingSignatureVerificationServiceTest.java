@@ -44,7 +44,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService.SignatureTask;
 
 public class AggregatingSignatureVerificationServiceTest {
-  private static List<BLSKeyPair> KEYS = BLSKeyGenerator.generateKeyPairs(50);
+  private static List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(50);
 
   private final int queueCapacity = 50;
   private final int batchSize = 25;
@@ -366,7 +366,7 @@ public class AggregatingSignatureVerificationServiceTest {
 
   private SafeFuture<Boolean> executeVerify(
       final int keypairIndex, final int data, final boolean useValidSignature) {
-    final BLSKeyPair keypair = KEYS.get(keypairIndex);
+    final BLSKeyPair keypair = keys.get(keypairIndex);
     final Bytes message = Bytes.of(data);
     final BLSSignature signature =
         useValidSignature ? BLS.sign(keypair.getSecretKey(), message) : BLSSignature.empty();
@@ -379,11 +379,11 @@ public class AggregatingSignatureVerificationServiceTest {
     final List<Bytes> messages = new ArrayList<>();
     final List<BLSSignature> signatures = new ArrayList<>();
     for (int i = 0; i < keyIndices.size(); i++) {
-      publicKeys.add(List.of(KEYS.get(i).getPublicKey()));
+      publicKeys.add(List.of(keys.get(i).getPublicKey()));
       messages.add(Bytes.of(data.getInt(i)));
       signatures.add(
           useValidSignatures.getBoolean(i)
-              ? BLS.sign(KEYS.get(i).getSecretKey(), messages.get(i))
+              ? BLS.sign(keys.get(i).getSecretKey(), messages.get(i))
               : BLSSignature.empty());
     }
     return service.verify(publicKeys, messages, signatures);

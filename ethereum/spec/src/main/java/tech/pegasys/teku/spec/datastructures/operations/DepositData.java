@@ -56,11 +56,11 @@ public class DepositData
   }
 
   public DepositData(
-      BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
+      BLSPublicKey pubkey, Bytes32 withdrawalCredentials, UInt64 amount, BLSSignature signature) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        SszBytes32.of(withdrawal_credentials),
+        SszBytes32.of(withdrawalCredentials),
         SszUInt64.of(amount),
         new SszSignature(signature));
   }
@@ -68,7 +68,7 @@ public class DepositData
   public DepositData(final DepositMessage depositMessage, final BLSSignature signature) {
     this(
         depositMessage.getPubkey(),
-        depositMessage.getWithdrawal_credentials(),
+        depositMessage.getWithdrawalCredentials(),
         depositMessage.getAmount(),
         signature);
   }
@@ -81,7 +81,7 @@ public class DepositData
     return getField0().getBLSPublicKey();
   }
 
-  public Bytes32 getWithdrawal_credentials() {
+  public Bytes32 getWithdrawalCredentials() {
     return getField1().get();
   }
 

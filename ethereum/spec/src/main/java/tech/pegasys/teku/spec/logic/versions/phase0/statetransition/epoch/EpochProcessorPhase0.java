@@ -64,8 +64,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   public void processParticipationUpdates(MutableBeaconState genericState) {
     // Rotate current/previous epoch attestations
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
-    state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
-    state.getCurrent_epoch_attestations().clear();
+    state.getPreviousEpochAttestations().setAll(state.getCurrentEpochAttestations());
+    state.getCurrentEpochAttestations().clear();
   }
 
   @Override

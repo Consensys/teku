@@ -53,7 +53,7 @@ public interface ValidatorRestApiClient {
   Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 
   Optional<BeaconBlock> createUnsignedBlock(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
 
   SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 

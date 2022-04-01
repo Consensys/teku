@@ -18,7 +18,7 @@ dependencyManagement {
       entry 'error_prone_test_helpers'
     }
 
-    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.2'
+    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.0'
 
     dependency 'com.google.guava:guava:31.1-jre'
     dependency 'com.google.code.gson:gson:2.9.0'
@@ -133,7 +133,7 @@ dependencyManagement {
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
 
-    dependencySet(group: "org.web3j", version: "4.9.0") {
+    dependencySet(group: "org.web3j", version: "4.9.1") {
       entry 'core'
       entry 'abi'
       entry 'crypto'

@@ -51,6 +51,16 @@ public class SerializableOneOfTypeDefinition<TObject>
   }
 
   @Override
+  public boolean isEquivalentToDeserializableType(final DeserializableTypeDefinition<?> type) {
+    for (SerializableTypeDefinition<?> current : types.values()) {
+      if (current == type) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     if (title.isPresent()) {

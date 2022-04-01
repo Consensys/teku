@@ -57,6 +57,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
@@ -150,7 +151,13 @@ public class BeaconRestApiV1Test {
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .build();
-    new BeaconRestApi(dataProvider, beaconRestApiConfig, eventChannels, new StubAsyncRunner(), app);
+    new BeaconRestApi(
+        dataProvider,
+        beaconRestApiConfig,
+        eventChannels,
+        new StubAsyncRunner(),
+        app,
+        storageClient.getSpec());
   }
 
   @ParameterizedTest(name = "{0}")
@@ -265,6 +272,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(PostProposerSlashing.ROUTE, PostProposerSlashing.class))
         .add(Arguments.of(PostVoluntaryExit.ROUTE, PostVoluntaryExit.class))
         .add(Arguments.of(PostBlock.ROUTE, PostBlock.class))
+        .add(Arguments.of(PostBlindedBlock.ROUTE, PostBlindedBlock.class))
         .add(Arguments.of(PostValidatorLiveness.ROUTE, PostValidatorLiveness.class));
 
     // validator

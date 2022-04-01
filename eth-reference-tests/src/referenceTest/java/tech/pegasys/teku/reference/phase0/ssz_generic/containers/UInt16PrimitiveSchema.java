@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class UInt16PrimitiveSchema extends AbstractSszPrimitiveSchema<Integer, SszUInt16> {
 
-  public static AbstractSszPrimitiveSchema<Integer, SszUInt16> UINT16_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Integer, SszUInt16> UINT16_SCHEMA =
       new UInt16PrimitiveSchema();
 
   private UInt16PrimitiveSchema() {

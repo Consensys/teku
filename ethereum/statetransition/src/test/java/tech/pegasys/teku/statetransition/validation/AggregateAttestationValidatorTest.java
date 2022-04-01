@@ -125,12 +125,12 @@ class AggregateAttestationValidatorTest {
 
   @BeforeAll
   public static void init() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void reset() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach
@@ -263,7 +263,7 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof2);
 
     // Sanity check
-    assertThat(attestation1.hash_tree_root()).isEqualTo(attestation2.hash_tree_root());
+    assertThat(attestation1.hashTreeRoot()).isEqualTo(attestation2.hashTreeRoot());
 
     assertThat(validator.validate(attestation1))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
@@ -294,7 +294,7 @@ class AggregateAttestationValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof2);
 
     // Sanity check
-    assertThat(attestation1.hash_tree_root()).isEqualTo(attestation2.hash_tree_root());
+    assertThat(attestation1.hashTreeRoot()).isEqualTo(attestation2.hashTreeRoot());
 
     validator.addSeenAggregate(attestation1);
     assertThat(validator.validate(attestation2))
@@ -395,7 +395,7 @@ class AggregateAttestationValidatorTest {
     assertThat(
             genesisSpec
                 .getValidatorsUtil()
-                .isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
+                .isAggregator(aggregate.getMessage().getSelectionProof(), aggregatorModulo))
         .isFalse();
 
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
@@ -485,7 +485,7 @@ class AggregateAttestationValidatorTest {
         storageSystem
             .recentChainData()
             .retrieveBlockState(
-                aggregate.getMessage().getAggregate().getData().getBeacon_block_root()));
+                aggregate.getMessage().getAggregate().getData().getBeaconBlockRoot()));
   }
 
   private CommitteeAssignment getCommitteeAssignment(

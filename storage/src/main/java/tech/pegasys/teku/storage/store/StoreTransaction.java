@@ -114,19 +114,19 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
-    this.justifiedCheckpoint = Optional.of(justified_checkpoint);
+  public void setJustifiedCheckpoint(Checkpoint justifiedCheckpoint) {
+    this.justifiedCheckpoint = Optional.of(justifiedCheckpoint);
   }
 
   @Override
-  public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint, boolean fromOptimisticBlock) {
-    this.finalizedCheckpoint = Optional.of(finalized_checkpoint);
+  public void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock) {
+    this.finalizedCheckpoint = Optional.of(finalizedCheckpoint);
     this.finalizedCheckpointOptimistic = fromOptimisticBlock;
   }
 
   @Override
-  public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
-    this.bestJustifiedCheckpoint = Optional.of(best_justified_checkpoint);
+  public void setBestJustifiedCheckpoint(Checkpoint bestJustifiedCheckpoint) {
+    this.bestJustifiedCheckpoint = Optional.of(bestJustifiedCheckpoint);
   }
 
   @Override

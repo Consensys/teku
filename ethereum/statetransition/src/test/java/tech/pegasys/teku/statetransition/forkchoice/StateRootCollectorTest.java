@@ -110,6 +110,6 @@ class StateRootCollectorTest {
   }
 
   private Bytes32 getStateRoot(final BeaconState state, final int slot) {
-    return state.getState_roots().getElement(slot % slotsPerHistoricalRoot);
+    return state.getStateRoots().getElement(slot % slotsPerHistoricalRoot);
   }
 }

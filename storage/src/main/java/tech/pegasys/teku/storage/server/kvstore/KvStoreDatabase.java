@@ -214,7 +214,7 @@ public class KvStoreDatabase implements Database {
       final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
 
       hotUpdater.setAnchor(anchor.getCheckpoint());
-      hotUpdater.setGenesisTime(anchorState.getGenesis_time());
+      hotUpdater.setGenesisTime(anchorState.getGenesisTime());
       hotUpdater.setJustifiedCheckpoint(anchorCheckpoint);
       hotUpdater.setBestJustifiedCheckpoint(anchorCheckpoint);
       hotUpdater.setFinalizedCheckpoint(anchorCheckpoint);
@@ -229,8 +229,8 @@ public class KvStoreDatabase implements Database {
                 new BlockAndCheckpointEpochs(
                     block,
                     new CheckpointEpochs(
-                        anchorState.getCurrent_justified_checkpoint().getEpoch(),
-                        anchorState.getFinalized_checkpoint().getEpoch())));
+                        anchorState.getCurrentJustifiedCheckpoint().getEpoch(),
+                        anchorState.getFinalizedCheckpoint().getEpoch())));
             // Save to cold storage
             finalizedUpdater.addFinalizedBlock(block);
           });

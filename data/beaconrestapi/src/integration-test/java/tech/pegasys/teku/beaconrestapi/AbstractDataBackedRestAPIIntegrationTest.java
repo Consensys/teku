@@ -186,7 +186,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .build();
 
     beaconRestApi =
-        new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER);
+        new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER, spec);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }

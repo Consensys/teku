@@ -37,7 +37,7 @@ public class ForkInfo {
   }
 
   public Bytes4 getForkDigest(final Spec spec) {
-    return spec.computeForkDigest(fork.getCurrent_version(), genesisValidatorsRoot);
+    return spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
   }
 
   /**

@@ -587,7 +587,7 @@ public class TekuNode extends Node {
   }
 
   public static class Config {
-    public static String DEFAULT_NETWORK_NAME = "swift";
+    public static final String DEFAULT_NETWORK_NAME = "swift";
 
     private Optional<InputStream> maybeNetworkYaml = Optional.empty();
 

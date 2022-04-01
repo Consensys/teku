@@ -39,6 +39,10 @@ public interface OpenApiTypeDefinition {
     return Stream.concat(Stream.of(this), getReferencedTypeDefinitions().stream()).collect(toSet());
   }
 
+  default boolean isEquivalentToDeserializableType(DeserializableTypeDefinition<?> type) {
+    return this == type;
+  }
+
   default void serializeOpenApiTypeOrReference(final JsonGenerator gen) throws IOException {
     if (getTypeName().isPresent()) {
       gen.writeStartObject();

@@ -79,7 +79,7 @@ public class SlotProcessorTest {
           slotEventsChannel,
           epochCachePrimer,
           eventLogger);
-  private final UInt64 genesisTime = beaconState.getGenesis_time();
+  private final UInt64 genesisTime = beaconState.getGenesisTime();
   private final UInt64 desiredSlot = UInt64.valueOf(100L);
 
   @BeforeEach
@@ -151,7 +151,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(beaconState.getGenesis_time());
+    slotProcessor.onTick(beaconState.getGenesisTime());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
 
     verify(slotEventsChannel).onSlot(captor.capture());
@@ -167,7 +167,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.OPTIMISTIC_SYNCING);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(beaconState.getGenesis_time());
+    slotProcessor.onTick(beaconState.getGenesisTime());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
 
     verify(slotEventsChannel).onSlot(captor.capture());
@@ -183,7 +183,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(beaconState.getGenesis_time());
+    slotProcessor.onTick(beaconState.getGenesisTime());
     verify(slotEventsChannel).onSlot(captor.capture());
     assertThat(captor.getValue()).isEqualTo(ZERO);
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
@@ -204,7 +204,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    UInt64 slotProcessingTime = beaconState.getGenesis_time().plus(slot.times(secondsPerSlot));
+    UInt64 slotProcessingTime = beaconState.getGenesisTime().plus(slot.times(secondsPerSlot));
     // slot processor starts at slot 0, but fast forwards to slot 100
     slotProcessor.onTick(slotProcessingTime);
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(slot);
@@ -237,7 +237,7 @@ public class SlotProcessorTest {
 
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(beaconState.getGenesis_time().plus(secondsPerSlot / 3));
+    slotProcessor.onTick(beaconState.getGenesisTime().plus(secondsPerSlot / 3));
     final Checkpoint justifiedCheckpoint = recentChainData.getStore().getJustifiedCheckpoint();
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     verify(eventLogger)
@@ -256,7 +256,7 @@ public class SlotProcessorTest {
     slotProcessor.setOnTickSlotStart(ZERO);
     slotProcessor.setOnTickSlotAttestation(ZERO);
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    slotProcessor.onTick(beaconState.getGenesis_time());
+    slotProcessor.onTick(beaconState.getGenesisTime());
 
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ZERO);
   }
@@ -278,14 +278,14 @@ public class SlotProcessorTest {
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     // Slot 0 start
-    slotProcessor.onTick(beaconState.getGenesis_time());
+    slotProcessor.onTick(beaconState.getGenesisTime());
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
-    slotProcessor.onTick(beaconState.getGenesis_time().plus(secondsPerSlot / 3));
+    slotProcessor.onTick(beaconState.getGenesisTime().plus(secondsPerSlot / 3));
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ZERO);
 
     // Slot 2 start
-    final UInt64 slot1Start = beaconState.getGenesis_time().plus(secondsPerSlot);
+    final UInt64 slot1Start = beaconState.getGenesisTime().plus(secondsPerSlot);
     slotProcessor.onTick(slot1Start);
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due

@@ -36,7 +36,7 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
    * earlier epoch. While we could search back to zero, that potentially means a lot of cache
    * look-ups that are extremely unlikely to succeed which is wasteful.
    */
-  private final UInt64 INTERIM_SLOTS_TO_SEARCH = UInt64.valueOf(640);
+  private static final UInt64 INTERIM_SLOTS_TO_SEARCH = UInt64.valueOf(640);
 
   private final Spec spec;
   private final SlotAndBlockRoot slotAndBlockRoot;

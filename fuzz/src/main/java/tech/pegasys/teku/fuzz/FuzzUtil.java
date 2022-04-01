@@ -66,7 +66,7 @@ public class FuzzUtil {
   private final BLSSignatureVerifier signatureVerifier;
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
-  public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
+  public FuzzUtil(final boolean useMainnetConfig, final boolean disableBls) {
     spec =
         useMainnetConfig
             ? TestSpecFactory.createMainnetBellatrix()
@@ -75,12 +75,12 @@ public class FuzzUtil {
     beaconBlockBodySchema =
         (BeaconBlockBodySchemaBellatrix<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
-    initialize(disable_bls);
-    this.signatureVerifier = disable_bls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+    initialize(disableBls);
+    this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
   }
 
-  public static void initialize(final boolean disable_bls) {
-    if (disable_bls) {
+  public static void initialize(final boolean disableBls) {
+    if (disableBls) {
       BLSConstants.disableBLSVerification();
     }
   }
@@ -113,7 +113,7 @@ public class FuzzUtil {
     SszList<AttesterSlashing> slashings =
         beaconBlockBodySchema
             .getAttesterSlashingsSchema()
-            .of(structuredInput.getAttester_slashing());
+            .of(structuredInput.getAttesterSlashing());
 
     // process and return post state
     try {
@@ -139,7 +139,7 @@ public class FuzzUtil {
       BeaconState postState =
           spec.processBlock(
               structuredInput.getState(),
-              structuredInput.getSigned_block(),
+              structuredInput.getSignedBlock(),
               signatureVerifier,
               OptimisticExecutionPayloadExecutor.NOOP);
       Bytes output = postState.sszSerialize();
@@ -197,7 +197,7 @@ public class FuzzUtil {
     SszList<ProposerSlashing> proposerSlashings =
         beaconBlockBodySchema
             .getProposerSlashingsSchema()
-            .of(structuredInput.getProposer_slashing());
+            .of(structuredInput.getProposerSlashing());
 
     // process and return post state
     try {
@@ -229,19 +229,19 @@ public class FuzzUtil {
     // int[] shuffled = BeaconStateUtil.shuffle(count, seed);
 
     // NOTE: although compute_shuffled_index returns an int, we save as a long for consistency
-    ByteBuffer result_bb = ByteBuffer.allocate(count * OUTPUT_INDEX_BYTES);
+    ByteBuffer resultBuffer = ByteBuffer.allocate(count * OUTPUT_INDEX_BYTES);
     // Convert to little endian bytes
-    result_bb.order(ByteOrder.LITTLE_ENDIAN);
+    resultBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
     for (int i = 0; i < count; i++) {
       // NOTE: shuffle returns an int (int32), but should be uint64 to be fully consistent with spec
       // (java long is int64)
       // no risk of inconsistency for this particular fuzzing as we only count <= 100
       // inconsistencies would require a validator count > MAX_INT32
-      result_bb.putLong(
+      resultBuffer.putLong(
           spec.atSlot(UInt64.ZERO).miscHelpers().computeShuffledIndex(i, count, seed));
     }
-    return Optional.of(result_bb.array());
+    return Optional.of(resultBuffer.array());
   }
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {

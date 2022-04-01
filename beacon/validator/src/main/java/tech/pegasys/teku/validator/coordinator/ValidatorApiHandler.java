@@ -269,7 +269,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final boolean blinded) {
     LOG.trace("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -282,7 +285,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               final SafeFuture<Optional<BeaconState>> blockSlotStateFuture =
                   combinedChainDataClient.getStateAtSlotExact(slot);
               return blockSlotStateFuture.thenApplyChecked(
-                  blockSlotState -> createBlock(slot, randaoReveal, graffiti, blockSlotState));
+                  blockSlotState ->
+                      createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
             });
   }
 
@@ -290,6 +294,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
+      final boolean blinded,
       final Optional<BeaconState> maybeBlockSlotState)
       throws StateTransitionException {
     if (maybeBlockSlotState.isEmpty()) {
@@ -304,7 +309,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       throw new NodeSyncingException();
     }
     return Optional.of(
-        blockFactory.createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti));
+        blockFactory.createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti, blinded));
   }
 
   @Override
@@ -480,7 +485,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Failed to send signed attestation for slot "
                       + attestation.getData().getSlot()
                       + ", block "
-                      + attestation.getData().getBeacon_block_root();
+                      + attestation.getData().getBeaconBlockRoot();
               LOG.debug(errorText, error);
               return AttestationProcessingResult.invalid(errorText);
             });

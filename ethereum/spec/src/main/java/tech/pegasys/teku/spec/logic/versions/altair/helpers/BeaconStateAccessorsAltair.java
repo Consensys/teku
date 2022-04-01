@@ -81,7 +81,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
         state
             .getValidators()
             .get(validatorIndex)
-            .getEffective_balance()
+            .getEffectiveBalance()
             .dividedBy(config.getEffectiveBalanceIncrement());
     return increments.times(getBaseRewardPerIncrement(state));
   }
@@ -110,7 +110,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
       final int randomByte =
           ByteUtil.toUnsignedInt(Hash.sha256(seed, uint64ToBytes(i / 32)).get(i % 32));
-      final UInt64 effectiveBalance = validators.get(candidateIndex).getEffective_balance();
+      final UInt64 effectiveBalance = validators.get(candidateIndex).getEffectiveBalance();
       if (effectiveBalance
           .times(MAX_RANDOM_BYTE)
           .isGreaterThanOrEqualTo(config.getMaxEffectiveBalance().times(randomByte))) {
@@ -169,9 +169,9 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       final BeaconState state, final AttestationData data, final UInt64 inclusionDelay) {
     final Checkpoint justifiedCheckpoint;
     if (data.getTarget().getEpoch().equals(getCurrentEpoch(state))) {
-      justifiedCheckpoint = state.getCurrent_justified_checkpoint();
+      justifiedCheckpoint = state.getCurrentJustifiedCheckpoint();
     } else {
-      justifiedCheckpoint = state.getPrevious_justified_checkpoint();
+      justifiedCheckpoint = state.getPreviousJustifiedCheckpoint();
     }
 
     // Matching roots
@@ -181,7 +181,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             && data.getTarget().getRoot().equals(getBlockRoot(state, data.getTarget().getEpoch()));
     final boolean isMatchingHead =
         isMatchingTarget
-            && data.getBeacon_block_root().equals(getBlockRootAtSlot(state, data.getSlot()));
+            && data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
 
     // Participation flag indices
     final IntList participationFlagIndices = new IntArrayList();

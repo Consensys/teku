@@ -23,15 +23,15 @@ import org.apache.tuweni.bytes.Bytes32;
 class SimpleLeafNode implements LeafNode, TreeNode {
 
   private final Bytes data;
-  private Bytes32 hashTreeRoot;
+  private volatile Bytes32 cachedHash;
 
   public SimpleLeafNode(Bytes data) {
     checkArgument(data.size() <= MAX_BYTE_SIZE);
     if (data.size() == MAX_BYTE_SIZE) {
       // if data is Bytes32, it will pass throw with no object creation
       // otherwise translate types to Bytes32
-      this.hashTreeRoot = Bytes32.wrap(data.copy());
-      this.data = hashTreeRoot;
+      this.cachedHash = Bytes32.wrap(data.copy());
+      this.data = cachedHash;
       return;
     }
     // If we store data as is, some Bytes instances (ie ConcatenatedBytes) will
@@ -49,12 +49,12 @@ class SimpleLeafNode implements LeafNode, TreeNode {
 
   @Override
   public Bytes32 hashTreeRoot() {
-    if (hashTreeRoot != null) {
-      return hashTreeRoot;
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      cachedHash = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+      this.cachedHash = cachedHash;
     }
-
-    hashTreeRoot = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
-    return hashTreeRoot;
+    return cachedHash;
   }
 
   @Override

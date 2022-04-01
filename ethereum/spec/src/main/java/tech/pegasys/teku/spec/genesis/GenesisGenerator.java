@@ -62,7 +62,7 @@ public class GenesisGenerator {
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             SpecConfig.GENESIS_SLOT, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
-    state.setLatest_block_header(beaconBlockHeader);
+    state.setLatestBlockHeader(beaconBlockHeader);
     state.setFork(genesisFork);
 
     depositDataList =
@@ -81,7 +81,7 @@ public class GenesisGenerator {
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
-    state.setEth1_data(
+    state.setEth1Data(
         new Eth1Data(
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
 
@@ -108,35 +108,35 @@ public class GenesisGenerator {
       return;
     }
     Validator validator = state.getValidators().get(index);
-    if (validator.getActivation_epoch().equals(GENESIS_EPOCH)) {
+    if (validator.getActivationEpoch().equals(GENESIS_EPOCH)) {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
     UInt64 balance = state.getBalances().getElement(index);
-    UInt64 effective_balance =
+    UInt64 effectiveBalance =
         balance
             .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
             .min(specConfig.getMaxEffectiveBalance());
 
-    UInt64 activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
-    UInt64 activation_epoch = validator.getActivation_epoch();
+    UInt64 activationEligibilityEpoch = validator.getActivationEligibilityEpoch();
+    UInt64 activationEpoch = validator.getActivationEpoch();
 
-    if (effective_balance.equals(specConfig.getMaxEffectiveBalance())) {
-      activation_eligibility_epoch = GENESIS_EPOCH;
-      activation_epoch = GENESIS_EPOCH;
+    if (effectiveBalance.equals(specConfig.getMaxEffectiveBalance())) {
+      activationEligibilityEpoch = GENESIS_EPOCH;
+      activationEpoch = GENESIS_EPOCH;
       activeValidatorCount++;
     }
 
     Validator modifiedValidator =
         new Validator(
             validator.getPubkeyBytes(),
-            validator.getWithdrawal_credentials(),
-            effective_balance,
+            validator.getWithdrawalCredentials(),
+            effectiveBalance,
             validator.isSlashed(),
-            activation_eligibility_epoch,
-            activation_epoch,
-            validator.getExit_epoch(),
-            validator.getWithdrawable_epoch());
+            activationEligibilityEpoch,
+            activationEpoch,
+            validator.getExitEpoch(),
+            validator.getWithdrawableEpoch());
 
     state.getValidators().set(index, modifiedValidator);
   }
@@ -146,7 +146,7 @@ public class GenesisGenerator {
   }
 
   public UInt64 getGenesisTime() {
-    return state.getGenesis_time();
+    return state.getGenesisTime();
   }
 
   public BeaconState getGenesisState() {
@@ -162,7 +162,7 @@ public class GenesisGenerator {
     calculateRandaoMixes();
     calculateDepositRoot();
     final BeaconState readOnlyState = state.commitChanges();
-    state.setGenesis_validators_root(readOnlyState.getValidators().hashTreeRoot());
+    state.setGenesisValidatorsRoot(readOnlyState.getValidators().hashTreeRoot());
 
     genesisSpec
         .getSyncCommitteeUtil()
@@ -170,20 +170,20 @@ public class GenesisGenerator {
   }
 
   private void calculateRandaoMixes() {
-    for (int i = 0; i < state.getRandao_mixes().size(); i++) {
-      state.getRandao_mixes().setElement(i, state.getEth1_data().getBlock_hash());
+    for (int i = 0; i < state.getRandaoMixes().size(); i++) {
+      state.getRandaoMixes().setElement(i, state.getEth1Data().getBlockHash());
     }
   }
 
   private void calculateDepositRoot() {
-    Eth1Data eth1Data = state.getEth1_data();
-    state.setEth1_data(
+    Eth1Data eth1Data = state.getEth1Data();
+    state.setEth1Data(
         new Eth1Data(
-            depositDataList.hashTreeRoot(), eth1Data.getDeposit_count(), eth1Data.getBlock_hash()));
+            depositDataList.hashTreeRoot(), eth1Data.getDepositCount(), eth1Data.getBlockHash()));
   }
 
   private void updateGenesisTime(final UInt64 eth1Timestamp) {
     UInt64 genesisTime = eth1Timestamp.plus(specConfig.getGenesisDelay());
-    state.setGenesis_time(genesisTime);
+    state.setGenesisTime(genesisTime);
   }
 }

@@ -81,7 +81,8 @@ public class BlockProductionDuty implements Duty {
   }
 
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(final BLSSignature randaoReveal) {
-    return validatorApiChannel.createUnsignedBlock(slot, randaoReveal, validator.getGraffiti());
+    return validatorApiChannel.createUnsignedBlock(
+        slot, randaoReveal, validator.getGraffiti(), false);
   }
 
   public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {

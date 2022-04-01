@@ -172,13 +172,13 @@ public class BlockValidator {
             Domain.BEACON_PROPOSER,
             spec.getCurrentEpoch(postState),
             postState.getFork(),
-            postState.getGenesis_validators_root());
-    final Bytes signing_root = spec.computeSigningRoot(block.getMessage(), domain);
+            postState.getGenesisValidatorsRoot());
+    final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
     boolean signatureValid =
         spec.getValidatorPubKey(postState, block.getMessage().getProposerIndex())
-            .map(publicKey -> BLS.verify(publicKey, signing_root, signature))
+            .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
             .orElse(false);
 
     return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));
@@ -199,11 +199,11 @@ public class BlockValidator {
 
   private static class SlotAndProposer {
     private final UInt64 slot;
-    private final UInt64 proposer_index;
+    private final UInt64 proposerIndex;
 
     public SlotAndProposer(SignedBeaconBlock block) {
       this.slot = block.getSlot();
-      this.proposer_index = block.getMessage().getProposerIndex();
+      this.proposerIndex = block.getMessage().getProposerIndex();
     }
 
     @Override
@@ -215,12 +215,12 @@ public class BlockValidator {
         return false;
       }
       SlotAndProposer that = (SlotAndProposer) o;
-      return Objects.equal(slot, that.slot) && Objects.equal(proposer_index, that.proposer_index);
+      return Objects.equal(slot, that.slot) && Objects.equal(proposerIndex, that.proposerIndex);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hashCode(slot, proposer_index);
+      return Objects.hashCode(slot, proposerIndex);
     }
   }
 }

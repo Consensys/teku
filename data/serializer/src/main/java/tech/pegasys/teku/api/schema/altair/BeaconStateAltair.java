@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
+@SuppressWarnings("JavaCase")
 public class BeaconStateAltair extends BeaconState implements State {
   @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
   public final byte[] previous_epoch_participation;
