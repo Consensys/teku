@@ -218,7 +218,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 schemaDefinitionsBellatrix.getExecutionPayloadSchema());
 
         final ExecutionPayloadHeader payloadHeader =
-            schemaDefinitionsBellatrix.getExecutionPayloadHeaderSchema().createFrom(payload);
+            schemaDefinitionsBellatrix
+                .getExecutionPayloadHeaderSchema()
+                .createFromExecutionPayload(payload);
 
         processor.processExecutionPayload(
             state,

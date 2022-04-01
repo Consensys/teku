@@ -89,7 +89,9 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final ExecutionPayload executionPayload =
           blockBody.getOptionalExecutionPayload().orElseThrow();
       executionPayloadHeader =
-          schemaDefinitions.getExecutionPayloadHeaderSchema().createFrom(executionPayload);
+          schemaDefinitions
+              .getExecutionPayloadHeaderSchema()
+              .createFromExecutionPayload(executionPayload);
     }
 
     processBlockHeader(state, block);

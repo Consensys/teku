@@ -28,7 +28,6 @@ import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ExecutionPayloadFuzzInput;
-import tech.pegasys.teku.fuzz.input.ExecutionPayloadHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
@@ -293,16 +292,18 @@ public class FuzzUtil {
     ExecutionPayloadFuzzInput structuredPayloadInput =
         deserialize(input, ExecutionPayloadFuzzInput.createSchema(specVersion));
 
-    ExecutionPayloadHeaderFuzzInput structuredPayloadHeaderInput =
-        deserialize(input, ExecutionPayloadHeaderFuzzInput.createSchema(specVersion));
-
     ExecutionPayload executionPayload = structuredPayloadInput.getExecutionPayload();
     ExecutionPayloadHeader executionPayloadHeader =
-        structuredPayloadHeaderInput.getExecutionPayloadHeader();
+        specVersion
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(executionPayload);
 
     try {
       BeaconState postState =
-          structuredPayloadHeaderInput
+          structuredPayloadInput
               .getState()
               .updated(
                   state ->

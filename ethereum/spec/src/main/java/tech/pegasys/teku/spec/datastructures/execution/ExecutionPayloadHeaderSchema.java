@@ -113,7 +113,8 @@ public class ExecutionPayloadHeaderSchema
         SszBytes32.of(transactionsRoot));
   }
 
-  public ExecutionPayloadHeader createFrom(final ExecutionPayload executionPayload) {
+  public ExecutionPayloadHeader createFromExecutionPayload(
+      final ExecutionPayload executionPayload) {
     return new ExecutionPayloadHeader(
         this,
         SszBytes32.of(executionPayload.getParentHash()),
