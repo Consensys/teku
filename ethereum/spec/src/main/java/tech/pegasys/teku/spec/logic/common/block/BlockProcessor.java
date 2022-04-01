@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -121,7 +122,8 @@ public interface BlockProcessor {
 
   void processExecutionPayload(
       MutableBeaconState state,
-      ExecutionPayload executionPayload,
+      ExecutionPayloadHeader payloadHeader,
+      Optional<ExecutionPayload> payload,
       OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException;
 

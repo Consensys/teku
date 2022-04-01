@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
@@ -99,7 +101,8 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      final ExecutionPayload executionPayload,
+      ExecutionPayloadHeader payloadHeader,
+      Optional<ExecutionPayload> payload,
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
