@@ -300,7 +300,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected Response post(final String route, final String postData) throws IOException {
-    final RequestBody body = RequestBody.create(JSON, postData);
+    final RequestBody body = RequestBody.create(postData, JSON);
     final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
     return client.newCall(request).execute();
   }
