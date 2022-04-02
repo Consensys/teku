@@ -106,6 +106,8 @@ dependencyManagement {
       entry 'log4j-slf4j-impl'
     }
 
+    dependency 'org.apiguardian:apiguardian-api:1.1.2'
+
     dependency 'org.assertj:assertj-core:3.22.0'
 
     dependency 'org.awaitility:awaitility:4.2.0'

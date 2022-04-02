@@ -730,6 +730,7 @@ subprojects {
 
     runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
+    runtimeOnly 'org.apiguardian:apiguardian-api'
 
     testImplementation 'org.apache.tuweni:tuweni-junit'
     testImplementation 'org.assertj:assertj-core'
