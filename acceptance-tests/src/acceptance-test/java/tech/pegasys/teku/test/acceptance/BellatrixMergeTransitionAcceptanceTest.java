@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion.DEVELOP;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -36,7 +34,6 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     eth1Node =
         createBesuNode(
-            DEVELOP,
             config -> config.withMergeSupport(true).withGenesisFile("besu/preMergeGenesis.json"));
     eth1Node.start();
 
