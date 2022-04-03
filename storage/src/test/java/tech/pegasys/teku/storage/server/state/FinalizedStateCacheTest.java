@@ -40,7 +40,7 @@ class FinalizedStateCacheTest {
   private static final int MAXIMUM_CACHE_SIZE = 3;
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final Database database = mock(Database.class);
   // We don't use soft references in unit tests to avoid intermittency
   private final FinalizedStateCache cache =
