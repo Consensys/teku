@@ -730,7 +730,6 @@ subprojects {
 
     runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
-    runtimeOnly 'org.apiguardian:apiguardian-api'
 
     testImplementation 'org.apache.tuweni:tuweni-junit'
     testImplementation 'org.assertj:assertj-core'
@@ -741,6 +740,8 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
+
+    testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'
   }
 
   if (!baseInfrastructureProjects.contains(project.path)) {
