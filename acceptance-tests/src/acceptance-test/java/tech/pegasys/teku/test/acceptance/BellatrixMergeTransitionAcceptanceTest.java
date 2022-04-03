@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
+@Disabled("While investigating flakiness")
 public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
 
