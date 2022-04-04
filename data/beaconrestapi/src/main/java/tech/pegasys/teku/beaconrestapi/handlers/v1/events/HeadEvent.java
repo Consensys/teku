@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class HeadEvent extends Event<HeadEvent.HeadData> {
 
-  static final SerializableTypeDefinition<HeadData> EVENT_TYPE =
+  static final SerializableTypeDefinition<HeadData> HEAD_EVENT_TYPE =
       SerializableTypeDefinition.object(HeadData.class)
           .withField("slot", UINT64_TYPE, HeadData::getSlot)
           .withField("block", BYTES32_TYPE, HeadData::getBlock)
@@ -48,7 +48,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot) {
     super(
-        EVENT_TYPE,
+        HEAD_EVENT_TYPE,
         new HeadData(
             slot,
             block,

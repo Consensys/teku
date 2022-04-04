@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
 
-  public static final SerializableTypeDefinition<ChainReorgData> EVENT_TYPE =
+  public static final SerializableTypeDefinition<ChainReorgData> CHAIN_REORG_EVENT_TYPE =
       SerializableTypeDefinition.object(ChainReorgData.class)
           .withField("slot", UINT64_TYPE, ChainReorgData::getSlot)
           .withField("depth", UINT64_TYPE, ChainReorgData::getDepth)
@@ -47,7 +47,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
       final UInt64 epoch,
       final Boolean executionOptimistic) {
     super(
-        EVENT_TYPE,
+        CHAIN_REORG_EVENT_TYPE,
         new ChainReorgData(
             slot,
             depth,

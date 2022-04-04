@@ -20,12 +20,12 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class SyncStateChangeEvent extends Event<String> {
 
-  private static final SerializableTypeDefinition<String> EVENT_TYPE =
+  private static final SerializableTypeDefinition<String> SYNC_STATE_CHANGE_EVENT_TYPE =
       SerializableTypeDefinition.object(String.class)
           .withField("sync_state", STRING_TYPE, Function.identity())
           .build();
 
   SyncStateChangeEvent(String syncState) {
-    super(EVENT_TYPE, syncState);
+    super(SYNC_STATE_CHANGE_EVENT_TYPE, syncState);
   }
 }

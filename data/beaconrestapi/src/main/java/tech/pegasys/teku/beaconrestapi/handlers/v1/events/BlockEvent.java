@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class BlockEvent extends Event<BlockEvent.BlockData> {
-  private static final SerializableTypeDefinition<BlockData> EVENT_TYPE =
+  private static final SerializableTypeDefinition<BlockData> BLOCK_EVENT_TYPE =
       SerializableTypeDefinition.object(BlockData.class)
           .withField("slot", UINT64_TYPE, BlockData::getSlot)
           .withField("block", BYTES32_TYPE, BlockData::getBlock)
@@ -34,7 +34,7 @@ public class BlockEvent extends Event<BlockEvent.BlockData> {
 
   BlockEvent(final SignedBeaconBlock block, final Boolean executionOptimistic) {
     super(
-        EVENT_TYPE,
+        BLOCK_EVENT_TYPE,
         new BlockData(block.getSlot(), block.getRoot(), Optional.ofNullable(executionOptimistic)));
   }
 
