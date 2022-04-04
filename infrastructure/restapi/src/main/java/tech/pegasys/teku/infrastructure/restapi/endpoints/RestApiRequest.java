@@ -50,6 +50,17 @@ public class RestApiRequest {
     respond(HttpStatusCodes.SC_OK, JSON_CONTENT_TYPE, response);
   }
 
+  public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
+    context.future(
+        futureResponse.thenAccept(
+            result -> {
+              context.status(result.getResponseCode());
+              if (result.hasResponseBody()) {
+                context.json(result.getResponseBody());
+              }
+            }));
+  }
+
   public void respondOk(final Object response, final CacheLength cacheLength)
       throws JsonProcessingException {
     context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());
