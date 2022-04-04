@@ -31,7 +31,7 @@ class StreamingStateRegeneratorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
 
   @Test
   void shouldHandleValidChainFromGenesis() throws Exception {

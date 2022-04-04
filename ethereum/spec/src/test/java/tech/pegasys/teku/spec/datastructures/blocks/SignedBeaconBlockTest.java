@@ -27,7 +27,7 @@ class SignedBeaconBlockTest {
   public void shouldRoundTripViaSsz() {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
-    final SignedBeaconBlock block = new DataStructureUtil().randomSignedBeaconBlock(1);
+    final SignedBeaconBlock block = new DataStructureUtil(spec).randomSignedBeaconBlock(1);
     final Bytes ssz = block.sszSerialize();
     final SignedBeaconBlock result =
         schemaDefinitions.getSignedBeaconBlockSchema().sszDeserialize(ssz);

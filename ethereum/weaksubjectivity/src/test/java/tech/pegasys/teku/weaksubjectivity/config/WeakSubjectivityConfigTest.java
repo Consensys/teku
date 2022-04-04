@@ -27,7 +27,7 @@ public class WeakSubjectivityConfigTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final WeakSubjectivityConfig config =
       WeakSubjectivityConfig.builder().specProvider(spec).build();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
   @Test
