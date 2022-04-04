@@ -252,8 +252,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      ExecutionPayloadHeader payloadHeader,
-      Optional<ExecutionPayload> payload,
+      final ExecutionPayloadHeader payloadHeader,
+      final Optional<ExecutionPayload> payload,
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
