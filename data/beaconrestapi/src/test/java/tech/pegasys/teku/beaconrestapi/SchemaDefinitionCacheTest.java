@@ -20,15 +20,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SchemaDefinitionCacheTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
@@ -67,5 +77,31 @@ public class SchemaDefinitionCacheTest {
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
     assertThat(spec.forMilestone(SpecMilestone.BELLATRIX)).isNull();
     assertThat(cache.getSchemaDefinition(SpecMilestone.BELLATRIX)).isNotNull();
+  }
+
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void subsequentCallsShouldGetTheSameSchemaObject(final SpecMilestone specMilestone) {
+    final Spec spec = TestSpecFactory.createMinimal(specMilestone);
+    final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
+
+    final List<Method> methods = Arrays.asList(SchemaDefinitions.class.getMethods());
+    // all the get methods should return the same object on subsequent calls,
+    // as creation of the schema objects is relatively expensive
+    methods.stream()
+        .filter(method -> method.getName().startsWith("get"))
+        .forEach(
+            method -> {
+              try {
+                LOG.info(method.getName());
+                final SszSchema<?> first =
+                    (SszSchema<?>) method.invoke(cache.getSchemaDefinition(specMilestone));
+                final SszSchema<?> second =
+                    (SszSchema<?>) method.invoke(cache.getSchemaDefinition(specMilestone));
+                assertThat(first.getJsonTypeDefinition()).isEqualTo(second.getJsonTypeDefinition());
+              } catch (IllegalAccessException | InvocationTargetException e) {
+                Assertions.fail(e);
+              }
+            });
   }
 }

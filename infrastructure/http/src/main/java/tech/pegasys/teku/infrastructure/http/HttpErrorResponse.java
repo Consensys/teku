@@ -15,6 +15,8 @@ package tech.pegasys.teku.infrastructure.http;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
+import java.util.Objects;
+
 public class HttpErrorResponse {
 
   private final Integer status;
@@ -35,5 +37,22 @@ public class HttpErrorResponse {
 
   public Integer getStatus() {
     return status;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final HttpErrorResponse that = (HttpErrorResponse) o;
+    return Objects.equals(status, that.status) && Objects.equals(message, that.message);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(status, message);
   }
 }
