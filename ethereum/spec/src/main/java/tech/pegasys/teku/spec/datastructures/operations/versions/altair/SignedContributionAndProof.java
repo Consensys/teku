@@ -40,4 +40,9 @@ public class SignedContributionAndProof
   public BLSSignature getSignature() {
     return getField1().getSignature();
   }
+
+  @Override
+  public SignedContributionAndProofSchema getSchema() {
+    return (SignedContributionAndProofSchema) super.getSchema();
+  }
 }
