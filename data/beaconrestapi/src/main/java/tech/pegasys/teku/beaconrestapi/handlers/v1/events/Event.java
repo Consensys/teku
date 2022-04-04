@@ -17,16 +17,16 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public abstract class Event<T> {
 
-  final SerializableTypeDefinition<T> EVENT_TYPE;
+  final SerializableTypeDefinition<T> type;
   final T data;
 
   Event(SerializableTypeDefinition<T> type, T data) {
-    this.EVENT_TYPE = type;
+    this.type = type;
     this.data = data;
   }
 
   public SerializableTypeDefinition<T> getJsonTypeDefinition() {
-    return EVENT_TYPE;
+    return type;
   }
 
   public T getData() {
