@@ -87,7 +87,7 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestBlockAndState().getState(),
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
-    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
+    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
     final ValidateableSyncCommitteeMessage validateableMessage =
         ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
 
@@ -121,7 +121,7 @@ class SyncCommitteeMessageValidatorTest {
             chainHead.getState(),
             syncCommitteeUtil.getEpochForDutiesAtSlot(lastSlotOfPeriod),
             message.getValidatorIndex());
-    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
+    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
     final ValidateableSyncCommitteeMessage validateableMessage =
         ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     timeProvider.advanceTimeByMillis(

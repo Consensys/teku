@@ -38,13 +38,15 @@ import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService.FetchBlockT
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksServiceTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
 
   @SuppressWarnings("unchecked")

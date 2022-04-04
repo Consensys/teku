@@ -350,7 +350,7 @@ check.dependsOn('checkMavenCoordinateCollisions')
 
 application {
   applicationName = "teku"
-  mainClassName = "tech.pegasys.teku.Teku"
+  getMainClass().set("tech.pegasys.teku.Teku")
   applicationDefaultJvmArgs = [
       "-Dvertx.disableFileCPResolving=true",
       "-Dteku.home=TEKU_HOME",
@@ -369,7 +369,7 @@ task autocomplete(type: JavaExec) {
   dependsOn compileJava
   outputs.file "build/teku.autocomplete.sh"
 
-  main = application.mainClassName
+  mainClass = application.getMainClass()
   args "debug-tools", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
   classpath sourceSets.main.runtimeClasspath
 }
@@ -382,7 +382,7 @@ distTar {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
   compression = Compression.GZIP
-  extension = 'tar.gz'
+  archiveExtension = 'tar.gz'
 }
 
 distZip {
@@ -551,7 +551,7 @@ subprojects {
    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
     useJUnitPlatform()
     reports {
-      junitXml.enabled = true
+      junitXml.required = true
     }
     filter {
       // Support filtering tests with the --tests option to gradle
@@ -712,7 +712,7 @@ subprojects {
   }
 
   jar {
-    baseName jarName
+    archiveBaseName = jarName
     manifest {
       attributes(
           'Specification-Title': jarName,
@@ -740,6 +740,8 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
+
+    testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'
   }
 
   if (!baseInfrastructureProjects.contains(project.path)) {
