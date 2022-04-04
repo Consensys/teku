@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,11 +51,19 @@ class SimpleLeafNode implements LeafNode, TreeNode {
   @Override
   public Bytes32 hashTreeRoot() {
     Bytes32 cachedHash = this.cachedHash;
-    if (cachedHash == null) {
-      cachedHash = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
-      this.cachedHash = cachedHash;
+    if (cachedHash != null) {
+      return cachedHash;
     }
-    return cachedHash;
+    return Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+  }
+
+  @Override
+  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash != null) {
+      return cachedHash;
+    }
+    return Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
   }
 
   @Override
