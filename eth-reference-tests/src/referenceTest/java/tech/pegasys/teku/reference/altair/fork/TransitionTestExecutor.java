@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
+import java.util.Optional;
+
 public class TransitionTestExecutor implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> TRANSITION_TEST_TYPES =
@@ -79,7 +81,7 @@ public class TransitionTestExecutor implements TestExecutor {
             metadata.blsSetting == 2 ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
         result =
             spec.processBlock(
-                result, block, signatureVerifier, OptimisticExecutionPayloadExecutor.NOOP);
+                result, block, signatureVerifier, Optional.empty());
       } catch (final StateTransitionException e) {
         Assertions.fail(
             "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),

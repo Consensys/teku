@@ -110,7 +110,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   public void processExecutionPayload(
       final MutableBeaconState genericState,
       final ExecutionPayloadHeader executionPayloadHeader,
-      final Optional<ExecutionPayload> executionPayload,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
@@ -137,13 +137,13 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     }
 
     if (payloadExecutor.isPresent()) {
+      final ExecutionPayload executionPayload =
+          maybeExecutionPayload.orElseThrow(
+              () -> new BlockProcessingException("Execution payload expected"));
       final boolean optimisticallyAccept =
           payloadExecutor
               .get()
-              .optimisticallyExecute(
-                  state.getLatestExecutionPayloadHeader(),
-                  executionPayload.orElseThrow(
-                      () -> new BlockProcessingException("Full execution payload expected")));
+              .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), executionPayload);
       if (!optimisticallyAccept) {
         throw new BlockProcessingException("Execution payload was not optimistically accepted");
       }
