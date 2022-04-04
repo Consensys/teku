@@ -607,7 +607,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
-          final boolean depositSignaturesAreAllGood = batchVerifyDepositSignatures(deposits);
+          final boolean depositSignaturesAreAllGood =
+              !blsVerifyDeposit || batchVerifyDepositSignatures(deposits);
           for (Deposit deposit : deposits) {
             processDeposit(state, deposit, depositSignaturesAreAllGood);
           }
@@ -615,21 +616,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   private boolean batchVerifyDepositSignatures(SszList<? extends Deposit> deposits) {
-    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
     final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
     final List<Bytes> messages = new ArrayList<>();
     final List<BLSSignature> signatures = new ArrayList<>();
     for (Deposit deposit : deposits) {
       final BLSPublicKey pubkey = deposit.getData().getPubkey();
-      final Bytes signingRoot =
-          miscHelpers.computeSigningRoot(
-              new DepositMessage(
-                  pubkey,
-                  deposit.getData().getWithdrawalCredentials(),
-                  deposit.getData().getAmount()),
-              domain);
       publicKeys.add(List.of(pubkey));
-      messages.add(signingRoot);
+      messages.add(computeDepositSigningRoot(deposit, pubkey));
       signatures.add(deposit.getData().getSignature());
     }
     // Overwhelmingly often we expect all the deposit signatures to be good
@@ -709,18 +702,17 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
-    if (!blsVerifyDeposit) {
-      return true;
-    }
+    return !blsVerifyDeposit
+        || BLS.verify(
+            pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
+  }
 
-    final UInt64 amount = deposit.getData().getAmount();
-    final DepositMessage depositMessage =
-        new DepositMessage(pubkey, deposit.getData().getWithdrawalCredentials(), amount);
+  private Bytes computeDepositSigningRoot(final Deposit deposit, BLSPublicKey pubkey) {
     final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(depositMessage, domain);
-    // Note that this can't use batch signature verification as invalid deposits can be included
-    // in blocks and processing differs based on whether the signature is valid or not.
-    return BLS.verify(pubkey, signingRoot, deposit.getData().getSignature());
+    final DepositMessage depositMessage =
+        new DepositMessage(
+            pubkey, deposit.getData().getWithdrawalCredentials(), deposit.getData().getAmount());
+    return miscHelpers.computeSigningRoot(depositMessage, domain);
   }
 
   protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
