@@ -26,7 +26,6 @@ public class AsyncApiResponseTest {
   void shouldGetCode() {
     final AsyncApiResponse response = AsyncApiResponse.respondWithCode(SC_OK);
     assertThat(response.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(response.hasResponseBody()).isFalse();
     assertThat(response.getResponseBody()).isEmpty();
   }
 
@@ -34,15 +33,13 @@ public class AsyncApiResponseTest {
   void shouldRespondWithError() {
     final AsyncApiResponse response = AsyncApiResponse.respondWithError(SC_BAD_REQUEST, BODY);
     assertThat(response.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.hasResponseBody()).isTrue();
-    assertThat(response.getResponseBody()).isEqualTo(BODY);
+    assertThat(response.getResponseBody().orElseThrow()).isEqualTo(BODY);
   }
 
   @Test
   void shouldRespondOk() {
     final AsyncApiResponse response = AsyncApiResponse.respondOk(BODY);
     assertThat(response.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(response.hasResponseBody()).isTrue();
-    assertThat(response.getResponseBody()).isEqualTo(BODY);
+    assertThat(response.getResponseBody().orElseThrow()).isEqualTo(BODY);
   }
 }

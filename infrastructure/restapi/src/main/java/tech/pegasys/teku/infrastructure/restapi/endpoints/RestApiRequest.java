@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
@@ -22,6 +23,8 @@ import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
@@ -29,6 +32,7 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class RestApiRequest {
+  private static final Logger LOG = LogManager.getLogger();
   private final Context context;
   private final EndpointMetadata metadata;
   private final Map<String, String> pathParamMap;
@@ -54,9 +58,11 @@ public class RestApiRequest {
     context.future(
         futureResponse.thenAccept(
             result -> {
-              context.status(result.getResponseCode());
-              if (result.hasResponseBody()) {
-                context.json(result.getResponseBody());
+              try {
+                respond(result.getResponseCode(), JSON_CONTENT_TYPE, result.getResponseBody());
+              } catch (JsonProcessingException e) {
+                LOG.trace("Failed to generate API response", e);
+                context.status(SC_INTERNAL_SERVER_ERROR);
               }
             }));
   }
@@ -70,6 +76,17 @@ public class RestApiRequest {
   public void respondError(final int statusCode, final String message)
       throws JsonProcessingException {
     respond(statusCode, JSON_CONTENT_TYPE, new HttpErrorResponse(statusCode, message));
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void respond(
+      final int statusCode, final String contentType, final Optional<Object> response)
+      throws JsonProcessingException {
+    context.status(statusCode);
+    if (response.isPresent()) {
+      final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
+      context.result(JsonUtil.serialize(response, type));
+    }
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

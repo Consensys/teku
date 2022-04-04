@@ -220,16 +220,10 @@ public class ValidatorDataProvider {
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
   }
 
-  public SafeFuture<ValidatorBlockResult> submitSignedBlindedBlock(
+  public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock) {
     LOG.debug("parsed block is from slot: {}", signedBeaconBlock.getMessage().getSlot());
-    final SpecMilestone milestone = spec.atSlot(signedBeaconBlock.getSlot()).getMilestone();
-    if (milestone == SpecMilestone.PHASE0 || milestone == SpecMilestone.ALTAIR) {
-      return validatorApiChannel
-          .sendSignedBlock(signedBeaconBlock)
-          .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
-    }
-    return SafeFuture.failedFuture(new IllegalStateException("Not implemented"));
+    return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
   }
 
   public SafeFuture<Optional<PostDataFailureResponse>> submitCommitteeSignatures(

@@ -15,37 +15,35 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import java.util.Optional;
+
 public class AsyncApiResponse {
   final int responseCode;
-  final String responseBody;
+  final Optional<Object> responseBody;
 
-  private AsyncApiResponse(final int responseCode, final String responseBody) {
+  private AsyncApiResponse(final int responseCode, final Object responseBody) {
     this.responseCode = responseCode;
-    this.responseBody = responseBody;
+    this.responseBody = Optional.ofNullable(responseBody);
   }
 
   public int getResponseCode() {
     return responseCode;
   }
 
-  public boolean hasResponseBody() {
-    return !responseBody.isEmpty();
-  }
-
-  public String getResponseBody() {
+  public Optional<Object> getResponseBody() {
     return responseBody;
   }
 
   public static AsyncApiResponse respondWithError(
-      final int responseCode, final String responseBody) {
+      final int responseCode, final Object responseBody) {
     return new AsyncApiResponse(responseCode, responseBody);
   }
 
   public static AsyncApiResponse respondWithCode(final int responseCode) {
-    return new AsyncApiResponse(responseCode, "");
+    return new AsyncApiResponse(responseCode, null);
   }
 
-  public static AsyncApiResponse respondOk(final String responseBody) {
+  public static AsyncApiResponse respondOk(final Object responseBody) {
     return new AsyncApiResponse(SC_OK, responseBody);
   }
 }

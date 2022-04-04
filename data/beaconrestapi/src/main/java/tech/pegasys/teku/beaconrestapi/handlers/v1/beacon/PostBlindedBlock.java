@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -39,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
@@ -55,6 +54,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class PostBlindedBlock extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/blinded_blocks";
@@ -116,16 +117,21 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
       request.respondError(SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.");
     }
 
-    final SafeFuture<ValidatorBlockResult> result =
+    final SafeFuture<SendSignedBlockResult> result =
         validatorDataProvider.submitSignedBlindedBlock(request.getRequestBody());
     request.respondAsync(
         result.thenApply(
             blockResult -> {
-              if (blockResult.getResponseCode() < SC_BAD_REQUEST) {
-                return AsyncApiResponse.respondWithCode(blockResult.getResponseCode());
+              if (blockResult.getRejectionReason().isEmpty()) {
+                return AsyncApiResponse.respondWithCode(SC_OK);
+              } else if (blockResult
+                  .getRejectionReason()
+                  .get()
+                  .equals(BlockImportResult.FailureReason.INTERNAL_ERROR.name())) {
+                return AsyncApiResponse.respondWithCode(SC_INTERNAL_SERVER_ERROR);
+              } else {
+                return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
               }
-              return AsyncApiResponse.respondWithError(
-                  blockResult.getResponseCode(), blockResult.getFailureReason().orElse(""));
             }));
   }
 
