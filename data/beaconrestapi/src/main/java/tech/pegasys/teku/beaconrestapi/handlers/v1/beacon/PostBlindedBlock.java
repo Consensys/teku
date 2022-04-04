@@ -128,7 +128,9 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
                   .getRejectionReason()
                   .get()
                   .equals(BlockImportResult.FailureReason.INTERNAL_ERROR.name())) {
-                return AsyncApiResponse.respondWithCode(SC_INTERNAL_SERVER_ERROR);
+                return AsyncApiResponse.respondWithError(
+                    SC_INTERNAL_SERVER_ERROR,
+                    "An internal error occurred, check the server logs for more details.");
               } else {
                 return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
               }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 
 public class AsyncApiResponse {
   final int responseCode;
@@ -34,9 +35,18 @@ public class AsyncApiResponse {
     return responseBody;
   }
 
+  /**
+   * Respond with error.
+   *
+   * <p>Errors must be defined with `CoreTypes.HTTP_ERROR_RESPONSE_TYPE`
+   *
+   * @param responseCode HTTP error code
+   * @param errorMessage Message text for response to user
+   * @return AsyncApiResponse with a HttpErrorResponse as the responseBody
+   */
   public static AsyncApiResponse respondWithError(
-      final int responseCode, final Object responseBody) {
-    return new AsyncApiResponse(responseCode, responseBody);
+      final int responseCode, final String errorMessage) {
+    return new AsyncApiResponse(responseCode, new HttpErrorResponse(responseCode, errorMessage));
   }
 
   public static AsyncApiResponse respondWithCode(final int responseCode) {

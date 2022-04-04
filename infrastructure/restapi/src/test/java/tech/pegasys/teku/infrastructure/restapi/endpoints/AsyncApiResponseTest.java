@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 
 public class AsyncApiResponseTest {
   private static final String BODY = "{\"slot\":\"1\"}";
@@ -31,9 +32,11 @@ public class AsyncApiResponseTest {
 
   @Test
   void shouldRespondWithError() {
-    final AsyncApiResponse response = AsyncApiResponse.respondWithError(SC_BAD_REQUEST, BODY);
+    final AsyncApiResponse response =
+        AsyncApiResponse.respondWithError(SC_BAD_REQUEST, "bad request");
     assertThat(response.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.getResponseBody().orElseThrow()).isEqualTo(BODY);
+    assertThat(response.getResponseBody().orElseThrow())
+        .isEqualTo(new HttpErrorResponse(SC_BAD_REQUEST, "bad request"));
   }
 
   @Test
