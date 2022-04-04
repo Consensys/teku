@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("JavaCase")
-public enum EventType { // TODO move logic outside of here?
+public enum EventType {
   head,
   block,
   attestation,
