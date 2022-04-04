@@ -95,7 +95,7 @@ public class GenesisGenerator {
           // We do still verify the signature
           genesisSpec
               .getBlockProcessor()
-              .processDepositWithoutCheckingMerkleProof(state, deposit, keyCache);
+              .processDepositWithoutCheckingMerkleProof(state, deposit, keyCache, false);
 
           processActivation(deposit);
         });
