@@ -349,6 +349,6 @@ public class EventSubscriptionManagerTest {
     String expected =
         eventString.substring(eventString.indexOf("{"), eventString.lastIndexOf("}") + 1);
     String result = JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition());
-    assertThat(expected).isEqualTo(result);
+    assertThat(result).isEqualTo(expected);
   }
 }
