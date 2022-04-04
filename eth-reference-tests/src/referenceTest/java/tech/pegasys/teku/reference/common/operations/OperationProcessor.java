@@ -53,6 +53,6 @@ public interface OperationProcessor {
       MutableBeaconState state,
       ExecutionPayloadHeader payloadHeader,
       Optional<ExecutionPayload> payload,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 }

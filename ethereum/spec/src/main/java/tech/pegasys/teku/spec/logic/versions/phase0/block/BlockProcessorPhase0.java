@@ -101,9 +101,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      ExecutionPayloadHeader payloadHeader,
-      Optional<ExecutionPayload> payload,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final ExecutionPayloadHeader payloadHeader,
+      final Optional<ExecutionPayload> payload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }

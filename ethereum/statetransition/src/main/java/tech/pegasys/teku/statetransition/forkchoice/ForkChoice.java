@@ -225,7 +225,10 @@ public class ForkChoice {
       postState =
           spec.getBlockProcessor(block.getSlot())
               .processAndValidateBlock(
-                  block, blockSlotState.get(), indexedAttestationCache, payloadExecutor);
+                  block,
+                  blockSlotState.get(),
+                  indexedAttestationCache,
+                  Optional.of(payloadExecutor));
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);

@@ -47,7 +47,7 @@ public interface BlockProcessor {
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException;
 
   /**
@@ -67,7 +67,7 @@ public interface BlockProcessor {
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -75,7 +75,7 @@ public interface BlockProcessor {
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -124,7 +124,7 @@ public interface BlockProcessor {
       MutableBeaconState state,
       ExecutionPayloadHeader executionPayloadHeader,
       Optional<ExecutionPayload> executionPayload,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
   boolean isOptimistic();

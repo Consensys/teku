@@ -77,7 +77,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     final BeaconBlockBody blockBody = block.getBody();
@@ -111,7 +111,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final MutableBeaconState genericState,
       final ExecutionPayloadHeader executionPayloadHeader,
       final Optional<ExecutionPayload> executionPayload,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     if (miscHelpersBellatrix.isMergeTransitionComplete(state)) {
@@ -136,10 +136,12 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
           "Execution payload timestamp does not match time for state slot");
     }
 
-    if (executionPayload.isPresent()) {
+    if (payloadExecutor.isPresent()) {
       final boolean optimisticallyAccept =
-          payloadExecutor.optimisticallyExecute(
-              state.getLatestExecutionPayloadHeader(), executionPayload.get());
+          payloadExecutor
+              .get()
+              .optimisticallyExecute(
+                  state.getLatestExecutionPayloadHeader(), executionPayload.orElseThrow());
       if (!optimisticallyAccept) {
         throw new BlockProcessingException("Execution payload was not optimistically accepted");
       }

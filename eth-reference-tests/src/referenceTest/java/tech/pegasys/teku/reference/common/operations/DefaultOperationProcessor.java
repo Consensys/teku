@@ -107,7 +107,7 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final MutableBeaconState state,
       final ExecutionPayloadHeader executionPayloadHeader,
       final Optional<ExecutionPayload> executionPayload,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
         .processExecutionPayload(state, executionPayloadHeader, executionPayload, payloadExecutor);

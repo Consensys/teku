@@ -226,7 +226,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             state,
             executionPayloadHeader,
             Optional.of(executionPayload),
-            (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid);
+            Optional.of(
+                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
     }
   }
