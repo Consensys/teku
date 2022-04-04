@@ -23,6 +23,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -32,7 +33,7 @@ public class BeaconStateBenchmark {
 
   private static final BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(0);
   private static final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(0).withPubKeyGenerator(() -> pubkey);
+      new DataStructureUtil(0, TestSpecFactory.createDefault()).withPubKeyGenerator(() -> pubkey);
   private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(32 * 1024);
 
   @Benchmark

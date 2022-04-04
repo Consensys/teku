@@ -30,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -39,7 +40,8 @@ class PostAggregateAndProofsTest {
   private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @SuppressWarnings("unused")
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
 
   private final Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);

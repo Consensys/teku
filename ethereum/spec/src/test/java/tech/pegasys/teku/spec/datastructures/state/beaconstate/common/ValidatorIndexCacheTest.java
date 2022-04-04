@@ -25,11 +25,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorIndexCacheTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   final BeaconState state = dataStructureUtil.randomBeaconState();
   final BLSPublicKey missingPublicKey = dataStructureUtil.randomPublicKey();
 
