@@ -740,6 +740,8 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
+
+    testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'
   }
 
   if (!baseInfrastructureProjects.contains(project.path)) {
