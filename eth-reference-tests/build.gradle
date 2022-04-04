@@ -34,7 +34,7 @@ task generateReferenceTestClasses(type: JavaExec) {
   group = "Execution"
   description = "Generate reference test classes"
   classpath = project.project(':eth-tests').sourceSets.referenceTest.runtimeClasspath
-  main = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
+  mainClass = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
   args = [project.file('src/referenceTest/generated_tests').absolutePath]
   systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
 }

@@ -36,7 +36,7 @@ public class ProtoArrayIndices {
   }
 
   public void remove(final Bytes32 root) {
-    rootIndices.remove(root);
+    rootIndices.removeInt(root);
   }
 
   public void offsetIndices(final int finalizedIndex) {
