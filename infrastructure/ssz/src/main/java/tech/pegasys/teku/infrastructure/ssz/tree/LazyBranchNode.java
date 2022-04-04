@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import com.google.common.base.Suppliers;
+import java.security.MessageDigest;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
@@ -95,6 +96,18 @@ public class LazyBranchNode implements BranchNode {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
       cachedHash = Hash.sha256(leftRoot, rightRoot);
+      this.cachedHash = cachedHash;
+    }
+    return cachedHash;
+  }
+
+  @Override
+  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      leftRoot.update(messageDigest);
+      rightRoot.update(messageDigest);
+      cachedHash = Bytes32.wrap(messageDigest.digest());
       this.cachedHash = cachedHash;
     }
     return cachedHash;
