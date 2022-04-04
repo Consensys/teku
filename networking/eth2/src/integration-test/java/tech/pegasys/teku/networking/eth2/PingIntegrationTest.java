@@ -65,31 +65,31 @@ public class PingIntegrationTest {
   public void testPingUpdatesMetadata() throws Exception {
     setUp(Duration.ofDays(1));
 
-    Optional<SszBitvector> attNets1_0 = peer1.getRemoteAttestationSubnets();
-    Optional<SszBitvector> attNets2_0 = peer2.getRemoteAttestationSubnets();
+    Optional<SszBitvector> initialAttNets1 = peer1.getRemoteAttestationSubnets();
+    Optional<SszBitvector> initialAttNets2 = peer2.getRemoteAttestationSubnets();
 
-    assertThat(attNets1_0.isEmpty() || attNets1_0.get().getBitCount() == 0).isTrue();
-    assertThat(attNets2_0.isEmpty() || attNets2_0.get().getBitCount() == 0).isTrue();
+    assertThat(initialAttNets1.isEmpty() || initialAttNets1.get().getBitCount() == 0).isTrue();
+    assertThat(initialAttNets2.isEmpty() || initialAttNets2.get().getBitCount() == 0).isTrue();
 
     MetadataMessage md1 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
 
-    UInt64 ping1_0 = peer1.sendPing().get(10, TimeUnit.SECONDS);
-    UInt64 ping2_0 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 firstPing1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 firstPing2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
 
-    assertThat(ping1_0).isEqualTo(md1.getSeqNumber());
-    assertThat(ping2_0).isEqualTo(md2.getSeqNumber());
+    assertThat(firstPing1).isEqualTo(md1.getSeqNumber());
+    assertThat(firstPing2).isEqualTo(md2.getSeqNumber());
 
-    UInt64 ping1_1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
-    UInt64 ping2_1 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 secondPing1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 secondPing2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
 
-    assertThat(ping1_1).isEqualTo(md1.getSeqNumber());
-    assertThat(ping2_1).isEqualTo(md2.getSeqNumber());
+    assertThat(secondPing1).isEqualTo(md1.getSeqNumber());
+    assertThat(secondPing2).isEqualTo(md2.getSeqNumber());
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     Thread.sleep(100);
-    UInt64 ping1_2 = peer1.sendPing().get(10, TimeUnit.SECONDS);
-    assertThat(ping1_2).isGreaterThan(ping1_1);
+    UInt64 thirdPing1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    assertThat(thirdPing1).isGreaterThan(secondPing1);
 
     SszBitvector expectedBitvector1 =
         SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(0, 1, 8);
@@ -99,8 +99,8 @@ public class PingIntegrationTest {
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(2, 4));
     Thread.sleep(100);
-    UInt64 ping2_2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
-    assertThat(ping2_2).isEqualTo(ping2_1);
+    UInt64 thirdPing2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+    assertThat(thirdPing2).isEqualTo(secondPing2);
 
     SszBitvector expectedBitvector2 =
         SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(2, 4);

@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 
 public class EpochProcessingTestExecutor implements TestExecutor {
 
-  public static ImmutableMap<String, TestExecutor> EPOCH_PROCESSING_TEST_TYPES =
+  public static final ImmutableMap<String, TestExecutor> EPOCH_PROCESSING_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "epoch_processing/slashings",

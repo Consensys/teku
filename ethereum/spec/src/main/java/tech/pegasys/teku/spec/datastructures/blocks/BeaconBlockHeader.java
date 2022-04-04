@@ -54,18 +54,14 @@ public class BeaconBlockHeader
   }
 
   public BeaconBlockHeader(
-      UInt64 slot,
-      UInt64 proposer_index,
-      Bytes32 parent_root,
-      Bytes32 state_root,
-      Bytes32 body_root) {
+      UInt64 slot, UInt64 proposerIndex, Bytes32 parentRoot, Bytes32 stateRoot, Bytes32 bodyRoot) {
     super(
         SSZ_SCHEMA,
         SszUInt64.of(slot),
-        SszUInt64.of(proposer_index),
-        SszBytes32.of(parent_root),
-        SszBytes32.of(state_root),
-        SszBytes32.of(body_root));
+        SszUInt64.of(proposerIndex),
+        SszBytes32.of(parentRoot),
+        SszBytes32.of(stateRoot),
+        SszBytes32.of(bodyRoot));
   }
 
   public BeaconBlockHeader(BeaconBlockHeader header) {
@@ -83,7 +79,7 @@ public class BeaconBlockHeader
    * @return The latest block header from the state, with stateRoot pointing to the supplied state
    */
   public static BeaconBlockHeader fromState(final BeaconState state) {
-    BeaconBlockHeader latestHeader = state.getLatest_block_header();
+    BeaconBlockHeader latestHeader = state.getLatestBlockHeader();
 
     if (latestHeader.getStateRoot().isZero()) {
       // If the state root is empty, replace it with the current state root

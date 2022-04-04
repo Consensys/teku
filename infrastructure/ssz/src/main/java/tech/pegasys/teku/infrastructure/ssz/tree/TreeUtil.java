@@ -53,7 +53,7 @@ public class TreeUtil {
 
   @VisibleForTesting public static final TreeNode[] ZERO_TREES;
 
-  public static ImmutableMap<Bytes32, TreeNode> ZERO_TREES_BY_ROOT;
+  public static final ImmutableMap<Bytes32, TreeNode> ZERO_TREES_BY_ROOT;
 
   static {
     ZERO_TREES = new TreeNode[64];
@@ -100,7 +100,7 @@ public class TreeUtil {
       checkArgument(defaultNodesCount == 1);
       return defaultNode;
     } else {
-      long leftNodesCount = Math.min(defaultNodesCount, 1 << (depth - 1));
+      long leftNodesCount = Math.min(defaultNodesCount, 1L << (depth - 1));
       long rightNodesCount = defaultNodesCount - leftNodesCount;
       TreeNode lTree = createTree(defaultNode, leftNodesCount, depth - 1);
       TreeNode rTree =

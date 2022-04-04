@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class AttestationData {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
@@ -52,7 +53,7 @@ public class AttestationData {
   public AttestationData(tech.pegasys.teku.spec.datastructures.operations.AttestationData data) {
     this.slot = data.getSlot();
     this.index = data.getIndex();
-    this.beacon_block_root = data.getBeacon_block_root();
+    this.beacon_block_root = data.getBeaconBlockRoot();
     this.source = new Checkpoint(data.getSource());
     this.target = new Checkpoint(data.getTarget());
   }

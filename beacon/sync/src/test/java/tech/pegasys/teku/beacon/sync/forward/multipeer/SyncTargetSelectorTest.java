@@ -26,6 +26,7 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChains;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -35,7 +36,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 class SyncTargetSelectorTest {
 
   private static final int SYNC_THRESHOLD = 40;
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private UInt64 suitableSyncTargetSlot;
 

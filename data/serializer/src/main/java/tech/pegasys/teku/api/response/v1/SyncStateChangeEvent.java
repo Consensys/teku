@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
+@SuppressWarnings("JavaCase")
 public class SyncStateChangeEvent {
   @JsonProperty("sync_state")
   public final String sync_state;

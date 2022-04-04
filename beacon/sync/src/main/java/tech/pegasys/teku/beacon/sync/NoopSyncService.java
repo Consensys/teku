@@ -64,7 +64,9 @@ public class NoopSyncService
 
   @Override
   public long subscribeToSyncStateChangesAndUpdate(SyncStateSubscriber subscriber) {
-    return 0;
+    final long subscriptionId = subscribeToSyncStateChanges(subscriber);
+    subscriber.onSyncStateChange(getCurrentSyncState());
+    return subscriptionId;
   }
 
   @Override

@@ -21,11 +21,13 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BatchChainTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private final TargetChain targetChain =
       TargetChainTestUtil.chainWith(new SlotAndBlockRoot(UInt64.MAX_VALUE, Bytes32.ZERO));
   private final StubBatchFactory batchFactory =

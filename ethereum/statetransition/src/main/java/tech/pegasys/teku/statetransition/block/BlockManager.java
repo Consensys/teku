@@ -50,7 +50,6 @@ public class BlockManager extends Service
   private final BlockValidator validator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
-  private final boolean blockImportPerformanceEnabled;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
@@ -60,6 +59,8 @@ public class BlockManager extends Service
   private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
+  private final Optional<BlockImportMetrics> blockImportMetrics;
+
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
@@ -68,7 +69,7 @@ public class BlockManager extends Service
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final boolean blockImportPerformanceEnabled) {
+      final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
@@ -76,7 +77,7 @@ public class BlockManager extends Service
     this.validator = validator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
-    this.blockImportPerformanceEnabled = blockImportPerformanceEnabled;
+    this.blockImportMetrics = blockImportMetrics;
   }
 
   @Override
@@ -101,8 +102,9 @@ public class BlockManager extends Service
 
     final Optional<BlockImportPerformance> blockImportPerformance;
 
-    if (blockImportPerformanceEnabled) {
-      final BlockImportPerformance performance = new BlockImportPerformance(timeProvider);
+    if (blockImportMetrics.isPresent()) {
+      final BlockImportPerformance performance =
+          new BlockImportPerformance(timeProvider, blockImportMetrics.get());
       performance.arrival(recentChainData, block.getSlot());
       blockImportPerformance = Optional.of(performance);
     } else {
@@ -165,7 +167,8 @@ public class BlockManager extends Service
         .orElseGet(
             () ->
                 handleBlockImport(block, blockImportPerformance)
-                    .thenPeek(__ -> lateBlockImportCheck(blockImportPerformance, block)))
+                    .thenPeek(
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -273,8 +276,10 @@ public class BlockManager extends Service
 
   private void lateBlockImportCheck(
       final Optional<BlockImportPerformance> maybeBlockImportPerformance,
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block,
+      final BlockImportResult blockImportResult) {
     maybeBlockImportPerformance.ifPresent(
-        blockImportPerformance -> blockImportPerformance.processingComplete(eventLogger, block));
+        blockImportPerformance ->
+            blockImportPerformance.processingComplete(eventLogger, block, blockImportResult));
   }
 }

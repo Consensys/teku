@@ -39,6 +39,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
 
   private final List<String> validatorKeys;
@@ -60,6 +61,7 @@ public class ValidatorConfig {
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
   private final boolean blindedBeaconBlocksApiEnabled;
+  private final boolean proposerMevBoostEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -80,6 +82,7 @@ public class ValidatorConfig {
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final Optional<String> proposerConfigSource,
       final boolean refreshProposerConfigFromSource,
+      final boolean proposerMevBoostEnabled,
       final boolean blindedBeaconBlocksApiEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -103,6 +106,7 @@ public class ValidatorConfig {
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
     this.blindedBeaconBlocksApiEnabled = blindedBeaconBlocksApiEnabled;
+    this.proposerMevBoostEnabled = proposerMevBoostEnabled;
   }
 
   public static Builder builder() {
@@ -180,6 +184,10 @@ public class ValidatorConfig {
     return blindedBeaconBlocksApiEnabled;
   }
 
+  public boolean isProposerMevBoostEnabled() {
+    return proposerMevBoostEnabled;
+  }
+
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && proposerConfigSource.isEmpty()
@@ -213,6 +221,7 @@ public class ValidatorConfig {
     private Optional<String> proposerConfigSource = Optional.empty();
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
+    private boolean proposerMevBoostEnabled = DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
     private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
     private Builder() {}
@@ -339,6 +348,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder proposerMevBoostEnabled(final boolean proposerMevBoostEnabled) {
+      this.proposerMevBoostEnabled = proposerMevBoostEnabled;
+      return this;
+    }
+
     public Builder blindedBeaconBlocksApiEnabled(final boolean blindedBeaconBlockEnabled) {
       this.blindedBlocksApiEnabled = blindedBeaconBlockEnabled;
       return this;
@@ -368,6 +382,7 @@ public class ValidatorConfig {
           proposerDefaultFeeRecipient,
           proposerConfigSource,
           refreshProposerConfigFromSource,
+          proposerMevBoostEnabled,
           blindedBlocksApiEnabled);
     }
 

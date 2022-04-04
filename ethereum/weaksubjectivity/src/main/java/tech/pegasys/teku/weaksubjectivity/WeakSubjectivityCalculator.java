@@ -83,6 +83,7 @@ public class WeakSubjectivityCalculator {
   }
 
   @VisibleForTesting
+  @SuppressWarnings("JavaCase") // Mathematicians...
   UInt64 computeWeakSubjectivityPeriod(
       final SpecVersion specVersion,
       final int activeValidatorCount,

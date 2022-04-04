@@ -50,7 +50,7 @@ class MockStartBeaconStateGeneratorTest {
             .createInitialBeaconState(genesisTime, deposits, Optional.empty());
 
     assertEquals(validatorCount, initialBeaconState.getValidators().size());
-    assertEquals(validatorCount, initialBeaconState.getEth1_data().getDeposit_count().longValue());
+    assertEquals(validatorCount, initialBeaconState.getEth1Data().getDepositCount().longValue());
 
     final List<BLSPublicKey> actualValidatorPublicKeys =
         initialBeaconState.getValidators().stream()

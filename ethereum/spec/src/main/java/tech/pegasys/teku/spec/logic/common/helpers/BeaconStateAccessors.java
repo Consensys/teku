@@ -128,9 +128,9 @@ public abstract class BeaconStateAccessors {
 
   public UInt64 getTotalBalance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
-    SszList<Validator> validator_registry = state.getValidators();
+    SszList<Validator> validatorRegistry = state.getValidators();
     for (Integer index : indices) {
-      sum = sum.plus(validator_registry.get(index).getEffective_balance());
+      sum = sum.plus(validatorRegistry.get(index).getEffectiveBalance());
     }
     return sum.max(config.getEffectiveBalanceIncrement());
   }
@@ -151,13 +151,13 @@ public abstract class BeaconStateAccessors {
     return committeeWeight.times(config.getProposerScoreBoost()).dividedBy(100);
   }
 
-  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
+  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domainType)
       throws IllegalArgumentException {
     UInt64 randaoIndex =
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
     Bytes32 mix = getRandaoMix(state, randaoIndex);
     Bytes epochBytes = uint64ToBytes(epoch);
-    return Hash.sha256(domain_type.getWrappedBytes(), epochBytes, mix);
+    return Hash.sha256(domainType.getWrappedBytes(), epochBytes, mix);
   }
 
   /**
@@ -172,10 +172,10 @@ public abstract class BeaconStateAccessors {
     return getCommitteeCountPerSlot(activeValidatorIndices.size());
   }
 
-  public UInt64 getCommitteeCountPerSlot(final int activeValidatorCount) {
+  public UInt64 getCommitteeCountPerSlot(final long activeValidatorCount) {
     return UInt64.valueOf(
         Math.max(
-            1,
+            1L,
             Math.min(
                 config.getMaxCommitteesPerSlot(),
                 Math.floorDiv(
@@ -185,7 +185,7 @@ public abstract class BeaconStateAccessors {
 
   public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(config.getEpochsPerHistoricalVector()).intValue();
-    return state.getRandao_mixes().getElement(index);
+    return state.getRandaoMixes().getElement(index);
   }
 
   public int getBeaconProposerIndex(BeaconState state) {
@@ -208,7 +208,7 @@ public abstract class BeaconStateAccessors {
   }
 
   public UInt64 getFinalityDelay(final BeaconState state) {
-    return getPreviousEpoch(state).minus(state.getFinalized_checkpoint().getEpoch());
+    return getPreviousEpoch(state).minus(state.getFinalizedCheckpoint().getEpoch());
   }
 
   public boolean isInactivityLeak(final UInt64 finalityDelay) {
@@ -240,7 +240,7 @@ public abstract class BeaconStateAccessors {
         slot,
         state.getSlot());
     int latestBlockRootIndex = slot.mod(config.getSlotsPerHistoricalRoot()).intValue();
-    return state.getBlock_roots().getElement(latestBlockRootIndex);
+    return state.getBlockRoots().getElement(latestBlockRootIndex);
   }
 
   public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
@@ -278,13 +278,13 @@ public abstract class BeaconStateAccessors {
             TekuPair.of(slot, index),
             p -> {
               UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
-              UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
+              UInt64 committeesPerSlot = getCommitteeCountPerSlot(state, epoch);
               int committeeIndex =
                   slot.mod(config.getSlotsPerEpoch())
-                      .times(committees_per_slot)
+                      .times(committeesPerSlot)
                       .plus(index)
                       .intValue();
-              int count = committees_per_slot.times(config.getSlotsPerEpoch()).intValue();
+              int count = committeesPerSlot.times(config.getSlotsPerEpoch()).intValue();
               return miscHelpers.computeCommittee(
                   state,
                   getActiveValidatorIndices(state, epoch),
@@ -315,8 +315,8 @@ public abstract class BeaconStateAccessors {
       final Bytes32 genesisValidatorsRoot) {
     Bytes4 forkVersion =
         (epoch.compareTo(fork.getEpoch()) < 0)
-            ? fork.getPrevious_version()
-            : fork.getCurrent_version();
+            ? fork.getPreviousVersion()
+            : fork.getCurrentVersion();
     return miscHelpers.computeDomain(domainType, forkVersion, genesisValidatorsRoot);
   }
 }

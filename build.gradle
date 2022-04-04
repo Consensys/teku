@@ -15,12 +15,12 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.3.0'
+  id 'com.diffplug.spotless' version '6.4.1'
   id 'com.github.ben-manes.versions' version '0.42.0'
   id 'com.github.jk1.dependency-license-report' version '2.1'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'net.ltgt.errorprone' version '2.0.2' apply false
-  id 'de.undercouch.download' version '5.0.2'
+  id 'de.undercouch.download' version '5.0.4'
   id 'org.ajoberstar.grgit' version '5.0.0'
 }
 
@@ -153,6 +153,8 @@ allprojects {
     ]
     options.forkOptions.jvmArgs += [
         '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+        '--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
+        '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED'
     ]
 
     options.errorprone {
@@ -174,6 +176,9 @@ allprojects {
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+
+      // Force strict compliance with Java naming conventions
+      check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
       // these checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
@@ -345,7 +350,7 @@ check.dependsOn('checkMavenCoordinateCollisions')
 
 application {
   applicationName = "teku"
-  mainClassName = "tech.pegasys.teku.Teku"
+  getMainClass().set("tech.pegasys.teku.Teku")
   applicationDefaultJvmArgs = [
       "-Dvertx.disableFileCPResolving=true",
       "-Dteku.home=TEKU_HOME",
@@ -364,7 +369,7 @@ task autocomplete(type: JavaExec) {
   dependsOn compileJava
   outputs.file "build/teku.autocomplete.sh"
 
-  main = application.mainClassName
+  mainClass = application.getMainClass()
   args "debug-tools", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
   classpath sourceSets.main.runtimeClasspath
 }
@@ -377,7 +382,7 @@ distTar {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
   compression = Compression.GZIP
-  extension = 'tar.gz'
+  archiveExtension = 'tar.gz'
 }
 
 distZip {
@@ -546,7 +551,7 @@ subprojects {
    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
     useJUnitPlatform()
     reports {
-      junitXml.enabled = true
+      junitXml.required = true
     }
     filter {
       // Support filtering tests with the --tests option to gradle
@@ -707,7 +712,7 @@ subprojects {
   }
 
   jar {
-    baseName jarName
+    archiveBaseName = jarName
     manifest {
       attributes(
           'Specification-Title': jarName,
@@ -735,6 +740,8 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
+
+    testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'
   }
 
   if (!baseInfrastructureProjects.contains(project.path)) {

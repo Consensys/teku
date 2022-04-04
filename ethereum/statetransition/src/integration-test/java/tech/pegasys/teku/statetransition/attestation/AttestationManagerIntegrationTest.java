@@ -97,15 +97,14 @@ class AttestationManagerIntegrationTest {
           attestationPool,
           attestationValidator,
           new AggregateAttestationValidator(
-              spec, recentChainData, attestationValidator, signatureVerificationService),
+              spec, attestationValidator, signatureVerificationService),
           signatureVerificationService,
           activeValidatorChannel);
 
   // Version of forks with same fork version for previous and current
   // Guarantees that's the version used for signing regardless of slot
-  private final Fork altairFork = createForkWithVersion(spec.fork(UInt64.ONE).getCurrent_version());
-  private final Fork phase0Fork =
-      createForkWithVersion(spec.fork(UInt64.ZERO).getCurrent_version());
+  private final Fork altairFork = createForkWithVersion(spec.fork(UInt64.ONE).getCurrentVersion());
+  private final Fork phase0Fork = createForkWithVersion(spec.fork(UInt64.ZERO).getCurrentVersion());
 
   @BeforeEach
   public void setup() {
@@ -226,7 +225,7 @@ class AttestationManagerIntegrationTest {
             attestationSlot, targetBlockAndState.getState(), targetBlockAndState, COMMITTEE_INDEX);
 
     final ForkInfo forkInfo =
-        new ForkInfo(fork, targetBlockAndState.getState().getGenesis_validators_root());
+        new ForkInfo(fork, targetBlockAndState.getState().getGenesisValidatorsRoot());
     final BLSSignature signature =
         storageSystem
             .chainBuilder()

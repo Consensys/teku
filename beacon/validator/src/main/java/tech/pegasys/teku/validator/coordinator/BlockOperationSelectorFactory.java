@@ -17,8 +17,13 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,6 +43,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
@@ -50,6 +56,7 @@ public class BlockOperationSelectorFactory {
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionEngineChannel executionEngineChannel;
+  private final boolean isMevBoostEnabled;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -61,8 +68,9 @@ public class BlockOperationSelectorFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      ForkChoiceNotifier forkChoiceNotifier,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final ExecutionEngineChannel executionEngineChannel,
+      final boolean isMevBoostEnabled) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -74,6 +82,7 @@ public class BlockOperationSelectorFactory {
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionEngineChannel = executionEngineChannel;
+    this.isMevBoostEnabled = isMevBoostEnabled;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
@@ -102,10 +111,9 @@ public class BlockOperationSelectorFactory {
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
               slashing ->
-                  !exitedValidators.contains(
-                      slashing.getHeader_1().getMessage().getProposerIndex()),
+                  !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex()),
               slashing ->
-                  exitedValidators.add(slashing.getHeader_1().getMessage().getProposerIndex()));
+                  exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
       // Collect exits to include
       final SszList<SignedVoluntaryExit> voluntaryExits =
@@ -126,26 +134,71 @@ public class BlockOperationSelectorFactory {
           .syncAggregate(
               () ->
                   contributionPool.createSyncAggregateForBlock(
-                      blockSlotState.getSlot(), parentRoot))
-          .executionPayload(
+                      blockSlotState.getSlot(), parentRoot));
+
+      // execution Payload handling
+      if (bodyBuilder.isBlinded()) {
+        if (isMevBoostEnabled) {
+
+          // mev-boost is enabled and a blinded block has been requested
+          // we can call builder api to get a payload header
+          bodyBuilder.executionPayloadHeader(
+              payloadProvider(
+                  parentRoot,
+                  blockSlotState,
+                  () ->
+                      SchemaDefinitionsBellatrix.required(
+                              spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                          .getExecutionPayloadHeaderSchema()
+                          .getDefault(),
+                  (payloadId) ->
+                      executionEngineChannel
+                          .getPayloadHeader(payloadId, blockSlotState.getSlot())
+                          .join()));
+          return;
+        }
+
+        // blinded block has been requested but mev-boost is not enabled
+        throw new UnsupportedOperationException(
+            "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
+      }
+
+      // non-blinded block requested
+      if (isMevBoostEnabled) {
+        LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
+      }
+
+      bodyBuilder.executionPayload(
+          payloadProvider(
+              parentRoot,
+              blockSlotState,
               () ->
-                  forkChoiceNotifier
-                      .getPayloadId(parentRoot, blockSlotState.getSlot())
-                      .thenApply(
-                          maybePayloadId -> {
-                            if (maybePayloadId.isEmpty()) {
-                              // TTD not reached
-                              return SchemaDefinitionsBellatrix.required(
-                                      spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                                  .getExecutionPayloadSchema()
-                                  .getDefault();
-                            } else {
-                              return executionEngineChannel
-                                  .getPayload(maybePayloadId.get(), blockSlotState.getSlot())
-                                  .join();
-                            }
-                          })
-                      .join());
+                  SchemaDefinitionsBellatrix.required(
+                          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                      .getExecutionPayloadSchema()
+                      .getDefault(),
+              (payloadId) ->
+                  executionEngineChannel.getPayload(payloadId, blockSlotState.getSlot()).join()));
     };
+  }
+
+  private <T> Supplier<T> payloadProvider(
+      final Bytes32 parentRoot,
+      final BeaconState blockSlotState,
+      Supplier<T> defaultSupplier,
+      Function<Bytes8, T> supplier) {
+    return () ->
+        forkChoiceNotifier
+            .getPayloadId(parentRoot, blockSlotState.getSlot())
+            .thenApply(
+                maybePayloadId -> {
+                  if (maybePayloadId.isEmpty()) {
+                    // TTD not reached
+                    return defaultSupplier.get();
+                  } else {
+                    return supplier.apply(maybePayloadId.get());
+                  }
+                })
+            .join();
   }
 }

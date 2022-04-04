@@ -53,12 +53,12 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
     super(type, backingNode);
   }
 
-  public Eth1Data(Bytes32 deposit_root, UInt64 deposit_count, Bytes32 block_hash) {
+  public Eth1Data(Bytes32 depositRoot, UInt64 depositCount, Bytes32 blockHash) {
     super(
         SSZ_SCHEMA,
-        SszBytes32.of(deposit_root),
-        SszUInt64.of(deposit_count),
-        SszBytes32.of(block_hash));
+        SszBytes32.of(depositRoot),
+        SszUInt64.of(depositCount),
+        SszBytes32.of(blockHash));
   }
 
   public Eth1Data() {
@@ -66,20 +66,20 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
   }
 
   public Eth1Data withBlockHash(final Bytes32 blockHash) {
-    return new Eth1Data(getDeposit_root(), getDeposit_count(), blockHash);
+    return new Eth1Data(getDepositRoot(), getDepositCount(), blockHash);
   }
 
   /** @return the deposit_root */
-  public Bytes32 getDeposit_root() {
+  public Bytes32 getDepositRoot() {
     return getField0().get();
   }
 
-  public UInt64 getDeposit_count() {
+  public UInt64 getDepositCount() {
     return getField1().get();
   }
 
   /** @return the block_hash */
-  public Bytes32 getBlock_hash() {
+  public Bytes32 getBlockHash() {
     return getField2().get();
   }
 }

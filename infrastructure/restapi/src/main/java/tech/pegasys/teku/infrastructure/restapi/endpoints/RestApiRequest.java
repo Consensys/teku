@@ -26,8 +26,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class RestApiRequest {
@@ -36,17 +34,9 @@ public class RestApiRequest {
   private final Map<String, String> pathParamMap;
   private final Map<String, List<String>> queryParamMap;
 
-  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
-    DeserializableTypeDefinition<T> bodySchema =
-        (DeserializableTypeDefinition<T>) metadata.getRequestBodyType();
-
-    final String body = context.body();
-    final T result = JsonUtil.parse(body, bodySchema);
-    if (result == null) {
-      throw new MissingRequestBodyException();
-    }
-    return result;
+    return metadata.getRequestBody(context.body());
   }
 
   public RestApiRequest(final Context context, final EndpointMetadata metadata) {
@@ -84,17 +74,30 @@ public class RestApiRequest {
     context.status(statusCode);
   }
 
-  public String getPathParam(final String pathParameter) {
-    return pathParamMap.get(pathParameter);
+  public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
   }
 
-  public int getQueryParamAsInt(final String queryParameter) {
-    return SingleQueryParameterUtils.getParameterValueAsInt(queryParamMap, queryParameter);
+  public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
+    if (!queryParamMap.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        parameterMetadata
+            .getType()
+            .deserializeFromString(
+                SingleQueryParameterUtils.validateQueryParameter(
+                    queryParamMap, parameterMetadata.getName())));
   }
 
-  public Optional<Integer> getQueryParamAsOptionalInteger(final String queryParameter) {
-    return SingleQueryParameterUtils.getParameterValueAsIntegerIfPresent(
-        queryParamMap, queryParameter);
+  public <T> T getQueryParameter(final ParameterMetadata<T> parameterMetadata) {
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(
+            SingleQueryParameterUtils.validateQueryParameter(
+                queryParamMap, parameterMetadata.getName()));
   }
 
   public <T> void handleOptionalResult(

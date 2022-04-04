@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
+@SuppressWarnings("JavaCase")
 public class BLSPubKey {
   /** The number of bytes in this value - i.e. 48 */
   private static final int SIZE = 48;

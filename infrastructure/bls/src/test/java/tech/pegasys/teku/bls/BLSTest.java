@@ -305,19 +305,19 @@ public abstract class BLSTest {
 
   @Test
   void succeedsWhenWeCanSignAndVerifyWithValidDST() {
-    final String DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+    final String dst = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(42);
     final Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, DST);
-    assertTrue(BLS.verify(keyPair.getPublicKey(), message, signature, DST));
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, dst);
+    assertTrue(BLS.verify(keyPair.getPublicKey(), message, signature, dst));
   }
 
   @Test
   void verifyWithDifferentDSTFails() {
-    final String DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+    final String dst = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(42);
     final Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, DST);
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, dst);
     assertFalse(BLS.verify(keyPair.getPublicKey(), message, signature)); // uses ETH2_DST
   }
 }

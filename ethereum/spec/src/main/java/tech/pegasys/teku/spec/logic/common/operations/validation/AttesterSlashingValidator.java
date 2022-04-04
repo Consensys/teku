@@ -55,28 +55,24 @@ public class AttesterSlashingValidator
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
       final SlashedIndicesCaptor slashedIndicesCaptor) {
-    IndexedAttestation attestation_1 = attesterSlashing.getAttestation_1();
-    IndexedAttestation attestation_2 = attesterSlashing.getAttestation_2();
+    IndexedAttestation attestation1 = attesterSlashing.getAttestation1();
+    IndexedAttestation attestation2 = attesterSlashing.getAttestation2();
     return firstOf(
         () ->
             check(
                 attestationUtil.isSlashableAttestationData(
-                    attestation_1.getData(), attestation_2.getData()),
+                    attestation1.getData(), attestation2.getData()),
                 AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE),
         () ->
             check(
-                attestationUtil
-                    .isValidIndexedAttestation(fork, state, attestation_1)
-                    .isSuccessful(),
+                attestationUtil.isValidIndexedAttestation(fork, state, attestation1).isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_1_INVALID),
         () ->
             check(
-                attestationUtil
-                    .isValidIndexedAttestation(fork, state, attestation_2)
-                    .isSuccessful(),
+                attestationUtil.isValidIndexedAttestation(fork, state, attestation2).isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_2_INVALID),
         () -> {
-          boolean slashed_any = false;
+          boolean slashedAny = false;
 
           Set<UInt64> intersectingIndices = attesterSlashing.getIntersectingValidatorIndices();
 
@@ -85,11 +81,11 @@ public class AttesterSlashingValidator
                 state.getValidators().get(toIntExact(index.longValue())),
                 beaconStateAccessors.getCurrentEpoch(state))) {
               slashedIndicesCaptor.captureSlashedValidatorIndex(index);
-              slashed_any = true;
+              slashedAny = true;
             }
           }
 
-          return check(slashed_any, AttesterSlashingInvalidReason.NO_ONE_SLASHED);
+          return check(slashedAny, AttesterSlashingInvalidReason.NO_ONE_SLASHED);
         });
   }
 

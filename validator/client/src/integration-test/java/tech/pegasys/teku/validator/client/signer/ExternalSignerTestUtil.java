@@ -30,7 +30,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 class ExternalSignerTestUtil {
-  private static final JsonProvider jsonProvider = new JsonProvider();
+  private static final JsonProvider JSON_PROVIDER = new JsonProvider();
 
   static void verifySignRequest(
       final ClientAndServer client,
@@ -41,7 +41,7 @@ class ExternalSignerTestUtil {
         request()
             .withMethod("POST")
             .withContentType(MediaType.APPLICATION_JSON)
-            .withBody(json(jsonProvider.objectToJSON(signingRequestBody), STRICT))
+            .withBody(json(JSON_PROVIDER.objectToJSON(signingRequestBody), STRICT))
             .withPath(ExternalSigner.EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey));
   }
 

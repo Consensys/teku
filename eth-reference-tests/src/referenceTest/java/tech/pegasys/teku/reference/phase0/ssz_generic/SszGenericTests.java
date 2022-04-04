@@ -18,7 +18,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 
 public class SszGenericTests {
 
-  public static ImmutableMap<String, TestExecutor> SSZ_GENERIC_TEST_TYPES =
+  public static final ImmutableMap<String, TestExecutor> SSZ_GENERIC_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Generic
           .put("ssz_generic/basic_vector", new SszGenericBasicVectorTestExecutor())

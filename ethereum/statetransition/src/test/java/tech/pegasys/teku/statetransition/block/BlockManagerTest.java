@@ -26,6 +26,12 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -121,18 +127,18 @@ public class BlockManagerTest {
           blockValidator,
           timeProvider,
           eventLogger,
-          true);
+          Optional.of(mock(BlockImportMetrics.class)));
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach
@@ -262,7 +268,7 @@ public class BlockManagerTest {
             mock(BlockValidator.class),
             timeProvider,
             eventLogger,
-            false);
+            Optional.empty());
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -573,7 +579,18 @@ public class BlockManagerTest {
         .lateBlockImport(
             block.getRoot(),
             block.getSlot(),
-            "Received 1000ms, Pre-state retrieved +3000ms, Block processed +0ms, Transaction prepared +0ms, Transaction committed +0ms, Import complete +0ms");
+            ARRIVAL_EVENT_LABEL
+                + " 1000ms, "
+                + PRESTATE_RETRIEVED_EVENT_LABEL
+                + " +3000ms, "
+                + PROCESSED_EVENT_LABEL
+                + " +0ms, "
+                + TRANSACTION_PREPARED_EVENT_LABEL
+                + " +0ms, "
+                + TRANSACTION_COMMITTED_EVENT_LABEL
+                + " +0ms, "
+                + COMPLETED_EVENT_LABEL
+                + " +0ms");
   }
 
   @Test

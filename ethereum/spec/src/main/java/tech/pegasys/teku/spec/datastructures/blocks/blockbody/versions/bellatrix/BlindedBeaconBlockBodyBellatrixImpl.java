@@ -60,7 +60,7 @@ class BlindedBeaconBlockBodyBellatrixImpl
   BlindedBeaconBlockBodyBellatrixImpl(
       BlindedBeaconBlockBodySchemaBellatrixImpl type,
       SszSignature randaoReveal,
-      Eth1Data eth1_data,
+      Eth1Data eth1Data,
       SszBytes32 graffiti,
       SszList<ProposerSlashing> proposerSlashings,
       SszList<AttesterSlashing> attesterSlashings,
@@ -72,7 +72,7 @@ class BlindedBeaconBlockBodyBellatrixImpl
     super(
         type,
         randaoReveal,
-        eth1_data,
+        eth1Data,
         graffiti,
         proposerSlashings,
         attesterSlashings,

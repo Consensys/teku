@@ -24,12 +24,12 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
-    return getValidatorStats(getPrevious_epoch_attestations(), correctTargetRoot);
+    return getValidatorStats(getPreviousEpochAttestations(), correctTargetRoot);
   }
 
   @Override
   default CorrectAndLiveValidators getValidatorStatsCurrentEpoch(final Bytes32 correctTargetRoot) {
-    return getValidatorStats(getCurrent_epoch_attestations(), correctTargetRoot);
+    return getValidatorStats(getCurrentEpochAttestations(), correctTargetRoot);
   }
 
   private CorrectAndLiveValidators getValidatorStats(
@@ -47,7 +47,7 @@ interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
                 .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
                 .merge(
                     attestation.getData().getIndex(),
-                    attestation.getAggregation_bits(),
+                    attestation.getAggregationBits(),
                     SszBitlist::nullableOr);
           }
 
@@ -55,7 +55,7 @@ interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
               .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
               .merge(
                   attestation.getData().getIndex(),
-                  attestation.getAggregation_bits(),
+                  attestation.getAggregationBits(),
                   SszBitlist::nullableOr);
         });
 

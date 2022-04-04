@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("JavaCase")
 public class Eth1Data {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 deposit_root;
@@ -33,9 +34,9 @@ public class Eth1Data {
   public final Bytes32 block_hash;
 
   public Eth1Data(final tech.pegasys.teku.spec.datastructures.blocks.Eth1Data eth1Data) {
-    deposit_count = eth1Data.getDeposit_count();
-    deposit_root = eth1Data.getDeposit_root();
-    block_hash = eth1Data.getBlock_hash();
+    deposit_count = eth1Data.getDepositCount();
+    deposit_root = eth1Data.getDepositRoot();
+    block_hash = eth1Data.getBlockHash();
   }
 
   @JsonCreator

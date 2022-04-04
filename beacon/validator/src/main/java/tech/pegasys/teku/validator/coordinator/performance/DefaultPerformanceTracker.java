@@ -271,14 +271,15 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
               // data hash to inclusion slot to aggregation bitlist
               Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
                   new HashMap<>();
-              for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
-                for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
+              for (Map.Entry<UInt64, List<Attestation>> entry :
+                  attestationsIncludedOnChain.entrySet()) {
+                for (Attestation attestation : entry.getValue()) {
                   Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
                   NavigableMap<UInt64, SszBitlist> slotToBitlists =
                       slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                           attestationDataHash, __ -> new TreeMap<>());
                   slotToBitlists.merge(
-                      slot, attestation.getAggregationBits(), SszBitlist::nullableOr);
+                      entry.getKey(), attestation.getAggregationBits(), SszBitlist::nullableOr);
                 }
               }
 
@@ -305,8 +306,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                   correctTargetCount++;
 
                   // Check if the attestation had correct head block root
-                  Bytes32 attestationHeadBlockRoot =
-                      sentAttestation.getData().getBeacon_block_root();
+                  Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
                   if (attestationHeadBlockRoot.equals(
                       spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
                     correctHeadBlockCount++;

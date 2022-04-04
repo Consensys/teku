@@ -21,6 +21,7 @@ import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
+@SuppressWarnings("JavaCase")
 public class FinalityCheckpointsResponse {
   @JsonProperty("previous_justified")
   public final Checkpoint previous_justified;
@@ -42,13 +43,13 @@ public class FinalityCheckpointsResponse {
   }
 
   public static FinalityCheckpointsResponse fromState(BeaconState state) {
-    if (state.getFinalized_checkpoint().getEpoch().equals(UInt64.ZERO)) {
+    if (state.getFinalizedCheckpoint().getEpoch().equals(UInt64.ZERO)) {
       return new FinalityCheckpointsResponse(Checkpoint.EMPTY, Checkpoint.EMPTY, Checkpoint.EMPTY);
     }
     return new FinalityCheckpointsResponse(
-        new Checkpoint(state.getPrevious_justified_checkpoint()),
-        new Checkpoint(state.getCurrent_justified_checkpoint()),
-        new Checkpoint(state.getFinalized_checkpoint()));
+        new Checkpoint(state.getPreviousJustifiedCheckpoint()),
+        new Checkpoint(state.getCurrentJustifiedCheckpoint()),
+        new Checkpoint(state.getFinalizedCheckpoint()));
   }
 
   @Override

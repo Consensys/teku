@@ -80,44 +80,44 @@ public class Validator
 
   public Validator(
       BLSPublicKey pubkey,
-      Bytes32 withdrawal_credentials,
-      UInt64 effective_balance,
+      Bytes32 withdrawalCredentials,
+      UInt64 effectiveBalance,
       boolean slashed,
-      UInt64 activation_eligibility_epoch,
-      UInt64 activation_epoch,
-      UInt64 exit_epoch,
-      UInt64 withdrawable_epoch) {
+      UInt64 activationEligibilityEpoch,
+      UInt64 activationEpoch,
+      UInt64 exitEpoch,
+      UInt64 withdrawableEpoch) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        SszBytes32.of(withdrawal_credentials),
-        SszUInt64.of(effective_balance),
+        SszBytes32.of(withdrawalCredentials),
+        SszUInt64.of(effectiveBalance),
         SszBit.of(slashed),
-        SszUInt64.of(activation_eligibility_epoch),
-        SszUInt64.of(activation_epoch),
-        SszUInt64.of(exit_epoch),
-        SszUInt64.of(withdrawable_epoch));
+        SszUInt64.of(activationEligibilityEpoch),
+        SszUInt64.of(activationEpoch),
+        SszUInt64.of(exitEpoch),
+        SszUInt64.of(withdrawableEpoch));
   }
 
   public Validator(
       Bytes48 pubkey,
-      Bytes32 withdrawal_credentials,
-      UInt64 effective_balance,
+      Bytes32 withdrawalCredentials,
+      UInt64 effectiveBalance,
       boolean slashed,
-      UInt64 activation_eligibility_epoch,
-      UInt64 activation_epoch,
-      UInt64 exit_epoch,
-      UInt64 withdrawable_epoch) {
+      UInt64 activationEligibilityEpoch,
+      UInt64 activationEpoch,
+      UInt64 exitEpoch,
+      UInt64 withdrawableEpoch) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        SszBytes32.of(withdrawal_credentials),
-        SszUInt64.of(effective_balance),
+        SszBytes32.of(withdrawalCredentials),
+        SszUInt64.of(effectiveBalance),
         SszBit.of(slashed),
-        SszUInt64.of(activation_eligibility_epoch),
-        SszUInt64.of(activation_epoch),
-        SszUInt64.of(exit_epoch),
-        SszUInt64.of(withdrawable_epoch));
+        SszUInt64.of(activationEligibilityEpoch),
+        SszUInt64.of(activationEpoch),
+        SszUInt64.of(exitEpoch),
+        SszUInt64.of(withdrawableEpoch));
   }
 
   /**
@@ -136,11 +136,11 @@ public class Validator
     return getField0().getBLSPublicKey();
   }
 
-  public Bytes32 getWithdrawal_credentials() {
+  public Bytes32 getWithdrawalCredentials() {
     return getField1().get();
   }
 
-  public UInt64 getEffective_balance() {
+  public UInt64 getEffectiveBalance() {
     return getField2().get();
   }
 
@@ -148,91 +148,91 @@ public class Validator
     return getField3().get();
   }
 
-  public UInt64 getActivation_eligibility_epoch() {
+  public UInt64 getActivationEligibilityEpoch() {
     return getField4().get();
   }
 
-  public UInt64 getActivation_epoch() {
+  public UInt64 getActivationEpoch() {
     return getField5().get();
   }
 
-  public UInt64 getExit_epoch() {
+  public UInt64 getExitEpoch() {
     return getField6().get();
   }
 
-  public UInt64 getWithdrawable_epoch() {
+  public UInt64 getWithdrawableEpoch() {
     return getField7().get();
   }
 
-  public Validator withEffective_balance(UInt64 effective_balance) {
+  public Validator withEffectiveBalance(UInt64 effectiveBalance) {
     return new Validator(
         getPubkeyBytes(),
-        getWithdrawal_credentials(),
-        effective_balance,
+        getWithdrawalCredentials(),
+        effectiveBalance,
         isSlashed(),
-        getActivation_eligibility_epoch(),
-        getActivation_epoch(),
-        getExit_epoch(),
-        getWithdrawable_epoch());
+        getActivationEligibilityEpoch(),
+        getActivationEpoch(),
+        getExitEpoch(),
+        getWithdrawableEpoch());
   }
 
   public Validator withSlashed(boolean slashed) {
     return new Validator(
         getPubkeyBytes(),
-        getWithdrawal_credentials(),
-        getEffective_balance(),
+        getWithdrawalCredentials(),
+        getEffectiveBalance(),
         slashed,
-        getActivation_eligibility_epoch(),
-        getActivation_epoch(),
-        getExit_epoch(),
-        getWithdrawable_epoch());
+        getActivationEligibilityEpoch(),
+        getActivationEpoch(),
+        getExitEpoch(),
+        getWithdrawableEpoch());
   }
 
-  public Validator withActivation_eligibility_epoch(UInt64 activation_eligibility_epoch) {
+  public Validator withActivationEligibilityEpoch(UInt64 activationEligibilityEpoch) {
     return new Validator(
         getPubkeyBytes(),
-        getWithdrawal_credentials(),
-        getEffective_balance(),
+        getWithdrawalCredentials(),
+        getEffectiveBalance(),
         isSlashed(),
-        activation_eligibility_epoch,
-        getActivation_epoch(),
-        getExit_epoch(),
-        getWithdrawable_epoch());
+        activationEligibilityEpoch,
+        getActivationEpoch(),
+        getExitEpoch(),
+        getWithdrawableEpoch());
   }
 
-  public Validator withActivation_epoch(UInt64 activation_epoch) {
+  public Validator withActivationEpoch(UInt64 activationEpoch) {
     return new Validator(
         getPubkeyBytes(),
-        getWithdrawal_credentials(),
-        getEffective_balance(),
+        getWithdrawalCredentials(),
+        getEffectiveBalance(),
         isSlashed(),
-        getActivation_eligibility_epoch(),
-        activation_epoch,
-        getExit_epoch(),
-        getWithdrawable_epoch());
+        getActivationEligibilityEpoch(),
+        activationEpoch,
+        getExitEpoch(),
+        getWithdrawableEpoch());
   }
 
-  public Validator withExit_epoch(UInt64 exit_epoch) {
+  public Validator withExitEpoch(UInt64 exitEpoch) {
     return new Validator(
         getPubkeyBytes(),
-        getWithdrawal_credentials(),
-        getEffective_balance(),
+        getWithdrawalCredentials(),
+        getEffectiveBalance(),
         isSlashed(),
-        getActivation_eligibility_epoch(),
-        getActivation_epoch(),
-        exit_epoch,
-        getWithdrawable_epoch());
+        getActivationEligibilityEpoch(),
+        getActivationEpoch(),
+        exitEpoch,
+        getWithdrawableEpoch());
   }
 
-  public Validator withWithdrawable_epoch(UInt64 withdrawable_epoch) {
+  public Validator withWithdrawableEpoch(UInt64 withdrawableEpoch) {
     return new Validator(
         getPubkeyBytes(),
-        getWithdrawal_credentials(),
-        getEffective_balance(),
+        getWithdrawalCredentials(),
+        getEffectiveBalance(),
         isSlashed(),
-        getActivation_eligibility_epoch(),
-        getActivation_epoch(),
-        getExit_epoch(),
-        withdrawable_epoch);
+        getActivationEligibilityEpoch(),
+        getActivationEpoch(),
+        getExitEpoch(),
+        withdrawableEpoch);
   }
 }

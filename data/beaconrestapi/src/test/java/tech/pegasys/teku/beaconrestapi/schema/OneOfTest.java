@@ -88,19 +88,19 @@ public class OneOfTest {
                 isPhase0,
                 spec.forMilestone(SpecMilestone.PHASE0)
                     .getSchemaDefinitions()
-                    .getBlindedBlockSchema()
+                    .getBlindedBeaconBlockSchema()
                     .getJsonTypeDefinition())
             .withType(
                 isAltair,
                 spec.forMilestone(SpecMilestone.ALTAIR)
                     .getSchemaDefinitions()
-                    .getBlindedBlockSchema()
+                    .getBlindedBeaconBlockSchema()
                     .getJsonTypeDefinition())
             .withType(
                 isBellatrix,
                 spec.forMilestone(SpecMilestone.BELLATRIX)
                     .getSchemaDefinitions()
-                    .getBlindedBlockSchema()
+                    .getBlindedBeaconBlockSchema()
                     .getJsonTypeDefinition())
             .build();
 

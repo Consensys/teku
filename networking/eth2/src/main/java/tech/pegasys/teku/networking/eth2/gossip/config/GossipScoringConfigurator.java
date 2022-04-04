@@ -269,7 +269,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
         final double firstMessageDeliveryDecay,
         final Optional<MessageDeliveriesOptions> messageDeliveryOptions) {
       final double timeInMeshCap =
-          (double) Math.max(1, Duration.ofHours(1).dividedBy(scoringConfig.getSlotDuration()));
+          Math.max(1., Duration.ofHours(1).dividedBy(scoringConfig.getSlotDuration()));
       final double firstMessageDeliveriesCap =
           scoringConfig.calculateDecayConvergence(
               firstMessageDeliveryDecay, 2.0 * expectedMessageRate / scoringConfig.getD());

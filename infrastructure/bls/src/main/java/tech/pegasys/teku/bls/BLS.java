@@ -43,19 +43,19 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static BLS12381 BLS_IMPL;
+  private static BLS12381 blsImpl;
 
   static {
     resetBlsImplementation();
   }
 
   public static void setBlsImplementation(BLS12381 blsImpl) {
-    BLS_IMPL = blsImpl;
+    BLS.blsImpl = blsImpl;
   }
 
   public static void resetBlsImplementation() {
     if (BlstLoader.INSTANCE.isPresent()) {
-      BLS_IMPL = BlstLoader.INSTANCE.get();
+      blsImpl = BlstLoader.INSTANCE.get();
       LOG.info("BLS: loaded BLST library");
     } else {
       throw new BlsException("Failed to load Blst library.");
@@ -90,7 +90,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
-    if (BLSConstants.VERIFICATION_DISABLED) {
+    if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -184,7 +184,7 @@ public class BLS {
    */
   public static boolean fastAggregateVerify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    if (BLSConstants.VERIFICATION_DISABLED) {
+    if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -275,7 +275,7 @@ public class BLS {
       List<BLSSignature> signatures,
       boolean doublePairing,
       boolean parallel) {
-    if (BLSConstants.VERIFICATION_DISABLED) {
+    if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -400,7 +400,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
-    if (BLSConstants.VERIFICATION_DISABLED) {
+    if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -441,7 +441,7 @@ public class BLS {
    */
   public static boolean verify(
       BLSPublicKey publicKey, Bytes message, BLSSignature signature, String dst) {
-    if (BLSConstants.VERIFICATION_DISABLED) {
+    if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -449,7 +449,7 @@ public class BLS {
   }
 
   static BLS12381 getBlsImpl() {
-    return BLS_IMPL;
+    return blsImpl;
   }
 
   private static class InvalidBatchSemiAggregate implements BatchSemiAggregate {}

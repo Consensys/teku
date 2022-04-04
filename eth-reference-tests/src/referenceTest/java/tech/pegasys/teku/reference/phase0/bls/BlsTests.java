@@ -20,7 +20,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 
 public class BlsTests {
 
-  public static ImmutableMap<String, TestExecutor> BLS_TEST_TYPES =
+  public static final ImmutableMap<String, TestExecutor> BLS_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("bls/verify", new BlsVerifyTestExecutor())
           .put("bls/batch_verify", new BlsBatchVerifyTestExecutor())

@@ -228,7 +228,7 @@ public class DepositsFetcherTest {
     DepositContract.DepositEventEventResponse depositEventEventResponse =
         new DepositContract.DepositEventEventResponse();
     depositEventEventResponse.pubkey = new byte[48];
-    depositEventEventResponse.withdrawal_credentials = new byte[32];
+    depositEventEventResponse.withdrawalCredentials = new byte[32];
     depositEventEventResponse.amount = Longs.toByteArray(0);
     depositEventEventResponse.signature = new byte[96];
 

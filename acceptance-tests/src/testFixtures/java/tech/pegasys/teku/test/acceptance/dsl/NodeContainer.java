@@ -26,8 +26,6 @@ public class NodeContainer extends GenericContainer<NodeContainer> {
 
   private final Map<File, String> tarballToExpand = new HashMap<>();
 
-  public NodeContainer() {}
-
   public NodeContainer(final String dockerImageName) {
     super(dockerImageName);
   }

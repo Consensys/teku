@@ -26,6 +26,7 @@ import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
+@SuppressWarnings("JavaCase")
 public class GetStateResponseV2 {
 
   public final Version version;

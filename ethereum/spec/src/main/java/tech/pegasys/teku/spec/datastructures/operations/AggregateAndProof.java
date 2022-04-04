@@ -74,7 +74,7 @@ public class AggregateAndProof
     return getField1();
   }
 
-  public BLSSignature getSelection_proof() {
+  public BLSSignature getSelectionProof() {
     return getField2().getSignature();
   }
 }

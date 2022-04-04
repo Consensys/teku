@@ -40,6 +40,7 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetHealth extends MigratingEndpointAdapter {
@@ -48,6 +49,10 @@ public class GetHealth extends MigratingEndpointAdapter {
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
 
+  private static final ParameterMetadata<Integer> SYNCING_PARAMETER =
+      new ParameterMetadata<>(
+          SYNCING_STATUS, CoreTypes.INTEGER_TYPE.withDescription(SYNCING_STATUS_DESCRIPTION));
+
   public GetHealth(final DataProvider provider) {
     this(provider.getSyncDataProvider(), provider.getChainDataProvider());
   }
@@ -55,10 +60,11 @@ public class GetHealth extends MigratingEndpointAdapter {
   GetHealth(final SyncDataProvider syncProvider, final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getNodePeers")
-            .summary("Get node peers")
-            .description("Retrieves data about the node's network peers.")
-            .queryParam(SYNCING_STATUS, CoreTypes.string(SYNCING_STATUS_DESCRIPTION))
+            .operationId("GetNodeHealth")
+            .summary("Get node health")
+            .description(
+                "Returns node health status in http status codes. Useful for load balancers.")
+            .queryParam(SYNCING_PARAMETER)
             .tags(TAG_NODE)
             .response(SC_OK, "Node is ready")
             .response(SC_PARTIAL_CONTENT, "Node is syncing but can serve incomplete data")
@@ -105,7 +111,7 @@ public class GetHealth extends MigratingEndpointAdapter {
 
   private int getResponseCodeFromQueryParams(final RestApiRequest request) {
     try {
-      return request.getQueryParamAsOptionalInteger(SYNCING_STATUS).orElse(SC_PARTIAL_CONTENT);
+      return request.getOptionalQueryParameter(SYNCING_PARAMETER).orElse(SC_PARTIAL_CONTENT);
     } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal parameter in GetHealth", ex);
     }

@@ -9,6 +9,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'it.unimi.dsi:fastutil'
 
+    testImplementation 'org.xerial.snappy:snappy-java'
     testImplementation testFixtures(project(':ethereum:spec'))
 }
 

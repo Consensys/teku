@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
+@SuppressWarnings("JavaCase")
 public class ValidatorBlockResult {
   private final int responseCode;
 

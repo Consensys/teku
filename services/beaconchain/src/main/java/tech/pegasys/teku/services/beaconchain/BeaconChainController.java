@@ -84,6 +84,7 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
@@ -543,7 +544,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eth1DataCache,
                 VersionProvider.getDefaultGraffiti(),
                 forkChoiceNotifier,
-                executionEngine));
+                executionEngine,
+                beaconConfig.validatorConfig().isProposerMevBoostEnabled()));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -628,8 +630,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
-        new AggregateAttestationValidator(
-            spec, recentChainData, attestationValidator, signatureVerificationService);
+        new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
         (slot, attestations) ->
             attestations.forEach(
@@ -795,7 +796,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   dataProvider,
                   beaconConfig.beaconRestApiConfig(),
                   eventChannels,
-                  eventAsyncRunner));
+                  eventAsyncRunner,
+                  spec));
 
       if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
         final int initialValidatorsCount =
@@ -824,7 +826,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
-    BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
+    final BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
+    final Optional<BlockImportMetrics> importMetrics =
+        beaconConfig.getMetricsConfig().isBlockPerformanceEnabled()
+            ? Optional.of(BlockImportMetrics.create(metricsSystem))
+            : Optional.empty();
+
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =
           new ReexecutingExecutionPayloadBlockManager(
@@ -836,7 +843,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               EVENT_LOG,
               beaconAsyncRunner,
-              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
+              importMetrics);
     } else {
       blockManager =
           new BlockManager(
@@ -847,7 +854,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               blockValidator,
               timeProvider,
               EVENT_LOG,
-              beaconConfig.getMetricsConfig().isBlockPerformanceEnabled());
+              importMetrics);
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
@@ -941,7 +948,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
-          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
+          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesisTime());
           wsInitializer.validateInitialAnchor(anchor, currentSlot, spec);
         });
 
@@ -952,7 +959,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         EVENT_LOG.genesisEvent(
             anchor.getStateRoot(),
             recentChainData.getBestBlockRoot().orElseThrow(),
-            anchor.getState().getGenesis_time());
+            anchor.getState().getGenesisTime());
       }
     } else if (beaconConfig.interopConfig().isInteropEnabled()) {
       setupInteropState();
@@ -975,7 +982,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(),
         recentChainData.getBestBlockRoot().orElseThrow(),
-        genesisState.getGenesis_time());
+        genesisState.getGenesisTime());
   }
 
   protected void onStoreInitialized() {

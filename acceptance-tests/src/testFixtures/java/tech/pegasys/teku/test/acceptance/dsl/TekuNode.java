@@ -71,12 +71,15 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -94,7 +97,10 @@ public class TekuNode extends Node {
   private TekuNode(final Network network, final DockerVersion version, final Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
-    this.spec = SpecFactory.create(config.getNetworkName());
+
+    Consumer<SpecConfigBuilder> specConfigModifier =
+        config.getSpecConfigModifier().orElse(__ -> {});
+    this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -288,6 +294,33 @@ public class TekuNode extends Node {
             assertThat(fetchStateFinalityCheckpoints().get().finalized.epoch)
                 .isNotEqualTo(startingFinalizedEpoch),
         9,
+        MINUTES);
+  }
+
+  public void waitForNonDefaultExecutionPayload() {
+    LOG.debug("Wait for a block containing a non default execution payload");
+
+    waitFor(
+        () -> {
+          final Optional<SignedBlock> block = fetchHeadBlock();
+          assertThat(block).isPresent();
+          assertThat(block.get()).isInstanceOf(SignedBeaconBlockBellatrix.class);
+
+          final SignedBeaconBlockBellatrix bellatrixBlock =
+              (SignedBeaconBlockBellatrix) block.get();
+          final ExecutionPayload executionPayload =
+              bellatrixBlock
+                  .getMessage()
+                  .getBody()
+                  .executionPayload
+                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
+                  .orElseThrow();
+
+          assertThat(executionPayload.isDefault()).isFalse();
+          LOG.debug(
+              "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
+        },
+        5,
         MINUTES);
   }
 
@@ -554,7 +587,7 @@ public class TekuNode extends Node {
   }
 
   public static class Config {
-    public static String DEFAULT_NETWORK_NAME = "swift";
+    public static final String DEFAULT_NETWORK_NAME = "swift";
 
     private Optional<InputStream> maybeNetworkYaml = Optional.empty();
 
@@ -567,6 +600,7 @@ public class TekuNode extends Node {
     private final List<File> tarballsToCopy = new ArrayList<>();
 
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
+    private Optional<Consumer<SpecConfigBuilder>> specConfigModifier = Optional.empty();
 
     public Config() {
       configMap.put("network", networkName);
@@ -667,6 +701,33 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
+      configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
+      specConfigModifier =
+          Optional.of(
+              specConfigBuilder ->
+                  specConfigBuilder.bellatrixBuilder(
+                      bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
+      return this;
+    }
+
+    public Config withTotalTerminalDifficulty(final String totalTerminalDifficulty) {
+      configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+      return this;
+    }
+
+    public Config withValidatorProposerDefaultFeeRecipient(
+        final String validatorProposerDefaultFeeRecipient) {
+      configMap.put(
+          "validators-proposer-default-fee-recipient", validatorProposerDefaultFeeRecipient);
+      return this;
+    }
+
+    public Config withExecutionEngineEndpoint(final String eeEndpoint) {
+      configMap.put("ee-endpoint", eeEndpoint);
+      return this;
+    }
+
     public Config withRealNetwork() {
       configMap.put("p2p-enabled", true);
       return this;
@@ -680,12 +741,21 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withStartupTargetPeerCount(Integer startupTargetPeerCount) {
+      configMap.put("Xstartup-target-peer-count", startupTargetPeerCount);
+      return this;
+    }
+
     public String getPeerId() {
       return peerId.toBase58();
     }
 
     public Optional<GenesisStateConfig> getGenesisStateConfig() {
       return genesisStateConfig;
+    }
+
+    public Optional<Consumer<SpecConfigBuilder>> getSpecConfigModifier() {
+      return specConfigModifier;
     }
 
     public Map<File, String> write() throws Exception {

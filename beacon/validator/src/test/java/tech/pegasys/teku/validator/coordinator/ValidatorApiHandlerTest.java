@@ -103,8 +103,8 @@ class ValidatorApiHandlerTest {
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
   private final Spec spec = TestSpecFactory.createMinimalAltair();
-  private final UInt64 EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(EPOCH);
-  private final UInt64 PREVIOUS_EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
+  private final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
+  private final UInt64 previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
@@ -229,7 +229,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndicesSpecified() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
@@ -242,7 +242,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldUsePreviousDutyDependentRootWhenStateFromSameEpoch() {
-    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     when(chainDataClient.getStateAtSlotExact(any()))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
@@ -268,7 +268,7 @@ class ValidatorApiHandlerTest {
     final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key =
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
-    when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
@@ -284,7 +284,7 @@ class ValidatorApiHandlerTest {
     final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key =
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
-    when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
@@ -316,8 +316,8 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
-    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
-    when(chainDataClient.getStateAtSlotExact(EPOCH_START_SLOT))
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -330,8 +330,8 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldAllowOneEpochTolerance() {
-    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
-    when(chainDataClient.getStateAtSlotExact(EPOCH_START_SLOT))
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
@@ -343,8 +343,8 @@ class ValidatorApiHandlerTest {
 
   @Test
   void getProposerDuties_shouldReturnDutiesInOrder() {
-    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
-    when(chainDataClient.getStateAtSlotExact(EPOCH_START_SLOT))
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
@@ -357,12 +357,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   void getSyncCommitteeDuties_shouldFailForEpochTooFarAhead() {
-    final BeaconState state = dataStructureUtil.stateBuilderAltair().slot(EPOCH_START_SLOT).build();
+    final BeaconState state = dataStructureUtil.stateBuilderAltair().slot(epochStartSlot).build();
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
     when(chainDataClient.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     final int epochsPerSyncCommitteePeriod =
         SpecConfigAltair.required(spec.getSpecConfig(EPOCH)).getEpochsPerSyncCommitteePeriod();
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(EPOCH_START_SLOT);
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(epochStartSlot);
     final UInt64 firstSlotAfterNextSyncCommitteePeriod =
         syncCommitteeUtil
             .computeFirstEpochOfCurrentSyncCommitteePeriod(EPOCH)
@@ -399,7 +399,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager);
     // Best state is still in Phase0
     final BeaconState state =
-        dataStructureUtil.stateBuilderPhase0().slot(PREVIOUS_EPOCH_START_SLOT.minus(1)).build();
+        dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
     when(chainDataClient.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     when(chainDataClient.getStateAtSlotExact(any())).thenReturn(new SafeFuture<>());
@@ -410,7 +410,7 @@ class ValidatorApiHandlerTest {
 
     // The start of the sync committee period is prior to the fork block so we should use the
     // fork block to ensure we actually have sync committees available.
-    verify(chainDataClient).getStateAtSlotExact(EPOCH_START_SLOT);
+    verify(chainDataClient).getStateAtSlotExact(epochStartSlot);
   }
 
   @Test
@@ -418,7 +418,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE, dataStructureUtil.randomSignature(), Optional.empty());
+            ONE, dataStructureUtil.randomSignature(), Optional.empty(), false);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -435,7 +435,7 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, dataStructureUtil.randomSignature(), Optional.empty());
+            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), false);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -451,14 +451,15 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
-    when(blockFactory.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty()))
+    when(blockFactory.createUnsignedBlock(
+            blockSlotState, newSlot, randaoReveal, Optional.empty(), false))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty());
+        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty(), false);
 
     verify(blockFactory)
-        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty());
+        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty(), false);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
@@ -477,7 +478,7 @@ class ValidatorApiHandlerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
-    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
     final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
@@ -503,7 +504,7 @@ class ValidatorApiHandlerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
-    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
     final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
@@ -910,7 +911,7 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithActiveValidators() {
-    return createStateWithActiveValidators(PREVIOUS_EPOCH_START_SLOT);
+    return createStateWithActiveValidators(previousEpochStartSlot);
   }
 
   private BeaconState createStateWithActiveValidators(final UInt64 slot) {
@@ -925,10 +926,10 @@ class ValidatorApiHandlerTest {
                     i,
                     validator ->
                         validator
-                            .withActivation_eligibility_epoch(ZERO)
-                            .withActivation_epoch(ZERO)
-                            .withExit_epoch(SpecConfig.FAR_FUTURE_EPOCH)
-                            .withWithdrawable_epoch(SpecConfig.FAR_FUTURE_EPOCH));
+                            .withActivationEligibilityEpoch(ZERO)
+                            .withActivationEpoch(ZERO)
+                            .withExitEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+                            .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
               }
             });
   }

@@ -81,66 +81,69 @@ public class BlockValidator {
       return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
-    return recentChainData
-        .retrieveBlockByRoot(block.getMessage().getParentRoot())
-        .thenCompose(
-            parentBlock -> {
-              if (parentBlock.isEmpty()) {
+    final Optional<UInt64> maybeParentBlockSlot =
+        recentChainData.getSlotForBlockRoot(block.getParentRoot());
+    if (maybeParentBlockSlot.isEmpty()) {
+      LOG.trace(
+          "BlockValidator: Parent block does not exist. It will be saved for future processing");
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
+
+    if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
+      return completedFuture(reject("Parent block is after child block."));
+    }
+
+    return getParentStateInBlockEpoch(block, parentBlockSlot)
+        .thenApply(
+            maybePostState -> {
+              if (maybePostState.isEmpty()) {
                 LOG.trace(
-                    "BlockValidator: Parent block does not exist. It will be saved for future processing");
-                return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+                    "Block was available but state wasn't. Must have been pruned by finalized.");
+                return InternalValidationResult.IGNORE;
               }
+              final BeaconState postState = maybePostState.get();
 
-              if (parentBlock.get().getSlot().isGreaterThanOrEqualTo(block.getSlot())) {
-                return completedFuture(reject("Parent block is after child block."));
+              if (!blockIsProposedByTheExpectedProposer(block, postState)) {
+                return reject(
+                    "Block proposed by incorrect proposer (%s)", block.getProposerIndex());
               }
+              if (spec.atSlot(block.getSlot()).miscHelpers().isMergeTransitionComplete(postState)) {
+                Optional<ExecutionPayload> executionPayload =
+                    block.getMessage().getBody().getOptionalExecutionPayload();
 
-              final UInt64 firstSlotInBlockEpoch =
-                  spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(block.getSlot()));
-              return recentChainData
-                  .retrieveStateAtSlot(
-                      new SlotAndBlockRoot(
-                          parentBlock.get().getSlot().max(firstSlotInBlockEpoch),
-                          block.getParentRoot()))
-                  .thenApply(
-                      maybePostState -> {
-                        if (maybePostState.isEmpty()) {
-                          LOG.trace(
-                              "Block was available but state wasn't. Must have been pruned by finalized.");
-                          return InternalValidationResult.IGNORE;
-                        }
-                        final BeaconState postState = maybePostState.get();
+                if (executionPayload.isEmpty()) {
+                  return reject("Missing execution payload");
+                }
 
-                        if (!blockIsProposedByTheExpectedProposer(block, postState)) {
-                          return reject(
-                              "Block proposed by incorrect proposer (%s)",
-                              block.getProposerIndex());
-                        }
-                        if (spec.atSlot(block.getSlot())
-                            .miscHelpers()
-                            .isMergeTransitionComplete(postState)) {
-                          Optional<ExecutionPayload> executionPayload =
-                              block.getMessage().getBody().getOptionalExecutionPayload();
-
-                          if (executionPayload.isEmpty()) {
-                            return reject("Missing execution payload");
-                          }
-
-                          if (executionPayload
-                                  .get()
-                                  .getTimestamp()
-                                  .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
-                              != 0) {
-                            return reject(
-                                "Execution Payload timestamp is not consistence with and block slot time");
-                          }
-                        }
-                        if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
-                          return reject("Block signature is invalid");
-                        }
-                        return InternalValidationResult.ACCEPT;
-                      });
+                if (executionPayload
+                        .get()
+                        .getTimestamp()
+                        .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
+                    != 0) {
+                  return reject(
+                      "Execution Payload timestamp is not consistence with and block slot time");
+                }
+              }
+              if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
+                return reject("Block signature is invalid");
+              }
+              return InternalValidationResult.ACCEPT;
             });
+  }
+
+  /**
+   * Retrieve the state for the parent block, applying the epoch transition if required to be able
+   * to calculate the expected proposer for block.
+   */
+  private SafeFuture<Optional<BeaconState>> getParentStateInBlockEpoch(
+      final SignedBeaconBlock block, final UInt64 parentBlockSlot) {
+    final UInt64 firstSlotInBlockEpoch =
+        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(block.getSlot()));
+    return parentBlockSlot.isLessThan(firstSlotInBlockEpoch)
+        ? recentChainData.retrieveStateAtSlot(
+            new SlotAndBlockRoot(firstSlotInBlockEpoch, block.getParentRoot()))
+        : recentChainData.retrieveBlockState(block.getParentRoot());
   }
 
   private boolean blockIsFromFutureSlot(SignedBeaconBlock block) {
@@ -169,13 +172,13 @@ public class BlockValidator {
             Domain.BEACON_PROPOSER,
             spec.getCurrentEpoch(postState),
             postState.getFork(),
-            postState.getGenesis_validators_root());
-    final Bytes signing_root = spec.computeSigningRoot(block.getMessage(), domain);
+            postState.getGenesisValidatorsRoot());
+    final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
     boolean signatureValid =
         spec.getValidatorPubKey(postState, block.getMessage().getProposerIndex())
-            .map(publicKey -> BLS.verify(publicKey, signing_root, signature))
+            .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
             .orElse(false);
 
     return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));
@@ -196,11 +199,11 @@ public class BlockValidator {
 
   private static class SlotAndProposer {
     private final UInt64 slot;
-    private final UInt64 proposer_index;
+    private final UInt64 proposerIndex;
 
     public SlotAndProposer(SignedBeaconBlock block) {
       this.slot = block.getSlot();
-      this.proposer_index = block.getMessage().getProposerIndex();
+      this.proposerIndex = block.getMessage().getProposerIndex();
     }
 
     @Override
@@ -212,12 +215,12 @@ public class BlockValidator {
         return false;
       }
       SlotAndProposer that = (SlotAndProposer) o;
-      return Objects.equal(slot, that.slot) && Objects.equal(proposer_index, that.proposer_index);
+      return Objects.equal(slot, that.slot) && Objects.equal(proposerIndex, that.proposerIndex);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hashCode(slot, proposer_index);
+      return Objects.hashCode(slot, proposerIndex);
     }
   }
 }

@@ -20,14 +20,17 @@ import java.util.Objects;
 
 public class PeersResponse {
   public final List<Peer> data;
+  public final Meta meta;
 
   @JsonCreator
-  public PeersResponse(@JsonProperty("data") final List<Peer> data) {
+  public PeersResponse(
+      @JsonProperty("data") final List<Peer> data, @JsonProperty("meta") final Meta meta) {
     this.data = data;
+    this.meta = meta;
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
@@ -35,11 +38,11 @@ public class PeersResponse {
       return false;
     }
     final PeersResponse that = (PeersResponse) o;
-    return Objects.equals(data, that.data);
+    return Objects.equals(data, that.data) && Objects.equals(meta, that.meta);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data);
+    return Objects.hash(data, meta);
   }
 }
