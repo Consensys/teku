@@ -47,6 +47,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -157,36 +158,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                 .name("GetNewBlindedBlockResponse")
                 .withField(
                     "data",
-                    new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>()
-                        .title("BlindedBlock")
-                        .withType(
-                            block ->
-                                schemaDefinitionCache
-                                    .milestoneAtSlot(block.getSlot())
-                                    .equals(SpecMilestone.PHASE0),
-                            schemaDefinitionCache
-                                .getSchemaDefinition(SpecMilestone.PHASE0)
-                                .getBlindedBeaconBlockSchema()
-                                .getJsonTypeDefinition())
-                        .withType(
-                            block ->
-                                schemaDefinitionCache
-                                    .milestoneAtSlot(block.getSlot())
-                                    .equals(SpecMilestone.ALTAIR),
-                            schemaDefinitionCache
-                                .getSchemaDefinition(SpecMilestone.ALTAIR)
-                                .getBlindedBeaconBlockSchema()
-                                .getJsonTypeDefinition())
-                        .withType(
-                            block ->
-                                schemaDefinitionCache
-                                    .milestoneAtSlot(block.getSlot())
-                                    .equals(SpecMilestone.BELLATRIX),
-                            schemaDefinitionCache
-                                .getSchemaDefinition(SpecMilestone.BELLATRIX)
-                                .getBlindedBeaconBlockSchema()
-                                .getJsonTypeDefinition())
-                        .build(),
+                    getBlindedBlockSchemaDefinition(schemaDefinitionCache),
                     Function.identity())
                 .withField(
                     "version",
@@ -194,5 +166,20 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build())
         .build();
+  }
+
+  private static SerializableOneOfTypeDefinition<BeaconBlock> getBlindedBlockSchemaDefinition(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableOneOfTypeDefinitionBuilder<BeaconBlock> builder =
+        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>().title("BlindedBlock");
+    for (SpecMilestone milestone : SpecMilestone.values()) {
+      builder.withType(
+          block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone),
+          schemaDefinitionCache
+              .getSchemaDefinition(milestone)
+              .getBlindedBeaconBlockSchema()
+              .getJsonTypeDefinition());
+    }
+    return builder.build();
   }
 }
