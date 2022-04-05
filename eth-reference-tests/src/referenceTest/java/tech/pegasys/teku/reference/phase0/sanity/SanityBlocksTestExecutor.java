@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public class SanityBlocksTestExecutor implements TestExecutor {
 
@@ -95,7 +94,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                 metaData.getBlsSetting() == IGNORED
                     ? BLSSignatureVerifier.NO_OP
                     : BLSSignatureVerifier.SIMPLE,
-                OptimisticExecutionPayloadExecutor.NOOP);
+                Optional.empty());
       }
       return result;
     } catch (StateTransitionException e) {

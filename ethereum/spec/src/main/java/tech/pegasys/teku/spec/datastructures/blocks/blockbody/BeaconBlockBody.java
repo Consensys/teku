@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -46,6 +47,10 @@ public interface BeaconBlockBody extends SszContainer {
   SszList<Deposit> getDeposits();
 
   SszList<SignedVoluntaryExit> getVoluntaryExits();
+
+  default Optional<SyncAggregate> getOptionalSyncAggregate() {
+    return Optional.empty();
+  }
 
   default Optional<ExecutionPayload> getOptionalExecutionPayload() {
     return Optional.empty();
