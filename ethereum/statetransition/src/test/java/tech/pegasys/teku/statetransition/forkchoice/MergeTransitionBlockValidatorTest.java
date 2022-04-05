@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -252,10 +253,14 @@ class MergeTransitionBlockValidatorTest {
         new PowBlock(
             getExecutionPayload(transitionBlock).getParentHash(),
             terminalBlockParentHash,
-            terminalBlockDifficulty));
+            terminalBlockDifficulty,
+            UInt64.ZERO));
     executionEngine.addPowBlock(
         new PowBlock(
-            terminalBlockParentHash, dataStructureUtil.randomBytes32(), ttdBlockParentDifficulty));
+            terminalBlockParentHash,
+            dataStructureUtil.randomBytes32(),
+            ttdBlockParentDifficulty,
+            UInt64.ZERO));
   }
 
   private SignedBlockAndState generateNonfinalizedTransition() {
