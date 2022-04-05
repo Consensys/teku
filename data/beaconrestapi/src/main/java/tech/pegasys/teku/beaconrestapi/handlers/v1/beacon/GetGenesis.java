@@ -31,6 +31,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -57,20 +58,7 @@ public class GetGenesis extends MigratingEndpointAdapter {
             .description(
                 "Retrieve details of the chain's genesis which can be used to identify chain.")
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
-            .response(
-                SC_OK,
-                "Success",
-                SerializableTypeDefinition.object(GenesisData.class)
-                    .withField("genesis_time", UINT64_TYPE, GenesisData::getGenesisTime)
-                    .withField(
-                        "genesis_validators_root",
-                        BYTES32_TYPE,
-                        GenesisData::getGenesisValidatorsRoot)
-                    .withField(
-                        "genesis_fork_version",
-                        BYTES4_TYPE,
-                        data -> chainDataProvider.getGenesisForkVersion())
-                    .build())
+            .response(SC_OK, "Success", getGenesisDataTypeDefinition(chainDataProvider))
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -111,5 +99,23 @@ public class GetGenesis extends MigratingEndpointAdapter {
       return Optional.empty();
     }
     return Optional.of(chainDataProvider.getStateGenesisData());
+  }
+
+  private static SerializableTypeDefinition<GenesisData> getGenesisDataTypeDefinition(
+      ChainDataProvider chainDataProvider) {
+    final SerializableTypeDefinition<GenesisData> dataType =
+        SerializableTypeDefinition.object(GenesisData.class)
+            .withField("genesis_time", UINT64_TYPE, GenesisData::getGenesisTime)
+            .withField(
+                "genesis_validators_root", BYTES32_TYPE, GenesisData::getGenesisValidatorsRoot)
+            .withField(
+                "genesis_fork_version",
+                BYTES4_TYPE,
+                data -> chainDataProvider.getGenesisForkVersion())
+            .build();
+
+    return SerializableTypeDefinition.object(GenesisData.class)
+        .withField("data", dataType, Function.identity())
+        .build();
   }
 }
