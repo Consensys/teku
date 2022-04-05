@@ -24,16 +24,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class FinalizedCheckpointEvent
     extends Event<FinalizedCheckpointEvent.FinalizedCheckpointData> {
 
-  private static final SerializableTypeDefinition<FinalizedCheckpointData>
-      FINALIZED_CHECKPOINT_EVENT_TYPE =
-          SerializableTypeDefinition.object(FinalizedCheckpointData.class)
-              .withField("block", BYTES32_TYPE, FinalizedCheckpointData::getBlock)
-              .withField("state", BYTES32_TYPE, FinalizedCheckpointData::getState)
-              .withField("epoch", UINT64_TYPE, FinalizedCheckpointData::getEpoch)
-              // TODO #5264
-              // .withOptionalField("execution_optimistic", BOOLEAN_TYPE,
-              // FinalizedCheckpointData::getExecutionOptimistic)
-              .build();
+  static final SerializableTypeDefinition<FinalizedCheckpointData> FINALIZED_CHECKPOINT_EVENT_TYPE =
+      SerializableTypeDefinition.object(FinalizedCheckpointData.class)
+          .name("FinalizedCheckpointEvent")
+          .withField("block", BYTES32_TYPE, FinalizedCheckpointData::getBlock)
+          .withField("state", BYTES32_TYPE, FinalizedCheckpointData::getState)
+          .withField("epoch", UINT64_TYPE, FinalizedCheckpointData::getEpoch)
+          // TODO #5264
+          // .withOptionalField("execution_optimistic", BOOLEAN_TYPE,
+          // FinalizedCheckpointData::getExecutionOptimistic)
+          .build();
 
   FinalizedCheckpointEvent(
       final Bytes32 block,

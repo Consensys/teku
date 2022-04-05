@@ -34,6 +34,7 @@ import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Fail;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 
 public class OpenApiTestUtil<TObject> {
@@ -80,6 +81,29 @@ public class OpenApiTestUtil<TObject> {
     }
 
     checkAllExpectedFilesExist(tempDir, path);
+  }
+
+  public void compareToKnownDefinition(final OpenApiTypeDefinition schema)
+      throws JsonProcessingException {
+    final String filename = schema.getTypeName().orElseThrow() + ".json";
+    final String openApiType = JsonUtil.serialize(schema::serializeOpenApiType);
+    final JsonNode node = mapper.readTree(openApiType);
+    final String namespace = "schema";
+    JsonNode expectedNode = null;
+    try {
+      expectedNode = loadResourceFile(namespace + "/" + filename);
+    } catch (Exception e) {
+      Fail.fail(
+          String.format(
+              "Expected to find %s with content %s, does it need to be added?",
+              namespace + "/" + filename, prettyJson(node)));
+    }
+    assertThat(node)
+        .describedAs(
+            String.format("Structure of %s -> (%s)", clazz.getName(), namespace + "/" + filename))
+        .withFailMessage(
+            String.format("Expected: %s\nbut was: %s", prettyJson(expectedNode), prettyJson(node)))
+        .isEqualTo(expectedNode);
   }
 
   /**

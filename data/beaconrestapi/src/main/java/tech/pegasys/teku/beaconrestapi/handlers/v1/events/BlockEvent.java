@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 public class BlockEvent extends Event<BlockEvent.BlockData> {
   private static final SerializableTypeDefinition<BlockData> BLOCK_EVENT_TYPE =
       SerializableTypeDefinition.object(BlockData.class)
+          .name("BlockEvent")
           .withField("slot", UINT64_TYPE, BlockData::getSlot)
           .withField("block", BYTES32_TYPE, BlockData::getBlock)
           // TODO #5264
