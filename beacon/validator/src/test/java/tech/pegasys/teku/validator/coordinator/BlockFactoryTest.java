@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -111,12 +112,36 @@ class BlockFactoryTest {
     assertThat(result).isEqualTo(executionPayload);
   }
 
+  @Test
+  void
+      shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndMevBoostIsEnabledAndBlindedBlockRequested()
+          throws Exception {
+    final BeaconBlock block =
+        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), true, true);
+    final ExecutionPayloadHeader result = getExecutionPayloadHeader(block);
+    assertThat(result).isEqualTo(executionPayloadHeader);
+  }
+
+  @Test
+  void
+      shouldIncludeExecutionPayloadWhenBellatrixIsActiveAndMevBoostIsEnabledAndBlindedBlockIsNotRequested()
+          throws Exception {
+    final BeaconBlock block =
+        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), true, false);
+    final ExecutionPayload result = getExecutionPayload(block);
+    assertThat(result).isEqualTo(executionPayload);
+  }
+
   private SyncAggregate getSyncAggregate(final BeaconBlock block) {
     return BeaconBlockBodyAltair.required(block.getBody()).getSyncAggregate();
   }
 
   private ExecutionPayload getExecutionPayload(final BeaconBlock block) {
     return BeaconBlockBodyBellatrix.required(block.getBody()).getExecutionPayload();
+  }
+
+  private ExecutionPayloadHeader getExecutionPayloadHeader(final BeaconBlock block) {
+    return BlindedBeaconBlockBodyBellatrix.required(block.getBody()).getExecutionPayloadHeader();
   }
 
   private BeaconBlock assertBlockCreated(
