@@ -1,6 +1,7 @@
 {
+  "title" : "SyncStateChangeEvent",
   "type" : "object",
-  "id" : "urn:jsonschema:tech:pegasys:teku:api:response:v1:SyncStateChangeEvent",
+  "required" : [ "sync_state" ],
   "properties" : {
     "sync_state" : {
       "type" : "string"

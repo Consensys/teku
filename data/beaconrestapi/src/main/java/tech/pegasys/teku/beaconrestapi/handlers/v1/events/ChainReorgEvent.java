@@ -25,6 +25,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
 
   public static final SerializableTypeDefinition<ChainReorgData> CHAIN_REORG_EVENT_TYPE =
       SerializableTypeDefinition.object(ChainReorgData.class)
+          .name("ChainReorgEvent")
           .withField("slot", UINT64_TYPE, ChainReorgData::getSlot)
           .withField("depth", UINT64_TYPE, ChainReorgData::getDepth)
           .withField("old_head_block", BYTES32_TYPE, ChainReorgData::getOldHeadBlock)

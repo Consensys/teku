@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.module.jsonSchema.factories.SchemaFactoryWrapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -35,6 +34,7 @@ import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Fail;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 
 public class OpenApiTestUtil<TObject> {
@@ -83,19 +83,12 @@ public class OpenApiTestUtil<TObject> {
     checkAllExpectedFilesExist(tempDir, path);
   }
 
-  @SuppressWarnings("rawtypes")
-  public void compareToKnownDefinition(final Class clazz) throws IOException {
-    final Path tempDir = Files.createTempDirectory("eventTypeDefinitions");
-    final String filename = clazz.getSimpleName() + ".json";
+  public void compareToKnownDefinition(final OpenApiTypeDefinition schema)
+      throws JsonProcessingException {
+    final String filename = schema.getTypeName().orElseThrow() + ".json";
+    final String openApiType = JsonUtil.serialize(schema::serializeOpenApiType);
+    final JsonNode node = mapper.readTree(openApiType);
     final String namespace = "schema";
-
-    final SchemaFactoryWrapper visitor = new SchemaFactoryWrapper();
-
-    mapper.acceptJsonFormatVisitor(mapper.constructType(clazz), visitor);
-    final JsonNode node =
-        mapper.readTree(
-            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(visitor.finalSchema()));
-    Files.write(tempDir.resolve(filename), prettyJson(node).getBytes(UTF_8));
     JsonNode expectedNode = null;
     try {
       expectedNode = loadResourceFile(namespace + "/" + filename);

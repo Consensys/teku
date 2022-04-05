@@ -26,6 +26,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
 
   static final SerializableTypeDefinition<HeadData> HEAD_EVENT_TYPE =
       SerializableTypeDefinition.object(HeadData.class)
+          .name("HeadEvent")
           .withField("slot", UINT64_TYPE, HeadData::getSlot)
           .withField("block", BYTES32_TYPE, HeadData::getBlock)
           .withField("state", BYTES32_TYPE, HeadData::getState)
