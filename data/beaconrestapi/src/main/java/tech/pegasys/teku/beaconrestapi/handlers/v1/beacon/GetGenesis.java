@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -70,12 +69,7 @@ public class GetGenesis extends MigratingEndpointAdapter {
                     .withField(
                         "genesis_fork_version",
                         BYTES4_TYPE,
-                        data ->
-                            chainDataProvider
-                                .getSpec()
-                                .atEpoch(ZERO)
-                                .getConfig()
-                                .getGenesisForkVersion())
+                        data -> chainDataProvider.getGenesisForkVersion())
                     .build())
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
             .build());
