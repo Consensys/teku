@@ -16,17 +16,21 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PowBlock {
 
   private final Bytes32 blockHash;
   private final Bytes32 parentHash;
   private final UInt256 totalDifficulty;
+  private final UInt64 blockTimestamp;
 
-  public PowBlock(Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty) {
+  public PowBlock(
+      Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty, UInt64 blockTimestamp) {
     this.blockHash = blockHash;
     this.parentHash = parentHash;
     this.totalDifficulty = totalDifficulty;
+    this.blockTimestamp = blockTimestamp;
   }
 
   public Bytes32 getBlockHash() {
@@ -41,12 +45,17 @@ public class PowBlock {
     return totalDifficulty;
   }
 
+  public UInt64 getBlockTimestamp() {
+    return blockTimestamp;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("blockHash", blockHash)
         .add("parentHash", parentHash)
         .add("totalDifficulty", totalDifficulty)
+        .add("blockTimestamp", blockTimestamp)
         .toString();
   }
 }

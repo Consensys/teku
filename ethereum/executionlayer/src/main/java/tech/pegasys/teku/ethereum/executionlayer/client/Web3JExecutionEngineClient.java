@@ -38,6 +38,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeac
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
@@ -94,7 +95,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         : new PowBlock(
             Bytes32.fromHexStringStrict(eth1Block.getHash()),
             Bytes32.fromHexStringStrict(eth1Block.getParentHash()),
-            UInt256.valueOf(eth1Block.getTotalDifficulty()));
+            UInt256.valueOf(eth1Block.getTotalDifficulty()),
+            UInt64.valueOf(eth1Block.getTimestamp()));
   }
 
   @Override

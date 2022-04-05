@@ -180,7 +180,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                       .readFixedBytes(Bytes32.SIZE)
                       .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN));
           reader.readFixedBytes(Bytes32.SIZE); // Read difficulty even though we don't use it.
-          return new PowBlock(blockHash, parentHash, totalDifficulty);
+          // We don't get a timestamp but as long as it's in the past that's fine
+          final UInt64 timestamp = UInt64.ZERO;
+          return new PowBlock(blockHash, parentHash, totalDifficulty, timestamp);
         });
   }
 
