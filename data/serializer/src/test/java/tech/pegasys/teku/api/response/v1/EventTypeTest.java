@@ -16,10 +16,17 @@ package tech.pegasys.teku.api.response.v1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 
 public class EventTypeTest {
+  private final OpenApiTestUtil<EventTypeTest> util = new OpenApiTestUtil<>(EventTypeTest.class);
 
   @Test
   void shouldParseEventTypes() {
@@ -33,5 +40,24 @@ public class EventTypeTest {
   @Test
   void shouldFailToParseInvalidEvents() {
     assertThrows(IllegalArgumentException.class, () -> EventType.getTopics(List.of("head1")));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getEventTypes")
+  @SuppressWarnings("rawtypes")
+  void shouldHaveConsistentEventStructures(final String name, final Class clazz)
+      throws IOException {
+    util.compareToKnownDefinition(clazz);
+  }
+
+  public static Stream<Arguments> getEventTypes() {
+    // attestation, voluntary_exit, contributionAndProof are all the standard objects,
+    // but the below objects don't have schema definition checks anywhere else
+    return Stream.of(
+        Arguments.of("BlockEvent", BlockEvent.class),
+        Arguments.of("ChainReorgEvent", ChainReorgEvent.class),
+        Arguments.of("FinalizedCheckpointEvent", FinalizedCheckpointEvent.class),
+        Arguments.of("HeadEvent", HeadEvent.class),
+        Arguments.of("SyncStateChangeEvent", SyncStateChangeEvent.class));
   }
 }

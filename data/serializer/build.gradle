@@ -12,4 +12,5 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:ssz'))
+  testImplementation testFixtures(project(':infrastructure:restapi'))
 }

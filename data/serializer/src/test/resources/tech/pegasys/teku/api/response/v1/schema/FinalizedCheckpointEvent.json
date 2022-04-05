@@ -1,0 +1,34 @@
+{
+  "type" : "object",
+  "id" : "urn:jsonschema:tech:pegasys:teku:api:response:v1:FinalizedCheckpointEvent",
+  "properties" : {
+    "block" : {
+      "type" : "object",
+      "id" : "urn:jsonschema:org:apache:tuweni:bytes:Bytes32",
+      "properties" : {
+        "empty" : {
+          "type" : "boolean"
+        },
+        "zero" : {
+          "type" : "boolean"
+        }
+      }
+    },
+    "epoch" : {
+      "type" : "object",
+      "id" : "urn:jsonschema:tech:pegasys:teku:infrastructure:unsigned:UInt64",
+      "properties" : {
+        "zero" : {
+          "type" : "boolean"
+        }
+      }
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "state" : {
+      "type" : "object",
+      "$ref" : "urn:jsonschema:org:apache:tuweni:bytes:Bytes32"
+    }
+  }
+}

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.module.jsonSchema.factories.SchemaFactoryWrapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -80,6 +81,36 @@ public class OpenApiTestUtil<TObject> {
     }
 
     checkAllExpectedFilesExist(tempDir, path);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public void compareToKnownDefinition(final Class clazz) throws IOException {
+    final Path tempDir = Files.createTempDirectory("eventTypeDefinitions");
+    final String filename = clazz.getSimpleName() + ".json";
+    final String namespace = "schema";
+
+    final SchemaFactoryWrapper visitor = new SchemaFactoryWrapper();
+
+    mapper.acceptJsonFormatVisitor(mapper.constructType(clazz), visitor);
+    final JsonNode node =
+        mapper.readTree(
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(visitor.finalSchema()));
+    Files.write(tempDir.resolve(filename), prettyJson(node).getBytes(UTF_8));
+    JsonNode expectedNode = null;
+    try {
+      expectedNode = loadResourceFile(namespace + "/" + filename);
+    } catch (Exception e) {
+      Fail.fail(
+          String.format(
+              "Expected to find %s with content %s, does it need to be added?",
+              namespace + "/" + filename, prettyJson(node)));
+    }
+    assertThat(node)
+        .describedAs(
+            String.format("Structure of %s -> (%s)", clazz.getName(), namespace + "/" + filename))
+        .withFailMessage(
+            String.format("Expected: %s\nbut was: %s", prettyJson(expectedNode), prettyJson(node)))
+        .isEqualTo(expectedNode);
   }
 
   /**
