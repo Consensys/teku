@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -69,11 +71,13 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
+  private static final Logger LOG = LogManager.getLogger();
 
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
       "Cannot produce a block for a historic slot.";
@@ -213,23 +217,13 @@ public class ValidatorDataProvider {
       final SignedBeaconBlock signedBeaconBlock) {
     return validatorApiChannel
         .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
-        .thenApply(
-            result -> {
-              int responseCode;
-              Optional<Bytes32> hashRoot = result.getBlockRoot();
-              if (result.getRejectionReason().isEmpty()) {
-                responseCode = SC_OK;
-              } else if (result
-                  .getRejectionReason()
-                  .get()
-                  .equals(FailureReason.INTERNAL_ERROR.name())) {
-                responseCode = SC_INTERNAL_ERROR;
-              } else {
-                responseCode = SC_ACCEPTED;
-              }
+        .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
+  }
 
-              return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
-            });
+  public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock) {
+    LOG.debug("parsed block is from slot: {}", signedBeaconBlock.getMessage().getSlot());
+    return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
   }
 
   public SafeFuture<Optional<PostDataFailureResponse>> submitCommitteeSignatures(
@@ -451,5 +445,20 @@ public class ValidatorDataProvider {
         syncCommitteeContributionSchema.getAggregationBitsSchema().fromBytes(aggregationBits);
 
     return aggregationBitsVector.getAllSetBits();
+  }
+
+  private static ValidatorBlockResult generateSubmitSignedBlockResponse(
+      SendSignedBlockResult result) {
+    int responseCode;
+    Optional<Bytes32> hashRoot = result.getBlockRoot();
+    if (result.getRejectionReason().isEmpty()) {
+      responseCode = SC_OK;
+    } else if (result.getRejectionReason().get().equals(FailureReason.INTERNAL_ERROR.name())) {
+      responseCode = SC_INTERNAL_ERROR;
+    } else {
+      responseCode = SC_ACCEPTED;
+    }
+
+    return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
   }
 }

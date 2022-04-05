@@ -17,9 +17,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
@@ -60,6 +62,42 @@ public class JsonUtil {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  public static <T> Optional<T> getAttribute(
+      final String json, final DeserializableTypeDefinition<T> type, final String... path) {
+    try (final JsonParser parser = FACTORY.createParser(json)) {
+      return getAttributeFromParser(parser, type, 0, path);
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static <T> Optional<T> getAttributeFromParser(
+      JsonParser parser, final DeserializableTypeDefinition<T> type, int i, final String... path)
+      throws IOException {
+    if (!JsonToken.START_OBJECT.equals(parser.nextToken())) {
+      throw new IllegalStateException("getAttribute was not passed an object");
+    }
+    final String fieldName = path[i];
+    while (!parser.isClosed()) {
+      final JsonToken jsonToken = parser.nextToken();
+      if (JsonToken.FIELD_NAME.equals(jsonToken)) {
+        final String currentFieldName = parser.getCurrentName();
+        if (currentFieldName.equals(fieldName)) {
+          if (path.length == i + 1) {
+            parser.nextToken();
+            return Optional.of(type.deserialize(parser));
+          } else {
+            return getAttributeFromParser(parser, type, i + 1, path);
+          }
+        }
+      } else if (JsonToken.START_ARRAY.equals(jsonToken)
+          || JsonToken.START_OBJECT.equals(jsonToken)) {
+        parser.skipChildren();
+      }
+    }
+    return Optional.empty();
   }
 
   public interface JsonWriter {

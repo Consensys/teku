@@ -403,7 +403,7 @@ public class BeaconRestApi {
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
     app.post(PostBlock.ROUTE, new PostBlock(dataProvider, jsonProvider));
-    app.post(PostBlindedBlock.ROUTE, new PostBlindedBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostBlindedBlock(dataProvider, schemaCache));
 
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
     app.get(

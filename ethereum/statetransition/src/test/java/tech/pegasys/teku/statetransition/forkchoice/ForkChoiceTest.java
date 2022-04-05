@@ -801,12 +801,14 @@ class ForkChoiceTest {
     final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
     final PowBlock terminalBlock =
-        new PowBlock(terminalBlockHash, terminalBlockParentHash, terminalTotalDifficulty.plus(1));
+        new PowBlock(
+            terminalBlockHash, terminalBlockParentHash, terminalTotalDifficulty.plus(1), ZERO);
     final PowBlock terminalParentBlock =
         new PowBlock(
             terminalBlockParentHash,
             dataStructureUtil.randomBytes32(),
-            terminalTotalDifficulty.subtract(1));
+            terminalTotalDifficulty.subtract(1),
+            ZERO);
     executionEngine.addPowBlock(terminalBlock);
     executionEngine.addPowBlock(terminalParentBlock);
     final SignedBlockAndState epoch4Block =

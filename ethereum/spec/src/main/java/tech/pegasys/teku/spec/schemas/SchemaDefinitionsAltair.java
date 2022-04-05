@@ -49,7 +49,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
         BeaconBlockBodySchemaAltairImpl.create(
             specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyAltair");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
-    this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
+    this.signedBeaconBlockSchema =
+        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockAltair");
     this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);
     this.contributionAndProofSchema =
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);

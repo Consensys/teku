@@ -15,13 +15,14 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.security.MessageDigest;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszNodeTemplate.Location;
 
@@ -69,30 +70,46 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   public Bytes32 hashTreeRoot() {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
-      cachedHash = calcHashTreeRoot();
+      final MessageDigest messageDigest = MessageDigestFactory.createSha256();
+      cachedHash = calcHashTreeRoot(messageDigest);
       this.cachedHash = cachedHash;
     }
     return cachedHash;
   }
 
-  private Bytes32 calcHashTreeRoot() {
-    return hashTreeRoot(0, 0);
+  @Override
+  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      cachedHash = calcHashTreeRoot(messageDigest);
+      this.cachedHash = cachedHash;
+    }
+    return cachedHash;
   }
 
-  private Bytes32 hashTreeRoot(int curDepth, int offset) {
+  private Bytes32 calcHashTreeRoot(final MessageDigest messageDigest) {
+    return hashTreeRoot(0, 0, messageDigest);
+  }
+
+  private Bytes32 hashTreeRoot(
+      final int curDepth, final int offset, final MessageDigest messageDigest) {
     if (curDepth == depth) {
       if (offset < ssz.size()) {
-        return elementTemplate.calculateHashTreeRoot(ssz, offset);
+        return elementTemplate.calculateHashTreeRoot(ssz, offset, messageDigest);
       } else {
         assert offset <= elementTemplate.getSszLength() * (getMaxElements() - 1);
         return DEFAULT_NODE.hashTreeRoot();
       }
     } else {
-      return Hash.sha256(
-          hashTreeRoot(curDepth + 1, offset),
+      final Bytes32 leftRoot = hashTreeRoot(curDepth + 1, offset, messageDigest);
+      final Bytes32 rightRoot =
           hashTreeRoot(
               curDepth + 1,
-              offset + elementTemplate.getSszLength() * (1 << ((depth - curDepth) - 1))));
+              offset + elementTemplate.getSszLength() * (1 << ((depth - curDepth) - 1)),
+              messageDigest);
+      leftRoot.update(messageDigest);
+      rightRoot.update(messageDigest);
+      return Bytes32.wrap(messageDigest.digest());
     }
   }
 
