@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -501,6 +502,14 @@ public class Spec {
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
+  }
+
+  public SignedBeaconBlock unblindBeaconBlock(
+      final SignedBeaconBlock blindedSignedBeaconBlock,
+      final Consumer<BeaconBlockUnblinder> blockUnblinder) {
+    return atSlot(blindedSignedBeaconBlock.getSlot())
+        .getBlockProposalUtil()
+        .unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder);
   }
 
   // Block Processor Utils

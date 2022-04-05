@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,9 +38,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -54,6 +58,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -359,6 +364,35 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
 
+  @Test
+  void shouldUnblindSignedBlindedBeaconBlockIfMevBoostEnabled() {
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+    final SignedBeaconBlock blindedSignedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
+    final CapturingBeaconBlockUnblinder blockUnblinder =
+        new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
+
+    when(executionEngine.proposeBlindedBlock(blindedSignedBlock))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+
+    factoryWithMevBoost.createUnblinderSelector().accept(blockUnblinder);
+
+    assertThat(blockUnblinder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
+  @Test
+  void shouldThrowUnblindSignedBlindedBeaconBlockIfMevBoostDisabled() {
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+    final SignedBeaconBlock blindedSignedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
+    final CapturingBeaconBlockUnblinder blockUnblinder =
+        new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
+
+    when(executionEngine.proposeBlindedBlock(blindedSignedBlock))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+
+    assertThatThrownBy(() -> factory.createUnblinderSelector().accept(blockUnblinder))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
     private final boolean blinded;
 
@@ -451,6 +485,27 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockBody build() {
+      return null;
+    }
+  }
+
+  private static class CapturingBeaconBlockUnblinder extends AbstractBeaconBlockUnblinder {
+    protected ExecutionPayload executionPayload;
+
+    public CapturingBeaconBlockUnblinder(
+        SchemaDefinitions schemaDefinitions, SignedBeaconBlock signedBlindedBeaconBlock) {
+      super(schemaDefinitions, signedBlindedBeaconBlock);
+    }
+
+    @Override
+    public BeaconBlockUnblinder executionPayload(
+        Supplier<ExecutionPayload> executionPayloadSupplier) {
+      this.executionPayload = executionPayloadSupplier.get();
+      return this;
+    }
+
+    @Override
+    public SignedBeaconBlock unblind() {
       return null;
     }
   }

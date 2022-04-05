@@ -16,9 +16,12 @@ package tech.pegasys.teku.spec.schemas;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockUnblinderPhase0;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
@@ -80,6 +83,12 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   public MetadataMessageSchemaPhase0 getMetadataMessageSchema() {
     return metadataMessageSchema;
+  }
+
+  @Override
+  public BeaconBlockUnblinder createBeaconBlockUnblinder(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    return new BeaconBlockUnblinderPhase0(this, signedBlindedBeaconBlock);
   }
 
   @Override

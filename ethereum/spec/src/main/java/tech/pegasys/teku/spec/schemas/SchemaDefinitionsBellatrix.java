@@ -18,10 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockUnblinderBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -107,6 +110,12 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
 
   public ExecutionPayloadSchema getExecutionPayloadSchema() {
     return beaconBlockBodySchema.getExecutionPayloadSchema();
+  }
+
+  @Override
+  public BeaconBlockUnblinder createBeaconBlockUnblinder(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    return new BeaconBlockUnblinderBellatrix(this, signedBlindedBeaconBlock);
   }
 
   public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {

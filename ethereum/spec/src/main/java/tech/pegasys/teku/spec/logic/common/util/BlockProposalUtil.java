@@ -24,8 +24,10 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -97,6 +99,15 @@ public class BlockProposalUtil {
     } catch (final BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
+  }
+
+  public SignedBeaconBlock unblindSignedBeaconBlock(
+      final SignedBeaconBlock signedBeaconBlock,
+      final Consumer<BeaconBlockUnblinder> blockUnblinder) {
+    BeaconBlockUnblinder unblinder =
+        schemaDefinitions.createBeaconBlockUnblinder(signedBeaconBlock);
+    blockUnblinder.accept(unblinder);
+    return unblinder.unblind();
   }
 
   private BeaconBlockBody createBeaconBlockBody(

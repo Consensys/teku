@@ -524,7 +524,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock blindedBlock) {
+    final SignedBeaconBlock block = blockFactory.unblindSignedBeaconBlock(blindedBlock);
     performanceTracker.saveProducedBlock(block);
     blockGossipChannel.publishBlock(block);
     return blockImportChannel

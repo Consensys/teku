@@ -14,9 +14,11 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
 
@@ -33,6 +35,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -49,8 +52,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -132,6 +133,44 @@ class BlockFactoryTest {
     assertThat(result).isEqualTo(executionPayload);
   }
 
+  @Test
+  void unblindSignedBeaconBlock_shouldThrowWhenUnblindingBlockWithInconsistentExecutionPayload() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    final SignedBeaconBlock signedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock(1);
+    executionPayload = dataStructureUtil.randomExecutionPayload();
+
+    assertThatThrownBy(
+            () -> assertBlockUnblinded(signedBlock, TestSpecFactory.createMinimalBellatrix(), true))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void unblindSignedBeaconBlock_shouldPassthroughUnblindedBlocks() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    final SignedBeaconBlock originalUnblindedSignedBlock =
+        dataStructureUtil.randomSignedBeaconBlock(1);
+
+    final SignedBeaconBlock unblindedSignedBlock =
+        assertBlockUnblinded(
+            originalUnblindedSignedBlock, TestSpecFactory.createMinimalBellatrix(), true);
+
+    assertThat(unblindedSignedBlock).isEqualTo(originalUnblindedSignedBlock);
+  }
+
+  @Test
+  void unblindSignedBeaconBlock_shouldUnblindBlockWhenBellatrixIsActiveAndMevBoostIsEnabled() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    /*
+    I need to blind a given unblinded block to run the test
+     */
+  }
+
   private SyncAggregate getSyncAggregate(final BeaconBlock block) {
     return BeaconBlockBodyAltair.required(block.getBody()).getSyncAggregate();
   }
@@ -146,7 +185,7 @@ class BlockFactoryTest {
 
   private BeaconBlock assertBlockCreated(
       final int blockSlot, final Spec spec, final boolean isMevBoostEnabled, final boolean blinded)
-      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
+      throws StateTransitionException {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
@@ -239,4 +278,85 @@ class BlockFactoryTest {
         .getSyncAggregateSchema()
         .createEmpty();
   }
+
+  private SignedBeaconBlock assertBlockUnblinded(
+      final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
+    final BlockFactory blockFactory =
+        new BlockFactory(
+            spec,
+            new BlockOperationSelectorFactory(
+                spec,
+                attestationsPool,
+                attesterSlashingPool,
+                proposerSlashingPool,
+                voluntaryExitPool,
+                syncCommitteeContributionPool,
+                depositProvider,
+                eth1DataCache,
+                graffiti,
+                forkChoiceNotifier,
+                executionEngine,
+                isMevBoostEnabled));
+
+    when(executionEngine.proposeBlindedBlock(beaconBlock))
+        .thenReturn(SafeFuture.completedFuture(executionPayload));
+
+    final SignedBeaconBlock block = blockFactory.unblindSignedBeaconBlock(beaconBlock);
+
+    if (!beaconBlock.getMessage().getBody().isBlinded()) {
+      verifyNoInteractions(executionEngine);
+    } else {
+      verify(executionEngine).proposeBlindedBlock(beaconBlock);
+    }
+
+    assertThat(block).isNotNull();
+    assertThat(block.getSlot()).isEqualTo(beaconBlock.getSlot());
+    assertThat(block.getSignature()).isEqualTo(beaconBlock.getSignature());
+
+    assertThat(block.getMessage().getBody().getRandaoReveal())
+        .isEqualTo(beaconBlock.getMessage().getBody().getRandaoReveal());
+    assertThat(block.getMessage().getBody().getEth1Data())
+        .isEqualTo(beaconBlock.getMessage().getBody().getEth1Data());
+    assertThat(block.getMessage().getBody().getDeposits())
+        .isEqualTo(beaconBlock.getMessage().getBody().getDeposits());
+    assertThat(block.getMessage().getBody().getAttestations())
+        .isEqualTo(beaconBlock.getMessage().getBody().getAttestations());
+    assertThat(block.getMessage().getBody().getAttesterSlashings())
+        .isEqualTo(beaconBlock.getMessage().getBody().getAttesterSlashings());
+    assertThat(block.getMessage().getBody().getProposerSlashings())
+        .isEqualTo(beaconBlock.getMessage().getBody().getProposerSlashings());
+    assertThat(block.getMessage().getBody().getVoluntaryExits())
+        .isEqualTo(beaconBlock.getMessage().getBody().getVoluntaryExits());
+    assertThat(block.getMessage().getBody().getGraffiti())
+        .isEqualTo(beaconBlock.getMessage().getBody().getGraffiti());
+    assertThat(block.getMessage().getBody().getOptionalSyncAggregate())
+        .isEqualTo(beaconBlock.getMessage().getBody().getOptionalSyncAggregate());
+    assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
+        .isEqualTo(Optional.empty());
+
+    return block;
+  }
+
+  /* TODO: BeaconBlockBlinder is needed!
+  private SignedBeaconBlock blindSignedBeaconBlockFromUnblindedBellatrix(
+      final Spec spec, final SignedBeaconBlock signedBeaconBlock) {
+
+    new BeaconBlockBodyBellatrixImpl(spec.getGenesisSpec().getSchemaDefinitions().toVersionBellatrix().orElseThrow().getBeaconBlockBodySchema(),
+            signedBeaconBlock.getMessage().getBody().getRandaoReveal(),
+            signedBeaconBlock.getMessage().getBody().getEth1Data(),
+            signedBeaconBlock.getMessage().getBody().getGraffiti(),
+            signedBeaconBlock.getMessage().getBody().getProposerSlashings(),
+            signedBeaconBlock.getMessage().getBody().getAttesterSlashings(),
+            signedBeaconBlock.getMessage().getBody().getAttestations(),
+            signedBeaconBlock.getMessage().getBody().getDeposits(),
+            signedBeaconBlock.getMessage().getBody().getVoluntaryExits(),
+            signedBeaconBlock.getMessage().getBody().getOptionalSyncAggregate().orElseThrow(),
+            spec.getGenesisSpec().getSchemaDefinitions().toVersionBellatrix().orElseThrow().getExecutionPayloadHeaderSchema().createFromExecutionPayload(
+                    signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow()
+            )
+    );
+  }*/
 }

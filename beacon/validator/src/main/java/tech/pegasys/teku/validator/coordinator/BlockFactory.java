@@ -21,6 +21,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
@@ -60,5 +61,14 @@ public class BlockFactory {
                 parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
         .getBlock();
+  }
+
+  public SignedBeaconBlock unblindSignedBeaconBlock(
+      final SignedBeaconBlock blindedSignedBeaconBlock) {
+    if (blindedSignedBeaconBlock.getMessage().getBody().isBlinded()) {
+      return spec.unblindBeaconBlock(
+          blindedSignedBeaconBlock, operationSelector.createUnblinderSelector());
+    }
+    return blindedSignedBeaconBlock;
   }
 }
