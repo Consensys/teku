@@ -119,6 +119,17 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
+  public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getStateGenesisData() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return recentChainData.getGenesisData().orElseThrow(ChainDataUnavailableException::new);
+  }
+
+  public Spec getSpec() {
+    return spec;
+  }
+
   public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
       final String slotParameter) {
     return defaultBlockSelectorFactory
