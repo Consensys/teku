@@ -381,7 +381,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   forkChoiceNotifier,
                   beaconAsyncRunner,
-                  EVENT_LOG));
+                  EVENT_LOG,
+                  timeProvider));
     }
   }
 
