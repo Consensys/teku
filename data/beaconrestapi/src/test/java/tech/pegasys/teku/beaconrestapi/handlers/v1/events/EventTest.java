@@ -38,8 +38,6 @@ public class EventTest {
 
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    // attestation, voluntary_exit, contributionAndProof are all the standard objects,
-    // but the below objects don't have schema definition checks anywhere else
     return Stream.of(
         Arguments.of(
             "AttestationEvent",
