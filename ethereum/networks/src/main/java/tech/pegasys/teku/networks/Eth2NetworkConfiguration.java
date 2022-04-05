@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
+import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KINTSUGI;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
@@ -375,6 +376,8 @@ public class Eth2NetworkConfiguration {
           return applyKintsugiNetworkDefaults();
         case KILN:
           return applyKilnNetworkDefaults();
+        case GNOSIS:
+          return applyGnosisNetworkDefaults();
         case SWIFT:
           return applySwiftNetworkDefaults();
         case LESS_SWIFT:
@@ -487,6 +490,20 @@ public class Eth2NetworkConfiguration {
               "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
               "enr:-KG4QFkPJUFWuONp5grM94OJvNht9wX6N36sA4wqucm6Z02ECWBQRmh6AzndaLVGYBHWre67mjK-E0uKt2CIbWrsZ_8DhGV0aDKQc6pfXHAAAHAyAAAAAAAAAIJpZIJ2NIJpcISl6LTmiXNlY3AyNTZrMaEDHlSNOgYrNWP8_l_WXqDMRvjv6gUAvHKizfqDDVc8feaDdGNwgiMog3VkcIIjKA",
               "enr:-MK4QI-wkVW1PxL4ksUM4H_hMgTTwxKMzvvDMfoiwPBuRxcsGkrGPLo4Kho3Ri1DEtJG4B6pjXddbzA9iF2gVctxv42GAX9v5WG5h2F0dG5ldHOIAAAAAAAAAACEZXRoMpBzql9ccAAAcDIAAAAAAAAAgmlkgnY0gmlwhKRcjMiJc2VjcDI1NmsxoQK1fc46pmVHKq8HNYLkSVaUv4uK2UBsGgjjGWU6AAhAY4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+    }
+
+    public Builder applyGnosisNetworkDefaults() {
+      return reset()
+          .constants(GNOSIS.configName())
+          .initialStateFromClasspath("gnosis-genesis.ssz")
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(19469077)
+          .discoveryBootnodes(
+              // Gnosis Chain Team bootnodes
+              "enr:-IS4QGmLwm7gFd0L0CEisllrb1op3v-wAGSc7_pwSMGgN3bOS9Fz7m1dWbwuuPHKqeETz9MbhjVuoWk0ohkyRv98kVoBgmlkgnY0gmlwhGjtlgaJc2VjcDI1NmsxoQLMdh0It9fJbuiLydZ9fpF6MRzgNle0vODaDiMqhbC7WIN1ZHCCIyg",
+              "enr:-IS4QFUVG3dvLPCUEI7ycRvFm0Ieg_ITa5tALmJ9LI7dJ6ieT3J4fF9xLRjOoB4ApV-Rjp7HeLKzyTWG1xRdbFBNZPQBgmlkgnY0gmlwhErP5weJc2VjcDI1NmsxoQOBbaJBvx0-w_pyZUhQl9A510Ho2T0grE0K8JevzES99IN1ZHCCIyg",
+              "enr:-Ku4QOQk8V-Hu2gxFzRXmLYIO4AvWDZhoMFwTf3n3DYm_mbsWv0ZitoqiN6JZUUj6Li6e1Jk1w2zFSVHKPMUP1g5tsgBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD5Jd3FAAAAZP__________gmlkgnY0gmlwhC1PTpmJc2VjcDI1NmsxoQL1Ynt5PoA0UOcHa1Rfn98rmnRlLzNuWTePPP4m4qHVroN1ZHCCKvg",
+              "enr:-Ku4QFaTwgoms-EiiRIfHUH3FXprWUFgjHg4UuWvilqoUQtDbmTszVIxUEOwQUmA2qkiP-T9wXjc_rVUuh9cU7WgwbgBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD5Jd3FAAAAZP__________gmlkgnY0gmlwhC0hBmCJc2VjcDI1NmsxoQOpsg1XCrXmCwZKcSTcycLwldoKUMHPUpMEVGeg_EEhuYN1ZHCCKvg");
     }
   }
 }
