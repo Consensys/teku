@@ -115,6 +115,7 @@ public class GetGenesis extends MigratingEndpointAdapter {
             .build();
 
     return SerializableTypeDefinition.object(GenesisData.class)
+        .name("GetGenesisResponse")
         .withField("data", dataType, Function.identity())
         .build();
   }
