@@ -346,9 +346,9 @@ public class EventSubscriptionManagerTest {
     final String eventString = outputStream.getString();
     assertThat(eventString).contains(String.format("event: %s\n", eventType));
 
-    String expected =
+    final String expected =
         eventString.substring(eventString.indexOf("{"), eventString.lastIndexOf("}") + 1);
-    String result = JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition());
+    final String result = JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition());
     assertThat(result).isEqualTo(expected);
   }
 }
