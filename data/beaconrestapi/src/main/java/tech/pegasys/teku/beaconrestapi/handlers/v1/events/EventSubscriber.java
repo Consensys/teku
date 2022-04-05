@@ -55,7 +55,7 @@ public class EventSubscriber {
     keepAlive();
   }
 
-  public void onEvent(final EventType eventType, final EventSource message)
+  public void onEvent(final EventType eventType, final EventSource<?> message)
       throws JsonProcessingException {
     if (!eventTypes.contains(eventType)) {
       return;
