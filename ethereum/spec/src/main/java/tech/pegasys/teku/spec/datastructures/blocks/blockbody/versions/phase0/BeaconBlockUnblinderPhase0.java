@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockUnblinder;
@@ -29,12 +30,12 @@ public class BeaconBlockUnblinderPhase0 extends AbstractBeaconBlockUnblinder {
 
   @Override
   public BeaconBlockUnblinder executionPayload(
-      Supplier<ExecutionPayload> executionPayloadSupplier) {
+      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
     return this;
   }
 
   @Override
-  public SignedBeaconBlock unblind() {
-    return signedBlindedBeaconBlock;
+  public SafeFuture<SignedBeaconBlock> unblind() {
+    return SafeFuture.completedFuture(signedBlindedBeaconBlock);
   }
 }

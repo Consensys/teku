@@ -504,7 +504,7 @@ public class Spec {
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
   }
 
-  public SignedBeaconBlock unblindBeaconBlock(
+  public SafeFuture<SignedBeaconBlock> unblindBeaconBlock(
       final SignedBeaconBlock blindedSignedBeaconBlock,
       final Consumer<BeaconBlockUnblinder> blockUnblinder) {
     return atSlot(blindedSignedBeaconBlock.getSlot())

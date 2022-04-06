@@ -304,7 +304,7 @@ class BlockFactoryTest {
     when(executionEngine.proposeBlindedBlock(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
-    final SignedBeaconBlock block = blockFactory.unblindSignedBeaconBlock(beaconBlock);
+    final SignedBeaconBlock block = blockFactory.unblindSignedBeaconBlock(beaconBlock).join();
 
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionEngine);

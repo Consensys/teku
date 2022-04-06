@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -101,7 +102,7 @@ public class BlockProposalUtil {
     }
   }
 
-  public SignedBeaconBlock unblindSignedBeaconBlock(
+  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
       final SignedBeaconBlock signedBeaconBlock,
       final Consumer<BeaconBlockUnblinder> blockUnblinder) {
     BeaconBlockUnblinder unblinder =

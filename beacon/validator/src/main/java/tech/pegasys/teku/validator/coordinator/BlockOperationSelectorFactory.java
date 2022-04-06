@@ -208,9 +208,8 @@ public class BlockOperationSelectorFactory {
       if (isMevBoostEnabled) {
         bodyUnblinder.executionPayload(
             () ->
-                executionEngineChannel
-                    .proposeBlindedBlock(bodyUnblinder.getSignedBlindedBeaconBlock())
-                    .join());
+                executionEngineChannel.proposeBlindedBlock(
+                    bodyUnblinder.getSignedBlindedBeaconBlock()));
         return;
       }
       // blinded block has been requested but mev-boost is not enabled

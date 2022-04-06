@@ -14,14 +14,16 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public interface BeaconBlockUnblinder {
 
-  BeaconBlockUnblinder executionPayload(Supplier<ExecutionPayload> executionPayloadSupplier);
+  BeaconBlockUnblinder executionPayload(
+      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
 
   SignedBeaconBlock getSignedBlindedBeaconBlock();
 
-  SignedBeaconBlock unblind();
+  SafeFuture<SignedBeaconBlock> unblind();
 }

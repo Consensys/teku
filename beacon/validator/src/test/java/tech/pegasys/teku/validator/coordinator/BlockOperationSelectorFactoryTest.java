@@ -490,7 +490,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private static class CapturingBeaconBlockUnblinder extends AbstractBeaconBlockUnblinder {
-    protected ExecutionPayload executionPayload;
+    protected SafeFuture<ExecutionPayload> executionPayload;
 
     public CapturingBeaconBlockUnblinder(
         SchemaDefinitions schemaDefinitions, SignedBeaconBlock signedBlindedBeaconBlock) {
@@ -499,13 +499,13 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockUnblinder executionPayload(
-        Supplier<ExecutionPayload> executionPayloadSupplier) {
+        Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
       this.executionPayload = executionPayloadSupplier.get();
       return this;
     }
 
     @Override
-    public SignedBeaconBlock unblind() {
+    public SafeFuture<SignedBeaconBlock> unblind() {
       return null;
     }
   }

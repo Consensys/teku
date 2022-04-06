@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconBlockUnblinderBellatrix extends BeaconBlockUnblinderAltair {
-  protected ExecutionPayload executionPayload;
+  protected SafeFuture<ExecutionPayload> executionPayloadFuture;
 
   public BeaconBlockUnblinderBellatrix(
       final SchemaDefinitions schemaDefinitions, final SignedBeaconBlock signedBlindedBeaconBlock) {
@@ -36,53 +37,56 @@ public class BeaconBlockUnblinderBellatrix extends BeaconBlockUnblinderAltair {
 
   @Override
   public BeaconBlockUnblinder executionPayload(
-      Supplier<ExecutionPayload> executionPayloadSupplier) {
-    this.executionPayload = executionPayloadSupplier.get();
+      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
+    this.executionPayloadFuture = executionPayloadSupplier.get();
     return this;
   }
 
   @Override
-  public SignedBeaconBlock unblind() {
+  public SafeFuture<SignedBeaconBlock> unblind() {
     BeaconBlock blindedBeaconBlock = signedBlindedBeaconBlock.getMessage();
     if (!blindedBeaconBlock.getBody().isBlinded()) {
-      return signedBlindedBeaconBlock;
+      return SafeFuture.completedFuture(signedBlindedBeaconBlock);
     }
 
-    checkNotNull(executionPayload, "executionPayload must be set");
+    checkNotNull(executionPayloadFuture, "executionPayload must be set");
 
-    final BlindedBeaconBlockBodyBellatrix blindedBody =
-        BlindedBeaconBlockBodyBellatrix.required(blindedBeaconBlock.getBody());
+    return executionPayloadFuture.thenApply(
+        executionPayload -> {
+          final BlindedBeaconBlockBodyBellatrix blindedBody =
+              BlindedBeaconBlockBodyBellatrix.required(blindedBeaconBlock.getBody());
 
-    checkState(
-        executionPayload.hashTreeRoot().equals(blindedBody.hashTreeRoot()),
-        "executionPayloadHeader root in blinded block do not match provided executionPayload root");
+          checkState(
+              executionPayload.hashTreeRoot().equals(blindedBody.hashTreeRoot()),
+              "executionPayloadHeader root in blinded block do not match provided executionPayload root");
 
-    final BeaconBlockBodyBellatrix unblindedBody =
-        new BeaconBlockBodyBellatrixImpl(
-            (BeaconBlockBodySchemaBellatrixImpl) schemaDefinitions.getBeaconBlockBodySchema(),
-            new SszSignature(blindedBody.getRandaoReveal()),
-            blindedBody.getEth1Data(),
-            SszBytes32.of(blindedBody.getGraffiti()),
-            blindedBody.getProposerSlashings(),
-            blindedBody.getAttesterSlashings(),
-            blindedBody.getAttestations(),
-            blindedBody.getDeposits(),
-            blindedBody.getVoluntaryExits(),
-            blindedBody.getSyncAggregate(),
-            executionPayload);
+          final BeaconBlockBodyBellatrix unblindedBody =
+              new BeaconBlockBodyBellatrixImpl(
+                  (BeaconBlockBodySchemaBellatrixImpl) schemaDefinitions.getBeaconBlockBodySchema(),
+                  new SszSignature(blindedBody.getRandaoReveal()),
+                  blindedBody.getEth1Data(),
+                  SszBytes32.of(blindedBody.getGraffiti()),
+                  blindedBody.getProposerSlashings(),
+                  blindedBody.getAttesterSlashings(),
+                  blindedBody.getAttestations(),
+                  blindedBody.getDeposits(),
+                  blindedBody.getVoluntaryExits(),
+                  blindedBody.getSyncAggregate(),
+                  executionPayload);
 
-    final BeaconBlock unblindedBlock =
-        schemaDefinitions
-            .getBeaconBlockSchema()
-            .create(
-                blindedBeaconBlock.getSlot(),
-                blindedBeaconBlock.getProposerIndex(),
-                blindedBeaconBlock.getParentRoot(),
-                blindedBeaconBlock.getStateRoot(),
-                unblindedBody);
+          final BeaconBlock unblindedBlock =
+              schemaDefinitions
+                  .getBeaconBlockSchema()
+                  .create(
+                      blindedBeaconBlock.getSlot(),
+                      blindedBeaconBlock.getProposerIndex(),
+                      blindedBeaconBlock.getParentRoot(),
+                      blindedBeaconBlock.getStateRoot(),
+                      unblindedBody);
 
-    return schemaDefinitions
-        .getSignedBeaconBlockSchema()
-        .create(unblindedBlock, signedBlindedBeaconBlock.getSignature());
+          return schemaDefinitions
+              .getSignedBeaconBlockSchema()
+              .create(unblindedBlock, signedBlindedBeaconBlock.getSignature());
+        });
   }
 }
