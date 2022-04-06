@@ -120,15 +120,15 @@ public class ConfigProvider {
         .withField(
             "TARGET_AGGREGATORS_PER_COMMITTEE",
             STRING_TYPE,
-            (__) -> Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE, 10))
+            (__) -> Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE))
         .withField(
             "RANDOM_SUBNETS_PER_VALIDATOR",
             STRING_TYPE,
-            (__) -> Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR, 10))
+            (__) -> Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR))
         .withField(
             "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
             STRING_TYPE,
-            (__) -> Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION, 10))
+            (__) -> Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
         .withField("DOMAIN_BEACON_PROPOSER", BYTES4_TYPE, (__) -> Domain.BEACON_PROPOSER)
         .withField("DOMAIN_BEACON_ATTESTER", BYTES4_TYPE, (__) -> Domain.BEACON_ATTESTER)
         .withField("DOMAIN_RANDAO", BYTES4_TYPE, (__) -> Domain.RANDAO)
@@ -157,11 +157,11 @@ public class ConfigProvider {
                       STRING_TYPE,
                       (__) ->
                           Integer.toString(
-                              ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE, 10))
+                              ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE))
                   .withField(
                       "SYNC_COMMITTEE_SUBNET_COUNT",
                       STRING_TYPE,
-                      (__) -> Integer.toString(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT, 10));
+                      (__) -> Integer.toString(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT));
             });
 
     return SerializableTypeDefinition.object(ConfigProvider.class)
