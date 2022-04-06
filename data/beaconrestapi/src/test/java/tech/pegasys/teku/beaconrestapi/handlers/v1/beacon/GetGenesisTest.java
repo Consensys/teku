@@ -51,6 +51,6 @@ public class GetGenesisTest extends AbstractBeaconHandlerTest {
     when(chainDataProvider.getStateGenesisData()).thenReturn(expectedGenesisData);
 
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(expectedGenesisData));
+    verify(request).respondOk(refEq(chainDataProvider));
   }
 }

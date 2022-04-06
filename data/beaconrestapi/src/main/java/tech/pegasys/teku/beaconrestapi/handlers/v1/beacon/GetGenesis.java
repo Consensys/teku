@@ -30,7 +30,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Optional;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -40,11 +39,30 @@ import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
 public class GetGenesis extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/genesis";
   private final ChainDataProvider chainDataProvider;
+
+  private static final SerializableTypeDefinition<ChainDataProvider> CHAIN_DATA_PROVIDER_TYPE =
+      SerializableTypeDefinition.object(ChainDataProvider.class)
+          .withField(
+              "genesis_time",
+              UINT64_TYPE,
+              chainDataProvider -> chainDataProvider.getStateGenesisData().getGenesisTime())
+          .withField(
+              "genesis_validators_root",
+              BYTES32_TYPE,
+              chainDataProvider ->
+                  chainDataProvider.getStateGenesisData().getGenesisValidatorsRoot())
+          .withField("genesis_fork_version", BYTES4_TYPE, ChainDataProvider::getGenesisForkVersion)
+          .build();
+
+  private static final SerializableTypeDefinition<ChainDataProvider> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(ChainDataProvider.class)
+          .name("GetGenesisResponse")
+          .withField("data", CHAIN_DATA_PROVIDER_TYPE, Function.identity())
+          .build();
 
   public GetGenesis(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
@@ -58,7 +76,7 @@ public class GetGenesis extends MigratingEndpointAdapter {
             .description(
                 "Retrieve details of the chain's genesis which can be used to identify chain.")
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
-            .response(SC_OK, "Success", getGenesisDataTypeDefinition(chainDataProvider))
+            .response(SC_OK, "Success", RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -86,37 +104,10 @@ public class GetGenesis extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final Optional<GenesisData> maybeData = getGenesisData();
-    if (maybeData.isEmpty()) {
+    if (!chainDataProvider.isStoreAvailable()) {
       request.respondWithCode(SC_NOT_FOUND);
       return;
     }
-    request.respondOk(maybeData.get());
-  }
-
-  private Optional<GenesisData> getGenesisData() {
-    if (!chainDataProvider.isStoreAvailable()) {
-      return Optional.empty();
-    }
-    return Optional.of(chainDataProvider.getStateGenesisData());
-  }
-
-  private static SerializableTypeDefinition<GenesisData> getGenesisDataTypeDefinition(
-      ChainDataProvider chainDataProvider) {
-    final SerializableTypeDefinition<GenesisData> dataType =
-        SerializableTypeDefinition.object(GenesisData.class)
-            .withField("genesis_time", UINT64_TYPE, GenesisData::getGenesisTime)
-            .withField(
-                "genesis_validators_root", BYTES32_TYPE, GenesisData::getGenesisValidatorsRoot)
-            .withField(
-                "genesis_fork_version",
-                BYTES4_TYPE,
-                data -> chainDataProvider.getGenesisForkVersion())
-            .build();
-
-    return SerializableTypeDefinition.object(GenesisData.class)
-        .name("GetGenesisResponse")
-        .withField("data", dataType, Function.identity())
-        .build();
+    request.respondOk(chainDataProvider);
   }
 }
