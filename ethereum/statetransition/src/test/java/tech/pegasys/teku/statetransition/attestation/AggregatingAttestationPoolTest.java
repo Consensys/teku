@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_SLOTS;
+import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
 import java.util.ArrayList;
@@ -53,8 +54,9 @@ class AggregatingAttestationPoolTest {
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final Spec mockSpec = mock(Spec.class);
 
-  private final AggregatingAttestationPool aggregatingPool =
-      new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem());
+  private AggregatingAttestationPool aggregatingPool =
+      new AggregatingAttestationPool(
+          mockSpec, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
   private final AttestationWorthinessChecker worthinessChecker =
@@ -159,13 +161,13 @@ class AggregatingAttestationPoolTest {
   @Test
   public void getAttestationsForBlock_shouldIncludeAttestationsThatPassValidation() {
     final Attestation attestation1 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 1);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 1);
     final Attestation attestation2 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 2);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 2);
     final Attestation attestation3 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3);
 
-    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
     when(mockSpec.validateAttestation(state, attestation1.getData()))
         .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
     when(mockSpec.validateAttestation(state, attestation2.getData())).thenReturn(Optional.empty());
@@ -191,13 +193,13 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldIncludeAttestationsWithDifferentData() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4);
     final Attestation attestation3 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3, 4);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3, 4);
 
-    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(ONE);
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
@@ -227,8 +229,8 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
     // Won't be included because of the 2 attestation limit.
@@ -372,9 +374,56 @@ class AggregatingAttestationPoolTest {
   }
 
   @Test
+  void shouldRemoveOldSlotsWhenMaximumNumberOfAttestationsReached() {
+    aggregatingPool = new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem(), 5);
+    final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ONE);
+    final AttestationData attestationData2 =
+        dataStructureUtil.randomAttestationData(UInt64.valueOf(2));
+    addAttestationFromValidators(attestationData0, 1);
+    addAttestationFromValidators(attestationData0, 2);
+    addAttestationFromValidators(attestationData1, 3);
+    addAttestationFromValidators(attestationData1, 4);
+    addAttestationFromValidators(attestationData2, 5);
+
+    assertThat(aggregatingPool.getSize()).isEqualTo(5);
+
+    final BeaconState slot1State = dataStructureUtil.randomBeaconState(ONE);
+    assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker, worthinessChecker))
+        .isNotEmpty();
+
+    addAttestationFromValidators(attestationData2, 6);
+    // Should drop the slot 0 attestations
+    assertThat(aggregatingPool.getSize()).isEqualTo(4);
+    assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker, worthinessChecker))
+        .isEmpty();
+  }
+
+  @Test
+  void shouldNotRemoveLastSlotEvenWhenMaximumNumberOfAttestationsReached() {
+    aggregatingPool = new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem(), 5);
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    addAttestationFromValidators(attestationData, 1);
+    addAttestationFromValidators(attestationData, 2);
+    addAttestationFromValidators(attestationData, 3);
+    addAttestationFromValidators(attestationData, 4);
+    addAttestationFromValidators(attestationData, 5);
+
+    assertThat(aggregatingPool.getSize()).isEqualTo(5);
+
+    final BeaconState slot1State = dataStructureUtil.randomBeaconState(ONE);
+    assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker, worthinessChecker))
+        .isNotEmpty();
+
+    addAttestationFromValidators(attestationData, 6);
+    // Can't drop anything as we only have one slot.
+    assertThat(aggregatingPool.getSize()).isEqualTo(6);
+  }
+
+  @Test
   public void getAttestationsForBlock_shouldNotAddAttestationsFromWrongFork() {
-    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
-    final AttestationData attestationData2 = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ZERO);
+    final AttestationData attestationData2 = dataStructureUtil.randomAttestationData(ZERO);
 
     addAttestationFromValidators(attestationData1, 1, 2, 3);
     Attestation attestation2 = addAttestationFromValidators(attestationData2, 4, 5);
@@ -384,7 +433,7 @@ class AggregatingAttestationPoolTest {
             ArgumentMatchers.argThat(arg -> arg.getAttestationData().equals(attestationData2))))
         .thenReturn(true);
 
-    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
     assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker, worthinessChecker))
         .containsExactly(attestation2);
   }
@@ -472,9 +521,9 @@ class AggregatingAttestationPoolTest {
 
   @Test
   void getAttestationsForBlock_inAltairShouldNotIncludeWorthlessAttestations() {
-    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
-    final AttestationData attestationData2 = dataStructureUtil.randomAttestationData();
-    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ZERO);
+    final AttestationData attestationData2 = dataStructureUtil.randomAttestationData(ZERO);
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(ONE);
 
     addAttestationFromValidators(attestationData1, 1, 2);
     Attestation attestation2 = addAttestationFromValidators(attestationData2, 3, 4);
