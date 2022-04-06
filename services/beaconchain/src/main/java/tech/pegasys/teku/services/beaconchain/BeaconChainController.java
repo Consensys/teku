@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import com.google.common.base.Throwables;
 import java.net.BindException;
@@ -757,7 +758,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool(spec, metricsSystem);
+    attestationPool =
+        new AggregatingAttestationPool(spec, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);
