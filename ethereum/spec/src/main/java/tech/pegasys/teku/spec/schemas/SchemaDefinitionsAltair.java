@@ -17,13 +17,10 @@ import com.google.common.base.Preconditions;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockUnblinderAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
@@ -110,12 +107,6 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   @Override
   public MetadataMessageSchemaAltair getMetadataMessageSchema() {
     return metadataMessageSchema;
-  }
-
-  @Override
-  public BeaconBlockUnblinder createBeaconBlockUnblinder(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return new BeaconBlockUnblinderAltair(this, signedBlindedBeaconBlock);
   }
 
   @Override

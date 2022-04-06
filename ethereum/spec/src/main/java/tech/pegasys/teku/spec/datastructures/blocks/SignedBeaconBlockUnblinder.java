@@ -11,16 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
+package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
-public interface BeaconBlockUnblinder {
+public interface SignedBeaconBlockUnblinder {
 
-  BeaconBlockUnblinder executionPayload(
+  SignedBeaconBlockUnblinder executionPayload(
       Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
 
   SignedBeaconBlock getSignedBlindedBeaconBlock();

@@ -21,22 +21,22 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockUnblinderAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class BeaconBlockUnblinderBellatrix extends BeaconBlockUnblinderAltair {
+public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlockUnblinder {
   protected SafeFuture<ExecutionPayload> executionPayloadFuture;
 
-  public BeaconBlockUnblinderBellatrix(
+  public SignedBeaconBlockUnblinderBellatrix(
       final SchemaDefinitions schemaDefinitions, final SignedBeaconBlock signedBlindedBeaconBlock) {
     super(schemaDefinitions, signedBlindedBeaconBlock);
   }
 
   @Override
-  public BeaconBlockUnblinder executionPayload(
+  public SignedBeaconBlockUnblinder executionPayload(
       Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
     this.executionPayloadFuture = executionPayloadSupplier.get();
     return this;
@@ -57,7 +57,9 @@ public class BeaconBlockUnblinderBellatrix extends BeaconBlockUnblinderAltair {
               BlindedBeaconBlockBodyBellatrix.required(blindedBeaconBlock.getBody());
 
           checkState(
-              executionPayload.hashTreeRoot().equals(blindedBody.hashTreeRoot()),
+              executionPayload
+                  .hashTreeRoot()
+                  .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
               "executionPayloadHeader root in blinded block do not match provided executionPayload root");
 
           final BeaconBlockBodyBellatrix unblindedBody =
@@ -74,7 +76,7 @@ public class BeaconBlockUnblinderBellatrix extends BeaconBlockUnblinderAltair {
                   blindedBody.getSyncAggregate(),
                   executionPayload);
 
-          final BeaconBlock unblindedBlock =
+          final BeaconBlock unblindedBeaconBlock =
               schemaDefinitions
                   .getBeaconBlockSchema()
                   .create(
@@ -84,9 +86,13 @@ public class BeaconBlockUnblinderBellatrix extends BeaconBlockUnblinderAltair {
                       blindedBeaconBlock.getStateRoot(),
                       unblindedBody);
 
+          checkState(
+              unblindedBeaconBlock.hashTreeRoot().equals(blindedBeaconBlock.hashTreeRoot()),
+              "unblinded block root do not match original blinded block root");
+
           return schemaDefinitions
               .getSignedBeaconBlockSchema()
-              .create(unblindedBlock, signedBlindedBeaconBlock.getSignature());
+              .create(unblindedBeaconBlock, signedBlindedBeaconBlock.getSignature());
         });
   }
 }

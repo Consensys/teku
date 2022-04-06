@@ -39,11 +39,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -489,7 +489,7 @@ class BlockOperationSelectorFactoryTest {
     }
   }
 
-  private static class CapturingBeaconBlockUnblinder extends AbstractBeaconBlockUnblinder {
+  private static class CapturingBeaconBlockUnblinder extends AbstractSignedBeaconBlockUnblinder {
     protected SafeFuture<ExecutionPayload> executionPayload;
 
     public CapturingBeaconBlockUnblinder(
@@ -498,7 +498,7 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public BeaconBlockUnblinder executionPayload(
+    public SignedBeaconBlockUnblinder executionPayload(
         Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
       this.executionPayload = executionPayloadSupplier.get();
       return this;

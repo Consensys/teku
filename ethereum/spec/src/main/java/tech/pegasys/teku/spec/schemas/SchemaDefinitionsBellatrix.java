@@ -19,14 +19,16 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockUnblinderBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.SignedBeaconBlockBlinderBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.SignedBeaconBlockUnblinderBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -43,6 +45,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
   private final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema;
+  private final Optional<SignedBeaconBlockBlinder> signedBeaconBlockBlinder;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
@@ -61,6 +64,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockBellatrix");
     this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);
+    this.signedBeaconBlockBlinder = Optional.of(new SignedBeaconBlockBlinderBellatrix(this));
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -113,9 +117,14 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   }
 
   @Override
-  public BeaconBlockUnblinder createBeaconBlockUnblinder(
+  public Optional<SignedBeaconBlockUnblinder> createBeaconBlockUnblinder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return new BeaconBlockUnblinderBellatrix(this, signedBlindedBeaconBlock);
+    return Optional.of(new SignedBeaconBlockUnblinderBellatrix(this, signedBlindedBeaconBlock));
+  }
+
+  @Override
+  public Optional<SignedBeaconBlockBlinder> getBeaconBlockBlinder() {
+    return signedBeaconBlockBlinder;
   }
 
   public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {

@@ -28,8 +28,8 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -203,7 +203,7 @@ public class BlockOperationSelectorFactory {
             .join();
   }
 
-  public Consumer<BeaconBlockUnblinder> createUnblinderSelector() {
+  public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {
     return bodyUnblinder -> {
       if (isMevBoostEnabled) {
         bodyUnblinder.executionPayload(

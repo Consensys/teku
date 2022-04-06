@@ -41,8 +41,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -506,10 +506,16 @@ public class Spec {
 
   public SafeFuture<SignedBeaconBlock> unblindBeaconBlock(
       final SignedBeaconBlock blindedSignedBeaconBlock,
-      final Consumer<BeaconBlockUnblinder> blockUnblinder) {
+      final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
     return atSlot(blindedSignedBeaconBlock.getSlot())
         .getBlockProposalUtil()
         .unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder);
+  }
+
+  public SignedBeaconBlock blindBeaconBlock(final SignedBeaconBlock unblindedSignedBeaconBlock) {
+    return atSlot(unblindedSignedBeaconBlock.getSlot())
+        .getBlockProposalUtil()
+        .blindSignedBeaconBlock(unblindedSignedBeaconBlock);
   }
 
   // Block Processor Utils

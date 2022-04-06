@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockUnblinderPhase0;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class BeaconBlockUnblinderAltair extends BeaconBlockUnblinderPhase0 {
-  public BeaconBlockUnblinderAltair(
-      final SchemaDefinitions schemaDefinitions, final SignedBeaconBlock signedBlindedBeaconBlock) {
-    super(schemaDefinitions, signedBlindedBeaconBlock);
+public abstract class AbstractSignedBeaconBlockBlinder implements SignedBeaconBlockBlinder {
+  protected final SchemaDefinitions schemaDefinitions;
+
+  public AbstractSignedBeaconBlockBlinder(final SchemaDefinitions schemaDefinitions) {
+    this.schemaDefinitions = schemaDefinitions;
   }
 }
