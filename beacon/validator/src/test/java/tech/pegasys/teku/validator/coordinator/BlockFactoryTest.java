@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -364,25 +365,7 @@ class BlockFactoryTest {
 
   private SignedBeaconBlock assertBlockUnblinded(
       final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
-    final BlockFactory blockFactory =
-        new BlockFactory(
-            spec,
-            new BlockOperationSelectorFactory(
-                spec,
-                attestationsPool,
-                attesterSlashingPool,
-                proposerSlashingPool,
-                voluntaryExitPool,
-                syncCommitteeContributionPool,
-                depositProvider,
-                eth1DataCache,
-                graffiti,
-                forkChoiceNotifier,
-                executionEngine,
-                isMevBoostEnabled));
+    final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
 
     when(executionEngine.proposeBlindedBlock(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
@@ -400,24 +383,9 @@ class BlockFactoryTest {
     assertThat(block.getSlot()).isEqualTo(beaconBlock.getSlot());
     assertThat(block.getSignature()).isEqualTo(beaconBlock.getSignature());
 
-    assertThat(block.getMessage().getBody().getRandaoReveal())
-        .isEqualTo(beaconBlock.getMessage().getBody().getRandaoReveal());
-    assertThat(block.getMessage().getBody().getEth1Data())
-        .isEqualTo(beaconBlock.getMessage().getBody().getEth1Data());
-    assertThat(block.getMessage().getBody().getDeposits())
-        .isEqualTo(beaconBlock.getMessage().getBody().getDeposits());
-    assertThat(block.getMessage().getBody().getAttestations())
-        .isEqualTo(beaconBlock.getMessage().getBody().getAttestations());
-    assertThat(block.getMessage().getBody().getAttesterSlashings())
-        .isEqualTo(beaconBlock.getMessage().getBody().getAttesterSlashings());
-    assertThat(block.getMessage().getBody().getProposerSlashings())
-        .isEqualTo(beaconBlock.getMessage().getBody().getProposerSlashings());
-    assertThat(block.getMessage().getBody().getVoluntaryExits())
-        .isEqualTo(beaconBlock.getMessage().getBody().getVoluntaryExits());
-    assertThat(block.getMessage().getBody().getGraffiti())
-        .isEqualTo(beaconBlock.getMessage().getBody().getGraffiti());
-    assertThat(block.getMessage().getBody().getOptionalSyncAggregate())
-        .isEqualTo(beaconBlock.getMessage().getBody().getOptionalSyncAggregate());
+    assertCommonBlockFieldsEquality(
+        block.getMessage().getBody(), beaconBlock.getMessage().getBody());
+
     assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isEqualTo(Optional.empty());
 
@@ -426,25 +394,8 @@ class BlockFactoryTest {
 
   private SignedBeaconBlock assertBlockBlinded(
       final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
-    final BlockFactory blockFactory =
-        new BlockFactory(
-            spec,
-            new BlockOperationSelectorFactory(
-                spec,
-                attestationsPool,
-                attesterSlashingPool,
-                proposerSlashingPool,
-                voluntaryExitPool,
-                syncCommitteeContributionPool,
-                depositProvider,
-                eth1DataCache,
-                graffiti,
-                forkChoiceNotifier,
-                executionEngine,
-                isMevBoostEnabled));
+    final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
 
     final SignedBeaconBlock block = blockFactory.blindSignedBeaconBlock(beaconBlock);
 
@@ -453,27 +404,43 @@ class BlockFactoryTest {
     assertThat(block.getSlot()).isEqualTo(beaconBlock.getSlot());
     assertThat(block.getSignature()).isEqualTo(beaconBlock.getSignature());
 
-    assertThat(block.getMessage().getBody().getRandaoReveal())
-        .isEqualTo(beaconBlock.getMessage().getBody().getRandaoReveal());
-    assertThat(block.getMessage().getBody().getEth1Data())
-        .isEqualTo(beaconBlock.getMessage().getBody().getEth1Data());
-    assertThat(block.getMessage().getBody().getDeposits())
-        .isEqualTo(beaconBlock.getMessage().getBody().getDeposits());
-    assertThat(block.getMessage().getBody().getAttestations())
-        .isEqualTo(beaconBlock.getMessage().getBody().getAttestations());
-    assertThat(block.getMessage().getBody().getAttesterSlashings())
-        .isEqualTo(beaconBlock.getMessage().getBody().getAttesterSlashings());
-    assertThat(block.getMessage().getBody().getProposerSlashings())
-        .isEqualTo(beaconBlock.getMessage().getBody().getProposerSlashings());
-    assertThat(block.getMessage().getBody().getVoluntaryExits())
-        .isEqualTo(beaconBlock.getMessage().getBody().getVoluntaryExits());
-    assertThat(block.getMessage().getBody().getGraffiti())
-        .isEqualTo(beaconBlock.getMessage().getBody().getGraffiti());
-    assertThat(block.getMessage().getBody().getOptionalSyncAggregate())
-        .isEqualTo(beaconBlock.getMessage().getBody().getOptionalSyncAggregate());
+    assertCommonBlockFieldsEquality(block.getMessage().getBody(), block.getMessage().getBody());
+
     assertThat(block.getMessage().getBody().getOptionalExecutionPayload())
         .isEqualTo(Optional.empty());
 
     return block;
+  }
+
+  private BlockFactory createBlockFactory(final Spec spec, final boolean isMevBoostEnabled) {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
+    return new BlockFactory(
+        spec,
+        new BlockOperationSelectorFactory(
+            spec,
+            attestationsPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
+            syncCommitteeContributionPool,
+            depositProvider,
+            eth1DataCache,
+            graffiti,
+            forkChoiceNotifier,
+            executionEngine,
+            isMevBoostEnabled));
+  }
+
+  private void assertCommonBlockFieldsEquality(final BeaconBlockBody a, final BeaconBlockBody b) {
+    assertThat(a.getRandaoReveal()).isEqualTo(b.getRandaoReveal());
+    assertThat(a.getEth1Data()).isEqualTo(b.getEth1Data());
+    assertThat(a.getDeposits()).isEqualTo(b.getDeposits());
+    assertThat(a.getAttestations()).isEqualTo(b.getAttestations());
+    assertThat(a.getAttesterSlashings()).isEqualTo(b.getAttesterSlashings());
+    assertThat(a.getProposerSlashings()).isEqualTo(b.getProposerSlashings());
+    assertThat(a.getVoluntaryExits()).isEqualTo(b.getVoluntaryExits());
+    assertThat(a.getGraffiti()).isEqualTo(b.getGraffiti());
+    assertThat(a.getOptionalSyncAggregate()).isEqualTo(b.getOptionalSyncAggregate());
   }
 }

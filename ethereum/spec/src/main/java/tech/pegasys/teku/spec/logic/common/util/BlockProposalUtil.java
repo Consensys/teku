@@ -106,7 +106,7 @@ public class BlockProposalUtil {
       final SignedBeaconBlock signedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
     return schemaDefinitions
-        .createBeaconBlockUnblinder(signedBeaconBlock)
+        .createSignedBeaconBlockUnblinder(signedBeaconBlock)
         .map(
             unblinder -> {
               blockUnblinder.accept(unblinder);
@@ -125,7 +125,7 @@ public class BlockProposalUtil {
 
   public SignedBeaconBlock blindSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
     return schemaDefinitions
-        .getBeaconBlockBlinder()
+        .getSignedBeaconBlockBlinder()
         .map(blinder -> blinder.blind(signedBeaconBlock))
         .orElseGet(
             () -> {

@@ -74,11 +74,11 @@ public interface SchemaDefinitions {
   AttesterSlashingSchema getAttesterSlashingSchema();
 
   @NonSchema
-  Optional<SignedBeaconBlockUnblinder> createBeaconBlockUnblinder(
+  Optional<SignedBeaconBlockUnblinder> createSignedBeaconBlockUnblinder(
       SignedBeaconBlock signedBlindedBeaconBlock);
 
   @NonSchema
-  Optional<SignedBeaconBlockBlinder> getBeaconBlockBlinder();
+  Optional<SignedBeaconBlockBlinder> getSignedBeaconBlockBlinder();
 
   @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {

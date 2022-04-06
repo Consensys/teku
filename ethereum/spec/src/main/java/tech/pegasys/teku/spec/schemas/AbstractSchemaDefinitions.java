@@ -76,13 +76,13 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   }
 
   @Override
-  public Optional<SignedBeaconBlockUnblinder> createBeaconBlockUnblinder(
+  public Optional<SignedBeaconBlockUnblinder> createSignedBeaconBlockUnblinder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return Optional.empty();
   }
 
   @Override
-  public Optional<SignedBeaconBlockBlinder> getBeaconBlockBlinder() {
+  public Optional<SignedBeaconBlockBlinder> getSignedBeaconBlockBlinder() {
     return Optional.empty();
   }
 }

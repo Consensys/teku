@@ -117,13 +117,13 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   }
 
   @Override
-  public Optional<SignedBeaconBlockUnblinder> createBeaconBlockUnblinder(
+  public Optional<SignedBeaconBlockUnblinder> createSignedBeaconBlockUnblinder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return Optional.of(new SignedBeaconBlockUnblinderBellatrix(this, signedBlindedBeaconBlock));
   }
 
   @Override
-  public Optional<SignedBeaconBlockBlinder> getBeaconBlockBlinder() {
+  public Optional<SignedBeaconBlockBlinder> getSignedBeaconBlockBlinder() {
     return signedBeaconBlockBlinder;
   }
 

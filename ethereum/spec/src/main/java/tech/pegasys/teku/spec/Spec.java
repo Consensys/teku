@@ -504,7 +504,7 @@ public class Spec {
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
   }
 
-  public SafeFuture<SignedBeaconBlock> unblindBeaconBlock(
+  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
       final SignedBeaconBlock blindedSignedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
     return atSlot(blindedSignedBeaconBlock.getSlot())
@@ -512,7 +512,7 @@ public class Spec {
         .unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder);
   }
 
-  public SignedBeaconBlock blindBeaconBlock(final SignedBeaconBlock unblindedSignedBeaconBlock) {
+  public SignedBeaconBlock blindSignedBeaconBlock(final SignedBeaconBlock unblindedSignedBeaconBlock) {
     return atSlot(unblindedSignedBeaconBlock.getSlot())
         .getBlockProposalUtil()
         .blindSignedBeaconBlock(unblindedSignedBeaconBlock);
