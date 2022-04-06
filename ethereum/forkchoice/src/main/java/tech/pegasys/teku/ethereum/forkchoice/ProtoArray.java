@@ -569,7 +569,8 @@ public class ProtoArray {
    * @return
    */
   public boolean nodeIsViableForHead(ProtoNode node) {
-    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(initialEpoch))
+    return !node.isInvalid()
+        && (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(initialEpoch))
         && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(initialEpoch));
   }
 
