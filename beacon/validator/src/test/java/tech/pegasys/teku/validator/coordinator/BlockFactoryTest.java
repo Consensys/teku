@@ -174,6 +174,18 @@ class BlockFactoryTest {
   }
 
   @Test
+  void blindSignedBeaconBlock_shouldThrowInNonBellatrixBlocks() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    final SignedBeaconBlock originalUnblindedSignedBlock =
+        dataStructureUtil.randomSignedBeaconBlock(1);
+
+    assertThatThrownBy(() -> assertBlockBlinded(originalUnblindedSignedBlock, spec, true))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
   void blindSignedBeaconBlock_shouldBlindBlockWhenBellatrixIsActiveAndMevBoostIsEnabled() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
