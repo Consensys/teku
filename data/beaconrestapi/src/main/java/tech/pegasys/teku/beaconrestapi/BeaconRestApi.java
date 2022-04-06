@@ -187,7 +187,7 @@ public class BeaconRestApi {
       final DataProvider dataProvider, final Eth1Address depositAddress) {
     addMigratedEndpoint(new GetDepositContract(depositAddress, dataProvider.getConfigProvider()));
     addMigratedEndpoint(new GetForkSchedule(dataProvider));
-    app.get(GetSpec.ROUTE, new GetSpec(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetSpec(dataProvider));
   }
 
   private void addDebugHandlers(final DataProvider dataProvider) {
