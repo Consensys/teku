@@ -512,7 +512,8 @@ public class Spec {
         .unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder);
   }
 
-  public SignedBeaconBlock blindSignedBeaconBlock(final SignedBeaconBlock unblindedSignedBeaconBlock) {
+  public SignedBeaconBlock blindSignedBeaconBlock(
+      final SignedBeaconBlock unblindedSignedBeaconBlock) {
     return atSlot(unblindedSignedBeaconBlock.getSlot())
         .getBlockProposalUtil()
         .blindSignedBeaconBlock(unblindedSignedBeaconBlock);
