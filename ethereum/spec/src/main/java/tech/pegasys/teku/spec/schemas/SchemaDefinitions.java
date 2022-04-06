@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -69,16 +73,24 @@ public interface SchemaDefinitions {
 
   AttesterSlashingSchema getAttesterSlashingSchema();
 
+  @NonSchema
   Optional<SignedBeaconBlockUnblinder> createBeaconBlockUnblinder(
       SignedBeaconBlock signedBlindedBeaconBlock);
 
+  @NonSchema
   Optional<SignedBeaconBlockBlinder> getBeaconBlockBlinder();
 
+  @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {
     return Optional.empty();
   }
 
+  @NonSchema
   default Optional<SchemaDefinitionsBellatrix> toVersionBellatrix() {
     return Optional.empty();
   }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.METHOD)
+  @interface NonSchema {}
 }
