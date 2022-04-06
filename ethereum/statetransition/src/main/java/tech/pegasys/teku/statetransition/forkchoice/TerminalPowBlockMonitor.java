@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -40,6 +41,7 @@ public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventLogger eventLogger;
+  private final TimeProvider timeProvider;
   private final ExecutionEngineChannel executionEngine;
   private final AsyncRunner asyncRunner;
   private Optional<Cancellable> timer = Optional.empty();
@@ -60,13 +62,15 @@ public class TerminalPowBlockMonitor {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final AsyncRunner asyncRunner,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final TimeProvider timeProvider) {
     this.executionEngine = executionEngine;
     this.asyncRunner = asyncRunner;
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.eventLogger = eventLogger;
+    this.timeProvider = timeProvider;
   }
 
   public synchronized void start() {
@@ -230,6 +234,10 @@ public class TerminalPowBlockMonitor {
               final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
+                return SafeFuture.COMPLETE;
+              }
+              if (powBlock.getBlockTimestamp().isGreaterThan(timeProvider.getTimeInSeconds())) {
+                LOG.trace("checkTerminalBlockByTTD: Chain head is in the future, ignoring for now");
                 return SafeFuture.COMPLETE;
               }
 

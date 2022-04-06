@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAl
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -97,7 +99,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
@@ -250,8 +252,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      final ExecutionPayload executionPayload,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final ExecutionPayloadHeader payloadHeader,
+      final Optional<ExecutionPayload> payload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }

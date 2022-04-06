@@ -23,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Improved peer scoring to better handle temporary errors from peers.
 - Enabled fork choice proposer boost by default.
 - Added Websockets and IPC protocols support for execution client’s Engine JSON RPC API.
+- Added experimental support for Gnosis Beacon chain
 
 ### Bug Fixes
 - Fixed the target database format for the `migrate-database` command.

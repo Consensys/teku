@@ -126,7 +126,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
@@ -150,7 +150,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     try {
       // Process_block
@@ -293,7 +293,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     return preState.updated(
         state ->
@@ -306,7 +306,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());

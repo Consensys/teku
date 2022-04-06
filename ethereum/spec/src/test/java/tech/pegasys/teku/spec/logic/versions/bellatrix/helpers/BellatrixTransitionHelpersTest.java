@@ -151,7 +151,7 @@ class BellatrixTransitionHelpersTest {
 
   private PowBlock withPowBlock(final Bytes32 hash, final UInt256 totalDifficulty) {
     final PowBlock powBlock =
-        new PowBlock(hash, dataStructureUtil.randomBytes32(), totalDifficulty);
+        new PowBlock(hash, dataStructureUtil.randomBytes32(), totalDifficulty, UInt64.ZERO);
     when(executionEngine.getPowBlock(powBlock.getBlockHash()))
         .thenReturn(completedFuture(Optional.of(powBlock)));
     return powBlock;

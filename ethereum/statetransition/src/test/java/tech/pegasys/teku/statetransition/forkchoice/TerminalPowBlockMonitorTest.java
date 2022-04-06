@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -56,6 +57,7 @@ public class TerminalPowBlockMonitorTest {
   private static final UInt256 TTD = UInt256.valueOf(10_000_000);
   private static final Bytes32 TERMINAL_BLOCK_HASH = Bytes32.random();
   private static final UInt64 TERMINAL_BLOCK_EPOCH = UInt64.valueOf(2);
+  private static final UInt64 TIME_IN_PAST = UInt64.valueOf(123);
 
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
@@ -131,7 +133,13 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
-            executionEngine, spec, recentChainData, forkChoiceNotifier, asyncRunner, eventLogger);
+            executionEngine,
+            spec,
+            recentChainData,
+            forkChoiceNotifier,
+            asyncRunner,
+            eventLogger,
+            timeProvider);
 
     terminalPowBlockMonitor.onNodeSyncStateChanged(true);
   }
@@ -167,7 +175,8 @@ public class TerminalPowBlockMonitorTest {
     final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD)));
+        .thenReturn(
+            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
@@ -175,7 +184,8 @@ public class TerminalPowBlockMonitorTest {
                     new PowBlock(
                         headBlockParentHash,
                         dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10)))));
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
 
     terminalPowBlockMonitor.start();
 
@@ -213,7 +223,11 @@ public class TerminalPowBlockMonitorTest {
     when(executionEngine.getPowChainHead())
         .thenReturn(
             completedFuture(
-                new PowBlock(headBlockHash, dataStructureUtil.randomBytes32(), TTD.subtract(10))));
+                new PowBlock(
+                    headBlockHash,
+                    dataStructureUtil.randomBytes32(),
+                    TTD.subtract(10),
+                    TIME_IN_PAST)));
 
     asyncRunner.executeQueuedActions();
 
@@ -224,7 +238,8 @@ public class TerminalPowBlockMonitorTest {
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD)));
+        .thenReturn(
+            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
@@ -232,7 +247,8 @@ public class TerminalPowBlockMonitorTest {
                     new PowBlock(
                         headBlockParentHash,
                         dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10)))));
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -253,12 +269,18 @@ public class TerminalPowBlockMonitorTest {
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10))));
+        .thenReturn(
+            completedFuture(
+                new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
-                    new PowBlock(headBlockParentHash, dataStructureUtil.randomBytes32(), TTD))));
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD,
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -270,7 +292,9 @@ public class TerminalPowBlockMonitorTest {
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10))));
+        .thenReturn(
+            completedFuture(
+                new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
@@ -278,7 +302,8 @@ public class TerminalPowBlockMonitorTest {
                     new PowBlock(
                         headBlockParentHash,
                         dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10)))));
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -299,6 +324,39 @@ public class TerminalPowBlockMonitorTest {
         .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
     verifyNoMoreInteractions(eventLogger);
+  }
+
+  @Test
+  public void shouldNotSelectTTDBlockWithTimestampInFuture() {
+    Bytes32 headBlockHash;
+    Bytes32 headBlockParentHash;
+
+    setUpTTDConfig();
+
+    terminalPowBlockMonitor.start();
+
+    // AT BELLATRIX FORK, TTD reached but block in future - should not notify
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+    headBlockHash = dataStructureUtil.randomBytes32();
+    headBlockParentHash = dataStructureUtil.randomBytes32();
+    final UInt64 timeInFuture = timeProvider.getTimeInSeconds().plus(1);
+    when(executionEngine.getPowChainHead())
+        .thenReturn(
+            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, timeInFuture)));
+    when(executionEngine.getPowBlock(headBlockParentHash))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger, never()).terminalPowBlockDetected(headBlockHash);
+    verify(forkChoiceNotifier, never()).onTerminalBlockReached(headBlockHash);
   }
 
   @Test
@@ -344,7 +402,10 @@ public class TerminalPowBlockMonitorTest {
             completedFuture(
                 Optional.of(
                     new PowBlock(
-                        TERMINAL_BLOCK_HASH, dataStructureUtil.randomBytes32(), UInt256.ONE))));
+                        TERMINAL_BLOCK_HASH,
+                        dataStructureUtil.randomBytes32(),
+                        UInt256.ONE,
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 

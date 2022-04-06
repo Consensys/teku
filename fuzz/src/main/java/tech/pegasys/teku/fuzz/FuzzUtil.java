@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -50,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
@@ -141,7 +141,7 @@ public class FuzzUtil {
               structuredInput.getState(),
               structuredInput.getSignedBlock(),
               signatureVerifier,
-              OptimisticExecutionPayloadExecutor.NOOP);
+              Optional.empty());
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {
@@ -288,19 +288,30 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzExecutionPayload(final byte[] input) {
-    ExecutionPayloadFuzzInput structuredInput =
+    ExecutionPayloadFuzzInput structuredPayloadInput =
         deserialize(input, ExecutionPayloadFuzzInput.createSchema(specVersion));
-    ExecutionPayload executionPayload = structuredInput.getExecutionPayload();
+
+    ExecutionPayload executionPayload = structuredPayloadInput.getExecutionPayload();
+    ExecutionPayloadHeader executionPayloadHeader =
+        specVersion
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(executionPayload);
 
     try {
       BeaconState postState =
-          structuredInput
+          structuredPayloadInput
               .getState()
               .updated(
                   state ->
                       spec.getBlockProcessor(state.getSlot())
                           .processExecutionPayload(
-                              state, executionPayload, OptimisticExecutionPayloadExecutor.NOOP));
+                              state,
+                              executionPayloadHeader,
+                              Optional.of(executionPayload),
+                              Optional.empty()));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {

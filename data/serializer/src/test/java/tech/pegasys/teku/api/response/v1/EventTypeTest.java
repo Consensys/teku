@@ -20,7 +20,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class EventTypeTest {
-
   @Test
   void shouldParseEventTypes() {
     List<EventType> topics =

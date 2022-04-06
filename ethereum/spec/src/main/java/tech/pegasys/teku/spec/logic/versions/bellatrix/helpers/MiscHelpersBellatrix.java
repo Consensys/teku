@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
@@ -34,11 +34,17 @@ public class MiscHelpersBellatrix extends MiscHelpersAltair {
 
   public boolean isMergeTransitionBlock(final BeaconState genericState, final BeaconBlock block) {
     final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
-    final BeaconBlockBodyBellatrix blockBody = BeaconBlockBodyBellatrix.required(block.getBody());
-    return !isMergeTransitionComplete(state) && !blockBody.getExecutionPayload().isDefault();
+    return !isMergeTransitionComplete(state) && !isDefaultExecution(block.getBody());
   }
 
   public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
     return isMergeTransitionBlock(genericState, block) || isMergeTransitionComplete(genericState);
+  }
+
+  private boolean isDefaultExecution(final BeaconBlockBody blockBody) {
+    if (blockBody.isBlinded()) {
+      return blockBody.getOptionalExecutionPayloadHeader().orElseThrow().isDefault();
+    }
+    return blockBody.getOptionalExecutionPayload().orElseThrow().isDefault();
   }
 }

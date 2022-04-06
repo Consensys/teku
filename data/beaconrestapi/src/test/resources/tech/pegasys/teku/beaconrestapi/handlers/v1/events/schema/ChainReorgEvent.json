@@ -1,0 +1,49 @@
+{
+  "title" : "ChainReorgEvent",
+  "type" : "object",
+  "required" : [ "slot", "depth", "old_head_block", "new_head_block", "old_head_state", "new_head_state", "epoch" ],
+  "properties" : {
+    "slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "depth" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "old_head_block" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
+    },
+    "new_head_block" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
+    },
+    "old_head_state" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
+    },
+    "new_head_state" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
+    },
+    "epoch" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}
