@@ -21,6 +21,7 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
@@ -201,20 +204,30 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case EXECUTION_PAYLOAD:
         final ExecutionMeta executionMeta =
             loadYaml(testDefinition, "execution.yaml", ExecutionMeta.class);
-        final ExecutionPayload payload =
+
+        final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
+            testDefinition
+                .getSpec()
+                .getGenesisSchemaDefinitions()
+                .toVersionBellatrix()
+                .orElseThrow();
+        final ExecutionPayload executionPayload =
             loadSsz(
                 testDefinition,
                 dataFileName,
-                testDefinition
-                    .getSpec()
-                    .getGenesisSchemaDefinitions()
-                    .toVersionBellatrix()
-                    .orElseThrow()
-                    .getExecutionPayloadSchema());
+                schemaDefinitionsBellatrix.getExecutionPayloadSchema());
+
+        final ExecutionPayloadHeader executionPayloadHeader =
+            schemaDefinitionsBellatrix
+                .getExecutionPayloadHeaderSchema()
+                .createFromExecutionPayload(executionPayload);
+
         processor.processExecutionPayload(
             state,
-            payload,
-            (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid);
+            executionPayloadHeader,
+            Optional.of(executionPayload),
+            Optional.of(
+                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
     }
   }

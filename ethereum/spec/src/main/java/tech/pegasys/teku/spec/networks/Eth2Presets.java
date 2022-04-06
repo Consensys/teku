@@ -18,7 +18,8 @@ import java.util.Locale;
 public enum Eth2Presets {
   MAINNET,
   MINIMAL,
-  SWIFT;
+  SWIFT,
+  GNOSIS;
 
   public String presetName() {
     return name().toLowerCase(Locale.US);

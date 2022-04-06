@@ -28,21 +28,13 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.response.v1.BlockEvent;
-import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
-import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
-import tech.pegasys.teku.api.response.v1.HeadEvent;
-import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
-import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
-import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -54,7 +46,6 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   private static final Logger LOG = LogManager.getLogger();
 
   private final ConfigProvider configProvider;
-  private final JsonProvider jsonProvider;
   private final ChainDataProvider provider;
   private final AsyncRunner asyncRunner;
   private final int maxPendingEvents;
@@ -64,14 +55,12 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   public EventSubscriptionManager(
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
-      final JsonProvider jsonProvider,
       final SyncDataProvider syncDataProvider,
       final ConfigProvider configProvider,
       final AsyncRunner asyncRunner,
       final EventChannels eventChannels,
       final int maxPendingEvents) {
     this.provider = chainDataProvider;
-    this.jsonProvider = jsonProvider;
     this.asyncRunner = asyncRunner;
     this.maxPendingEvents = maxPendingEvents;
     this.eventSubscribers = new ConcurrentLinkedQueue<>();
@@ -145,7 +134,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit,
       final InternalValidationResult result,
       final boolean fromNetwork) {
-    final SignedVoluntaryExit voluntaryExitEvent = new SignedVoluntaryExit(exit);
+    final VoluntaryExitEvent voluntaryExitEvent = new VoluntaryExitEvent(exit);
     notifySubscribersOfEvent(EventType.voluntary_exit, voluntaryExitEvent);
   }
 
@@ -156,14 +145,14 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final InternalValidationResult result,
       final boolean fromNetwork) {
     if (result.isAccept()) {
-      final SignedContributionAndProof signedContributionAndProof =
-          new SignedContributionAndProof(proof);
+      final ContributionAndProofEvent signedContributionAndProof =
+          new ContributionAndProofEvent(proof);
       notifySubscribersOfEvent(EventType.contribution_and_proof, signedContributionAndProof);
     }
   }
 
   protected void onNewAttestation(final ValidateableAttestation attestation) {
-    final Attestation attestationEvent = new Attestation(attestation.getAttestation());
+    final AttestationEvent attestationEvent = new AttestationEvent(attestation.getAttestation());
     notifySubscribersOfEvent(EventType.attestation, attestationEvent);
   }
 
@@ -171,7 +160,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block,
       final boolean executionOptimistic) {
     final BlockEvent blockEvent =
-        BlockEvent.fromSignedBeaconBlock(block, getExecutionOptimisticForApi(executionOptimistic));
+        new BlockEvent(block, getExecutionOptimisticForApi(executionOptimistic));
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
@@ -192,8 +181,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     notifySubscribersOfEvent(EventType.sync_state, new SyncStateChangeEvent(syncState.name()));
   }
 
-  private void notifySubscribersOfEvent(final EventType eventType, final Object event) {
-    final EventSource eventSource = new EventSource(jsonProvider, event);
+  private void notifySubscribersOfEvent(final EventType eventType, final Event<?> event) {
+    final EventSource<?> eventSource = new EventSource<>(event);
     try {
       for (EventSubscriber subscriber : eventSubscribers) {
         subscriber.onEvent(eventType, eventSource);
@@ -207,19 +196,17 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     return provider.isBellatrixEnabled() ? executionOptimistic : null;
   }
 
-  public static class EventSource {
-    private final JsonProvider jsonProvider;
-    private final Object event;
+  public static class EventSource<T> {
+    private final Event<T> event;
     private String value;
 
-    public EventSource(final JsonProvider jsonProvider, final Object event) {
-      this.jsonProvider = jsonProvider;
+    public EventSource(final Event<T> event) {
       this.event = event;
     }
 
     public String get() throws JsonProcessingException {
       if (value == null) {
-        value = jsonProvider.objectToJSON(event);
+        value = JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition());
       }
       return value;
     }

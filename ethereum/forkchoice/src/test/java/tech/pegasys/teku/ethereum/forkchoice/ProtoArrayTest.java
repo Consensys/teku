@@ -451,9 +451,13 @@ class ProtoArrayTest {
   }
 
   private void assertHead(final Bytes32 expectedBlockHash) {
+    final ProtoNode node = protoArray.getProtoNode(expectedBlockHash).orElseThrow();
     assertThat(
             protoArray.findOptimisticHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
-        .isEqualTo(protoArray.getProtoNode(expectedBlockHash).orElseThrow());
+        .isEqualTo(node);
+
+    assertThat(node.getBestDescendantIndex()).isEmpty();
+    assertThat(node.getBestChildIndex()).isEmpty();
   }
 
   private void addValidBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {

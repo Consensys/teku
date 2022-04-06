@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -76,29 +77,47 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
-    final BeaconBlockBodyBellatrix blockBody = BeaconBlockBodyBellatrix.required(block.getBody());
+    final BeaconBlockBody blockBody = block.getBody();
+    final ExecutionPayloadHeader executionPayloadHeader;
+
+    if (blockBody.isBlinded()) {
+      executionPayloadHeader = blockBody.getOptionalExecutionPayloadHeader().orElseThrow();
+    } else {
+      final ExecutionPayload executionPayload =
+          blockBody.getOptionalExecutionPayload().orElseThrow();
+      executionPayloadHeader =
+          schemaDefinitions
+              .getExecutionPayloadHeaderSchema()
+              .createFromExecutionPayload(executionPayload);
+    }
+
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(state, blockBody.getExecutionPayload(), payloadExecutor);
+      processExecutionPayload(
+          state, executionPayloadHeader, blockBody.getOptionalExecutionPayload(), payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
-    processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
+    processSyncAggregate(
+        state, blockBody.getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
   }
 
   @Override
   public void processExecutionPayload(
       final MutableBeaconState genericState,
-      final ExecutionPayload payload,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     if (miscHelpersBellatrix.isMergeTransitionComplete(state)) {
-      if (!payload.getParentHash().equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
+      if (!executionPayloadHeader
+          .getParentHash()
+          .equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
         throw new BlockProcessingException(
             "Execution payload parent hash does not match previous execution payload header");
       }
@@ -106,41 +125,31 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     if (!beaconStateAccessors
         .getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state))
-        .equals(payload.getPrevRandao())) {
+        .equals(executionPayloadHeader.getPrevRandao())) {
       throw new BlockProcessingException("Execution payload random does not match state randao");
     }
 
     if (!miscHelpersBellatrix
         .computeTimeAtSlot(state, state.getSlot())
-        .equals(payload.getTimestamp())) {
+        .equals(executionPayloadHeader.getTimestamp())) {
       throw new BlockProcessingException(
           "Execution payload timestamp does not match time for state slot");
     }
 
-    final boolean optimisticallyAccept =
-        payloadExecutor.optimisticallyExecute(state.getLatestExecutionPayloadHeader(), payload);
-    if (!optimisticallyAccept) {
-      throw new BlockProcessingException("Execution payload was not optimistically accepted");
+    if (payloadExecutor.isPresent()) {
+      final ExecutionPayload executionPayload =
+          maybeExecutionPayload.orElseThrow(
+              () -> new BlockProcessingException("Execution payload expected"));
+      final boolean optimisticallyAccept =
+          payloadExecutor
+              .get()
+              .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), executionPayload);
+      if (!optimisticallyAccept) {
+        throw new BlockProcessingException("Execution payload was not optimistically accepted");
+      }
     }
 
-    final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
-        schemaDefinitions.getExecutionPayloadHeaderSchema();
-    state.setLatestExecutionPayloadHeader(
-        executionPayloadHeaderSchema.create(
-            payload.getParentHash(),
-            payload.getFeeRecipient(),
-            payload.getStateRoot(),
-            payload.getReceiptsRoot(),
-            payload.getLogsBloom(),
-            payload.getPrevRandao(),
-            payload.getBlockNumber(),
-            payload.getGasLimit(),
-            payload.getGasUsed(),
-            payload.getTimestamp(),
-            payload.getExtraData(),
-            payload.getBaseFeePerGas(),
-            payload.getBlockHash(),
-            payload.getTransactions().hashTreeRoot()));
+    state.setLatestExecutionPayloadHeader(executionPayloadHeader);
   }
 
   @Override

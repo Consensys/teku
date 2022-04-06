@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -46,7 +47,7 @@ public interface BlockProcessor {
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException;
 
   /**
@@ -66,7 +67,7 @@ public interface BlockProcessor {
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -74,7 +75,7 @@ public interface BlockProcessor {
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -121,8 +122,9 @@ public interface BlockProcessor {
 
   void processExecutionPayload(
       MutableBeaconState state,
-      ExecutionPayload executionPayload,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      ExecutionPayloadHeader executionPayloadHeader,
+      Optional<ExecutionPayload> executionPayload,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
   boolean isOptimistic();

@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EVENTS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -39,27 +40,24 @@ import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
 
 public class GetEvents implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/events";
-  private final JsonProvider jsonProvider;
   private final EventSubscriptionManager eventSubscriptionManager;
 
   public GetEvents(
       final DataProvider dataProvider,
-      final JsonProvider jsonProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final int maxPendingEvents) {
     this(
         dataProvider.getNodeDataProvider(),
         dataProvider.getChainDataProvider(),
-        jsonProvider,
         dataProvider.getSyncDataProvider(),
         dataProvider.getConfigProvider(),
         eventChannels,
@@ -70,18 +68,15 @@ public class GetEvents implements Handler {
   GetEvents(
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
-      final JsonProvider jsonProvider,
       final SyncDataProvider syncDataProvider,
       final ConfigProvider configProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final int maxPendingEvents) {
-    this.jsonProvider = jsonProvider;
     eventSubscriptionManager =
         new EventSubscriptionManager(
             nodeDataProvider,
             chainDataProvider,
-            jsonProvider,
             syncDataProvider,
             configProvider,
             asyncRunner,
@@ -134,7 +129,7 @@ public class GetEvents implements Handler {
 
   private String getBadRequestString(final String message) {
     try {
-      return jsonProvider.objectToJSON(new BadRequest(message));
+      return JsonUtil.serialize(new BadRequest(SC_BAD_REQUEST, message), BAD_REQUEST_TYPE);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }

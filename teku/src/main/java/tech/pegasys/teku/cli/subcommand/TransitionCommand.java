@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import picocli.CommandLine;
@@ -40,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 @Command(
     name = "transition",
@@ -79,11 +79,7 @@ public class TransitionCommand implements Runnable {
             for (String blockPath : blocks) {
               SignedBeaconBlock block = readBlock(spec, blockPath);
               state =
-                  spec.processBlock(
-                      state,
-                      block,
-                      BLSSignatureVerifier.SIMPLE,
-                      OptimisticExecutionPayloadExecutor.NOOP);
+                  spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
             }
           }
           return state;

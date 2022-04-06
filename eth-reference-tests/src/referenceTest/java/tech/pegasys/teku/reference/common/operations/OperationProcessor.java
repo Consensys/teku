@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.reference.common.operations;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -49,7 +51,8 @@ public interface OperationProcessor {
 
   void processExecutionPayload(
       MutableBeaconState state,
-      ExecutionPayload executionPayload,
-      OptimisticExecutionPayloadExecutor payloadExecutor)
+      ExecutionPayloadHeader payloadHeader,
+      Optional<ExecutionPayload> payload,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 }

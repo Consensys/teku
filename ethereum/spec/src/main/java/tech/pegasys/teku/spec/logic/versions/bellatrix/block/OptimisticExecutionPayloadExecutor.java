@@ -18,8 +18,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 public interface OptimisticExecutionPayloadExecutor {
 
-  OptimisticExecutionPayloadExecutor NOOP = (latestPayload, payload) -> true;
-
   /**
    * At least begins execution of the specified payload, which may complete asynchronously. Note
    * that a {@code true} value does NOT indicate the payload is valid only that it is not
