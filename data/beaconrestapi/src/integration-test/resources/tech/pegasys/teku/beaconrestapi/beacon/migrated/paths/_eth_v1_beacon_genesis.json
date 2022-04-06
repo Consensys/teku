@@ -6,7 +6,7 @@
     "description" : "Retrieve details of the chain's genesis which can be used to identify chain.",
     "responses" : {
       "200" : {
-        "description" : "Success",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {

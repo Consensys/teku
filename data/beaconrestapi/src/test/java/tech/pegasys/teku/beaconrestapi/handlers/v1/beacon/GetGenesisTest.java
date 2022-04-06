@@ -19,9 +19,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,12 +47,18 @@ public class GetGenesisTest extends AbstractBeaconHandlerTest {
     final RestApiRequest request = mock(RestApiRequest.class);
     final GetGenesis handler = new GetGenesis(chainDataProvider);
 
-    final GenesisData expectedGenesisData =
-        new GenesisData(dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
+    final UInt64 genesisTime = dataStructureUtil.randomUInt64();
+    final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
+
+    final GenesisData expectedGenesisData = new GenesisData(genesisTime, genesisValidatorsRoot);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(chainDataProvider.getStateGenesisData()).thenReturn(expectedGenesisData);
+    when(chainDataProvider.getGenesisStateData()).thenReturn(expectedGenesisData);
+
+    final GetGenesis.ResponseData expectedData =
+        new GetGenesis.ResponseData(
+            genesisTime, genesisValidatorsRoot, chainDataProvider.getGenesisForkVersion());
 
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(chainDataProvider));
+    verify(request).respondOk(refEq(expectedData));
   }
 }

@@ -120,7 +120,7 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
-  public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getStateGenesisData() {
+  public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getGenesisStateData() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }

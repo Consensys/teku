@@ -30,38 +30,37 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
 public class GetGenesis extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/genesis";
   private final ChainDataProvider chainDataProvider;
 
-  private static final SerializableTypeDefinition<ChainDataProvider> CHAIN_DATA_PROVIDER_TYPE =
-      SerializableTypeDefinition.object(ChainDataProvider.class)
+  private static final SerializableTypeDefinition<ResponseData> GENESIS_DATA_TYPE =
+      SerializableTypeDefinition.object(ResponseData.class)
+          .withField("genesis_time", UINT64_TYPE, ResponseData::getGenesisTime)
           .withField(
-              "genesis_time",
-              UINT64_TYPE,
-              chainDataProvider -> chainDataProvider.getStateGenesisData().getGenesisTime())
-          .withField(
-              "genesis_validators_root",
-              BYTES32_TYPE,
-              chainDataProvider ->
-                  chainDataProvider.getStateGenesisData().getGenesisValidatorsRoot())
-          .withField("genesis_fork_version", BYTES4_TYPE, ChainDataProvider::getGenesisForkVersion)
+              "genesis_validators_root", BYTES32_TYPE, ResponseData::getGenesisValidatorsRoot)
+          .withField("genesis_fork_version", BYTES4_TYPE, ResponseData::getGenesisForkVersion)
           .build();
 
-  private static final SerializableTypeDefinition<ChainDataProvider> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(ChainDataProvider.class)
+  private static final SerializableTypeDefinition<ResponseData> GENESIS_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(ResponseData.class)
           .name("GetGenesisResponse")
-          .withField("data", CHAIN_DATA_PROVIDER_TYPE, Function.identity())
+          .withField("data", GENESIS_DATA_TYPE, Function.identity())
           .build();
 
   public GetGenesis(final DataProvider dataProvider) {
@@ -76,7 +75,7 @@ public class GetGenesis extends MigratingEndpointAdapter {
             .description(
                 "Retrieve details of the chain's genesis which can be used to identify chain.")
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
-            .response(SC_OK, "Success", RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", GENESIS_RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -102,12 +101,54 @@ public class GetGenesis extends MigratingEndpointAdapter {
     adapt(ctx);
   }
 
+  private Optional<GenesisData> getGenesisData() {
+    if (!chainDataProvider.isStoreAvailable()) {
+      return Optional.empty();
+    }
+    return Optional.of(chainDataProvider.getGenesisStateData());
+  }
+
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    if (!chainDataProvider.isStoreAvailable()) {
+    final Optional<GenesisData> maybeData = getGenesisData();
+    if (maybeData.isEmpty()) {
       request.respondWithCode(SC_NOT_FOUND);
       return;
     }
-    request.respondOk(chainDataProvider);
+    request.respondOk(new ResponseData(maybeData.get(), chainDataProvider));
+  }
+
+  static class ResponseData {
+
+    private final UInt64 genesisTime;
+    private final Bytes32 genesisValidatorsRoot;
+    private final Bytes4 genesisForkVersion;
+
+    ResponseData(
+        final UInt64 genesisTime,
+        final Bytes32 genesisValidatorsRoot,
+        final Bytes4 genesisForkVersion) {
+      this.genesisTime = genesisTime;
+      this.genesisValidatorsRoot = genesisValidatorsRoot;
+      this.genesisForkVersion = genesisForkVersion;
+    }
+
+    ResponseData(final GenesisData genesisData, ChainDataProvider chainDataProvider) {
+      this.genesisTime = genesisData.getGenesisTime();
+      this.genesisValidatorsRoot = genesisData.getGenesisValidatorsRoot();
+      this.genesisForkVersion = chainDataProvider.getGenesisForkVersion();
+    }
+
+    public UInt64 getGenesisTime() {
+      return genesisTime;
+    }
+
+    public Bytes32 getGenesisValidatorsRoot() {
+      return genesisValidatorsRoot;
+    }
+
+    public Bytes4 getGenesisForkVersion() {
+      return genesisForkVersion;
+    }
   }
 }
