@@ -376,7 +376,7 @@ class BlockOperationSelectorFactoryTest {
 
     factoryWithMevBoost.createUnblinderSelector().accept(blockUnblinder);
 
-    assertThat(blockUnblinder.executionPayload).isEqualTo(randomExecutionPayload);
+    assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
   }
 
   @Test
