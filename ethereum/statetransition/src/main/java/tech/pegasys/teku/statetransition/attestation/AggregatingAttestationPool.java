@@ -54,6 +54,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    */
   static final long ATTESTATION_RETENTION_SLOTS = 32;
 
+  /**
+   * Default maximum number of attestations to store in the pool. Even with 400,000 validators we'd
+   * expect just 12,500 attestations per slot. It's very unlikely we'll be able to include more than
+   * a few slots worth of attestations into any block we produce so may as well prune them.
+   *
+   * <p>In fact even with perfect aggregation, there are 64 committees per slot and a maximum of 128
+   * attestations per block, so we can only possibly include 2 full slots worth of attestations. If
+   * the prior slots weren't entirely missed the majority of attestations should have been included
+   * in those blocks, and we'll have room to store older attestations to fill any space we have
+   * remaining.
+   *
+   * <p>A limit of 40,000 attestations is enough for 3 slots worth at 400,000 validators which gives
+   * a sane upper limit while still being above the typical 10-20k pool size seen on MainNet.
+   */
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 40_000;
+
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
@@ -61,8 +77,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final Spec spec;
   private final AtomicInteger size = new AtomicInteger(0);
   private final SettableGauge sizeGauge;
+  private final int maximumAttestationCount;
 
-  public AggregatingAttestationPool(final Spec spec, final MetricsSystem metricsSystem) {
+  public AggregatingAttestationPool(
+      final Spec spec, final MetricsSystem metricsSystem, final int maximumAttestationCount) {
     this.spec = spec;
     this.sizeGauge =
         SettableGauge.create(
@@ -70,6 +88,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "attestation_pool_size",
             "The number of attestations available to be included in proposed blocks");
+    this.maximumAttestationCount = maximumAttestationCount;
   }
 
   public synchronized void add(final ValidateableAttestation attestation) {
@@ -77,6 +96,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final boolean add = getOrCreateAttestationGroup(attestationData).add(attestation);
     if (add) {
       updateSize(1);
+    }
+    // Always keep the latest slot attestations so we don't discard everything
+    while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
+      final UInt64 firstSlotToKeep = dataHashBySlot.firstKey().plus(1);
+      removeAttestationsPriorToSlot(firstSlotToKeep);
     }
   }
 
@@ -96,6 +120,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       return;
     }
     final UInt64 firstValidAttestationSlot = slot.minus(ATTESTATION_RETENTION_SLOTS);
+    removeAttestationsPriorToSlot(firstValidAttestationSlot);
+  }
+
+  private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
     final Collection<Set<Bytes>> dataHashesToRemove =
         dataHashBySlot.headMap(firstValidAttestationSlot, false).values();
     dataHashesToRemove.stream()
@@ -144,7 +172,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             .getAttestationsSchema();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
-    return dataHashBySlot.descendingMap().values().stream()
+    return dataHashBySlot
+        // We can immediately skip any attestations from the block slot or later
+        .headMap(stateAtBlockSlot.getSlot(), false)
+        .descendingMap()
+        .values()
+        .stream()
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
