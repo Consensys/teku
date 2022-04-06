@@ -14,38 +14,70 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
-public class GetGenesis extends AbstractHandler implements Handler {
+public class GetGenesis extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/genesis";
   private final ChainDataProvider chainDataProvider;
 
-  public GetGenesis(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.chainDataProvider = dataProvider.getChainDataProvider();
+  private static final SerializableTypeDefinition<ResponseData> GENESIS_DATA_TYPE =
+      SerializableTypeDefinition.object(ResponseData.class)
+          .withField("genesis_time", UINT64_TYPE, ResponseData::getGenesisTime)
+          .withField(
+              "genesis_validators_root", BYTES32_TYPE, ResponseData::getGenesisValidatorsRoot)
+          .withField("genesis_fork_version", BYTES4_TYPE, ResponseData::getGenesisForkVersion)
+          .build();
+
+  private static final SerializableTypeDefinition<ResponseData> GENESIS_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(ResponseData.class)
+          .name("GetGenesisResponse")
+          .withField("data", GENESIS_DATA_TYPE, Function.identity())
+          .build();
+
+  public GetGenesis(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  GetGenesis(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  GetGenesis(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getGenesis")
+            .summary("Get chain genesis details")
+            .description(
+                "Retrieve details of the chain's genesis which can be used to identify chain.")
+            .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+            .response(SC_OK, "Request successful", GENESIS_RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -66,18 +98,57 @@ public class GetGenesis extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Optional<GenesisData> maybeData = getGenesisData();
-    if (maybeData.isEmpty()) {
-      ctx.status(SC_NOT_FOUND);
-      return;
-    }
-    ctx.json(jsonProvider.objectToJSON(new GetGenesisResponse(maybeData.get())));
+    adapt(ctx);
   }
 
   private Optional<GenesisData> getGenesisData() {
     if (!chainDataProvider.isStoreAvailable()) {
       return Optional.empty();
     }
-    return Optional.of(chainDataProvider.getGenesisData());
+    return Optional.of(chainDataProvider.getGenesisStateData());
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final Optional<GenesisData> maybeData = getGenesisData();
+    if (maybeData.isEmpty()) {
+      request.respondWithCode(SC_NOT_FOUND);
+      return;
+    }
+    request.respondOk(new ResponseData(maybeData.get(), chainDataProvider));
+  }
+
+  static class ResponseData {
+
+    private final UInt64 genesisTime;
+    private final Bytes32 genesisValidatorsRoot;
+    private final Bytes4 genesisForkVersion;
+
+    ResponseData(
+        final UInt64 genesisTime,
+        final Bytes32 genesisValidatorsRoot,
+        final Bytes4 genesisForkVersion) {
+      this.genesisTime = genesisTime;
+      this.genesisValidatorsRoot = genesisValidatorsRoot;
+      this.genesisForkVersion = genesisForkVersion;
+    }
+
+    ResponseData(final GenesisData genesisData, ChainDataProvider chainDataProvider) {
+      this.genesisTime = genesisData.getGenesisTime();
+      this.genesisValidatorsRoot = genesisData.getGenesisValidatorsRoot();
+      this.genesisForkVersion = chainDataProvider.getGenesisForkVersion();
+    }
+
+    public UInt64 getGenesisTime() {
+      return genesisTime;
+    }
+
+    public Bytes32 getGenesisValidatorsRoot() {
+      return genesisValidatorsRoot;
+    }
+
+    public Bytes4 getGenesisForkVersion() {
+      return genesisForkVersion;
+    }
   }
 }

@@ -59,6 +59,7 @@ import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -117,6 +118,17 @@ public class ChainDataProvider {
         genesisData.getGenesisTime(),
         genesisData.getGenesisValidatorsRoot(),
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
+  }
+
+  public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getGenesisStateData() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return recentChainData.getGenesisData().orElseThrow(ChainDataUnavailableException::new);
+  }
+
+  public Bytes4 getGenesisForkVersion() {
+    return spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(

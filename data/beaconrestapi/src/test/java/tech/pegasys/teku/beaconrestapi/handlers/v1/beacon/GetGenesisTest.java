@@ -14,14 +14,18 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.refEq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetGenesisTest extends AbstractBeaconHandlerTest {
@@ -30,26 +34,31 @@ public class GetGenesisTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    final GetGenesis handler = new GetGenesis(chainDataProvider, jsonProvider);
+    final RestApiRequest request = mock(RestApiRequest.class);
+    final GetGenesis handler = new GetGenesis(chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
-    handler.handle(context);
-    verifyStatusCode(SC_NOT_FOUND);
+    handler.handleRequest(request);
+    verify(request).respondWithCode(SC_NOT_FOUND);
   }
 
   @Test
   public void shouldReturnGenesisInformation() throws Exception {
-    final GetGenesis handler = new GetGenesis(chainDataProvider, jsonProvider);
-    final GenesisData expectedGenesisData =
-        new GenesisData(
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes4());
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(chainDataProvider.getGenesisData()).thenReturn(expectedGenesisData);
+    final RestApiRequest request = mock(RestApiRequest.class);
+    final GetGenesis handler = new GetGenesis(chainDataProvider);
 
-    handler.handle(context);
-    final GetGenesisResponse response = getResponseObject(GetGenesisResponse.class);
-    assertThat(response.data).isEqualTo(expectedGenesisData);
+    final UInt64 genesisTime = dataStructureUtil.randomUInt64();
+    final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
+
+    final GenesisData expectedGenesisData = new GenesisData(genesisTime, genesisValidatorsRoot);
+    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
+    when(chainDataProvider.getGenesisStateData()).thenReturn(expectedGenesisData);
+
+    final GetGenesis.ResponseData expectedData =
+        new GetGenesis.ResponseData(
+            genesisTime, genesisValidatorsRoot, chainDataProvider.getGenesisForkVersion());
+
+    handler.handleRequest(request);
+    verify(request).respondOk(refEq(expectedData));
   }
 }
