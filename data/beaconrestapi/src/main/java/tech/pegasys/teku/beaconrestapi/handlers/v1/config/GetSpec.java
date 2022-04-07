@@ -64,7 +64,11 @@ public class GetSpec extends MigratingEndpointAdapter {
       tags = {TAG_CONFIG, TAG_VALIDATOR_REQUIRED},
       description = "Retrieve specification configuration used on this node.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetSpecResponse.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content =
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.response.v1.config.GetSpecResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
