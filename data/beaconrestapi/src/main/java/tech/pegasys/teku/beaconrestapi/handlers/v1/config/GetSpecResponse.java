@@ -32,13 +32,13 @@ import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
 public class GetSpecResponse {
   private static final StringValueTypeDefinition<Bytes> WITHDRAWAL_PREFIX_TYPE =
-          DeserializableTypeDefinition.string(Bytes.class)
-                  .formatter(Bytes::toHexString)
-                  .parser(str -> Bytes.fromHexStringLenient(str, 1))
-                  .example("0x01")
-                  .description("Withdrawal prefix hexadecimal")
-                  .format("byte")
-                  .build();
+      DeserializableTypeDefinition.string(Bytes.class)
+          .formatter(Bytes::toHexString)
+          .parser(str -> Bytes.fromHexStringLenient(str, 1))
+          .example("0x01")
+          .description("Withdrawal prefix hexadecimal")
+          .format("byte")
+          .build();
 
   private final SpecConfig specConfig;
 
@@ -47,66 +47,66 @@ public class GetSpecResponse {
   }
 
   public static SerializableTypeDefinition<GetSpecResponse> getSpecTypeDefinition(
-          SpecConfig config) {
+      SpecConfig config) {
     final SerializableObjectTypeDefinitionBuilder<GetSpecResponse> builder =
-            SerializableTypeDefinition.object(GetSpecResponse.class);
+        SerializableTypeDefinition.object(GetSpecResponse.class);
 
     config
-            .getRawConfig()
-            .forEach(
-                    (name, value) ->
-                            builder.withField(name, STRING_TYPE, (__) -> ConfigProvider.formatValue(value)));
+        .getRawConfig()
+        .forEach(
+            (name, value) ->
+                builder.withField(name, STRING_TYPE, (__) -> ConfigProvider.formatValue(value)));
 
     // For the time being, manually add legacy constants for compatibility reasons
     // These constants are no longer defined in newer config files, but may be required by consumers
     builder
-            .withField(
-                    "BLS_WITHDRAWAL_PREFIX",
-                    WITHDRAWAL_PREFIX_TYPE,
-                    GetSpecResponse::getBlsWithdrawalPrefix)
-            .withField(
-                    "TARGET_AGGREGATORS_PER_COMMITTEE",
-                    STRING_TYPE,
-                    GetSpecResponse::getTargetAggregatorsPerCommittee)
-            .withField(
-                    "RANDOM_SUBNETS_PER_VALIDATOR",
-                    STRING_TYPE,
-                    GetSpecResponse::getRandomSubnetsPerValidator)
-            .withField(
-                    "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
-                    STRING_TYPE,
-                    GetSpecResponse::getEpochsPerRandomSubnetSubscription)
-            .withField("DOMAIN_BEACON_PROPOSER", BYTES4_TYPE, GetSpecResponse::getDomainBeaconProposer)
-            .withField("DOMAIN_BEACON_ATTESTER", BYTES4_TYPE, GetSpecResponse::getDomainBeaconAttester)
-            .withField("DOMAIN_RANDAO", BYTES4_TYPE, GetSpecResponse::getDomainRandao)
-            .withField("DOMAIN_DEPOSIT", BYTES4_TYPE, GetSpecResponse::getDomainDeposit)
-            .withField("DOMAIN_VOLUNTARY_EXIT", BYTES4_TYPE, GetSpecResponse::getDomainVoluntaryExit)
-            .withField("DOMAIN_SELECTION_PROOF", BYTES4_TYPE, GetSpecResponse::getDomainSelectionProof)
-            .withField(
-                    "DOMAIN_AGGREGATE_AND_PROOF", BYTES4_TYPE, GetSpecResponse::getDomainAggregateAndProof)
-            .withOptionalField(
-                    "DOMAIN_SYNC_COMMITTEE", BYTES4_TYPE, GetSpecResponse::getDomainSyncCommittee)
-            .withOptionalField(
-                    "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
-                    BYTES4_TYPE,
-                    GetSpecResponse::getDomainSyncCommitteeSelectionProof)
-            .withOptionalField(
-                    "DOMAIN_CONTRIBUTION_AND_PROOF",
-                    BYTES4_TYPE,
-                    GetSpecResponse::getDomainContributionAndProof)
-            .withOptionalField(
-                    "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
-                    STRING_TYPE,
-                    GetSpecResponse::getTargetAggregatorsPerSyncSubcommittee)
-            .withOptionalField(
-                    "SYNC_COMMITTEE_SUBNET_COUNT",
-                    STRING_TYPE,
-                    GetSpecResponse::getSyncCommitteeSubnetCount);
+        .withField(
+            "BLS_WITHDRAWAL_PREFIX",
+            WITHDRAWAL_PREFIX_TYPE,
+            GetSpecResponse::getBlsWithdrawalPrefix)
+        .withField(
+            "TARGET_AGGREGATORS_PER_COMMITTEE",
+            STRING_TYPE,
+            GetSpecResponse::getTargetAggregatorsPerCommittee)
+        .withField(
+            "RANDOM_SUBNETS_PER_VALIDATOR",
+            STRING_TYPE,
+            GetSpecResponse::getRandomSubnetsPerValidator)
+        .withField(
+            "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
+            STRING_TYPE,
+            GetSpecResponse::getEpochsPerRandomSubnetSubscription)
+        .withField("DOMAIN_BEACON_PROPOSER", BYTES4_TYPE, GetSpecResponse::getDomainBeaconProposer)
+        .withField("DOMAIN_BEACON_ATTESTER", BYTES4_TYPE, GetSpecResponse::getDomainBeaconAttester)
+        .withField("DOMAIN_RANDAO", BYTES4_TYPE, GetSpecResponse::getDomainRandao)
+        .withField("DOMAIN_DEPOSIT", BYTES4_TYPE, GetSpecResponse::getDomainDeposit)
+        .withField("DOMAIN_VOLUNTARY_EXIT", BYTES4_TYPE, GetSpecResponse::getDomainVoluntaryExit)
+        .withField("DOMAIN_SELECTION_PROOF", BYTES4_TYPE, GetSpecResponse::getDomainSelectionProof)
+        .withField(
+            "DOMAIN_AGGREGATE_AND_PROOF", BYTES4_TYPE, GetSpecResponse::getDomainAggregateAndProof)
+        .withOptionalField(
+            "DOMAIN_SYNC_COMMITTEE", BYTES4_TYPE, GetSpecResponse::getDomainSyncCommittee)
+        .withOptionalField(
+            "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
+            BYTES4_TYPE,
+            GetSpecResponse::getDomainSyncCommitteeSelectionProof)
+        .withOptionalField(
+            "DOMAIN_CONTRIBUTION_AND_PROOF",
+            BYTES4_TYPE,
+            GetSpecResponse::getDomainContributionAndProof)
+        .withOptionalField(
+            "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
+            STRING_TYPE,
+            GetSpecResponse::getTargetAggregatorsPerSyncSubcommittee)
+        .withOptionalField(
+            "SYNC_COMMITTEE_SUBNET_COUNT",
+            STRING_TYPE,
+            GetSpecResponse::getSyncCommitteeSubnetCount);
 
     return SerializableTypeDefinition.object(GetSpecResponse.class)
-            .name("GetSpecResponse")
-            .withField("data", builder.build(), Function.identity())
-            .build();
+        .name("GetSpecResponse")
+        .withField("data", builder.build(), Function.identity())
+        .build();
   }
 
   private Bytes getBlsWithdrawalPrefix() {
