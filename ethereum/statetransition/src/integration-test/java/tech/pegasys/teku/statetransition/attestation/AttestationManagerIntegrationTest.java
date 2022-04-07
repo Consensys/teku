@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -65,7 +66,8 @@ class AttestationManagerIntegrationTest {
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final AggregatingAttestationPool attestationPool =
-      new AggregatingAttestationPool(spec, new NoOpMetricsSystem());
+      new AggregatingAttestationPool(
+          spec, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
   private final ForkChoice forkChoice =

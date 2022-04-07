@@ -27,3 +27,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed the target database format for the `migrate-database` command.
+- Added stricter limits on attestation pool size. 
