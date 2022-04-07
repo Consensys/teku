@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import java.math.BigInteger;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -29,15 +28,6 @@ public class CoreTypes {
   public static final StringValueTypeDefinition<Boolean> BOOLEAN_TYPE = new BooleanTypeDefinition();
 
   public static final StringValueTypeDefinition<Byte> BYTE_TYPE = new ByteTypeDefinition();
-
-  public static final StringValueTypeDefinition<Bytes> BYTES_TYPE =
-      DeserializableTypeDefinition.string(Bytes.class)
-          .formatter(Bytes::toHexString)
-          .parser(Bytes::fromHexString)
-          .example("0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2")
-          .description("Bytes hexadecimal")
-          .format("byte")
-          .build();
 
   public static final StringValueTypeDefinition<Bytes32> BYTES32_TYPE =
       DeserializableTypeDefinition.string(Bytes32.class)

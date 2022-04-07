@@ -13,21 +13,14 @@
 
 package tech.pegasys.teku.api;
 
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.infrastructure.json.types.SerializableObjectTypeDefinitionBuilder;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -99,78 +92,11 @@ public class ConfigProvider {
     return new GetSpecResponse(configAttributes);
   }
 
-  public SerializableTypeDefinition<ConfigProvider> getSpecTypeDefinition() {
-    final SerializableObjectTypeDefinitionBuilder<ConfigProvider> builder =
-        SerializableTypeDefinition.object(ConfigProvider.class);
-
-    final SpecConfig config =
-        spec
-            // Display genesis spec, for now
-            .atEpoch(UInt64.ZERO)
-            .getConfig();
-
-    config
-        .getRawConfig()
-        .forEach((k, v) -> builder.withField(k, STRING_TYPE, specConfig -> formatValue(v)));
-
-    // For the time being, manually add legacy constants for compatibility reasons
-    // These constants are no longer defined in newer config files, but may be required by consumers
-    builder
-        .withField("BLS_WITHDRAWAL_PREFIX", BYTES_TYPE, (__) -> config.getBlsWithdrawalPrefix())
-        .withField(
-            "TARGET_AGGREGATORS_PER_COMMITTEE",
-            STRING_TYPE,
-            (__) -> Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE))
-        .withField(
-            "RANDOM_SUBNETS_PER_VALIDATOR",
-            STRING_TYPE,
-            (__) -> Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR))
-        .withField(
-            "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
-            STRING_TYPE,
-            (__) -> Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
-        .withField("DOMAIN_BEACON_PROPOSER", BYTES4_TYPE, (__) -> Domain.BEACON_PROPOSER)
-        .withField("DOMAIN_BEACON_ATTESTER", BYTES4_TYPE, (__) -> Domain.BEACON_ATTESTER)
-        .withField("DOMAIN_RANDAO", BYTES4_TYPE, (__) -> Domain.RANDAO)
-        .withField("DOMAIN_DEPOSIT", BYTES4_TYPE, (__) -> Domain.DEPOSIT)
-        .withField("DOMAIN_VOLUNTARY_EXIT", BYTES4_TYPE, (__) -> Domain.VOLUNTARY_EXIT)
-        .withField("DOMAIN_SELECTION_PROOF", BYTES4_TYPE, (__) -> Domain.SELECTION_PROOF)
-        .withField("DOMAIN_AGGREGATE_AND_PROOF", BYTES4_TYPE, (__) -> Domain.AGGREGATE_AND_PROOF);
-
-    // Manually add legacy altair constants
-    config
-        .toVersionAltair()
-        .ifPresent(
-            altairConfig -> {
-              builder
-                  .withField("DOMAIN_SYNC_COMMITTEE", BYTES4_TYPE, (__) -> Domain.SYNC_COMMITTEE)
-                  .withField(
-                      "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
-                      BYTES4_TYPE,
-                      (__) -> Domain.SYNC_COMMITTEE_SELECTION_PROOF)
-                  .withField(
-                      "DOMAIN_CONTRIBUTION_AND_PROOF",
-                      BYTES4_TYPE,
-                      (__) -> Domain.CONTRIBUTION_AND_PROOF)
-                  .withField(
-                      "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
-                      STRING_TYPE,
-                      (__) ->
-                          Integer.toString(
-                              ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE))
-                  .withField(
-                      "SYNC_COMMITTEE_SUBNET_COUNT",
-                      STRING_TYPE,
-                      (__) -> Integer.toString(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT));
-            });
-
-    return SerializableTypeDefinition.object(ConfigProvider.class)
-        .name("GetSpecResponse")
-        .withField("data", builder.build(), Function.identity())
-        .build();
+  public SpecConfig getGenesisSpec() {
+    return spec.atEpoch(UInt64.ZERO).getConfig();
   }
 
-  private static String formatValue(final Object v) {
+  public static String formatValue(final Object v) {
     if (v instanceof UInt256) {
       return ((UInt256) v).toBigInteger().toString(10);
     }
