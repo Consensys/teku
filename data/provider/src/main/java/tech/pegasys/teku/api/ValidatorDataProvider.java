@@ -108,8 +108,12 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
-      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
+  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock>>
+      getUnsignedBeaconBlockAtSlot(
+          final UInt64 slot,
+          final tech.pegasys.teku.bls.BLSSignature randao,
+          final Optional<Bytes32> graffiti,
+          final boolean isBlinded) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
@@ -125,9 +129,15 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
+    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
+  }
 
-    return validatorApiChannel
-        .createUnsignedBlock(
+  public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
+      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
+    if (randao == null) {
+      throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
+    }
+    return getUnsignedBeaconBlockAtSlot(
             slot,
             tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
             graffiti,
