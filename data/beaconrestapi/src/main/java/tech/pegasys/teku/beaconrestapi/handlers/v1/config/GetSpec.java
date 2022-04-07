@@ -13,33 +13,48 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpecResponse.getSpecTypeDefinition;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class GetSpec implements Handler {
+public class GetSpec extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/config/spec";
-  private final JsonProvider jsonProvider;
   private final ConfigProvider configProvider;
 
-  public GetSpec(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetSpec(final DataProvider dataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getSpec")
+            .summary("Get spec params")
+            .description("Retrieve specification configuration used on this node.")
+            .tags(TAG_CONFIG, TAG_VALIDATOR_REQUIRED)
+            .response(
+                SC_OK,
+                "Success",
+                getSpecTypeDefinition(dataProvider.getConfigProvider().getGenesisSpec()))
+            .build());
     this.configProvider = dataProvider.getConfigProvider();
-    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -49,16 +64,26 @@ public class GetSpec implements Handler {
       tags = {TAG_CONFIG, TAG_VALIDATOR_REQUIRED},
       description = "Retrieve specification configuration used on this node.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetSpecResponse.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content =
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.response.v1.config.GetSpecResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(final Context ctx) throws Exception {
+  public void handle(@NotNull final Context ctx) throws Exception {
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     try {
-      ctx.json(jsonProvider.objectToJSON(configProvider.getConfig()));
+      request.respondOk(new GetSpecResponse(configProvider.getGenesisSpec()));
     } catch (JsonProcessingException e) {
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
+      String message =
+          JsonUtil.serialize(new BadRequest(SC_BAD_REQUEST, "Not found"), BAD_REQUEST_TYPE);
+      request.respondError(SC_INTERNAL_SERVER_ERROR, message);
     }
   }
 }
