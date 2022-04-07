@@ -27,10 +27,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 class RepeatingTaskSchedulerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(500);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-  private final RepeatingTask action = mock(RepeatingTask.class);
 
   private final RepeatingTaskScheduler eventQueue =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
+
+  private final StubTimeProvider timeProviderMs = StubTimeProvider.withTimeInMillis(500);
+  private final StubAsyncRunner asyncRunnerMs = new StubAsyncRunner(timeProviderMs);
+
+  private final RepeatingTaskScheduler eventQueueMs =
+      new RepeatingTaskScheduler(asyncRunnerMs, timeProviderMs);
+
+  private final RepeatingTask action = mock(RepeatingTask.class);
 
   @Test
   void shouldExecuteEventImmediatelyWhenAlreadyDue() {
@@ -112,5 +119,92 @@ class RepeatingTaskSchedulerTest {
 
     asyncRunner.executeDueActionsRepeatedly();
     verify(action).execute(scheduledTime, timeProvider.getTimeInSeconds());
+  }
+
+  @Test
+  void shouldExecuteEventImmediatelyWhenAlreadyDueMillis() {
+    eventQueueMs.scheduleRepeatingEventInMillis(
+        timeProviderMs.getTimeInMillis(), UInt64.valueOf(500), action);
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+  }
+
+  @Test
+  void shouldExecuteEventImmediatelyMultipleTimesWhenMultipleRepeatsAreAlreadyDueMillis() {
+    eventQueueMs.scheduleRepeatingEventInMillis(
+        timeProviderMs.getTimeInMillis().minus(300), UInt64.valueOf(100), action);
+    verify(action)
+        .execute(timeProviderMs.getTimeInMillis().minus(200), timeProviderMs.getTimeInMillis());
+    verify(action)
+        .execute(timeProviderMs.getTimeInMillis().minus(100), timeProviderMs.getTimeInMillis());
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+  }
+
+  @Test
+  void shouldDelayExecutionUntilEventIsDueMillis() {
+    eventQueueMs.scheduleRepeatingEventInMillis(
+        timeProviderMs.getTimeInMillis().plus(1000), UInt64.valueOf(100), action);
+
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verifyNoInteractions(action);
+
+    // Task executes when time becomes due
+    timeProviderMs.advanceTimeByMillis(1000);
+    // Delayed action fires
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    // Action is executed async
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+    verifyNoMoreInteractions(action);
+  }
+
+  @Test
+  void shouldExecuteEventAgainAfterRepeatPeriodMillis() {
+    final UInt64 repeatPeriod = UInt64.valueOf(500);
+    // Action executes immediately
+    eventQueueMs.scheduleRepeatingEventInMillis(
+        timeProviderMs.getTimeInMillis(), repeatPeriod, action);
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+
+    timeProviderMs.advanceTimeByMillis(repeatPeriod.longValue());
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+  }
+
+  @Test
+  void shouldInterleaveMultipleRepeatingEventsMillis() {
+    final RepeatingTask secondAction = mock(RepeatingTask.class);
+    eventQueueMs.scheduleRepeatingEventInMillis(
+        timeProviderMs.getTimeInMillis(), UInt64.valueOf(1000), action);
+    eventQueueMs.scheduleRepeatingEventInMillis(
+        timeProviderMs.getTimeInMillis(), UInt64.valueOf(800), secondAction);
+
+    // Both execute initially
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+    verify(secondAction)
+        .execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+
+    // Then second action is scheduled 800 millis later
+    timeProviderMs.advanceTimeByMillis(800);
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(secondAction)
+        .execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+    verifyNoMoreInteractions(action);
+
+    // And action 200 millis after that
+    timeProviderMs.advanceTimeByMillis(200);
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(action).execute(timeProviderMs.getTimeInMillis(), timeProviderMs.getTimeInMillis());
+    verifyNoMoreInteractions(secondAction);
+  }
+
+  @Test
+  void shouldReportScheduledAndActualExecutionTimeWhenTaskIsDelayedMillis() {
+    final UInt64 scheduledTime = timeProviderMs.getTimeInMillis().minus(250);
+    eventQueueMs.scheduleRepeatingEventInMillis(scheduledTime, UInt64.valueOf(1000), action);
+
+    asyncRunnerMs.executeDueActionsRepeatedly();
+    verify(action).execute(scheduledTime, timeProviderMs.getTimeInMillis());
   }
 }

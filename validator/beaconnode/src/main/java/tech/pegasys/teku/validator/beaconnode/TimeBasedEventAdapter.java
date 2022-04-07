@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.validator.beaconnode;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,22 +51,35 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   void start(final UInt64 genesisTime) {
     this.genesisTime = genesisTime;
-    final UInt64 currentSlot = spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+    final UInt64 currentSlot = getCurrentSlot();
+
     final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
-    final UInt64 secondsPerSlot = UInt64.valueOf(spec.getSecondsPerSlot(currentSlot));
+    final UInt64 secondsPerSlot = getSecondsPerSlot(currentSlot);
 
     // NOTE: seconds_per_slot currently based on genesis slot, and timings set up based on this
     //       if seconds_per_slot ever changes, timers would have to be updated, which isn't
     //       currently implemented.
-    final long oneThirdSlotSeconds = spec.getSecondsPerSlot(currentSlot) / 3;
-    final long twoThirdSlotSeconds = oneThirdSlotSeconds * 2;
+
     taskScheduler.scheduleRepeatingEvent(nextSlotStartTime, secondsPerSlot, this::onStartSlot);
-    taskScheduler.scheduleRepeatingEvent(
-        nextSlotStartTime.plus(oneThirdSlotSeconds),
-        secondsPerSlot,
-        this::onAttestationCreationDue);
-    taskScheduler.scheduleRepeatingEvent(
-        nextSlotStartTime.plus(twoThirdSlotSeconds), secondsPerSlot, this::onAggregationDue);
+
+    final UInt64 nextSlotStartTimeMillis = secondsToMillis(nextSlotStartTime);
+
+    final UInt64 millisPerSlot = secondsToMillis(secondsPerSlot);
+    final UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
+    final UInt64 twoThirdsSlot = oneThirdSlot.times(2);
+
+    taskScheduler.scheduleRepeatingEventInMillis(
+        nextSlotStartTimeMillis.plus(oneThirdSlot), millisPerSlot, this::onAttestationCreationDue);
+    taskScheduler.scheduleRepeatingEventInMillis(
+        nextSlotStartTimeMillis.plus(twoThirdsSlot), millisPerSlot, this::onAggregationDue);
+  }
+
+  private UInt64 getCurrentSlot() {
+    return spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+  }
+
+  private UInt64 getSecondsPerSlot(final UInt64 slot) {
+    return UInt64.valueOf(spec.getSecondsPerSlot(slot));
   }
 
   private void onStartSlot(final UInt64 scheduledTime, final UInt64 actualTime) {
@@ -76,28 +93,45 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     validatorTimingChannel.onBlockProductionDue(slot);
   }
 
-  private void onAttestationCreationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 slot = spec.getCurrentSlot(scheduledTime, genesisTime);
-    if (isTooLate(scheduledTime, actualTime)) {
+  private void onAttestationCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = getCurrentSlotForMillisEpoch(scheduledTimeInMillis);
+    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
       LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
     validatorTimingChannel.onAttestationCreationDue(slot);
   }
 
-  private void onAggregationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 slot = spec.getCurrentSlot(scheduledTime, genesisTime);
-    if (isTooLate(scheduledTime, actualTime)) {
+  private void onAggregationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = getCurrentSlotForMillisEpoch(scheduledTimeInMillis);
+    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
       LOG.warn("Skipping aggregation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
     validatorTimingChannel.onAttestationAggregationDue(slot);
   }
 
+  private UInt64 getCurrentSlotForMillisEpoch(final UInt64 millisEpoch) {
+    return spec.getCurrentSlot(millisToSeconds(millisEpoch), genesisTime);
+  }
+
   private boolean isTooLate(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 currentSlot = spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
-    final UInt64 secondsPerSlot = UInt64.valueOf(spec.getSecondsPerSlot(currentSlot));
+    final UInt64 currentSlot = getCurrentSlot();
+    final UInt64 secondsPerSlot = getSecondsPerSlot(currentSlot);
     return scheduledTime.plus(secondsPerSlot).isLessThan(actualTime);
+  }
+
+  private boolean isTooLateInMillis(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 currentSlot = getCurrentSlot();
+    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
+    return scheduledTimeInMillis.plus(millisPerSlot).isLessThan(actualTimeInMillis);
+  }
+
+  private UInt64 getMillisPerSlot(final UInt64 slot) {
+    return secondsToMillis(getSecondsPerSlot(slot));
   }
 
   @Override
