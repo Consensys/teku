@@ -1,0 +1,310 @@
+{
+  "title" : "GetSpecResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "DEPOSIT_CONTRACT_ADDRESS", "MIN_ATTESTATION_INCLUSION_DELAY", "SLOTS_PER_EPOCH", "PRESET_BASE", "TERMINAL_TOTAL_DIFFICULTY", "INACTIVITY_SCORE_BIAS", "SHUFFLE_ROUND_COUNT", "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", "MAX_EFFECTIVE_BALANCE", "PROPOSER_SCORE_BOOST", "MAX_ATTESTER_SLASHINGS", "MIN_SLASHING_PENALTY_QUOTIENT_BELLATRIX", "INACTIVITY_PENALTY_QUOTIENT_BELLATRIX", "INACTIVITY_PENALTY_QUOTIENT", "SAFE_SLOTS_TO_UPDATE_JUSTIFIED", "SECONDS_PER_ETH1_BLOCK", "HYSTERESIS_UPWARD_MULTIPLIER", "MIN_SEED_LOOKAHEAD", "VALIDATOR_REGISTRY_LIMIT", "MIN_DEPOSIT_AMOUNT", "SLOTS_PER_HISTORICAL_ROOT", "PROPORTIONAL_SLASHING_MULTIPLIER_ALTAIR", "MIN_VALIDATOR_WITHDRAWABILITY_DELAY", "TARGET_COMMITTEE_SIZE", "MAX_VALIDATORS_PER_COMMITTEE", "TERMINAL_BLOCK_HASH", "MIN_GENESIS_TIME", "ALTAIR_FORK_EPOCH", "HYSTERESIS_QUOTIENT", "ALTAIR_FORK_VERSION", "MAX_BYTES_PER_TRANSACTION", "WHISTLEBLOWER_REWARD_QUOTIENT", "PROPOSER_REWARD_QUOTIENT", "DEPOSIT_CHAIN_ID", "EPOCHS_PER_HISTORICAL_VECTOR", "MIN_PER_EPOCH_CHURN_LIMIT", "MIN_SLASHING_PENALTY_QUOTIENT_ALTAIR", "EPOCHS_PER_ETH1_VOTING_PERIOD", "MAX_DEPOSITS", "BELLATRIX_FORK_EPOCH", "HISTORICAL_ROOTS_LIMIT", "SYNC_COMMITTEE_SIZE", "EPOCHS_PER_SLASHINGS_VECTOR", "MIN_SLASHING_PENALTY_QUOTIENT", "PROPORTIONAL_SLASHING_MULTIPLIER", "MAX_VOLUNTARY_EXITS", "HYSTERESIS_DOWNWARD_MULTIPLIER", "EPOCHS_PER_SYNC_COMMITTEE_PERIOD", "GENESIS_DELAY", "MAX_SEED_LOOKAHEAD", "BYTES_PER_LOGS_BLOOM", "ETH1_FOLLOW_DISTANCE", "SECONDS_PER_SLOT", "MIN_GENESIS_ACTIVE_VALIDATOR_COUNT", "MIN_SYNC_COMMITTEE_PARTICIPANTS", "MAX_ATTESTATIONS", "BELLATRIX_FORK_VERSION", "GENESIS_FORK_VERSION", "DEPOSIT_NETWORK_ID", "PROPORTIONAL_SLASHING_MULTIPLIER_BELLATRIX", "EJECTION_BALANCE", "MAX_COMMITTEES_PER_SLOT", "SHARD_COMMITTEE_PERIOD", "EFFECTIVE_BALANCE_INCREMENT", "INACTIVITY_PENALTY_QUOTIENT_ALTAIR", "MIN_EPOCHS_TO_INACTIVITY_PENALTY", "BASE_REWARD_FACTOR", "MAX_EXTRA_DATA_BYTES", "MAX_PROPOSER_SLASHINGS", "CHURN_LIMIT_QUOTIENT", "INACTIVITY_SCORE_RECOVERY_RATE", "MAX_TRANSACTIONS_PER_PAYLOAD", "BLS_WITHDRAWAL_PREFIX", "TARGET_AGGREGATORS_PER_COMMITTEE", "RANDOM_SUBNETS_PER_VALIDATOR", "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION", "DOMAIN_BEACON_PROPOSER", "DOMAIN_BEACON_ATTESTER", "DOMAIN_RANDAO", "DOMAIN_DEPOSIT", "DOMAIN_VOLUNTARY_EXIT", "DOMAIN_SELECTION_PROOF", "DOMAIN_AGGREGATE_AND_PROOF" ],
+      "properties" : {
+        "DEPOSIT_CONTRACT_ADDRESS" : {
+          "type" : "string"
+        },
+        "MIN_ATTESTATION_INCLUSION_DELAY" : {
+          "type" : "string"
+        },
+        "SLOTS_PER_EPOCH" : {
+          "type" : "string"
+        },
+        "PRESET_BASE" : {
+          "type" : "string"
+        },
+        "TERMINAL_TOTAL_DIFFICULTY" : {
+          "type" : "string"
+        },
+        "INACTIVITY_SCORE_BIAS" : {
+          "type" : "string"
+        },
+        "SHUFFLE_ROUND_COUNT" : {
+          "type" : "string"
+        },
+        "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH" : {
+          "type" : "string"
+        },
+        "MAX_EFFECTIVE_BALANCE" : {
+          "type" : "string"
+        },
+        "PROPOSER_SCORE_BOOST" : {
+          "type" : "string"
+        },
+        "MAX_ATTESTER_SLASHINGS" : {
+          "type" : "string"
+        },
+        "MIN_SLASHING_PENALTY_QUOTIENT_BELLATRIX" : {
+          "type" : "string"
+        },
+        "INACTIVITY_PENALTY_QUOTIENT_BELLATRIX" : {
+          "type" : "string"
+        },
+        "INACTIVITY_PENALTY_QUOTIENT" : {
+          "type" : "string"
+        },
+        "SAFE_SLOTS_TO_UPDATE_JUSTIFIED" : {
+          "type" : "string"
+        },
+        "SECONDS_PER_ETH1_BLOCK" : {
+          "type" : "string"
+        },
+        "HYSTERESIS_UPWARD_MULTIPLIER" : {
+          "type" : "string"
+        },
+        "MIN_SEED_LOOKAHEAD" : {
+          "type" : "string"
+        },
+        "VALIDATOR_REGISTRY_LIMIT" : {
+          "type" : "string"
+        },
+        "MIN_DEPOSIT_AMOUNT" : {
+          "type" : "string"
+        },
+        "SLOTS_PER_HISTORICAL_ROOT" : {
+          "type" : "string"
+        },
+        "PROPORTIONAL_SLASHING_MULTIPLIER_ALTAIR" : {
+          "type" : "string"
+        },
+        "MIN_VALIDATOR_WITHDRAWABILITY_DELAY" : {
+          "type" : "string"
+        },
+        "TARGET_COMMITTEE_SIZE" : {
+          "type" : "string"
+        },
+        "MAX_VALIDATORS_PER_COMMITTEE" : {
+          "type" : "string"
+        },
+        "TERMINAL_BLOCK_HASH" : {
+          "type" : "string"
+        },
+        "MIN_GENESIS_TIME" : {
+          "type" : "string"
+        },
+        "ALTAIR_FORK_EPOCH" : {
+          "type" : "string"
+        },
+        "HYSTERESIS_QUOTIENT" : {
+          "type" : "string"
+        },
+        "ALTAIR_FORK_VERSION" : {
+          "type" : "string"
+        },
+        "MAX_BYTES_PER_TRANSACTION" : {
+          "type" : "string"
+        },
+        "WHISTLEBLOWER_REWARD_QUOTIENT" : {
+          "type" : "string"
+        },
+        "PROPOSER_REWARD_QUOTIENT" : {
+          "type" : "string"
+        },
+        "DEPOSIT_CHAIN_ID" : {
+          "type" : "string"
+        },
+        "EPOCHS_PER_HISTORICAL_VECTOR" : {
+          "type" : "string"
+        },
+        "MIN_PER_EPOCH_CHURN_LIMIT" : {
+          "type" : "string"
+        },
+        "MIN_SLASHING_PENALTY_QUOTIENT_ALTAIR" : {
+          "type" : "string"
+        },
+        "EPOCHS_PER_ETH1_VOTING_PERIOD" : {
+          "type" : "string"
+        },
+        "MAX_DEPOSITS" : {
+          "type" : "string"
+        },
+        "BELLATRIX_FORK_EPOCH" : {
+          "type" : "string"
+        },
+        "HISTORICAL_ROOTS_LIMIT" : {
+          "type" : "string"
+        },
+        "SYNC_COMMITTEE_SIZE" : {
+          "type" : "string"
+        },
+        "EPOCHS_PER_SLASHINGS_VECTOR" : {
+          "type" : "string"
+        },
+        "MIN_SLASHING_PENALTY_QUOTIENT" : {
+          "type" : "string"
+        },
+        "PROPORTIONAL_SLASHING_MULTIPLIER" : {
+          "type" : "string"
+        },
+        "MAX_VOLUNTARY_EXITS" : {
+          "type" : "string"
+        },
+        "HYSTERESIS_DOWNWARD_MULTIPLIER" : {
+          "type" : "string"
+        },
+        "EPOCHS_PER_SYNC_COMMITTEE_PERIOD" : {
+          "type" : "string"
+        },
+        "GENESIS_DELAY" : {
+          "type" : "string"
+        },
+        "MAX_SEED_LOOKAHEAD" : {
+          "type" : "string"
+        },
+        "BYTES_PER_LOGS_BLOOM" : {
+          "type" : "string"
+        },
+        "ETH1_FOLLOW_DISTANCE" : {
+          "type" : "string"
+        },
+        "SECONDS_PER_SLOT" : {
+          "type" : "string"
+        },
+        "MIN_GENESIS_ACTIVE_VALIDATOR_COUNT" : {
+          "type" : "string"
+        },
+        "MIN_SYNC_COMMITTEE_PARTICIPANTS" : {
+          "type" : "string"
+        },
+        "MAX_ATTESTATIONS" : {
+          "type" : "string"
+        },
+        "BELLATRIX_FORK_VERSION" : {
+          "type" : "string"
+        },
+        "GENESIS_FORK_VERSION" : {
+          "type" : "string"
+        },
+        "DEPOSIT_NETWORK_ID" : {
+          "type" : "string"
+        },
+        "PROPORTIONAL_SLASHING_MULTIPLIER_BELLATRIX" : {
+          "type" : "string"
+        },
+        "EJECTION_BALANCE" : {
+          "type" : "string"
+        },
+        "MAX_COMMITTEES_PER_SLOT" : {
+          "type" : "string"
+        },
+        "SHARD_COMMITTEE_PERIOD" : {
+          "type" : "string"
+        },
+        "EFFECTIVE_BALANCE_INCREMENT" : {
+          "type" : "string"
+        },
+        "INACTIVITY_PENALTY_QUOTIENT_ALTAIR" : {
+          "type" : "string"
+        },
+        "MIN_EPOCHS_TO_INACTIVITY_PENALTY" : {
+          "type" : "string"
+        },
+        "BASE_REWARD_FACTOR" : {
+          "type" : "string"
+        },
+        "MAX_EXTRA_DATA_BYTES" : {
+          "type" : "string"
+        },
+        "MAX_PROPOSER_SLASHINGS" : {
+          "type" : "string"
+        },
+        "CHURN_LIMIT_QUOTIENT" : {
+          "type" : "string"
+        },
+        "INACTIVITY_SCORE_RECOVERY_RATE" : {
+          "type" : "string"
+        },
+        "MAX_TRANSACTIONS_PER_PAYLOAD" : {
+          "type" : "string"
+        },
+        "BLS_WITHDRAWAL_PREFIX" : {
+          "type" : "string",
+          "description" : "Withdrawal prefix hexadecimal",
+          "example" : "0x01",
+          "format" : "byte"
+        },
+        "TARGET_AGGREGATORS_PER_COMMITTEE" : {
+          "type" : "string"
+        },
+        "RANDOM_SUBNETS_PER_VALIDATOR" : {
+          "type" : "string"
+        },
+        "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION" : {
+          "type" : "string"
+        },
+        "DOMAIN_BEACON_PROPOSER" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_BEACON_ATTESTER" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_RANDAO" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_DEPOSIT" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_VOLUNTARY_EXIT" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_SELECTION_PROOF" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_AGGREGATE_AND_PROOF" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_SYNC_COMMITTEE" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "DOMAIN_CONTRIBUTION_AND_PROOF" : {
+          "type" : "string",
+          "description" : "Bytes4 hexadecimal",
+          "example" : "0xcf8e0d4e",
+          "format" : "byte"
+        },
+        "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE" : {
+          "type" : "string"
+        },
+        "SYNC_COMMITTEE_SUBNET_COUNT" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}

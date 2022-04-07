@@ -92,7 +92,11 @@ public class ConfigProvider {
     return new GetSpecResponse(configAttributes);
   }
 
-  private String formatValue(final Object v) {
+  public SpecConfig getGenesisSpec() {
+    return spec.atEpoch(UInt64.ZERO).getConfig();
+  }
+
+  public static String formatValue(final Object v) {
     if (v instanceof UInt256) {
       return ((UInt256) v).toBigInteger().toString(10);
     }
