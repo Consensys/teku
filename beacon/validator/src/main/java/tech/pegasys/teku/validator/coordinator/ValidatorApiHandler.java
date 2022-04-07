@@ -527,7 +527,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
     return blockFactory
-        .unblindSignedBeaconBlock(maybeBlindedBlock)
+        .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
         .thenCompose(this::sendUnblindedSignedBlock);
   }
 

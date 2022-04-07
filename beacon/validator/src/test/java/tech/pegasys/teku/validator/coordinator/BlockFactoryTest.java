@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -370,7 +369,8 @@ class BlockFactoryTest {
     when(executionEngine.proposeBlindedBlock(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
-    final SignedBeaconBlock block = blockFactory.unblindSignedBeaconBlock(beaconBlock).join();
+    final SignedBeaconBlock block =
+        blockFactory.unblindSignedBeaconBlockIfBlinded(beaconBlock).join();
 
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionEngine);
@@ -379,13 +379,8 @@ class BlockFactoryTest {
     }
 
     assertThat(block).isNotNull();
+    assertThat(block.hashTreeRoot()).isEqualTo(beaconBlock.hashTreeRoot());
     assertThat(block.getMessage().getBody().isBlinded()).isFalse();
-    assertThat(block.getSlot()).isEqualTo(beaconBlock.getSlot());
-    assertThat(block.getSignature()).isEqualTo(beaconBlock.getSignature());
-
-    assertCommonBlockFieldsEquality(
-        block.getMessage().getBody(), beaconBlock.getMessage().getBody());
-
     assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isEqualTo(Optional.empty());
 
@@ -397,15 +392,11 @@ class BlockFactoryTest {
 
     final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
 
-    final SignedBeaconBlock block = blockFactory.blindSignedBeaconBlock(beaconBlock);
+    final SignedBeaconBlock block = blockFactory.blindSignedBeaconBlockIfUnblinded(beaconBlock);
 
     assertThat(block).isNotNull();
+    assertThat(block.hashTreeRoot()).isEqualTo(beaconBlock.hashTreeRoot());
     assertThat(block.getMessage().getBody().isBlinded()).isTrue();
-    assertThat(block.getSlot()).isEqualTo(beaconBlock.getSlot());
-    assertThat(block.getSignature()).isEqualTo(beaconBlock.getSignature());
-
-    assertCommonBlockFieldsEquality(block.getMessage().getBody(), block.getMessage().getBody());
-
     assertThat(block.getMessage().getBody().getOptionalExecutionPayload())
         .isEqualTo(Optional.empty());
 
@@ -430,17 +421,5 @@ class BlockFactoryTest {
             forkChoiceNotifier,
             executionEngine,
             isMevBoostEnabled));
-  }
-
-  private void assertCommonBlockFieldsEquality(final BeaconBlockBody a, final BeaconBlockBody b) {
-    assertThat(a.getRandaoReveal()).isEqualTo(b.getRandaoReveal());
-    assertThat(a.getEth1Data()).isEqualTo(b.getEth1Data());
-    assertThat(a.getDeposits()).isEqualTo(b.getDeposits());
-    assertThat(a.getAttestations()).isEqualTo(b.getAttestations());
-    assertThat(a.getAttesterSlashings()).isEqualTo(b.getAttesterSlashings());
-    assertThat(a.getProposerSlashings()).isEqualTo(b.getProposerSlashings());
-    assertThat(a.getVoluntaryExits()).isEqualTo(b.getVoluntaryExits());
-    assertThat(a.getGraffiti()).isEqualTo(b.getGraffiti());
-    assertThat(a.getOptionalSyncAggregate()).isEqualTo(b.getOptionalSyncAggregate());
   }
 }

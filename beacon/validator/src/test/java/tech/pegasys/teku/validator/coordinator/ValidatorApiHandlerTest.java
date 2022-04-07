@@ -159,7 +159,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
-        .unblindSignedBeaconBlock(any());
+        .unblindSignedBeaconBlockIfBlinded(any());
   }
 
   @Test
