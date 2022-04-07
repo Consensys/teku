@@ -129,7 +129,7 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, false);
+    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
