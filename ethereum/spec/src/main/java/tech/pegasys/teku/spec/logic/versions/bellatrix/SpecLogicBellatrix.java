@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValida
 import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutato
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SpecLogicBellatrix extends AbstractSpecLogic {
@@ -63,6 +65,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
       final BlockProcessorBellatrix blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
+      final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BellatrixStateUpgrade stateUpgrade,
       final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
@@ -81,6 +84,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
+        Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.specConfig = specConfig;
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
@@ -152,6 +156,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
+    final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
+
     // State upgrade
     final BellatrixStateUpgrade stateUpgrade =
         new BellatrixStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
@@ -175,6 +181,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
+        blindBlockUtil,
         syncCommitteeUtil,
         stateUpgrade,
         bellatrixTransitionHelpers);

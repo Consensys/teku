@@ -43,7 +43,6 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
       final BlindedBeaconBlockBodySchemaBellatrixImpl schema) {
     this.blindedSchema = schema;
     this.blinded = Optional.of(true);
-    ;
     return this;
   }
 
