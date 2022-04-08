@@ -24,6 +24,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -101,10 +103,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
+  private final boolean blindedBlocksEnabled;
 
-  public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+  public OkHttpValidatorRestApiClient(
+      final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
+      final boolean blindedBlocksEnabled) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
+    this.blindedBlocksEnabled = blindedBlocksEnabled;
   }
 
   public Optional<GetSpecResponse> getConfigSpec() {
@@ -166,8 +173,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    if (blinded) {
-      throw new UnsupportedOperationException("blinded blocks not yet implemented");
+    if (blindedBlocksEnabled && blinded) {
+      return createUnsignedBlindedBlock(pathParams, queryParams);
     }
 
     return get(
@@ -175,6 +182,16 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             pathParams,
             queryParams,
             createHandler(GetNewBlockResponseV2.class))
+        .map(response -> (BeaconBlock) response.data);
+  }
+
+  private Optional<BeaconBlock> createUnsignedBlindedBlock(
+      final Map<String, String> pathParams, final Map<String, String> queryParams) {
+    return get(
+            GET_UNSIGNED_BLINDED_BLOCK,
+            pathParams,
+            queryParams,
+            createHandler(GetNewBlindedBlockResponse.class))
         .map(response -> (BeaconBlock) response.data);
   }
 

@@ -89,6 +89,6 @@ class RemoteSpecLoader {
     // Strip any authentication info from the URL to ensure it doesn't get logged.
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
-    return new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
+    return new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient, false);
   }
 }

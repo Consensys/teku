@@ -49,6 +49,7 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -60,9 +61,13 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 class OkHttpValidatorRestApiClientTest {
@@ -77,7 +82,7 @@ class OkHttpValidatorRestApiClientTest {
   public void beforeEach() throws Exception {
     mockWebServer.start();
     okHttpClient = new OkHttpClient();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
   }
 
   @AfterEach
@@ -230,6 +235,32 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(beaconBlock).isPresent();
     assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
+  }
+
+  @Test
+  public void createUnsignedBlocks_shouldUseBlindedBlocksIfEnabled() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 slot = UInt64.ONE;
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
+    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
+    final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock expectedBeaconBlock =
+        dataStructureUtil.randomBlindedBeaconBlock(slot);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(
+                asJson(
+                    new GetNewBlindedBlockResponse(
+                        SpecMilestone.BELLATRIX, new BlindedBlockBellatrix(expectedBeaconBlock)))));
+    Optional<BeaconBlock> beaconBlock =
+        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, true);
+    assertThat(beaconBlock).isPresent();
+
+    // TODO make comparable
+    // Some of the underlying stores are mutable, but the values are the same.
+    // It does make it harder to compare here though
   }
 
   @Test
@@ -682,7 +713,7 @@ class OkHttpValidatorRestApiClientTest {
       throws Exception {
     final HttpUrl url =
         mockWebServer.url("/").newBuilder().username("user").password("password").build();
-    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
+    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient, false);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getGenesis();
