@@ -113,8 +113,8 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     validatorTimingChannel.onAttestationAggregationDue(slot);
   }
 
-  private UInt64 getCurrentSlotForMillis(final UInt64 millisEpoch) {
-    return spec.getCurrentSlot(millisToSeconds(millisEpoch), genesisTime);
+  private UInt64 getCurrentSlotForMillis(final UInt64 millis) {
+    return spec.getCurrentSlot(millisToSeconds(millis), genesisTime);
   }
 
   private boolean isTooLate(final UInt64 scheduledTime, final UInt64 actualTime) {
