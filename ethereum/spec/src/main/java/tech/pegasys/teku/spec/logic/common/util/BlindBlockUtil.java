@@ -23,7 +23,7 @@ public abstract class BlindBlockUtil {
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
       final SignedBeaconBlock signedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
-    SignedBeaconBlockUnblinder beaconBlockUnblinder =
+    final SignedBeaconBlockUnblinder beaconBlockUnblinder =
         createSignedBeaconBlockUnblinder(signedBeaconBlock);
     blockUnblinder.accept(beaconBlockUnblinder);
     return beaconBlockUnblinder.unblind();
