@@ -17,10 +17,22 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
+/**
+ * Classes implementing this interface MUST:
+ *
+ * <p>- provide via getSignedBlindedBeaconBlock() the Blinded Block on which we are about to apply
+ * the unblinding process
+ *
+ * <p>- expect setExecutionPayloadSupplier() to be called, which provides a future retrieving an
+ * ExecutionPayload consistent with the ExecutionPayloadHeader included in the Blinded Block
+ *
+ * <p>- expect the unblind() method to be called after setExecutionPayloadSupplier().
+ *
+ * <p>- unblind() have now all the information (Blinded Block + ExecutionPayload) to construct the
+ * unblinded version of the block
+ */
 public interface SignedBeaconBlockUnblinder {
-
-  SignedBeaconBlockUnblinder executionPayload(
-      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
+  void setExecutionPayloadSupplier(Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
 
   SignedBeaconBlock getSignedBlindedBeaconBlock();
 

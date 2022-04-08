@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -498,10 +497,9 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public SignedBeaconBlockUnblinder executionPayload(
+    public void setExecutionPayloadSupplier(
         Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
       this.executionPayload = executionPayloadSupplier.get();
-      return this;
     }
 
     @Override

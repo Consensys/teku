@@ -20,7 +20,6 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -35,10 +34,9 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
   }
 
   @Override
-  public SignedBeaconBlockUnblinder executionPayload(
+  public void setExecutionPayloadSupplier(
       Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
     this.executionPayloadFuture = executionPayloadSupplier.get();
-    return this;
   }
 
   @Override

@@ -206,7 +206,7 @@ public class BlockOperationSelectorFactory {
   public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {
     return bodyUnblinder -> {
       if (isMevBoostEnabled) {
-        bodyUnblinder.executionPayload(
+        bodyUnblinder.setExecutionPayloadSupplier(
             () ->
                 executionEngineChannel.proposeBlindedBlock(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
