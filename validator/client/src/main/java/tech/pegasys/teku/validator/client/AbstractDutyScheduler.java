@@ -149,7 +149,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
     if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) <= 0) {
       LOG.debug(
-          "Not performing {} duties for slot {} because last production slot {} is beyond that.",
+          "Not performing {} duties for slot {} because last production slot {} is equal or beyond that.",
           dutyType,
           slot,
           lastProductionSlot);
@@ -164,6 +164,12 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
           getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
       return;
     }
+
+    LOG.debug(
+        "Performing {} duties for slot {}, last production slot {}",
+        dutyType,
+        slot,
+        lastProductionSlot);
 
     lastProductionSlot = slot;
     notifyEpochDuties(PendingDuties::onProductionDue, slot);

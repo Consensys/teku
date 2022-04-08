@@ -85,7 +85,7 @@ public class RestApiRequest {
     context.status(statusCode);
     if (response.isPresent()) {
       final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
-      context.result(JsonUtil.serialize(response, type));
+      context.result(JsonUtil.serialize(response.get(), type));
     }
   }
 
