@@ -28,17 +28,23 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class TimeBasedEventAdapterTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec gnosisSpec = TestSpecFactory.create(SpecMilestone.PHASE0, Eth2Network.GNOSIS);
+
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
   final int secondsPerSlot = spec.getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
+  final int secondsPerSlotGnosis = gnosisSpec.getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
+
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTaskScheduler repeatingTaskScheduler =
@@ -47,6 +53,14 @@ class TimeBasedEventAdapterTest {
   private final TimeBasedEventAdapter eventAdapter =
       new TimeBasedEventAdapter(
           genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
+
+  private final TimeBasedEventAdapter eventAdapterGnosis =
+      new TimeBasedEventAdapter(
+          genesisDataProvider,
+          repeatingTaskScheduler,
+          timeProvider,
+          validatorTimingChannel,
+          gnosisSpec);
 
   @Test
   void shouldScheduleEventsOnceGenesisIsKnown() {
@@ -115,6 +129,43 @@ class TimeBasedEventAdapterTest {
   }
 
   @Test
+  void shouldScheduleAttestationEventsStartingFromNextSlotForGnosis() {
+    // ensure seconds per slot not divisible by 3 is tested
+    assertThat(secondsPerSlotGnosis % 3).isNotZero();
+
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
+    final long nextSlot = 25;
+    // Starting time is before the aggregation for the current slot should happen, but should still
+    // wait until the next slot to start
+    final int timeUntilNextSlot = secondsPerSlotGnosis - 1;
+    timeProvider.advanceTimeBySeconds(secondsPerSlotGnosis * nextSlot - timeUntilNextSlot);
+
+    assertThat(eventAdapterGnosis.start()).isCompleted();
+
+    // Should not fire any events immediately
+    asyncRunner.executeDueActionsRepeatedly();
+    verifyNoMoreInteractions(validatorTimingChannel);
+
+    // Attestation should not fire at the start of the slot
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+
+    // It should also not fire at 1/3 seconds (whole number)
+    timeProvider.advanceTimeBySeconds(secondsPerSlotGnosis / 3);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+
+    // But does fire 1/3rds in millis through the slot
+    long alreadyPassedMillis = (secondsPerSlotGnosis / 3) * 1000L;
+    long oneThird = (secondsPerSlotGnosis * 1000L) / 3;
+    timeProvider.advanceTimeByMillis(oneThird - alreadyPassedMillis);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+  }
+
+  @Test
   void shouldScheduleAggregateEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
@@ -137,6 +188,43 @@ class TimeBasedEventAdapterTest {
 
     // But does fire 2/3rds through the slot
     timeProvider.advanceTimeBySeconds(secondsPerSlot / 3 * 2);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
+  }
+
+  @Test
+  void shouldScheduleAggregateEventsStartingFromNextSlotForGnosis() {
+    // ensure seconds per slot not divisible by 3 is tested
+    assertThat(secondsPerSlotGnosis % 3).isNotZero();
+
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
+    final long nextSlot = 25;
+    // Starting time is before the aggregation for the current slot should happen, but should still
+    // wait until the next slot to start
+    final int timeUntilNextSlot = secondsPerSlotGnosis - 1;
+    timeProvider.advanceTimeBySeconds(secondsPerSlotGnosis * nextSlot - timeUntilNextSlot);
+
+    assertThat(eventAdapterGnosis.start()).isCompleted();
+
+    // Should not fire any events immediately
+    asyncRunner.executeDueActionsRepeatedly();
+    verifyNoMoreInteractions(validatorTimingChannel);
+
+    // Aggregation should not fire at the start of the slot
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
+
+    // It should also not fire at 2/3 seconds (whole number)
+    timeProvider.advanceTimeBySeconds((secondsPerSlotGnosis / 3) * 2L);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
+
+    // But does fire 2/3rds in millis through the slot
+    long alreadyPassedMillis = (secondsPerSlotGnosis / 3) * 2000L;
+    long twoThirds = (secondsPerSlotGnosis * 2000L) / 3;
+    timeProvider.advanceTimeByMillis(twoThirds - alreadyPassedMillis);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
   }

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.infrastructure.async.timed;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
@@ -34,9 +34,9 @@ public class RepeatingTaskScheduler {
   }
 
   /**
-   * Schedules a repeating event. If the initial invocation time has already been reached, the task
-   * will be executed immediately. The task will then try to repeat repeatingPeriodSeconds after
-   * that initial invocation time.
+   * Schedules a repeating event in seconds, but can be changed to use millis. If the initial
+   * invocation time has already been reached, the task will be executed immediately. The task will
+   * then try to repeat repeatingPeriod after that initial invocation time.
    *
    * <p>It is guaranteed that only one instance of the task will execute at a time. If a task is
    * still executing when the next repeat is due, the next repeat will be executed immediately after
@@ -44,28 +44,40 @@ public class RepeatingTaskScheduler {
    * actual time is provided when the task is executed. Tasks should use that information to skip
    * unnecessary work when events are delayed to allow the system to catch up.
    *
-   * @param initialInvocationTimeInSeconds the time in epoch seconds that the task should first be
-   *     executed.
-   * @param repeatingPeriodSeconds the number of seconds after the previous execution was due that
-   *     the next execution should occur
-   * @param task the task to execute
+   * @param initialInvocationTime the time in epoch that the task should first be executed.
+   * @param repeatingPeriod the period after the previous execution was due that the next execution
+   *     should occur
+   * @param useMillis use millis instead of seconds
+   * @param task the task to execute. If useMillis is true, then {@link RepeatingTask#execute} will
+   *     use epoch millis instead of epoch seconds.
    */
   public void scheduleRepeatingEvent(
-      final UInt64 initialInvocationTimeInSeconds,
-      final UInt64 repeatingPeriodSeconds,
+      final UInt64 initialInvocationTime,
+      final UInt64 repeatingPeriod,
+      final boolean useMillis,
       final RepeatingTask task) {
-    scheduleEvent(new TimedEvent(initialInvocationTimeInSeconds, repeatingPeriodSeconds, task));
+    scheduleEvent(new TimedEvent(initialInvocationTime, repeatingPeriod, useMillis, task));
+  }
+
+  public void scheduleRepeatingEvent(
+      final UInt64 initialInvocationTime, final UInt64 repeatingPeriod, final RepeatingTask task) {
+    scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, false, task);
+  }
+
+  public void scheduleRepeatingEventInMillis(
+      final UInt64 initialInvocationTime, final UInt64 repeatingPeriod, final RepeatingTask task) {
+    scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, true, task);
   }
 
   private void scheduleEvent(final TimedEvent event) {
     UInt64 nowMs = timeProvider.getTimeInMillis();
-    UInt64 dueMs = event.getNextDueSeconds().times(MILLIS_PER_SECOND);
+    UInt64 dueMs = getDueMs(event);
     // First execute any already due executions
     while (nowMs.isGreaterThanOrEqualTo(dueMs)) {
       executeEvent(event);
       // Update both now and due in case another repeat because due while we were executing
       nowMs = timeProvider.getTimeInMillis();
-      dueMs = event.getNextDueSeconds().times(MILLIS_PER_SECOND);
+      dueMs = getDueMs(event);
     }
     asyncRunner
         .runAfterDelay(
@@ -81,9 +93,14 @@ public class RepeatingTaskScheduler {
             });
   }
 
+  private UInt64 getDueMs(final TimedEvent event) {
+    return event.useMillis ? event.getNextDue() : secondsToMillis(event.getNextDue());
+  }
+
   private void executeEvent(final TimedEvent event) {
     try {
-      event.execute(timeProvider.getTimeInSeconds());
+      UInt64 actualTime = getActualTime(event);
+      event.execute(actualTime);
     } catch (final Throwable t) {
       Thread.currentThread()
           .getUncaughtExceptionHandler()
@@ -91,38 +108,44 @@ public class RepeatingTaskScheduler {
     }
   }
 
+  private UInt64 getActualTime(final TimedEvent event) {
+    return event.useMillis ? timeProvider.getTimeInMillis() : timeProvider.getTimeInSeconds();
+  }
+
   private static class TimedEvent {
-    private UInt64 nextDueSeconds;
-    private final UInt64 repeatPeriodSeconds;
+    private UInt64 nextDue;
+    private final UInt64 repeatPeriod;
+    private final boolean useMillis;
     private final RepeatingTask action;
 
     private TimedEvent(
-        final UInt64 nextDueSeconds, final UInt64 repeatPeriodSeconds, final RepeatingTask action) {
-      this.nextDueSeconds = nextDueSeconds;
-      this.repeatPeriodSeconds = repeatPeriodSeconds;
+        final UInt64 nextDue,
+        final UInt64 repeatPeriod,
+        final boolean useMillis,
+        final RepeatingTask action) {
+      this.nextDue = nextDue;
+      this.repeatPeriod = repeatPeriod;
+      this.useMillis = useMillis;
       this.action = action;
     }
 
-    public UInt64 getNextDueSeconds() {
-      return nextDueSeconds;
+    public UInt64 getNextDue() {
+      return nextDue;
     }
 
     public void execute(final UInt64 actualTime) {
       checkArgument(
-          actualTime.isGreaterThanOrEqualTo(nextDueSeconds),
-          "Executing task before it is due. Scheduled "
-              + nextDueSeconds
-              + " currently "
-              + actualTime);
+          actualTime.isGreaterThanOrEqualTo(nextDue),
+          "Executing task before it is due. Scheduled " + nextDue + " currently " + actualTime);
       try {
-        action.execute(nextDueSeconds, actualTime);
+        action.execute(nextDue, actualTime);
       } finally {
         moveToNextScheduledTime();
       }
     }
 
     public void moveToNextScheduledTime() {
-      nextDueSeconds = nextDueSeconds.plus(repeatPeriodSeconds);
+      nextDue = nextDue.plus(repeatPeriod);
     }
   }
 
