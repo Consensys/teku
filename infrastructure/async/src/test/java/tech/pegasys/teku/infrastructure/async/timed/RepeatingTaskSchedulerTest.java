@@ -18,7 +18,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.RepeatingTask;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -32,85 +33,118 @@ class RepeatingTaskSchedulerTest {
   private final RepeatingTaskScheduler eventQueue =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
-  @Test
-  void shouldExecuteEventImmediatelyWhenAlreadyDue() {
-    eventQueue.scheduleRepeatingEvent(timeProvider.getTimeInSeconds(), UInt64.valueOf(12), action);
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+  private enum SchedulerType {
+    SECONDS,
+    MILLIS
   }
 
-  @Test
-  void shouldExecuteEventImmediatelyMultipleTimesWhenMultipleRepeatsAreAlreadyDue() {
-    eventQueue.scheduleRepeatingEvent(
-        timeProvider.getTimeInSeconds().minus(24), UInt64.valueOf(12), action);
-    verify(action)
-        .execute(timeProvider.getTimeInSeconds().minus(24), timeProvider.getTimeInSeconds());
-    verify(action)
-        .execute(timeProvider.getTimeInSeconds().minus(12), timeProvider.getTimeInSeconds());
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldExecuteEventImmediatelyWhenAlreadyDue(SchedulerType type) {
+    scheduleRepeatingEvent(type, getTime(type), UInt64.valueOf(12), action);
+    verify(action).execute(getTime(type), getTime(type));
   }
 
-  @Test
-  void shouldDelayExecutionUntilEventIsDue() {
-    eventQueue.scheduleRepeatingEvent(
-        timeProvider.getTimeInSeconds().plus(100), UInt64.valueOf(12), action);
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldExecuteEventImmediatelyMultipleTimesWhenMultipleRepeatsAreAlreadyDue(
+      SchedulerType type) {
+    scheduleRepeatingEvent(type, getTime(type).minus(24), UInt64.valueOf(12), action);
+    verify(action).execute(getTime(type).minus(24), getTime(type));
+    verify(action).execute(getTime(type).minus(12), getTime(type));
+    verify(action).execute(getTime(type), getTime(type));
+  }
+
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldDelayExecutionUntilEventIsDue(SchedulerType type) {
+    scheduleRepeatingEvent(type, getTime(type).plus(100), UInt64.valueOf(12), action);
 
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoInteractions(action);
 
     // Task executes when time becomes due
-    timeProvider.advanceTimeBySeconds(100);
+    advanceTimeBy(type, 100);
     // Delayed action fires
     asyncRunner.executeDueActionsRepeatedly();
     // Action is executed async
     asyncRunner.executeDueActionsRepeatedly();
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+    verify(action).execute(getTime(type), getTime(type));
     verifyNoMoreInteractions(action);
   }
 
-  @Test
-  void shouldExecuteEventAgainAfterRepeatPeriod() {
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldExecuteEventAgainAfterRepeatPeriod(SchedulerType type) {
     final UInt64 repeatPeriod = UInt64.valueOf(12);
     // Action executes immediately
-    eventQueue.scheduleRepeatingEvent(timeProvider.getTimeInSeconds(), repeatPeriod, action);
+    scheduleRepeatingEvent(type, getTime(type), repeatPeriod, action);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+    verify(action).execute(getTime(type), getTime(type));
 
-    timeProvider.advanceTimeBySeconds(repeatPeriod.longValue());
+    advanceTimeBy(type, repeatPeriod.longValue());
     asyncRunner.executeDueActionsRepeatedly();
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+    verify(action).execute(getTime(type), getTime(type));
   }
 
-  @Test
-  void shouldInterleaveMultipleRepeatingEvents() {
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldInterleaveMultipleRepeatingEvents(SchedulerType type) {
     final RepeatingTask secondAction = mock(RepeatingTask.class);
-    eventQueue.scheduleRepeatingEvent(timeProvider.getTimeInSeconds(), UInt64.valueOf(6), action);
-    eventQueue.scheduleRepeatingEvent(
-        timeProvider.getTimeInSeconds(), UInt64.valueOf(5), secondAction);
+    scheduleRepeatingEvent(type, getTime(type), UInt64.valueOf(6), action);
+    scheduleRepeatingEvent(type, getTime(type), UInt64.valueOf(5), secondAction);
 
     // Both execute initially
     asyncRunner.executeDueActionsRepeatedly();
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
-    verify(secondAction).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+    verify(action).execute(getTime(type), getTime(type));
+    verify(secondAction).execute(getTime(type), getTime(type));
 
     // Then second action is scheduled 5 seconds later
-    timeProvider.advanceTimeBySeconds(5);
+    advanceTimeBy(type, 5);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(secondAction).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+    verify(secondAction).execute(getTime(type), getTime(type));
     verifyNoMoreInteractions(action);
 
     // And action one second after that
-    timeProvider.advanceTimeBySeconds(1);
+    advanceTimeBy(type, 1);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+    verify(action).execute(getTime(type), getTime(type));
     verifyNoMoreInteractions(secondAction);
   }
 
-  @Test
-  void shouldReportScheduledAndActualExecutionTimeWhenTaskIsDelayed() {
-    final UInt64 scheduledTime = timeProvider.getTimeInSeconds().minus(5);
-    eventQueue.scheduleRepeatingEvent(scheduledTime, UInt64.valueOf(10), action);
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldReportScheduledAndActualExecutionTimeWhenTaskIsDelayed(SchedulerType type) {
+    final UInt64 scheduledTime = getTime(type).minus(5);
+    scheduleRepeatingEvent(type, scheduledTime, UInt64.valueOf(10), action);
 
     asyncRunner.executeDueActionsRepeatedly();
-    verify(action).execute(scheduledTime, timeProvider.getTimeInSeconds());
+    verify(action).execute(scheduledTime, getTime(type));
+  }
+
+  private void scheduleRepeatingEvent(
+      SchedulerType schedulerType,
+      UInt64 initialInvocationTime,
+      UInt64 repeatingPeriod,
+      RepeatingTask task) {
+    if (schedulerType == SchedulerType.SECONDS) {
+      eventQueue.scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, task);
+    } else {
+      eventQueue.scheduleRepeatingEventInMillis(initialInvocationTime, repeatingPeriod, task);
+    }
+  }
+
+  private UInt64 getTime(SchedulerType schedulerType) {
+    return schedulerType == SchedulerType.SECONDS
+        ? timeProvider.getTimeInSeconds()
+        : timeProvider.getTimeInMillis();
+  }
+
+  private void advanceTimeBy(SchedulerType schedulerType, long time) {
+    if (schedulerType == SchedulerType.SECONDS) {
+      timeProvider.advanceTimeBySeconds(time);
+    } else {
+      timeProvider.advanceTimeByMillis(time);
+    }
   }
 }

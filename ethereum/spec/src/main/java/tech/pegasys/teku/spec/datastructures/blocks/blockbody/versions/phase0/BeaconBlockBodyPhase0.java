@@ -80,6 +80,11 @@ public class BeaconBlockBodyPhase0
   }
 
   @Override
+  public SszSignature getRandaoRevealSsz() {
+    return getField0();
+  }
+
+  @Override
   public Eth1Data getEth1Data() {
     return getField1();
   }
@@ -87,6 +92,11 @@ public class BeaconBlockBodyPhase0
   @Override
   public Bytes32 getGraffiti() {
     return getField2().get();
+  }
+
+  @Override
+  public SszBytes32 getGraffitiSsz() {
+    return getField2();
   }
 
   @Override

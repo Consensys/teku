@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -52,6 +53,8 @@ public interface SpecLogic {
   ForkChoiceUtil getForkChoiceUtil();
 
   BlockProposalUtil getBlockProposalUtil();
+
+  Optional<BlindBlockUtil> getBlindBlockUtil();
 
   Optional<SyncCommitteeUtil> getSyncCommitteeUtil();
 

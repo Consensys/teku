@@ -26,23 +26,10 @@ class BlockProcessor {
   }
 
   public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
-
     try {
-      final BeaconState postState = spec.replayValidatedBlock(preState, block);
-      assertBlockAndStateMatch(block, postState);
-      return postState;
+      return spec.replayValidatedBlock(preState, block);
     } catch (StateTransitionException e) {
       throw new IllegalStateException(getFailedStateGenerationError(block), e);
-    }
-  }
-
-  public void assertBlockAndStateMatch(final SignedBeaconBlock block, final BeaconState state) {
-    if (!block.getStateRoot().equals(state.hashTreeRoot())) {
-      final String msg =
-          String.format(
-              "Failed to regenerate state for block root %s.  Generated state root %s does not match expected state root %s",
-              block.getRoot(), state.hashTreeRoot(), block.getStateRoot());
-      throw new IllegalStateException(msg);
     }
   }
 
