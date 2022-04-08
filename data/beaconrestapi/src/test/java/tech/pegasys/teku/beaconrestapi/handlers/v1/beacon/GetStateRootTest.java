@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -33,9 +32,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class GetStateRootTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Bytes32 root = dataStructureUtil.randomBytes32();
-
-  @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @Test
   public void shouldReturnRootInfo() throws Exception {
@@ -50,12 +46,5 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
     String expected = String.format("{\"data\":{\"root\":\"%s\"}}", root.toHexString());
     AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
     verify(context, never()).status(any());
-  }
-
-  private String getResultString() {
-    verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
-    AssertionsForClassTypes.assertThat(future).isCompleted();
-    return future.join();
   }
 }

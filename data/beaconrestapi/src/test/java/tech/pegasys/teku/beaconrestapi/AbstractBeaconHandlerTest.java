@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -105,5 +106,12 @@ public abstract class AbstractBeaconHandlerTest {
         false,
         spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
         true);
+  }
+
+  protected String getResultString() {
+    verify(context).future(args.capture());
+    SafeFuture<String> future = args.getValue();
+    AssertionsForClassTypes.assertThat(future).isCompleted();
+    return future.join();
   }
 }

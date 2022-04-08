@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -43,9 +42,6 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
           dataStructureUtil.randomBytes4(),
           dataStructureUtil.randomBytes4(),
           dataStructureUtil.randomUInt64());
-
-  @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeEach
   void setUp() {
@@ -86,12 +82,5 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("invalid state");
-  }
-
-  private String getResultString() {
-    verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
-    assertThat(future).isCompleted();
-    return future.join();
   }
 }
