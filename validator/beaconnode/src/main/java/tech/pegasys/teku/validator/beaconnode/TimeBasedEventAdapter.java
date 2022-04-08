@@ -95,7 +95,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   private void onAttestationCreationDue(
       final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
-    final UInt64 slot = getCurrentSlotForMillisEpoch(scheduledTimeInMillis);
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
     if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
       LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
       return;
@@ -105,7 +105,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   private void onAggregationDue(
       final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
-    final UInt64 slot = getCurrentSlotForMillisEpoch(scheduledTimeInMillis);
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
     if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
       LOG.warn("Skipping aggregation for slot {} due to unexpected delay in slot processing", slot);
       return;
@@ -113,7 +113,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     validatorTimingChannel.onAttestationAggregationDue(slot);
   }
 
-  private UInt64 getCurrentSlotForMillisEpoch(final UInt64 millisEpoch) {
+  private UInt64 getCurrentSlotForMillis(final UInt64 millisEpoch) {
     return spec.getCurrentSlot(millisToSeconds(millisEpoch), genesisTime);
   }
 
