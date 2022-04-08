@@ -34,9 +34,9 @@ public class RepeatingTaskScheduler {
   }
 
   /**
-   * Schedules a repeating event. If the initial invocation time has already been reached, the task
-   * will be executed immediately. The task will then try to repeat repeatingPeriod after that
-   * initial invocation time.
+   * Schedules a repeating event in seconds, but can be changed to use millis. If the initial
+   * invocation time has already been reached, the task will be executed immediately. The task will
+   * then try to repeat repeatingPeriod after that initial invocation time.
    *
    * <p>It is guaranteed that only one instance of the task will execute at a time. If a task is
    * still executing when the next repeat is due, the next repeat will be executed immediately after
@@ -49,7 +49,7 @@ public class RepeatingTaskScheduler {
    *     should occur
    * @param useMillis use millis instead of seconds
    * @param task the task to execute. If useMillis is true, then {@link RepeatingTask#execute} will
-   *     use epoch millis.
+   *     use epoch millis instead of epoch seconds.
    */
   public void scheduleRepeatingEvent(
       final UInt64 initialInvocationTime,

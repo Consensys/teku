@@ -217,13 +217,13 @@ class TimeBasedEventAdapterTest {
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
 
     // It should also not fire at 2/3 seconds (whole number)
-    timeProvider.advanceTimeBySeconds((secondsPerSlotGnosis / 3) * 2);
+    timeProvider.advanceTimeBySeconds((secondsPerSlotGnosis / 3) * 2L);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
 
     // But does fire 2/3rds in millis through the slot
     long alreadyPassedMillis = (secondsPerSlotGnosis / 3) * 2000L;
-    long twoThirds = ((secondsPerSlotGnosis * 1000L) / 3) * 2;
+    long twoThirds = (secondsPerSlotGnosis * 2000L) / 3;
     timeProvider.advanceTimeByMillis(twoThirds - alreadyPassedMillis);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));

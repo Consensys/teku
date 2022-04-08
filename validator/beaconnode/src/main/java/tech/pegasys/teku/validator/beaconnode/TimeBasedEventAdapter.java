@@ -66,7 +66,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
     final UInt64 millisPerSlot = secondsToMillis(secondsPerSlot);
     final UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
-    final UInt64 twoThirdsSlot = oneThirdSlot.times(2);
+    final UInt64 twoThirdsSlot = millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT);
 
     taskScheduler.scheduleRepeatingEventInMillis(
         nextSlotStartTimeMillis.plus(oneThirdSlot), millisPerSlot, this::onAttestationCreationDue);
