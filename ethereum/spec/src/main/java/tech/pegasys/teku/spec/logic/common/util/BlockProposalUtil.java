@@ -19,14 +19,11 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -100,42 +97,6 @@ public class BlockProposalUtil {
     } catch (final BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
-  }
-
-  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
-      final SignedBeaconBlock signedBeaconBlock,
-      final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
-    return schemaDefinitions
-        .createSignedBeaconBlockUnblinder(signedBeaconBlock)
-        .map(
-            unblinder -> {
-              blockUnblinder.accept(unblinder);
-              return unblinder.unblind();
-            })
-        .orElseGet(
-            () -> {
-              // this shouldn't happen: BlockFactory should skip unblinding when is not needed
-              if (signedBeaconBlock.getMessage().getBody().isBlinded()) {
-                throw new IllegalStateException(
-                    "Unblinder not available for the current spec but the given block was blinded");
-              }
-              return SafeFuture.completedFuture(signedBeaconBlock);
-            });
-  }
-
-  public SignedBeaconBlock blindSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
-    return schemaDefinitions
-        .getSignedBeaconBlockBlinder()
-        .map(blinder -> blinder.blind(signedBeaconBlock))
-        .orElseGet(
-            () -> {
-              // this shouldn't happen: BlockFactory should skip blinding when is not needed
-              if (signedBeaconBlock.getMessage().getBody().isBlinded()) {
-                return signedBeaconBlock;
-              }
-              throw new IllegalStateException(
-                  "Blinder not available for the current spec but the given block was unblinded");
-            });
   }
 
   private BeaconBlockBody createBeaconBlockBody(

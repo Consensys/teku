@@ -18,20 +18,19 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlockUnblinder {
   protected SafeFuture<ExecutionPayload> executionPayloadFuture;
 
   public SignedBeaconBlockUnblinderBellatrix(
-      final SchemaDefinitions schemaDefinitions, final SignedBeaconBlock signedBlindedBeaconBlock) {
+      final SchemaDefinitionsBellatrix schemaDefinitions,
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
     super(schemaDefinitions, signedBlindedBeaconBlock);
   }
 
@@ -65,9 +64,9 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
           final BeaconBlockBodyBellatrix unblindedBody =
               new BeaconBlockBodyBellatrixImpl(
                   (BeaconBlockBodySchemaBellatrixImpl) schemaDefinitions.getBeaconBlockBodySchema(),
-                  new SszSignature(blindedBody.getRandaoReveal()),
+                  blindedBody.getRandaoRevealSsz(),
                   blindedBody.getEth1Data(),
-                  SszBytes32.of(blindedBody.getGraffiti()),
+                  blindedBody.getGraffitiSsz(),
                   blindedBody.getProposerSlashings(),
                   blindedBody.getAttesterSlashings(),
                   blindedBody.getAttestations(),

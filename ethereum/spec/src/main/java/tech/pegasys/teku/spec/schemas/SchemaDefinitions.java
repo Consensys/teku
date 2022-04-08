@@ -21,10 +21,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
@@ -72,13 +69,6 @@ public interface SchemaDefinitions {
   IndexedAttestationSchema getIndexedAttestationSchema();
 
   AttesterSlashingSchema getAttesterSlashingSchema();
-
-  @NonSchema
-  Optional<SignedBeaconBlockUnblinder> createSignedBeaconBlockUnblinder(
-      SignedBeaconBlock signedBlindedBeaconBlock);
-
-  @NonSchema
-  Optional<SignedBeaconBlockBlinder> getSignedBeaconBlockBlinder();
 
   @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {

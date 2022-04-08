@@ -13,15 +13,11 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
@@ -73,16 +69,5 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   @Override
   public AttesterSlashingSchema getAttesterSlashingSchema() {
     return attesterSlashingSchema;
-  }
-
-  @Override
-  public Optional<SignedBeaconBlockUnblinder> createSignedBeaconBlockUnblinder(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return Optional.empty();
-  }
-
-  @Override
-  public Optional<SignedBeaconBlockBlinder> getSignedBeaconBlockBlinder() {
-    return Optional.empty();
   }
 }

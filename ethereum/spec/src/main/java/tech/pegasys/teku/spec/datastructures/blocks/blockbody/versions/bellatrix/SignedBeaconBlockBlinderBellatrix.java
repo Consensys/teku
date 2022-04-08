@@ -15,15 +15,13 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatri
 
 import static com.google.common.base.Preconditions.checkState;
 
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockBlinder;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SignedBeaconBlockBlinderBellatrix extends AbstractSignedBeaconBlockBlinder {
-  public SignedBeaconBlockBlinderBellatrix(SchemaDefinitions schemaDefinitions) {
+  public SignedBeaconBlockBlinderBellatrix(SchemaDefinitionsBellatrix schemaDefinitions) {
     super(schemaDefinitions);
   }
 
@@ -39,9 +37,9 @@ public class SignedBeaconBlockBlinderBellatrix extends AbstractSignedBeaconBlock
     final BlindedBeaconBlockBodyBellatrixImpl blindedBody =
         new BlindedBeaconBlockBodyBellatrixImpl(
             schema,
-            new SszSignature(unblindedBlockBody.getRandaoReveal()),
+            unblindedBlockBody.getRandaoRevealSsz(),
             unblindedBlockBody.getEth1Data(),
-            SszBytes32.of(unblindedBlockBody.getGraffiti()),
+            unblindedBlockBody.getGraffitiSsz(),
             unblindedBlockBody.getProposerSlashings(),
             unblindedBlockBody.getAttesterSlashings(),
             unblindedBlockBody.getAttestations(),

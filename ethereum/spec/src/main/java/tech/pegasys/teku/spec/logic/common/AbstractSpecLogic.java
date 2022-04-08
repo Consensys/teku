@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -49,6 +50,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final BlockProcessor blockProcessor;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
+  protected final Optional<BlindBlockUtil> blockConversionUtil;
 
   // State upgrade
   protected final Optional<StateUpgrade<?>> stateUpgrade;
@@ -68,6 +70,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final BlockProcessor blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
+      final Optional<BlindBlockUtil> blockConversionUtil,
       final Optional<StateUpgrade<?>> stateUpgrade) {
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
@@ -82,6 +85,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.blockProcessor = blockProcessor;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
+    this.blockConversionUtil = blockConversionUtil;
     this.operationValidator = operationValidator;
     this.stateUpgrade = stateUpgrade;
   }
@@ -129,6 +133,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BlockProposalUtil getBlockProposalUtil() {
     return blockProposalUtil;
+  }
+
+  @Override
+  public Optional<BlindBlockUtil> getBlindBlockUtil() {
+    return blockConversionUtil;
   }
 
   @Override
