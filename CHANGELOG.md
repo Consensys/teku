@@ -18,7 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 
 ### Additions and Improvements
-
+- Improved performance when regenerating non-finalized states that had to be dropped from memory.
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
