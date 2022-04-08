@@ -22,10 +22,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 public class DeserializableStringMapTypeDefinition
+    extends SerializableObjectTypeDefinition<Map<String, String>>
     implements DeserializableTypeDefinition<Map<String, String>> {
-  private final Optional<String> name;
-  private final Optional<String> title;
-  private final Optional<String> description;
 
   public DeserializableStringMapTypeDefinition() {
     this(Optional.empty(), Optional.empty(), Optional.empty());
@@ -35,9 +33,7 @@ public class DeserializableStringMapTypeDefinition
       final Optional<String> name,
       final Optional<String> title,
       final Optional<String> description) {
-    this.name = name;
-    this.title = title;
-    this.description = description;
+    super(name, title, description, Map.of());
   }
 
   @Override
@@ -80,27 +76,15 @@ public class DeserializableStringMapTypeDefinition
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("type", "object");
-    if (title.isPresent()) {
-      gen.writeStringField("title", title.get());
+    if (getTitle().isPresent()) {
+      gen.writeStringField("title", getTitle().get());
     }
-    if (description.isPresent()) {
-      gen.writeStringField("description", description.get());
+    if (getDescription().isPresent()) {
+      gen.writeStringField("description", getDescription().get());
     }
     gen.writeObjectFieldStart("additionalProperties");
     gen.writeStringField("type", "string");
     gen.writeEndObject();
     gen.writeEndObject();
-  }
-
-  public Optional<String> getName() {
-    return name;
-  }
-
-  public Optional<String> getTitle() {
-    return title;
-  }
-
-  public Optional<String> getDescription() {
-    return description;
   }
 }

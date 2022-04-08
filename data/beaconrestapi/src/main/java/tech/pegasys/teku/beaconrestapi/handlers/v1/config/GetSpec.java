@@ -28,6 +28,8 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Map;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.api.GetSpecResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableStringMapTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -43,6 +46,12 @@ public class GetSpec extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/config/spec";
   private final ConfigProvider configProvider;
 
+  private static final SerializableTypeDefinition<Map<String, String>> GET_SPEC_RESPONSE_TYPE =
+      SerializableTypeDefinition.<Map<String, String>>object()
+          .name("GetSpecResponse")
+          .withField("data", new DeserializableStringMapTypeDefinition(), Function.identity())
+          .build();
+
   public GetSpec(final DataProvider dataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
@@ -50,7 +59,7 @@ public class GetSpec extends MigratingEndpointAdapter {
             .summary("Get spec params")
             .description("Retrieve specification configuration used on this node.")
             .tags(TAG_CONFIG, TAG_VALIDATOR_REQUIRED)
-            .response(SC_OK, "Success", new DeserializableStringMapTypeDefinition())
+            .response(SC_OK, "Success", GET_SPEC_RESPONSE_TYPE)
             .build());
     this.configProvider = dataProvider.getConfigProvider();
   }
