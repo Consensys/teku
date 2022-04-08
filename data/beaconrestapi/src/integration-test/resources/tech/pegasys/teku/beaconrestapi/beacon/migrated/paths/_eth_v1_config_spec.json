@@ -10,7 +10,10 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetSpecResponse"
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              }
             }
           }
         }
