@@ -107,4 +107,12 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
   public String toString() {
     return MoreObjects.toStringHelper(this).add("name", name).add("fields", fields).toString();
   }
+
+  public Optional<String> getName() {
+    return name;
+  }
+
+  public Optional<String> getDescription() {
+    return description;
+  }
 }
