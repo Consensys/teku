@@ -40,6 +40,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
@@ -82,7 +84,7 @@ class OkHttpValidatorRestApiClientTest {
   public void beforeEach() throws Exception {
     mockWebServer.start();
     okHttpClient = new OkHttpClient();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, false);
   }
 
   @AfterEach
@@ -254,13 +256,30 @@ class OkHttpValidatorRestApiClientTest {
                 asJson(
                     new GetNewBlindedBlockResponse(
                         SpecMilestone.BELLATRIX, new BlindedBlockBellatrix(expectedBeaconBlock)))));
-    Optional<BeaconBlock> beaconBlock =
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
+    Optional<BeaconBlock> maybeBlock =
         apiClient.createUnsignedBlock(slot, blsSignature, graffiti, true);
-    assertThat(beaconBlock).isPresent();
+    assertThat(maybeBlock).isPresent();
 
-    // TODO make comparable
-    // Some of the underlying stores are mutable, but the values are the same.
-    // It does make it harder to compare here though
+    final BlindedBlockBellatrix expectedBlock = new BlindedBlockBellatrix(expectedBeaconBlock);
+    final BlindedBlockBellatrix block = (BlindedBlockBellatrix) maybeBlock.get();
+
+    assertThat(block)
+        .usingRecursiveComparison()
+        .ignoringFields(
+            "body.executionPayloadHeader.extraData",
+            "body.executionPayloadHeader.feeRecipient.bytes")
+        .isEqualTo(expectedBlock);
+    assertThat(block.getBody().executionPayloadHeader.extraData.toHexString())
+        .isEqualTo(expectedBlock.getBody().executionPayloadHeader.extraData.toHexString());
+    assertThat(block.getBody().executionPayloadHeader.feeRecipient.getWrappedBytes().toHexString())
+        .isEqualTo(
+            expectedBlock
+                .getBody()
+                .executionPayloadHeader
+                .feeRecipient
+                .getWrappedBytes()
+                .toHexString());
   }
 
   @Test
@@ -282,10 +301,15 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
   }
 
-  @Test
-  public void sendSignedBlock_MakesExpectedRequest() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void sendSignedBlock_MakesExpectedRequest(final boolean isBlindedBlocksEnabled)
+      throws Exception {
     final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    apiClient =
+        new OkHttpValidatorRestApiClient(
+            mockWebServer.url("/"), okHttpClient, isBlindedBlocksEnabled);
 
     // Block has been successfully broadcast, validated and imported
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(blockRoot)));
@@ -294,9 +318,12 @@ class OkHttpValidatorRestApiClientTest {
 
     RecordedRequest request = mockWebServer.takeRequest();
 
+    final ValidatorApiMethod expectedPath =
+        isBlindedBlocksEnabled
+            ? ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK
+            : ValidatorApiMethod.SEND_SIGNED_BLOCK;
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath(emptyMap()));
+    assertThat(request.getPath()).contains(expectedPath.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedBeaconBlock));
   }
