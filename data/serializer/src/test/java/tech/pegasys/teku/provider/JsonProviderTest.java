@@ -137,6 +137,17 @@ class JsonProviderTest {
   }
 
   @Test
+  public void zeroLengthByteArrayShouldSerializeToJson() throws JsonProcessingException {
+    final byte[] bytes = Bytes.fromHexString("").toArray();
+    assertEquals("[]", jsonProvider.objectToJSON(bytes));
+  }
+
+  @Test
+  public void deserializeToBytesShouldAllowZeroLengthArray() throws JsonProcessingException {
+    assertThat(jsonProvider.jsonToObject("[]", byte[].class)).isEqualTo(new byte[0]);
+  }
+
+  @Test
   public void deserializeToBytesShouldHandleSignedBits() throws JsonProcessingException {
     assertThat(jsonProvider.jsonToObject("[\"0\",\"160\",\"240\",\"255\"]", byte[].class))
         .isEqualTo(Bytes.fromHexString("0x00A0F0FF").toArray());
