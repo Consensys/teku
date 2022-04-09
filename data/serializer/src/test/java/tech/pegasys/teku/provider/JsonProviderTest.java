@@ -138,8 +138,7 @@ class JsonProviderTest {
 
   @Test
   public void zeroLengthByteArrayShouldSerializeToJson() throws JsonProcessingException {
-    final byte[] bytes = Bytes.fromHexString("").toArray();
-    assertEquals("[]", jsonProvider.objectToJSON(bytes));
+    assertEquals("[]", jsonProvider.objectToJSON(new byte[0]));
   }
 
   @Test
