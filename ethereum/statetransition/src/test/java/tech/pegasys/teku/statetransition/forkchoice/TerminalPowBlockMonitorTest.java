@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -210,8 +209,6 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    // we call exchangeTransitionConfiguration even before bellatrix activates
-    verify(executionEngine, times(1)).exchangeTransitionConfiguration(localTransitionConfiguration);
     verify(executionEngine, times(0)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
@@ -261,8 +258,6 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(executionEngine, times(3)).getPowChainHead();
-    verify(executionEngine, atLeastOnce())
-        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
 
     // new different Terminal Block with wrong parent TTD - should not notify
@@ -320,8 +315,6 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verify(executionEngine, atLeastOnce())
-        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
     verifyNoMoreInteractions(eventLogger);
   }
@@ -373,8 +366,6 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    // we call exchangeTransitionConfiguration even before bellatrix activates
-    verify(executionEngine, times(1)).exchangeTransitionConfiguration(localTransitionConfiguration);
     verify(executionEngine, times(0)).getPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
@@ -419,8 +410,6 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verify(executionEngine, atLeastOnce())
-        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
     verifyNoMoreInteractions(eventLogger);
   }
@@ -450,60 +439,6 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, atLeastOnce()).exchangeTransitionConfiguration(any());
     verifyNoMoreInteractions(executionEngine);
-  }
-
-  @Test
-  void shouldDetectTerminalConfigProblems() {
-    setUpTerminalBlockHashConfig();
-    final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
-    final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
-
-    TransitionConfiguration wrongRemoteConfig;
-
-    terminalPowBlockMonitor.start();
-
-    // wrong TTD
-    wrongRemoteConfig =
-        new TransitionConfiguration(
-            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
-
-    // wrong TBH
-    wrongRemoteConfig =
-        new TransitionConfiguration(
-            localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
-
-    // remote TBH TBN inconsistency
-    wrongRemoteConfig =
-        new TransitionConfiguration(
-            localTransitionConfiguration.getTerminalTotalDifficulty(),
-            localTransitionConfiguration.getTerminalBlockHash(),
-            UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
-
-    verifyNoMoreInteractions(eventLogger);
   }
 }
