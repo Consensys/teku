@@ -36,7 +36,7 @@ class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
   public Byte deserialize(final JsonParser parser) throws IOException {
     final int value = Integer.parseUnsignedInt(parser.getValueAsString(), 10);
     checkArgument(
-        value <= Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for unsigned byte", value);
+        value < Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for unsigned byte", value);
     return (byte) value;
   }
 
