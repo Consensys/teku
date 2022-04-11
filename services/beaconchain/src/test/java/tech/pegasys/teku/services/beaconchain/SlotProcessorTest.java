@@ -370,7 +370,7 @@ public class SlotProcessorTest {
     verify(recentChainData, never()).retrieveStateAtSlot(any());
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
-    slotProcessor.onTick(nextEpochSlotMinusOne.plus((secondsPerSlot / 3) * 2));
+    slotProcessor.onTick(nextEpochSlotMinusOne.plus((secondsPerSlot / 3) * 2L));
     if (isNotDivisibleBy3(secondsPerSlot)) {
       // 2/3 is not due yet, will be on the next second
       verify(epochCachePrimer, never()).primeCacheForEpoch(ONE);

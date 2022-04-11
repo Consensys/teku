@@ -346,7 +346,7 @@ public class ForkChoice {
     return result;
   }
 
-  private boolean isBeforeAttestingInterval(int secondsPerSlot, UInt64 timeIntoSlot) {
+  private boolean isBeforeAttestingInterval(final int secondsPerSlot, final UInt64 timeIntoSlot) {
     UInt64 oneThirdSlot = secondsToMillis(secondsPerSlot).dividedBy(INTERVALS_PER_SLOT);
     return secondsToMillis(timeIntoSlot).isLessThan(oneThirdSlot);
   }
