@@ -154,7 +154,7 @@ public final class DataStructureUtil {
     return new Random(nextSeed()).nextLong();
   }
 
-  public long randomLong(final long bound) {
+  public long randomPositiveLong(final long bound) {
     return new Random(nextSeed()).longs(0, bound).findFirst().orElse(0L);
   }
 
@@ -173,7 +173,7 @@ public final class DataStructureUtil {
   }
 
   public UInt64 randomUInt64(final long bound) {
-    return UInt64.fromLongBits(randomLong(bound));
+    return UInt64.fromLongBits(randomPositiveLong(bound));
   }
 
   public UInt256 randomUInt256() {
