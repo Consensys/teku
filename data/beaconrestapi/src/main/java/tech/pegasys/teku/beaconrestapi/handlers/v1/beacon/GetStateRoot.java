@@ -42,9 +42,9 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -111,23 +111,22 @@ public class GetStateRoot extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> result =
         chainDataProvider.getStateRootBytes32(request.getPathParameter(PARAMETER_STATE_ID));
-    request.handleOptionalResult(future, this::handleResult, SC_NOT_FOUND);
-  }
-
-  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Bytes32> response)
-      throws JsonProcessingException {
-    return Optional.of(
-        JsonUtil.serialize(
-            new StateRootData(response.isExecutionOptimisticForApi(), response.getData()),
-            RESPONSE_TYPE));
+    request.respondAsync(
+        result.thenApplyChecked(
+            maybeRootData -> {
+              if (maybeRootData.isEmpty()) {
+                return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Not found");
+              }
+              return AsyncApiResponse.respondOk(
+                  new StateRootData(
+                      maybeRootData.get().isExecutionOptimistic(), maybeRootData.get().getData()));
+            }));
   }
 
   static class StateRootData {
-    @SuppressWarnings("unused")
     private final Boolean executionOptimistic;
-
     private final Bytes32 forkData;
 
     public StateRootData(final Boolean executionOptimistic, final Bytes32 forkData) {
@@ -137,6 +136,10 @@ public class GetStateRoot extends MigratingEndpointAdapter {
 
     public Bytes32 getForkData() {
       return forkData;
+    }
+
+    public Boolean getExecutionOptimistic() {
+      return executionOptimistic;
     }
   }
 }
