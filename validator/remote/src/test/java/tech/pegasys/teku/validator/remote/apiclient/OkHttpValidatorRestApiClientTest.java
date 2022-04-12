@@ -264,22 +264,8 @@ class OkHttpValidatorRestApiClientTest {
     final BlindedBlockBellatrix expectedBlock = new BlindedBlockBellatrix(expectedBeaconBlock);
     final BlindedBlockBellatrix block = (BlindedBlockBellatrix) maybeBlock.get();
 
-    assertThat(block)
-        .usingRecursiveComparison()
-        .ignoringFields(
-            "body.executionPayloadHeader.extraData",
-            "body.executionPayloadHeader.feeRecipient.bytes")
-        .isEqualTo(expectedBlock);
-    assertThat(block.getBody().executionPayloadHeader.extraData.toHexString())
-        .isEqualTo(expectedBlock.getBody().executionPayloadHeader.extraData.toHexString());
-    assertThat(block.getBody().executionPayloadHeader.feeRecipient.getWrappedBytes().toHexString())
-        .isEqualTo(
-            expectedBlock
-                .getBody()
-                .executionPayloadHeader
-                .feeRecipient
-                .getWrappedBytes()
-                .toHexString());
+    assertThat(block.asInternalBeaconBlock(spec))
+        .isEqualTo(expectedBlock.asInternalBeaconBlock(spec));
   }
 
   @Test
