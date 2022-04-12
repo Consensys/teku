@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
@@ -306,9 +307,8 @@ public class ForkChoice {
       final int secondsPerSlot = spec.getSecondsPerSlot(block.getSlot());
       final UInt64 timeIntoSlot =
           transaction.getTime().minus(transaction.getGenesisTime()).mod(secondsPerSlot);
-      final boolean isBeforeAttestingInterval =
-          timeIntoSlot.isLessThan(secondsPerSlot / INTERVALS_PER_SLOT);
-      if (isBeforeAttestingInterval) {
+
+      if (isBeforeAttestingInterval(secondsPerSlot, timeIntoSlot)) {
         transaction.setProposerBoostRoot(block.getRoot());
       }
     }
@@ -344,6 +344,11 @@ public class ForkChoice {
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
     return result;
+  }
+
+  private boolean isBeforeAttestingInterval(final int secondsPerSlot, final UInt64 timeIntoSlot) {
+    UInt64 oneThirdSlot = secondsToMillis(secondsPerSlot).dividedBy(INTERVALS_PER_SLOT);
+    return secondsToMillis(timeIntoSlot).isLessThan(oneThirdSlot);
   }
 
   private void onExecutionPayloadResult(
