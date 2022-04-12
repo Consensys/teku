@@ -291,8 +291,13 @@ class OkHttpValidatorRestApiClientTest {
   @ValueSource(booleans = {true, false})
   public void sendSignedBlock_MakesExpectedRequest(final boolean isBlindedBlocksEnabled)
       throws Exception {
+    final SchemaObjectsTestFixture schemaObjectsBellatrix =
+        new SchemaObjectsTestFixture(TestSpecFactory.createMinimalBellatrix());
     final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
-    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock =
+        isBlindedBlocksEnabled
+            ? schemaObjectsBellatrix.signedBlindedBlock()
+            : schemaObjectsBellatrix.signedBeaconBlock();
     apiClient =
         new OkHttpValidatorRestApiClient(
             mockWebServer.url("/"), okHttpClient, isBlindedBlocksEnabled);

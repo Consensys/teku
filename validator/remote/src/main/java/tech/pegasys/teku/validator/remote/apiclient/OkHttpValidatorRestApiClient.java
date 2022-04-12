@@ -198,10 +198,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    return post(
-            blindedBlocksEnabled ? SEND_SIGNED_BLINDED_BLOCK : SEND_SIGNED_BLOCK,
-            beaconBlock,
-            createHandler())
+    final ValidatorApiMethod apiMethod =
+        beaconBlock.getMessage().getBody().isBlinded()
+            ? SEND_SIGNED_BLINDED_BLOCK
+            : SEND_SIGNED_BLOCK;
+    return post(apiMethod, beaconBlock, createHandler())
         .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
