@@ -31,9 +31,6 @@ public class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
     ObjectCodec oc = p.getCodec();
     JsonNode node = oc.readTree(p);
     checkArgument(node.isArray(), "Expected array but did not appear to be one!");
-    if (node.size() == 0) {
-      return null;
-    }
     byte[] data = new byte[node.size()];
     for (int i = 0; i < node.size(); i++) {
       final int current = node.get(i).asInt(-1);
