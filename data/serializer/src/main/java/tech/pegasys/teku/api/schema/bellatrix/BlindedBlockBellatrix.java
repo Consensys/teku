@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 
 public class BlindedBlockBellatrix extends BeaconBlockAltair {
 
@@ -36,10 +36,14 @@ public class BlindedBlockBellatrix extends BeaconBlockAltair {
   }
 
   @Override
+  public BeaconBlockSchema getBeaconBlockSchema(final SpecVersion spec) {
+    return spec.getSchemaDefinitions().getBlindedBeaconBlockSchema();
+  }
+
+  @Override
   public BeaconBlock asInternalBeaconBlock(Spec spec) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    return SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
-        .getBeaconBlockSchema()
+    return getBeaconBlockSchema(specVersion)
         .create(
             slot,
             proposer_index,

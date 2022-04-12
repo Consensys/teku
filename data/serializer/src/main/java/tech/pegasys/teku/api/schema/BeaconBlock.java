@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 
 @SuppressWarnings("JavaCase")
 public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
@@ -68,12 +69,14 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
     this.body = body;
   }
 
+  public BeaconBlockSchema getBeaconBlockSchema(final SpecVersion spec) {
+    return spec.getSchemaDefinitions().getBeaconBlockSchema();
+  }
+
   public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock(
       final Spec spec) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    return specVersion
-        .getSchemaDefinitions()
-        .getBeaconBlockSchema()
+    return getBeaconBlockSchema(spec.atSlot(slot))
         .create(
             slot,
             proposer_index,
