@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -49,6 +50,10 @@ public class DeserializableStringMapTypeDefinition
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       final String fieldName = p.getCurrentName();
       p.nextToken();
+      if (!p.getCurrentToken().isScalarValue()) {
+        throw MismatchedInputException.from(
+            p, (Class<?>) null, "Expected scalar value but got " + p.getCurrentToken());
+      }
       final String fieldValue = p.getValueAsString();
       result.put(fieldName, fieldValue);
     }
