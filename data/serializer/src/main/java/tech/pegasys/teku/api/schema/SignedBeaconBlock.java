@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
@@ -58,6 +59,10 @@ public class SignedBeaconBlock implements SignedBlock {
         internalBlock.getMessage().getBody();
 
     return Stream.of(
+            () ->
+                beaconBlock
+                    .toBlindedVersionBellatrix()
+                    .map(__ -> new SignedBlindedBeaconBlockBellatrix(internalBlock)),
             () ->
                 beaconBlock
                     .toVersionBellatrix()
