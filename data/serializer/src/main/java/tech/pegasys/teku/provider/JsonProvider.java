@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
@@ -71,6 +72,8 @@ public class JsonProvider {
         GetNewBlockResponseV2.class, new GetNewBlockResponseV2Deserializer(objectMapper));
     module.addDeserializer(
         GetStateResponseV2.class, new GetStateResponseV2Deserializer(objectMapper));
+    module.addDeserializer(
+        GetNewBlindedBlockResponse.class, new GetNewBlindedBlockResponseDeserializer(objectMapper));
 
     objectMapper.registerModule(module);
   }

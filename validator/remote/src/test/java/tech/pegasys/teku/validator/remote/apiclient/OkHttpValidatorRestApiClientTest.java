@@ -40,6 +40,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
@@ -49,6 +51,7 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -60,9 +63,13 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 class OkHttpValidatorRestApiClientTest {
@@ -77,7 +84,7 @@ class OkHttpValidatorRestApiClientTest {
   public void beforeEach() throws Exception {
     mockWebServer.start();
     okHttpClient = new OkHttpClient();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, false);
   }
 
   @AfterEach
@@ -233,6 +240,35 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
+  public void createUnsignedBlocks_shouldUseBlindedBlocksIfEnabled() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 slot = UInt64.ONE;
+    final BLSSignature blsSignature = schemaObjects.blsSignature();
+    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
+    final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock expectedBeaconBlock =
+        dataStructureUtil.randomBlindedBeaconBlock(slot);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(
+                asJson(
+                    new GetNewBlindedBlockResponse(
+                        SpecMilestone.BELLATRIX, new BlindedBlockBellatrix(expectedBeaconBlock)))));
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
+    Optional<BeaconBlock> maybeBlock =
+        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, true);
+    assertThat(maybeBlock).isPresent();
+
+    final BlindedBlockBellatrix expectedBlock = new BlindedBlockBellatrix(expectedBeaconBlock);
+    final BlindedBlockBellatrix block = (BlindedBlockBellatrix) maybeBlock.get();
+
+    assertThat(block.asInternalBeaconBlock(spec))
+        .isEqualTo(expectedBlock.asInternalBeaconBlock(spec));
+  }
+
+  @Test
   public void createUnsignedBlock_Altair_ReturnsBeaconBlock() {
     final UInt64 slot = UInt64.ONE;
     final BLSSignature blsSignature = schemaObjects.blsSignature();
@@ -251,10 +287,20 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
   }
 
-  @Test
-  public void sendSignedBlock_MakesExpectedRequest() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void sendSignedBlock_MakesExpectedRequest(final boolean isBlindedBlocksEnabled)
+      throws Exception {
+    final SchemaObjectsTestFixture schemaObjectsBellatrix =
+        new SchemaObjectsTestFixture(TestSpecFactory.createMinimalBellatrix());
     final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
-    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock =
+        isBlindedBlocksEnabled
+            ? schemaObjectsBellatrix.signedBlindedBlock()
+            : schemaObjectsBellatrix.signedBeaconBlock();
+    apiClient =
+        new OkHttpValidatorRestApiClient(
+            mockWebServer.url("/"), okHttpClient, isBlindedBlocksEnabled);
 
     // Block has been successfully broadcast, validated and imported
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(blockRoot)));
@@ -263,9 +309,12 @@ class OkHttpValidatorRestApiClientTest {
 
     RecordedRequest request = mockWebServer.takeRequest();
 
+    final ValidatorApiMethod expectedPath =
+        isBlindedBlocksEnabled
+            ? ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK
+            : ValidatorApiMethod.SEND_SIGNED_BLOCK;
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath(emptyMap()));
+    assertThat(request.getPath()).contains(expectedPath.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedBeaconBlock));
   }
@@ -682,7 +731,7 @@ class OkHttpValidatorRestApiClientTest {
       throws Exception {
     final HttpUrl url =
         mockWebServer.url("/").newBuilder().username("user").password("password").build();
-    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
+    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient, false);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getGenesis();

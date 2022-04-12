@@ -17,6 +17,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -120,6 +121,11 @@ public class BeaconBlockBody {
                       .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
                       .collect(schema.getVoluntaryExitsSchema().collector()));
         });
+  }
+
+  @JsonIgnore
+  public boolean isBlinded() {
+    return false;
   }
 
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema(final SpecVersion spec) {
