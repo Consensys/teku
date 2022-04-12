@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.common.base.MoreObjects;
 import java.io.IOException;
 import java.util.Optional;
@@ -59,6 +60,10 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
 
   @Override
   public T deserialize(final JsonParser parser) throws IOException {
+    if (!parser.getCurrentToken().isScalarValue()) {
+      throw MismatchedInputException.from(
+          parser, (Class<?>) null, "Expected scalar value but got " + parser.getCurrentToken());
+    }
     return deserializeFromString(parser.getValueAsString());
   }
 
