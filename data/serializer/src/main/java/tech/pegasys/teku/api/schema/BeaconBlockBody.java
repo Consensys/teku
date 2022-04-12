@@ -89,7 +89,7 @@ public class BeaconBlockBody {
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(
           final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
-    BeaconBlockBodySchema<?> schema = spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    final BeaconBlockBodySchema<?> schema = getBeaconBlockBodySchema(spec);
     return schema.createBlockBody(
         builder -> {
           builderRef.accept(builder);
@@ -120,6 +120,10 @@ public class BeaconBlockBody {
                       .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
                       .collect(schema.getVoluntaryExitsSchema().collector()));
         });
+  }
+
+  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema(final SpecVersion spec) {
+    return spec.getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
