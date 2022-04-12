@@ -257,7 +257,7 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
-  void onForkChoiceUpdated_shouldNotSendNotificationOfOrderedPayloadAttributes() {
+  void onForkChoiceUpdated_shouldSendNotificationOfOrderedPayloadAttributes() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(1); // slot 2
@@ -286,7 +286,72 @@ class ForkChoiceNotifierTest {
     verify(executionEngineChannel)
         .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
 
-    // it should get ignored
+    verifyNoMoreInteractions(executionEngineChannel);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void onForkChoiceUpdated_shouldNotSendNotificationWithOldPayloadAttributes() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    BeaconState headState = getHeadState();
+    UInt64 blockSlot = headState.getSlot().plus(1); // slot 2
+
+    final List<PayloadAttributes> payloadAttributesArr =
+        withProposerForTwoSlots(headState, blockSlot, blockSlot.plus(1));
+
+    // proposer index 1 and 0 will propose slot 2 and 3
+    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+
+    // current slot is 1
+
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceState))
+        .isCompleted(); // calculate attributes for slot 2
+
+    // expect attributes for slot 2
+    verify(executionEngineChannel)
+        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
+
+    // advance chain (generate block at slot 2), we get a new forkChoiceState
+    storageSystem.chainUpdater().addNewBestBlock();
+
+    headState = getHeadState();
+    blockSlot = headState.getSlot().plus(1);
+
+    // new attributes for new state block production at slot 3
+    final PayloadAttributes payloadAttributesSlot3 =
+        withProposerForSlot(
+            headState,
+            blockSlot,
+            false,
+            Optional.of(payloadAttributesArr.get(1).getFeeRecipient()));
+    final ForkChoiceState forkChoiceStateSlot3 = getCurrentForkChoiceState();
+
+    // store real payload attributes and return an incomplete future
+    AtomicReference<SafeFuture<Optional<PayloadAttributes>>> actualResponseA =
+        new AtomicReference<>();
+    SafeFuture<Optional<PayloadAttributes>> deferredResponseA = new SafeFuture<>();
+    doAnswer(
+            invocation -> {
+              actualResponseA.set(
+                  (SafeFuture<Optional<PayloadAttributes>>) invocation.callRealMethod());
+              return deferredResponseA;
+            })
+        .when(payloadAttributesCalculator)
+        .calculatePayloadAttributes(any(), anyBoolean(), any(), anyBoolean());
+
+    assertThat(notifier.onForkChoiceUpdated(forkChoiceStateSlot3))
+        .isCompleted(); // calculate attributes for slot 3
+
+    // it is called once with no attributes. the one with attributes is pending
+    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceStateSlot3, Optional.empty());
+
+    // let the payload attributes for slot 3 return
+    actualResponseA.get().propagateTo(deferredResponseA);
+
+    // expect attributes for slot 3
+    verify(executionEngineChannel)
+        .forkChoiceUpdated(forkChoiceStateSlot3, Optional.of(payloadAttributesSlot3));
+
     verifyNoMoreInteractions(executionEngineChannel);
   }
 
