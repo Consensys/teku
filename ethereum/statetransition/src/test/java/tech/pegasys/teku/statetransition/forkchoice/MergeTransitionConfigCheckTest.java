@@ -75,7 +75,7 @@ class MergeTransitionConfigCheckTest {
 
     assertThat(mergeTransitionConfigCheck.start()).isCompleted();
 
-    // wrong TTD
+    // wrong terminal total difficulty
     wrongRemoteConfig =
         new TransitionConfiguration(
             wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
@@ -88,7 +88,7 @@ class MergeTransitionConfigCheckTest {
         .transitionConfigurationTtdTbhMismatch(
             localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
 
-    // wrong TBH
+    // wrong terminal block hash
     wrongRemoteConfig =
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
@@ -101,7 +101,7 @@ class MergeTransitionConfigCheckTest {
         .transitionConfigurationTtdTbhMismatch(
             localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
 
-    // remote TBH TBN inconsistency
+    // remote terminal block hash / terminal block number inconsistency
     wrongRemoteConfig =
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(),
