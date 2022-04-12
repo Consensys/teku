@@ -24,4 +24,12 @@ public class TimeUtilities {
   public static UInt64 secondsToMillis(final long timeInSeconds) {
     return UInt64.valueOf(TimeUnit.SECONDS.toMillis(timeInSeconds));
   }
+
+  public static UInt64 millisToSeconds(final UInt64 timeInMillis) {
+    return millisToSeconds(timeInMillis.longValue());
+  }
+
+  public static UInt64 millisToSeconds(final long timeInMillis) {
+    return UInt64.valueOf(TimeUnit.MILLISECONDS.toSeconds(timeInMillis));
+  }
 }

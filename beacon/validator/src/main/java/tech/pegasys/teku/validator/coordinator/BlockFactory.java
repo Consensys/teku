@@ -18,9 +18,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
@@ -60,5 +62,22 @@ public class BlockFactory {
                 parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
         .getBlock();
+  }
+
+  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlockIfBlinded(
+      final SignedBeaconBlock blindedSignedBeaconBlock) {
+    if (blindedSignedBeaconBlock.getMessage().getBody().isBlinded()) {
+      return spec.unblindSignedBeaconBlock(
+          blindedSignedBeaconBlock, operationSelector.createUnblinderSelector());
+    }
+    return SafeFuture.completedFuture(blindedSignedBeaconBlock);
+  }
+
+  public SignedBeaconBlock blindSignedBeaconBlockIfUnblinded(
+      final SignedBeaconBlock unblindedSignedBeaconBlock) {
+    if (unblindedSignedBeaconBlock.getMessage().getBody().isBlinded()) {
+      return unblindedSignedBeaconBlock;
+    }
+    return spec.blindSignedBeaconBlock(unblindedSignedBeaconBlock);
   }
 }

@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -200,5 +201,20 @@ public class BlockOperationSelectorFactory {
                   }
                 })
             .join();
+  }
+
+  public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {
+    return bodyUnblinder -> {
+      if (isMevBoostEnabled) {
+        bodyUnblinder.setExecutionPayloadSupplier(
+            () ->
+                executionEngineChannel.proposeBlindedBlock(
+                    bodyUnblinder.getSignedBlindedBeaconBlock()));
+        return;
+      }
+      // blinded block has been requested but mev-boost is not enabled
+      throw new UnsupportedOperationException(
+          "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
+    };
   }
 }

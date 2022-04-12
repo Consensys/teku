@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions.NonSchema;
 
 public class SchemaDefinitionCacheTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -89,7 +90,7 @@ public class SchemaDefinitionCacheTest {
     // all the get methods should return the same object on subsequent calls,
     // as creation of the schema objects is relatively expensive
     methods.stream()
-        .filter(method -> method.getName().startsWith("get"))
+        .filter(method -> method.getAnnotation(NonSchema.class) == null)
         .forEach(
             method -> {
               try {

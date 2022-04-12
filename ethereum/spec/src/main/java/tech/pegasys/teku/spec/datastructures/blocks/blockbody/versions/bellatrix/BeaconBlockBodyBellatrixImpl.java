@@ -96,6 +96,11 @@ class BeaconBlockBodyBellatrixImpl
   }
 
   @Override
+  public SszSignature getRandaoRevealSsz() {
+    return getField0();
+  }
+
+  @Override
   public Eth1Data getEth1Data() {
     return getField1();
   }
@@ -103,6 +108,11 @@ class BeaconBlockBodyBellatrixImpl
   @Override
   public Bytes32 getGraffiti() {
     return getField2().get();
+  }
+
+  @Override
+  public SszBytes32 getGraffitiSsz() {
+    return getField2();
   }
 
   @Override
