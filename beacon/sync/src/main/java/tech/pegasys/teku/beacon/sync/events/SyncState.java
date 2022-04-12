@@ -17,6 +17,7 @@ public enum SyncState {
   START_UP,
   SYNCING,
   OPTIMISTIC_SYNCING,
+  AWAITING_EL, // Beacon chain has completed optimistic sync but waiting for the EL
   IN_SYNC;
 
   public boolean isInSync() {
@@ -28,10 +29,10 @@ public enum SyncState {
   }
 
   public boolean isSyncing() {
-    return this == SYNCING || this == OPTIMISTIC_SYNCING;
+    return this == SYNCING || this == OPTIMISTIC_SYNCING || this == AWAITING_EL;
   }
 
   public boolean isOptimistic() {
-    return this == OPTIMISTIC_SYNCING;
+    return this == OPTIMISTIC_SYNCING || this == AWAITING_EL;
   }
 }
