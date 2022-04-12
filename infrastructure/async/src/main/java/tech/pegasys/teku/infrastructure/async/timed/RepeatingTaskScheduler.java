@@ -51,7 +51,7 @@ public class RepeatingTaskScheduler {
    * @param task the task to execute. If useMillis is true, then {@link RepeatingTask#execute} will
    *     use epoch millis instead of epoch seconds.
    */
-  public void scheduleRepeatingEvent(
+  private void scheduleRepeatingEvent(
       final UInt64 initialInvocationTime,
       final UInt64 repeatingPeriod,
       final boolean useMillis,
