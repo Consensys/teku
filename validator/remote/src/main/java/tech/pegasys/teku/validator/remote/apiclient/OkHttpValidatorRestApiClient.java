@@ -174,7 +174,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    if (blindedBlocksEnabled && blinded) {
+    if (blindedBlocksEnabled || blinded) {
       return createUnsignedBlindedBlock(pathParams, queryParams);
     }
 
