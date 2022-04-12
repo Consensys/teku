@@ -73,12 +73,16 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   @Override
+  public BeaconBlockBodySchemaBellatrix<?> getBeaconBlockBodySchema(final SpecVersion spec) {
+    return (BeaconBlockBodySchemaBellatrix<?>)
+        spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+  }
+
+  @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
-
-    BeaconBlockBodySchemaBellatrix<?> schema =
-        (BeaconBlockBodySchemaBellatrix<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
-    ExecutionPayloadSchema executionPayloadSchema = schema.getExecutionPayloadSchema();
+    final ExecutionPayloadSchema executionPayloadSchema =
+        getBeaconBlockBodySchema(spec).getExecutionPayloadSchema();
 
     return super.asInternalBeaconBlockBody(
         spec,
