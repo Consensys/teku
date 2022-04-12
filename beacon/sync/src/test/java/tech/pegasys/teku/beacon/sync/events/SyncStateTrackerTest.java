@@ -143,9 +143,9 @@ class SyncStateTrackerTest {
     verify(eventLogger).syncCompleted();
     assertSyncState(SyncState.START_UP);
 
-    // turn head optimistic
+    // turn head optimistic. No blocks to sync so enter awaiting EL state.
     tracker.onOptimisticHeadChanged(true);
-    assertSyncState(SyncState.OPTIMISTIC_SYNCING);
+    assertSyncState(SyncState.AWAITING_EL);
 
     verifyNoMoreInteractions(eventLogger);
   }

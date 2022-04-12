@@ -22,18 +22,15 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -52,7 +49,6 @@ public class TerminalPowBlockMonitor {
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
   private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
   private SpecConfigBellatrix specConfigBellatrix;
-  private TransitionConfiguration localTransitionConfiguration;
   private boolean isBellatrixActive = false;
   private boolean inSync = true;
 
@@ -86,12 +82,6 @@ public class TerminalPowBlockMonitor {
     }
     specConfigBellatrix = maybeSpecConfigBellatrix.get();
 
-    localTransitionConfiguration =
-        new TransitionConfiguration(
-            specConfigBellatrix.getTerminalTotalDifficulty(),
-            specConfigBellatrix.getTerminalBlockHash(),
-            UInt64.ZERO);
-
     final Duration pollingPeriod =
         Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
     timer =
@@ -122,8 +112,6 @@ public class TerminalPowBlockMonitor {
   }
 
   private synchronized void monitor() {
-    verifyTransitionConfiguration();
-
     if (!isBellatrixActive) {
       initMergeState();
       if (!isBellatrixActive) {
@@ -288,42 +276,11 @@ public class TerminalPowBlockMonitor {
     return !foundTerminalBlockHash.map(blockHash::equals).orElse(false);
   }
 
-  private void verifyTransitionConfiguration() {
-    executionEngine
-        .exchangeTransitionConfiguration(localTransitionConfiguration)
-        .thenAccept(
-            remoteTransitionConfiguration -> {
-              if (!localTransitionConfiguration
-                      .getTerminalTotalDifficulty()
-                      .equals(remoteTransitionConfiguration.getTerminalTotalDifficulty())
-                  || !localTransitionConfiguration
-                      .getTerminalBlockHash()
-                      .equals(remoteTransitionConfiguration.getTerminalBlockHash())) {
-
-                eventLogger.transitionConfigurationTtdTbhMismatch(
-                    localTransitionConfiguration.toString(),
-                    remoteTransitionConfiguration.toString());
-              } else if (remoteTransitionConfiguration.getTerminalBlockHash().isZero()
-                  != remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
-
-                eventLogger.transitionConfigurationRemoteTbhTbnInconsistency(
-                    remoteTransitionConfiguration.toString());
-              }
-            })
-        .finish(
-            error -> {
-              LOG.error("an error occurred while querying remote transition configuration", error);
-            });
-  }
-
   private Optional<SpecConfigBellatrix> getSpecConfigBellatrix() {
-    return spec.getForkSchedule()
-        .streamMilestoneBoundarySlots()
-        .filter(
-            specMilestoneAndSlot -> specMilestoneAndSlot.getLeft().equals(SpecMilestone.BELLATRIX))
-        .findFirst()
-        .map(TekuPair::getRight)
-        .map(slot -> spec.atSlot(slot).getConfig())
-        .flatMap(SpecConfig::toVersionBellatrix);
+    final SpecVersion bellatrixMilestone = spec.forMilestone(SpecMilestone.BELLATRIX);
+    if (bellatrixMilestone == null) {
+      return Optional.empty();
+    }
+    return bellatrixMilestone.getConfig().toVersionBellatrix();
   }
 }

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -71,9 +74,9 @@ public class DutyMetrics {
 
   private UInt64 calculateExpectedAttestationTimeInMillis(final UInt64 slot) {
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    return genesisTime
-        .plus(slot.times(spec.getSecondsPerSlot(slot)))
-        .plus(spec.getSecondsPerSlot(slot) / 3)
-        .times(1000);
+    UInt64 millisPerSlot = secondsToMillis(spec.getSecondsPerSlot(slot));
+    return secondsToMillis(genesisTime)
+        .plus(slot.times(millisPerSlot))
+        .plus(millisPerSlot.dividedBy(INTERVALS_PER_SLOT));
   }
 }

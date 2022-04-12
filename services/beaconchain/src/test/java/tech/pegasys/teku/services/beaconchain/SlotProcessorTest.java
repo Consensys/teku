@@ -20,12 +20,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
@@ -35,10 +38,12 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -68,19 +73,22 @@ public class SlotProcessorTest {
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final EpochCachePrimer epochCachePrimer = mock(EpochCachePrimer.class);
-  private final SlotProcessor slotProcessor =
-      new SlotProcessor(
-          spec,
-          recentChainData,
-          syncStateProvider,
-          forkChoiceTrigger,
-          forkChoiceNotifier,
-          p2pNetwork,
-          slotEventsChannel,
-          epochCachePrimer,
-          eventLogger);
+  private final SlotProcessor slotProcessor = createSlotProcessor(spec);
   private final UInt64 genesisTime = beaconState.getGenesisTime();
   private final UInt64 desiredSlot = UInt64.valueOf(100L);
+
+  private SlotProcessor createSlotProcessor(Spec spec) {
+    return new SlotProcessor(
+        spec,
+        recentChainData,
+        syncStateProvider,
+        forkChoiceTrigger,
+        forkChoiceNotifier,
+        p2pNetwork,
+        slotEventsChannel,
+        epochCachePrimer,
+        eventLogger);
+  }
 
   @BeforeEach
   public void setup() {
@@ -127,17 +135,19 @@ public class SlotProcessorTest {
 
   @Test
   public void isTimeReached_shouldReturnFalseIfTimeNotReached() {
-    assertThat(slotProcessor.isTimeReached(genesisTime, genesisTime.plus(ONE))).isFalse();
+    assertThat(slotProcessor.isTimeReached(genesisTime, secondsToMillis(genesisTime).plus(ONE)))
+        .isFalse();
   }
 
   @Test
   public void isTimeReached_shouldReturnTrueIfTimeMatches() {
-    assertThat(slotProcessor.isTimeReached(genesisTime, genesisTime)).isTrue();
+    assertThat(slotProcessor.isTimeReached(genesisTime, secondsToMillis(genesisTime))).isTrue();
   }
 
   @Test
   public void isTimeReached_shouldReturnTrueIfBeyondEarliestTime() {
-    assertThat(slotProcessor.isTimeReached(genesisTime, genesisTime.minus(ONE))).isTrue();
+    assertThat(slotProcessor.isTimeReached(genesisTime, secondsToMillis(genesisTime).minus(ONE)))
+        .isTrue();
   }
 
   @Test
@@ -228,16 +238,29 @@ public class SlotProcessorTest {
     verify(eventLogger).nodeSlotsMissed(ZERO, slot);
   }
 
-  @Test
-  public void onTick_shouldRunAttestationsDuringProcessing() {
+  @ParameterizedTest
+  @EnumSource(
+      value = Eth2Network.class,
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
+  public void onTick_shouldRunAttestationsDuringProcessing(Eth2Network eth2Network) {
+    Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
+    int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
+
+    SlotProcessor slotProcessor = createSlotProcessor(spec);
+
     // skip the slot start
     final UInt64 slot = slotProcessor.getNodeSlot().getValue();
     slotProcessor.setOnTickSlotStart(slot);
-    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesisTime().plus(secondsPerSlot / 3));
+    if (isNotDivisibleBy3(secondsPerSlot)) {
+      // attestation is not due yet, will be on the next second
+      verify(forkChoiceTrigger, never()).onAttestationsDueForSlot(slot);
+      slotProcessor.onTick(beaconState.getGenesisTime().plus(oneThirdSeconds(secondsPerSlot) + 1));
+    }
     final Checkpoint justifiedCheckpoint = recentChainData.getStore().getJustifiedCheckpoint();
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     verify(eventLogger)
@@ -272,16 +295,24 @@ public class SlotProcessorTest {
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(desiredSlot);
   }
 
-  @Test
-  void shouldProgressThroughMultipleSlots() {
+  @ParameterizedTest
+  @EnumSource(
+      value = Eth2Network.class,
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
+  void shouldProgressThroughMultipleSlots(Eth2Network eth2Network) {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
+
+    Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
+    int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
+
+    SlotProcessor slotProcessor = createSlotProcessor(spec);
 
     // Slot 0 start
     slotProcessor.onTick(beaconState.getGenesisTime());
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
-    slotProcessor.onTick(beaconState.getGenesisTime().plus(secondsPerSlot / 3));
+    slotProcessor.onTick(beaconState.getGenesisTime().plus(oneThirdSeconds(secondsPerSlot)));
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ZERO);
 
     // Slot 2 start
@@ -289,12 +320,15 @@ public class SlotProcessorTest {
     slotProcessor.onTick(slot1Start);
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due
-    slotProcessor.onTick(slot1Start.plus(secondsPerSlot / 3));
+    slotProcessor.onTick(slot1Start.plus(oneThirdSeconds(secondsPerSlot)));
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ONE);
   }
 
-  @Test
-  void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch() {
+  @ParameterizedTest
+  @EnumSource(
+      value = Eth2Network.class,
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
+  void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch(Eth2Network eth2Network) {
     final RecentChainData recentChainData = mock(RecentChainData.class);
     when(recentChainData.getGenesisTime()).thenReturn(genesisTime);
     final Optional<MinimalBeaconBlockSummary> headBlock =
@@ -302,6 +336,9 @@ public class SlotProcessorTest {
     when(recentChainData.getHeadBlock()).thenReturn(headBlock);
     when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+
+    Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
+    int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
 
     final SlotProcessor slotProcessor =
         new SlotProcessor(
@@ -314,27 +351,44 @@ public class SlotProcessorTest {
             slotEventsChannel,
             epochCachePrimer,
             eventLogger);
-    slotProcessor.setCurrentSlot(UInt64.valueOf(6));
-    final UInt64 slot6StartTime = spec.getSlotStartTime(UInt64.valueOf(6), genesisTime);
-    final UInt64 slot7StartTime = spec.getSlotStartTime(UInt64.valueOf(7), genesisTime);
+
+    int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
+
+    UInt64 currentSlot = UInt64.valueOf(slotsPerEpoch - 2);
+    slotProcessor.setCurrentSlot(currentSlot);
+    final UInt64 nextEpochSlotMinusTwo = spec.getSlotStartTime(currentSlot, genesisTime);
+    final UInt64 nextEpochSlotMinusOne = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
 
     // Progress through to end of initial epoch
-    slotProcessor.onTick(slot6StartTime);
-    slotProcessor.onTick(slot6StartTime.plus(secondsPerSlot / 3));
-    slotProcessor.onTick(slot6StartTime.plus(secondsPerSlot / 3 * 2));
-    slotProcessor.onTick(slot7StartTime);
-    slotProcessor.onTick(slot7StartTime.plus(secondsPerSlot / 3));
+    slotProcessor.onTick(nextEpochSlotMinusTwo);
+    slotProcessor.onTick(nextEpochSlotMinusTwo.plus(oneThirdSeconds(secondsPerSlot)));
+    slotProcessor.onTick(nextEpochSlotMinusTwo.plus(oneThirdSeconds(secondsPerSlot) * 2));
+    slotProcessor.onTick(nextEpochSlotMinusOne);
+    slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdSeconds(secondsPerSlot)));
 
     // Shouldn't have precomputed epoch transition yet.
     verify(recentChainData, never()).retrieveStateAtSlot(any());
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
-    slotProcessor.onTick(slot7StartTime.plus(secondsPerSlot / 3 * 2));
+    slotProcessor.onTick(nextEpochSlotMinusOne.plus((secondsPerSlot / 3) * 2L));
+    if (isNotDivisibleBy3(secondsPerSlot)) {
+      // 2/3 is not due yet, will be on the next second
+      verify(epochCachePrimer, never()).primeCacheForEpoch(ONE);
+      slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdSeconds(secondsPerSlot) * 2));
+    }
     verify(epochCachePrimer).primeCacheForEpoch(ONE);
 
     // Should not repeat computation
-    slotProcessor.onTick(slot7StartTime.plus(secondsPerSlot / 3 * 2 + 1));
-    slotProcessor.onTick(slot7StartTime.plus(secondsPerSlot / 3 * 2 + 2));
+    slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdSeconds(secondsPerSlot) * 2 + 1));
+    slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdSeconds(secondsPerSlot) * 2 + 2));
     verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
+  }
+
+  private long oneThirdSeconds(int seconds) {
+    return seconds / 3 + (isNotDivisibleBy3(seconds) ? 1L : 0L);
+  }
+
+  private boolean isNotDivisibleBy3(int seconds) {
+    return seconds % 3 != 0;
   }
 }

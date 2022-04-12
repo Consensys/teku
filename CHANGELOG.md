@@ -19,6 +19,8 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Improved performance when regenerating non-finalized states that had to be dropped from memory.
+- Performance optimizations for Gnosis beacon chain
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
+- Fixed issue with loading the optimised BLST library on Windows.
