@@ -24,13 +24,14 @@ import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
@@ -41,6 +42,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private final RecentChainData recentChainData;
   private final PayloadAttributesCalculator payloadAttributesCalculator;
   private final Spec spec;
+
+  private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
+      Subscribers.create(true);
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
 
@@ -78,14 +82,23 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
+  public long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+    return subscribers.subscribe(subscriber);
+  }
+
+  @Override
+  public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
+    return subscribers.unsubscribe(subscriberId);
+  }
+
+  @Override
   public void onUpdatePreparableProposers(final Collection<BeaconPreparableProposer> proposers) {
     eventThread.execute(() -> internalUpdatePreparableProposers(proposers));
   }
 
   @Override
-  public SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState) {
-    return eventThread.executeFuture(() -> internalForkChoiceUpdated(forkChoiceState));
+  public void onForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
+    eventThread.execute(() -> internalForkChoiceUpdated(forkChoiceState));
   }
 
   @Override
@@ -201,8 +214,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     updatePayloadAttributes(currentSlot.plus(1));
   }
 
-  private SafeFuture<Optional<ForkChoiceUpdatedResult>> internalForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState) {
+  private void internalForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalForkChoiceUpdated forkChoiceState {}", forkChoiceState);
@@ -214,7 +226,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     recentChainData
         .getCurrentSlot()
         .ifPresent(currentSlot -> updatePayloadAttributes(currentSlot.plus(1)));
-    return forkChoiceUpdateData.send(executionEngineChannel);
+
+    sendForkChoiceUpdated();
   }
 
   private void internalAttestationsDue(final UInt64 slot) {
@@ -227,9 +240,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   private void sendForkChoiceUpdated() {
-    forkChoiceUpdateData
-        .send(executionEngineChannel)
-        .finish(error -> LOG.error("forkChoiceUpdated notification failed", error));
+    subscribers.deliver(
+        ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
+        new ForkChoiceUpdatedResultNotification(
+            forkChoiceUpdateData.getForkChoiceState(),
+            forkChoiceUpdateData.send(executionEngineChannel)));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {

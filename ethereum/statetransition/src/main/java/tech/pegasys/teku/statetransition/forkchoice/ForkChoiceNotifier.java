@@ -26,8 +26,7 @@ import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 public interface ForkChoiceNotifier {
   void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);
 
-  SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
-      ForkChoiceState forkChoiceState);
+  void onForkChoiceUpdated(ForkChoiceState forkChoiceState);
 
   void onAttestationsDue(UInt64 slot);
 
@@ -38,4 +37,25 @@ public interface ForkChoiceNotifier {
   void onTerminalBlockReached(Bytes32 executionBlockHash);
 
   PayloadAttributesCalculator getPayloadAttributesCalculator();
+
+  long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
+
+  boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId);
+
+  interface ForkChoiceUpdatedResultSubscriber {
+    void onForkChoiceUpdatedResult(
+        final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification);
+
+    class ForkChoiceUpdatedResultNotification {
+      final ForkChoiceState forkChoiceState;
+      final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult;
+
+      public ForkChoiceUpdatedResultNotification(
+          ForkChoiceState forkChoiceState,
+          SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult) {
+        this.forkChoiceState = forkChoiceState;
+        this.forkChoiceUpdatedResult = forkChoiceUpdatedResult;
+      }
+    }
+  }
 }
