@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.time.Instant.now;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
@@ -112,8 +113,8 @@ abstract class AbstractBeaconStateBuilder<
   }
 
   protected void initDefaults() {
-
-    genesisTime = dataStructureUtil.randomUInt64();
+    // limit genesis time to current time
+    genesisTime = dataStructureUtil.randomUInt64(now().getEpochSecond());
     genesisValidatorsRoot = dataStructureUtil.randomBytes32();
     slot = dataStructureUtil.randomUInt64();
     fork = dataStructureUtil.randomFork();

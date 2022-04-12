@@ -72,7 +72,7 @@ public class ForkChoiceUpdateData {
     if (this.forkChoiceState.equals(forkChoiceState)) {
       return this;
     }
-    return new ForkChoiceUpdateData(forkChoiceState, payloadAttributes, terminalBlockHash);
+    return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
   }
 
   public ForkChoiceUpdateData withPayloadAttributes(
