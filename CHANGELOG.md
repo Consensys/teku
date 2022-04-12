@@ -22,3 +22,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
+- Fixed issue with loading the optimised BLST library on Windows.
