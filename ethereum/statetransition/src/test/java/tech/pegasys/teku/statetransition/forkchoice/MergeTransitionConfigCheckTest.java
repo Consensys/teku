@@ -21,8 +21,6 @@ import static org.mockito.Mockito.when;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -36,7 +34,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MergeTransitionConfigCheckTest {
@@ -69,16 +66,6 @@ class MergeTransitionConfigCheckTest {
 
   private final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
   private final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
-
-  @BeforeAll
-  public static void initSession() {
-    AbstractBlockProcessor.blsVerifyDeposit = false;
-  }
-
-  @AfterAll
-  public static void resetSession() {
-    AbstractBlockProcessor.blsVerifyDeposit = true;
-  }
 
   @BeforeEach
   void setUp() {
