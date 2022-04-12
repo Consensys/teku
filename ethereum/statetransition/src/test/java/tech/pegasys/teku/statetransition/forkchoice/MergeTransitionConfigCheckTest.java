@@ -19,11 +19,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
@@ -51,9 +50,25 @@ class MergeTransitionConfigCheckTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final EventLogger eventLogger = Mockito.mock(EventLogger.class);
 
-  private DataStructureUtil dataStructureUtil;
-  private MergeTransitionConfigCheck mergeTransitionConfigCheck;
+  private final Spec spec =
+      TestSpecFactory.createBellatrix(
+          SpecConfigLoader.loadConfig(
+              "minimal",
+              phase0Builder ->
+                  phase0Builder
+                      .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(
+                          bellatrixBuilder ->
+                              bellatrixBuilder
+                                  .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
+                                  .terminalBlockHash(TERMINAL_BLOCK_HASH)
+                                  .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH))));
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private TransitionConfiguration localTransitionConfiguration;
+
+  private final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
+  private final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
 
   @BeforeAll
   public static void initSession() {
@@ -65,18 +80,35 @@ class MergeTransitionConfigCheckTest {
     AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
-  @Test
-  void shouldDetectTerminalConfigProblems() {
-    setUpTerminalBlockHashConfig();
-    final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
-    final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
+  @BeforeEach
+  void setUp() {
+    localTransitionConfiguration =
+        new TransitionConfiguration(
+            spec.getGenesisSpecConfig()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getTerminalTotalDifficulty(),
+            spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalBlockHash(),
+            UInt64.ZERO);
 
-    TransitionConfiguration wrongRemoteConfig;
+    final MergeTransitionConfigCheck mergeTransitionConfigCheck =
+        new MergeTransitionConfigCheck(eventLogger, spec, executionEngine, asyncRunner);
+
+    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new TransitionConfiguration(
+                    localTransitionConfiguration.getTerminalTotalDifficulty(),
+                    localTransitionConfiguration.getTerminalBlockHash(),
+                    dataStructureUtil.randomUInt64())));
 
     assertThat(mergeTransitionConfigCheck.start()).isCompleted();
+  }
 
+  @Test
+  void shouldReportWrongTotalTerminalDifficulty() {
     // wrong terminal total difficulty
-    wrongRemoteConfig =
+    final TransitionConfiguration wrongRemoteConfig =
         new TransitionConfiguration(
             wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
     when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
@@ -87,9 +119,12 @@ class MergeTransitionConfigCheckTest {
     verify(eventLogger)
         .transitionConfigurationTtdTbhMismatch(
             localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+  }
 
+  @Test
+  void shouldDetectWrongTerminalBlockHash() {
     // wrong terminal block hash
-    wrongRemoteConfig =
+    final TransitionConfiguration wrongRemoteConfig =
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
     when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
@@ -100,9 +135,12 @@ class MergeTransitionConfigCheckTest {
     verify(eventLogger)
         .transitionConfigurationTtdTbhMismatch(
             localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+  }
 
+  @Test
+  void shouldReportInconsistencyReportedByRemote() {
     // remote terminal block hash / terminal block number inconsistency
-    wrongRemoteConfig =
+    final TransitionConfiguration wrongRemoteConfig =
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(),
             localTransitionConfiguration.getTerminalBlockHash(),
@@ -116,46 +154,5 @@ class MergeTransitionConfigCheckTest {
         .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
 
     verifyNoMoreInteractions(eventLogger);
-  }
-
-  private void setUpTerminalBlockHashConfig() {
-    setUpCommon(
-        bellatrixBuilder ->
-            bellatrixBuilder
-                .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
-                .terminalBlockHash(TERMINAL_BLOCK_HASH)
-                .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
-
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new TransitionConfiguration(
-                    localTransitionConfiguration.getTerminalTotalDifficulty(),
-                    localTransitionConfiguration.getTerminalBlockHash(),
-                    dataStructureUtil.randomUInt64())));
-  }
-
-  private void setUpCommon(Consumer<BellatrixBuilder> bellatrixBuilder) {
-    Spec spec =
-        TestSpecFactory.createBellatrix(
-            SpecConfigLoader.loadConfig(
-                "minimal",
-                phase0Builder ->
-                    phase0Builder
-                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(bellatrixBuilder)));
-    dataStructureUtil = new DataStructureUtil(spec);
-
-    localTransitionConfiguration =
-        new TransitionConfiguration(
-            spec.getGenesisSpecConfig()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getTerminalTotalDifficulty(),
-            spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalBlockHash(),
-            UInt64.ZERO);
-
-    mergeTransitionConfigCheck =
-        new MergeTransitionConfigCheck(eventLogger, spec, executionEngine, asyncRunner);
   }
 }
