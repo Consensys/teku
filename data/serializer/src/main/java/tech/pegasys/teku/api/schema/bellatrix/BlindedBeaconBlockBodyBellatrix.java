@@ -86,6 +86,11 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   @Override
+  public boolean isBlinded() {
+    return true;
+  }
+
+  @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
 

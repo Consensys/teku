@@ -1,9 +1,9 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "getSateFork",
-    "summary" : "Get state fork",
-    "description" : "Returns Fork object for state with given 'state_id'.",
+    "tags" : [ "Beacon" ],
+    "operationId" : "getStateRoot",
+    "summary" : "Get state root",
+    "description" : "Calculates HashTreeRoot for state with given 'state_id'. If stateId is root, same value will be returned.",
     "parameters" : [ {
       "name" : "state_id",
       "required" : true,
@@ -20,7 +20,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetStateForkResponse"
+              "$ref" : "#/components/schemas/GetStateRootResponse"
             }
           }
         }
@@ -30,7 +30,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+              "$ref" : "#/components/schemas/BadRequest"
             }
           }
         }

@@ -56,14 +56,16 @@ public class RestApiRequest {
 
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
     context.future(
-        futureResponse.thenAccept(
+        futureResponse.thenApply(
             result -> {
               try {
-                respond(result.getResponseCode(), JSON_CONTENT_TYPE, result.getResponseBody());
+                return respond(
+                    result.getResponseCode(), JSON_CONTENT_TYPE, result.getResponseBody());
               } catch (JsonProcessingException e) {
                 LOG.trace("Failed to generate API response", e);
                 context.status(SC_INTERNAL_SERVER_ERROR);
               }
+              return "";
             }));
   }
 
@@ -79,14 +81,15 @@ public class RestApiRequest {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private void respond(
+  private String respond(
       final int statusCode, final String contentType, final Optional<Object> response)
       throws JsonProcessingException {
     context.status(statusCode);
     if (response.isPresent()) {
       final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
-      context.result(JsonUtil.serialize(response.get(), type));
+      return JsonUtil.serialize(response.get(), type);
     }
+    return "";
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
