@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
@@ -25,45 +26,36 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
-public class GetStateFork extends MigratingEndpointAdapter {
+public class GetStateFork extends AbstractGetSimpleDataFromState {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/fork";
   public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
-  private static final ParameterMetadata<String> PARAMETER_STATE_ID =
-      new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
 
-  private static final SerializableTypeDefinition<StateForkData> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(StateForkData.class)
+  private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(StateAndMetaData.class)
           .name("GetStateForkResponse")
           .description(
               "Returns [Fork](https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/beacon-chain.md#fork) object for state with given 'stateId'.")
-          .withField("data", Fork.getJsonTypeDefinition(), StateForkData::getData)
+          .withField(
+              "data",
+              Fork.getJsonTypeDefinition(),
+              stateAndMetaData -> stateAndMetaData.getData().getFork())
           .build();
-
-  private final ChainDataProvider chainDataProvider;
 
   public GetStateFork(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
@@ -79,8 +71,8 @@ public class GetStateFork extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE)
-            .build());
-    this.chainDataProvider = chainDataProvider;
+            .build(),
+        chainDataProvider);
   }
 
   @OpenApi(
@@ -103,33 +95,5 @@ public class GetStateFork extends MigratingEndpointAdapter {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     adapt(ctx);
-  }
-
-  @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<Fork>>> future =
-        chainDataProvider.getFork(request.getPathParameter(PARAMETER_STATE_ID));
-    request.respondAsync(
-        future.thenApplyChecked(
-            maybeFork -> {
-              if (maybeFork.isEmpty()) {
-                return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Not found");
-              }
-              return AsyncApiResponse.respondOk(new StateForkData(maybeFork.get()));
-            }));
-  }
-
-  static class StateForkData {
-    public final Boolean executionOptimistic;
-    public final Fork data;
-
-    public StateForkData(ObjectAndMetaData<Fork> fork) {
-      this.executionOptimistic = fork.isExecutionOptimistic();
-      this.data = fork.getData();
-    }
-
-    public Fork getData() {
-      return data;
-    }
   }
 }
