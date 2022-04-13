@@ -61,7 +61,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -189,18 +188,14 @@ public class ChainDataProvider {
     return fromState(stateIdParam, FinalityCheckpointsResponse::fromState);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getStateRoot(final String stateIdParam) {
-    return fromState(stateIdParam, state -> new Root(state.hashTreeRoot()));
-  }
-
-  public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getStateRootBytes32(
-      final String stateIdParam) {
-    return fromState(stateIdParam, SszData::hashTreeRoot);
-  }
-
   public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getBeaconState(
       final String stateIdParam) {
     return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
+  }
+
+  public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAndMetadata(
+      final String stateIdParam) {
+    return defaultStateSelectorFactory.defaultStateSelector(stateIdParam).getState();
   }
 
   public SafeFuture<Optional<SszResponse>> getBeaconStateSsz(final String stateIdParam) {
