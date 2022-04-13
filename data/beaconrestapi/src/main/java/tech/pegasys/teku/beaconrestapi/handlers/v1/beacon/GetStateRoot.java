@@ -59,7 +59,8 @@ public class GetStateRoot extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(StateAndMetaData.class)
           .name("GetStateRootResponse")
-          .withField("data", ROOT_TYPE, s -> s.getData().hashTreeRoot())
+          .withField(
+              "data", ROOT_TYPE, stateAndMetaData -> stateAndMetaData.getData().hashTreeRoot())
           .build();
 
   public GetStateRoot(final DataProvider dataProvider) {
