@@ -53,6 +53,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final StorageUpdateChannel storageUpdateChannel;
 
   Optional<UInt64> time = Optional.empty();
+  Optional<UInt64> timeMillis = Optional.empty();
   Optional<UInt64> genesisTime = Optional.empty();
   Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
   Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
@@ -106,6 +107,17 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
         storeTime,
         time);
     this.time = Optional.of(time);
+  }
+
+  @Override
+  public void setTimeMillis(UInt64 timeMillis) {
+    final UInt64 storeTimeMillis = store.getTimeMillis();
+    checkArgument(
+        timeMillis.isGreaterThanOrEqualTo(storeTimeMillis),
+        "Cannot revert time millis from %s to %s",
+        storeTimeMillis,
+        timeMillis);
+    this.timeMillis = Optional.of(timeMillis);
   }
 
   @Override
@@ -197,6 +209,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public UInt64 getTime() {
     return time.orElseGet(store::getTime);
+  }
+
+  @Override
+  public UInt64 getTimeMillis() {
+    return timeMillis.orElseGet(store::getTimeMillis);
   }
 
   @Override

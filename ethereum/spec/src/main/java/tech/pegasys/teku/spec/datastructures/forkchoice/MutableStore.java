@@ -33,6 +33,8 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setTime(UInt64 time);
 
+  void setTimeMillis(UInt64 timeMillis);
+
   void setGenesisTime(UInt64 genesisTime);
 
   void setJustifiedCheckpoint(Checkpoint justifiedCheckpoint);

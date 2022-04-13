@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,43 +39,62 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class StoreTransactionTest extends AbstractStoreTest {
 
-  @Test
-  public void setTime_failsWhenValueIsOlderThanCurrentTime() {
-    final UpdatableStore store = createGenesisStore();
-
-    // Make sure time is non-zero
-    setTime(store, store.getTime().plus(10));
-
-    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    final UInt64 invalidTime = store.getTime().minus(1);
-    assertThatThrownBy(() -> tx.setTime(invalidTime))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(
-            String.format("Cannot revert time from %s to %s", store.getTime(), invalidTime));
+  private enum TimeType {
+    SECONDS,
+    MILLIS;
   }
 
-  @Test
-  public void setTime_doesNotOverwriteNewerValue() {
+  @ParameterizedTest
+  @EnumSource(TimeType.class)
+  public void setTime_failsWhenValueIsOlderThanCurrentTime(TimeType timeType) {
     final UpdatableStore store = createGenesisStore();
 
     // Make sure time is non-zero
-    setTime(store, store.getTime().plus(10));
+    setTime(store, timeType, getTime(store, timeType).plus(10));
+
+    final UInt64 invalidTime = getTime(store, timeType).minus(1);
+    assertThatThrownBy(() -> setTime(store, timeType, invalidTime))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            String.format(
+                "Cannot revert time"
+                    + (timeType == TimeType.MILLIS ? " millis" : "")
+                    + " from %s to %s",
+                getTime(store, timeType),
+                invalidTime));
+  }
+
+  @ParameterizedTest
+  @EnumSource(TimeType.class)
+  public void setTime_doesNotOverwriteNewerValue(TimeType timeType) {
+    final UpdatableStore store = createGenesisStore();
+
+    // Make sure time is non-zero
+    setTime(store, timeType, getTime(store, timeType).plus(10));
 
     final StoreTransaction txA = store.startTransaction(storageUpdateChannel);
-    final UInt64 timeA = store.getTime().plus(1);
+    final UInt64 timeA = getTime(store, timeType).plus(1);
 
     final UInt64 timeB = timeA.plus(1);
-    setTime(store, timeB);
-    assertThat(store.getTime()).isEqualTo(timeB);
+    setTime(store, timeType, timeB);
+    assertThat(getTime(store, timeType)).isEqualTo(timeB);
 
     // Commit tx, time should not be updated
     assertThat(txA.commit()).isCompleted();
-    assertThat(store.getTime()).isEqualTo(timeB);
+    assertThat(getTime(store, timeType)).isEqualTo(timeB);
   }
 
-  private void setTime(UpdatableStore store, final UInt64 newTime) {
+  private UInt64 getTime(UpdatableStore store, TimeType timeType) {
+    return timeType == TimeType.SECONDS ? store.getTime() : store.getTimeMillis();
+  }
+
+  private void setTime(UpdatableStore store, TimeType timeType, final UInt64 newTime) {
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.setTime(newTime);
+    if (timeType == TimeType.SECONDS) {
+      tx.setTime(newTime);
+    } else {
+      tx.setTimeMillis(newTime);
+    }
     assertThat(tx.commit()).isCompleted();
   }
 

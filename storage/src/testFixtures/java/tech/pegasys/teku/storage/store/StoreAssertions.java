@@ -23,6 +23,7 @@ public class StoreAssertions {
         .isEqualToIgnoringGivenFields(
             expectedState,
             "time",
+            "timeMillis",
             "stateCountGauge",
             "blockCountGauge",
             "checkpointCountGauge",

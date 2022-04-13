@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -84,6 +85,7 @@ class Store implements UpdatableStore {
 
   private final Optional<Checkpoint> initialCheckpoint;
   UInt64 time;
+  UInt64 timeMillis;
   UInt64 genesisTime;
   AnchorPoint finalizedAnchor;
   Checkpoint justifiedCheckpoint;
@@ -134,6 +136,7 @@ class Store implements UpdatableStore {
     this.initialCheckpoint = initialCheckpoint;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.time = time;
+    this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
@@ -300,6 +303,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return time;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public UInt64 getTimeMillis() {
+    readLock.lock();
+    try {
+      return timeMillis;
     } finally {
       readLock.unlock();
     }

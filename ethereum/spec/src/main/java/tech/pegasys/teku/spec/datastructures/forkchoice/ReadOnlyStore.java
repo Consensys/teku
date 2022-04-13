@@ -33,6 +33,13 @@ public interface ReadOnlyStore {
 
   UInt64 getTime();
 
+  /**
+   * Returns time in milliseconds to allow for more fine-grained time calculations
+   *
+   * @return the time in milliseconds
+   */
+  UInt64 getTimeMillis();
+
   UInt64 getGenesisTime();
 
   /**
