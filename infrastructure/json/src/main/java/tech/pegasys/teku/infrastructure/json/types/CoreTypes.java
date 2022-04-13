@@ -70,7 +70,7 @@ public class CoreTypes {
   public static final SerializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       SerializableTypeDefinition.object(HttpErrorResponse.class)
           .name("HttpErrorResponse")
-          .withField("code", INTEGER_TYPE, HttpErrorResponse::getStatus)
+          .withField("code", INTEGER_TYPE, HttpErrorResponse::getCode)
           .withField("message", STRING_TYPE, HttpErrorResponse::getMessage)
           .build();
 
