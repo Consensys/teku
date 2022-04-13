@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -46,6 +48,20 @@ public class DeserializableStringMapTypeDefinitionTest {
   @Test
   void shouldDeserializeMap() throws JsonProcessingException {
     assertThat(JsonUtil.parse(serializedData, definition)).isEqualTo(data);
+  }
+
+  @Test
+  void shouldRejectNestedArray() throws JsonProcessingException {
+    final String input = "{\"ak\":[1,2,3]}";
+    assertThatThrownBy(() -> JsonUtil.parse(input, definition))
+        .isInstanceOf(MismatchedInputException.class);
+  }
+
+  @Test
+  void shouldRejectNestedObject() throws JsonProcessingException {
+    final String input = "{\"ak\":{\"bk\":1}}";
+    assertThatThrownBy(() -> JsonUtil.parse(input, definition))
+        .isInstanceOf(MismatchedInputException.class);
   }
 
   @Test
