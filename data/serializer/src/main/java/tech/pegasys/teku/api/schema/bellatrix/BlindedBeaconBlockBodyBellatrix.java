@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
@@ -79,14 +80,22 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   @Override
+  public BlindedBeaconBlockBodySchemaBellatrix<?> getBeaconBlockBodySchema(final SpecVersion spec) {
+    return (BlindedBeaconBlockBodySchemaBellatrix<?>)
+        spec.getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
+  }
+
+  @Override
+  public boolean isBlinded() {
+    return true;
+  }
+
+  @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
 
-    ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
-        spec.getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getExecutionPayloadHeaderSchema();
+    final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec).getExecutionPayloadHeaderSchema();
 
     return super.asInternalBeaconBlockBody(
         spec,

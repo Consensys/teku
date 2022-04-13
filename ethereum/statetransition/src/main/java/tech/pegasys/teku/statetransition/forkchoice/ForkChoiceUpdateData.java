@@ -30,6 +30,9 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 
 public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
+  private static final ForkChoiceState DEFAULT_FORK_CHOICE_STATE =
+      new ForkChoiceState(
+          Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
 
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadAttributes> payloadAttributes;
@@ -41,9 +44,7 @@ public class ForkChoiceUpdateData {
   private long payloadAttributesSequenceConsumer = -1;
 
   public ForkChoiceUpdateData() {
-    this.forkChoiceState =
-        new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
+    this.forkChoiceState = DEFAULT_FORK_CHOICE_STATE;
     this.payloadAttributes = Optional.empty();
     this.terminalBlockHash = Optional.empty();
   }
@@ -72,7 +73,7 @@ public class ForkChoiceUpdateData {
     if (this.forkChoiceState.equals(forkChoiceState)) {
       return this;
     }
-    return new ForkChoiceUpdateData(forkChoiceState, payloadAttributes, terminalBlockHash);
+    return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
   }
 
   public ForkChoiceUpdateData withPayloadAttributes(
@@ -164,7 +165,7 @@ public class ForkChoiceUpdateData {
     }
 
     LOG.debug("send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadAttributes);
-    SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
+    final SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
         executionEngine.forkChoiceUpdated(forkChoiceState, payloadAttributes);
 
     forkChoiceUpdatedResult
@@ -187,6 +188,10 @@ public class ForkChoiceUpdateData {
 
   public boolean hasTerminalBlockHash() {
     return terminalBlockHash.isPresent();
+  }
+
+  public ForkChoiceState getForkChoiceState() {
+    return forkChoiceState;
   }
 
   @Override

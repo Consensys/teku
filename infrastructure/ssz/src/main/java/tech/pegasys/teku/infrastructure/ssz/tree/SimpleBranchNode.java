@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
+import java.security.MessageDigest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -60,6 +61,16 @@ class SimpleBranchNode implements BranchNode, TreeNode {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
       cachedHash = BranchNode.super.hashTreeRoot();
+      this.cachedHash = cachedHash;
+    }
+    return cachedHash;
+  }
+
+  @Override
+  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+    Bytes32 cachedHash = this.cachedHash;
+    if (cachedHash == null) {
+      cachedHash = BranchNode.super.hashTreeRoot(messageDigest);
       this.cachedHash = cachedHash;
     }
     return cachedHash;

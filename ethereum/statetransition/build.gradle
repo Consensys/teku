@@ -43,6 +43,7 @@ dependencies {
   testFixturesImplementation project(':ethereum:core')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
+  testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:forkchoice'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))

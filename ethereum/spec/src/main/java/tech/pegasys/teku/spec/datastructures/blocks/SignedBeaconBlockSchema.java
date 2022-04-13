@@ -22,9 +22,10 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 public class SignedBeaconBlockSchema
     extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszSignature> {
 
-  public SignedBeaconBlockSchema(final BeaconBlockSchema beaconBlockSchema) {
+  public SignedBeaconBlockSchema(
+      final BeaconBlockSchema beaconBlockSchema, final String containerName) {
     super(
-        "SignedBeaconBlock",
+        containerName,
         namedSchema("message", beaconBlockSchema),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }

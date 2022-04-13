@@ -23,7 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -40,9 +40,9 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -78,7 +78,7 @@ public class GetStateFork extends MigratingEndpointAdapter {
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
+            .response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE)
             .build());
     this.chainDataProvider = chainDataProvider;
   }
@@ -109,24 +109,23 @@ public class GetStateFork extends MigratingEndpointAdapter {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<Fork>>> future =
         chainDataProvider.getFork(request.getPathParameter(PARAMETER_STATE_ID));
-    request.handleOptionalResult(future, this::handleResult, SC_NOT_FOUND);
-  }
-
-  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Fork> response)
-      throws JsonProcessingException {
-    return Optional.of(
-        JsonUtil.serialize(
-            new StateForkData(response.isExecutionOptimisticForApi(), response.getData()),
-            RESPONSE_TYPE));
+    request.respondAsync(
+        future.thenApplyChecked(
+            maybeFork -> {
+              if (maybeFork.isEmpty()) {
+                return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Not found");
+              }
+              return AsyncApiResponse.respondOk(new StateForkData(maybeFork.get()));
+            }));
   }
 
   static class StateForkData {
     public final Boolean executionOptimistic;
     public final Fork data;
 
-    public StateForkData(final Boolean executionOptimistic, final Fork data) {
-      this.executionOptimistic = executionOptimistic;
-      this.data = data;
+    public StateForkData(ObjectAndMetaData<Fork> fork) {
+      this.executionOptimistic = fork.isExecutionOptimistic();
+      this.data = fork.getData();
     }
 
     public Fork getData() {

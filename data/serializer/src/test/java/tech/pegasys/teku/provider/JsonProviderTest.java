@@ -27,11 +27,13 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class JsonProviderTest {
   private static final String Q = "\"";
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
@@ -132,6 +134,16 @@ class JsonProviderTest {
   public void byteArrayShouldSerializeToJson() throws JsonProcessingException {
     final byte[] bytes = Bytes.fromHexString("0x00A0F0FF").toArray();
     assertEquals("[\"0\",\"160\",\"240\",\"255\"]", jsonProvider.objectToJSON(bytes));
+  }
+
+  @Test
+  public void zeroLengthByteArrayShouldSerializeToJson() throws JsonProcessingException {
+    assertEquals("[]", jsonProvider.objectToJSON(new byte[0]));
+  }
+
+  @Test
+  public void deserializeToBytesShouldAllowZeroLengthArray() throws JsonProcessingException {
+    assertThat(jsonProvider.jsonToObject("[]", byte[].class)).isEqualTo(new byte[0]);
   }
 
   @Test

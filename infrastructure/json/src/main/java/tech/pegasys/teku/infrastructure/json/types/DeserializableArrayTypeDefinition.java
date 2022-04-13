@@ -49,7 +49,7 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
   public CollectionT deserialize(final JsonParser parser) throws IOException {
     if (!parser.isExpectedStartArrayToken()) {
       throw MismatchedInputException.from(
-          parser, (Class<?>) null, "Array expected but got " + parser.getCurrentToken());
+          parser, String.class, "Array expected but got " + parser.getCurrentToken());
     }
     final List<ItemT> result = new ArrayList<>();
     while (parser.nextToken() != JsonToken.END_ARRAY) {

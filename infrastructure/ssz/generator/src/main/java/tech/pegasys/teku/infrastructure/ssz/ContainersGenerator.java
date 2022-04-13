@@ -163,8 +163,10 @@ public class ContainersGenerator {
 
   public String replacePlaceholders(String src, Map<String, String> varToVal) {
     String res = src;
-    for (String var : varToVal.keySet()) {
-      res = res.replaceAll("/\\*\\$\\$" + var + "\\*/[^$]+/\\*\\$\\$\\*/", varToVal.get(var));
+    for (Map.Entry<String, String> entry : varToVal.entrySet()) {
+      res =
+          res.replaceAll(
+              "/\\*\\$\\$" + entry.getKey() + "\\*/[^$]+/\\*\\$\\$\\*/", entry.getValue());
     }
     if (res.contains("/*$$")) {
       throw new RuntimeException("Non substituted placeholders found: " + res);

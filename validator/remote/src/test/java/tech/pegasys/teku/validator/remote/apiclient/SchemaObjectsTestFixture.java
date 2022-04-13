@@ -39,8 +39,17 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SchemaObjectsTestFixture {
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final Spec spec;
+  private final DataStructureUtil dataStructureUtil;
+
+  public SchemaObjectsTestFixture(final Spec spec) {
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(this.spec);
+  }
+
+  public SchemaObjectsTestFixture() {
+    this(TestSpecFactory.createMinimalPhase0());
+  }
 
   public GetGenesisResponse getGenesisResponse() {
     return new GetGenesisResponse(
@@ -97,6 +106,10 @@ public class SchemaObjectsTestFixture {
 
   public SignedBeaconBlock signedBeaconBlock() {
     return SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
+  }
+
+  public SignedBeaconBlock signedBlindedBlock() {
+    return SignedBeaconBlock.create(dataStructureUtil.randomSignedBlindedBeaconBlock(UInt64.ONE));
   }
 
   public Attestation attestation() {

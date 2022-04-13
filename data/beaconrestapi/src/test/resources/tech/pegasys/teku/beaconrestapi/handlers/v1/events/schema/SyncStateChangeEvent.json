@@ -1,0 +1,10 @@
+{
+  "title" : "SyncStateChangeEvent",
+  "type" : "object",
+  "required" : [ "sync_state" ],
+  "properties" : {
+    "sync_state" : {
+      "type" : "string"
+    }
+  }
+}

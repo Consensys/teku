@@ -97,8 +97,6 @@ public interface ExecutionEngineChannel extends ChannelInterface {
       final SignedBeaconBlock signedBlindedBeaconBlock);
 
   enum Version {
-    KINTSUGI,
-    KILN,
     KILNV2;
 
     public static final Version DEFAULT_VERSION = KILNV2;

@@ -163,9 +163,12 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
                 return;
               }
 
-              for (BLSPublicKey key : newValidatorStatuses.keySet()) {
+              for (Map.Entry<BLSPublicKey, ValidatorStatus> entry :
+                  newValidatorStatuses.entrySet()) {
+                BLSPublicKey key = entry.getKey();
+                ValidatorStatus newStatus = entry.getValue();
                 ValidatorStatus oldStatus = oldValidatorStatuses.get(key);
-                ValidatorStatus newStatus = newValidatorStatuses.get(key);
+
                 // report the status of a new validator
                 if (oldStatus == null) {
                   STATUS_LOG.validatorStatus(key.toAbbreviatedString(), newStatus.name());

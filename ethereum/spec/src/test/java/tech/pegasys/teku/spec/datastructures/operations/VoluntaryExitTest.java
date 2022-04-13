@@ -19,10 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class VoluntaryExitTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private UInt64 epoch = dataStructureUtil.randomUInt64();
   private UInt64 validatorIndex = dataStructureUtil.randomUInt64();
 

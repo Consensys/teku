@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BlockProposalUtil {
@@ -88,7 +88,7 @@ public class BlockProposalUtil {
               newBlock,
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
-              OptimisticExecutionPayloadExecutor.NOOP);
+              Optional.empty());
 
       final Bytes32 stateRoot = newState.hashTreeRoot();
       final BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);

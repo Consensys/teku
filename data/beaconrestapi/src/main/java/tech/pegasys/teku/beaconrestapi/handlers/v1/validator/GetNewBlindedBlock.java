@@ -44,17 +44,21 @@ import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 @SuppressWarnings("unused")
 public class GetNewBlindedBlock extends MigratingEndpointAdapter {
@@ -130,9 +134,18 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getPathParameter(PARAM_SLOT);
-    final BLSSignature signature = request.getQueryParameter(PARAM_RANDAO);
-    final Optional<Bytes32> grafitti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
-    throw new IllegalArgumentException("Not implemented");
+    final BLSSignature randao = request.getQueryParameter(PARAM_RANDAO);
+    final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
+    final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock>> result =
+        provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true);
+    request.respondAsync(
+        result.thenApplyChecked(
+            maybeBlock -> {
+              if (maybeBlock.isEmpty()) {
+                throw new ChainDataUnavailableException();
+              }
+              return AsyncApiResponse.respondOk(maybeBlock.get());
+            }));
   }
 
   private static EndpointMetadata getEndpointMetaData(
@@ -157,36 +170,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                 .name("GetNewBlindedBlockResponse")
                 .withField(
                     "data",
-                    new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>()
-                        .title("BlindedBlock")
-                        .withType(
-                            block ->
-                                schemaDefinitionCache
-                                    .milestoneAtSlot(block.getSlot())
-                                    .equals(SpecMilestone.PHASE0),
-                            schemaDefinitionCache
-                                .getSchemaDefinition(SpecMilestone.PHASE0)
-                                .getBlindedBeaconBlockSchema()
-                                .getJsonTypeDefinition())
-                        .withType(
-                            block ->
-                                schemaDefinitionCache
-                                    .milestoneAtSlot(block.getSlot())
-                                    .equals(SpecMilestone.ALTAIR),
-                            schemaDefinitionCache
-                                .getSchemaDefinition(SpecMilestone.ALTAIR)
-                                .getBlindedBeaconBlockSchema()
-                                .getJsonTypeDefinition())
-                        .withType(
-                            block ->
-                                schemaDefinitionCache
-                                    .milestoneAtSlot(block.getSlot())
-                                    .equals(SpecMilestone.BELLATRIX),
-                            schemaDefinitionCache
-                                .getSchemaDefinition(SpecMilestone.BELLATRIX)
-                                .getBlindedBeaconBlockSchema()
-                                .getJsonTypeDefinition())
-                        .build(),
+                    getBlindedBlockSchemaDefinition(schemaDefinitionCache),
                     Function.identity())
                 .withField(
                     "version",
@@ -194,5 +178,20 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build())
         .build();
+  }
+
+  private static SerializableOneOfTypeDefinition<BeaconBlock> getBlindedBlockSchemaDefinition(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableOneOfTypeDefinitionBuilder<BeaconBlock> builder =
+        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>().title("BlindedBlock");
+    for (SpecMilestone milestone : SpecMilestone.values()) {
+      builder.withType(
+          block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone),
+          schemaDefinitionCache
+              .getSchemaDefinition(milestone)
+              .getBlindedBeaconBlockSchema()
+              .getJsonTypeDefinition());
+    }
+    return builder.build();
   }
 }

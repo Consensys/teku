@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import com.google.common.base.Throwables;
 import java.net.BindException;
@@ -94,6 +95,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -199,6 +201,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
   protected volatile ExecutionEngineChannel executionEngine;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
+  protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
+      Optional.empty();
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -257,7 +261,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)),
+            mergeTransitionConfigCheck
+                .map(MergeTransitionConfigCheck::start)
+                .orElse(SafeFuture.completedFuture(null)))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -285,7 +292,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)),
+            mergeTransitionConfigCheck
+                .map(MergeTransitionConfigCheck::stop)
+                .orElse(SafeFuture.completedFuture(null)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -339,7 +349,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initAll() {
     initExecutionEngine();
     initForkChoiceNotifier();
-    initTerminalPowBlockMonitor();
+    initMergeMonitors();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -371,7 +381,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
   }
 
-  protected void initTerminalPowBlockMonitor() {
+  protected void initMergeMonitors() {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       terminalPowBlockMonitor =
           Optional.of(
@@ -381,7 +391,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   forkChoiceNotifier,
                   beaconAsyncRunner,
-                  EVENT_LOG));
+                  EVENT_LOG,
+                  timeProvider));
+
+      mergeTransitionConfigCheck =
+          Optional.of(
+              new MergeTransitionConfigCheck(EVENT_LOG, spec, executionEngine, beaconAsyncRunner));
     }
   }
 
@@ -756,7 +771,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool(spec, metricsSystem);
+    attestationPool =
+        new AggregatingAttestationPool(spec, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);

@@ -171,7 +171,7 @@ public abstract class AbstractSszMutableComposite<
               .map(
                   entry -> {
                     ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = entry.getValue();
-                    Integer childIndex = entry.getKey();
+                    Integer childIndex = entry.getIntKey();
                     final SszChildT newValue;
                     if (changeRecord.isByValue()) {
                       newValue = changeRecord.getNewValue();

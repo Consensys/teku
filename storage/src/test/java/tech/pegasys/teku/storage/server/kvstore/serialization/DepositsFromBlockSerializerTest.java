@@ -18,12 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockSerializerTest {
   private final DepositsFromBlockEventSerializer serializer =
       new DepositsFromBlockEventSerializer();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
   public void shouldEncodeAndDecodeWithMultipleDeposits() {

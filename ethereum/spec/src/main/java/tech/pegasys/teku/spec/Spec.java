@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.HashMap;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -503,6 +506,41 @@ public class Spec {
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
   }
 
+  // Blind Block Utils
+
+  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
+      final SignedBeaconBlock blindedSignedBeaconBlock,
+      final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
+    return atSlot(blindedSignedBeaconBlock.getSlot())
+        .getBlindBlockUtil()
+        .map(
+            converter ->
+                converter.unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder))
+        .orElseGet(
+            () -> {
+              // this shouldn't happen: BlockFactory should skip unblinding when is not needed
+              checkState(
+                  !blindedSignedBeaconBlock.getMessage().getBody().isBlinded(),
+                  "Unblinder not available for the current spec but the given block was blinded");
+              return SafeFuture.completedFuture(blindedSignedBeaconBlock);
+            });
+  }
+
+  public SignedBeaconBlock blindSignedBeaconBlock(
+      final SignedBeaconBlock unblindedSignedBeaconBlock) {
+    return atSlot(unblindedSignedBeaconBlock.getSlot())
+        .getBlindBlockUtil()
+        .map(converter -> converter.blindSignedBeaconBlock(unblindedSignedBeaconBlock))
+        .orElseGet(
+            () -> {
+              // this shouldn't happen: BlockFactory should skip blinding when is not needed
+              checkState(
+                  unblindedSignedBeaconBlock.getMessage().getBody().isBlinded(),
+                  "Blinder not available for the current spec but the given block was unblinded");
+              return unblindedSignedBeaconBlock;
+            });
+  }
+
   // Block Processor Utils
 
   public BlockProcessor getBlockProcessor(final UInt64 slot) {
@@ -513,7 +551,7 @@ public class Spec {
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
@@ -539,7 +577,7 @@ public class Spec {
               block.getMessage(),
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
-              OptimisticExecutionPayloadExecutor.NOOP);
+              Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }

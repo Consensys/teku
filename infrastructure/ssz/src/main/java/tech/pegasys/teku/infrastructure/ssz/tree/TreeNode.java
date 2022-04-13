@@ -15,10 +15,12 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static java.util.Collections.singletonList;
 
+import java.security.MessageDigest;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
 
 /**
  * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
@@ -33,7 +35,12 @@ public interface TreeNode {
    * Calculates (if necessary) and returns `hash_tree_root` of this tree node. Worth to mention that
    * `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content
    */
-  Bytes32 hashTreeRoot();
+  default Bytes32 hashTreeRoot() {
+    final MessageDigest digest = MessageDigestFactory.createSha256();
+    return hashTreeRoot(digest);
+  }
+
+  Bytes32 hashTreeRoot(MessageDigest messageDigest);
 
   /**
    * Gets this node descendant by its 'generalized index'

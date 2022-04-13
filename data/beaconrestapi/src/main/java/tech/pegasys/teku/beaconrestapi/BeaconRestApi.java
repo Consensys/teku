@@ -187,7 +187,7 @@ public class BeaconRestApi {
       final DataProvider dataProvider, final Eth1Address depositAddress) {
     addMigratedEndpoint(new GetDepositContract(depositAddress, dataProvider.getConfigProvider()));
     addMigratedEndpoint(new GetForkSchedule(dataProvider));
-    app.get(GetSpec.ROUTE, new GetSpec(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetSpec(dataProvider));
   }
 
   private void addDebugHandlers(final DataProvider dataProvider) {
@@ -386,8 +386,8 @@ public class BeaconRestApi {
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider) {
-    app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
-    app.get(GetStateRoot.ROUTE, new GetStateRoot(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetGenesis(dataProvider));
+    addMigratedEndpoint(new GetStateRoot(dataProvider));
     addMigratedEndpoint(new GetStateFork(dataProvider));
     app.get(
         GetStateFinalityCheckpoints.ROUTE,
@@ -403,7 +403,7 @@ public class BeaconRestApi {
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
     app.post(PostBlock.ROUTE, new PostBlock(dataProvider, jsonProvider));
-    app.post(PostBlindedBlock.ROUTE, new PostBlindedBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostBlindedBlock(dataProvider, schemaCache));
 
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
     app.get(
@@ -435,11 +435,7 @@ public class BeaconRestApi {
     app.get(
         GetEvents.ROUTE,
         new GetEvents(
-            dataProvider,
-            jsonProvider,
-            eventChannels,
-            asyncRunner,
-            configuration.getMaxPendingEvents()));
+            dataProvider, eventChannels, asyncRunner, configuration.getMaxPendingEvents()));
   }
 
   public void stop() {

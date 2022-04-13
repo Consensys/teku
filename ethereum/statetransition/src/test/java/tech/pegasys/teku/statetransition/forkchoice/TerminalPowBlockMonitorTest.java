@@ -15,8 +15,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -56,6 +56,7 @@ public class TerminalPowBlockMonitorTest {
   private static final UInt256 TTD = UInt256.valueOf(10_000_000);
   private static final Bytes32 TERMINAL_BLOCK_HASH = Bytes32.random();
   private static final UInt64 TERMINAL_BLOCK_EPOCH = UInt64.valueOf(2);
+  private static final UInt64 TIME_IN_PAST = UInt64.valueOf(123);
 
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
@@ -131,7 +132,13 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
-            executionEngine, spec, recentChainData, forkChoiceNotifier, asyncRunner, eventLogger);
+            executionEngine,
+            spec,
+            recentChainData,
+            forkChoiceNotifier,
+            asyncRunner,
+            eventLogger,
+            timeProvider);
 
     terminalPowBlockMonitor.onNodeSyncStateChanged(true);
   }
@@ -167,7 +174,8 @@ public class TerminalPowBlockMonitorTest {
     final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD)));
+        .thenReturn(
+            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
@@ -175,7 +183,8 @@ public class TerminalPowBlockMonitorTest {
                     new PowBlock(
                         headBlockParentHash,
                         dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10)))));
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
 
     terminalPowBlockMonitor.start();
 
@@ -200,8 +209,6 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    // we call exchangeTransitionConfiguration even before bellatrix activates
-    verify(executionEngine, times(1)).exchangeTransitionConfiguration(localTransitionConfiguration);
     verify(executionEngine, times(0)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
@@ -213,7 +220,11 @@ public class TerminalPowBlockMonitorTest {
     when(executionEngine.getPowChainHead())
         .thenReturn(
             completedFuture(
-                new PowBlock(headBlockHash, dataStructureUtil.randomBytes32(), TTD.subtract(10))));
+                new PowBlock(
+                    headBlockHash,
+                    dataStructureUtil.randomBytes32(),
+                    TTD.subtract(10),
+                    TIME_IN_PAST)));
 
     asyncRunner.executeQueuedActions();
 
@@ -224,7 +235,8 @@ public class TerminalPowBlockMonitorTest {
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD)));
+        .thenReturn(
+            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
@@ -232,7 +244,8 @@ public class TerminalPowBlockMonitorTest {
                     new PowBlock(
                         headBlockParentHash,
                         dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10)))));
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -245,20 +258,24 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(executionEngine, times(3)).getPowChainHead();
-    verify(executionEngine, atLeastOnce())
-        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
 
     // new different Terminal Block with wrong parent TTD - should not notify
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10))));
+        .thenReturn(
+            completedFuture(
+                new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
-                    new PowBlock(headBlockParentHash, dataStructureUtil.randomBytes32(), TTD))));
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD,
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -270,7 +287,9 @@ public class TerminalPowBlockMonitorTest {
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
-        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10))));
+        .thenReturn(
+            completedFuture(
+                new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
     when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
@@ -278,7 +297,8 @@ public class TerminalPowBlockMonitorTest {
                     new PowBlock(
                         headBlockParentHash,
                         dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10)))));
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -295,10 +315,41 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verify(executionEngine, atLeastOnce())
-        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
     verifyNoMoreInteractions(eventLogger);
+  }
+
+  @Test
+  public void shouldNotSelectTTDBlockWithTimestampInFuture() {
+    Bytes32 headBlockHash;
+    Bytes32 headBlockParentHash;
+
+    setUpTTDConfig();
+
+    terminalPowBlockMonitor.start();
+
+    // AT BELLATRIX FORK, TTD reached but block in future - should not notify
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+    headBlockHash = dataStructureUtil.randomBytes32();
+    headBlockParentHash = dataStructureUtil.randomBytes32();
+    final UInt64 timeInFuture = timeProvider.getTimeInSeconds().plus(1);
+    when(executionEngine.getPowChainHead())
+        .thenReturn(
+            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, timeInFuture)));
+    when(executionEngine.getPowBlock(headBlockParentHash))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD.subtract(10),
+                        TIME_IN_PAST))));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger, never()).terminalPowBlockDetected(headBlockHash);
+    verify(forkChoiceNotifier, never()).onTerminalBlockReached(headBlockHash);
   }
 
   @Test
@@ -315,8 +366,6 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    // we call exchangeTransitionConfiguration even before bellatrix activates
-    verify(executionEngine, times(1)).exchangeTransitionConfiguration(localTransitionConfiguration);
     verify(executionEngine, times(0)).getPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
@@ -344,7 +393,10 @@ public class TerminalPowBlockMonitorTest {
             completedFuture(
                 Optional.of(
                     new PowBlock(
-                        TERMINAL_BLOCK_HASH, dataStructureUtil.randomBytes32(), UInt256.ONE))));
+                        TERMINAL_BLOCK_HASH,
+                        dataStructureUtil.randomBytes32(),
+                        UInt256.ONE,
+                        TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -358,8 +410,6 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verify(executionEngine, atLeastOnce())
-        .exchangeTransitionConfiguration(localTransitionConfiguration);
     verifyNoMoreInteractions(executionEngine);
     verifyNoMoreInteractions(eventLogger);
   }
@@ -389,60 +439,6 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, atLeastOnce()).exchangeTransitionConfiguration(any());
     verifyNoMoreInteractions(executionEngine);
-  }
-
-  @Test
-  void shouldDetectTerminalConfigProblems() {
-    setUpTerminalBlockHashConfig();
-    final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
-    final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
-
-    TransitionConfiguration wrongRemoteConfig;
-
-    terminalPowBlockMonitor.start();
-
-    // wrong TTD
-    wrongRemoteConfig =
-        new TransitionConfiguration(
-            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
-
-    // wrong TBH
-    wrongRemoteConfig =
-        new TransitionConfiguration(
-            localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
-
-    // remote TBH TBN inconsistency
-    wrongRemoteConfig =
-        new TransitionConfiguration(
-            localTransitionConfiguration.getTerminalTotalDifficulty(),
-            localTransitionConfiguration.getTerminalBlockHash(),
-            UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
-
-    verifyNoMoreInteractions(eventLogger);
   }
 }

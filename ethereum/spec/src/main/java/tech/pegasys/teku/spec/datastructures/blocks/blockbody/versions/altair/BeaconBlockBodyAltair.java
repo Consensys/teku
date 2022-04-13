@@ -30,6 +30,11 @@ public interface BeaconBlockBodyAltair extends BeaconBlockBody {
   SyncAggregate getSyncAggregate();
 
   @Override
+  default Optional<SyncAggregate> getOptionalSyncAggregate() {
+    return Optional.of(getSyncAggregate());
+  }
+
+  @Override
   BeaconBlockBodySchemaAltair<?> getSchema();
 
   @Override

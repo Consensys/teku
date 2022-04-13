@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,10 +39,14 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeac
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
+  public static final Duration EXECUTION_TIMEOUT = Duration.ofMinutes(2);
+  private static final Duration NON_EXECUTION_TIMEOUT = Duration.ofSeconds(12);
+
   private final Web3JClient web3JClient;
 
   static {
@@ -94,7 +99,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         : new PowBlock(
             Bytes32.fromHexStringStrict(eth1Block.getHash()),
             Bytes32.fromHexStringStrict(eth1Block.getParentHash()),
-            UInt256.valueOf(eth1Block.getTotalDifficulty()));
+            UInt256.valueOf(eth1Block.getTotalDifficulty()),
+            UInt64.valueOf(eth1Block.getTimestamp()));
   }
 
   @Override
@@ -105,7 +111,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -116,7 +122,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(executionPayload),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest, EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -128,7 +134,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             list(forkChoiceState, payloadAttributes.orElse(null)),
             web3JClient.getWeb3jService(),
             ForkChoiceUpdatedResultWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest, EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -140,7 +146,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(transitionConfiguration),
             web3JClient.getWeb3jService(),
             TransitionConfigurationV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -151,7 +157,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadHeaderV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -163,7 +169,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(signedBlindedBeaconBlock),
             web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest);
+    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
   }
 
   protected Web3JClient getWeb3JClient() {

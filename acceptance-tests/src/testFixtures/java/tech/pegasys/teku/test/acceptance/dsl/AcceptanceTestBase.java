@@ -94,7 +94,7 @@ public class AcceptanceTestBase {
   }
 
   protected BesuNode createBesuNode(final Consumer<BesuNode.Config> configOptions) {
-    return createBesuNode(BesuDockerVersion.V21_10_9, configOptions);
+    return createBesuNode(BesuDockerVersion.STABLE, configOptions);
   }
 
   protected BesuNode createBesuNode(

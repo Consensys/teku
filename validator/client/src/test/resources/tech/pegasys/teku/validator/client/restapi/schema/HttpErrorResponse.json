@@ -1,9 +1,9 @@
 {
   "title" : "HttpErrorResponse",
   "type" : "object",
-  "required" : [ "status", "message" ],
+  "required" : [ "code", "message" ],
   "properties" : {
-    "status" : {
+    "code" : {
       "type" : "number"
     },
     "message" : {

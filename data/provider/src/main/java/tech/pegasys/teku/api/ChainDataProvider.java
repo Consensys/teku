@@ -59,6 +59,7 @@ import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -119,6 +120,17 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
+  public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getGenesisStateData() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return recentChainData.getGenesisData().orElseThrow(ChainDataUnavailableException::new);
+  }
+
+  public Bytes4 getGenesisForkVersion() {
+    return spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
+  }
+
   public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
       final String slotParameter) {
     return defaultBlockSelectorFactory
@@ -176,13 +188,14 @@ public class ChainDataProvider {
     return fromState(stateIdParam, FinalityCheckpointsResponse::fromState);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getStateRoot(final String stateIdParam) {
-    return fromState(stateIdParam, state -> new Root(state.hashTreeRoot()));
-  }
-
   public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getBeaconState(
       final String stateIdParam) {
     return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
+  }
+
+  public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAndMetadata(
+      final String stateIdParam) {
+    return defaultStateSelectorFactory.defaultStateSelector(stateIdParam).getState();
   }
 
   public SafeFuture<Optional<SszResponse>> getBeaconStateSsz(final String stateIdParam) {

@@ -13,32 +13,47 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
 import java.util.Optional;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
-import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateRootTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final Root root = new Root(dataStructureUtil.randomBytes32());
 
   @Test
   public void shouldReturnRootInfo() throws Exception {
-    final GetStateRoot handler = new GetStateRoot(chainDataProvider, jsonProvider);
+    final GetStateRoot handler = new GetStateRoot(chainDataProvider);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(
+            dataStructureUtil.randomBeaconState(),
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            false,
+            true);
+    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(chainDataProvider.getStateRoot("head"))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(withMetaData(root))));
+    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
-    handler.handle(context);
+    handler.handleRequest(request);
 
-    final GetStateRootResponse response = getResponseFromFuture(GetStateRootResponse.class);
-    assertThat(root).isEqualTo(response.data);
+    String expected =
+        String.format(
+            "{\"data\":{\"root\":\"%s\"}}",
+            stateAndMetaData.getData().hashTreeRoot().toHexString());
+    AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
+    verify(context, never()).status(any());
   }
 }

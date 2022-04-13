@@ -21,13 +21,11 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 
 public interface ForkChoiceNotifier {
   void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);
 
-  SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
-      ForkChoiceState forkChoiceState);
+  void onForkChoiceUpdated(ForkChoiceState forkChoiceState);
 
   void onAttestationsDue(UInt64 slot);
 
@@ -38,4 +36,8 @@ public interface ForkChoiceNotifier {
   void onTerminalBlockReached(Bytes32 executionBlockHash);
 
   PayloadAttributesCalculator getPayloadAttributesCalculator();
+
+  long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
+
+  boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId);
 }

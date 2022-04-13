@@ -22,8 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionlayer.client.KilnV1Web3JExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionlayer.client.KintsugiWeb3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
@@ -37,6 +35,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -78,18 +77,12 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
     LOG.info("Execution Engine version: {}", version);
-    switch (version) {
-      case KILNV2:
-        final JwtSecretKeyLoader keyLoader =
-            new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
-        return new Web3JExecutionEngineClient(
-            eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
-      case KILN:
-        return new KilnV1Web3JExecutionEngineClient(eeEndpoint, timeProvider);
-      case KINTSUGI:
-      default:
-        return new KintsugiWeb3JExecutionEngineClient(eeEndpoint, timeProvider);
+    if (version != Version.KILNV2) {
+      throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
     }
+    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
+    return new Web3JExecutionEngineClient(
+        eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
   }
 
   private ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {

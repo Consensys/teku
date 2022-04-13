@@ -15,14 +15,12 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- The `/eth/v1/node/peers` endpoint had field `address` in `data` object, which is not correct according to the spec, changed to `last_seen_p2p_address`. Also `meta` object with `count` added
-- The `/eth/v1/node/peers/{peer_id}` endpoint had field `address` in `data` object, which is not correct according to the spec, changed to `last_seen_p2p_address`
+
 
 ### Additions and Improvements
-- Introduced smarter state selection strategy when validating attestations to reduce required regenerations after a full GC.
-- Improved peer scoring to better handle temporary errors from peers.
-- Enabled fork choice proposer boost by default.
-- Added Websockets and IPC protocols support for execution client’s Engine JSON RPC API.
+- Improved performance when regenerating non-finalized states that had to be dropped from memory.
+- Performance optimizations for Gnosis beacon chain
 
 ### Bug Fixes
-- Fixed the target database format for the `migrate-database` command.
+- Added stricter limits on attestation pool size. 
+- Fixed issue with loading the optimised BLST library on Windows.

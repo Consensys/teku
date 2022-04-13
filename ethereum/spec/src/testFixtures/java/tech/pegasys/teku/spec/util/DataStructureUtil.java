@@ -64,7 +64,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -125,7 +124,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public final class DataStructureUtil {
-  private static final Supplier<Spec> DEFAULT_SPEC_PROVIDER = TestSpecFactory::createMinimalPhase0;
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
@@ -133,16 +131,6 @@ public final class DataStructureUtil {
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
-
-  @Deprecated
-  public DataStructureUtil() {
-    this(92892824, DEFAULT_SPEC_PROVIDER.get());
-  }
-
-  @Deprecated
-  public DataStructureUtil(final int seed) {
-    this(seed, DEFAULT_SPEC_PROVIDER.get());
-  }
 
   public DataStructureUtil(final Spec spec) {
     this(92892824, spec);
@@ -166,6 +154,10 @@ public final class DataStructureUtil {
     return new Random(nextSeed()).nextLong();
   }
 
+  public long randomPositiveLong(final long bound) {
+    return new Random(nextSeed()).longs(0, bound).findFirst().orElse(0L);
+  }
+
   public int randomPositiveInt() {
     return randomInt(Integer.MAX_VALUE);
   }
@@ -178,6 +170,10 @@ public final class DataStructureUtil {
 
   public UInt64 randomUInt64() {
     return UInt64.fromLongBits(randomLong());
+  }
+
+  public UInt64 randomUInt64(final long bound) {
+    return UInt64.fromLongBits(randomPositiveLong(bound));
   }
 
   public UInt256 randomUInt256() {

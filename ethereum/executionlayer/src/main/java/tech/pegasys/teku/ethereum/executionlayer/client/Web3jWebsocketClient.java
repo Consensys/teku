@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import java.net.ConnectException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,10 +75,11 @@ public class Web3jWebsocketClient extends Web3JClient {
   }
 
   @Override
-  protected <T> SafeFuture<Response<T>> doRequest(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
+  public <T> SafeFuture<Response<T>> doRequest(
+      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
+      final Duration timeout) {
     return tryToConnect()
         .<SafeFuture<Response<T>>>map(SafeFuture::failedFuture)
-        .orElseGet(() -> super.doRequest(web3jRequest));
+        .orElseGet(() -> super.doRequest(web3jRequest, timeout));
   }
 }

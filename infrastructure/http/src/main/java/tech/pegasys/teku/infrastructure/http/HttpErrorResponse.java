@@ -15,17 +15,19 @@ package tech.pegasys.teku.infrastructure.http;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
+import java.util.Objects;
+
 public class HttpErrorResponse {
 
-  private final Integer status;
+  private final int code;
   private final String message;
 
   public static HttpErrorResponse badRequest(String message) {
     return new HttpErrorResponse(SC_BAD_REQUEST, message);
   }
 
-  public HttpErrorResponse(final Integer status, final String message) {
-    this.status = status;
+  public HttpErrorResponse(final int code, final String message) {
+    this.code = code;
     this.message = message;
   }
 
@@ -33,7 +35,24 @@ public class HttpErrorResponse {
     return message;
   }
 
-  public Integer getStatus() {
-    return status;
+  public int getCode() {
+    return code;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final HttpErrorResponse that = (HttpErrorResponse) o;
+    return code == that.code && Objects.equals(message, that.message);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(code, message);
   }
 }
