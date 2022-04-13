@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -118,13 +117,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 latestFinalizedBlockSlot =
         recentChainData.getStore().getLatestFinalizedBlockSlot();
     forkChoiceUpdatedResultNotification
-        .forkChoiceUpdatedResult
+        .getForkChoiceUpdatedResult()
         .thenAccept(
             maybeForkChoiceUpdatedResult ->
                 maybeForkChoiceUpdatedResult.ifPresent(
                     forkChoiceUpdatedResult ->
                         onExecutionPayloadResult(
-                            forkChoiceUpdatedResultNotification.forkChoiceState.getHeadBlockRoot(),
+                            forkChoiceUpdatedResultNotification
+                                .getForkChoiceState()
+                                .getHeadBlockRoot(),
                             forkChoiceUpdatedResult.getPayloadStatus(),
                             latestFinalizedBlockSlot)))
         .reportExceptions();

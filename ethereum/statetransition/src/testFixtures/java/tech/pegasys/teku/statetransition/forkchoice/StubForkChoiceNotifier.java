@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 
 public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
@@ -32,9 +32,9 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   private SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResultNotification =
       SafeFuture.completedFuture(Optional.empty());
 
-  public void setForkChoiceUpdatedResul(
-      final Optional<ForkChoiceUpdatedResult> forkChoiceUpdatedResul) {
-    forkChoiceUpdatedResultNotification = SafeFuture.completedFuture(forkChoiceUpdatedResul);
+  public void setForkChoiceUpdatedResult(
+      final Optional<ForkChoiceUpdatedResult> forkChoiceUpdatedResult) {
+    forkChoiceUpdatedResultNotification = SafeFuture.completedFuture(forkChoiceUpdatedResult);
   }
 
   @Override

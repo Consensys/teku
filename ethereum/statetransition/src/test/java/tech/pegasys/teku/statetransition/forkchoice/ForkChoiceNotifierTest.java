@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -688,7 +688,7 @@ class ForkChoiceNotifierTest {
     forkChoiceUpdatedResultNotification = null;
     notifier.onForkChoiceUpdated(forkChoiceState);
     assertThat(forkChoiceUpdatedResultNotification).isNotNull();
-    assertThat(forkChoiceUpdatedResultNotification.forkChoiceUpdatedResult).isCompleted();
+    assertThat(forkChoiceUpdatedResultNotification.getForkChoiceUpdatedResult()).isCompleted();
   }
 
   private void validateGetPayloadIdOnTheFlyRetrieval(

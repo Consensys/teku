@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 
 public interface ForkChoiceNotifier {
   void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);
@@ -41,21 +40,4 @@ public interface ForkChoiceNotifier {
   long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
 
   boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId);
-
-  interface ForkChoiceUpdatedResultSubscriber {
-    void onForkChoiceUpdatedResult(
-        final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification);
-
-    class ForkChoiceUpdatedResultNotification {
-      final ForkChoiceState forkChoiceState;
-      final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult;
-
-      public ForkChoiceUpdatedResultNotification(
-          ForkChoiceState forkChoiceState,
-          SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult) {
-        this.forkChoiceState = forkChoiceState;
-        this.forkChoiceUpdatedResult = forkChoiceUpdatedResult;
-      }
-    }
-  }
 }

@@ -31,7 +31,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
@@ -240,11 +241,13 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   private void sendForkChoiceUpdated() {
+    final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
+        forkChoiceUpdateData.send(executionEngineChannel);
+
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
-            forkChoiceUpdateData.getForkChoiceState(),
-            forkChoiceUpdateData.send(executionEngineChannel)));
+            forkChoiceUpdateData.getForkChoiceState(), forkChoiceUpdatedResult));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
