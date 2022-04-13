@@ -14,11 +14,13 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
@@ -34,6 +36,7 @@ import org.assertj.core.api.AssertionsForClassTypes;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -54,20 +57,31 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTes
               stateAndMetaData -> stateAndMetaData.getData().hashTreeRoot())
           .build();
 
+  private final TestHandler handler = new TestHandler(chainDataProvider);
+
   @Test
   void shouldReturnNotFound() throws JsonProcessingException {
-    final TestHandler handler = new TestHandler(chainDataProvider);
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 
     AssertionsForClassTypes.assertThat(getResultString())
         .isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context, never()).status(any());
+  }
+
+  @Test
+  public void shouldThrowBadRequest() throws JsonProcessingException {
+    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
+        .thenThrow(new BadRequestException("invalid state"));
+    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+
+    handler.handleRequest(request);
+    verify(context).status(eq(SC_BAD_REQUEST));
+    verify(context).result(contains("\"Bad Request - check state_id is correct\""));
   }
 
   static class TestHandler extends AbstractGetSimpleDataFromState {

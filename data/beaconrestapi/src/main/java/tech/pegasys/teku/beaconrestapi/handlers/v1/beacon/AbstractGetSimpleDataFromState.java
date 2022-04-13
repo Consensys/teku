@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -39,6 +40,10 @@ public abstract class AbstractGetSimpleDataFromState extends MigratingEndpointAd
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<StateAndMetaData>> future =
         chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
+    if (future == null) {
+      request.respondError(SC_BAD_REQUEST, "Bad Request - check state_id is correct");
+      return;
+    }
     request.respondAsync(
         future.thenApply(
             maybeStateAndMetadata ->

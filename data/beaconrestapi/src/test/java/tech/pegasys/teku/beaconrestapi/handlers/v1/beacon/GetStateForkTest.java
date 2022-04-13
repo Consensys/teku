@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -26,22 +25,23 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateForkTest extends AbstractBeaconHandlerTest {
   private final GetStateFork handler = new GetStateFork(chainDataProvider);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RestApiRequest request;
-  private final Fork fork =
-      new Fork(
-          dataStructureUtil.randomBytes4(),
-          dataStructureUtil.randomBytes4(),
-          dataStructureUtil.randomUInt64());
+  private final StateAndMetaData stateAndMetaData =
+      new StateAndMetaData(
+          dataStructureUtil.randomBeaconState(),
+          spec.getGenesisSpec().getMilestone(),
+          false,
+          false,
+          true);
 
   @BeforeEach
   void setUp() {
@@ -50,21 +50,21 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnForkInfo() throws Exception {
-    when(chainDataProvider.getFork(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(withMetaData(fork))));
+    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 
     assertThat(getResultString())
         .isEqualTo(
-            "{\"data\":{\"previous_version\":\"0x235bc340\",\"current_version\":\"0x367cbd40\",\"epoch\":\"4669978815449698508\"}}");
+            "{\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
     verify(context, never()).status(any());
   }
 
   @Test
   public void shouldReturnNotFound() throws Exception {
-    when(chainDataProvider.getFork(eq("head")))
+    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     request = new RestApiRequest(context, handler.getMetadata());
 
@@ -72,15 +72,5 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
 
     assertThat(getResultString()).isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context).status(SC_NOT_FOUND);
-  }
-
-  @Test
-  public void shouldThrowBadRequest() {
-    when(chainDataProvider.getFork(eq("head"))).thenThrow(new BadRequestException("invalid state"));
-    request = new RestApiRequest(context, handler.getMetadata());
-
-    assertThatThrownBy(() -> handler.handleRequest(request))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessage("invalid state");
   }
 }
