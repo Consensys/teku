@@ -45,8 +45,8 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
 
     String expected =
         String.format(
-            "{\"previous_justified\":{\"epoch\":\"%s\",\"root\":\"%s\"},\"current_justified\":{\"epoch\":\"%s\","
-                + "\"root\":\"%s\"},\"finalized\":{\"epoch\":\"%s\",\"root\":\"%s\"}}",
+            "{\"data\":{\"previous_justified\":{\"epoch\":\"%s\",\"root\":\"%s\"},\"current_justified\":"
+                + "{\"epoch\":\"%s\",\"root\":\"%s\"},\"finalized\":{\"epoch\":\"%s\",\"root\":\"%s\"}}}",
             beaconState.getPreviousJustifiedCheckpoint().getEpoch(),
             beaconState.getPreviousJustifiedCheckpoint().getRoot(),
             beaconState.getCurrentJustifiedCheckpoint().getEpoch(),

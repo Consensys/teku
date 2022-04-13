@@ -40,25 +40,31 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateFinalityCheckpoints extends AbstractGetSimpleDataFromState {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/finality_checkpoints";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
 
-  private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(StateAndMetaData.class)
+  private static final SerializableTypeDefinition<BeaconState> DATA_TYPE =
+      SerializableTypeDefinition.object(BeaconState.class)
           .withField(
               "previous_justified",
               Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
-              stateAndMetaData -> stateAndMetaData.getData().getPreviousJustifiedCheckpoint())
+              BeaconState::getPreviousJustifiedCheckpoint)
           .withField(
               "current_justified",
               Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
-              stateAndMetaData -> stateAndMetaData.getData().getCurrentJustifiedCheckpoint())
+              BeaconState::getCurrentJustifiedCheckpoint)
           .withField(
               "finalized",
               Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
-              stateAndMetaData -> stateAndMetaData.getData().getFinalizedCheckpoint())
+              BeaconState::getFinalizedCheckpoint)
+          .build();
+
+  private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(StateAndMetaData.class)
+          .withField("data", DATA_TYPE, StateAndMetaData::getData)
           .build();
 
   public GetStateFinalityCheckpoints(final DataProvider dataProvider) {
