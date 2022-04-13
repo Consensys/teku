@@ -182,14 +182,6 @@ public class ChainDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<
-          Optional<
-              ObjectAndMetaData<
-                  tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>>
-      getStateFinalityCheckpoints(final String stateIdParam) {
-    return fromState(stateIdParam, value -> value);
-  }
-
   public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getBeaconState(
       final String stateIdParam) {
     return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
