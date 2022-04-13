@@ -21,16 +21,22 @@
           "application/json" : {
             "schema" : {
               "type" : "object",
-              "required" : [ "previous_justified", "current_justified", "finalized" ],
+              "required" : [ "data" ],
               "properties" : {
-                "previous_justified" : {
-                  "$ref" : "#/components/schemas/Checkpoint"
-                },
-                "current_justified" : {
-                  "$ref" : "#/components/schemas/Checkpoint"
-                },
-                "finalized" : {
-                  "$ref" : "#/components/schemas/Checkpoint"
+                "data" : {
+                  "type" : "object",
+                  "required" : [ "previous_justified", "current_justified", "finalized" ],
+                  "properties" : {
+                    "previous_justified" : {
+                      "$ref" : "#/components/schemas/Checkpoint"
+                    },
+                    "current_justified" : {
+                      "$ref" : "#/components/schemas/Checkpoint"
+                    },
+                    "finalized" : {
+                      "$ref" : "#/components/schemas/Checkpoint"
+                    }
+                  }
                 }
               }
             }
