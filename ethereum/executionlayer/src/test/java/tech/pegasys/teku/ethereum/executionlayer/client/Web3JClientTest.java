@@ -18,11 +18,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,10 +38,13 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.VoidResponse;
 import org.web3j.protocol.websocket.WebSocketService;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3JClientTest {
-  private static final TimeProvider TIME_PROVIDER = mock(TimeProvider.class);
+  private static final TimeProvider TIME_PROVIDER = StubTimeProvider.withTimeInSeconds(1000);
   private static final Web3jService WEB3J_SERVICE = mock(Web3jService.class);
   private static final Web3JClient WEB3J_CLIENT = new Web3JClientImpl(TIME_PROVIDER);
   private static final URI ENDPOINT = URI.create("");
@@ -47,6 +55,7 @@ public class Web3JClientTest {
       new Web3jWebsocketClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
   private static final Web3jIpcClient WEB3J_IPC_CLIENT =
       new Web3jIpcClient(URI.create("file:/a"), TIME_PROVIDER, Optional.empty());
+  private static final Duration TIMEOUT = Duration.ofSeconds(10000000);
 
   static class Web3JClientImpl extends Web3JClient {
     protected Web3JClientImpl(TimeProvider timeProvider) {
@@ -83,7 +92,7 @@ public class Web3JClientTest {
 
   @ParameterizedTest
   @MethodSource("getClientInstances")
-  public void shouldModifyRequestWhenDoRequestCalled(Web3JClient client) {
+  public void shouldModifyRequestWhenDoRequestCalled(final Web3JClient client) {
     client.addRequestAdapter(
         request -> {
           request.setId(123);
@@ -94,8 +103,24 @@ public class Web3JClientTest {
     request.setId(1);
     when(WEB3J_SERVICE.sendAsync(request, VoidResponse.class))
         .thenReturn(CompletableFuture.completedFuture(new VoidResponse()));
-    client.doRequest(request).finish(ex -> {});
+    assertThat(client.doRequest(request, TIMEOUT)).isCompleted();
     verify(WEB3J_SERVICE, times(1)).sendAsync(request, VoidResponse.class);
     assertThat(request.getId()).isEqualTo(123);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldTimeoutIfResponseNotReceived(final Web3JClient client) throws Exception {
+    Request<Void, VoidResponse> request =
+        new Request<>("test", new ArrayList<>(), WEB3J_SERVICE, VoidResponse.class);
+    when(WEB3J_SERVICE.sendAsync(request, VoidResponse.class))
+        .thenReturn(new CompletableFuture<>());
+
+    final Duration crazyShortTimeout = Duration.ofMillis(0);
+    final SafeFuture<Response<Void>> result = client.doRequest(request, crazyShortTimeout);
+    waitFor(result);
+    assertThatSafeFuture(result).isCompleted();
+    final Response<Void> response = safeJoin(result);
+    assertThat(response.getErrorMessage()).isEqualTo(TimeoutException.class.getSimpleName());
   }
 }
