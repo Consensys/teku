@@ -41,7 +41,6 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
@@ -184,9 +183,12 @@ public class ChainDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<FinalityCheckpointsResponse>>>
+  public SafeFuture<
+          Optional<
+              ObjectAndMetaData<
+                  tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>>
       getStateFinalityCheckpoints(final String stateIdParam) {
-    return fromState(stateIdParam, FinalityCheckpointsResponse::fromState);
+    return fromState(stateIdParam, value -> value);
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Root>>> getStateRoot(final String stateIdParam) {

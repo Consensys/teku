@@ -13,53 +13,59 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static java.util.Collections.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
 import java.util.Optional;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BeaconState state = dataStructureUtil.randomBeaconState();
 
   @Test
   public void shouldReturnFinalityCheckpointsInfo() throws Exception {
-    final GetStateFinalityCheckpoints handler =
-        new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
+    final GetStateFinalityCheckpoints handler = new GetStateFinalityCheckpoints(chainDataProvider);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(
+            dataStructureUtil.randomBeaconState(),
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            false,
+            true);
+    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(chainDataProvider.getStateFinalityCheckpoints("head"))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ObjectAndMetaData<>(
-                        FinalityCheckpointsResponse.fromState(state),
-                        spec.getGenesisSpec().getMilestone(),
-                        false,
-                        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
-                        true))));
+    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
-    handler.handle(context);
+    handler.handleRequest(request);
 
-    final FinalityCheckpointsResponse expectedResponse =
-        new FinalityCheckpointsResponse(
-            new Checkpoint(state.getPreviousJustifiedCheckpoint()),
-            new Checkpoint(state.getCurrentJustifiedCheckpoint()),
-            new Checkpoint(state.getFinalizedCheckpoint()));
-
-    final GetStateFinalityCheckpointsResponse response =
-        getResponseFromFuture(GetStateFinalityCheckpointsResponse.class);
-
-    assertThat(response.data).isEqualTo(expectedResponse);
+    String expected =
+        String.format(
+            "{\n"
+                + "  \"data\": {\n"
+                + "    \"previous_justified\": {\n"
+                + "      \"epoch\": \"1\",\n"
+                + "      \"root\": \"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"\n"
+                + "    },\n"
+                + "    \"current_justified\": {\n"
+                + "      \"epoch\": \"1\",\n"
+                + "      \"root\": \"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"\n"
+                + "    },\n"
+                + "    \"finalized\": {\n"
+                + "      \"epoch\": \"1\",\n"
+                + "      \"root\": \"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"\n"
+                + "    }\n"
+                + "  }\n"
+                + "}",
+            stateAndMetaData.getData().hashTreeRoot().toHexString());
+    AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
   }
 }

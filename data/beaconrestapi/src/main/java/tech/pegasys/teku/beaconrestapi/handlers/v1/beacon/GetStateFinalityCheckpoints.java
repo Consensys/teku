@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -21,41 +23,68 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
-public class GetStateFinalityCheckpoints extends AbstractHandler implements Handler {
+public class GetStateFinalityCheckpoints extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/finality_checkpoints";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  private static final ParameterMetadata<String> PARAMETER_STATE_ID =
+      new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
+
+  private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(StateAndMetaData.class)
+          .withField(
+              "previous_justified",
+              Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
+              stateAndMetaData -> stateAndMetaData.getData().getPreviousJustifiedCheckpoint())
+          .withField(
+              "current_justified",
+              Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
+              stateAndMetaData -> stateAndMetaData.getData().getCurrentJustifiedCheckpoint())
+          .withField(
+              "finalized",
+              Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
+              stateAndMetaData -> stateAndMetaData.getData().getFinalizedCheckpoint())
+          .build();
+
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateFinalityCheckpoints(
-      final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.chainDataProvider = dataProvider.getChainDataProvider();
+  public GetStateFinalityCheckpoints(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  GetStateFinalityCheckpoints(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  GetStateFinalityCheckpoints(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getStateFinalityCheckpoints")
+            .summary("Get state finality checkpoints")
+            .description(
+                "Returns finality checkpoints for state with given 'state_id'. In case finality is not yet achieved, checkpoint should return epoch 0 and ZERO_HASH as root.")
+            .tags(TAG_BEACON)
+            .pathParam(PARAMETER_STATE_ID)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -77,18 +106,12 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParamMap = ctx.pathParamMap();
-    final SafeFuture<Optional<ObjectAndMetaData<FinalityCheckpointsResponse>>> future =
-        chainDataProvider.getStateFinalityCheckpoints(pathParamMap.get(PARAM_STATE_ID));
-    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+    adapt(ctx);
   }
 
-  private Optional<String> handleResult(
-      Context ctx, final ObjectAndMetaData<FinalityCheckpointsResponse> response)
-      throws JsonProcessingException {
-    return Optional.of(
-        jsonProvider.objectToJSON(
-            new GetStateFinalityCheckpointsResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    // TODO use new handle method once merged
+    // handleStateByIdRequest(request, chainDataProvider);
   }
 }
