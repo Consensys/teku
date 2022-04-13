@@ -119,9 +119,9 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableBlindedBeaconBlocks() {
-    final String[] args = {"--Xvalidators-blinded-blocks-api-enabled", "true"};
+    final String[] args = {"--Xvalidators-proposer-blinded-blocks-enabled", "true"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksApiEnabled())
+    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksEnabled())
         .isTrue();
   }
 
@@ -129,7 +129,26 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldNotUseBlindedBeaconBlocksByDefault() {
     final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksApiEnabled())
+    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksEnabled())
         .isFalse();
+  }
+
+  @Test
+  public void shouldEnableMevBoost() {
+    final String[] args = {
+      "--Xvalidators-proposer-mev-boost-enabled",
+      "true",
+      "--Xvalidators-proposer-blinded-blocks-enabled",
+      "true"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isProposerMevBoostEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldNotUseMevBoostByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isProposerMevBoostEnabled()).isFalse();
   }
 }

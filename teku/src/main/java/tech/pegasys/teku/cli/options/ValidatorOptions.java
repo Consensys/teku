@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
-
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -102,16 +100,6 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
-  @Option(
-      names = {"--Xvalidators-blinded-blocks-api-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Use blinded block api calls",
-      fallbackValue = "true",
-      hidden = true,
-      arity = "0..1")
-  private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
-
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -125,7 +113,6 @@ public class ValidatorOptions {
         config ->
             config
                 .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .blindedBeaconBlocksApiEnabled(blindedBlocksApiEnabled)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .validatorExternalSignerSlashingProtectionEnabled(
                     validatorExternalSignerSlashingProtectionEnabled)

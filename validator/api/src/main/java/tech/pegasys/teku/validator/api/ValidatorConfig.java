@@ -60,7 +60,7 @@ public class ValidatorConfig {
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
-  private final boolean blindedBeaconBlocksApiEnabled;
+  private final boolean blindedBeaconBlocksEnabled;
   private final boolean proposerMevBoostEnabled;
 
   private ValidatorConfig(
@@ -83,7 +83,7 @@ public class ValidatorConfig {
       final Optional<String> proposerConfigSource,
       final boolean refreshProposerConfigFromSource,
       final boolean proposerMevBoostEnabled,
-      final boolean blindedBeaconBlocksApiEnabled) {
+      final boolean blindedBeaconBlocksEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -105,7 +105,7 @@ public class ValidatorConfig {
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
-    this.blindedBeaconBlocksApiEnabled = blindedBeaconBlocksApiEnabled;
+    this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.proposerMevBoostEnabled = proposerMevBoostEnabled;
   }
 
@@ -180,8 +180,8 @@ public class ValidatorConfig {
     return refreshProposerConfigFromSource;
   }
 
-  public boolean isBlindedBeaconBlocksApiEnabled() {
-    return blindedBeaconBlocksApiEnabled;
+  public boolean isBlindedBeaconBlocksEnabled() {
+    return blindedBeaconBlocksEnabled;
   }
 
   public boolean isProposerMevBoostEnabled() {
@@ -222,7 +222,7 @@ public class ValidatorConfig {
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
     private boolean proposerMevBoostEnabled = DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
-    private boolean blindedBlocksApiEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
+    private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
     private Builder() {}
 
@@ -353,8 +353,8 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder blindedBeaconBlocksApiEnabled(final boolean blindedBeaconBlockEnabled) {
-      this.blindedBlocksApiEnabled = blindedBeaconBlockEnabled;
+    public Builder blindedBeaconBlocksEnabled(final boolean blindedBeaconBlockEnabled) {
+      this.blindedBlocksEnabled = blindedBeaconBlockEnabled;
       return this;
     }
 
@@ -363,6 +363,7 @@ public class ValidatorConfig {
       validateExternalSignerKeystoreAndPasswordFileConfig();
       validateExternalSignerTruststoreAndPasswordFileConfig();
       validateExternalSignerURLScheme();
+      validateMevBoostAndBlindedBlocks();
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
@@ -383,7 +384,7 @@ public class ValidatorConfig {
           proposerConfigSource,
           refreshProposerConfigFromSource,
           proposerMevBoostEnabled,
-          blindedBlocksApiEnabled);
+          blindedBlocksEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
@@ -429,6 +430,14 @@ public class ValidatorConfig {
                   validatorExternalSignerUrl);
           throw new InvalidConfigurationException(errorMessage);
         }
+      }
+    }
+
+    private void validateMevBoostAndBlindedBlocks() {
+      if (proposerMevBoostEnabled && !blindedBlocksEnabled) {
+        final String errorMessage =
+            "Invalid configuration. '--Xvalidators-proposer-mev-boost-enabled' requires '--Xvalidators-proposer-blinded-blocks-enabled' to be enabled as well.";
+        throw new InvalidConfigurationException(errorMessage);
       }
     }
 

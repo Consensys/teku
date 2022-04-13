@@ -84,7 +84,7 @@ class OkHttpValidatorRestApiClientTest {
   public void beforeEach() throws Exception {
     mockWebServer.start();
     okHttpClient = new OkHttpClient();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, false);
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
   }
 
   @AfterEach
@@ -256,7 +256,7 @@ class OkHttpValidatorRestApiClientTest {
                 asJson(
                     new GetNewBlindedBlockResponse(
                         SpecMilestone.BELLATRIX, new BlindedBlockBellatrix(expectedBeaconBlock)))));
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
     Optional<BeaconBlock> maybeBlock =
         apiClient.createUnsignedBlock(slot, blsSignature, graffiti, true);
     assertThat(maybeBlock).isPresent();
@@ -298,9 +298,7 @@ class OkHttpValidatorRestApiClientTest {
         isBlindedBlocksEnabled
             ? schemaObjectsBellatrix.signedBlindedBlock()
             : schemaObjectsBellatrix.signedBeaconBlock();
-    apiClient =
-        new OkHttpValidatorRestApiClient(
-            mockWebServer.url("/"), okHttpClient, isBlindedBlocksEnabled);
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
 
     // Block has been successfully broadcast, validated and imported
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(blockRoot)));
@@ -731,7 +729,7 @@ class OkHttpValidatorRestApiClientTest {
       throws Exception {
     final HttpUrl url =
         mockWebServer.url("/").newBuilder().username("user").password("password").build();
-    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient, false);
+    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getGenesis();
