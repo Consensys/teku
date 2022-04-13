@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.ConnectException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -35,11 +36,12 @@ import org.web3j.protocol.core.methods.response.VoidResponse;
 import org.web3j.protocol.websocket.WebSocketService;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Web3jWebsocketClientTest {
-  private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private static final Duration TIMEOUT = Duration.ofSeconds(10000000);
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final WebSocketService webSocketService = mock(WebSocketService.class);
   private final URI endpoint = URI.create("");
   private Web3jWebsocketClient web3jWebsocketClient;
@@ -48,7 +50,6 @@ public class Web3jWebsocketClientTest {
   public void setup() {
     this.web3jWebsocketClient = new Web3jWebsocketClient(endpoint, timeProvider, Optional.empty());
     web3jWebsocketClient.initWeb3jService(webSocketService);
-    when(timeProvider.getTimeInMillis()).thenReturn(UInt64.ONE);
   }
 
   @Test
@@ -58,7 +59,7 @@ public class Web3jWebsocketClientTest {
     doNothing().when(webSocketService).connect(any(), any(), any());
     when(webSocketService.sendAsync(request, VoidResponse.class))
         .thenReturn(CompletableFuture.completedFuture(new VoidResponse()));
-    SafeFuture<Response<Void>> result = web3jWebsocketClient.doRequest(request);
+    SafeFuture<Response<Void>> result = web3jWebsocketClient.doRequest(request, TIMEOUT);
     assertThat(result.isCompletedNormally()).isTrue();
     verify(webSocketService, times(1)).connect(any(), any(), any());
   }
@@ -68,7 +69,7 @@ public class Web3jWebsocketClientTest {
     Request<Void, VoidResponse> request =
         new Request<>("test", new ArrayList<>(), webSocketService, VoidResponse.class);
     doThrow(new ConnectException("Failed")).when(webSocketService).connect(any(), any(), any());
-    SafeFuture<Response<Void>> result = web3jWebsocketClient.doRequest(request);
+    SafeFuture<Response<Void>> result = web3jWebsocketClient.doRequest(request, TIMEOUT);
     assertThat(result.isCompletedExceptionally()).isTrue();
     verify(webSocketService, times(1)).connect(any(), any(), any());
     verify(webSocketService, never()).send(any(), any());

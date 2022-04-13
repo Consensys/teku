@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -923,7 +925,16 @@ class ForkChoiceTest {
         status
             .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()))
             .orElse(null);
-    when(forkChoiceNotifier.onForkChoiceUpdated(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.ofNullable(result)));
+
+    doAnswer(
+            invocation -> {
+              forkChoice.onForkChoiceUpdatedResult(
+                  new ForkChoiceUpdatedResultNotification(
+                      invocation.getArgument(0),
+                      SafeFuture.completedFuture(Optional.ofNullable(result))));
+              return null;
+            })
+        .when(forkChoiceNotifier)
+        .onForkChoiceUpdated(any());
   }
 }
