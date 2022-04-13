@@ -38,7 +38,10 @@ public class Web3jHttpClient extends Web3JClient {
 
   private OkHttpClient createOkHttpClient(
       final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder()
+            // Set read timeout to longest request timeout
+            .readTimeout(Web3JExecutionEngineClient.EXECUTION_TIMEOUT);
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);

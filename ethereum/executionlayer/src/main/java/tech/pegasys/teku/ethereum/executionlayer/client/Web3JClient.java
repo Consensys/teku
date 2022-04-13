@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -80,28 +81,30 @@ public abstract class Web3JClient {
         .thenPeek(__ -> handleSuccess());
   }
 
-  protected <T> SafeFuture<Response<T>> doRequest(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
+  public <T> SafeFuture<Response<T>> doRequest(
+      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
+      final Duration timeout) {
     throwIfNotInitialized();
-    CompletableFuture<Response<T>> responseFuture =
-        applyRequestAdapters(web3jRequest)
-            .sendAsync()
-            .handle(
-                (response, exception) -> {
-                  if (exception != null) {
-                    handleError(exception);
-                    return new Response<>(exception.getMessage());
-                  } else if (response.hasError()) {
-                    final String errorMessage =
-                        response.getError().getCode() + ": " + response.getError().getMessage();
-                    handleError(new IOException(errorMessage));
-                    return new Response<>(errorMessage);
-                  } else {
-                    handleSuccess();
-                    return new Response<>(response.getResult());
-                  }
-                });
-    return SafeFuture.of(responseFuture);
+    return SafeFuture.of(applyRequestAdapters(web3jRequest).sendAsync())
+        .orTimeout(timeout)
+        .handle(
+            (response, exception) -> {
+              if (exception != null) {
+                handleError(exception);
+                return new Response<>(
+                    exception.getMessage() != null
+                        ? exception.getMessage()
+                        : exception.getClass().getSimpleName());
+              } else if (response.hasError()) {
+                final String errorMessage =
+                    response.getError().getCode() + ": " + response.getError().getMessage();
+                handleError(new IOException(errorMessage));
+                return new Response<>(errorMessage);
+              } else {
+                handleSuccess();
+                return new Response<>(response.getResult());
+              }
+            });
   }
 
   protected void handleError(Throwable error) {
