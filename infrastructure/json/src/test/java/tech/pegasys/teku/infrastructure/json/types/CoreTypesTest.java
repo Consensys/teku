@@ -98,4 +98,14 @@ class CoreTypesTest {
     final List<String> result = JsonUtil.parse(input, stringListType);
     assertThat(result).contains("true");
   }
+
+  @Test
+  void shouldAcceptListOfLists() throws Exception {
+    final DeserializableTypeDefinition<List<List<String>>> listOfStringListType =
+        DeserializableTypeDefinition.listOf(stringListType);
+
+    final String input = "[[\"a\", \"b\", \"c\"], [\"d\", \"e\", \"f\"]]";
+    final List<List<String>> result = JsonUtil.parse(input, listOfStringListType);
+    assertThat(result).isEqualTo(List.of(List.of("a", "b", "c"), List.of("d", "e", "f")));
+  }
 }
