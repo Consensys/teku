@@ -26,10 +26,10 @@ import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
-import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
+import tech.pegasys.teku.cli.options.ValidatorClientLoggingOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.ValidatorRestApiOptions;
@@ -73,8 +73,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  @SuppressWarnings("FieldMayBeFinal")
-  private LoggingOptions loggingOptions = new LoggingOptions();
+  private ValidatorClientLoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -118,11 +117,15 @@ public class ValidatorClientCommand implements Callable<Integer> {
   }
 
   private void startLogging() {
-    LoggingConfig loggingConfig =
-        parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
     parentCommand.getLoggingConfigurator().startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
+  }
+
+  private LoggingConfig buildLoggingConfig(
+      final String logDirectoryPath, final String logFilePrefix) {
+    return loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
   }
 
   private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {

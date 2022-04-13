@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class DefaultValidatorStatusLoggerTest {

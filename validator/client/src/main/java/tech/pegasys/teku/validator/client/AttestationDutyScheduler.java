@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
-  static final int LOOKAHEAD_EPOCHS = 1;
+  public static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {

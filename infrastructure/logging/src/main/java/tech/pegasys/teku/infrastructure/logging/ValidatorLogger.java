@@ -16,8 +16,10 @@ package tech.pegasys.teku.infrastructure.logging;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.base.Strings;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,6 +52,34 @@ public class ValidatorLogger {
         ColorConsolePrinter.print(
             "Validator   *** Error while connecting to beacon node event stream", Color.RED),
         t);
+  }
+
+  public void scheduledDutiesForEpoch(
+      String type, String epoch, String epochSeconds, List<String> delays, String validatorString) {
+    final String message;
+    if (delays.isEmpty()) {
+      message =
+          String.format(
+              "Epoch %s (next %s seconds): no scheduled %s duties for validator %s",
+              epoch, epochSeconds, type, validatorString);
+    } else {
+      StringJoiner sj = new StringJoiner(", ");
+      delays.forEach(sj::add);
+      message =
+          String.format(
+              "Epoch %s: scheduled %s duty in %s seconds for validator %s",
+              epoch, type, sj, validatorString);
+    }
+    log.info(ColorConsolePrinter.print(message, Color.GREEN));
+  }
+
+  public void scheduledDuties(String type, List<String> delays, String validatorString) {
+    StringJoiner sj = new StringJoiner(", ");
+    delays.forEach(sj::add);
+    String message =
+        String.format(
+            "Scheduled %s duty in %s seconds for validator %s", type, sj, validatorString);
+    log.info(ColorConsolePrinter.print(message, Color.GREEN));
   }
 
   public void dutyCompleted(

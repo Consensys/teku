@@ -54,6 +54,7 @@ public class LoggingConfigurator {
   private static LoggingDestination destination;
   private static boolean includeEvents;
   private static boolean includeValidatorDuties;
+  private static boolean validatorDutiesVerbose;
   private static boolean includeP2pWarnings;
   private static String file;
   private static String filePattern;
@@ -97,6 +98,7 @@ public class LoggingConfigurator {
     destination = configuration.getDestination();
     includeEvents = configuration.isIncludeEventsEnabled();
     includeValidatorDuties = configuration.isIncludeValidatorDutiesEnabled();
+    validatorDutiesVerbose = configuration.isValidatorDutiesVerbose();
     includeP2pWarnings = configuration.isIncludeP2pWarningsEnabled();
     file = configuration.getLogFile();
     filePattern = configuration.getLogFileNamePattern();
@@ -217,6 +219,10 @@ public class LoggingConfigurator {
 
   private static boolean isUninitialized() {
     return destination == null;
+  }
+
+  public static boolean isValidatorDutiesVerbose() {
+    return validatorDutiesVerbose;
   }
 
   @VisibleForTesting

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.logger;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 

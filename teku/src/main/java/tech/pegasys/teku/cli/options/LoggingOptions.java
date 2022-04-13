@@ -55,15 +55,6 @@ public class LoggingOptions {
   private boolean logIncludeEventsEnabled = true;
 
   @Option(
-      names = {"--log-include-validator-duties-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Whether events are logged when validators perform duties",
-      fallbackValue = "true",
-      arity = "0..1")
-  private boolean logIncludeValidatorDutiesEnabled = true;
-
-  @Option(
       names = {"--Xlog-include-p2p-warnings-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Whether warnings are logged for invalid P2P messages",
@@ -154,9 +145,10 @@ public class LoggingOptions {
                 .logWireGossip(logWireGossipEnabled));
   }
 
-  public LoggingConfig applyLoggingConfiguration(
-      final String dataDirectory, final String defaultLogFileNamePrefix) {
-    final LoggingConfig.LoggingConfigBuilder loggingBuilder = LoggingConfig.builder();
+  protected LoggingConfig applyLoggingConfiguration(
+      final String dataDirectory,
+      final String defaultLogFileNamePrefix,
+      final LoggingConfig.LoggingConfigBuilder loggingBuilder) {
     loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
     loggingBuilder.dataDirectory(dataDirectory);
     if (logFile != null) {
@@ -177,9 +169,14 @@ public class LoggingOptions {
         .logLevel(logLevel)
         .colorEnabled(logColorEnabled)
         .includeEventsEnabled(logIncludeEventsEnabled)
-        .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
         .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
         .destination(logDestination);
     return loggingBuilder.build();
+  }
+
+  public LoggingConfig applyLoggingConfiguration(
+      final String dataDirectory, final String defaultLogFileNamePrefix) {
+    final LoggingConfig.LoggingConfigBuilder loggingBuilder = LoggingConfig.builder();
+    return applyLoggingConfiguration(dataDirectory, defaultLogFileNamePrefix, loggingBuilder);
   }
 }

@@ -22,6 +22,8 @@ public class LoggingConfig {
   public static final String DEFAULT_LOG_FILE_NAME_PREFIX = "teku-node";
   public static final String DEFAULT_LOG_FILE_NAME_SUFFIX = ".log";
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX = "_%d{yyyy-MM-dd}.log";
+  public static final boolean DEFAULT_INCLUDE_VALIDATOR_DUTIES_ENABLED = true;
+  public static final boolean DEFAULT_LOG_VALIDATOR_DUTIES_VERBOSE = false;
 
   public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
@@ -33,6 +35,7 @@ public class LoggingConfig {
   private final LoggingDestination destination;
   private final String logFile;
   private final String logFileNamePattern;
+  private final boolean validatorDutiesVerbose;
 
   private LoggingConfig(
       final Optional<Level> logLevel,
@@ -40,6 +43,7 @@ public class LoggingConfig {
       final boolean includeEventsEnabled,
       final boolean includeValidatorDutiesEnabled,
       final boolean includeP2pWarningsEnabled,
+      final boolean validatorDutiesVerbose,
       final LoggingDestination destination,
       final String logFile,
       final String logFileNamePattern) {
@@ -48,6 +52,7 @@ public class LoggingConfig {
     this.includeEventsEnabled = includeEventsEnabled;
     this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
     this.includeP2pWarningsEnabled = includeP2pWarningsEnabled;
+    this.validatorDutiesVerbose = validatorDutiesVerbose;
     this.destination = destination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
@@ -77,6 +82,10 @@ public class LoggingConfig {
     return includeP2pWarningsEnabled;
   }
 
+  public boolean isValidatorDutiesVerbose() {
+    return validatorDutiesVerbose;
+  }
+
   public LoggingDestination getDestination() {
     return destination;
   }
@@ -95,8 +104,9 @@ public class LoggingConfig {
     private Optional<Level> logLevel = Optional.empty();
     private boolean colorEnabled = true;
     private boolean includeEventsEnabled = true;
-    private boolean includeValidatorDutiesEnabled = true;
+    private boolean includeValidatorDutiesEnabled = DEFAULT_INCLUDE_VALIDATOR_DUTIES_ENABLED;
     private boolean includeP2pWarningsEnabled = false;
+    private boolean validatorVerboseDuties = DEFAULT_LOG_VALIDATOR_DUTIES_VERBOSE;
     private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
 
     private String logFileNamePrefix = DEFAULT_LOG_FILE_NAME_PREFIX;
@@ -167,6 +177,11 @@ public class LoggingConfig {
       return this;
     }
 
+    public LoggingConfigBuilder validatorVerboseDuties(final boolean validatorVerboseDuties) {
+      this.validatorVerboseDuties = validatorVerboseDuties;
+      return this;
+    }
+
     public LoggingConfigBuilder destination(LoggingDestination destination) {
       this.destination = destination;
       return this;
@@ -216,6 +231,7 @@ public class LoggingConfig {
           includeEventsEnabled,
           includeValidatorDutiesEnabled,
           includeP2pWarningsEnabled,
+          validatorVerboseDuties,
           destination,
           logPath,
           logPathPattern);

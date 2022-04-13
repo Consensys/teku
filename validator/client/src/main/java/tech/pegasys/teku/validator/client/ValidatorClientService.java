@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
@@ -51,6 +52,11 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.logger.AttestationDutyLogger;
+import tech.pegasys.teku.validator.client.logger.BlockDutyLogger;
+import tech.pegasys.teku.validator.client.logger.DefaultValidatorStatusLogger;
+import tech.pegasys.teku.validator.client.logger.ValidatorDutyLogger;
+import tech.pegasys.teku.validator.client.logger.ValidatorStatusLogger;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
@@ -220,6 +226,16 @@ public class ValidatorClientService extends Service {
     validatorTimingChannels.add(
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, spec));
     validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
+
+    if (LoggingConfigurator.isValidatorDutiesVerbose()) {
+      AttestationDutyLogger attestationDutyLogger =
+          new AttestationDutyLogger(validatorApiChannel, validatorIndexProvider, spec);
+      BlockDutyLogger blockDutyLogger =
+          new BlockDutyLogger(validatorApiChannel, validatorIndexProvider, validators, spec);
+      ValidatorDutyLogger validatorDutyLogger =
+          new ValidatorDutyLogger(attestationDutyLogger, blockDutyLogger, spec);
+      validatorTimingChannels.add(validatorDutyLogger);
+    }
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final ChainHeadTracker chainHeadTracker = new ChainHeadTracker();
