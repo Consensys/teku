@@ -52,7 +52,7 @@ public class DeserializableStringMapTypeDefinition
       p.nextToken();
       if (!p.getCurrentToken().isScalarValue()) {
         throw MismatchedInputException.from(
-            p, (Class<?>) null, "Expected scalar value but got " + p.getCurrentToken());
+            p, String.class, "Expected scalar value but got " + p.getCurrentToken());
       }
       final String fieldValue = p.getValueAsString();
       result.put(fieldName, fieldValue);

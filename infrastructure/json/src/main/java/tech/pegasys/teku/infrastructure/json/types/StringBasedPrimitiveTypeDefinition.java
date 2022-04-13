@@ -62,7 +62,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
   public T deserialize(final JsonParser parser) throws IOException {
     if (!parser.getCurrentToken().isScalarValue()) {
       throw MismatchedInputException.from(
-          parser, (Class<?>) null, "Expected scalar value but got " + parser.getCurrentToken());
+          parser, String.class, "Expected scalar value but got " + parser.getCurrentToken());
     }
     return deserializeFromString(parser.getValueAsString());
   }
