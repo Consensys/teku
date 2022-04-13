@@ -264,11 +264,11 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
         spec.computeStartSlotAtEpoch(specConfigBellatrix.getBellatrixForkEpoch());
 
     // assumes genesis happen immediately at min genesis time reached
-    final UInt64 genesisTime =
+    final UInt64 bellatrixActivationTime =
         spec.getSlotStartTime(
             bellatrixActivationSlot, spec.getGenesisSpecConfig().getMinGenesisTime());
 
-    transitionTime = genesisTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
+    transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
 
     terminalBlockParent =
         new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt256.ZERO, UInt64.ZERO);
