@@ -54,9 +54,6 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     final List<ItemT> result = new ArrayList<>();
     while (parser.nextToken() != JsonToken.END_ARRAY) {
       result.add(itemType.deserialize(parser));
-      if (parser.getCurrentToken().isStructStart()) {
-        parser.skipChildren();
-      }
     }
     return createFromList.apply(result);
   }

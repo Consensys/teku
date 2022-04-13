@@ -106,6 +106,6 @@ class CoreTypesTest {
 
     final String input = "[[\"a\", \"b\", \"c\"], [\"d\", \"e\", \"f\"]]";
     final List<List<String>> result = JsonUtil.parse(input, listOfStringListType);
-    assertThat(result).isEqualTo(List.of(List.of("a", "b", "c"), List.of("d", "e", "f")));
+    assertThat(result).isEqualTo(List.of(List.of("a", "b", "c"), List.of("d", "e", "k")));
   }
 }
