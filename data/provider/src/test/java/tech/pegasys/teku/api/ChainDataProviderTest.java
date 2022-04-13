@@ -201,19 +201,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getStateRoot_shouldGetRootAtGenesis()
-      throws ExecutionException, InterruptedException {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    final Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState> state =
-        combinedChainDataClient.getStateAtSlotExact(ZERO).get();
-    final Optional<ObjectAndMetaData<Root>> maybeStateRoot = provider.getStateRoot("genesis").get();
-    assertThat(maybeStateRoot)
-        .contains(addMetaData(new Root(state.orElseThrow().hashTreeRoot()), ZERO));
-  }
-
-  @Test
   public void getBlockHeaders_shouldGetHeadBlockIfNoParameters() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);

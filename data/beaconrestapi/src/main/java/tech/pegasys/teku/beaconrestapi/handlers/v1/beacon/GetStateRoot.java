@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
@@ -23,7 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -32,7 +33,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
@@ -41,32 +41,25 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
 public class GetStateRoot extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/root";
   public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  private static final ParameterMetadata<String> PARAMETER_STATE_ID =
-      new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
-
   private static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
       SerializableTypeDefinition.object(Bytes32.class)
           .withField("root", BYTES32_TYPE, Function.identity())
           .build();
 
-  private static final SerializableTypeDefinition<StateRootData> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(StateRootData.class)
+  private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(StateAndMetaData.class)
           .name("GetStateRootResponse")
-          .withField("data", ROOT_TYPE, StateRootData::getForkData)
+          .withField("data", ROOT_TYPE, s -> s.getData().hashTreeRoot())
           .build();
 
   public GetStateRoot(final DataProvider dataProvider) {
@@ -83,7 +76,7 @@ public class GetStateRoot extends MigratingEndpointAdapter {
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
+            .response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE)
             .build());
     this.chainDataProvider = chainDataProvider;
   }
@@ -111,35 +104,6 @@ public class GetStateRoot extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> result =
-        chainDataProvider.getStateRootBytes32(request.getPathParameter(PARAMETER_STATE_ID));
-    request.respondAsync(
-        result.thenApplyChecked(
-            maybeRootData -> {
-              if (maybeRootData.isEmpty()) {
-                return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Not found");
-              }
-              return AsyncApiResponse.respondOk(
-                  new StateRootData(
-                      maybeRootData.get().isExecutionOptimistic(), maybeRootData.get().getData()));
-            }));
-  }
-
-  static class StateRootData {
-    private final Boolean executionOptimistic;
-    private final Bytes32 forkData;
-
-    public StateRootData(final Boolean executionOptimistic, final Bytes32 forkData) {
-      this.executionOptimistic = executionOptimistic;
-      this.forkData = forkData;
-    }
-
-    public Bytes32 getForkData() {
-      return forkData;
-    }
-
-    public Boolean getExecutionOptimistic() {
-      return executionOptimistic;
-    }
+    handleStateByIdRequest(request, chainDataProvider);
   }
 }
