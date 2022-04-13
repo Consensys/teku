@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static java.util.Collections.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
@@ -33,13 +33,9 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldReturnFinalityCheckpointsInfo() throws Exception {
     final GetStateFinalityCheckpoints handler = new GetStateFinalityCheckpoints(chainDataProvider);
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState();
     final StateAndMetaData stateAndMetaData =
-        new StateAndMetaData(
-            dataStructureUtil.randomBeaconState(),
-            spec.getGenesisSpec().getMilestone(),
-            false,
-            false,
-            true);
+        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, false, true);
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
@@ -49,23 +45,14 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
 
     String expected =
         String.format(
-            "{\n"
-                + "  \"data\": {\n"
-                + "    \"previous_justified\": {\n"
-                + "      \"epoch\": \"1\",\n"
-                + "      \"root\": \"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"\n"
-                + "    },\n"
-                + "    \"current_justified\": {\n"
-                + "      \"epoch\": \"1\",\n"
-                + "      \"root\": \"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"\n"
-                + "    },\n"
-                + "    \"finalized\": {\n"
-                + "      \"epoch\": \"1\",\n"
-                + "      \"root\": \"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"\n"
-                + "    }\n"
-                + "  }\n"
-                + "}",
-            stateAndMetaData.getData().hashTreeRoot().toHexString());
+            "{\"previous_justified\":{\"epoch\":\"%s\",\"root\":\"%s\"},\"current_justified\":{\"epoch\":\"%s\","
+                + "\"root\":\"%s\"},\"finalized\":{\"epoch\":\"%s\",\"root\":\"%s\"}}",
+            beaconState.getPreviousJustifiedCheckpoint().getEpoch(),
+            beaconState.getPreviousJustifiedCheckpoint().getRoot(),
+            beaconState.getCurrentJustifiedCheckpoint().getEpoch(),
+            beaconState.getCurrentJustifiedCheckpoint().getRoot(),
+            beaconState.getFinalizedCheckpoint().getEpoch(),
+            beaconState.getFinalizedCheckpoint().getRoot());
     AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -25,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -36,20 +36,14 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
-public class GetStateFinalityCheckpoints extends MigratingEndpointAdapter {
+public class GetStateFinalityCheckpoints extends AbstractGetSimpleDataFromState {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/finality_checkpoints";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
-  private static final ParameterMetadata<String> PARAMETER_STATE_ID =
-      new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
 
   private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(StateAndMetaData.class)
@@ -67,8 +61,6 @@ public class GetStateFinalityCheckpoints extends MigratingEndpointAdapter {
               stateAndMetaData -> stateAndMetaData.getData().getFinalizedCheckpoint())
           .build();
 
-  private final ChainDataProvider chainDataProvider;
-
   public GetStateFinalityCheckpoints(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
   }
@@ -84,8 +76,8 @@ public class GetStateFinalityCheckpoints extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
-            .build());
-    this.chainDataProvider = chainDataProvider;
+            .build(),
+        chainDataProvider);
   }
 
   @OpenApi(
@@ -107,11 +99,5 @@ public class GetStateFinalityCheckpoints extends MigratingEndpointAdapter {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     adapt(ctx);
-  }
-
-  @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    // TODO use new handle method once merged
-    // handleStateByIdRequest(request, chainDataProvider);
   }
 }
