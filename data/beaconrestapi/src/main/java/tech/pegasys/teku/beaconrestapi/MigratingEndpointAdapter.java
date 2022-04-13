@@ -13,19 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import java.util.Optional;
-import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
 public abstract class MigratingEndpointAdapter extends RestApiEndpoint implements Handler {
 
@@ -41,19 +34,5 @@ public abstract class MigratingEndpointAdapter extends RestApiEndpoint implement
   protected void adapt(final Context ctx) throws Exception {
     final RestApiRequest request = new RestApiRequest(ctx, getMetadata());
     handleRequest(request);
-  }
-
-  protected void handleStateByIdRequest(
-      final RestApiRequest request, final ChainDataProvider chainDataProvider) {
-    final SafeFuture<Optional<StateAndMetaData>> future =
-        chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
-    request.respondAsync(
-        future.thenApply(
-            maybeStateAndMetadata -> {
-              if (maybeStateAndMetadata.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-              return AsyncApiResponse.respondOk(maybeStateAndMetadata.get());
-            }));
   }
 }

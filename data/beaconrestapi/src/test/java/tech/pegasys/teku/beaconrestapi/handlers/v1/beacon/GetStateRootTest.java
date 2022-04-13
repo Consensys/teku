@@ -19,7 +19,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -55,22 +54,6 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
             "{\"data\":{\"root\":\"%s\"}}",
             stateAndMetaData.getData().hashTreeRoot().toHexString());
     AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
-    verify(context, never()).status(any());
-  }
-
-  @Test
-  void shouldReturnNotFound() throws JsonProcessingException {
-    final GetStateRoot handler = new GetStateRoot(chainDataProvider);
-
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
-
-    handler.handleRequest(request);
-
-    AssertionsForClassTypes.assertThat(getResultString())
-        .isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context, never()).status(any());
   }
 }

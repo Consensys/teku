@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -39,17 +38,14 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
-public class GetStateRoot extends MigratingEndpointAdapter {
+public class GetStateRoot extends AbstractGetSimpleDataFromState {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/root";
   public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
-  private final ChainDataProvider chainDataProvider;
 
   private static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
       SerializableTypeDefinition.object(Bytes32.class)
@@ -78,8 +74,8 @@ public class GetStateRoot extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE)
-            .build());
-    this.chainDataProvider = chainDataProvider;
+            .build(),
+        chainDataProvider);
   }
 
   @OpenApi(
@@ -101,10 +97,5 @@ public class GetStateRoot extends MigratingEndpointAdapter {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     adapt(ctx);
-  }
-
-  @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    handleStateByIdRequest(request, chainDataProvider);
   }
 }
