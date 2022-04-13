@@ -60,7 +60,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public class ForkChoice {
+public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -88,6 +88,7 @@ public class ForkChoice {
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
+    forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
 
   /**
@@ -108,6 +109,26 @@ public class ForkChoice {
         forkChoiceNotifier,
         transitionBlockValidator,
         false);
+  }
+
+  @Override
+  public void onForkChoiceUpdatedResult(
+      final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
+    final UInt64 latestFinalizedBlockSlot =
+        recentChainData.getStore().getLatestFinalizedBlockSlot();
+    forkChoiceUpdatedResultNotification
+        .getForkChoiceUpdatedResult()
+        .thenAccept(
+            maybeForkChoiceUpdatedResult ->
+                maybeForkChoiceUpdatedResult.ifPresent(
+                    forkChoiceUpdatedResult ->
+                        onExecutionPayloadResult(
+                            forkChoiceUpdatedResultNotification
+                                .getForkChoiceState()
+                                .getHeadBlockRoot(),
+                            forkChoiceUpdatedResult.getPayloadStatus(),
+                            latestFinalizedBlockSlot)))
+        .reportExceptions();
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -450,19 +471,9 @@ public class ForkChoice {
             .getForkChoiceState(
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
-    UInt64 latestFinalizedBlockSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
 
-    forkChoiceNotifier
-        .onForkChoiceUpdated(forkChoiceState)
-        .thenAccept(
-            maybeForkChoiceUpdatedResult ->
-                maybeForkChoiceUpdatedResult.ifPresent(
-                    forkChoiceUpdatedResult ->
-                        onExecutionPayloadResult(
-                            forkChoiceState.getHeadBlockRoot(),
-                            forkChoiceUpdatedResult.getPayloadStatus(),
-                            latestFinalizedBlockSlot)))
-        .reportExceptions();
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
         .orElse(true)) {

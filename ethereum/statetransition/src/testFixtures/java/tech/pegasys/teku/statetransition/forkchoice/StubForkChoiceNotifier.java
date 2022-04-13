@@ -18,20 +18,44 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 
 public class StubForkChoiceNotifier implements ForkChoiceNotifier {
+
+  private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
+      Subscribers.create(true);
+  private SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResultNotification =
+      SafeFuture.completedFuture(Optional.empty());
+
+  public void setForkChoiceUpdatedResult(
+      final Optional<ForkChoiceUpdatedResult> forkChoiceUpdatedResult) {
+    forkChoiceUpdatedResultNotification = SafeFuture.completedFuture(forkChoiceUpdatedResult);
+  }
+
+  @Override
+  public long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+    return subscribers.subscribe(subscriber);
+  }
+
+  @Override
+  public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
+    return subscribers.unsubscribe(subscriberId);
+  }
 
   @Override
   public void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers) {}
 
   @Override
-  public SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
-      ForkChoiceState forkChoiceState) {
-    return SafeFuture.completedFuture(Optional.empty());
+  public void onForkChoiceUpdated(ForkChoiceState forkChoiceState) {
+    subscribers.deliver(
+        ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
+        new ForkChoiceUpdatedResultNotification(
+            forkChoiceState, forkChoiceUpdatedResultNotification));
   }
 
   @Override
