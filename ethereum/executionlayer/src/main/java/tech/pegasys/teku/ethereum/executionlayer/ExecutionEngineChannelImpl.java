@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
@@ -56,7 +57,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private final ExecutionEngineClient executionEngineClient;
   private final Spec spec;
 
-  public static ExecutionEngineChannelImpl create(
+  public static ExecutionEngineChannel create(
       final String eeEndpoint,
       final Spec spec,
       final TimeProvider timeProvider,
@@ -65,6 +66,9 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
+    if (eeEndpoint.equalsIgnoreCase(MOCK_ENDPOINT_IDENTIFIER)) {
+      return new ExecutionEngineChannelMock(spec, timeProvider, true);
+    }
     return new ExecutionEngineChannelImpl(
         createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile, beaconDataDirectory),
         spec);

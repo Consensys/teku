@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
+  String MOCK_ENDPOINT_IDENTIFIER = "mock";
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
         @Override

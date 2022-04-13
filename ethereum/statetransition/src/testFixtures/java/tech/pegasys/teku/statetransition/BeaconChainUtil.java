@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -250,7 +250,9 @@ public class BeaconChainUtil {
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
     final BlockImportResult importResult =
-        forkChoice.onBlock(block, Optional.empty(), new StubExecutionEngineChannel(spec)).join();
+        forkChoice
+            .onBlock(block, Optional.empty(), new ExecutionEngineChannelMock(spec, false))
+            .join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "
