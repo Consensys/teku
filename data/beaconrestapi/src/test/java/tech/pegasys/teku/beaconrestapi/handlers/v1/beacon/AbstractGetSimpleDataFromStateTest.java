@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
@@ -75,13 +74,14 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTes
 
   @Test
   public void shouldThrowBadRequest() throws JsonProcessingException {
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
+    when(chainDataProvider.getBeaconStateAndMetadata(eq("invalid")))
         .thenThrow(new BadRequestException("invalid state"));
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "invalid"));
     final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
 
-    handler.handleRequest(request);
-    verify(context).status(eq(SC_BAD_REQUEST));
-    verify(context).result(contains("\"Bad Request - check state_id is correct\""));
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("invalid state");
   }
 
   static class TestHandler extends AbstractGetSimpleDataFromState {
