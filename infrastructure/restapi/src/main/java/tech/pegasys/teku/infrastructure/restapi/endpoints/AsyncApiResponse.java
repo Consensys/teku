@@ -59,6 +59,6 @@ public class AsyncApiResponse {
   }
 
   public static AsyncApiResponse respondNotFound() {
-    return new AsyncApiResponse(SC_NOT_FOUND, "Not found");
+    return new AsyncApiResponse(SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Not found"));
   }
 }
