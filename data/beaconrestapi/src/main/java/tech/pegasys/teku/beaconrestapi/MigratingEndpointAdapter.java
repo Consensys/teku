@@ -48,7 +48,7 @@ public abstract class MigratingEndpointAdapter extends RestApiEndpoint implement
     final SafeFuture<Optional<StateAndMetaData>> future =
         chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
     request.respondAsync(
-        future.thenApplyChecked(
+        future.thenApply(
             maybeStateAndMetadata -> {
               if (maybeStateAndMetadata.isEmpty()) {
                 return AsyncApiResponse.respondNotFound();
