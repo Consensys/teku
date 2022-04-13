@@ -46,6 +46,6 @@ class CoreTypesTest {
     final Map<String, Object> result =
         JsonTestUtil.parse(serialize(value, CoreTypes.HTTP_ERROR_RESPONSE_TYPE));
 
-    assertThat(result).containsOnly(entry("status", 442), entry("message", "No good"));
+    assertThat(result).containsOnly(entry("code", 442), entry("message", "No good"));
   }
 }

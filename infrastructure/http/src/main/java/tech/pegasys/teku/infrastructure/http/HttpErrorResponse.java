@@ -19,15 +19,15 @@ import java.util.Objects;
 
 public class HttpErrorResponse {
 
-  private final Integer status;
+  private final int code;
   private final String message;
 
   public static HttpErrorResponse badRequest(String message) {
     return new HttpErrorResponse(SC_BAD_REQUEST, message);
   }
 
-  public HttpErrorResponse(final Integer status, final String message) {
-    this.status = status;
+  public HttpErrorResponse(final int code, final String message) {
+    this.code = code;
     this.message = message;
   }
 
@@ -35,8 +35,8 @@ public class HttpErrorResponse {
     return message;
   }
 
-  public Integer getStatus() {
-    return status;
+  public int getCode() {
+    return code;
   }
 
   @Override
@@ -48,11 +48,11 @@ public class HttpErrorResponse {
       return false;
     }
     final HttpErrorResponse that = (HttpErrorResponse) o;
-    return Objects.equals(status, that.status) && Objects.equals(message, that.message);
+    return code == that.code && Objects.equals(message, that.message);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, message);
+    return Objects.hash(code, message);
   }
 }

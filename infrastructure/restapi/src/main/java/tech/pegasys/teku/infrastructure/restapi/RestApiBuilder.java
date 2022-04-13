@@ -171,7 +171,7 @@ public class RestApiBuilder {
           try {
             final HttpErrorResponse response =
                 ((RestApiExceptionHandler) handler).handleException(exception, ctx.url());
-            ctx.status(response.getStatus());
+            ctx.status(response.getCode());
             ctx.json(JsonUtil.serialize(response, HTTP_ERROR_RESPONSE_TYPE));
           } catch (final Throwable t) {
             ctx.status(SC_INTERNAL_SERVER_ERROR);
