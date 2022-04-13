@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -52,7 +51,7 @@ public abstract class MigratingEndpointAdapter extends RestApiEndpoint implement
         future.thenApplyChecked(
             maybeStateAndMetadata -> {
               if (maybeStateAndMetadata.isEmpty()) {
-                return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Not found");
+                return AsyncApiResponse.respondNotFound();
               }
               return AsyncApiResponse.respondOk(maybeStateAndMetadata.get());
             }));

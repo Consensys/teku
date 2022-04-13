@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.util.Optional;
@@ -55,5 +56,9 @@ public class AsyncApiResponse {
 
   public static AsyncApiResponse respondOk(final Object responseBody) {
     return new AsyncApiResponse(SC_OK, responseBody);
+  }
+
+  public static AsyncApiResponse respondNotFound() {
+    return new AsyncApiResponse(SC_NOT_FOUND, "Not found");
   }
 }
