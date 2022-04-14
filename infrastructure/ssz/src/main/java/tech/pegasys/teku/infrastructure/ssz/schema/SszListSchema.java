@@ -45,4 +45,6 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
       return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
     }
   }
+
+  SszListT nCopies(ElementDataT value, int length);
 }

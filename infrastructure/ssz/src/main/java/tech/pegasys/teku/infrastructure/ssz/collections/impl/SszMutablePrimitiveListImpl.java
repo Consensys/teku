@@ -17,6 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszComposite;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
@@ -74,6 +75,19 @@ public class SszMutablePrimitiveListImpl<
     if (index == size()) {
       cachedSize++;
     }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void setAll(final SszElementT value, final int startIndex, final int endIndex) {
+    if (startIndex == 0 && endIndex >= size()) {
+      // We're replacing everything so just build a new backing tree rather that iterating
+      setImmutableBackingData(
+          (AbstractSszComposite<SszElementT>) getSchema().nCopies(value, endIndex));
+      cachedSize = endIndex;
+      return;
+    }
+    SszMutablePrimitiveList.super.setAll(value, startIndex, endIndex);
   }
 
   @Override

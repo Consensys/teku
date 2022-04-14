@@ -17,6 +17,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
@@ -35,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -73,6 +77,43 @@ public abstract class AbstractSszListSchema<
 
   protected TreeNode createTree(TreeNode dataNode, int length) {
     return BranchNode.create(dataNode, toLengthNode(length));
+  }
+
+  @Override
+  public SszListT nCopies(final ElementDataT value, final int length) {
+    final int elementsPerChunk = getElementsPerChunk();
+    final TreeNode fullLeafNode;
+    TreeNode partialNode = null;
+    if (elementsPerChunk == 1) {
+      fullLeafNode = value.getBackingNode();
+    } else {
+      final Bytes singleItemData = ((LeafDataNode) value.getBackingNode()).getData();
+      final int partialNodeItemCount = length % elementsPerChunk;
+      if (singleItemData.isZero()) {
+        fullLeafNode = LeafNode.ZERO_LEAVES[singleItemData.size() * elementsPerChunk];
+        if (partialNodeItemCount != 0) {
+          partialNode = LeafNode.ZERO_LEAVES[singleItemData.size() * partialNodeItemCount];
+        }
+      } else {
+        fullLeafNode =
+            LeafNode.create(
+                Bytes.concatenate(Collections.nCopies(elementsPerChunk, singleItemData)));
+        if (partialNodeItemCount != 0) {
+          partialNode =
+              LeafNode.create(
+                  Bytes.concatenate(Collections.nCopies(partialNodeItemCount, singleItemData)));
+        }
+      }
+    }
+
+    List<TreeNode> leafNodes = Collections.nCopies(length / elementsPerChunk, fullLeafNode);
+    if (partialNode != null) {
+      leafNodes = new ArrayList<>(leafNodes);
+      leafNodes.add(partialNode);
+    }
+
+    final TreeNode dataTree = TreeUtil.createTree(leafNodes, treeDepth());
+    return createFromBackingNode(createTree(dataTree, length));
   }
 
   @Override

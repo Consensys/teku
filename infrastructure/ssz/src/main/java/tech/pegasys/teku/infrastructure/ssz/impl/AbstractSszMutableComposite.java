@@ -148,7 +148,11 @@ public abstract class AbstractSszMutableComposite<
   @Override
   @SuppressWarnings("unchecked")
   public void clear() {
-    backingImmutableData = (AbstractSszComposite<SszChildT>) getSchema().getDefault();
+    setImmutableBackingData((AbstractSszComposite<SszChildT>) getSchema().getDefault());
+  }
+
+  protected void setImmutableBackingData(final AbstractSszComposite<SszChildT> data) {
+    backingImmutableData = data;
     childrenChanges.clear();
     sizeCache = backingImmutableData.size();
     invalidate();
