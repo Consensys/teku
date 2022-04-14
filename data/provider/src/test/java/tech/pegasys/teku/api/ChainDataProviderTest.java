@@ -34,7 +34,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
@@ -330,42 +329,6 @@ public class ChainDataProviderTest {
                     Optional.of(internalState.getSlot()))
                 .size())
         .isEqualTo(1);
-  }
-
-  @Test
-  public void getStateFinalityCheckpoints_shouldGetEmptyCheckpointsBeforeFinalized() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    assertThatSafeFuture(provider.getStateFinalityCheckpoints("genesis"))
-        .isCompletedWithOptionalContaining(
-            addMetaData(
-                new FinalityCheckpointsResponse(
-                    tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
-                    tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
-                    tech.pegasys.teku.api.schema.Checkpoint.EMPTY),
-                ZERO));
-  }
-
-  @Test
-  public void getStateFinalityCheckpoints_shouldGetCheckpointsAfterFinalized() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
-    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(UInt64.valueOf(42));
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        blockAndState.getState();
-    final FinalityCheckpointsResponse expected =
-        new FinalityCheckpointsResponse(
-            new tech.pegasys.teku.api.schema.Checkpoint(
-                internalState.getPreviousJustifiedCheckpoint()),
-            new tech.pegasys.teku.api.schema.Checkpoint(
-                internalState.getCurrentJustifiedCheckpoint()),
-            new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalizedCheckpoint()));
-
-    when(mockCombinedChainDataClient.getChainHead())
-        .thenReturn(Optional.of(tech.pegasys.teku.storage.client.ChainHead.create(blockAndState)));
-    assertThatSafeFuture(provider.getStateFinalityCheckpoints("head"))
-        .isCompletedWithOptionalContaining(addMetaData(expected, ZERO));
   }
 
   @Test
