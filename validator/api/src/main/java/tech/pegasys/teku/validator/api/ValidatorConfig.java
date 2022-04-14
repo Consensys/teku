@@ -23,11 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final int DEFAULT_REST_API_PORT = 5051;
   public static final String DEFAULT_BEACON_NODE_API_ENDPOINT =
@@ -435,9 +438,9 @@ public class ValidatorConfig {
 
     private void validateMevBoostAndBlindedBlocks() {
       if (proposerMevBoostEnabled && !blindedBlocksEnabled) {
-        final String errorMessage =
-            "Invalid configuration. '--Xvalidators-proposer-mev-boost-enabled' requires '--Xvalidators-proposer-blinded-blocks-enabled' to be enabled as well.";
-        throw new InvalidConfigurationException(errorMessage);
+        LOG.info(
+            "'--Xvalidators-proposer-mev-boost-enabled' requires '--Xvalidators-proposer-blinded-blocks-enabled', enabling it");
+        blindedBlocksEnabled = true;
       }
     }
 

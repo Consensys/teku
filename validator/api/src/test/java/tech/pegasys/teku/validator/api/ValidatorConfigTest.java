@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -165,12 +163,6 @@ class ValidatorConfigTest {
             .build();
 
     verifyProposerConfigOrProposerDefaultFeeRecipientNotThrow(config);
-  }
-
-  @Test
-  public void shouldThrowIfMevBoostIsWithoutBlindedBeaconBlocks() {
-    assertThatThrownBy(() -> configBuilder.proposerMevBoostEnabled(true).build())
-        .isInstanceOf(InvalidConfigurationException.class);
   }
 
   void verifyProposerConfigOrProposerDefaultFeeRecipientNotThrow(final ValidatorConfig config) {
