@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
+
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -56,6 +58,16 @@ public class ValidatorProposerOptions {
   private boolean proposerMevBoostEnabled =
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
 
+  @Option(
+      names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Use blinded blocks when in block production duties",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -63,6 +75,7 @@ public class ValidatorProposerOptions {
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
-                .proposerMevBoostEnabled(proposerMevBoostEnabled));
+                .proposerMevBoostEnabled(proposerMevBoostEnabled)
+                .blindedBeaconBlocksEnabled(blindedBlocksEnabled));
   }
 }
