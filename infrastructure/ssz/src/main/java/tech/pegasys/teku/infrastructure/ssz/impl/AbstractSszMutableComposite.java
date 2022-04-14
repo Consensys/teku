@@ -52,8 +52,8 @@ public abstract class AbstractSszMutableComposite<
 
   protected AbstractSszComposite<SszChildT> backingImmutableData;
   private Consumer<SszMutableData> invalidator;
-  private final Int2ObjectSortedMap<ChildChangeRecord<SszChildT, SszMutableChildT>> childrenChanges =
-      new Int2ObjectRBTreeMap<>();
+  private final Int2ObjectSortedMap<ChildChangeRecord<SszChildT, SszMutableChildT>>
+      childrenChanges = new Int2ObjectRBTreeMap<>();
   private Integer sizeCache;
   private final SszCompositeSchema<?> cachedSchema;
 
