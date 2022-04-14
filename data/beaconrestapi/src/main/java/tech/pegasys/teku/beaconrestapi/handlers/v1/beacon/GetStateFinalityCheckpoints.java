@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import io.javalin.http.Context;
@@ -81,7 +82,7 @@ public class GetStateFinalityCheckpoints extends AbstractGetSimpleDataFromState 
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .response(SC_NOT_FOUND, "Not found", BAD_REQUEST_TYPE)
+            .response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE)
             .build(),
         chainDataProvider);
   }
