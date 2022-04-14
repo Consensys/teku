@@ -219,7 +219,11 @@ public class BlockOperationSelectorFactory {
 
       final BeaconBlock block = bodyUnblinder.getSignedBlindedBeaconBlock().getMessage();
 
-      if (block.getBody().getOptionalExecutionPayloadHeader().orElseThrow().isHeaderOfDefaultPayload()) {
+      if (block
+          .getBody()
+          .getOptionalExecutionPayloadHeader()
+          .orElseThrow()
+          .isHeaderOfDefaultPayload()) {
         // Terminal block not reached, provide default payload
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
