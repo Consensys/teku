@@ -37,11 +37,11 @@ public class BeaconStateInvariants {
   static final SszSchema<SszUInt64> SLOT_SCHEMA = SszPrimitiveSchemas.UINT64_SCHEMA;
 
   // Fields
-  static final SszField GENESIS_TIME_FIELD =
+  public static final SszField GENESIS_TIME_FIELD =
       new SszField(0, BeaconStateFields.GENESIS_TIME, GENESIS_TIME_SCHEMA);
-  static final SszField GENESIS_VALIDATORS_ROOT_FIELD =
+  public static final SszField GENESIS_VALIDATORS_ROOT_FIELD =
       new SszField(1, BeaconStateFields.GENESIS_VALIDATORS_ROOT, GENESIS_VALIDATORS_ROOT_SCHEMA);
-  static final SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT, SLOT_SCHEMA);
+  public static final SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT, SLOT_SCHEMA);
 
   // Return list of invariant fields
   static List<SszField> getInvariantFields() {
