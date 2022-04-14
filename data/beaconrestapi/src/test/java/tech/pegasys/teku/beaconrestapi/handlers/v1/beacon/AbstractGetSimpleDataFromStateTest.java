@@ -20,10 +20,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -94,7 +92,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTes
               .description("TEST")
               .pathParam(PARAMETER_STATE_ID)
               .response(SC_OK, "Request successful", RESPONSE_TYPE)
-              .response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE)
+              .withNotFoundResponse()
               .build(),
           chainDataProvider);
     }
