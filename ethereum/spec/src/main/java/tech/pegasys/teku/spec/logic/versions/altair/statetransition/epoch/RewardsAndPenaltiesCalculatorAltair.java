@@ -21,6 +21,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
@@ -96,10 +97,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
       final RewardAndPenalty validatorDeltas = deltas.getDelta(i);
 
       final UInt64 baseReward =
-          validator
-              .getCurrentEpochEffectiveBalance()
-              .dividedBy(effectiveBalanceIncrement)
-              .times(baseRewardPerIncrement);
+          getBaseReward(effectiveBalanceIncrement, baseRewardPerIncrement, validator);
       if (isUnslashedPrevEpochParticipatingIndex(validator, flagIndex)) {
         if (!isInactivityLeak()) {
           final UInt64 rewardNumerator =
@@ -111,6 +109,24 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
         validatorDeltas.penalize(baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR));
       }
     }
+  }
+
+  /**
+   * Calculate the base reward for the validator.
+   *
+   * <p>This is equivalent to {@link BeaconStateAccessorsAltair#getBaseReward(BeaconState, int)} but
+   * uses the ValidatorStatus to get the effective balance and uses the precalculated
+   * baseRewardPerIncrement. This is significantly faster than having to go back to the state for
+   * the data.
+   */
+  private UInt64 getBaseReward(
+      final UInt64 effectiveBalanceIncrement,
+      final UInt64 baseRewardPerIncrement,
+      final ValidatorStatus validator) {
+    return validator
+        .getCurrentEpochEffectiveBalance()
+        .dividedBy(effectiveBalanceIncrement)
+        .times(baseRewardPerIncrement);
   }
 
   /**
