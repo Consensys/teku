@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.api;
 
-import tech.pegasys.teku.api.response.v1.node.Syncing;
 import tech.pegasys.teku.beacon.sync.SyncService;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncDataProvider {
 
@@ -25,12 +24,6 @@ public class SyncDataProvider {
 
   public SyncDataProvider(SyncService syncService) {
     this.syncService = syncService;
-  }
-
-  public Syncing getSyncing() {
-    SyncingStatus syncStatus = syncService.getSyncStatus();
-    return new Syncing(
-        syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus), syncStatus.isSyncing());
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -52,11 +45,7 @@ public class SyncDataProvider {
     return !syncService.getCurrentSyncState().isInSync();
   }
 
-  private UInt64 getSlotsBehind(final SyncingStatus syncingStatus) {
-    if (syncingStatus.isSyncing() && syncingStatus.getHighestSlot().isPresent()) {
-      final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
-      return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
-    }
-    return UInt64.ZERO;
+  public SyncState getCurrentSyncState() {
+    return syncService.getCurrentSyncState();
   }
 }
