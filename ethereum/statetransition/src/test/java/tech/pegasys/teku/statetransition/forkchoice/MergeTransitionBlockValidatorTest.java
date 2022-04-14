@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
@@ -45,8 +45,8 @@ class MergeTransitionBlockValidatorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ExecutionEngineChannelMock executionEngine =
-      new ExecutionEngineChannelMock(spec, false);
+  private final ExecutionEngineChannelStub executionEngine =
+      new ExecutionEngineChannelStub(spec, false);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   @BeforeAll

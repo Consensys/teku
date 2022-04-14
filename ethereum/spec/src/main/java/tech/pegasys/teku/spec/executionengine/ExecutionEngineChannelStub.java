@@ -44,39 +44,40 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
+public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final LRUCache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
-  private Set<Bytes32> requestedPowBlocks = new HashSet<>();
+  private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
-  private ExecutionPayload lastPayloadToBeUnblinded;
 
   // transition emulation
   private final boolean transitionEmulationEnabled;
   private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
-  private static final Bytes32 TERMINAL_BLOCK_HASH = Bytes32.fromHexStringLenient("0x01");
+  private boolean bellatrixActivationDetected = false;
+  private Bytes32 terminalBlockHash;
   private PowBlock terminalBlockParent;
   private PowBlock terminalBlock;
   private boolean terminalBlockSent;
   private UInt64 transitionTime;
 
-  public ExecutionEngineChannelMock(
+  // block and payload tracking
+  private Optional<ExecutionPayload> lastMevBoostPayloadToBeUnblinded = Optional.empty();
+  private Optional<PowBlock> lastValidBlock = Optional.empty();
+
+  public ExecutionEngineChannelStub(
       final Spec spec, final TimeProvider timeProvider, final boolean enableTransitionEmulation) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.transitionEmulationEnabled = enableTransitionEmulation;
-    if (enableTransitionEmulation) {
-      prepareTransitionBlocks();
-    }
   }
 
-  public ExecutionEngineChannelMock(final Spec spec, final boolean enableTransitionEmulation) {
+  public ExecutionEngineChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
     this(spec, new SystemTimeProvider(), enableTransitionEmulation);
   }
 
@@ -90,11 +91,22 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
       requestedPowBlocks.add(blockHash);
       return SafeFuture.completedFuture(Optional.ofNullable(knownBlocks.get(blockHash)));
     }
+
+    checkBellatrixActivation();
+
     if (blockHash.equals(TERMINAL_BLOCK_PARENT_HASH)) {
       return SafeFuture.completedFuture(Optional.of(terminalBlockParent));
     }
+    if (blockHash.equals(terminalBlockHash)) {
+      // TBH flow
+      LOG.info("TBH: sending terminal block hash " + terminalBlockHash);
+      terminalBlockSent = true;
+      return SafeFuture.completedFuture(Optional.of(terminalBlock));
+    }
+
     return SafeFuture.failedFuture(
-        new UnsupportedOperationException("getPowBlock supported for terminalBlockParent only"));
+        new UnsupportedOperationException(
+            "getPowBlock supported for terminalBlockParent or terminalBlock only"));
   }
 
   @Override
@@ -103,11 +115,15 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
       return SafeFuture.failedFuture(
           new UnsupportedOperationException("getPowChainHead not supported"));
     }
+
+    checkBellatrixActivation();
+
     if (terminalBlockSent) {
-      return SafeFuture.failedFuture(
-          new UnsupportedOperationException("getPowChainHead not supported after transition"));
+      return SafeFuture.completedFuture(lastValidBlock.orElse(terminalBlock));
     }
     if (timeProvider.getTimeInSeconds().isGreaterThanOrEqualTo(transitionTime)) {
+      // TTD flow
+      LOG.info("TTD: sending terminal block hash " + terminalBlockHash);
       terminalBlockSent = true;
       return SafeFuture.completedFuture(terminalBlock);
     }
@@ -117,6 +133,12 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
   @Override
   public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes) {
+    if (!terminalBlockSent) {
+      LOG.info(
+          "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");
+      terminalBlockSent = true;
+    }
+
     return SafeFuture.completedFuture(
         new ForkChoiceUpdatedResult(
             PayloadStatus.VALID,
@@ -134,7 +156,13 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
-    Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
+    if (!terminalBlockSent) {
+      LOG.info(
+          "getPayload received before terminalBlock has been sent. Assuming transition already happened");
+      terminalBlockSent = true;
+    }
+
+    final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         spec.atSlot(slot).getSchemaDefinitions().toVersionBellatrix();
 
     if (schemaDefinitionsBellatrix.isEmpty()) {
@@ -143,16 +171,16 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
               "getPayload not supported for non-Bellatrix milestones"));
     }
 
-    Optional<HeadAndAttributes> maybeHeadAndAttrs =
+    final Optional<HeadAndAttributes> maybeHeadAndAttrs =
         payloadIdToHeadAndAttrsCache.getCached(payloadId);
     if (maybeHeadAndAttrs.isEmpty()) {
       return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
     }
 
-    HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
-    PayloadAttributes payloadAttributes = headAndAttrs.attributes;
+    final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
+    final PayloadAttributes payloadAttributes = headAndAttrs.attributes;
 
-    return SafeFuture.completedFuture(
+    final ExecutionPayload executionPayload =
         schemaDefinitionsBellatrix
             .get()
             .getExecutionPayloadSchema()
@@ -170,7 +198,18 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
                 Bytes.EMPTY,
                 UInt256.ONE,
                 Bytes32.random(),
-                List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0"))));
+                List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")));
+
+    // we assume all blocks are produced locally
+    lastValidBlock =
+        Optional.of(
+            new PowBlock(
+                executionPayload.getBlockHash(),
+                executionPayload.getParentHash(),
+                UInt256.ZERO,
+                payloadAttributes.getTimestamp()));
+
+    return SafeFuture.completedFuture(executionPayload);
   }
 
   @Override
@@ -189,7 +228,7 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
     return getPayload(payloadId, slot)
         .thenApply(
             executionPayload -> {
-              lastPayloadToBeUnblinded = executionPayload;
+              lastMevBoostPayloadToBeUnblinded = Optional.of(executionPayload);
               return spec.atSlot(slot)
                   .getSchemaDefinitions()
                   .toVersionBellatrix()
@@ -213,8 +252,8 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
         signedBlindedBeaconBlock.getBeaconBlock().orElseThrow().getBody().isBlinded(),
         "proposeBlindedBlock requires a signed blinded beacon block");
 
-    checkNotNull(
-        lastPayloadToBeUnblinded,
+    checkState(
+        lastMevBoostPayloadToBeUnblinded.isPresent(),
         "proposeBlindedBlock requires a previous call to getPayloadHeader");
 
     final ExecutionPayloadHeader executionPayloadHeader =
@@ -226,10 +265,12 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
             .orElseThrow();
 
     checkState(
-        executionPayloadHeader.hashTreeRoot().equals(lastPayloadToBeUnblinded.hashTreeRoot()),
+        executionPayloadHeader
+            .hashTreeRoot()
+            .equals(lastMevBoostPayloadToBeUnblinded.get().hashTreeRoot()),
         "provided signed blinded block contains an execution payload header not matching the previously retrieved execution payload via getPayloadHeader");
 
-    return SafeFuture.completedFuture(lastPayloadToBeUnblinded);
+    return SafeFuture.completedFuture(lastMevBoostPayloadToBeUnblinded.get());
   }
 
   public PayloadStatus getPayloadStatus() {
@@ -254,37 +295,46 @@ public class ExecutionEngineChannelMock implements ExecutionEngineChannel {
     }
   }
 
-  private void prepareTransitionBlocks() {
+  private void checkBellatrixActivation() {
+    if (!bellatrixActivationDetected) {
+      LOG.info("Bellatrix activation detected");
+      bellatrixActivationDetected = true;
+      prepareTransitionBlocks(timeProvider.getTimeInSeconds());
+    }
+  }
+
+  private void prepareTransitionBlocks(final UInt64 bellatrixActivationTime) {
     final SpecVersion specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
     checkNotNull(specVersion, "Bellatrix must be scheduled to for transition emulation");
     final SpecConfigBellatrix specConfigBellatrix =
         specVersion.getConfig().toVersionBellatrix().orElseThrow();
 
-    final UInt64 bellatrixActivationSlot =
-        spec.computeStartSlotAtEpoch(specConfigBellatrix.getBellatrixForkEpoch());
+    if (specConfigBellatrix.getTerminalBlockHash().isZero()) {
+      // TTD emulation
+      LOG.info("Preparing transition via TTD");
 
-    // assumes genesis happen immediately at min genesis time reached
-    final UInt64 bellatrixActivationTime =
-        spec.getSlotStartTime(
-            bellatrixActivationSlot, spec.getGenesisSpecConfig().getMinGenesisTime());
+      transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
 
-    transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
+      terminalBlockHash = Bytes32.fromHexStringLenient("0x01");
+
+    } else {
+      // TBH emulation
+      LOG.info("Preparing transition via TBH");
+
+      // transition time is not relevant, just wait for the getPowBlock asking for the transition
+      // block
+      transitionTime = bellatrixActivationTime;
+
+      terminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
+    }
 
     terminalBlockParent =
         new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt256.ZERO, UInt64.ZERO);
     terminalBlock =
         new PowBlock(
-            TERMINAL_BLOCK_HASH,
+            terminalBlockHash,
             TERMINAL_BLOCK_PARENT_HASH,
             specConfigBellatrix.getTerminalTotalDifficulty(),
             transitionTime);
-
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-
-    // if transition time is passed, we assume terminalBlock already sent
-    terminalBlockSent = currentTime.isGreaterThanOrEqualTo(transitionTime);
-    if (terminalBlockSent) {
-      LOG.info("transition assumed to be already happened.");
-    }
   }
 }

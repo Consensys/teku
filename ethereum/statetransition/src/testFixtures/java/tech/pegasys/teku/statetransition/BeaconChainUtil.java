@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -251,7 +251,7 @@ public class BeaconChainUtil {
     setSlot(slot);
     final BlockImportResult importResult =
         forkChoice
-            .onBlock(block, Optional.empty(), new ExecutionEngineChannelMock(spec, false))
+            .onBlock(block, Optional.empty(), new ExecutionEngineChannelStub(spec, false))
             .join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(

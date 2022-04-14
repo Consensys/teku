@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -280,7 +280,7 @@ public class ForkChoiceIntegrationTest {
 
   private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
-        fc.onBlock(block, Optional.empty(), new ExecutionEngineChannelMock(SPEC, false)).join();
+        fc.onBlock(block, Optional.empty(), new ExecutionEngineChannelStub(SPEC, false)).join();
     return blockImportResult.isSuccessful();
   }
 

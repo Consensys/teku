@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -107,8 +107,8 @@ public class BlockManagerTest {
           forkChoiceNotifier,
           transitionBlockValidator);
 
-  private final ExecutionEngineChannelMock executionEngine =
-      new ExecutionEngineChannelMock(spec, false);
+  private final ExecutionEngineChannelStub executionEngine =
+      new ExecutionEngineChannelStub(spec, false);
   private final BlockValidator blockValidator = mock(BlockValidator.class);
 
   private final BlockImporter blockImporter =

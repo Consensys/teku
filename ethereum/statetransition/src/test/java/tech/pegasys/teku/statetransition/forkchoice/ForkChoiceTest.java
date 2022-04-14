@@ -58,7 +58,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelMock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
@@ -95,8 +95,8 @@ class ForkChoiceTest {
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
-  private final ExecutionEngineChannelMock executionEngine =
-      new ExecutionEngineChannelMock(spec, false);
+  private final ExecutionEngineChannelStub executionEngine =
+      new ExecutionEngineChannelStub(spec, false);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
   private ForkChoice forkChoice =
