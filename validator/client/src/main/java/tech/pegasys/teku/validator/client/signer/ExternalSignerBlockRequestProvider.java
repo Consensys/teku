@@ -19,16 +19,20 @@ import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 
 public class ExternalSignerBlockRequestProvider {
   private final Spec spec;
   private final SchemaObjectProvider schemaObjectProvider;
   private final BeaconBlock block;
+  private final BeaconBlockHeader blockHeader;
+
   private final SignType signType;
 
   public ExternalSignerBlockRequestProvider(final Spec spec, final BeaconBlock block) {
     this.spec = spec;
     this.block = block;
+    this.blockHeader = BeaconBlockHeader.fromBlock(block);
     schemaObjectProvider = new SchemaObjectProvider(spec);
     // backward compatible with phase 0
     if (spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.PHASE0)) {
@@ -49,6 +53,8 @@ public class ExternalSignerBlockRequestProvider {
       metadata.put(
           "beacon_block",
           new BlockRequestBody(spec.atSlot(block.getSlot()).getMilestone(), beaconBlock));
+
+      // TODO: beacon_block_header for >= Bellatrix
     }
 
     return metadata;

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 
 public class BlockRequestBody {
   private final SpecMilestone version;
@@ -24,8 +25,8 @@ public class BlockRequestBody {
 
   @JsonCreator
   public BlockRequestBody(
-      @JsonProperty("version") final SpecMilestone version,
-      @JsonProperty("block") final BeaconBlock beaconBlock) {
+          @JsonProperty("version") final SpecMilestone version,
+          @JsonProperty("block") final BeaconBlock beaconBlock, final tech.pegasys.teku.api.schema.BeaconBlockHeader) {
     this.version = version;
     this.beaconBlock = beaconBlock;
   }
@@ -38,5 +39,10 @@ public class BlockRequestBody {
   @JsonProperty("block")
   public BeaconBlock getBeaconBlock() {
     return beaconBlock;
+  }
+
+  @JsonProperty("block_header")
+  public BeaconBlockHeader getBeaconBlockHeader() {
+    return
   }
 }
