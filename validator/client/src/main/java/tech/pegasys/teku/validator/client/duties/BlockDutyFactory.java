@@ -24,20 +24,23 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final Spec spec;
+  private final boolean useBlindedBlock;
 
   public BlockDutyFactory(
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
+      final boolean useBlindedBlock,
       final Spec spec) {
     this.forkProvider = forkProvider;
-
+    this.useBlindedBlock = useBlindedBlock;
     this.validatorApiChannel = validatorApiChannel;
     this.spec = spec;
   }
 
   @Override
   public BlockProductionDuty createProductionDuty(final UInt64 slot, final Validator validator) {
-    return new BlockProductionDuty(validator, slot, forkProvider, validatorApiChannel, spec);
+    return new BlockProductionDuty(
+        validator, slot, forkProvider, validatorApiChannel, useBlindedBlock, spec);
   }
 
   @Override

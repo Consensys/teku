@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
@@ -29,6 +30,7 @@ public class GetSyncingTest extends AbstractBeaconHandlerTest {
   public void shouldGetSyncingStatusSyncing() throws Exception {
     GetSyncing handler = new GetSyncing(syncDataProvider);
     final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 7, 10));
 
     handler.handleRequest(request);
@@ -40,6 +42,7 @@ public class GetSyncingTest extends AbstractBeaconHandlerTest {
     GetSyncing handler = new GetSyncing(syncDataProvider);
     final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     handler.handleRequest(request);
     checkResponse("10", "0", false);
@@ -48,7 +51,7 @@ public class GetSyncingTest extends AbstractBeaconHandlerTest {
   private void checkResponse(String headSlot, String syncDistance, boolean isSyncing) {
     final String expectedResponse =
         String.format(
-            "{\"data\":{\"head_slot\":\"%s\",\"sync_distance\":\"%s\",\"is_syncing\":%s}}",
+            "{\"data\":{\"head_slot\":\"%s\",\"sync_distance\":\"%s\",\"is_syncing\":%s,\"is_optimistic\":false}}",
             headSlot, syncDistance, isSyncing);
 
     verify(context).result(args.capture());

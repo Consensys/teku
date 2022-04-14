@@ -16,12 +16,14 @@ package tech.pegasys.teku.api.response.v1.node;
 import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_UINT64;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Syncing {
   @JsonProperty("head_slot")
   @Schema(type = "string", pattern = PATTERN_UINT64, description = "Beacon node's head slot")
@@ -40,14 +42,26 @@ public class Syncing {
       description = "Set to true if the node is syncing, false if the node is synced.")
   public final boolean isSyncing;
 
+  @JsonProperty("is_optimistic")
+  @Schema(
+      type = "boolean",
+      description = "Set to true if the node is optimistically fetching blocks.")
+  public final Boolean isOptimistic;
+
+  public Syncing(final UInt64 headSlot, final UInt64 syncDistance, final boolean isSyncing) {
+    this(headSlot, syncDistance, isSyncing, false);
+  }
+
   @JsonCreator
   public Syncing(
       @JsonProperty("head_slot") final UInt64 headSlot,
       @JsonProperty("sync_distance") final UInt64 syncDistance,
-      @JsonProperty("is_syncing") final boolean isSyncing) {
+      @JsonProperty("is_syncing") final boolean isSyncing,
+      @JsonProperty("is_optimistic") final boolean isOptimistic) {
     this.headSlot = headSlot;
     this.syncDistance = syncDistance;
     this.isSyncing = isSyncing;
+    this.isOptimistic = isOptimistic;
   }
 
   @Override
@@ -61,12 +75,13 @@ public class Syncing {
     final Syncing syncing = (Syncing) o;
     return isSyncing == syncing.isSyncing
         && Objects.equals(headSlot, syncing.headSlot)
-        && Objects.equals(syncDistance, syncing.syncDistance);
+        && Objects.equals(syncDistance, syncing.syncDistance)
+        && Objects.equals(isOptimistic, syncing.isOptimistic);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headSlot, syncDistance, isSyncing);
+    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic);
   }
 
   @Override
@@ -75,6 +90,7 @@ public class Syncing {
         .add("headSlot", headSlot)
         .add("syncDistance", syncDistance)
         .add("isSyncing", isSyncing)
+        .add("isOptimistic", isOptimistic)
         .toString();
   }
 }

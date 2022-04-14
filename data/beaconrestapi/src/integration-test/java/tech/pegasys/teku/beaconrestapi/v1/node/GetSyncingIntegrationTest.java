@@ -22,6 +22,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.node.Syncing;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
@@ -33,6 +34,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
   public void shouldGetSyncStatusWhenSyncing() throws IOException {
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 15));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -46,6 +48,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
   public void shouldGetSyncStatusWhenNotSyncing() throws IOException {
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);

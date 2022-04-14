@@ -99,8 +99,6 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
     final boolean generateEarlyAttestations =
         config.getValidatorConfig().generateEarlyAttestations();
-    final boolean blindedBlocksEnabled =
-        config.getValidatorConfig().isBlindedBeaconBlocksApiEnabled();
     final BeaconNodeApi beaconNodeApi =
         config
             .getValidatorConfig()
@@ -112,8 +110,7 @@ public class ValidatorClientService extends Service {
                         asyncRunner,
                         endpoint,
                         config.getSpec(),
-                        generateEarlyAttestations,
-                        blindedBlocksEnabled))
+                        generateEarlyAttestations))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(
@@ -194,7 +191,11 @@ public class ValidatorClientService extends Service {
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
-        new BlockDutyFactory(forkProvider, validatorApiChannel, spec);
+        new BlockDutyFactory(
+            forkProvider,
+            validatorApiChannel,
+            config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
+            spec);
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
