@@ -309,10 +309,8 @@ class StoreTest extends AbstractStoreTest {
 
     final SafeFuture<Void> txResult2;
     if (withInterleavedTransaction) {
-      UInt64 time = store.getTimeSeconds().plus(UInt64.ONE);
       UInt64 timeMillis = store.getTimeMillis().plus(1300);
       StoreTransaction tx2 = store.startTransaction(updateChannel);
-      tx2.setTimeSeconds(time);
       tx2.setTimeMillis(timeMillis);
       txResult2 = tx2.commit();
     } else {
