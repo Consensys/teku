@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -43,17 +44,17 @@ public interface BeaconState extends SszContainer, ValidatorStats {
   BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState> getBeaconStateSchema();
 
   default UInt64 getGenesisTime() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME);
+    final int fieldIndex = BeaconStateInvariants.GENESIS_TIME_FIELD.getIndex();
     return ((SszUInt64) get(fieldIndex)).get();
   }
 
   default Bytes32 getGenesisValidatorsRoot() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_VALIDATORS_ROOT);
+    final int fieldIndex = BeaconStateInvariants.GENESIS_VALIDATORS_ROOT_FIELD.getIndex();
     return ((SszBytes32) get(fieldIndex)).get();
   }
 
   default UInt64 getSlot() {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLOT);
+    final int fieldIndex = BeaconStateInvariants.SLOT_FIELD.getIndex();
     return ((SszUInt64) get(fieldIndex)).get();
   }
 
