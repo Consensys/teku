@@ -708,6 +708,10 @@ public final class DataStructureUtil {
         body);
   }
 
+  public BeaconBlock randomBlindedBeaconBlock(long slotNum) {
+    return randomBlindedBeaconBlock(UInt64.valueOf(slotNum));
+  }
+
   public BeaconBlock randomBlindedBeaconBlock(UInt64 slotNum) {
     final UInt64 proposerIndex = randomUInt64();
     Bytes32 previousRoot = randomBytes32();
