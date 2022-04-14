@@ -236,12 +236,24 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   @Override
   public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration) {
+    final TransitionConfiguration transitionConfigurationResponse;
+
+    this.transitionConfiguration = Optional.of(transitionConfiguration);
+
+    if (transitionConfiguration.getTerminalBlockHash().isZero()) {
+      transitionConfigurationResponse = transitionConfiguration;
+    } else {
+      transitionConfigurationResponse =
+          new TransitionConfiguration(
+              transitionConfiguration.getTerminalTotalDifficulty(),
+              transitionConfiguration.getTerminalBlockHash(),
+              UInt64.ONE);
+    }
     LOG.info(
         "exchangeTransitionConfiguration: {} -> {}",
         transitionConfiguration,
-        transitionConfiguration);
-    this.transitionConfiguration = Optional.of(transitionConfiguration);
-    return SafeFuture.completedFuture(transitionConfiguration);
+        transitionConfigurationResponse);
+    return SafeFuture.completedFuture(transitionConfigurationResponse);
   }
 
   @Override
@@ -348,7 +360,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
         specVersion.getConfig().toVersionBellatrix().orElseThrow();
 
     final Bytes32 configTerminalBlockHash;
-    final UInt256 TerminalTotalDifficulty;
+    final UInt256 terminalTotalDifficulty;
 
     // let's try to use last received transition configuration, otherwise fallback to spec
     // we can't wait for transitionConfiguration because we may receive it too late,
@@ -356,16 +368,16 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
     if (transitionConfiguration.isPresent()) {
       LOG.info("Preparing transition blocks using received transitionConfiguration");
       configTerminalBlockHash = transitionConfiguration.get().getTerminalBlockHash();
-      TerminalTotalDifficulty = transitionConfiguration.get().getTerminalTotalDifficulty();
+      terminalTotalDifficulty = transitionConfiguration.get().getTerminalTotalDifficulty();
     } else {
       LOG.info("Preparing transition blocks using spec");
       configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
-      TerminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
+      terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
     }
 
     if (configTerminalBlockHash.isZero()) {
       // TTD emulation
-      LOG.info("Transition via TTD: {}", TerminalTotalDifficulty);
+      LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
 
       transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
 
@@ -385,6 +397,6 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
         new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt256.ZERO, UInt64.ZERO);
     terminalBlock =
         new PowBlock(
-            terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, TerminalTotalDifficulty, transitionTime);
+            terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, terminalTotalDifficulty, transitionTime);
   }
 }
