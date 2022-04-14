@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
 import java.util.Collections;
 import java.util.List;
@@ -250,7 +251,6 @@ class StoreTest extends AbstractStoreTest {
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
 
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
-    final UInt64 initialTime = store.getTime();
     final UInt64 initialTimeMillis = store.getTimeMillis();
     final UInt64 genesisTime = store.getGenesisTime();
 
@@ -269,11 +269,10 @@ class StoreTest extends AbstractStoreTest {
     tx.setJustifiedCheckpoint(checkpoint2);
     tx.setBestJustifiedCheckpoint(checkpoint3);
     // Update time
-    UInt64 updatedTime = initialTime.plus(UInt64.ONE);
-    tx.setTime(updatedTime);
     UInt64 updatedTimeMillis = initialTimeMillis.plus(1300);
     tx.setTimeMillis(updatedTimeMillis);
-    tx.setGenesisTime(genesisTime.plus(UInt64.ONE));
+    UInt64 updatedGenesisTime = genesisTime.plus(UInt64.ONE);
+    tx.setGenesisTime(updatedGenesisTime);
 
     // Check that store is not yet updated
     // Check blocks
@@ -285,7 +284,7 @@ class StoreTest extends AbstractStoreTest {
     assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(genesisCheckpoint);
     // Check time
-    assertThat(store.getTime()).isEqualTo(initialTime);
+    assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(initialTimeMillis));
     assertThat(store.getTimeMillis()).isEqualTo(initialTimeMillis);
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime);
 
@@ -301,19 +300,19 @@ class StoreTest extends AbstractStoreTest {
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
     assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
     // Check time
-    assertThat(tx.getTime()).isEqualTo(updatedTime);
+    assertThat(tx.getTimeSeconds()).isEqualTo(millisToSeconds(updatedTimeMillis));
     assertThat(tx.getTimeMillis()).isEqualTo(updatedTimeMillis);
-    assertThat(tx.getGenesisTime()).isEqualTo(genesisTime.plus(UInt64.ONE));
+    assertThat(tx.getGenesisTime()).isEqualTo(updatedGenesisTime);
 
     // Commit transaction
     final SafeFuture<Void> txResult = tx.commit();
 
     final SafeFuture<Void> txResult2;
     if (withInterleavedTransaction) {
-      UInt64 time = store.getTime().plus(UInt64.ONE);
+      UInt64 time = store.getTimeSeconds().plus(UInt64.ONE);
       UInt64 timeMillis = store.getTimeMillis().plus(1300);
       StoreTransaction tx2 = store.startTransaction(updateChannel);
-      tx2.setTime(time);
+      tx2.setTimeSeconds(time);
       tx2.setTimeMillis(timeMillis);
       txResult2 = tx2.commit();
     } else {
@@ -343,9 +342,9 @@ class StoreTest extends AbstractStoreTest {
     assertThat(finalizedCheckpointState).isCompleted();
     assertThat(finalizedCheckpointState.join().getCheckpoint()).isEqualTo(checkpoint1);
     // Check time
-    assertThat(store.getTime()).isEqualTo(updatedTime);
+    assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(updatedTimeMillis));
     assertThat(store.getTimeMillis()).isEqualTo(updatedTimeMillis);
-    assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UInt64.ONE));
+    assertThat(store.getGenesisTime()).isEqualTo(updatedGenesisTime);
 
     // Check store was pruned as expected
     final List<Bytes32> expectedBlockRoots =

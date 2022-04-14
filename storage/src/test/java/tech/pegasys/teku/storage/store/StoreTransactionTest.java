@@ -57,9 +57,8 @@ public class StoreTransactionTest extends AbstractStoreTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             String.format(
-                "Cannot revert time"
-                    + (timeType == TimeType.MILLIS ? " millis" : "")
-                    + " from %s to %s",
+                "Cannot revert time (%s) from %s to %s",
+                timeType == TimeType.SECONDS ? "seconds" : "millis",
                 getTime(store, timeType),
                 invalidTime));
   }
@@ -84,18 +83,50 @@ public class StoreTransactionTest extends AbstractStoreTest {
     assertThat(getTime(store, timeType)).isEqualTo(timeB);
   }
 
-  private UInt64 getTime(UpdatableStore store, TimeType timeType) {
-    return timeType == TimeType.SECONDS ? store.getTime() : store.getTimeMillis();
+  @Test
+  public void setTimeSeconds_doesNotUpdateMillis() {
+    final UpdatableStore store = createGenesisStore();
+
+    // given
+    setTime(store, TimeType.MILLIS, UInt64.valueOf(1300));
+
+    // when setting time to one second
+    setTime(store, TimeType.SECONDS, UInt64.valueOf(1));
+
+    // then millis should not be changed
+    assertThat(store.getTimeSeconds()).isEqualTo(UInt64.ONE);
+    assertThat(store.getTimeMillis()).isEqualTo(UInt64.valueOf(1300));
   }
 
-  private void setTime(UpdatableStore store, TimeType timeType, final UInt64 newTime) {
-    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    if (timeType == TimeType.SECONDS) {
-      tx.setTime(newTime);
-    } else {
-      tx.setTimeMillis(newTime);
-    }
-    assertThat(tx.commit()).isCompleted();
+  @Test
+  public void setTimeSeconds_updatesMillisIfRequired() {
+    final UpdatableStore store = createGenesisStore();
+
+    // given
+    setTime(store, TimeType.MILLIS, UInt64.valueOf(1300));
+
+    // when setting time to two seconds
+    setTime(store, TimeType.SECONDS, UInt64.valueOf(2));
+
+    // then millis should be changed
+    assertThat(store.getTimeSeconds()).isEqualTo(UInt64.valueOf(2));
+    assertThat(store.getTimeMillis()).isEqualTo(UInt64.valueOf(2000));
+  }
+
+  @Test
+  public void setTimeMillis_updatesSeconds() {
+    final UpdatableStore store = createGenesisStore();
+
+    // given
+    setTime(store, TimeType.MILLIS, UInt64.valueOf(1300));
+
+    // then seconds should be updated
+    assertThat(store.getTimeSeconds()).isEqualTo(UInt64.ONE);
+
+    // one more test
+    setTime(store, TimeType.MILLIS, UInt64.valueOf(3750));
+
+    assertThat(store.getTimeSeconds()).isEqualTo(UInt64.valueOf(3));
   }
 
   @Test
@@ -425,5 +456,19 @@ public class StoreTransactionTest extends AbstractStoreTest {
               mainChainBlock3.getRoot(),
               mainChainBlock4.getRoot());
     }
+  }
+
+  private UInt64 getTime(UpdatableStore store, TimeType timeType) {
+    return timeType == TimeType.SECONDS ? store.getTimeSeconds() : store.getTimeMillis();
+  }
+
+  private void setTime(UpdatableStore store, TimeType timeType, final UInt64 newTime) {
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    if (timeType == TimeType.SECONDS) {
+      tx.setTimeSeconds(newTime);
+    } else {
+      tx.setTimeMillis(newTime);
+    }
+    assertThat(tx.commit()).isCompleted();
   }
 }

@@ -84,7 +84,6 @@ class Store implements UpdatableStore {
   final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
-  UInt64 time;
   UInt64 timeMillis;
   UInt64 genesisTime;
   AnchorPoint finalizedAnchor;
@@ -135,7 +134,6 @@ class Store implements UpdatableStore {
     // Store instance variables
     this.initialCheckpoint = initialCheckpoint;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
-    this.time = time;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -296,16 +294,6 @@ class Store implements UpdatableStore {
   @Override
   public VoteUpdater startVoteUpdate(final VoteUpdateChannel voteUpdateChannel) {
     return new StoreVoteUpdater(this, lock, voteUpdateChannel);
-  }
-
-  @Override
-  public UInt64 getTime() {
-    readLock.lock();
-    try {
-      return time;
-    } finally {
-      readLock.unlock();
-    }
   }
 
   @Override

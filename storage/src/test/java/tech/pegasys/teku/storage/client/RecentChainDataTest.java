@@ -125,7 +125,7 @@ class RecentChainDataTest {
     final UInt64 genesisTime = UInt64.valueOf(5000);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.valueOf(100));
-    assertThat(recentChainData.getStore().getTime()).isEqualTo(genesisTime);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(genesisTime);
   }
 
   @Test
@@ -136,7 +136,7 @@ class RecentChainDataTest {
     final UInt64 time = genesisTime.plus(100);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
     recentChainData.initializeFromGenesis(genesis.getState(), time);
-    assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(time);
   }
 
   @Test
@@ -153,7 +153,7 @@ class RecentChainDataTest {
     final UInt64 anchorBlockTime =
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(100));
-    assertThat(recentChainData.getStore().getTime()).isEqualTo(anchorBlockTime);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(anchorBlockTime);
   }
 
   @Test
@@ -172,7 +172,7 @@ class RecentChainDataTest {
     final UInt64 time = genesisTime.plus(1);
     assertThat(time).isLessThan(anchorBlockTime);
     recentChainData.initializeFromAnchorPoint(anchorPoint, time);
-    assertThat(recentChainData.getStore().getTime()).isEqualTo(anchorBlockTime);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(anchorBlockTime);
   }
 
   @Test
@@ -190,7 +190,7 @@ class RecentChainDataTest {
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     final UInt64 time = anchorBlockTime.plus(100);
     recentChainData.initializeFromAnchorPoint(anchorPoint, time);
-    assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(time);
   }
 
   @Test
@@ -309,7 +309,7 @@ class RecentChainDataTest {
     final Checkpoint originalCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setTime(UInt64.valueOf(11L));
+    tx.setTimeSeconds(UInt64.valueOf(11L));
     tx.commit().reportExceptions();
 
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();

@@ -97,7 +97,7 @@ public class AttestationValidator {
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
     // queue future attestations for processing at the appropriate slot).
-    final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeMillis();
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
       return completedFuture(InternalValidationResultWithState.ignore());

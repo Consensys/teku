@@ -88,7 +88,6 @@ class StoreTransactionUpdates {
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
     // Add new data
-    tx.time.filter(t -> t.isGreaterThan(store.getTime())).ifPresent(value -> store.time = value);
     tx.timeMillis
         .filter(t -> t.isGreaterThan(store.getTimeMillis()))
         .ifPresent(value -> store.timeMillis = value);

@@ -64,7 +64,7 @@ public class ChainUpdater {
   public void setTime(final UInt64 time) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setTime(time);
+    tx.setTimeSeconds(time);
     tx.commit().join();
   }
 
@@ -259,7 +259,7 @@ public class ChainUpdater {
   public void saveBlockTime(final SignedBlockAndState block) {
     // Make sure time is consistent with block
     final UInt64 blockTime = getSlotTime(block.getSlot());
-    if (blockTime.compareTo(recentChainData.getStore().getTime()) > 0) {
+    if (blockTime.compareTo(recentChainData.getStore().getTimeSeconds()) > 0) {
       setTime(blockTime);
     }
   }
