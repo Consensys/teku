@@ -25,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
