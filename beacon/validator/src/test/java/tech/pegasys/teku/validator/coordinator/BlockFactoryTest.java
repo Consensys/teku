@@ -289,7 +289,7 @@ class BlockFactoryTest {
       executionPayloadHeader =
           SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
               .getExecutionPayloadHeaderSchema()
-              .getDefault();
+              .getOfDefaultPayload();
     } else {
       executionPayload = null;
       executionPayloadHeader = null;

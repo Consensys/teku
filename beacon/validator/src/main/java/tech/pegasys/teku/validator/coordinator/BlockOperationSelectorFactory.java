@@ -23,10 +23,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -151,7 +154,7 @@ public class BlockOperationSelectorFactory {
                       SchemaDefinitionsBellatrix.required(
                               spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                           .getExecutionPayloadHeaderSchema()
-                          .getDefault(),
+                          .getOfDefaultPayload(),
                   (payloadId) ->
                       executionEngineChannel
                           .getPayloadHeader(payloadId, blockSlotState.getSlot())
@@ -165,7 +168,10 @@ public class BlockOperationSelectorFactory {
       }
 
       // non-blinded block requested
-      if (isMevBoostEnabled) {
+      if (isMevBoostEnabled
+          && spec.atSlot(blockSlotState.getSlot())
+              .getMilestone()
+              .isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
         LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
       }
 
@@ -194,7 +200,7 @@ public class BlockOperationSelectorFactory {
             .thenApply(
                 maybePayloadId -> {
                   if (maybePayloadId.isEmpty()) {
-                    // TTD not reached
+                    // Terminal block not reached, provide default payload
                     return defaultSupplier.get();
                   } else {
                     return supplier.apply(maybePayloadId.get());
@@ -205,16 +211,29 @@ public class BlockOperationSelectorFactory {
 
   public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {
     return bodyUnblinder -> {
-      if (isMevBoostEnabled) {
+      if (!isMevBoostEnabled) {
+        // blinded block has been requested but mev-boost is not enabled
+        throw new UnsupportedOperationException(
+            "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
+      }
+
+      final BeaconBlock block = bodyUnblinder.getSignedBlindedBeaconBlock().getMessage();
+
+      if (block.getBody().getOptionalExecutionPayloadHeader().orElseThrow().isOfDefaultPayload()) {
+        // Terminal block not reached, provide default payload
+        bodyUnblinder.setExecutionPayloadSupplier(
+            () ->
+                SafeFuture.completedFuture(
+                    SchemaDefinitionsBellatrix.required(
+                            spec.atSlot(block.getSlot()).getSchemaDefinitions())
+                        .getExecutionPayloadSchema()
+                        .getDefault()));
+      } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
                 executionEngineChannel.proposeBlindedBlock(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
-        return;
       }
-      // blinded block has been requested but mev-boost is not enabled
-      throw new UnsupportedOperationException(
-          "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
     };
   }
 }

@@ -49,6 +49,7 @@ public class ExecutionPayloadHeaderSchema
         SszBytes32> {
 
   private final ExecutionPayloadHeader defaultExecutionPayloadHeader;
+  private final ExecutionPayloadHeader executionPayloadHeaderOfDefaultPayload;
 
   public ExecutionPayloadHeaderSchema(final SpecConfigBellatrix specConfig) {
     super(
@@ -67,6 +68,12 @@ public class ExecutionPayloadHeaderSchema
         namedSchema("base_fee_per_gas", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
+
+    final ExecutionPayload defaultExecutionPayload =
+        new ExecutionPayloadSchema(specConfig).getDefault();
+
+    this.executionPayloadHeaderOfDefaultPayload =
+        createFromExecutionPayload(defaultExecutionPayload);
 
     this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
@@ -136,5 +143,9 @@ public class ExecutionPayloadHeaderSchema
   @Override
   public ExecutionPayloadHeader getDefault() {
     return defaultExecutionPayloadHeader;
+  }
+
+  public ExecutionPayloadHeader getOfDefaultPayload() {
+    return executionPayloadHeaderOfDefaultPayload;
   }
 }
