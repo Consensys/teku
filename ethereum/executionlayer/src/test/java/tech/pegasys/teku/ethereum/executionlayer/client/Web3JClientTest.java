@@ -15,8 +15,6 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -30,7 +28,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -55,7 +52,6 @@ public class Web3JClientTest {
       new Web3jWebsocketClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
   private static final Web3jIpcClient WEB3J_IPC_CLIENT =
       new Web3jIpcClient(URI.create("file:/a"), TIME_PROVIDER, Optional.empty());
-  private static final Duration TIMEOUT = Duration.ofSeconds(10000000);
 
   static class Web3JClientImpl extends Web3JClient {
     protected Web3JClientImpl(TimeProvider timeProvider) {
@@ -70,42 +66,10 @@ public class Web3JClientTest {
     WEB3J_WEBSOCKET_CLIENT.initWeb3jService(WEB_SOCKET_SERVICE);
   }
 
-  @Test
-  public void shouldModifyRequestWithApplyModifiers() {
-    WEB3J_CLIENT.addRequestAdapter(
-        request -> {
-          request.setId(123);
-          return request;
-        });
-    Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), WEB3J_SERVICE, VoidResponse.class);
-    request.setId(1);
-    Request<?, ?> actualRequest = WEB3J_CLIENT.applyRequestAdapters(request);
-    assertThat(actualRequest.getId()).isEqualTo(123);
-  }
-
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
     return Stream.of(WEB3J_CLIENT, WEB3J_HTTP_CLIENT, WEB3J_WEBSOCKET_CLIENT, WEB3J_IPC_CLIENT)
         .map(Arguments::of);
-  }
-
-  @ParameterizedTest
-  @MethodSource("getClientInstances")
-  public void shouldModifyRequestWhenDoRequestCalled(final Web3JClient client) {
-    client.addRequestAdapter(
-        request -> {
-          request.setId(123);
-          return request;
-        });
-    Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), WEB3J_SERVICE, VoidResponse.class);
-    request.setId(1);
-    when(WEB3J_SERVICE.sendAsync(request, VoidResponse.class))
-        .thenReturn(CompletableFuture.completedFuture(new VoidResponse()));
-    assertThat(client.doRequest(request, TIMEOUT)).isCompleted();
-    verify(WEB3J_SERVICE, times(1)).sendAsync(request, VoidResponse.class);
-    assertThat(request.getId()).isEqualTo(123);
   }
 
   @ParameterizedTest
