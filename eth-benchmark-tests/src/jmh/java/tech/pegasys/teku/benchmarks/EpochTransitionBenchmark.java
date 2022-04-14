@@ -143,8 +143,8 @@ public class EpochTransitionBenchmark {
             .getValidatorStatusFactory()
             .createValidatorStatuses(preEpochTransitionState);
     preEpochTransitionState.hashTreeRoot();
-        attestationDeltas =
-            epochProcessor.getRewardAndPenaltyDeltas(preEpochTransitionState, validatorStatuses);
+    attestationDeltas =
+        epochProcessor.getRewardAndPenaltyDeltas(preEpochTransitionState, validatorStatuses);
 
     System.out.println("Done!");
   }

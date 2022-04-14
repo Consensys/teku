@@ -18,7 +18,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveCollection;
@@ -67,23 +67,26 @@ public abstract class AbstractSszMutablePrimitiveCollection<
     SszCollectionSchema<?, ?> type = getSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
-    List<Map.Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
-    int prevChildNodeIndex = 0;
-    List<NodeUpdate<ElementT, SszElementT>> nodeUpdates = new ArrayList<>();
-    NodeUpdate<ElementT, SszElementT> curNodeUpdate = null;
+    final List<NodeUpdate<ElementT, SszElementT>> nodeUpdates = new ArrayList<>();
+    newChildValues.forEach(
+        new Consumer<>() {
+          private int prevChildNodeIndex = 0;
+          private NodeUpdate<ElementT, SszElementT> curNodeUpdate = null;
 
-    for (Map.Entry<Integer, SszElementT> entry : newChildren) {
-      int childIndex = entry.getKey();
-      int childNodeIndex = childIndex / elementsPerChunk;
+          @Override
+          public void accept(final Map.Entry<Integer, SszElementT> entry) {
+            int childIndex = entry.getKey();
+            int childNodeIndex = childIndex / elementsPerChunk;
 
-      if (curNodeUpdate == null || childNodeIndex != prevChildNodeIndex) {
-        long gIndex = type.getChildGeneralizedIndex(childNodeIndex);
-        curNodeUpdate = new NodeUpdate<>(gIndex, elementsPerChunk);
-        nodeUpdates.add(curNodeUpdate);
-        prevChildNodeIndex = childNodeIndex;
-      }
-      curNodeUpdate.addUpdate(childIndex % elementsPerChunk, entry.getValue());
-    }
+            if (curNodeUpdate == null || childNodeIndex != prevChildNodeIndex) {
+              long gIndex = type.getChildGeneralizedIndex(childNodeIndex);
+              curNodeUpdate = new NodeUpdate<>(gIndex, elementsPerChunk);
+              nodeUpdates.add(curNodeUpdate);
+              prevChildNodeIndex = childNodeIndex;
+            }
+            curNodeUpdate.addUpdate(childIndex % elementsPerChunk, entry.getValue());
+          }
+        });
 
     LongList gIndices = new LongArrayList();
     List<TreeNode> newValues = new ArrayList<>();
