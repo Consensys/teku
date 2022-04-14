@@ -21,6 +21,9 @@
         },
         "is_syncing" : {
           "type" : "boolean"
+        },
+        "is_optimistic" : {
+          "type" : "boolean"
         }
       }
     }

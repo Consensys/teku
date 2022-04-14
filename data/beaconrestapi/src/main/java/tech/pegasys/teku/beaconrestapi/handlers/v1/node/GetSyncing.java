@@ -30,11 +30,13 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -45,15 +47,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class GetSyncing extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/syncing";
 
-  private static final SerializableTypeDefinition<SyncingStatus> SYNC_RESPONSE_DATA_TYPE =
-      SerializableTypeDefinition.object(SyncingStatus.class)
-          .withField("head_slot", UINT64_TYPE, SyncingStatus::getCurrentSlot)
-          .withField("sync_distance", UINT64_TYPE, GetSyncing::getSlotsBehind)
-          .withField("is_syncing", BOOLEAN_TYPE, SyncingStatus::isSyncing)
+  private static final SerializableTypeDefinition<SyncStatusData> SYNC_RESPONSE_DATA_TYPE =
+      SerializableTypeDefinition.object(SyncStatusData.class)
+          .withField("head_slot", UINT64_TYPE, SyncStatusData::getCurrentSlot)
+          .withField("sync_distance", UINT64_TYPE, SyncStatusData::getSlotsBehind)
+          .withField("is_syncing", BOOLEAN_TYPE, SyncStatusData::isSyncing)
+          .withOptionalField("is_optimistic", BOOLEAN_TYPE, SyncStatusData::isOptimistic)
           .build();
 
-  private static final SerializableTypeDefinition<SyncingStatus> SYNCING_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(SyncingStatus.class)
+  private static final SerializableTypeDefinition<SyncStatusData> SYNCING_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(SyncStatusData.class)
           .name("GetSyncingStatusResponse")
           .withField("data", SYNC_RESPONSE_DATA_TYPE, Function.identity())
           .build();
@@ -99,14 +102,47 @@ public class GetSyncing extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(syncProvider.getSyncingStatus());
+    request.respondOk(new SyncStatusData(syncProvider));
   }
 
-  private static UInt64 getSlotsBehind(final SyncingStatus syncingStatus) {
-    if (syncingStatus.isSyncing() && syncingStatus.getHighestSlot().isPresent()) {
-      final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
-      return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
+  static class SyncStatusData {
+    private final boolean isSyncing;
+    private final Optional<Boolean> isOptimistic;
+    private final UInt64 currentSlot;
+    private final UInt64 slotsBehind;
+
+    public SyncStatusData(final SyncDataProvider syncProvider) {
+      final SyncingStatus status = syncProvider.getSyncingStatus();
+      final SyncState syncState = syncProvider.getCurrentSyncState();
+      this.isSyncing = !syncState.isInSync();
+      this.isOptimistic = Optional.of(syncState.isOptimistic());
+      this.currentSlot = status.getCurrentSlot();
+      // do this last, after isSyncing is calculated
+      this.slotsBehind = calculateSlotsBehind(status);
     }
-    return UInt64.ZERO;
+
+    public boolean isSyncing() {
+      return isSyncing;
+    }
+
+    public Optional<Boolean> isOptimistic() {
+      return isOptimistic;
+    }
+
+    public UInt64 getCurrentSlot() {
+      return currentSlot;
+    }
+
+    public UInt64 getSlotsBehind() {
+      return slotsBehind;
+    }
+
+    private UInt64 calculateSlotsBehind(final SyncingStatus syncingStatus) {
+      if (isSyncing && syncingStatus.getHighestSlot().isPresent()) {
+        final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
+        return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
+      }
+      return UInt64.ZERO;
+    }
   }
 }

@@ -15,8 +15,8 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -52,8 +52,8 @@ public abstract class AbstractSszMutableComposite<
 
   protected AbstractSszComposite<SszChildT> backingImmutableData;
   private Consumer<SszMutableData> invalidator;
-  private final Int2ObjectMap<ChildChangeRecord<SszChildT, SszMutableChildT>> childrenChanges =
-      new Int2ObjectOpenHashMap<ChildChangeRecord<SszChildT, SszMutableChildT>>();
+  private final Int2ObjectSortedMap<ChildChangeRecord<SszChildT, SszMutableChildT>>
+      childrenChanges = new Int2ObjectRBTreeMap<>();
   private Integer sizeCache;
   private final SszCompositeSchema<?> cachedSchema;
 
@@ -181,7 +181,6 @@ public abstract class AbstractSszMutableComposite<
                     }
                     return Map.entry(childIndex, newValue);
                   })
-              .sorted(Map.Entry.comparingByKey())
               // pre-fill the read cache with changed values
               .peek(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableData.getBackingNode();

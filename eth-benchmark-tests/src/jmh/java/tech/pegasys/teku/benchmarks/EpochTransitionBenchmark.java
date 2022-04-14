@@ -89,6 +89,7 @@ public class EpochTransitionBenchmark {
   public void init() throws Exception {
     AbstractBlockProcessor.blsVerifyDeposit = false;
 
+    spec = TestSpecFactory.createMainnetAltair();
     String blocksFile =
         "/blocks/blocks_epoch_"
             + spec.getSlotsPerEpoch(UInt64.ZERO)
@@ -102,7 +103,6 @@ public class EpochTransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
-    spec = TestSpecFactory.createMainnetPhase0();
     epochProcessor = spec.getGenesisSpec().getEpochProcessor();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
 
@@ -142,7 +142,7 @@ public class EpochTransitionBenchmark {
         spec.getGenesisSpec()
             .getValidatorStatusFactory()
             .createValidatorStatuses(preEpochTransitionState);
-    preEpochTransitionState.updated(mbs -> preEpochTransitionMutableState = mbs);
+    preEpochTransitionState.hashTreeRoot();
     attestationDeltas =
         epochProcessor.getRewardAndPenaltyDeltas(preEpochTransitionState, validatorStatuses);
 
@@ -153,6 +153,7 @@ public class EpochTransitionBenchmark {
   public void epochTransition(Blackhole bh) {
     try {
       preEpochTransitionState = epochProcessor.processEpoch(preEpochTransitionState);
+      bh.consume(preEpochTransitionState.hashTreeRoot());
     } catch (EpochProcessingException e) {
       throw new RuntimeException(e);
     }

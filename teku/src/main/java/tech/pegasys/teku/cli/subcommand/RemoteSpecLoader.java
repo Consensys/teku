@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
-
 import java.net.URI;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +89,6 @@ class RemoteSpecLoader {
     // Strip any authentication info from the URL to ensure it doesn't get logged.
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
-    return new OkHttpValidatorRestApiClient(
-        apiEndpoint, okHttpClient, DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED);
+    return new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
   }
 }
