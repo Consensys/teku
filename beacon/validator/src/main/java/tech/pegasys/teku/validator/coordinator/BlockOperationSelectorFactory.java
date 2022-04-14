@@ -154,7 +154,7 @@ public class BlockOperationSelectorFactory {
                       SchemaDefinitionsBellatrix.required(
                               spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                           .getExecutionPayloadHeaderSchema()
-                          .getOfDefaultPayload(),
+                          .getHeaderOfDefaultPayload(),
                   (payloadId) ->
                       executionEngineChannel
                           .getPayloadHeader(payloadId, blockSlotState.getSlot())
@@ -219,7 +219,7 @@ public class BlockOperationSelectorFactory {
 
       final BeaconBlock block = bodyUnblinder.getSignedBlindedBeaconBlock().getMessage();
 
-      if (block.getBody().getOptionalExecutionPayloadHeader().orElseThrow().isOfDefaultPayload()) {
+      if (block.getBody().getOptionalExecutionPayloadHeader().orElseThrow().isHeaderOfDefaultPayload()) {
         // Terminal block not reached, provide default payload
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->

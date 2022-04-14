@@ -145,7 +145,7 @@ public class ExecutionPayloadHeaderSchema
     return defaultExecutionPayloadHeader;
   }
 
-  public ExecutionPayloadHeader getOfDefaultPayload() {
+  public ExecutionPayloadHeader getHeaderOfDefaultPayload() {
     return executionPayloadHeaderOfDefaultPayload;
   }
 }
