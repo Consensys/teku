@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
+  String STUB_ENDPOINT_IDENTIFIER = "stub";
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
         @Override
