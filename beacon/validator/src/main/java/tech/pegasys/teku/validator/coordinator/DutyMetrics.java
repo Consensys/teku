@@ -74,7 +74,7 @@ public class DutyMetrics {
 
   private UInt64 calculateExpectedAttestationTimeInMillis(final UInt64 slot) {
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    UInt64 millisPerSlot = secondsToMillis(spec.getSecondsPerSlot(slot));
+    UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
     return secondsToMillis(genesisTime)
         .plus(slot.times(millisPerSlot))
         .plus(millisPerSlot.dividedBy(INTERVALS_PER_SLOT));

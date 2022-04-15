@@ -30,10 +30,14 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.verification.VerificationMode;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -75,6 +79,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
 
@@ -174,8 +179,18 @@ class ForkChoiceTest {
     assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
   }
 
-  @Test
-  void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain() {
+  private static Stream<Arguments> provideArgumentsForShouldReorg() {
+    return Stream.of(
+        Arguments.of(0, true),
+        Arguments.of(500, true),
+        Arguments.of(1700, true),
+        Arguments.of(2300, false));
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideArgumentsForShouldReorg")
+  void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain(
+      long advanceTimeSlotMillis, boolean shouldReorg) {
     forkChoice =
         new ForkChoice(
             spec,
@@ -211,14 +226,31 @@ class ForkChoiceTest {
       expectedChainHead = chainBuilder.generateBlockAtSlot(currentSlot);
     }
 
+    // advance time into slot
+    if (advanceTimeSlotMillis > 0) {
+      StoreTransaction transaction = recentChainData.startStoreTransaction();
+      UInt64 timeIntoSlotMillis =
+          recentChainData.getStore().getTimeMillis().plus(advanceTimeSlotMillis);
+      transaction.setTimeMillis(timeIntoSlotMillis);
+      transaction.commit().join();
+    }
+
     importBlock(expectedChainHead);
-    assertThat(recentChainData.getStore().getProposerBoostRoot())
-        .contains(expectedChainHead.getRoot());
 
-    assertThat(forkChoice.processHead()).isCompleted();
-
-    // Check we switched chains, if proposer reward wasn't considered we'd stay on the other fork
-    assertThat(recentChainData.getBestBlockRoot()).contains(expectedChainHead.getRoot());
+    if (shouldReorg) {
+      assertThat(recentChainData.getStore().getProposerBoostRoot())
+          .contains(expectedChainHead.getRoot());
+      assertThat(forkChoice.processHead()).isCompleted();
+      // Check we switched chains, if proposer reward wasn't considered we'd stay on the other fork
+      assertThat(recentChainData.getBestBlockRoot()).hasValue(expectedChainHead.getRoot());
+    } else {
+      assertThat(recentChainData.getStore().getProposerBoostRoot()).isEmpty();
+      assertThat(forkChoice.processHead()).isCompleted();
+      // no reorg
+      assertThat(recentChainData.getBestBlockRoot())
+          .hasValueSatisfying(
+              bestBlockRoot -> assertThat(bestBlockRoot).isNotEqualTo(expectedChainHead.getRoot()));
+    }
   }
 
   @Test
