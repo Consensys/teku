@@ -160,9 +160,9 @@ public class BlsKeyPairIO {
     }
   }
 
-  public static Reader createReaderForFile(String name) {
+  public static Reader createReaderForFile(File file) {
     try {
-      return createReaderFromStream(new FileInputStream(new File(name)), name.endsWith(".gz"));
+      return createReaderFromStream(new FileInputStream(file), file.getName().endsWith(".gz"));
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage());
     }
