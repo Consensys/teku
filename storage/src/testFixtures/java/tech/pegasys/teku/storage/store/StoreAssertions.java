@@ -22,7 +22,7 @@ public class StoreAssertions {
     assertThat(actualState)
         .isEqualToIgnoringGivenFields(
             expectedState,
-            "time",
+            "timeMillis",
             "stateCountGauge",
             "blockCountGauge",
             "checkpointCountGauge",

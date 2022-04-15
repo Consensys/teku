@@ -392,7 +392,7 @@ public class Spec {
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store) {
-    return atTime(store.getGenesisTime(), store.getTime())
+    return atTime(store.getGenesisTime(), store.getTimeSeconds())
         .getForkChoiceUtil()
         .getCurrentSlot(store);
   }

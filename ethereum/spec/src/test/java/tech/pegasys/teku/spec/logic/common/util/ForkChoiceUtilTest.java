@@ -184,20 +184,20 @@ class ForkChoiceUtilTest {
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeGenesisTime() {
     final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
-    when(store.getTime()).thenReturn(UInt64.ZERO);
+    when(store.getTimeSeconds()).thenReturn(UInt64.ZERO);
     forkChoiceUtil.onTick(store, UInt64.valueOf(2000));
 
-    verify(store, never()).setTime(any());
+    verify(store, never()).setTimeSeconds(any());
   }
 
   @Test
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeStoreTime() {
     final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
-    when(store.getTime()).thenReturn(UInt64.valueOf(5000));
+    when(store.getTimeSeconds()).thenReturn(UInt64.valueOf(5000));
     forkChoiceUtil.onTick(store, UInt64.valueOf(4000));
 
-    verify(store, never()).setTime(any());
+    verify(store, never()).setTimeSeconds(any());
   }
 
   @Test
@@ -249,7 +249,7 @@ class ForkChoiceUtilTest {
     }
 
     final UInt64 genesisTime = UInt64.valueOf(1982239L);
-    when(store.getTime())
+    when(store.getTimeSeconds())
         .thenReturn(spec.getSlotStartTime(UInt64.valueOf(currentSlot), genesisTime));
     when(store.getGenesisTime()).thenReturn(genesisTime);
     return store;

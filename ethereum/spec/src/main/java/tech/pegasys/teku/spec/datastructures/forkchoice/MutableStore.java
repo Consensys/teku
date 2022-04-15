@@ -31,7 +31,9 @@ public interface MutableStore extends ReadOnlyStore {
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
-  void setTime(UInt64 time);
+  void setTimeSeconds(UInt64 timeSeconds);
+
+  void setTimeMillis(UInt64 timeMillis);
 
   void setGenesisTime(UInt64 genesisTime);
 

@@ -192,7 +192,7 @@ public class BeaconChainUtil {
   public void setTime(final UInt64 time) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setTime(time);
+    tx.setTimeSeconds(time);
     tx.commit().join();
   }
 
