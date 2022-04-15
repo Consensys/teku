@@ -204,6 +204,12 @@ public class EventLogger {
     warn(reorgEventLog, Color.YELLOW);
   }
 
+  public void executionEngineStubEnabled() {
+    info(
+        "Execution Engine Stub has been enabled. Please make sure this is intentional.",
+        Color.YELLOW);
+  }
+
   private void info(final String message, final Color color) {
     log.info(print(message, color));
   }

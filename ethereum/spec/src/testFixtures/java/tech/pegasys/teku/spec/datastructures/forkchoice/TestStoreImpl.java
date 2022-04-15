@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class TestStoreImpl implements MutableStore, VoteUpdater {
   private final Spec spec;
-  protected UInt64 time;
+  protected UInt64 timeMillis;
   protected UInt64 genesisTime;
   protected final Optional<Checkpoint> initialCheckpoint;
   protected Checkpoint justifiedCheckpoint;
@@ -60,7 +62,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UInt64, VoteTracker> votes) {
     this.spec = spec;
-    this.time = time;
+    this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
     this.initialCheckpoint = initialCheckpoint;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -74,8 +76,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   // Readonly methods
   @Override
-  public UInt64 getTime() {
-    return time;
+  public UInt64 getTimeMillis() {
+    return timeMillis;
   }
 
   @Override
@@ -253,8 +255,13 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void setTime(final UInt64 time) {
-    this.time = time;
+  public void setTimeSeconds(final UInt64 timeSeconds) {
+    setTimeMillis(secondsToMillis(timeSeconds));
+  }
+
+  @Override
+  public void setTimeMillis(final UInt64 time) {
+    this.timeMillis = time;
   }
 
   @Override

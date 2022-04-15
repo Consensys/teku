@@ -20,8 +20,10 @@ import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,7 +41,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -390,15 +391,16 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
-      return response(
-          SC_UNAUTHORIZED, "Unauthorized, no token is found", CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+      return response(SC_UNAUTHORIZED, "Unauthorized, no token is found", HTTP_ERROR_RESPONSE_TYPE);
+    }
+
+    public EndpointMetaDataBuilder withNotFoundResponse() {
+      return response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE);
     }
 
     public EndpointMetaDataBuilder withForbiddenResponse() {
       return response(
-          SC_FORBIDDEN,
-          "Forbidden, a token is found but is invalid",
-          CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+          SC_FORBIDDEN, "Forbidden, a token is found but is invalid", HTTP_ERROR_RESPONSE_TYPE);
     }
 
     public EndpointMetaDataBuilder withAuthenticationResponses() {
@@ -406,8 +408,7 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder withInternalErrorResponse() {
-      response(
-          SC_INTERNAL_SERVER_ERROR, "Internal server error", CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+      response(SC_INTERNAL_SERVER_ERROR, "Internal server error", HTTP_ERROR_RESPONSE_TYPE);
       return this;
     }
 
@@ -416,7 +417,7 @@ public class EndpointMetadata {
           SC_BAD_REQUEST,
           maybeMessage.orElse(
               "The request could not be processed, check the response for more information."),
-          CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+          HTTP_ERROR_RESPONSE_TYPE);
       return this;
     }
 

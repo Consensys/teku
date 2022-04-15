@@ -23,12 +23,12 @@ import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszByteListSchemaImpl<SszListT extends SszByteList>
-    extends AbstractSszListSchema<SszByte, SszListT> implements SszByteListSchema<SszListT> {
+    extends SszPrimitiveListSchemaImpl<Byte, SszByte, SszListT>
+    implements SszByteListSchema<SszListT> {
 
   public SszByteListSchemaImpl(long maxLength) {
     super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);

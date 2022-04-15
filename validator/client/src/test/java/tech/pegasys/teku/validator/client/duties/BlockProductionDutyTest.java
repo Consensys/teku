@@ -28,6 +28,8 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,22 +64,34 @@ class BlockProductionDutyTest {
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
-  private final BlockProductionDuty duty =
-      new BlockProductionDuty(validator, SLOT, forkProvider, validatorApiChannel, spec);
+  private BlockProductionDuty duty;
 
   @BeforeEach
   public void setUp() {
+    duty = new BlockProductionDuty(validator, SLOT, forkProvider, validatorApiChannel, false, spec);
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
-  @Test
-  public void shouldCreateAndPublishBlock() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void shouldCreateAndPublishBlock(final boolean isBlindedBlocksEnabled) {
+    duty =
+        new BlockProductionDuty(
+            validator, SLOT, forkProvider, validatorApiChannel, isBlindedBlocksEnabled, spec);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
-    final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
+    final BeaconBlock unsignedBlock;
+
+    if (isBlindedBlocksEnabled) {
+      unsignedBlock = dataStructureUtil.randomBlindedBeaconBlock(SLOT);
+    } else {
+      unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT);
+    }
+
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
+    when(validatorApiChannel.createUnsignedBlock(
+            SLOT, randaoReveal, Optional.of(graffiti), isBlindedBlocksEnabled))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =

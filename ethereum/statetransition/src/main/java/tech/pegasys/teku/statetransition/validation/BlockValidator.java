@@ -150,7 +150,7 @@ public class BlockValidator {
     ReadOnlyStore store = recentChainData.getStore();
     final long disparityInSeconds = Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0);
     final UInt64 maxOffset = UInt64.valueOf(disparityInSeconds);
-    final UInt64 maxTime = store.getTime().plus(maxOffset);
+    final UInt64 maxTime = store.getTimeSeconds().plus(maxOffset);
     UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
     return block.getSlot().compareTo(maxCurrSlot) > 0;
   }

@@ -17,12 +17,11 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
@@ -39,7 +38,6 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
 
   private final BeaconStateAltair stateAltair;
-  private final Int2ObjectMap<UInt64> baseRewardCache = new Int2ObjectOpenHashMap<>();
 
   public RewardsAndPenaltiesCalculatorAltair(
       final SpecConfigAltair specConfig,
@@ -53,12 +51,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     this.beaconStateAccessorsAltair = beaconStateAccessors;
   }
 
-  /**
-   * Return attestation reward/penalty deltas for each validator
-   *
-   * @return
-   * @throws IllegalArgumentException
-   */
+  /** Return attestation reward/penalty deltas for each validator */
   @Override
   public RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException {
     final RewardAndPenaltyDeltas deltas =
@@ -92,6 +85,10 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     final UInt64 activeIncrements =
         totalBalances.getCurrentEpochActiveValidators().dividedBy(effectiveBalanceIncrement);
 
+    // Cache baseRewardPerIncrement - while it is also cached in transition caches,
+    // looking it up from there for every single validator is quite expensive.
+    final UInt64 baseRewardPerIncrement =
+        beaconStateAccessorsAltair.getBaseRewardPerIncrement(state);
     for (int i = 0; i < statusList.size(); i++) {
       final ValidatorStatus validator = statusList.get(i);
       if (!validator.isEligibleValidator()) {
@@ -99,7 +96,8 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
       }
       final RewardAndPenalty validatorDeltas = deltas.getDelta(i);
 
-      final UInt64 baseReward = getBaseReward(i);
+      final UInt64 baseReward =
+          getBaseReward(effectiveBalanceIncrement, baseRewardPerIncrement, validator);
       if (isUnslashedPrevEpochParticipatingIndex(validator, flagIndex)) {
         if (!isInactivityLeak()) {
           final UInt64 rewardNumerator =
@@ -111,6 +109,24 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
         validatorDeltas.penalize(baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR));
       }
     }
+  }
+
+  /**
+   * Calculate the base reward for the validator.
+   *
+   * <p>This is equivalent to {@link BeaconStateAccessorsAltair#getBaseReward(BeaconState, int)} but
+   * uses the ValidatorStatus to get the effective balance and uses the precalculated
+   * baseRewardPerIncrement. This is significantly faster than having to go back to the state for
+   * the data.
+   */
+  private UInt64 getBaseReward(
+      final UInt64 effectiveBalanceIncrement,
+      final UInt64 baseRewardPerIncrement,
+      final ValidatorStatus validator) {
+    return validator
+        .getCurrentEpochEffectiveBalance()
+        .dividedBy(effectiveBalanceIncrement)
+        .times(baseRewardPerIncrement);
   }
 
   /**
@@ -179,10 +195,5 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
       final ValidatorStatus validatorStatus, final int flagIndex) {
     return validatorStatus.isNotSlashed()
         && validatorHasPrevEpochParticipationFlag(validatorStatus, flagIndex);
-  }
-
-  private UInt64 getBaseReward(final int validatorIndex) {
-    return baseRewardCache.computeIfAbsent(
-        validatorIndex, index -> beaconStateAccessorsAltair.getBaseReward(state, validatorIndex));
   }
 }
