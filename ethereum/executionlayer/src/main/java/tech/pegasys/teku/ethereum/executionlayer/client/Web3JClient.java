@@ -105,7 +105,7 @@ public abstract class Web3JClient {
     return web3jService;
   }
 
-  protected synchronized Web3j getEth1Web3j() {
+  public synchronized Web3j getEth1Web3j() {
     throwIfNotInitialized();
     return eth1Web3j;
   }

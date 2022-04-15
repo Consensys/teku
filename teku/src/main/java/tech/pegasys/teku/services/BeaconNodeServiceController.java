@@ -19,7 +19,9 @@ import tech.pegasys.teku.networking.nat.NatService;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
+import tech.pegasys.teku.services.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.services.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.services.executionengine.TrustedExecutionClientProvider;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
@@ -29,9 +31,16 @@ public class BeaconNodeServiceController extends ServiceController {
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
     services.add(new StorageService(serviceConfig, tekuConfig.storageConfiguration()));
+    final ExecutionClientProvider trustedExecutionClientProvider;
     if (tekuConfig.executionEngine().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
-      services.add(new ExecutionEngineService(serviceConfig, tekuConfig.executionEngine()));
+      trustedExecutionClientProvider =
+          new TrustedExecutionClientProvider(serviceConfig, tekuConfig.executionEngine());
+      services.add(
+          new ExecutionEngineService(
+              serviceConfig, tekuConfig.executionEngine(), trustedExecutionClientProvider));
+    } else {
+      trustedExecutionClientProvider = ExecutionClientProvider.NOOP;
     }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(
@@ -39,17 +48,25 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.natConfiguration(),
             tekuConfig.network().getListenPort(),
             tekuConfig.discovery().isDiscoveryEnabled()));
-    powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
+    powchainService(tekuConfig, serviceConfig, trustedExecutionClientProvider)
+        .ifPresent(services::add);
     services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
   }
 
   private Optional<PowchainService> powchainService(
-      TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
+      TekuConfiguration tekuConfig,
+      final ServiceConfig serviceConfig,
+      ExecutionClientProvider executionClientProvider) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
-        || !tekuConfig.powchain().isEnabled()) {
+        || (!tekuConfig.powchain().isEnabled() && executionClientProvider.getWeb3j().isEmpty())) {
       return Optional.empty();
     }
 
-    return Optional.of(new PowchainService(serviceConfig, tekuConfig.powchain()));
+    return Optional.of(
+        new PowchainService(
+            serviceConfig,
+            tekuConfig.powchain(),
+            executionClientProvider.getWeb3j(),
+            executionClientProvider.getEndpoint()));
   }
 }

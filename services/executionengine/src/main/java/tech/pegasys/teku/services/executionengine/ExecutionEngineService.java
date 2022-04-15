@@ -15,7 +15,6 @@ package tech.pegasys.teku.services.executionengine;
 
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
-import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -23,7 +22,6 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -35,16 +33,16 @@ public class ExecutionEngineService extends Service {
   private final EventChannels eventChannels;
   private final ExecutionEngineConfiguration config;
   private final MetricsSystem metricsSystem;
-  private final TimeProvider timeProvider;
-  private final Path beaconDataDirectory;
+  private final ExecutionClientProvider trustedWeb3jClientProvider;
 
   public ExecutionEngineService(
-      final ServiceConfig serviceConfig, final ExecutionEngineConfiguration config) {
+      final ServiceConfig serviceConfig,
+      final ExecutionEngineConfiguration config,
+      final ExecutionClientProvider trustedWeb3jClientProvider) {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
-    this.timeProvider = serviceConfig.getTimeProvider();
-    this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.config = config;
+    this.trustedWeb3jClientProvider = trustedWeb3jClientProvider;
   }
 
   @Override
@@ -54,12 +52,7 @@ public class ExecutionEngineService extends Service {
     final ExecutionEngineChannel executionEngine =
         new ThrottlingExecutionEngineChannel(
             ExecutionEngineChannelImpl.create(
-                endpoint,
-                config.getSpec(),
-                timeProvider,
-                config.getVersion(),
-                config.getJwtSecretFile(),
-                beaconDataDirectory),
+                trustedWeb3jClientProvider.getWeb3JClient(), config.getVersion(), config.getSpec()),
             MAXIMUM_CONCURRENT_EE_REQUESTS,
             metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);

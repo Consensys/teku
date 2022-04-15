@@ -16,15 +16,13 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.Web3JClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
@@ -36,7 +34,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigu
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -57,32 +54,19 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private final Spec spec;
 
   public static ExecutionEngineChannelImpl create(
-      final String eeEndpoint,
-      final Spec spec,
-      final TimeProvider timeProvider,
-      final Version version,
-      final Optional<String> jwtSecretFile,
-      final Path beaconDataDirectory) {
-    checkNotNull(eeEndpoint);
+      final Optional<Web3JClient> web3JClient, final Version version, final Spec spec) {
     checkNotNull(version);
-    return new ExecutionEngineChannelImpl(
-        createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile, beaconDataDirectory),
-        spec);
+    checkArgument(web3JClient.isPresent());
+    return new ExecutionEngineChannelImpl(createEngineClient(version, web3JClient.get()), spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
-      final String eeEndpoint,
-      final TimeProvider timeProvider,
-      final Version version,
-      final Optional<String> jwtSecretFile,
-      final Path beaconDataDirectory) {
+      final Version version, final Web3JClient web3JClient) {
     LOG.info("Execution Engine version: {}", version);
     if (version != Version.KILNV2) {
       throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
     }
-    final JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
-    return new Web3JExecutionEngineClient(
-        eeEndpoint, timeProvider, Optional.of(new JwtConfig(keyLoader.getSecretKey())));
+    return new Web3JExecutionEngineClient(web3JClient);
   }
 
   private ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {

@@ -282,7 +282,7 @@ public class StatusLogger {
   }
 
   public void eth1ServiceDown(final long interval) {
-    log.warn("Eth1 service down for {}s, retrying", interval);
+    log.warn("Eth1 service down or still syncing for {}s, retrying", interval);
   }
 
   public void eth1AtHead(final BigInteger headBlockNumber) {

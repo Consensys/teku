@@ -58,17 +58,20 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private final Web3j web3j;
   private final AsyncRunner asyncRunner;
   private final LabelledMetric<Counter> requestCounter;
+  private final boolean trustedWeb3j;
 
   public Web3jEth1Provider(
       final SpecConfig config,
       final MetricsSystem metricsSystem,
       final String id,
       final Web3j web3j,
+      final boolean trustedWeb3j,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider) {
     super(timeProvider);
     this.config = config;
     this.web3j = web3j;
+    this.trustedWeb3j = trustedWeb3j;
     this.asyncRunner = asyncRunner;
     this.id = id;
     requestCounter =
@@ -213,15 +216,22 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   public SafeFuture<Boolean> validate() {
     if (validating.compareAndSet(false, true)) {
       LOG.debug("Validating endpoint {} ...", this.id);
-      return validateChainId()
-          .thenCompose(
-              result -> {
-                if (result == Result.FAILED) {
-                  return SafeFuture.completedFuture(result);
-                } else {
-                  return validateSyncing();
-                }
-              })
+      final SafeFuture<Result> firstValidationStep;
+      if (trustedWeb3j) {
+        firstValidationStep = validateSyncing();
+      } else {
+        firstValidationStep =
+            validateChainId()
+                .thenCompose(
+                    result -> {
+                      if (result == Result.FAILED) {
+                        return SafeFuture.completedFuture(result);
+                      } else {
+                        return validateSyncing();
+                      }
+                    });
+      }
+      return firstValidationStep
           .thenApply(
               result -> {
                 updateLastValidation(result);

@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -66,29 +67,50 @@ public class PowchainService extends Service {
   private final List<Web3j> web3js;
   private final OkHttpClient okHttpClient;
 
-  public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
-    checkArgument(powConfig.isEnabled());
+  public PowchainService(
+      final ServiceConfig serviceConfig,
+      final PowchainConfiguration powConfig,
+      final Optional<Web3j> trustedWeb3j,
+      final Optional<String> trustedEndpoint) {
+    checkArgument(powConfig.isEnabled() || trustedWeb3j.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     this.okHttpClient = createOkHttpClient();
-    this.web3js = createWeb3js(powConfig);
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
-    Eth1ProviderSelector eth1ProviderSelector =
-        new Eth1ProviderSelector(
-            IntStream.range(0, web3js.size())
-                .mapToObj(
-                    idx ->
-                        new Web3jEth1Provider(
-                            powConfig.getSpec().getGenesisSpecConfig(),
-                            serviceConfig.getMetricsSystem(),
-                            Eth1Provider.generateEth1ProviderId(
-                                idx + 1, powConfig.getEth1Endpoints().get(idx)),
-                            web3js.get(idx),
-                            asyncRunner,
-                            serviceConfig.getTimeProvider()))
-                .collect(Collectors.toList()));
-
+    final Eth1ProviderSelector eth1ProviderSelector;
+    if (trustedWeb3j.isPresent()) {
+      LOG.warn("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
+      this.web3js = Collections.singletonList(trustedWeb3j.get());
+      eth1ProviderSelector =
+          new Eth1ProviderSelector(
+              Collections.singletonList(
+                  new Web3jEth1Provider(
+                      powConfig.getSpec().getGenesisSpecConfig(),
+                      serviceConfig.getMetricsSystem(),
+                      trustedEndpoint.orElseThrow(),
+                      web3js.get(0),
+                      true,
+                      asyncRunner,
+                      serviceConfig.getTimeProvider())));
+    } else {
+      this.web3js = createWeb3js(powConfig);
+      eth1ProviderSelector =
+          new Eth1ProviderSelector(
+              IntStream.range(0, web3js.size())
+                  .mapToObj(
+                      idx ->
+                          new Web3jEth1Provider(
+                              powConfig.getSpec().getGenesisSpecConfig(),
+                              serviceConfig.getMetricsSystem(),
+                              Eth1Provider.generateEth1ProviderId(
+                                  idx + 1, powConfig.getEth1Endpoints().get(idx)),
+                              web3js.get(idx),
+                              false,
+                              asyncRunner,
+                              serviceConfig.getTimeProvider()))
+                  .collect(Collectors.toList()));
+    }
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(

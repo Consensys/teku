@@ -26,7 +26,6 @@ import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigu
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeaconBlockSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -55,17 +53,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     ObjectMapperFactory.getObjectMapper().registerModule(module);
   }
 
-  public Web3JExecutionEngineClient(
-      final String eeEndpoint,
-      final TimeProvider timeProvider,
-      final Optional<JwtConfig> jwtConfig) {
-    Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
-    this.web3JClient =
-        web3JClientBuilder
-            .endpoint(eeEndpoint)
-            .jwtConfigOpt(jwtConfig)
-            .timeProvider(timeProvider)
-            .build();
+  public Web3JExecutionEngineClient(final Web3JClient web3JClient) {
+    this.web3JClient = web3JClient;
   }
 
   @Override

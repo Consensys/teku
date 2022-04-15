@@ -19,6 +19,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
+  testImplementation project(':services:executionengine')
 
   integrationTestImplementation testFixtures(project(':infrastructure:json'))
   integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
