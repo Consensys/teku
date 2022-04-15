@@ -256,7 +256,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
         case "time":
           final UInt64 expectedTime = getUInt64(checks, checkType);
-          assertThat(store.getTime()).isEqualTo(expectedTime);
+          assertThat(store.getTimeSeconds()).isEqualTo(expectedTime);
           break;
 
         case "justified_checkpoint_root":

@@ -66,4 +66,5 @@ dependencies {
     testFixturesImplementation project(':infrastructure:bytes')
     testFixturesImplementation testFixtures(project(':infrastructure:bls'))
     testFixturesImplementation project(':infrastructure:events')
+    testFixturesImplementation project(':infrastructure:time')
 }

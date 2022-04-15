@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,7 +33,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ReadOnlyStore {
 
-  UInt64 getTime();
+  default UInt64 getTimeSeconds() {
+    return millisToSeconds(getTimeMillis());
+  }
+
+  /**
+   * Returns time in milliseconds to allow for more fine-grained time calculations
+   *
+   * @return the time in milliseconds
+   */
+  UInt64 getTimeMillis();
 
   UInt64 getGenesisTime();
 
