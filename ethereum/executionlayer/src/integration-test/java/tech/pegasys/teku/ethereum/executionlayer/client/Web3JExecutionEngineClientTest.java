@@ -50,7 +50,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.services.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -86,11 +85,14 @@ public class Web3JExecutionEngineClientTest {
     dataStructureUtil = specContext.getDataStructureUtil();
     spec = specContext.getSpec();
     mockWebServer.start();
-    ExecutionClientProvider trustedWebClientProvider =
-        ExecutionClientProvider.create(
-            "http://localhost:" + mockWebServer.getPort(), timeProvider, Optional.empty(), null);
-    eeClient =
-        new Web3JExecutionEngineClient(trustedWebClientProvider.getWeb3JClient().orElseThrow());
+    Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
+    Web3JClient web3JClient =
+        web3JClientBuilder
+            .endpoint("http://localhost:" + mockWebServer.getPort())
+            .jwtConfigOpt(Optional.empty())
+            .timeProvider(timeProvider)
+            .build();
+    eeClient = new Web3JExecutionEngineClient(web3JClient);
   }
 
   @AfterEach

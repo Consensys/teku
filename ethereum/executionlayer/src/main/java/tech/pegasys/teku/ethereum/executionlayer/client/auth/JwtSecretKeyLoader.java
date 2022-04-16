@@ -59,6 +59,7 @@ public class JwtSecretKeyLoader {
   private void writeGeneratedKeyToFile(final Key key) {
     final Path generatedKeyFilePath = beaconDataDirectory.resolve(JWT_SECRET_FILE_NAME);
     try {
+      Files.createDirectories(generatedKeyFilePath.getParent());
       Files.writeString(generatedKeyFilePath, Bytes.wrap(key.getEncoded()).toHexString());
       LOG.info(
           "New execution engine JWT secret generated in {}", generatedKeyFilePath.toAbsolutePath());
