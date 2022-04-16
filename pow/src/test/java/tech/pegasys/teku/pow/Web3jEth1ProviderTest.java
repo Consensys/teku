@@ -63,6 +63,7 @@ public class Web3jEth1ProviderTest {
             new StubMetricsSystem(),
             Eth1Provider.generateEth1ProviderId(0, "https://eth.test.org:1234/test"),
             web3,
+            false,
             asyncRunner,
             timeProvider);
   }

@@ -13,11 +13,15 @@
 
 package tech.pegasys.teku.services.executionengine;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JClient;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 public interface ExecutionClientProvider {
+  String STUB_ENDPOINT_IDENTIFIER = "stub";
   ExecutionClientProvider NOOP =
       new ExecutionClientProvider() {
         @Override
@@ -35,10 +39,58 @@ public interface ExecutionClientProvider {
           return Optional.empty();
         }
       };
+  ExecutionClientProvider STUB =
+      new ExecutionClientProvider() {
+        @Override
+        public Optional<Web3JClient> getWeb3JClient() {
+          return Optional.empty();
+        }
+
+        @Override
+        public Optional<Web3j> getWeb3j() {
+          return Optional.empty();
+        }
+
+        @Override
+        public Optional<String> getEndpoint() {
+          return Optional.of(STUB_ENDPOINT_IDENTIFIER);
+        }
+
+        @Override
+        public boolean isStub() {
+          return true;
+        }
+      };
+
+  static ExecutionClientProvider create(
+      final ServiceConfig serviceConfig, final ExecutionEngineConfiguration engineConfiguration) {
+    return create(
+        engineConfiguration.getEndpoint(),
+        serviceConfig.getTimeProvider(),
+        engineConfiguration.getJwtSecretFile(),
+        serviceConfig.getDataDirLayout().getBeaconDataDirectory());
+  }
+
+  static ExecutionClientProvider create(
+      final String eeEndpoint,
+      final TimeProvider timeProvider,
+      final Optional<String> jwtSecretFile,
+      final Path beaconDataDirectory) {
+    if (eeEndpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {
+      return STUB;
+    } else {
+      return new TrustedExecutionClientProvider(
+          eeEndpoint, timeProvider, jwtSecretFile, beaconDataDirectory);
+    }
+  }
 
   Optional<Web3JClient> getWeb3JClient();
 
   Optional<Web3j> getWeb3j();
 
   Optional<String> getEndpoint();
+
+  default boolean isStub() {
+    return false;
+  }
 }

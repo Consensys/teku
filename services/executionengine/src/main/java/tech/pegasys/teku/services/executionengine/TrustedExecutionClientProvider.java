@@ -23,7 +23,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.Web3jClientBuilder;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtSecretKeyLoader;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 public class TrustedExecutionClientProvider implements ExecutionClientProvider {
   private final String eeEndpoint;
@@ -33,16 +32,7 @@ public class TrustedExecutionClientProvider implements ExecutionClientProvider {
   private boolean alreadyBuilt = false;
   private Web3JClient web3JClient;
 
-  public TrustedExecutionClientProvider(
-      final ServiceConfig serviceConfig, final ExecutionEngineConfiguration engineConfiguration) {
-    this(
-        engineConfiguration.getEndpoint(),
-        serviceConfig.getTimeProvider(),
-        engineConfiguration.getJwtSecretFile(),
-        serviceConfig.getDataDirLayout().getBeaconDataDirectory());
-  }
-
-  public TrustedExecutionClientProvider(
+  TrustedExecutionClientProvider(
       final String eeEndpoint,
       final TimeProvider timeProvider,
       final Optional<String> jwtSecretFile,

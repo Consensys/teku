@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigu
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
@@ -53,11 +56,17 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private final ExecutionEngineClient executionEngineClient;
   private final Spec spec;
 
-  public static ExecutionEngineChannelImpl create(
+  public static ExecutionEngineChannel createImpl(
       final Optional<Web3JClient> web3JClient, final Version version, final Spec spec) {
     checkNotNull(version);
     checkArgument(web3JClient.isPresent());
     return new ExecutionEngineChannelImpl(createEngineClient(version, web3JClient.get()), spec);
+  }
+
+  public static ExecutionEngineChannel createStub(
+      final TimeProvider timeProvider, final Spec spec) {
+    EVENT_LOG.executionEngineStubEnabled();
+    return new ExecutionEngineChannelStub(spec, timeProvider, true);
   }
 
   private static ExecutionEngineClient createEngineClient(

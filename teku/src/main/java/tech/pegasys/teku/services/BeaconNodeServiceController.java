@@ -21,7 +21,6 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.services.executionengine.ExecutionEngineService;
-import tech.pegasys.teku.services.executionengine.TrustedExecutionClientProvider;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
@@ -35,7 +34,7 @@ public class BeaconNodeServiceController extends ServiceController {
     if (tekuConfig.executionEngine().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
       trustedExecutionClientProvider =
-          new TrustedExecutionClientProvider(serviceConfig, tekuConfig.executionEngine());
+          ExecutionClientProvider.create(serviceConfig, tekuConfig.executionEngine());
       services.add(
           new ExecutionEngineService(
               serviceConfig, tekuConfig.executionEngine(), trustedExecutionClientProvider));

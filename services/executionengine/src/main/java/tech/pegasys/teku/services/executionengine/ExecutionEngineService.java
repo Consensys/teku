@@ -22,6 +22,7 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -34,6 +35,7 @@ public class ExecutionEngineService extends Service {
   private final ExecutionEngineConfiguration config;
   private final MetricsSystem metricsSystem;
   private final ExecutionClientProvider trustedWeb3jClientProvider;
+  private final TimeProvider timeProvider;
 
   public ExecutionEngineService(
       final ServiceConfig serviceConfig,
@@ -43,18 +45,25 @@ public class ExecutionEngineService extends Service {
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.config = config;
     this.trustedWeb3jClientProvider = trustedWeb3jClientProvider;
+    this.timeProvider = serviceConfig.getTimeProvider();
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    final String endpoint = config.getEndpoint();
+    final String endpoint = trustedWeb3jClientProvider.getEndpoint().orElseThrow();
     LOG.info("Using execution engine at {}", endpoint);
+    final ExecutionEngineChannel executionEngineChannel;
+    if (trustedWeb3jClientProvider.isStub()) {
+      executionEngineChannel =
+          ExecutionEngineChannelImpl.createStub(timeProvider, config.getSpec());
+    } else {
+      executionEngineChannel =
+          ExecutionEngineChannelImpl.createImpl(
+              trustedWeb3jClientProvider.getWeb3JClient(), config.getVersion(), config.getSpec());
+    }
     final ExecutionEngineChannel executionEngine =
         new ThrottlingExecutionEngineChannel(
-            ExecutionEngineChannelImpl.create(
-                trustedWeb3jClientProvider.getWeb3JClient(), config.getVersion(), config.getSpec()),
-            MAXIMUM_CONCURRENT_EE_REQUESTS,
-            metricsSystem);
+            executionEngineChannel, MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);
     return SafeFuture.COMPLETE;
   }
