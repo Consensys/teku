@@ -165,7 +165,7 @@ class AttestationValidatorTest {
     final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
     chainUpdater.setCurrentSlot(slot);
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
-    chainUpdater.setTime(recentChainData.getStore().getTime().plus(ONE));
+    chainUpdater.setTime(recentChainData.getStore().getTimeSeconds().plus(ONE));
 
     assertThat(validate(attestation).code()).isEqualTo(IGNORE);
   }

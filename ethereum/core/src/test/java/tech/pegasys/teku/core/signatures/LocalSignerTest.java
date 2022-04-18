@@ -57,6 +57,20 @@ class LocalSignerTest {
   }
 
   @Test
+  public void shouldSignBlindedBlock() {
+    final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock(10);
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "pbSSuf7h70JkzI/U157flTWPZDuaBXgRLj1HLMoCwjA4Xd0hMdGewn7G2HLZiQcNC9G6FSd1+0BT5PwknYez4ya6TccwpaGnsvWYLPf3SNIX5Ug7Yi1CF1fvEr3x9sZ0"));
+
+    final SafeFuture<BLSSignature> result = signer.signBlock(block, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
   public void shouldCreateRandaoReveal() {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(

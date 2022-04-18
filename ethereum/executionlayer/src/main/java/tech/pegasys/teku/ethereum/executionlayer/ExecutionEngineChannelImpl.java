@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
@@ -56,7 +58,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private final ExecutionEngineClient executionEngineClient;
   private final Spec spec;
 
-  public static ExecutionEngineChannelImpl create(
+  public static ExecutionEngineChannel create(
       final String eeEndpoint,
       final Spec spec,
       final TimeProvider timeProvider,
@@ -65,6 +67,10 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     checkNotNull(version);
+    if (eeEndpoint.equalsIgnoreCase(STUB_ENDPOINT_IDENTIFIER)) {
+      EVENT_LOG.executionEngineStubEnabled();
+      return new ExecutionEngineChannelStub(spec, timeProvider, true);
+    }
     return new ExecutionEngineChannelImpl(
         createEngineClient(eeEndpoint, timeProvider, version, jwtSecretFile, beaconDataDirectory),
         spec);

@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,7 +53,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final ReadWriteLock lock;
   private final StorageUpdateChannel storageUpdateChannel;
 
-  Optional<UInt64> time = Optional.empty();
+  Optional<UInt64> timeMillis = Optional.empty();
   Optional<UInt64> genesisTime = Optional.empty();
   Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
   Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
@@ -98,14 +99,32 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setTime(UInt64 time) {
-    final UInt64 storeTime = store.getTime();
+  public void setTimeSeconds(UInt64 timeSeconds) {
+    final UInt64 storeTime = store.getTimeSeconds();
     checkArgument(
-        time.isGreaterThanOrEqualTo(storeTime),
-        "Cannot revert time from %s to %s",
+        timeSeconds.isGreaterThanOrEqualTo(storeTime),
+        "Cannot revert time (seconds) from %s to %s",
         storeTime,
-        time);
-    this.time = Optional.of(time);
+        timeSeconds);
+    UInt64 timeMillis = secondsToMillis(timeSeconds);
+    if (updatingMillisIsRequired(timeMillis)) {
+      setTimeMillis(timeMillis);
+    }
+  }
+
+  private boolean updatingMillisIsRequired(UInt64 timeMillis) {
+    return timeMillis.isGreaterThan(store.getTimeMillis());
+  }
+
+  @Override
+  public void setTimeMillis(UInt64 timeMillis) {
+    final UInt64 storeTimeMillis = store.getTimeMillis();
+    checkArgument(
+        timeMillis.isGreaterThanOrEqualTo(storeTimeMillis),
+        "Cannot revert time (millis) from %s to %s",
+        storeTimeMillis,
+        timeMillis);
+    this.timeMillis = Optional.of(timeMillis);
   }
 
   @Override
@@ -195,8 +214,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public UInt64 getTime() {
-    return time.orElseGet(store::getTime);
+  public UInt64 getTimeMillis() {
+    return timeMillis.orElseGet(store::getTimeMillis);
   }
 
   @Override

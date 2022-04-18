@@ -92,7 +92,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
             .build();
 
-    assertThat(store.getTime()).isEqualTo(genesisTime);
+    assertThat(store.getTimeSeconds()).isEqualTo(genesisTime);
   }
 
   @Test

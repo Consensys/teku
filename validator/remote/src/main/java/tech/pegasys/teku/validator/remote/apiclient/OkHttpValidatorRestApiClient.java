@@ -104,15 +104,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
-  private final boolean blindedBlocksEnabled;
 
-  public OkHttpValidatorRestApiClient(
-      final HttpUrl baseEndpoint,
-      final OkHttpClient okHttpClient,
-      final boolean blindedBlocksEnabled) {
+  public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
-    this.blindedBlocksEnabled = blindedBlocksEnabled;
   }
 
   public Optional<GetSpecResponse> getConfigSpec() {
@@ -174,7 +169,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    if (blindedBlocksEnabled || blinded) {
+    if (blinded) {
       return createUnsignedBlindedBlock(pathParams, queryParams);
     }
 

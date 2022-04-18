@@ -35,6 +35,7 @@ public class BlockProductionDuty implements Duty {
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final boolean useBlindedBlock;
   private final Spec spec;
 
   public BlockProductionDuty(
@@ -42,11 +43,13 @@ public class BlockProductionDuty implements Duty {
       final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
+      final boolean useBlindedBlock,
       final Spec spec) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.useBlindedBlock = useBlindedBlock;
     this.spec = spec;
   }
 
@@ -82,7 +85,7 @@ public class BlockProductionDuty implements Duty {
 
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(final BLSSignature randaoReveal) {
     return validatorApiChannel.createUnsignedBlock(
-        slot, randaoReveal, validator.getGraffiti(), false);
+        slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
   }
 
   public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
