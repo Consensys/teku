@@ -102,11 +102,7 @@ public class Generator {
                   : attestationGenerator.getAttestationsForSlot(postState, currentSlot);
 
           System.out.println(
-              "Processed: "
-                  + currentSlot
-                  + ", "
-                  + (System.currentTimeMillis() - s)
-                  + " ms");
+              "Processed: " + currentSlot + ", " + (System.currentTimeMillis() - s) + " ms");
         }
 
         Optional<BeaconState> bestState =
