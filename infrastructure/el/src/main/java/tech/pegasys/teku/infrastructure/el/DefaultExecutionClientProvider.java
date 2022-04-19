@@ -16,28 +16,32 @@ package tech.pegasys.teku.infrastructure.el;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.infrastructure.el.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.el.auth.JwtSecretKeyLoader;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class TrustedExecutionClientProvider implements ExecutionClientProvider {
+public class DefaultExecutionClientProvider implements ExecutionClientProvider {
   private final String eeEndpoint;
   private final TimeProvider timeProvider;
   private final Optional<String> jwtSecretFile;
+  private final Optional<Duration> timeout;
   private final Path beaconDataDirectory;
   private boolean alreadyBuilt = false;
   private Web3JClient web3JClient;
 
-  TrustedExecutionClientProvider(
+  DefaultExecutionClientProvider(
       final String eeEndpoint,
       final TimeProvider timeProvider,
+      final Optional<Duration> timeout,
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     this.eeEndpoint = eeEndpoint;
     this.timeProvider = timeProvider;
+    this.timeout = timeout;
     this.jwtSecretFile = jwtSecretFile;
     this.beaconDataDirectory = beaconDataDirectory;
   }
@@ -52,6 +56,7 @@ public class TrustedExecutionClientProvider implements ExecutionClientProvider {
     this.web3JClient =
         web3JClientBuilder
             .endpoint(eeEndpoint)
+            .timeout(timeout)
             .jwtConfigOpt(Optional.of(jwtConfig))
             .timeProvider(timeProvider)
             .build();

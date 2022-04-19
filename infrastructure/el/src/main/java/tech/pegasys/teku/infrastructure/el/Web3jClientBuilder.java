@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.el.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -26,9 +27,15 @@ public class Web3jClientBuilder {
   private TimeProvider timeProvider;
   private URI endpoint;
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
+  private Optional<Duration> timeout = Optional.empty();
 
   public Web3jClientBuilder endpoint(String endpoint) {
     this.endpoint = parseEndpoint(endpoint);
+    return this;
+  }
+
+  public Web3jClientBuilder timeout(Optional<Duration> timeout) {
+    this.timeout = timeout;
     return this;
   }
 
@@ -59,7 +66,7 @@ public class Web3jClientBuilder {
     switch (endpoint.getScheme()) {
       case "http":
       case "https":
-        return new Web3jHttpClient(endpoint, timeProvider, jwtConfigOpt);
+        return new Web3jHttpClient(endpoint, timeProvider, timeout, jwtConfigOpt);
       case "ws":
       case "wss":
         return new Web3jWebsocketClient(endpoint, timeProvider, jwtConfigOpt);

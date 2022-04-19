@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services;
 
+import static tech.pegasys.teku.spec.config.Constants.EL_QUERY_TIMEOUT;
+
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.el.ExecutionClientProvider;
@@ -37,6 +39,7 @@ public class BeaconNodeServiceController extends ServiceController {
           ExecutionClientProvider.create(
               tekuConfig.executionEngine().getEndpoint(),
               serviceConfig.getTimeProvider(),
+              Optional.of(EL_QUERY_TIMEOUT),
               tekuConfig.executionEngine().getJwtSecretFile(),
               serviceConfig.getDataDirLayout().getBeaconDataDirectory());
       services.add(

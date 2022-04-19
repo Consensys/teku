@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.el;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -47,13 +48,14 @@ public interface ExecutionClientProvider {
   static ExecutionClientProvider create(
       final String eeEndpoint,
       final TimeProvider timeProvider,
+      final Optional<Duration> timeout,
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
     if (eeEndpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {
       return STUB;
     } else {
-      return new TrustedExecutionClientProvider(
-          eeEndpoint, timeProvider, jwtSecretFile, beaconDataDirectory);
+      return new DefaultExecutionClientProvider(
+          eeEndpoint, timeProvider, timeout, jwtSecretFile, beaconDataDirectory);
     }
   }
 

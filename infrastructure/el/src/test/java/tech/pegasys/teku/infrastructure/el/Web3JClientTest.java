@@ -45,7 +45,7 @@ public class Web3JClientTest {
   private static final Web3JClient WEB3J_CLIENT = new Web3JClientImpl(TIME_PROVIDER);
   private static final URI ENDPOINT = URI.create("");
   private static final Web3jHttpClient WEB3J_HTTP_CLIENT =
-      new Web3jHttpClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
+      new Web3jHttpClient(ENDPOINT, TIME_PROVIDER, Optional.empty(), Optional.empty());
   private static final WebSocketService WEB_SOCKET_SERVICE = mock(WebSocketService.class);
   private static final Web3jWebsocketClient WEB3J_WEBSOCKET_CLIENT =
       new Web3jWebsocketClient(ENDPOINT, TIME_PROVIDER, Optional.empty());

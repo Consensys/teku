@@ -1,5 +1,4 @@
 dependencies {
-  implementation project(':ethereum:spec')
   implementation project(':infrastructure:time')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:unsigned')

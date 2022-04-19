@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.el;
 
-import static tech.pegasys.teku.spec.config.Constants.EL_QUERY_TIMEOUT;
-
 import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -31,19 +30,22 @@ public class Web3jHttpClient extends Web3JClient {
   private static final Logger LOG = LogManager.getLogger();
 
   public Web3jHttpClient(
-      final URI endpoint, final TimeProvider timeProvider, final Optional<JwtConfig> jwtConfig) {
+      final URI endpoint,
+      final TimeProvider timeProvider,
+      final Optional<Duration> timeout,
+      final Optional<JwtConfig> jwtConfig) {
     super(timeProvider);
-    final OkHttpClient okHttpClient = createOkHttpClient(jwtConfig, timeProvider);
+    final OkHttpClient okHttpClient = createOkHttpClient(jwtConfig, timeout, timeProvider);
     Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
     initWeb3jService(httpService);
   }
 
   private OkHttpClient createOkHttpClient(
-      final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder =
-        new OkHttpClient.Builder()
-            // Set read timeout to longest request timeout
-            .readTimeout(EL_QUERY_TIMEOUT);
+      final Optional<JwtConfig> jwtConfig,
+      final Optional<Duration> timeout,
+      final TimeProvider timeProvider) {
+    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    timeout.ifPresent(builder::readTimeout);
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);
