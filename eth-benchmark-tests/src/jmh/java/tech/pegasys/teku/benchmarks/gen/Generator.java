@@ -52,10 +52,10 @@ public class Generator {
     AbstractBlockProcessor.blsVerifyDeposit = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 32 * 1024;
+    int validatorsCount = 400000;
 
     List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
+        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-400k-seed-0.txt.gz")
             .readAll(validatorsCount);
 
     System.out.println("Keypairs done.");
@@ -102,13 +102,7 @@ public class Generator {
                   : attestationGenerator.getAttestationsForSlot(postState, currentSlot);
 
           System.out.println(
-              "Processed: "
-                  + currentSlot
-                  + ", "
-                  + getCommittees(spec, postState.getState())
-                  + ", "
-                  + (System.currentTimeMillis() - s)
-                  + " ms");
+              "Processed: " + currentSlot + ", " + (System.currentTimeMillis() - s) + " ms");
         }
 
         Optional<BeaconState> bestState =
@@ -122,7 +116,7 @@ public class Generator {
   @Test
   public void generateKeyPairs() throws Exception {
     int randomSeed = 0;
-    int limitK = 200;
+    int limitK = 400;
     File outFile = new File("bls-key-pairs-" + limitK + "k-seed-" + randomSeed + ".txt");
     Iterator<BLSKeyPair> keyPairIterator =
         IntStream.range(randomSeed, randomSeed + Integer.MAX_VALUE)
@@ -138,7 +132,7 @@ public class Generator {
     }
 
     // check
-    try (BlsKeyPairIO.Reader reader = BlsKeyPairIO.createReaderForFile(outFile.getName())) {
+    try (BlsKeyPairIO.Reader reader = BlsKeyPairIO.createReaderForFile(outFile)) {
       for (BLSKeyPair keyPair : reader.withLimit(10)) {
         System.out.println(keyPair);
       }
