@@ -588,8 +588,10 @@ public class TekuNode extends Node {
 
   public static class Config {
     public static final String DEFAULT_NETWORK_NAME = "swift";
+    public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
 
     private Optional<InputStream> maybeNetworkYaml = Optional.empty();
+    private Optional<InputStream> maybeJwtFile = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -728,6 +730,12 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withJwtSecretFile(final InputStream jwtFileStream) {
+      this.maybeJwtFile = Optional.of(jwtFileStream);
+      configMap.put(EE_JWT_SECRET_FILE_KEY, JWT_SECRET_FILE_PATH);
+      return this;
+    }
+
     public Config withRealNetwork() {
       configMap.put("p2p-enabled", true);
       return this;
@@ -767,18 +775,10 @@ public class TekuNode extends Node {
       configFiles.put(configFile, CONFIG_FILE_PATH);
 
       if (maybeNetworkYaml.isPresent()) {
-        final File networkFile = File.createTempFile("network", ".yaml");
-        networkFile.deleteOnExit();
-        try (FileOutputStream out = new FileOutputStream(networkFile)) {
-          IOUtils.copy(maybeNetworkYaml.get(), out);
-        } catch (Exception ex) {
-          LOG.error("Failed to write network yaml", ex);
-        } finally {
-          if (maybeNetworkYaml.isPresent()) {
-            maybeNetworkYaml.get().close();
-          }
-        }
-        configFiles.put(networkFile, NETWORK_FILE_PATH);
+        configFiles.put(copyStreamInTmpFile(maybeNetworkYaml.get()), NETWORK_FILE_PATH);
+      }
+      if (maybeJwtFile.isPresent()) {
+        configFiles.put(copyStreamInTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
       }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");
@@ -787,6 +787,18 @@ public class TekuNode extends Node {
           privateKeyFile.toPath(), Bytes.wrap(privateKey.bytes()).toHexString(), UTF_8);
       configFiles.put(privateKeyFile, PRIVATE_KEY_FILE_PATH);
       return configFiles;
+    }
+
+    private File copyStreamInTmpFile(final InputStream inputStream) throws Exception {
+      final File tmpFile = File.createTempFile("teku", ".tmp");
+      tmpFile.deleteOnExit();
+      try (inputStream;
+          FileOutputStream out = new FileOutputStream(tmpFile)) {
+        IOUtils.copy(inputStream, out);
+      } catch (Exception ex) {
+        LOG.error("Failed to write file", ex);
+      }
+      return tmpFile;
     }
 
     public String getNetworkName() {

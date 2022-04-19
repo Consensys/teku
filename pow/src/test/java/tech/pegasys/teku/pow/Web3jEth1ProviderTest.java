@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.Web3j;
@@ -63,13 +62,12 @@ public class Web3jEth1ProviderTest {
             new StubMetricsSystem(),
             Eth1Provider.generateEth1ProviderId(0, "https://eth.test.org:1234/test"),
             web3,
-            false,
             asyncRunner,
             timeProvider);
   }
 
   @Test
-  void shouldUpdateCallTimestampOnSuccess() throws ExecutionException, InterruptedException {
+  void shouldUpdateCallTimestampOnSuccess() {
     succeedACall();
 
     assertThat(provider.getLastCallTime()).isEqualTo(UInt64.valueOf(1000));
@@ -153,18 +151,18 @@ public class Web3jEth1ProviderTest {
   }
 
   @Test
-  void validationShouldFailIfChainIdReturnsJRPCErrorNotSyncing() {
+  void validationShouldNotFailIfChainIdReturnsJRPCErrorNotSyncing() {
     prepareFailingRequestWithChainidJRPCError(request1);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate()).isCompletedWithValue(false);
-    assertThat(provider.isValid()).isFalse();
+    assertThat(provider.validate()).isCompletedWithValue(true);
+    assertThat(provider.isValid()).isTrue();
   }
 
   @Test
-  void needsToBeValidatedChecks() throws ExecutionException, InterruptedException {
+  void needsToBeValidatedChecks() {
     // needs to be validated on initialization
     assertThat(provider.needsToBeValidated()).isTrue();
 

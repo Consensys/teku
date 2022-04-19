@@ -15,14 +15,12 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionlayer.client.Web3JClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
@@ -30,12 +28,12 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.el.Web3JClient;
+import tech.pegasys.teku.infrastructure.el.schema.Response;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -43,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
@@ -56,17 +53,10 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private final ExecutionEngineClient executionEngineClient;
   private final Spec spec;
 
-  public static ExecutionEngineChannel createImpl(
-      final Optional<Web3JClient> web3JClient, final Version version, final Spec spec) {
+  public static ExecutionEngineChannelImpl create(
+      final Web3JClient web3JClient, final Version version, final Spec spec) {
     checkNotNull(version);
-    checkArgument(web3JClient.isPresent());
-    return new ExecutionEngineChannelImpl(createEngineClient(version, web3JClient.get()), spec);
-  }
-
-  public static ExecutionEngineChannel createStub(
-      final TimeProvider timeProvider, final Spec spec) {
-    EVENT_LOG.executionEngineStubEnabled();
-    return new ExecutionEngineChannelStub(spec, timeProvider, true);
+    return new ExecutionEngineChannelImpl(createEngineClient(version, web3JClient), spec);
   }
 
   private static ExecutionEngineClient createEngineClient(

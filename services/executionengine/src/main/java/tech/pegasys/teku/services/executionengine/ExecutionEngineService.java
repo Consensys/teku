@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.executionengine;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,11 +22,13 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.el.ExecutionClientProvider;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 
 public class ExecutionEngineService extends Service {
 
@@ -34,32 +37,32 @@ public class ExecutionEngineService extends Service {
   private final EventChannels eventChannels;
   private final ExecutionEngineConfiguration config;
   private final MetricsSystem metricsSystem;
-  private final ExecutionClientProvider trustedWeb3jClientProvider;
+  private final ExecutionClientProvider web3jClientProvider;
   private final TimeProvider timeProvider;
 
   public ExecutionEngineService(
       final ServiceConfig serviceConfig,
       final ExecutionEngineConfiguration config,
-      final ExecutionClientProvider trustedWeb3jClientProvider) {
+      final ExecutionClientProvider web3jClientProvider) {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.config = config;
-    this.trustedWeb3jClientProvider = trustedWeb3jClientProvider;
+    this.web3jClientProvider = web3jClientProvider;
     this.timeProvider = serviceConfig.getTimeProvider();
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    final String endpoint = trustedWeb3jClientProvider.getEndpoint().orElseThrow();
+    final String endpoint = web3jClientProvider.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
     final ExecutionEngineChannel executionEngineChannel;
-    if (trustedWeb3jClientProvider.isStub()) {
-      executionEngineChannel =
-          ExecutionEngineChannelImpl.createStub(timeProvider, config.getSpec());
+    if (web3jClientProvider.isStub()) {
+      EVENT_LOG.executionEngineStubEnabled();
+      executionEngineChannel = new ExecutionEngineChannelStub(config.getSpec(), timeProvider, true);
     } else {
       executionEngineChannel =
-          ExecutionEngineChannelImpl.createImpl(
-              trustedWeb3jClientProvider.getWeb3JClient(), config.getVersion(), config.getSpec());
+          ExecutionEngineChannelImpl.create(
+              web3jClientProvider.getWeb3JClient(), config.getVersion(), config.getSpec());
     }
     final ExecutionEngineChannel executionEngine =
         new ThrottlingExecutionEngineChannel(

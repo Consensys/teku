@@ -33,6 +33,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.el.ExecutionClientProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.pow.BlockBasedEth1HeadTracker;
@@ -70,27 +71,25 @@ public class PowchainService extends Service {
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<Web3j> trustedWeb3j,
-      final Optional<String> trustedEndpoint) {
-    checkArgument(powConfig.isEnabled() || trustedWeb3j.isPresent());
+      final Optional<ExecutionClientProvider> executionClientProvider) {
+    checkArgument(powConfig.isEnabled() || executionClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     this.okHttpClient = createOkHttpClient();
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
     final Eth1ProviderSelector eth1ProviderSelector;
-    if (trustedWeb3j.isPresent()) {
-      LOG.warn("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
-      this.web3js = Collections.singletonList(trustedWeb3j.get());
+    if (!powConfig.isEnabled()) {
+      LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
+      this.web3js = Collections.singletonList(executionClientProvider.orElseThrow().getWeb3j());
       eth1ProviderSelector =
           new Eth1ProviderSelector(
               Collections.singletonList(
                   new Web3jEth1Provider(
                       powConfig.getSpec().getGenesisSpecConfig(),
                       serviceConfig.getMetricsSystem(),
-                      trustedEndpoint.orElseThrow(),
+                      executionClientProvider.get().getEndpoint(),
                       web3js.get(0),
-                      true,
                       asyncRunner,
                       serviceConfig.getTimeProvider())));
     } else {
@@ -106,7 +105,6 @@ public class PowchainService extends Service {
                               Eth1Provider.generateEth1ProviderId(
                                   idx + 1, powConfig.getEth1Endpoints().get(idx)),
                               web3js.get(idx),
-                              false,
                               asyncRunner,
                               serviceConfig.getTimeProvider()))
                   .collect(Collectors.toList()));
