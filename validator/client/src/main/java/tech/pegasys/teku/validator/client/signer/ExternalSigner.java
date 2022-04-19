@@ -49,7 +49,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -119,21 +118,10 @@ public class ExternalSigner implements Signer {
         new ExternalSignerBlockRequestProvider(spec, block);
 
     return sign(
-        getSigningRootForBlock(block, forkInfo),
+        signingRootUtil.signingRootForSignBlock(block, forkInfo),
         blockRequestProvider.getSignType(),
         blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo(forkInfo))),
         slashableBlockMessage(block.getSlot()));
-  }
-
-  private Bytes getSigningRootForBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    switch (spec.atSlot(block.getSlot()).getMilestone()) {
-      case PHASE0:
-      case ALTAIR:
-        return signingRootUtil.signingRootForSignBlock(block, forkInfo);
-      default:
-        return signingRootUtil.signingRootForSignBlock(
-            BeaconBlockHeader.fromBlock(block), forkInfo);
-    }
   }
 
   @Override
