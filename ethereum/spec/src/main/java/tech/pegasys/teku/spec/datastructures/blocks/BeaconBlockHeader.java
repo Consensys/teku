@@ -97,7 +97,12 @@ public class BeaconBlockHeader
   }
 
   public static BeaconBlockHeader fromBlock(final BeaconBlock block) {
-    return new BeaconBlockHeader(block.getSlot(), block.getProposerIndex(), block.getParentRoot(), block.getStateRoot(), block.getBodyRoot());
+    return new BeaconBlockHeader(
+        block.getSlot(),
+        block.getProposerIndex(),
+        block.getParentRoot(),
+        block.getStateRoot(),
+        block.getBodyRoot());
   }
 
   @Override

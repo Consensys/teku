@@ -14,21 +14,26 @@
 package tech.pegasys.teku.validator.client.signer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BlockRequestBody {
   private final SpecMilestone version;
   private final BeaconBlock beaconBlock;
+  private final BeaconBlockHeader beaconBlockHeader;
 
   @JsonCreator
   public BlockRequestBody(
-          @JsonProperty("version") final SpecMilestone version,
-          @JsonProperty("block") final BeaconBlock beaconBlock, final tech.pegasys.teku.api.schema.BeaconBlockHeader) {
+      @JsonProperty("version") final SpecMilestone version,
+      @JsonProperty("block") final BeaconBlock beaconBlock,
+      @JsonProperty("block_header") final BeaconBlockHeader beaconBlockHeader) {
     this.version = version;
     this.beaconBlock = beaconBlock;
+    this.beaconBlockHeader = beaconBlockHeader;
   }
 
   @JsonProperty("version")
@@ -43,6 +48,6 @@ public class BlockRequestBody {
 
   @JsonProperty("block_header")
   public BeaconBlockHeader getBeaconBlockHeader() {
-    return
+    return beaconBlockHeader;
   }
 }
