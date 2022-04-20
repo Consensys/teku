@@ -108,7 +108,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
         timeSeconds);
     UInt64 timeMillis = secondsToMillis(timeSeconds);
     if (updatingMillisIsRequired(timeMillis)) {
-      setTimeMillis(timeMillis);
+      this.timeMillis = Optional.of(timeMillis);
     }
   }
 

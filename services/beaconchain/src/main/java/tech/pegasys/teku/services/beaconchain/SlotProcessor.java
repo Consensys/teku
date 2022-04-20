@@ -198,7 +198,7 @@ public class SlotProcessor {
   }
 
   private UInt64 oneThirdSlotMillis(final UInt64 slot) {
-    return secondsToMillis(spec.getSecondsPerSlot(slot)).dividedBy(INTERVALS_PER_SLOT);
+    return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
   }
 
   private void processSlotStart(final UInt64 nodeEpoch) {
