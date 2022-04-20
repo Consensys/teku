@@ -14,10 +14,6 @@
 package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
-import java.io.IOException;
-import java.net.URL;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -28,7 +24,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
-  private static final Logger LOG = LogManager.getLogger();
   private static final String NETWORK_NAME = "less-swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
@@ -46,12 +41,9 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
     final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(NETWORK_NAME).sendValidatorDeposits(eth1Node, totalValidators);
-    final URL jwtFile = Resources.getResource("teku/ee-jwt-secret.hex");
-
     tekuNode =
         createTekuNode(
-            config -> {
-              try {
+            config ->
                 configureTekuNode(config, genesisTime)
                     .withDepositsFrom(eth1Node)
                     .withStartupTargetPeerCount(0)
@@ -59,11 +51,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")
                     .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
-                    .withJwtSecretFile(jwtFile.openStream());
-              } catch (IOException e) {
-                LOG.error("JWT secret file loading failure", e);
-              }
-            });
+                    .withJwtSecretFile(Resources.getResource("teku/ee-jwt-secret.hex")));
     tekuNode.start();
   }
 

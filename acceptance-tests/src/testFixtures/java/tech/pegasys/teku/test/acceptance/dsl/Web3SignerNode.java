@@ -16,10 +16,8 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
@@ -116,7 +113,7 @@ public class Web3SignerNode extends Node {
   public static class Config {
     private Map<String, Object> configMap = new HashMap<>();
     private final Map<File, String> configFileMap = new HashMap<>();
-    private Optional<InputStream> maybeNetworkYaml = Optional.empty();
+    private Optional<URL> maybeNetworkYaml = Optional.empty();
 
     public Config() {
       configMap.put("logging", "debug");
@@ -126,9 +123,9 @@ public class Web3SignerNode extends Node {
       configMap.put("eth2.key-manager-api-enabled", true);
     }
 
-    public Web3SignerNode.Config withNetwork(final InputStream stream) {
+    public Web3SignerNode.Config withNetwork(final URL yamlUrl) {
       // TODO just specify less-swift rather than NETWORK_FILE_PATH
-      this.maybeNetworkYaml = Optional.of(stream);
+      this.maybeNetworkYaml = Optional.of(yamlUrl);
       configMap.put("eth2.network", NETWORK_FILE_PATH);
       return this;
     }
@@ -144,17 +141,7 @@ public class Web3SignerNode extends Node {
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
       if (maybeNetworkYaml.isPresent()) {
-        final File networkFile = File.createTempFile("network", ".yaml");
-        networkFile.deleteOnExit();
-        try (OutputStream out = new FileOutputStream(networkFile)) {
-          IOUtils.copy(maybeNetworkYaml.get(), out);
-        } catch (Exception ex) {
-          LOG.error("Failed to write network yaml", ex);
-        } finally {
-          if (maybeNetworkYaml.isPresent()) {
-            maybeNetworkYaml.get().close();
-          }
-        }
+        final File networkFile = copyToTmpFile(maybeNetworkYaml.get());
         configFileMap.put(networkFile, NETWORK_FILE_PATH);
       }
     }
