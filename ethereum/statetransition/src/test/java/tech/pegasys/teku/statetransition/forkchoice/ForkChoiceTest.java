@@ -45,6 +45,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -232,7 +233,7 @@ class ForkChoiceTest {
       UInt64 timeIntoSlotMillis =
           recentChainData.getStore().getTimeMillis().plus(advanceTimeSlotMillis);
       transaction.setTimeMillis(timeIntoSlotMillis);
-      transaction.commit().join();
+      SafeFutureAssert.safeJoin(transaction.commit());
     }
 
     importBlock(expectedChainHead);

@@ -36,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.spec.util.RandomChainBuilder;
 import tech.pegasys.teku.spec.util.RandomChainBuilderForkChoiceStrategy;
@@ -183,7 +185,7 @@ class ForkChoiceUtilTest {
 
   @Test
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeGenesisTime() {
-    final MutableStore store = spy(MutableStore.class);
+    final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
     when(store.getTimeMillis()).thenReturn(UInt64.ZERO);
     forkChoiceUtil.onTick(store, UInt64.valueOf(2000000));
@@ -193,7 +195,7 @@ class ForkChoiceUtilTest {
 
   @Test
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeStoreTime() {
-    final MutableStore store = spy(MutableStore.class);
+    final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
     when(store.getTimeMillis()).thenReturn(UInt64.valueOf(5000000));
     forkChoiceUtil.onTick(store, UInt64.valueOf(4000000));
@@ -202,13 +204,11 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void onTick_setsStoreTimeAndStoreTimeMillis() {
-    final MutableStore store = spy(MutableStore.class);
-    when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
-    when(store.getTimeMillis()).thenReturn(UInt64.valueOf(4000000));
-    forkChoiceUtil.onTick(store, UInt64.valueOf(5000678));
-
-    verify(store).setTimeMillis(UInt64.valueOf(5000678));
+  void onTick_setsStoreTimeMillis() {
+    final TestStoreImpl store = new TestStoreFactory(spec).createGenesisStore();
+    final UInt64 expectedMillis = store.getTimeMillis().plus(123456);
+    forkChoiceUtil.onTick(store, expectedMillis);
+    assertThat(store.getTimeMillis()).isEqualTo(expectedMillis);
   }
 
   @Test
