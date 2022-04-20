@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionengine;
 
+import static tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.STUB_ENDPOINT_IDENTIFIER;
+
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
@@ -21,7 +23,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public interface ExecutionClientProvider {
-  String STUB_ENDPOINT_IDENTIFIER = "stub";
   ExecutionClientProvider STUB =
       new ExecutionClientProvider() {
         @Override
