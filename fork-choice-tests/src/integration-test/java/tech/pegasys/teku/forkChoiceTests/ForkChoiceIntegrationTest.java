@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -197,7 +197,7 @@ public class ForkChoiceIntegrationTest {
       if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
         while (SPEC.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
-          SPEC.onTick(transaction, transaction.getTime().plus(UInt64.ONE));
+          SPEC.onTick(transaction, transaction.getTimeSeconds().plus(UInt64.ONE));
         }
         assertEquals(step, SPEC.getCurrentSlot(transaction));
         transaction.commit().join();
@@ -280,7 +280,7 @@ public class ForkChoiceIntegrationTest {
 
   private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
-        fc.onBlock(block, Optional.empty(), new StubExecutionEngineChannel(SPEC)).join();
+        fc.onBlock(block, Optional.empty(), new ExecutionEngineChannelStub(SPEC, false)).join();
     return blockImportResult.isSuccessful();
   }
 

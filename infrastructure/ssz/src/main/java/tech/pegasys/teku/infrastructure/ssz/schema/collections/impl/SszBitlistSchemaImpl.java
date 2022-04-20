@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitlistImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
@@ -34,7 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
-public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitlist>
+public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, SszBit, SszBitlist>
     implements SszBitlistSchema<SszBitlist> {
 
   public SszBitlistSchemaImpl(long maxLength) {

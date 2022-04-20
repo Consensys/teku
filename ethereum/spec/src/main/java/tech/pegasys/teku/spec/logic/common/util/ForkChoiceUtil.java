@@ -57,7 +57,8 @@ public class ForkChoiceUtil {
   }
 
   public UInt64 getSlotsSinceGenesis(ReadOnlyStore store, boolean useUnixTime) {
-    UInt64 time = useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTime();
+    UInt64 time =
+        useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTimeSeconds();
     return getCurrentSlot(time, store.getGenesisTime());
   }
 
@@ -169,13 +170,13 @@ public class ForkChoiceUtil {
   public void onTick(MutableStore store, UInt64 time) {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
-    if (store.getTime().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
+    if (store.getTimeSeconds().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
       return;
     }
     UInt64 previousSlot = getCurrentSlot(store);
 
     // Update store time
-    store.setTime(time);
+    store.setTimeSeconds(time);
 
     UInt64 currentSlot = getCurrentSlot(store);
 

@@ -327,7 +327,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final int secondsPerSlot = spec.getSecondsPerSlot(block.getSlot());
       final UInt64 timeIntoSlot =
-          transaction.getTime().minus(transaction.getGenesisTime()).mod(secondsPerSlot);
+          transaction.getTimeSeconds().minus(transaction.getGenesisTime()).mod(secondsPerSlot);
 
       if (isBeforeAttestingInterval(secondsPerSlot, timeIntoSlot)) {
         transaction.setProposerBoostRoot(block.getRoot());
