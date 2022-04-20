@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services;
 
 import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
 
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;

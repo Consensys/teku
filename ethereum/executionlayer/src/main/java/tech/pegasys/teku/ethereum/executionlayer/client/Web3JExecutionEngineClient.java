@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
-import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
