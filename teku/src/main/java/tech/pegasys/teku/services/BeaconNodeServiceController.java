@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
 
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.el.ExecutionClientProvider;
+import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.networking.nat.NatService;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;

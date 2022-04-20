@@ -28,6 +28,8 @@ import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.executionengine.Web3JClient;
+import tech.pegasys.teku.ethereum.executionengine.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
@@ -38,8 +40,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigu
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeaconBlockSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
-import tech.pegasys.teku.infrastructure.el.Web3JClient;
-import tech.pegasys.teku.infrastructure.el.schema.Response;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;

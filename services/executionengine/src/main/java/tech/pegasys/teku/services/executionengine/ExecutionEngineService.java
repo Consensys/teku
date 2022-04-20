@@ -19,10 +19,10 @@ import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQU
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.el.ExecutionClientProvider;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
