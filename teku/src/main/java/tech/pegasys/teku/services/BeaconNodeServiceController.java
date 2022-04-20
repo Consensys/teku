@@ -45,7 +45,9 @@ public class BeaconNodeServiceController extends ServiceController {
       services.add(
           new ExecutionEngineService(
               serviceConfig, tekuConfig.executionEngine(), executionClientProvider));
-      maybeExecutionClientProvider = Optional.of(executionClientProvider);
+      if (!executionClientProvider.isStub()) {
+        maybeExecutionClientProvider = Optional.of(executionClientProvider);
+      }
     }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(
