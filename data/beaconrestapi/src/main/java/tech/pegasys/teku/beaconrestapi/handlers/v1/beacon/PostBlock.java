@@ -14,58 +14,93 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class PostBlock implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
+public class PostBlock extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/blocks";
 
-  private final JsonProvider jsonProvider;
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
-  public PostBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public PostBlock(
+      final SchemaDefinitionCache schemaDefinitionCache, final DataProvider dataProvider) {
+    super(createMetadata(schemaDefinitionCache));
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
-    this.jsonProvider = jsonProvider;
   }
 
   PostBlock(
+      final SchemaDefinitionCache schemaDefinitionCache,
       final ValidatorDataProvider validatorDataProvider,
-      final SyncDataProvider syncDataProvider,
-      final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+      final SyncDataProvider syncDataProvider) {
+    super(createMetadata(schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
+  }
+
+  private static EndpointMetadata createMetadata(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return EndpointMetadata.post(ROUTE)
+        .operationId("publishBlock")
+        .summary("Publish a signed block")
+        .description(
+            "Submit a signed beacon block to the beacon node to be imported."
+                + " The beacon node performs the required validation.")
+        .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .requestBodyType(
+            getSchemaDefinitionForAllMilestones(
+                schemaDefinitionCache,
+                "SignedBeaconBlock",
+                SchemaDefinitions::getSignedBeaconBlockSchema,
+                (block, milestone) ->
+                    schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone)),
+            json ->
+                slotBasedSelector(
+                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBeaconBlockSchema))
+        .response(
+            HttpStatusCodes.SC_OK, "Block has been successfully broadcast, validated and imported.")
+        .response(
+            HttpStatusCodes.SC_ACCEPTED,
+            "Block has been successfully broadcast, but failed validation and has not been imported.")
+        .withBadRequestResponse(Optional.of("Unable to parse request body."))
+        .response(
+            SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
+        .build();
   }
 
   @OpenApi(
@@ -95,44 +130,34 @@ public class PostBlock implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    try {
-      if (syncDataProvider.isSyncing()) {
-        ctx.status(SC_SERVICE_UNAVAILABLE);
-        ctx.json(BadRequest.serviceUnavailable(jsonProvider));
-        return;
-      }
-
-      final SignedBeaconBlock signedBeaconBlock =
-          validatorDataProvider.parseBlock(jsonProvider, ctx.body());
-
-      ctx.future(
-          validatorDataProvider
-              .submitSignedBlock(signedBeaconBlock)
-              .thenApplyChecked(
-                  validatorBlockResult -> handleResponseContext(ctx, validatorBlockResult)));
-
-    } catch (final JsonProcessingException ex) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    } catch (final Exception ex) {
-      LOG.error("Failed to post block due to internal error", ex);
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
-      ctx.json(BadRequest.internalError(jsonProvider, ex.getMessage()));
-    }
+    super.adapt(ctx);
   }
 
-  private String handleResponseContext(
-      final Context ctx, final ValidatorBlockResult validatorBlockResult) {
-    ctx.status(validatorBlockResult.getResponseCode());
-    if (validatorBlockResult.getResponseCode() == SC_ACCEPTED
-        || validatorBlockResult.getResponseCode() == SC_OK) {
-      return "";
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    if (syncDataProvider.isSyncing()) {
+      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
+      return;
     }
-    return validatorBlockResult
-        .getFailureReason()
-        .map(
-            reason ->
-                BadRequest.serialize(jsonProvider, validatorBlockResult.getResponseCode(), reason))
-        .orElse("");
+
+    final SignedBeaconBlock signedBeaconBlock = request.getRequestBody();
+
+    request.respondAsync(
+        validatorDataProvider
+            .submitSignedBlock(signedBeaconBlock)
+            .thenApply(
+                result -> {
+                  if (result.getRejectionReason().isEmpty()) {
+                    return AsyncApiResponse.respondWithCode(SC_OK);
+                  } else if (result
+                      .getRejectionReason()
+                      .get()
+                      .equals(FailureReason.INTERNAL_ERROR.name())) {
+                    return AsyncApiResponse.respondWithError(
+                        SC_INTERNAL_SERVER_ERROR, result.getRejectionReason().get());
+                  } else {
+                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+                  }
+                }));
   }
 }

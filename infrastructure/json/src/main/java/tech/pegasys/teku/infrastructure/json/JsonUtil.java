@@ -65,9 +65,12 @@ public class JsonUtil {
   }
 
   public static <T> Optional<T> getAttribute(
-      final String json, final DeserializableTypeDefinition<T> type, final String... path) {
+      final String json, final DeserializableTypeDefinition<T> type, final String... path)
+      throws JsonProcessingException {
     try (final JsonParser parser = FACTORY.createParser(json)) {
       return getAttributeFromParser(parser, type, 0, path);
+    } catch (final JsonProcessingException e) {
+      throw e;
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }

@@ -14,10 +14,10 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -25,19 +25,20 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
+import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 class PostBlockTest {
   @SuppressWarnings("unchecked")
@@ -50,7 +51,7 @@ class PostBlockTest {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final PostBlock handler =
-      new PostBlock(validatorDataProvider, syncDataProvider, jsonProvider);
+      new PostBlock(new SchemaDefinitionCache(spec), validatorDataProvider, syncDataProvider);
 
   DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -64,15 +65,11 @@ class PostBlockTest {
   }
 
   @Test
-  void shouldReturnBadRequestIfArgumentNotJSON() throws Exception {
+  void shouldReturnBadRequestIfArgumentNotJSON() {
     when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn("Not a beacon block.");
-    when(validatorDataProvider.parseBlock(any(), any()))
-        .thenThrow(mock(JsonProcessingException.class));
 
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
+    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(BadRequestException.class);
   }
 
   @Test
@@ -85,22 +82,18 @@ class PostBlockTest {
     when(validatorDataProvider.parseBlock(any(), any()))
         .thenThrow(mock(JsonProcessingException.class));
 
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
+    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(BadRequestException.class);
   }
 
   @Test
   void shouldReturnOkIfBlockImportSuccessful() throws Exception {
-    final ValidatorBlockResult successResult =
-        new ValidatorBlockResult(
-            200, Optional.empty(), Optional.of(dataStructureUtil.randomBytes32()));
-    final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        SafeFuture.completedFuture(successResult);
+    final SendSignedBlockResult successResult =
+        SendSignedBlockResult.success(dataStructureUtil.randomBytes32());
 
     when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(buildSignedBeaconBlock());
-    when(validatorDataProvider.submitSignedBlock(any())).thenReturn(validatorBlockResultSafeFuture);
+    when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any()))
+        .thenReturn(SafeFuture.completedFuture(successResult));
 
     handler.handle(context);
 
@@ -112,14 +105,14 @@ class PostBlockTest {
 
   @Test
   void shouldReturnAcceptedIfBlockFailsValidation() throws Exception {
-    final ValidatorBlockResult failResult =
-        new ValidatorBlockResult(202, Optional.of("ERROR"), Optional.empty());
-    final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
+    final SendSignedBlockResult failResult = SendSignedBlockResult.notImported("Invalid block");
+    final SafeFuture<SendSignedBlockResult> validatorBlockResultSafeFuture =
         SafeFuture.completedFuture(failResult);
 
     when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(buildSignedBeaconBlock());
-    when(validatorDataProvider.submitSignedBlock(any())).thenReturn(validatorBlockResultSafeFuture);
+    when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any()))
+        .thenReturn(validatorBlockResultSafeFuture);
 
     handler.handle(context);
 
@@ -130,8 +123,8 @@ class PostBlockTest {
   }
 
   private String buildSignedBeaconBlock() throws JsonProcessingException {
-    SignedBeaconBlock block =
-        SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(3));
-    return jsonProvider.objectToJSON(block);
+    return jsonProvider.objectToJSON(
+        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(
+            dataStructureUtil.randomSignedBeaconBlock(3)));
   }
 }
