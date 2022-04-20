@@ -70,6 +70,7 @@ public abstract class TransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
+    spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.blsVerifyDeposit = false;
 
     String blocksFile =
@@ -85,7 +86,6 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
-    spec = TestSpecFactory.createMainnetAltair();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
