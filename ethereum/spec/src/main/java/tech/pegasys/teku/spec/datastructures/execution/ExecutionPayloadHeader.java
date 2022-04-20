@@ -106,6 +106,10 @@ public class ExecutionPayloadHeader
     return (ExecutionPayloadHeaderSchema) super.getSchema();
   }
 
+  public boolean isHeaderOfDefaultPayload() {
+    return equals(getSchema().getHeaderOfDefaultPayload());
+  }
+
   public Bytes32 getParentHash() {
     return getField0().get();
   }
