@@ -160,9 +160,9 @@ public class GetNewBlock extends MigratingEndpointAdapter {
     final BLSSignature randao = request.getQueryParameter(PARAM_RANDAO);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
     final SafeFuture<Optional<BeaconBlock>> result =
-        provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true);
+        provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, false);
     request.respondAsync(
-        result.thenApplyChecked(
+        result.thenApply(
             maybeBlock -> {
               if (maybeBlock.isEmpty()) {
                 throw new ChainDataUnavailableException();
@@ -174,7 +174,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
   private static SerializableOneOfTypeDefinition<BeaconBlock> getBlockSchemaDefinition(
       final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableOneOfTypeDefinitionBuilder<BeaconBlock> builder =
-        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>().title("BlindedBlock");
+        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>().title("Block");
 
     for (SpecMilestone milestone : SpecMilestone.values()) {
       builder.withType(

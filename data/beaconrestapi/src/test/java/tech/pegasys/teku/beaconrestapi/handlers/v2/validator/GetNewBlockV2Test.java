@@ -13,80 +13,65 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import io.javalin.http.Context;
+import com.google.common.io.Resources;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.SchemaObjectProvider;
-import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetNewBlockV2Test {
+public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       BLSTestUtil.randomSignature(1234);
-  private final BLSSignature signature = new BLSSignature(signatureInternal);
-  private final Context context = mock(Context.class);
-  private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private GetNewBlock handler;
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private GetNewBlock handler;
 
   @SuppressWarnings("unchecked")
   final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeEach
   public void setup() {
-    // TODO Fix
-    // handler = new GetNewBlock(provider, );
+    handler = new GetNewBlock(validatorDataProvider, new SchemaDefinitionCache(spec));
   }
 
   @Test
-  @Disabled // TODO remove
   void shouldReturnBlockWithoutGraffiti() throws Exception {
     final Map<String, String> pathParams = Map.of(SLOT, "1");
-    final SchemaObjectProvider schemaProvider = new SchemaObjectProvider(spec);
     final Map<String, List<String>> queryParams =
-        Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
+        Map.of(RANDAO_REVEAL, List.of(signatureInternal.toBytesCompressed().toHexString()));
 
     final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock randomBeaconBlock =
         dataStructureUtil.randomBeaconBlock(ONE);
 
-    final BeaconBlock altairBlock = schemaProvider.getBeaconBlock(randomBeaconBlock);
     when(context.queryParamMap()).thenReturn(queryParams);
     when(context.pathParamMap()).thenReturn(pathParams);
-    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(altairBlock)));
-    handler.handle(context);
+    when(validatorDataProvider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);
+    when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
+            ONE, signatureInternal, Optional.empty(), false))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)));
 
-    verify(context).future(args.capture());
-    SafeFuture<String> result = args.getValue();
-    assertThat(result)
-        .isCompletedWithValue(
-            jsonProvider.objectToJSON(
-                new GetNewBlockResponseV2(SpecMilestone.ALTAIR, altairBlock)));
+    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    handler.handleRequest(request);
+
+    assertThat(getResultString())
+        .isEqualTo(
+            Resources.toString(
+                Resources.getResource(GetNewBlockV2Test.class, "beaconBlock.json"), UTF_8));
   }
 }
