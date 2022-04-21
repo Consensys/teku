@@ -39,7 +39,7 @@ public class BeaconNodeServiceController extends ServiceController {
           ExecutionClientProvider.create(
               tekuConfig.executionEngine().getEndpoint(),
               serviceConfig.getTimeProvider(),
-              Optional.of(EXECUTION_TIMEOUT),
+              EXECUTION_TIMEOUT,
               tekuConfig.executionEngine().getJwtSecretFile(),
               serviceConfig.getDataDirLayout().getBeaconDataDirectory());
       services.add(

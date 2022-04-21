@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class Web3JExecutionEngineClientTest {
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
@@ -91,6 +93,7 @@ public class Web3JExecutionEngineClientTest {
     Web3JClient web3JClient =
         web3JClientBuilder
             .endpoint("http://localhost:" + mockWebServer.getPort())
+            .timeout(DEFAULT_TIMEOUT)
             .jwtConfigOpt(Optional.empty())
             .timeProvider(timeProvider)
             .build();

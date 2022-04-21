@@ -27,14 +27,14 @@ public class Web3jClientBuilder {
   private TimeProvider timeProvider;
   private URI endpoint;
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
-  private Optional<Duration> timeout = Optional.empty();
+  private Duration timeout;
 
   public Web3jClientBuilder endpoint(String endpoint) {
     this.endpoint = parseEndpoint(endpoint);
     return this;
   }
 
-  public Web3jClientBuilder timeout(Optional<Duration> timeout) {
+  public Web3jClientBuilder timeout(Duration timeout) {
     this.timeout = timeout;
     return this;
   }
@@ -63,6 +63,7 @@ public class Web3jClientBuilder {
   public Web3JClient build() {
     checkNotNull(timeProvider);
     checkNotNull(endpoint);
+    checkNotNull(timeout);
     switch (endpoint.getScheme()) {
       case "http":
       case "https":

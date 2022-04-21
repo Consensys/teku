@@ -49,7 +49,7 @@ public interface ExecutionClientProvider {
   static ExecutionClientProvider create(
       final String eeEndpoint,
       final TimeProvider timeProvider,
-      final Optional<Duration> timeout,
+      final Duration timeout,
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
     if (eeEndpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {

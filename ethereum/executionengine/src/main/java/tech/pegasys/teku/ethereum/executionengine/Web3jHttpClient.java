@@ -32,7 +32,7 @@ public class Web3jHttpClient extends Web3JClient {
   public Web3jHttpClient(
       final URI endpoint,
       final TimeProvider timeProvider,
-      final Optional<Duration> timeout,
+      final Duration timeout,
       final Optional<JwtConfig> jwtConfig) {
     super(timeProvider);
     final OkHttpClient okHttpClient = createOkHttpClient(jwtConfig, timeout, timeProvider);
@@ -42,10 +42,9 @@ public class Web3jHttpClient extends Web3JClient {
 
   private OkHttpClient createOkHttpClient(
       final Optional<JwtConfig> jwtConfig,
-      final Optional<Duration> timeout,
+      final Duration timeout,
       final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
-    timeout.ifPresent(builder::readTimeout);
+    final OkHttpClient.Builder builder = new OkHttpClient.Builder().readTimeout(timeout);
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);

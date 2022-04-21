@@ -27,7 +27,7 @@ public class DefaultExecutionClientProvider implements ExecutionClientProvider {
   private final String eeEndpoint;
   private final TimeProvider timeProvider;
   private final Optional<String> jwtSecretFile;
-  private final Optional<Duration> timeout;
+  private final Duration timeout;
   private final Path beaconDataDirectory;
   private boolean alreadyBuilt = false;
   private Web3JClient web3JClient;
@@ -35,7 +35,7 @@ public class DefaultExecutionClientProvider implements ExecutionClientProvider {
   DefaultExecutionClientProvider(
       final String eeEndpoint,
       final TimeProvider timeProvider,
-      final Optional<Duration> timeout,
+      final Duration timeout,
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);

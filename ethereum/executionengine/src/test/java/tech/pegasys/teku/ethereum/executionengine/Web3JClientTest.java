@@ -41,11 +41,12 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3JClientTest {
   private static final TimeProvider TIME_PROVIDER = StubTimeProvider.withTimeInSeconds(1000);
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
   private static final Web3jService WEB3J_SERVICE = mock(Web3jService.class);
   private static final Web3JClient WEB3J_CLIENT = new Web3JClientImpl(TIME_PROVIDER);
   private static final URI ENDPOINT = URI.create("");
   private static final Web3jHttpClient WEB3J_HTTP_CLIENT =
-      new Web3jHttpClient(ENDPOINT, TIME_PROVIDER, Optional.empty(), Optional.empty());
+      new Web3jHttpClient(ENDPOINT, TIME_PROVIDER, DEFAULT_TIMEOUT, Optional.empty());
   private static final WebSocketService WEB_SOCKET_SERVICE = mock(WebSocketService.class);
   private static final Web3jWebsocketClient WEB3J_WEBSOCKET_CLIENT =
       new Web3jWebsocketClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
