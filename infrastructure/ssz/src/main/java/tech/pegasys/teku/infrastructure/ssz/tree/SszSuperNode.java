@@ -49,6 +49,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   private final SszNodeTemplate elementTemplate;
   private final Bytes ssz;
   private volatile Bytes32 cachedHash;
+  private volatile byte[] cachedHashByte;
 
   public SszSuperNode(int depth, SszNodeTemplate elementTemplate, Bytes ssz) {
     this.depth = depth;
@@ -78,13 +79,13 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
-    Bytes32 cachedHash = this.cachedHash;
-    if (cachedHash == null) {
-      cachedHash = calcHashTreeRoot(messageDigest);
-      this.cachedHash = cachedHash;
+  public byte[] hashTreeRoot(MessageDigest messageDigest) {
+    byte[] cachedHashByte = this.cachedHashByte;
+    if (cachedHashByte == null) {
+      cachedHashByte = calcHashTreeRoot(messageDigest).toArrayUnsafe();
+      this.cachedHashByte = cachedHashByte;
     }
-    return cachedHash;
+    return cachedHashByte;
   }
 
   private Bytes32 calcHashTreeRoot(final MessageDigest messageDigest) {

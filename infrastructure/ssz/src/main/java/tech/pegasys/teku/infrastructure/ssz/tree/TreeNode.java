@@ -18,6 +18,7 @@ import static java.util.Collections.singletonList;
 import java.security.MessageDigest;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
@@ -37,10 +38,10 @@ public interface TreeNode {
    */
   default Bytes32 hashTreeRoot() {
     final MessageDigest digest = MessageDigestFactory.createSha256();
-    return hashTreeRoot(digest);
+    return Bytes32.wrap(hashTreeRoot(digest));
   }
 
-  Bytes32 hashTreeRoot(MessageDigest messageDigest);
+  byte[] hashTreeRoot(MessageDigest messageDigest);
 
   /**
    * Gets this node descendant by its 'generalized index'
@@ -160,5 +161,9 @@ public interface TreeNode {
    */
   default TreeNode updated(long generalizedIndex, TreeNode node) {
     return updated(generalizedIndex, oldNode -> node);
+  }
+
+  default Bytes getLeafData() {
+    return null;
   }
 }

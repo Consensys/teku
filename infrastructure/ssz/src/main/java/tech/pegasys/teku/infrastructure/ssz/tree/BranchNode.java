@@ -15,10 +15,12 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.ssz.tree.LeafNode.MAX_BYTE_SIZE;
+import static tech.pegasys.teku.infrastructure.ssz.tree.LeafNode.ZERO_LEAVES;
 
 import java.security.MessageDigest;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.NodeRelation;
 
@@ -61,12 +63,38 @@ public interface BranchNode extends TreeNode {
   BranchNode rebind(boolean left, TreeNode newNode);
 
   @Override
-  default Bytes32 hashTreeRoot(MessageDigest messageDigest) {
-    final Bytes32 leftRoot = left().hashTreeRoot(messageDigest);
-    final Bytes32 rightRoot = right().hashTreeRoot(messageDigest);
-    leftRoot.update(messageDigest);
-    rightRoot.update(messageDigest);
-    return Bytes32.wrap(messageDigest.digest());
+  default byte[] hashTreeRoot(MessageDigest messageDigest) {
+    Bytes leftData = left().getLeafData();
+    Bytes rightData = right().getLeafData();
+    byte[] leftRoot = null;
+    byte[] rightRoot = null;
+
+    if (leftData == null) {
+      leftRoot = left().hashTreeRoot(messageDigest);
+    }
+    if (rightData == null) {
+      rightRoot = right().hashTreeRoot(messageDigest);
+    }
+
+    if (leftData != null) {
+      leftData.update(messageDigest);
+      if (leftData.size() < MAX_BYTE_SIZE) {
+        ZERO_LEAVES[MAX_BYTE_SIZE - leftData.size()].getData().update(messageDigest);
+      }
+    } else {
+      messageDigest.update(leftRoot);
+    }
+
+    if (rightData != null) {
+      rightData.update(messageDigest);
+      if (rightData.size() < MAX_BYTE_SIZE) {
+        ZERO_LEAVES[MAX_BYTE_SIZE - rightData.size()].getData().update(messageDigest);
+      }
+    } else {
+      messageDigest.update(rightRoot);
+    }
+
+    return messageDigest.digest();
   }
 
   @NotNull

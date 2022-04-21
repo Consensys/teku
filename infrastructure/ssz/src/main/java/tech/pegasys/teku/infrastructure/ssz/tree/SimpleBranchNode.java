@@ -22,6 +22,7 @@ class SimpleBranchNode implements BranchNode, TreeNode {
   private final TreeNode left;
   private final TreeNode right;
   private volatile Bytes32 cachedHash = null;
+  private volatile byte[] cachedHashByte = null;
 
   public SimpleBranchNode(TreeNode left, TreeNode right) {
     this.left = left;
@@ -67,11 +68,11 @@ class SimpleBranchNode implements BranchNode, TreeNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
-    Bytes32 cachedHash = this.cachedHash;
+  public byte[] hashTreeRoot(MessageDigest messageDigest) {
+    byte[] cachedHash = this.cachedHashByte;
     if (cachedHash == null) {
       cachedHash = BranchNode.super.hashTreeRoot(messageDigest);
-      this.cachedHash = cachedHash;
+      this.cachedHashByte = cachedHash;
     }
     return cachedHash;
   }

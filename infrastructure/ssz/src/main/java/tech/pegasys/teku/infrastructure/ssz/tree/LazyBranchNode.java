@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class LazyBranchNode implements BranchNode {
   private volatile Bytes32 cachedHash;
+  private volatile byte[] cachedHashByte;
   private final Bytes32 leftRoot;
   private final Bytes32 rightRoot;
 
@@ -102,15 +103,15 @@ public class LazyBranchNode implements BranchNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
-    Bytes32 cachedHash = this.cachedHash;
-    if (cachedHash == null) {
+  public byte[] hashTreeRoot(MessageDigest messageDigest) {
+    byte[] cachedHashByte = this.cachedHashByte;
+    if (cachedHashByte == null) {
       leftRoot.update(messageDigest);
       rightRoot.update(messageDigest);
-      cachedHash = Bytes32.wrap(messageDigest.digest());
-      this.cachedHash = cachedHash;
+      cachedHashByte = messageDigest.digest();
+      this.cachedHashByte = cachedHashByte;
     }
-    return cachedHash;
+    return cachedHashByte;
   }
 
   @Override
