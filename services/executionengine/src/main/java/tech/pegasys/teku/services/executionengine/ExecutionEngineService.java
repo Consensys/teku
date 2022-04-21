@@ -14,8 +14,10 @@
 package tech.pegasys.teku.services.executionengine;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -41,13 +43,17 @@ public class ExecutionEngineService extends Service {
   private final TimeProvider timeProvider;
 
   public ExecutionEngineService(
-      final ServiceConfig serviceConfig,
-      final ExecutionEngineConfiguration config,
-      final ExecutionClientProvider web3jClientProvider) {
+      final ServiceConfig serviceConfig, final ExecutionEngineConfiguration config) {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.config = config;
-    this.web3jClientProvider = web3jClientProvider;
+    this.web3jClientProvider =
+        ExecutionClientProvider.create(
+            config.getEndpoint(),
+            serviceConfig.getTimeProvider(),
+            EXECUTION_TIMEOUT,
+            config.getJwtSecretFile(),
+            serviceConfig.getDataDirLayout().getBeaconDataDirectory());
     this.timeProvider = serviceConfig.getTimeProvider();
   }
 
@@ -74,5 +80,9 @@ public class ExecutionEngineService extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.COMPLETE;
+  }
+
+  public Optional<ExecutionClientProvider> getWeb3jClientProvider() {
+    return web3jClientProvider.isStub() ? Optional.empty() : Optional.of(web3jClientProvider);
   }
 }

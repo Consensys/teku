@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.services;
 
-import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
-
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
@@ -35,19 +33,10 @@ public class BeaconNodeServiceController extends ServiceController {
     Optional<ExecutionClientProvider> maybeExecutionClientProvider = Optional.empty();
     if (tekuConfig.executionEngine().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
-      final ExecutionClientProvider executionClientProvider =
-          ExecutionClientProvider.create(
-              tekuConfig.executionEngine().getEndpoint(),
-              serviceConfig.getTimeProvider(),
-              EXECUTION_TIMEOUT,
-              tekuConfig.executionEngine().getJwtSecretFile(),
-              serviceConfig.getDataDirLayout().getBeaconDataDirectory());
-      services.add(
-          new ExecutionEngineService(
-              serviceConfig, tekuConfig.executionEngine(), executionClientProvider));
-      if (!executionClientProvider.isStub()) {
-        maybeExecutionClientProvider = Optional.of(executionClientProvider);
-      }
+      ExecutionEngineService executionEngineService =
+          new ExecutionEngineService(serviceConfig, tekuConfig.executionEngine());
+      services.add(executionEngineService);
+      maybeExecutionClientProvider = executionEngineService.getWeb3jClientProvider();
     }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(
@@ -63,13 +52,13 @@ public class BeaconNodeServiceController extends ServiceController {
   private Optional<PowchainService> powchainService(
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
-      final Optional<ExecutionClientProvider> executionClientProvider) {
+      final Optional<ExecutionClientProvider> maybeExecutionClientProvider) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
-        || (!tekuConfig.powchain().isEnabled() && executionClientProvider.isEmpty())) {
+        || (!tekuConfig.powchain().isEnabled() && maybeExecutionClientProvider.isEmpty())) {
       return Optional.empty();
     }
 
     return Optional.of(
-        new PowchainService(serviceConfig, tekuConfig.powchain(), executionClientProvider));
+        new PowchainService(serviceConfig, tekuConfig.powchain(), maybeExecutionClientProvider));
   }
 }
