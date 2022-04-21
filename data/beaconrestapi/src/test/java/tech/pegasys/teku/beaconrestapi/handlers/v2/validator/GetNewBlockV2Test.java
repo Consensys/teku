@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -41,9 +40,6 @@ public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
       BLSTestUtil.randomSignature(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private GetNewBlock handler;
-
-  @SuppressWarnings("unchecked")
-  final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeEach
   public void setup() {
