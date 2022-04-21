@@ -247,7 +247,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
         .handle(
             (chainId, ex) -> {
               if (ex != null) {
-                LOG.info(
+                LOG.trace(
                     "eth_chainId method is not supported by provider, skipping validation", ex);
                 return Result.NOT_SUPPORTED;
               }
