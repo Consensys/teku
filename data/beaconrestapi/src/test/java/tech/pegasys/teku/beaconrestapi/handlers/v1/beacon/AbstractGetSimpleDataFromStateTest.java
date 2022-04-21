@@ -35,14 +35,14 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
-public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTest {
+public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHandlerTest {
   private static final String ROUTE = "/test/:state_id";
   private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(StateAndMetaData.class)
@@ -67,7 +67,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTes
 
     handler.handleRequest(request);
 
-    AssertionsForClassTypes.assertThat(getBytesResultString())
+    AssertionsForClassTypes.assertThat(getFutureResultString())
         .isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context, never()).status(any());
   }

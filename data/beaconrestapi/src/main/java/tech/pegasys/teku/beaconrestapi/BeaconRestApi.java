@@ -101,6 +101,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -361,10 +362,7 @@ public class BeaconRestApi {
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, jsonProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
-        new tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock(
-            dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetNewBlock(dataProvider, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, schemaCache));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
