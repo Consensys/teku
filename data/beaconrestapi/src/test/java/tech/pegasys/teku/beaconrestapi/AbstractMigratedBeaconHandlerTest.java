@@ -14,17 +14,21 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import io.javalin.http.Context;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
-  protected final SchemaDefinitionCache schemaDefinition = new SchemaDefinitionCache(spec);
+  protected final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
   protected final ArgumentCaptor<SafeFuture<String>> args =
@@ -33,4 +37,16 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Context context = mock(Context.class);
 
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
+
+  protected String getResultString() {
+    verify(context).future(args.capture());
+    SafeFuture<String> future = args.getValue();
+    AssertionsForClassTypes.assertThat(future).isCompleted();
+    return future.join();
+  }
+
+  protected SafeFuture<String> getResultFuture() {
+    verify(context).future(args.capture());
+    return args.getValue();
+  }
 }

@@ -13,60 +13,18 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import tech.pegasys.teku.beaconrestapi.AbstractGetNewBlockTest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+public class GetNewBlindedBlockTest extends AbstractGetNewBlockTest {
 
-public class GetNewBlindedBlockTest extends AbstractMigratedBeaconHandlerTest {
-  private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
-  private GetNewBlindedBlock handler;
-
-  @BeforeEach
-  public void setup() {
-    handler = new GetNewBlindedBlock(validatorDataProvider, schemaDefinition);
-    final Map<String, String> pathParams = Map.of(SLOT, "1");
-    final Map<String, List<String>> queryParams =
-        Map.of(RANDAO_REVEAL, List.of(signatureInternal.toBytesCompressed().toHexString()));
-
-    when(context.queryParamMap()).thenReturn(queryParams);
-    when(context.pathParamMap()).thenReturn(pathParams);
-    when(validatorDataProvider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);
+  @Override
+  public MigratingEndpointAdapter getHandler() {
+    return new GetNewBlindedBlock(validatorDataProvider, schemaDefinitionCache);
   }
 
-  @Test
-  void shouldThrowExceptionWithEmptyBlock() throws Exception {
-    when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
-            ONE, signatureInternal, Optional.empty(), true))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
-    handler.handleRequest(request);
-
-    SafeFuture<String> future = getResultFuture();
-    assertThat(future).isCompletedExceptionally();
-    assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
-  }
-
-  protected SafeFuture<String> getResultFuture() {
-    verify(context).future(args.capture());
-    return args.getValue();
+  @Override
+  public boolean isBlindedBlocks() {
+    return true;
   }
 }
