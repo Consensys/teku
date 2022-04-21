@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +37,7 @@ public class GetPeerByIdTest extends AbstractBeaconHandlerTest {
   final MockNodeId peerId = new MockNodeId(123456);
   final Eth2Peer peer = mock(Eth2Peer.class);
 
-  private final ArgumentCaptor<String> args = ArgumentCaptor.forClass(String.class);
+  private final ArgumentCaptor<byte[]> args = ArgumentCaptor.forClass(byte[].class);
 
   @BeforeEach
   void setUp() {
@@ -78,7 +79,7 @@ public class GetPeerByIdTest extends AbstractBeaconHandlerTest {
             peerId, address, state, direction);
 
     verify(context).result(args.capture());
-    String response = args.getValue();
+    String response = new String(args.getValue(), StandardCharsets.UTF_8);
     assertThat(response).isEqualTo(expectedResponse);
   }
 }
