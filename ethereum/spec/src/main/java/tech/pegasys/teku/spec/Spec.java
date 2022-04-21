@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -196,6 +198,10 @@ public class Spec {
 
   public int getSecondsPerSlot(final UInt64 slot) {
     return atSlot(slot).getConfig().getSecondsPerSlot();
+  }
+
+  public UInt64 getMillisPerSlot(final UInt64 slot) {
+    return secondsToMillis(getSecondsPerSlot(slot));
   }
 
   public long getMaxDeposits(final BeaconState state) {
@@ -438,8 +444,9 @@ public class Spec {
     return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
-  public void onTick(MutableStore store, UInt64 time) {
-    atTime(store.getGenesisTime(), time).getForkChoiceUtil().onTick(store, time);
+  public void onTick(MutableStore store, UInt64 timeMillis) {
+    UInt64 timeSeconds = millisToSeconds(timeMillis);
+    atTime(store.getGenesisTime(), timeSeconds).getForkChoiceUtil().onTick(store, timeMillis);
   }
 
   public AttestationProcessingResult validateAttestation(

@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
@@ -1050,20 +1051,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (recentChainData.isPreGenesis()) {
       return;
     }
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    forkChoice.onTick(currentTime);
+
+    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final UInt64 currentTimeSeconds = millisToSeconds(currentTimeMillis);
+
+    forkChoice.onTick(currentTimeMillis);
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    if (genesisTime.isGreaterThan(currentTime)) {
+    if (genesisTime.isGreaterThan(currentTimeSeconds)) {
       // notify every 10 minutes
-      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTime)) {
-        genesisTimeTracker = currentTime;
+      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTimeSeconds)) {
+        genesisTimeTracker = currentTimeSeconds;
         STATUS_LOG.timeUntilGenesis(
-            genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());
+            genesisTime.minus(currentTimeSeconds).longValue(), p2pNetwork.getPeerCount());
       }
     }
 
-    slotProcessor.onTick(currentTime);
+    slotProcessor.onTick(currentTimeSeconds);
   }
 
   @Override

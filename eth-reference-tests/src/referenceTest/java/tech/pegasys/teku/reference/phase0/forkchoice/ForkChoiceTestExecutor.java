@@ -14,6 +14,7 @@
 package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.collect.ImmutableMap;
 import java.nio.ByteOrder;
@@ -141,7 +142,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         applyChecks(recentChainData, forkChoice, step);
 
       } else if (step.containsKey("tick")) {
-        forkChoice.onTick(getUInt64(step, "tick"));
+        forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")));
 
       } else if (step.containsKey("block")) {
         applyBlock(testDefinition, spec, forkChoice, step, executionEngine);

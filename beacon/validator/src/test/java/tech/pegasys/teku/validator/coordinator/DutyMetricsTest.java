@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -87,7 +86,7 @@ class DutyMetricsTest {
   }
 
   private UInt64 expectedAttestationTime(final UInt64 slot, final Spec spec) {
-    UInt64 millisPerSlot = secondsToMillis(spec.getSecondsPerSlot(slot));
+    UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
     return slot.times(millisPerSlot).plus(millisPerSlot.dividedBy(3));
   }
 }

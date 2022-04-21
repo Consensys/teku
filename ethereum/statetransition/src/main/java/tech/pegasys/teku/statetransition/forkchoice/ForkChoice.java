@@ -325,11 +325,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         transaction, block, postState, payloadResult.hasNotValidatedStatus());
 
     if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {
-      final int secondsPerSlot = spec.getSecondsPerSlot(block.getSlot());
-      final UInt64 timeIntoSlot =
-          transaction.getTimeSeconds().minus(transaction.getGenesisTime()).mod(secondsPerSlot);
+      final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
+      final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
 
-      if (isBeforeAttestingInterval(secondsPerSlot, timeIntoSlot)) {
+      if (isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
         transaction.setProposerBoostRoot(block.getRoot());
       }
     }
@@ -367,9 +366,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  private boolean isBeforeAttestingInterval(final int secondsPerSlot, final UInt64 timeIntoSlot) {
-    UInt64 oneThirdSlot = secondsToMillis(secondsPerSlot).dividedBy(INTERVALS_PER_SLOT);
-    return secondsToMillis(timeIntoSlot).isLessThan(oneThirdSlot);
+  private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {
+    return transaction
+        .getTimeMillis()
+        .minus(secondsToMillis(transaction.getGenesisTime()))
+        .mod(millisPerSlot);
+  }
+
+  private boolean isBeforeAttestingInterval(
+      final UInt64 millisPerSlot, final UInt64 timeIntoSlotMillis) {
+    UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
+    return timeIntoSlotMillis.isLessThan(oneThirdSlot);
   }
 
   private void onExecutionPayloadResult(
@@ -552,10 +559,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .reportExceptions();
   }
 
-  public void onTick(final UInt64 currentTime) {
+  public void onTick(final UInt64 currentTimeMillis) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final UInt64 previousSlot = spec.getCurrentSlot(transaction);
-    spec.onTick(transaction, currentTime);
+    spec.onTick(transaction, currentTimeMillis);
     if (spec.getCurrentSlot(transaction).isGreaterThan(previousSlot)) {
       transaction.removeProposerBoostRoot();
     }

@@ -43,7 +43,7 @@ public class MiscHelpersBellatrix extends MiscHelpersAltair {
 
   private boolean isDefaultExecution(final BeaconBlockBody blockBody) {
     if (blockBody.isBlinded()) {
-      return blockBody.getOptionalExecutionPayloadHeader().orElseThrow().isDefault();
+      return blockBody.getOptionalExecutionPayloadHeader().orElseThrow().isHeaderOfDefaultPayload();
     }
     return blockBody.getOptionalExecutionPayload().orElseThrow().isDefault();
   }

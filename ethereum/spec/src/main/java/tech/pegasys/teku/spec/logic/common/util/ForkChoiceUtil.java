@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+
 import java.time.Instant;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -162,36 +164,40 @@ public class ForkChoiceUtil {
   // Fork Choice Event Handlers
 
   /**
+   * The implementation differs from the spec in that the time parameter is in milliseconds instead
+   * of seconds. This allows the time to be stored in milliseconds which allows for more
+   * fine-grained time calculations if required.
+   *
    * @param store
-   * @param time
+   * @param timeMillis onTick time in milliseconds
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
-  public void onTick(MutableStore store, UInt64 time) {
+  public void onTick(MutableStore store, UInt64 timeMillis) {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
-    if (store.getTimeSeconds().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
+    if (store.getTimeMillis().isGreaterThan(timeMillis)
+        || secondsToMillis(store.getGenesisTime()).isGreaterThan(timeMillis)) {
       return;
     }
     UInt64 previousSlot = getCurrentSlot(store);
 
     // Update store time
-    store.setTimeSeconds(time);
+    store.setTimeMillis(timeMillis);
 
     UInt64 currentSlot = getCurrentSlot(store);
 
     // Not a new epoch, return
-    if (!(currentSlot.compareTo(previousSlot) > 0
-        && computeSlotsSinceEpochStart(currentSlot).equals(UInt64.ZERO))) {
+    if (!(currentSlot.isGreaterThan(previousSlot)
+        && computeSlotsSinceEpochStart(currentSlot).isZero())) {
       return;
     }
 
     // Update store.justified_checkpoint if a better checkpoint is known
     if (store
-            .getBestJustifiedCheckpoint()
-            .getEpoch()
-            .compareTo(store.getJustifiedCheckpoint().getEpoch())
-        > 0) {
+        .getBestJustifiedCheckpoint()
+        .getEpoch()
+        .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
       store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
     }
   }

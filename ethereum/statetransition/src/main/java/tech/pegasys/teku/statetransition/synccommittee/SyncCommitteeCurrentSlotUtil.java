@@ -38,7 +38,7 @@ public class SyncCommitteeCurrentSlotUtil {
       return false;
     }
 
-    final UInt64 slotMillis = secondsToMillis(spec.atSlot(slot).getConfig().getSecondsPerSlot());
+    final UInt64 slotMillis = spec.getMillisPerSlot(slot);
     final UInt64 slotStartTimeMillis =
         secondsToMillis(spec.getSlotStartTime(slot, recentChainData.getGenesisTime()));
     final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
