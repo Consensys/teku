@@ -53,6 +53,7 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
             beaconState.getCurrentJustifiedCheckpoint().getRoot(),
             beaconState.getFinalizedCheckpoint().getEpoch(),
             beaconState.getFinalizedCheckpoint().getRoot());
-    AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
+
+    AssertionsForClassTypes.assertThat(getBytesResultString()).isEqualTo(expected);
   }
 }

@@ -53,7 +53,7 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
         String.format(
             "{\"data\":{\"root\":\"%s\"}}",
             stateAndMetaData.getData().hashTreeRoot().toHexString());
-    AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
+    AssertionsForClassTypes.assertThat(getBytesResultString()).isEqualTo(expected);
     verify(context, never()).status(any());
   }
 }

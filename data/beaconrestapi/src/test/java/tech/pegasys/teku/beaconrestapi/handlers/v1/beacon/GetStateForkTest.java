@@ -56,7 +56,7 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
 
     handler.handleRequest(request);
 
-    assertThat(getResultString())
+    assertThat(getBytesResultString())
         .isEqualTo(
             "{\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
     verify(context, never()).status(any());
@@ -70,7 +70,7 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
 
     handler.handleRequest(request);
 
-    assertThat(getResultString()).isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
+    assertThat(getBytesResultString()).isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context).status(SC_NOT_FOUND);
   }
 }

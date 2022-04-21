@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -57,7 +58,8 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTes
   private final TestHandler handler = new TestHandler(chainDataProvider);
 
   @Test
-  void shouldReturnNotFound() throws JsonProcessingException {
+  void shouldReturnNotFound()
+      throws JsonProcessingException, ExecutionException, InterruptedException {
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
@@ -65,7 +67,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractBeaconHandlerTes
 
     handler.handleRequest(request);
 
-    AssertionsForClassTypes.assertThat(getResultString())
+    AssertionsForClassTypes.assertThat(getBytesResultString())
         .isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context, never()).status(any());
   }
