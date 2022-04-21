@@ -108,4 +108,9 @@ public abstract class AbstractBeaconHandlerTest {
     AssertionsForClassTypes.assertThat(future).isCompleted();
     return new String(future.join(), StandardCharsets.UTF_8);
   }
+
+  protected SafeFuture<String> getResultFuture() {
+    verify(context).future(args.capture());
+    return args.getValue();
+  }
 }
