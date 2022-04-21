@@ -347,14 +347,14 @@ public class ExternalSigner implements Signer {
   static Supplier<String> slashableBlockMessage(final UInt64 slot) {
     return () ->
         String.format(
-            "External signed refused to sign block at slot %s as it may violate a slashing condition",
+            "External signer refused to sign block at slot %s as it may violate a slashing condition",
             slot);
   }
 
   @VisibleForTesting
   static Supplier<String> slashableAttestationMessage(final AttestationData attestationData) {
     return () ->
-        "External signed refused to sign attestation at slot "
+        "External signer refused to sign attestation at slot "
             + attestationData.getSlot()
             + " with source epoch "
             + attestationData.getSource().getEpoch()
