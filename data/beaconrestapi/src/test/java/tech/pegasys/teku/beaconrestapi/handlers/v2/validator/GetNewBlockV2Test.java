@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
@@ -46,18 +48,18 @@ public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
   @BeforeEach
   public void setup() {
     handler = new GetNewBlock(validatorDataProvider, schemaDefinition);
-  }
-
-  @Test
-  void shouldReturnBlockWithoutGraffiti() throws Exception {
     final Map<String, String> pathParams = Map.of(SLOT, "1");
     final Map<String, List<String>> queryParams =
         Map.of(RANDAO_REVEAL, List.of(signatureInternal.toBytesCompressed().toHexString()));
-    final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
 
     when(context.queryParamMap()).thenReturn(queryParams);
     when(context.pathParamMap()).thenReturn(pathParams);
     when(validatorDataProvider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);
+  }
+
+  @Test
+  void shouldReturnBlockWithoutGraffiti() throws Exception {
+    final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
             ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)));
@@ -69,5 +71,19 @@ public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
         .isEqualTo(
             Resources.toString(
                 Resources.getResource(GetNewBlockV2Test.class, "beaconBlock.json"), UTF_8));
+  }
+
+  @Test
+  void shouldThrowExceptionWithEmptyBlock() throws Exception {
+    when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
+            ONE, signatureInternal, Optional.empty(), false))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    handler.handleRequest(request);
+
+    SafeFuture<String> future = getResultFuture();
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }
 }
