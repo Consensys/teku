@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -197,6 +200,10 @@ public class Spec {
     return atSlot(slot).getConfig().getSecondsPerSlot();
   }
 
+  public UInt64 getMillisPerSlot(final UInt64 slot) {
+    return secondsToMillis(getSecondsPerSlot(slot));
+  }
+
   public long getMaxDeposits(final BeaconState state) {
     return atState(state).getConfig().getMaxDeposits();
   }
@@ -289,6 +296,10 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
+  }
+
+  public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
+    return atSlot(blockHeader.getSlot()).miscHelpers().computeSigningRoot(blockHeader, domain);
   }
 
   public Bytes computeSigningRoot(AggregateAndProof proof, Bytes32 domain) {
@@ -433,8 +444,9 @@ public class Spec {
     return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
-  public void onTick(MutableStore store, UInt64 time) {
-    atTime(store.getGenesisTime(), time).getForkChoiceUtil().onTick(store, time);
+  public void onTick(MutableStore store, UInt64 timeMillis) {
+    UInt64 timeSeconds = millisToSeconds(timeMillis);
+    atTime(store.getGenesisTime(), timeSeconds).getForkChoiceUtil().onTick(store, timeMillis);
   }
 
   public AttestationProcessingResult validateAttestation(

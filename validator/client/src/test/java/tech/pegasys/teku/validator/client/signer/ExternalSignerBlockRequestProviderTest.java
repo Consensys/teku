@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,5 +54,31 @@ class ExternalSignerBlockRequestProviderTest {
     assertThat(signType).isEqualTo(SignType.BLOCK_V2);
     assertThat(blockMetadata).containsKey("beacon_block");
     assertThat(blockMetadata.get("beacon_block")).isExactlyInstanceOf(BlockRequestBody.class);
+
+    final BlockRequestBody blockRequestBody = (BlockRequestBody) blockMetadata.get("beacon_block");
+    assertThat(blockRequestBody.getVersion()).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(blockRequestBody.getBeaconBlock()).isNotNull();
+    assertThat(blockRequestBody.getBeaconBlockHeader()).isNull();
+  }
+
+  @Test
+  void bellatrixBlockGeneratesCorrectSignTypeAndMetadata() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final BeaconBlock block = new DataStructureUtil(spec).randomBeaconBlock(10);
+
+    final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+    final SignType signType = externalSignerBlockRequestProvider.getSignType();
+    final Map<String, Object> blockMetadata =
+        externalSignerBlockRequestProvider.getBlockMetadata(Map.of());
+
+    assertThat(signType).isEqualTo(SignType.BLOCK_V2);
+    assertThat(blockMetadata).containsKey("beacon_block");
+    assertThat(blockMetadata.get("beacon_block")).isExactlyInstanceOf(BlockRequestBody.class);
+
+    final BlockRequestBody blockRequestBody = (BlockRequestBody) blockMetadata.get("beacon_block");
+    assertThat(blockRequestBody.getVersion()).isEqualTo(SpecMilestone.BELLATRIX);
+    assertThat(blockRequestBody.getBeaconBlock()).isNull();
+    assertThat(blockRequestBody.getBeaconBlockHeader()).isNotNull();
   }
 }

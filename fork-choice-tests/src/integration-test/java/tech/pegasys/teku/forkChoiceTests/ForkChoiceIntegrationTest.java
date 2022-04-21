@@ -197,7 +197,7 @@ public class ForkChoiceIntegrationTest {
       if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
         while (SPEC.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
-          SPEC.onTick(transaction, transaction.getTimeSeconds().plus(UInt64.ONE));
+          SPEC.onTick(transaction, transaction.getTimeMillis().plus(1000));
         }
         assertEquals(step, SPEC.getCurrentSlot(transaction));
         transaction.commit().join();

@@ -121,7 +121,7 @@ public class ExternalSigner implements Signer {
         signingRootUtil.signingRootForSignBlock(block, forkInfo),
         blockRequestProvider.getSignType(),
         blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo(forkInfo))),
-        slashableBlockMessage(block));
+        slashableBlockMessage(block.getSlot()));
   }
 
   @Override
@@ -344,17 +344,17 @@ public class ExternalSigner implements Signer {
   }
 
   @VisibleForTesting
-  static Supplier<String> slashableBlockMessage(final BeaconBlock block) {
+  static Supplier<String> slashableBlockMessage(final UInt64 slot) {
     return () ->
-        "External signed refused to sign block at slot "
-            + block.getSlot()
-            + " as it may violate a slashing condition";
+        String.format(
+            "External signer refused to sign block at slot %s as it may violate a slashing condition",
+            slot);
   }
 
   @VisibleForTesting
   static Supplier<String> slashableAttestationMessage(final AttestationData attestationData) {
     return () ->
-        "External signed refused to sign attestation at slot "
+        "External signer refused to sign attestation at slot "
             + attestationData.getSlot()
             + " with source epoch "
             + attestationData.getSource().getEpoch()
