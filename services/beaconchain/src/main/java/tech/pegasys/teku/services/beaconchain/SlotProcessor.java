@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -101,19 +102,22 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
-  public void onTick(final UInt64 currentTime) {
+  public void onTick(final UInt64 currentTimeMillis) {
+
+    final UInt64 currentTimeSeconds = millisToSeconds(currentTimeMillis);
+
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    if (currentTime.isLessThan(genesisTime)) {
+    if (currentTimeSeconds.isLessThan(genesisTime)) {
       return;
     }
-    if (isNextSlotDue(currentTime, genesisTime)
+    if (isNextSlotDue(currentTimeSeconds, genesisTime)
         && !syncStateProvider.getCurrentSyncState().isInSync()) {
       processSlotWhileSyncing();
       nodeSlot.inc();
       return;
     }
 
-    final UInt64 calculatedSlot = spec.getCurrentSlot(currentTime, genesisTime);
+    final UInt64 calculatedSlot = spec.getCurrentSlot(currentTimeSeconds, genesisTime);
     // tolerate 1 slot difference, not more
     if (calculatedSlot.isGreaterThan(nodeSlot.getValue().plus(ONE))) {
       eventLog.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
@@ -126,12 +130,12 @@ public class SlotProcessor {
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
     }
-    if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
+    if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTime)) {
       processSlotAttestation();
       nodeSlot.inc();
     }
 
-    if (isEpochPrecalculationDue(epoch, currentTime, genesisTime)) {
+    if (isEpochPrecalculationDue(epoch, currentTimeMillis, genesisTime)) {
       processEpochPrecompute(epoch);
     }
   }
@@ -162,26 +166,22 @@ public class SlotProcessor {
     return currentPosition == null || calculatedSlot.isGreaterThan(currentPosition);
   }
 
-  boolean isTimeReached(final UInt64 currentTime, final UInt64 earliestTimeInMillis) {
-    return secondsToMillis(currentTime).isGreaterThanOrEqualTo(earliestTimeInMillis);
-  }
-
   boolean isSlotStartDue(final UInt64 calculatedSlot) {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
   // Attestations are due 1/3 of the way through the slots time period
   boolean isSlotAttestationDue(
-      final UInt64 calculatedSlot, final UInt64 currentTime, final UInt64 nodeSlotStartTime) {
+      final UInt64 calculatedSlot, final UInt64 currentTimeMillis, final UInt64 nodeSlotStartTime) {
     final UInt64 earliestTimeInMillis =
         secondsToMillis(nodeSlotStartTime).plus(oneThirdSlotMillis(calculatedSlot));
     return isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)
-        && isTimeReached(currentTime, earliestTimeInMillis);
+        && isTimeReached(currentTimeMillis, earliestTimeInMillis, 5);
   }
 
   // Precalculate epoch transition 2/3 of the way through the last slot of the epoch
   boolean isEpochPrecalculationDue(
-      final UInt64 epoch, final UInt64 currentTime, final UInt64 genesisTime) {
+      final UInt64 epoch, final UInt64 currentTimeMillis, final UInt64 genesisTime) {
     final UInt64 firstSlotOfNextEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (onTickEpochPrecompute == null) {
       onTickEpochPrecompute =
@@ -193,12 +193,17 @@ public class SlotProcessor {
         secondsToMillis(nextEpochStartTime).minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
     final boolean processingDueForSlot =
         isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
-    final boolean timeReached = isTimeReached(currentTime, earliestTimeInMillis);
+    final boolean timeReached = isTimeReached(currentTimeMillis, earliestTimeInMillis, 5);
     return processingDueForSlot && timeReached;
   }
 
   private UInt64 oneThirdSlotMillis(final UInt64 slot) {
     return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
+  }
+
+  boolean isTimeReached(
+      final UInt64 currentTime, final UInt64 earliestTime, final long acceptableDifference) {
+    return currentTime.isGreaterThanOrEqualTo(earliestTime.minusMinZero(acceptableDifference));
   }
 
   private void processSlotStart(final UInt64 nodeEpoch) {
