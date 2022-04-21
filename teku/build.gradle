@@ -12,6 +12,7 @@ dependencies {
   implementation project(':data:yaml')
   implementation project(':ethereum:core')
   implementation project(':ethereum:dataproviders')
+  implementation project(':ethereum:executionengine')
   implementation project(':ethereum:forkchoice')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')

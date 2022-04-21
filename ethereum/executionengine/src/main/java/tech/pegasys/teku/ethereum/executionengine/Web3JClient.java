@@ -11,21 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client;
+package tech.pegasys.teku.ethereum.executionengine;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionengine.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -36,11 +33,6 @@ public abstract class Web3JClient {
   private Web3jService web3jService;
   private Web3j eth1Web3j;
   private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
-  private final List<
-          Function<
-              Request<?, ? extends org.web3j.protocol.core.Response<?>>,
-              Request<?, ? extends org.web3j.protocol.core.Response<?>>>>
-      requestAdapters = new ArrayList<>();
   private boolean initialized = false;
 
   protected Web3JClient(TimeProvider timeProvider) {
@@ -59,22 +51,7 @@ public abstract class Web3JClient {
     }
   }
 
-  public void addRequestAdapter(
-      Function<
-              Request<?, ? extends org.web3j.protocol.core.Response<?>>,
-              Request<?, ? extends org.web3j.protocol.core.Response<?>>>
-          requestAdapter) {
-    requestAdapters.add(requestAdapter);
-  }
-
-  @SuppressWarnings("unchecked")
-  protected <T> Request<?, ? extends org.web3j.protocol.core.Response<T>> applyRequestAdapters(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> request) {
-    return (Request<?, ? extends org.web3j.protocol.core.Response<T>>)
-        requestAdapters.stream().reduce(Function.identity(), Function::andThen).apply(request);
-  }
-
-  protected <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
+  public <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
     throwIfNotInitialized();
     return SafeFuture.of(web3Request)
         .catchAndRethrow(this::handleError)
@@ -85,7 +62,7 @@ public abstract class Web3JClient {
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
       final Duration timeout) {
     throwIfNotInitialized();
-    return SafeFuture.of(applyRequestAdapters(web3jRequest).sendAsync())
+    return SafeFuture.of(web3jRequest.sendAsync())
         .orTimeout(timeout)
         .handle(
             (response, exception) -> {
@@ -123,12 +100,12 @@ public abstract class Web3JClient {
     }
   }
 
-  protected synchronized Web3jService getWeb3jService() {
+  public synchronized Web3jService getWeb3jService() {
     throwIfNotInitialized();
     return web3jService;
   }
 
-  protected synchronized Web3j getEth1Web3j() {
+  public synchronized Web3j getEth1Web3j() {
     throwIfNotInitialized();
     return eth1Web3j;
   }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client;
+package tech.pegasys.teku.ethereum.executionengine;
 
 import java.net.ConnectException;
 import java.net.URI;
@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.websocket.WebSocketClient;
 import org.web3j.protocol.websocket.WebSocketService;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtAuthWebsocketHelper;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
+import tech.pegasys.teku.ethereum.executionengine.auth.JwtAuthWebsocketHelper;
+import tech.pegasys.teku.ethereum.executionengine.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionengine.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -68,7 +68,7 @@ public class Web3jWebsocketClient extends Web3JClient {
   }
 
   @Override
-  protected <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
+  public <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
     return tryToConnect()
         .<SafeFuture<T>>map(SafeFuture::failedFuture)
         .orElseGet(() -> super.doWeb3JRequest(web3Request));

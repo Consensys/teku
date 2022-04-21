@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client.auth;
+package tech.pegasys.teku.ethereum.executionengine.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtTestHelper.assertSecretEquals;
+import static tech.pegasys.teku.ethereum.executionengine.auth.JwtTestHelper.assertSecretEquals;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.config.Constants;
 public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1Provider {
   protected enum Result {
     SUCCESS,
+    NOT_SUPPORTED,
     FAILED
   }
 
