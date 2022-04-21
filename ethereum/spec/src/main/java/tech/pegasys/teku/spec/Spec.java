@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -295,6 +296,10 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
+  }
+
+  public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
+    return atSlot(blockHeader.getSlot()).miscHelpers().computeSigningRoot(blockHeader, domain);
   }
 
   public Bytes computeSigningRoot(AggregateAndProof proof, Bytes32 domain) {

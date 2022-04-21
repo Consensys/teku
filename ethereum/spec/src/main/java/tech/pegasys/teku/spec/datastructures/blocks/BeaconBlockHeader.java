@@ -96,6 +96,15 @@ public class BeaconBlockHeader
     return latestHeader;
   }
 
+  public static BeaconBlockHeader fromBlock(final BeaconBlock block) {
+    return new BeaconBlockHeader(
+        block.getSlot(),
+        block.getProposerIndex(),
+        block.getParentRoot(),
+        block.getStateRoot(),
+        block.getBodyRoot());
+  }
+
   @Override
   public UInt64 getSlot() {
     return getField0().get();

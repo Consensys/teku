@@ -149,7 +149,7 @@ public class ExternalSignerIntegrationTest {
 
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
-        .hasMessageEndingWith(slashableBlockMessage(block).get());
+        .hasMessageEndingWith(slashableBlockMessage(block.getSlot()).get());
 
     validateMetrics(metricsSystem, 0, 1, 0);
   }
