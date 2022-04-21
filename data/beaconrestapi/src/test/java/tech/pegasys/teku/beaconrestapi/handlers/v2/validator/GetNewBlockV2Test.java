@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.io.Resources;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,7 +81,7 @@ public class GetNewBlockV2Test extends AbstractMigratedBeaconHandlerTest {
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    SafeFuture<byte[]> future = getResultFuture();
+    SafeFuture<ByteArrayInputStream> future = getResultFuture();
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }

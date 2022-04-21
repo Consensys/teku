@@ -17,6 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import io.javalin.http.Context;
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -47,7 +48,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final SchemaDefinitionCache schemaDefinition = new SchemaDefinitionCache(spec);
 
   @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<SafeFuture<byte[]>> futureArgs =
+  private final ArgumentCaptor<SafeFuture<ByteArrayInputStream>> futureArgs =
       ArgumentCaptor.forClass(SafeFuture.class);
 
   private final ArgumentCaptor<byte[]> args = ArgumentCaptor.forClass(byte[].class);
@@ -69,9 +70,9 @@ public abstract class AbstractMigratedBeaconHandlerTest {
 
   protected String getFutureResultString() throws ExecutionException, InterruptedException {
     verify(context).future(futureArgs.capture());
-    SafeFuture<byte[]> future = futureArgs.getValue();
+    SafeFuture<ByteArrayInputStream> future = futureArgs.getValue();
     AssertionsForClassTypes.assertThat(future).isCompleted();
-    return new String(future.get(), StandardCharsets.UTF_8);
+    return new String(future.get().readAllBytes(), StandardCharsets.UTF_8);
   }
 
   protected String getResultString() {
@@ -79,7 +80,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
     return new String(args.getValue(), StandardCharsets.UTF_8);
   }
 
-  protected SafeFuture<byte[]> getResultFuture() {
+  protected SafeFuture<ByteArrayInputStream> getResultFuture() {
     verify(context).future(futureArgs.capture());
     return futureArgs.getValue();
   }
