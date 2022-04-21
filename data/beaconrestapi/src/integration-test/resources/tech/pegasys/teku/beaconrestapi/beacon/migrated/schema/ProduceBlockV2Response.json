@@ -4,7 +4,7 @@
   "required" : [ "data", "version" ],
   "properties" : {
     "data" : {
-      "title" : "BlindedBlock",
+      "title" : "Block",
       "type" : "object",
       "oneOf" : [ {
         "$ref" : "#/components/schemas/BeaconBlockPhase0"
