@@ -50,21 +50,17 @@ public class ExternalSignerBlockRequestProvider {
     final tech.pegasys.teku.api.schema.BeaconBlockHeader beaconBlockHeader =
         new tech.pegasys.teku.api.schema.BeaconBlockHeader(blockHeader);
 
-    switch (spec.atSlot(block.getSlot()).getMilestone()) {
+    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
+    switch (milestone) {
       case PHASE0:
         metadata.put("block", beaconBlock); // backward compatible with phase0
         break;
       case ALTAIR:
-        metadata.put(
-            "beacon_block",
-            new BlockRequestBody(spec.atSlot(block.getSlot()).getMilestone(), beaconBlock, null));
+        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlock, null));
         break;
       default:
         // use block header for BELLATRIX and onward milestones
-        metadata.put(
-            "beacon_block",
-            new BlockRequestBody(
-                spec.atSlot(block.getSlot()).getMilestone(), null, beaconBlockHeader));
+        metadata.put("beacon_block", new BlockRequestBody(milestone, null, beaconBlockHeader));
     }
 
     return metadata;
