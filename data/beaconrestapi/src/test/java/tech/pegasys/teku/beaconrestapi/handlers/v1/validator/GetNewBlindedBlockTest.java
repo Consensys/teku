@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
@@ -21,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.io.Resources;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
@@ -35,18 +33,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetNewBlockV2Test extends AbstractMigratedBeaconHandlerTest {
+public class GetNewBlindedBlockTest extends AbstractMigratedBeaconHandlerTest {
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private GetNewBlock handler;
+  private GetNewBlindedBlock handler;
 
   @BeforeEach
   public void setup() {
-    handler = new GetNewBlock(validatorDataProvider, schemaDefinition);
+    handler = new GetNewBlindedBlock(validatorDataProvider, schemaDefinition);
     final Map<String, String> pathParams = Map.of(SLOT, "1");
     final Map<String, List<String>> queryParams =
         Map.of(RANDAO_REVEAL, List.of(signatureInternal.toBytesCompressed().toHexString()));
@@ -57,25 +52,9 @@ public class GetNewBlockV2Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void shouldReturnBlockWithoutGraffiti() throws Exception {
-    final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
-            ONE, signatureInternal, Optional.empty(), false))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)));
-
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
-    handler.handleRequest(request);
-
-    assertThat(getFutureResultString())
-        .isEqualTo(
-            Resources.toString(
-                Resources.getResource(GetNewBlockV2Test.class, "beaconBlock.json"), UTF_8));
-  }
-
-  @Test
   void shouldThrowExceptionWithEmptyBlock() throws Exception {
     when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
-            ONE, signatureInternal, Optional.empty(), false))
+            ONE, signatureInternal, Optional.empty(), true))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());

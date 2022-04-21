@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,17 +57,19 @@ public class RestApiRequest {
 
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
     context.future(
-        futureResponse.thenApply(
-            result -> {
-              try {
-                return respond(
-                    result.getResponseCode(), JSON_CONTENT_TYPE, result.getResponseBody());
-              } catch (JsonProcessingException e) {
-                LOG.trace("Failed to generate API response", e);
-                context.status(SC_INTERNAL_SERVER_ERROR);
-                return "";
-              }
-            }));
+        futureResponse
+            .thenApply(
+                result -> {
+                  try {
+                    return respond(
+                        result.getResponseCode(), JSON_CONTENT_TYPE, result.getResponseBody());
+                  } catch (JsonProcessingException e) {
+                    LOG.trace("Failed to generate API response", e);
+                    context.status(SC_INTERNAL_SERVER_ERROR);
+                    return Bytes.EMPTY.toArrayUnsafe();
+                  }
+                })
+            .thenApply(ByteArrayInputStream::new));
   }
 
   public void respondOk(final Object response, final CacheLength cacheLength)

@@ -25,13 +25,13 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetStateForkTest extends AbstractBeaconHandlerTest {
+public class GetStateForkTest extends AbstractMigratedBeaconHandlerTest {
   private final GetStateFork handler = new GetStateFork(chainDataProvider);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RestApiRequest request;
@@ -56,7 +56,7 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
 
     handler.handleRequest(request);
 
-    assertThat(getResultString())
+    assertThat(getFutureResultString())
         .isEqualTo(
             "{\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
     verify(context, never()).status(any());
@@ -70,7 +70,7 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
 
     handler.handleRequest(request);
 
-    assertThat(getResultString()).isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
+    assertThat(getFutureResultString()).isEqualTo("{\"code\":404,\"message\":\"Not found\"}");
     verify(context).status(SC_NOT_FOUND);
   }
 }
