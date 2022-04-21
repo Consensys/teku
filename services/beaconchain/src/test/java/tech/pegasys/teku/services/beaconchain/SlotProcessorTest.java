@@ -331,7 +331,7 @@ public class SlotProcessorTest {
   @ParameterizedTest
   @EnumSource(
       value = Eth2Network.class,
-      names = {"GNOSIS"})
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
   void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch(Eth2Network eth2Network) {
     final RecentChainData recentChainData = mock(RecentChainData.class);
     when(recentChainData.getGenesisTime()).thenReturn(genesisTime);
