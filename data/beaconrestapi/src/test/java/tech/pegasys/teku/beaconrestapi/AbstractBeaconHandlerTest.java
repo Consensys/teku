@@ -114,4 +114,9 @@ public abstract class AbstractBeaconHandlerTest {
     AssertionsForClassTypes.assertThat(future).isCompleted();
     return future.join();
   }
+
+  protected SafeFuture<String> getResultFuture() {
+    verify(context).future(args.capture());
+    return args.getValue();
+  }
 }

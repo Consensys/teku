@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import tech.pegasys.teku.beaconrestapi.AbstractGetNewBlockTest;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 
-public class GetNewBlockV2Test extends AbstractGetNewBlockTest {
+public class GetNewBlindedBlockTest extends AbstractGetNewBlockTest {
+
   @Override
   public MigratingEndpointAdapter getHandler() {
-    return new GetNewBlock(validatorDataProvider, schemaDefinitionCache);
+    return new GetNewBlindedBlock(validatorDataProvider, schemaDefinitionCache);
   }
 
   @Override
   public boolean isBlindedBlocks() {
-    return false;
+    return true;
   }
 }

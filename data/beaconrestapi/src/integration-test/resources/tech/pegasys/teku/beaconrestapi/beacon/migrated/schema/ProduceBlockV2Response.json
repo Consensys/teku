@@ -1,0 +1,22 @@
+{
+  "title" : "ProduceBlockV2Response",
+  "type" : "object",
+  "required" : [ "data", "version" ],
+  "properties" : {
+    "data" : {
+      "title" : "Block",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BeaconBlockPhase0"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockAltair"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockBellatrix"
+      } ]
+    },
+    "version" : {
+      "type" : "string",
+      "enum" : [ "PHASE0", "ALTAIR", "BELLATRIX" ]
+    }
+  }
+}
