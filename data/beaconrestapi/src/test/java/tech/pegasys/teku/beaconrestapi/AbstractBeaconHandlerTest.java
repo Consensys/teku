@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.nio.charset.StandardCharsets;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -52,7 +52,7 @@ public abstract class AbstractBeaconHandlerTest {
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
 
   @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
+  private final ArgumentCaptor<SafeFuture<byte[]>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
@@ -72,18 +72,12 @@ public abstract class AbstractBeaconHandlerTest {
   }
 
   protected <T> T getResponseFromFuture(Class<T> clazz) throws JsonProcessingException {
-    verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
-    assertThat(future).isCompleted();
-    String data = future.join();
+    String data = getResultString();
     return jsonProvider.jsonToObject(data, clazz);
   }
 
   protected BadRequest getBadRequestFromFuture() throws JsonProcessingException {
-    verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
-    assertThat(future).isCompleted();
-    String data = future.join();
+    String data = getResultString();
     return jsonProvider.jsonToObject(data, BadRequest.class);
   }
 
@@ -110,8 +104,8 @@ public abstract class AbstractBeaconHandlerTest {
 
   protected String getResultString() {
     verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
+    SafeFuture<byte[]> future = args.getValue();
     AssertionsForClassTypes.assertThat(future).isCompleted();
-    return future.join();
+    return new String(future.join(), StandardCharsets.UTF_8);
   }
 }

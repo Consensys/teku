@@ -25,11 +25,11 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class RestApiRequest {
   private static final Logger LOG = LogManager.getLogger();
@@ -64,8 +64,8 @@ public class RestApiRequest {
               } catch (JsonProcessingException e) {
                 LOG.trace("Failed to generate API response", e);
                 context.status(SC_INTERNAL_SERVER_ERROR);
+                return "";
               }
-              return "";
             }));
   }
 
@@ -80,24 +80,21 @@ public class RestApiRequest {
     respond(statusCode, JSON_CONTENT_TYPE, new HttpErrorResponse(statusCode, message));
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private String respond(
+  private byte[] respond(
       final int statusCode, final String contentType, final Optional<Object> response)
       throws JsonProcessingException {
     context.status(statusCode);
     if (response.isPresent()) {
-      final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
-      return JsonUtil.serialize(response.get(), type);
+      return metadata.serialize(statusCode, contentType, response.get());
     }
-    return "";
+    return Bytes.EMPTY.toArrayUnsafe();
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   private void respond(final int statusCode, final String contentType, final Object response)
       throws JsonProcessingException {
-    final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
     context.status(statusCode);
-    context.result(JsonUtil.serialize(response, type));
+    context.contentType(contentType);
+    context.result(metadata.serialize(statusCode, contentType, response));
   }
 
   /** This is only used when intending to return status code without a response body */
