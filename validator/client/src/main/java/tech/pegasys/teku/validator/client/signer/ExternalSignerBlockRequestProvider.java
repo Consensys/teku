@@ -56,11 +56,11 @@ public class ExternalSignerBlockRequestProvider {
         metadata.put("block", beaconBlock); // backward compatible with phase0
         break;
       case ALTAIR:
-        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlock, null));
+        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlock));
         break;
       default:
         // use block header for BELLATRIX and onward milestones
-        metadata.put("beacon_block", new BlockRequestBody(milestone, null, beaconBlockHeader));
+        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlockHeader));
     }
 
     return metadata;

@@ -36,6 +36,14 @@ public class BlockRequestBody {
     this.beaconBlockHeader = beaconBlockHeader;
   }
 
+  public BlockRequestBody(final SpecMilestone version, final BeaconBlock beaconBlock) {
+    this(version, beaconBlock, null);
+  }
+
+  public BlockRequestBody(final SpecMilestone version, final BeaconBlockHeader beaconBlockHeader) {
+    this(version, null, beaconBlockHeader);
+  }
+
   @JsonProperty("version")
   public SpecMilestone getVersion() {
     return version;
