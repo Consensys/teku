@@ -107,7 +107,7 @@ public class ExternalSignerBellatrixBlockSigningIntegrationTest {
         new ExternalSignerBlockRequestProvider(spec, block);
 
     final Bytes blockHeaderSigningRoot =
-        signingRootUtil.signingRootForSignBlock(BeaconBlockHeader.fromBlock(block), fork);
+        signingRootUtil.signingRootForSignBlockHeader(BeaconBlockHeader.fromBlock(block), fork);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(

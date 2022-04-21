@@ -36,7 +36,7 @@ class ExternalSignerBlockSignTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
 
     final Bytes blockHeaderSigningRoot =
-        signingRootUtil.signingRootForSignBlock(BeaconBlockHeader.fromBlock(block), fork);
+        signingRootUtil.signingRootForSignBlockHeader(BeaconBlockHeader.fromBlock(block), fork);
     final Bytes blockSigningRoot = signingRootUtil.signingRootForSignBlock(block, fork);
 
     assertThat(blockHeaderSigningRoot).isEqualTo(blockSigningRoot);

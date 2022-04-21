@@ -45,7 +45,7 @@ public class SigningRootUtil {
     return spec.computeSigningRoot(block, getDomainForSignBlock(block.getSlot(), forkInfo));
   }
 
-  public Bytes signingRootForSignBlock(
+  public Bytes signingRootForSignBlockHeader(
       final BeaconBlockHeader blockHeader, final ForkInfo forkInfo) {
     return spec.computeSigningRoot(
         blockHeader, getDomainForSignBlock(blockHeader.getSlot(), forkInfo));
