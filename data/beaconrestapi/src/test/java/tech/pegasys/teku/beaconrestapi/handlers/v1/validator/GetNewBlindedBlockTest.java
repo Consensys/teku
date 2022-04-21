@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
@@ -60,13 +59,8 @@ public class GetNewBlindedBlockTest extends AbstractMigratedBeaconHandlerTest {
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    SafeFuture<String> future = getResultFuture();
+    SafeFuture<byte[]> future = getResultFuture();
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
-  }
-
-  protected SafeFuture<String> getResultFuture() {
-    verify(context).future(args.capture());
-    return args.getValue();
   }
 }

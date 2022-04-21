@@ -27,8 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -39,10 +38,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
+public class GetNewBlockV2Test extends AbstractMigratedBeaconHandlerTest {
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SchemaDefinitionCache schemaDefinition = new SchemaDefinitionCache(spec);
   private GetNewBlock handler;
 
   @BeforeEach
@@ -67,7 +65,7 @@ public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    assertThat(getResultString())
+    assertThat(getFutureResultString())
         .isEqualTo(
             Resources.toString(
                 Resources.getResource(GetNewBlockV2Test.class, "beaconBlock.json"), UTF_8));
@@ -82,7 +80,7 @@ public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    SafeFuture<String> future = getResultFuture();
+    SafeFuture<byte[]> future = getResultFuture();
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }

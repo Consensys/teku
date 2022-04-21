@@ -19,8 +19,6 @@ import static org.mockito.Mockito.verify;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -54,10 +52,6 @@ public abstract class AbstractBeaconHandlerTest {
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
-
-  @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<SafeFuture<byte[]>> byteArgs =
-      ArgumentCaptor.forClass(SafeFuture.class);
 
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
@@ -112,12 +106,5 @@ public abstract class AbstractBeaconHandlerTest {
     SafeFuture<String> future = args.getValue();
     AssertionsForClassTypes.assertThat(future).isCompleted();
     return future.join();
-  }
-
-  protected String getBytesResultString() throws ExecutionException, InterruptedException {
-    verify(context).future(byteArgs.capture());
-    SafeFuture<byte[]> future = byteArgs.getValue();
-    AssertionsForClassTypes.assertThat(future).isCompleted();
-    return new String(future.get(), StandardCharsets.UTF_8);
   }
 }

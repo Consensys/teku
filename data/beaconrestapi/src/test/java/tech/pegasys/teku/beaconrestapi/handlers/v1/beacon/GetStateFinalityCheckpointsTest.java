@@ -20,14 +20,14 @@ import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
+public class GetStateFinalityCheckpointsTest extends AbstractMigratedBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
@@ -54,6 +54,6 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
             beaconState.getFinalizedCheckpoint().getEpoch(),
             beaconState.getFinalizedCheckpoint().getRoot());
 
-    AssertionsForClassTypes.assertThat(getBytesResultString()).isEqualTo(expected);
+    AssertionsForClassTypes.assertThat(getFutureResultString()).isEqualTo(expected);
   }
 }

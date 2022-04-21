@@ -14,23 +14,73 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import io.javalin.http.Context;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beacon.sync.SyncService;
+import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
+  protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
+
+  protected final Context context = mock(Context.class);
+  protected final JsonProvider jsonProvider = new JsonProvider();
+  protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
+
+  protected final SyncService syncService = mock(SyncService.class);
+  protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
   protected final SchemaDefinitionCache schemaDefinition = new SchemaDefinitionCache(spec);
 
   @SuppressWarnings("unchecked")
-  protected final ArgumentCaptor<SafeFuture<String>> args =
+  private final ArgumentCaptor<SafeFuture<byte[]>> futureArgs =
       ArgumentCaptor.forClass(SafeFuture.class);
 
-  protected final Context context = mock(Context.class);
+  private final ArgumentCaptor<byte[]> args = ArgumentCaptor.forClass(byte[].class);
 
+  protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
+
+  protected SyncingStatus getSyncStatus(
+      final boolean isSyncing,
+      final long startSlot,
+      final long currentSlot,
+      final long highestSlot) {
+    return new SyncingStatus(
+        isSyncing,
+        UInt64.valueOf(currentSlot),
+        UInt64.valueOf(startSlot),
+        UInt64.valueOf(highestSlot));
+  }
+
+  protected String getFutureResultString() throws ExecutionException, InterruptedException {
+    verify(context).future(futureArgs.capture());
+    SafeFuture<byte[]> future = futureArgs.getValue();
+    AssertionsForClassTypes.assertThat(future).isCompleted();
+    return new String(future.get(), StandardCharsets.UTF_8);
+  }
+
+  protected String getResultString() {
+    verify(context).result(args.capture());
+    return new String(args.getValue(), StandardCharsets.UTF_8);
+  }
+
+  protected SafeFuture<byte[]> getResultFuture() {
+    verify(context).future(futureArgs.capture());
+    return futureArgs.getValue();
+  }
 }
