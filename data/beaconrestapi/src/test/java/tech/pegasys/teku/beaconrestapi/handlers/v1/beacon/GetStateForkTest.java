@@ -29,11 +29,9 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateForkTest extends AbstractMigratedBeaconHandlerTest {
   private final GetStateFork handler = new GetStateFork(chainDataProvider);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RestApiRequest request;
   private final StateAndMetaData stateAndMetaData =
       new StateAndMetaData(

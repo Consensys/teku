@@ -25,10 +25,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateFinalityCheckpointsTest extends AbstractMigratedBeaconHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   public void shouldReturnFinalityCheckpointsInfo() throws Exception {

@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
@@ -45,7 +46,8 @@ public abstract class AbstractMigratedBeaconHandlerTest {
 
   protected final SyncService syncService = mock(SyncService.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
-  protected final SchemaDefinitionCache schemaDefinition = new SchemaDefinitionCache(spec);
+  protected final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<SafeFuture<ByteArrayInputStream>> futureArgs =

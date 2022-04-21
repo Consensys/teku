@@ -27,10 +27,8 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateRootTest extends AbstractMigratedBeaconHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   public void shouldReturnRootInfo() throws Exception {

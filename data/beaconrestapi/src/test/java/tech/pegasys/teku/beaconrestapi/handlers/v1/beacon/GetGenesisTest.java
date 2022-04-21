@@ -24,13 +24,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetGenesisTest extends AbstractMigratedBeaconHandlerTest {
-  final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
