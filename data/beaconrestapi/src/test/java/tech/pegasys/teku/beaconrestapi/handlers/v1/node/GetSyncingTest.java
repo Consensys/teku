@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
@@ -24,7 +25,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetSyncingTest extends AbstractBeaconHandlerTest {
-  private final ArgumentCaptor<String> args = ArgumentCaptor.forClass(String.class);
+  private final ArgumentCaptor<byte[]> args = ArgumentCaptor.forClass(byte[].class);
 
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {
@@ -55,7 +56,7 @@ public class GetSyncingTest extends AbstractBeaconHandlerTest {
             headSlot, syncDistance, isSyncing);
 
     verify(context).result(args.capture());
-    String response = args.getValue();
+    String response = new String(args.getValue(), StandardCharsets.UTF_8);
     assertThat(response).isEqualTo(expectedResponse);
   }
 }
