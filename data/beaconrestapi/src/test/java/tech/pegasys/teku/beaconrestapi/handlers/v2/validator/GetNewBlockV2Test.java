@@ -40,11 +40,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class GetNewBlockV2Test extends AbstractBeaconHandlerTest {
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final SchemaDefinitionCache schemaDefinition = new SchemaDefinitionCache(spec);
   private GetNewBlock handler;
 
   @BeforeEach
   public void setup() {
-    handler = new GetNewBlock(validatorDataProvider, new SchemaDefinitionCache(spec));
+    handler = new GetNewBlock(validatorDataProvider, schemaDefinition);
   }
 
   @Test
