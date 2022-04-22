@@ -406,10 +406,10 @@ public class Spec {
         .getCurrentSlot(currentTime, genesisTime);
   }
 
-  public UInt64 getCurrentSlotMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
+  public UInt64 getCurrentSlotForMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
     return atTimeMillis(genesisTimeMillis, currentTimeMillis)
         .getForkChoiceUtil()
-        .getCurrentSlotMillis(currentTimeMillis, genesisTimeMillis);
+        .getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store) {

@@ -113,7 +113,8 @@ public class SlotProcessor {
       return;
     }
 
-    final UInt64 calculatedSlot = spec.getCurrentSlotMillis(currentTimeMillis, genesisTimeMillis);
+    final UInt64 calculatedSlot =
+        spec.getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
     // tolerate 1 slot difference, not more
     if (calculatedSlot.isGreaterThan(nodeSlot.getValue().plus(ONE))) {
       eventLog.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);

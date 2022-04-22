@@ -162,8 +162,8 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  public void getCurrentSlotMillis_shouldGetZeroAtGenesisMillis() {
-    assertThat(forkChoiceUtil.getCurrentSlotMillis(GENESIS_TIME_MILLIS, GENESIS_TIME_MILLIS))
+  public void getCurrentSlotForMillis_shouldGetZeroAtGenesisMillis() {
+    assertThat(forkChoiceUtil.getCurrentSlotForMillis(GENESIS_TIME_MILLIS, GENESIS_TIME_MILLIS))
         .isEqualTo(UInt64.ZERO);
   }
 
@@ -174,8 +174,8 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  public void getCurrentSlotMillis_shouldGetNonZeroPastGenesisMillis() {
-    assertThat(forkChoiceUtil.getCurrentSlotMillis(slot50TimeMillis, GENESIS_TIME_MILLIS))
+  public void getCurrentSlotForMillis_shouldGetNonZeroPastGenesisMillis() {
+    assertThat(forkChoiceUtil.getCurrentSlotForMillis(slot50TimeMillis, GENESIS_TIME_MILLIS))
         .isEqualTo(UInt64.valueOf(50L));
   }
 
@@ -186,9 +186,9 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  public void getCurrentSlotMillis_shouldGetZeroPriorToGenesisMillis() {
+  public void getCurrentSlotForMillis_shouldGetZeroPriorToGenesisMillis() {
     assertThat(
-            forkChoiceUtil.getCurrentSlotMillis(
+            forkChoiceUtil.getCurrentSlotForMillis(
                 GENESIS_TIME_MILLIS.minus(1000), GENESIS_TIME_MILLIS))
         .isEqualTo(UInt64.ZERO);
   }

@@ -71,7 +71,7 @@ public class ForkChoiceUtil {
     return currentTime.minus(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
 
-  public UInt64 getCurrentSlotMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
+  public UInt64 getCurrentSlotForMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
     if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
       return UInt64.ZERO;
     }
