@@ -380,7 +380,7 @@ public class SlotProcessorTest {
     verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
   }
 
-  private long oneThirdMillis(int millis) {
+  private long oneThirdMillis(long millis) {
     return millis / 3L;
   }
 }
