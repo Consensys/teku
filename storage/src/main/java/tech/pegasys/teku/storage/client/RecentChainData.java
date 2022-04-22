@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -162,12 +164,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return genesisTime;
   }
 
-  public UInt64 computeTimeAtSlot(UInt64 slot) {
-    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+  public UInt64 getGenesisTimeMillis() {
+    return secondsToMillis(genesisTime);
   }
 
-  public UInt64 computeMillisSinceSlotStart(UInt64 currentTimeMs, UInt64 slot) {
-    return currentTimeMs.minus(computeTimeAtSlot(slot).times(1000));
+  public UInt64 computeTimeAtSlot(UInt64 slot) {
+    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
   }
 
   public Optional<GenesisData> getGenesisData() {

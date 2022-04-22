@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -45,6 +46,11 @@ public interface ReadOnlyStore {
   UInt64 getTimeMillis();
 
   UInt64 getGenesisTime();
+
+  /** @return the genesis time in milliseconds */
+  default UInt64 getGenesisTimeMillis() {
+    return secondsToMillis(getGenesisTime());
+  }
 
   /**
    * Returns the initial checkpoint from which the chain was started. If the checkpoint is missing,
