@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
 
 import java.time.Instant;
 import java.util.NavigableMap;
@@ -71,8 +71,22 @@ public class ForkChoiceUtil {
     return currentTime.minus(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
 
+  public UInt64 getCurrentSlotMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
+    if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
+      return UInt64.ZERO;
+    }
+    return currentTimeMillis
+        .minus(genesisTimeMillis)
+        .dividedBy(specConfig.getSecondsPerSlot() * MILLIS_PER_SECOND.longValue());
+  }
+
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
     return genesisTime.plus(slotNumber.times(specConfig.getSecondsPerSlot()));
+  }
+
+  public UInt64 getSlotStartTimeMillis(UInt64 slotNumber, UInt64 genesisTimeMillis) {
+    return genesisTimeMillis.plus(
+        slotNumber.times(specConfig.getSecondsPerSlot() * MILLIS_PER_SECOND.longValue()));
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store, boolean useUnixTime) {
@@ -177,7 +191,7 @@ public class ForkChoiceUtil {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
     if (store.getTimeMillis().isGreaterThan(timeMillis)
-        || secondsToMillis(store.getGenesisTime()).isGreaterThan(timeMillis)) {
+        || store.getGenesisTimeMillis().isGreaterThan(timeMillis)) {
       return;
     }
     UInt64 previousSlot = getCurrentSlot(store);

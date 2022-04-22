@@ -129,6 +129,10 @@ public class Spec {
     return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
   }
 
+  private SpecVersion atTimeMillis(final UInt64 genesisTimeMillis, final UInt64 currentTimeMillis) {
+    return atTime(millisToSeconds(genesisTimeMillis), millisToSeconds(currentTimeMillis));
+  }
+
   public SpecConfig getSpecConfig(final UInt64 epoch) {
     return atEpoch(epoch).getConfig();
   }
@@ -402,6 +406,12 @@ public class Spec {
         .getCurrentSlot(currentTime, genesisTime);
   }
 
+  public UInt64 getCurrentSlotMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
+    return atTimeMillis(genesisTimeMillis, currentTimeMillis)
+        .getForkChoiceUtil()
+        .getCurrentSlotMillis(currentTimeMillis, genesisTimeMillis);
+  }
+
   public UInt64 getCurrentSlot(ReadOnlyStore store) {
     return atTime(store.getGenesisTime(), store.getTimeSeconds())
         .getForkChoiceUtil()
@@ -410,6 +420,12 @@ public class Spec {
 
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
     return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
+  }
+
+  public UInt64 getSlotStartTimeMillis(UInt64 slotNumber, UInt64 genesisTimeMillis) {
+    return atSlot(slotNumber)
+        .getForkChoiceUtil()
+        .getSlotStartTimeMillis(slotNumber, genesisTimeMillis);
   }
 
   public Optional<Bytes32> getAncestor(
@@ -445,8 +461,9 @@ public class Spec {
   }
 
   public void onTick(MutableStore store, UInt64 timeMillis) {
-    UInt64 timeSeconds = millisToSeconds(timeMillis);
-    atTime(store.getGenesisTime(), timeSeconds).getForkChoiceUtil().onTick(store, timeMillis);
+    atTimeMillis(store.getGenesisTimeMillis(), timeMillis)
+        .getForkChoiceUtil()
+        .onTick(store, timeMillis);
   }
 
   public AttestationProcessingResult validateAttestation(

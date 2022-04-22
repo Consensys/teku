@@ -107,8 +107,9 @@ public class SlotProcessorTest {
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsDue() {
     slotProcessor.setCurrentSlot(desiredSlot);
-    final UInt64 currentTime = spec.getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
-    assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isTrue();
+    final UInt64 currentTimeMillis =
+        spec.getSlotStartTimeMillis(desiredSlot.plus(ONE), genesisTimeMillis);
+    assertThat(slotProcessor.isNextSlotDue(currentTimeMillis, genesisTimeMillis)).isTrue();
   }
 
   @Test
@@ -137,24 +138,18 @@ public class SlotProcessorTest {
 
   @Test
   public void isTimeReached_shouldReturnFalseIfTimeNotReached() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.plus(1000), 5))
+    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.plus(1000)))
         .isFalse();
   }
 
   @Test
-  public void isTimeReached_shouldReturnTrueIfTimeNotReachedButItHasAnAcceptableDifference() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.plus(1000), 1200))
-        .isTrue();
-  }
-
-  @Test
   public void isTimeReached_shouldReturnTrueIfTimeMatches() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis, 5)).isTrue();
+    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis)).isTrue();
   }
 
   @Test
   public void isTimeReached_shouldReturnTrueIfBeyondEarliestTime() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.minus(1000), 5))
+    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.minus(1000)))
         .isTrue();
   }
 
@@ -334,7 +329,7 @@ public class SlotProcessorTest {
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
   void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch(Eth2Network eth2Network) {
     final RecentChainData recentChainData = mock(RecentChainData.class);
-    when(recentChainData.getGenesisTime()).thenReturn(genesisTime);
+    when(recentChainData.getGenesisTimeMillis()).thenReturn(genesisTimeMillis);
     final Optional<MinimalBeaconBlockSummary> headBlock =
         storageSystem.recentChainData().getHeadBlock();
     when(recentChainData.getHeadBlock()).thenReturn(headBlock);
@@ -376,7 +371,7 @@ public class SlotProcessorTest {
     verify(recentChainData, never()).retrieveStateAtSlot(any());
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
-    slotProcessor.onTick(nextEpochSlotMinusOne.plus((millisPerSlot / 3) * 2L));
+    slotProcessor.onTick(nextEpochSlotMinusOne.plus(((millisPerSlot / 3) * 2L) + 5L));
     verify(epochCachePrimer).primeCacheForEpoch(ONE);
 
     // Should not repeat computation
