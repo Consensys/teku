@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.client;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -112,6 +113,8 @@ class RecentChainDataTest {
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
     assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesisTime());
+    assertThat(recentChainData.getGenesisTimeMillis())
+        .isEqualTo(secondsToMillis(genesisState.getGenesisTime()));
     assertThat(recentChainData.getHeadSlot()).isEqualTo(GENESIS_SLOT);
     assertThat(recentChainData.getBestState()).isPresent();
     assertThat(recentChainData.getBestState().get()).isCompletedWithValue(genesisState);

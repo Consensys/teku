@@ -1067,7 +1067,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       }
     }
 
-    slotProcessor.onTick(currentTimeSeconds);
+    slotProcessor.onTick(currentTimeMillis);
   }
 
   @Override
