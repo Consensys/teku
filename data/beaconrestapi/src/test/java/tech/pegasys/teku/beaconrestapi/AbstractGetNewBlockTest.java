@@ -17,11 +17,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.io.Resources;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +65,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    assertThat(getResultString())
+    final ByteArrayInputStream byteArrayInputStream = safeJoin(getResultFuture());
+    assertThat(new String(byteArrayInputStream.readAllBytes(), UTF_8))
         .isEqualTo(
             Resources.toString(
                 Resources.getResource(AbstractGetNewBlockTest.class, "beaconBlock.json"), UTF_8));
@@ -78,7 +81,7 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    SafeFuture<String> future = getResultFuture();
+    SafeFuture<ByteArrayInputStream> future = getResultFuture();
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }

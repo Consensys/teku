@@ -183,6 +183,14 @@ public class EndpointMetadata {
     return responseType;
   }
 
+  @SuppressWarnings("unchecked")
+  public <T> byte[] serialize(final int statusCode, final String contentType, final T response)
+      throws JsonProcessingException {
+    final SerializableTypeDefinition<T> type =
+        (SerializableTypeDefinition<T>) getResponseType(statusCode, contentType);
+    return JsonUtil.serializeToBytes(response, type).toArrayUnsafe();
+  }
+
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
     gen.writeObjectFieldStart(method.name().toLowerCase(Locale.ROOT));
     writeTags(gen);

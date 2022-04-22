@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -72,18 +71,12 @@ public abstract class AbstractBeaconHandlerTest {
   }
 
   protected <T> T getResponseFromFuture(Class<T> clazz) throws JsonProcessingException {
-    verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
-    assertThat(future).isCompleted();
-    String data = future.join();
+    String data = getResultString();
     return jsonProvider.jsonToObject(data, clazz);
   }
 
   protected BadRequest getBadRequestFromFuture() throws JsonProcessingException {
-    verify(context).future(args.capture());
-    SafeFuture<String> future = args.getValue();
-    assertThat(future).isCompleted();
-    String data = future.join();
+    String data = getResultString();
     return jsonProvider.jsonToObject(data, BadRequest.class);
   }
 
@@ -113,10 +106,5 @@ public abstract class AbstractBeaconHandlerTest {
     SafeFuture<String> future = args.getValue();
     AssertionsForClassTypes.assertThat(future).isCompleted();
     return future.join();
-  }
-
-  protected SafeFuture<String> getResultFuture() {
-    verify(context).future(args.capture());
-    return args.getValue();
   }
 }
