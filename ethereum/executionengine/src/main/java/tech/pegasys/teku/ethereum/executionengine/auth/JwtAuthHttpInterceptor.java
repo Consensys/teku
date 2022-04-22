@@ -11,29 +11,34 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client.auth;
+package tech.pegasys.teku.ethereum.executionengine.auth;
 
 import com.google.common.net.HttpHeaders;
+import java.io.IOException;
 import java.util.Optional;
-import org.web3j.protocol.websocket.WebSocketClient;
+import okhttp3.Interceptor;
+import okhttp3.Response;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class JwtAuthWebsocketHelper {
+public class JwtAuthHttpInterceptor implements Interceptor {
   private final SafeTokenProvider tokenProvider;
+
   private final TimeProvider timeProvider;
 
-  public JwtAuthWebsocketHelper(final JwtConfig jwtConfig, final TimeProvider timeProvider) {
+  public JwtAuthHttpInterceptor(final JwtConfig jwtConfig, final TimeProvider timeProvider) {
     this.tokenProvider = new SafeTokenProvider(new TokenProvider(jwtConfig));
     this.timeProvider = timeProvider;
   }
 
-  public void setAuth(final WebSocketClient webSocketClient) {
+  @Override
+  public Response intercept(final Chain chain) throws IOException {
     final Optional<Token> optionalToken = tokenProvider.token(timeProvider.getTimeInMillis());
     if (optionalToken.isEmpty()) {
-      return;
+      return chain.proceed(chain.request());
     }
     final Token token = optionalToken.get();
     final String authHeader = "Bearer " + token.getJwtToken();
-    webSocketClient.addHeader(HttpHeaders.AUTHORIZATION, authHeader);
+    return chain.proceed(
+        chain.request().newBuilder().header(HttpHeaders.AUTHORIZATION, authHeader).build());
   }
 }

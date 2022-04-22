@@ -11,16 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client.auth;
+package tech.pegasys.teku.ethereum.executionengine.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig.TOLERANCE_IN_SECONDS;
+import static tech.pegasys.teku.ethereum.executionengine.auth.JwtConfig.TOLERANCE_IN_SECONDS;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import java.security.Key;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -64,19 +65,19 @@ class SafeTokenProviderTest {
     validateTokenAtInstant(updatedToken, timeInMillis);
     validateJwtTokenAtInstant(jwtSecretKey, updatedToken, timeInMillis);
 
-    assertThat(originalToken).isEqualTo(updatedToken);
+    Assertions.assertThat(originalToken).isEqualTo(updatedToken);
   }
 
   public static void validateTokenAtInstant(
       final Optional<Token> optionalToken, final UInt64 instantInMillis) {
-    assertThat(optionalToken).isPresent();
+    Assertions.assertThat(optionalToken).isPresent();
     assertThat(optionalToken.get().isAvailableAt(instantInMillis)).isTrue();
     assertThat(optionalToken.get().getJwtToken()).isNotBlank();
   }
 
   public static void validateJwtTokenAtInstant(
       final Key jwtSecretKey, final Optional<Token> optionalToken, final UInt64 instantInMillis) {
-    assertThat(optionalToken).isPresent();
+    Assertions.assertThat(optionalToken).isPresent();
     final long issuedAtInSeconds =
         Jwts.parserBuilder()
             .setSigningKey(jwtSecretKey)

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client.schema;
+package tech.pegasys.teku.ethereum.executionengine.schema;
 
 import java.util.Objects;
 

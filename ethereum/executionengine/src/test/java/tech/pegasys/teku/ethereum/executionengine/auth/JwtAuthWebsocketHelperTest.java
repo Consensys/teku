@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client.auth;
+package tech.pegasys.teku.ethereum.executionengine.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtTestHelper.generateJwtSecret;
+import static tech.pegasys.teku.ethereum.executionengine.auth.JwtTestHelper.generateJwtSecret;
 
 import com.google.common.net.HttpHeaders;
 import java.util.concurrent.TimeUnit;
@@ -37,14 +37,14 @@ public class JwtAuthWebsocketHelperTest {
     final JwtAuthWebsocketHelper jwtAuthWebsocketHelper =
         new JwtAuthWebsocketHelper(jwtConfig, timeProvider);
     UInt64 timeOne = UInt64.valueOf(123);
-    Token expectedTokenOne = tokenProvider.token(timeOne).get();
+    Token expectedTokenOne = tokenProvider.token(timeOne).orElseThrow();
     when(timeProvider.getTimeInMillis()).thenReturn(timeOne);
     jwtAuthWebsocketHelper.setAuth(webSocketClient);
     verify(webSocketClient)
         .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + expectedTokenOne.getJwtToken());
     UInt64 timeTwo =
         timeOne.plus(UInt64.ONE).plus(TimeUnit.SECONDS.toMillis(JwtConfig.EXPIRES_IN_SECONDS));
-    Token expectedTokenTwo = tokenProvider.token(timeTwo).get();
+    Token expectedTokenTwo = tokenProvider.token(timeTwo).orElseThrow();
     assertThat(expectedTokenTwo).isNotEqualTo(expectedTokenOne);
     when(timeProvider.getTimeInMillis()).thenReturn(timeTwo);
     jwtAuthWebsocketHelper.setAuth(webSocketClient);

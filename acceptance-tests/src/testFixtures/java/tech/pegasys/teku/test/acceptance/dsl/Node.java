@@ -21,10 +21,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
@@ -53,6 +55,7 @@ public abstract class Node {
   protected static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String NETWORK_FILE_PATH = "/network.yaml";
   protected static final String PRIVATE_KEY_FILE_PATH = "/private-key.txt";
+  protected static final String JWT_SECRET_FILE_PATH = "/jwt-secret.hex";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
   protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";
   protected static final int P2P_PORT = 9000;
@@ -170,6 +173,18 @@ public abstract class Node {
     } catch (final IOException e) {
       throw new RuntimeException("Failed to copy directory from " + nodeAlias, e);
     }
+  }
+
+  protected static File copyToTmpFile(final URL fileUrl) throws Exception {
+    final File tmpFile = File.createTempFile("teku", ".tmp");
+    tmpFile.deleteOnExit();
+    try (InputStream inputStream = fileUrl.openStream();
+        FileOutputStream out = new FileOutputStream(tmpFile)) {
+      org.testcontainers.shaded.org.apache.commons.io.IOUtils.copy(inputStream, out);
+    } catch (Exception ex) {
+      LOG.error("Failed to copy provided URL to temporary file", ex);
+    }
+    return tmpFile;
   }
 
   /**

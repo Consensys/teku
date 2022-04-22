@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client;
+package tech.pegasys.teku.ethereum.executionengine;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.ipc.IpcService;
 import org.web3j.protocol.ipc.UnixIpcService;
 import org.web3j.protocol.ipc.WindowsIpcService;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionengine.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 

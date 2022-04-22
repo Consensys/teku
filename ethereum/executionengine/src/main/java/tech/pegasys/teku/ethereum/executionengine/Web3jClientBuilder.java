@@ -11,14 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer.client;
+package tech.pegasys.teku.ethereum.executionengine;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Optional;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionengine.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -26,9 +27,15 @@ public class Web3jClientBuilder {
   private TimeProvider timeProvider;
   private URI endpoint;
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
+  private Duration timeout;
 
   public Web3jClientBuilder endpoint(String endpoint) {
     this.endpoint = parseEndpoint(endpoint);
+    return this;
+  }
+
+  public Web3jClientBuilder timeout(Duration timeout) {
+    this.timeout = timeout;
     return this;
   }
 
@@ -56,10 +63,11 @@ public class Web3jClientBuilder {
   public Web3JClient build() {
     checkNotNull(timeProvider);
     checkNotNull(endpoint);
+    checkNotNull(timeout);
     switch (endpoint.getScheme()) {
       case "http":
       case "https":
-        return new Web3jHttpClient(endpoint, timeProvider, jwtConfigOpt);
+        return new Web3jHttpClient(endpoint, timeProvider, timeout, jwtConfigOpt);
       case "ws":
       case "wss":
         return new Web3jWebsocketClient(endpoint, timeProvider, jwtConfigOpt);
