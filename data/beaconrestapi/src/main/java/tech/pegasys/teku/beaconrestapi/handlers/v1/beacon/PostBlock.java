@@ -58,7 +58,7 @@ public class PostBlock extends MigratingEndpointAdapter {
   private final SyncDataProvider syncDataProvider;
 
   public PostBlock(
-      final SchemaDefinitionCache schemaDefinitionCache, final DataProvider dataProvider) {
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(createMetadata(schemaDefinitionCache));
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
