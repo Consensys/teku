@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.SERIALIZABLE_ONE_OF_TYPE_DEFINITION;
@@ -33,7 +32,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
+import tech.pegasys.teku.infrastructure.restapi.openapi.ContentTypeDefinition;
 
 class EndpointMetadataTest {
 
@@ -73,8 +75,8 @@ class EndpointMetadataTest {
                 500,
                 "foo",
                 Map.of(
-                    "application/json", objectType1,
-                    "application/ssz", objectType3))
+                    "application/json", ContentTypeDefinition.json(objectType1),
+                    "application/ssz", ContentTypeDefinition.json(objectType3)))
             .build();
 
     assertThat(metadata.getReferencedTypeDefinitions())
@@ -89,11 +91,61 @@ class EndpointMetadataTest {
   }
 
   @Test
-  void getResponseType_shouldThrowExceptionWhenStatusCodeNodeDeclared() {
+  void selectContentType_shouldUseDefaultContentTypeWhenRequestedType() {
+    final String contentType = "application/foo";
+    final EndpointMetadata metadata =
+        validBuilder()
+            .response(
+                SC_OK, "Success", Map.of(contentType, ContentTypeDefinition.json(STRING_TYPE)))
+            .defaultResponseType(contentType)
+            .build();
+    assertThat(metadata.selectContentType(SC_OK, Optional.empty())).isEqualTo(contentType);
+  }
+
+  @Test
+  void selectContentType_shouldThrowExceptionWhenStatusCodeNotDeclared() {
     final EndpointMetadata metadata =
         validBuilder().response(SC_OK, "Success", STRING_TYPE).build();
-    assertThatThrownBy(() -> metadata.getResponseType(SC_NOT_FOUND, JSON_CONTENT_TYPE))
+    assertThatThrownBy(() -> metadata.selectContentType(SC_NOT_FOUND, Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void selectContentType_shouldReturnDefaultContentTypeWhenRequestedContentTypeNotSupported() {
+    final String contentType = "application/foo";
+    final EndpointMetadata metadata =
+        validBuilder()
+            .response(
+                SC_OK, "Success", Map.of(contentType, ContentTypeDefinition.json(STRING_TYPE)))
+            .defaultResponseType(contentType)
+            .build();
+    assertThat(metadata.selectContentType(SC_OK, Optional.of("foo"))).isEqualTo(contentType);
+  }
+
+  @Test
+  void selectContentType_shouldReturnRequestedTypeWhenAvailable() {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .response(
+                SC_OK,
+                "Success",
+                Map.of(
+                    ContentTypes.APPLICATION_JSON,
+                    ContentTypeDefinition.json(STRING_TYPE),
+                    ContentTypes.APPLICATION_OCTET_STREAM,
+                    ContentTypeDefinition.json(STRING_TYPE)))
+            .build();
+    assertThat(
+            metadata.selectContentType(SC_OK, Optional.of(ContentTypes.APPLICATION_OCTET_STREAM)))
+        .isEqualTo(ContentTypes.APPLICATION_OCTET_STREAM);
+  }
+
+  @Test
+  void selectContentType_shouldThrowExceptionWhenDefaultContentTypeNotSupported() {
+    final EndpointMetadata metadata =
+        validBuilder().response(SC_OK, "Foo").defaultResponseType("baa").build();
+    assertThatThrownBy(() -> metadata.selectContentType(SC_OK, Optional.empty()))
+        .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
@@ -156,14 +208,6 @@ class EndpointMetadataTest {
   }
 
   @Test
-  void getResponseType_shouldThrowExceptionWhenStatusCodeMatchesButContentTypeNotDeclared() {
-    final EndpointMetadata metadata =
-        validBuilder().response(SC_OK, "Success", STRING_TYPE).build();
-    assertThatThrownBy(() -> metadata.getResponseType(SC_OK, "foo"))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
   void requestBodyType_shouldAcceptTypes() {
     final DeserializableTypeDefinition<String> type = STRING_TYPE;
     final EndpointMetadata metadata =
@@ -205,13 +249,6 @@ class EndpointMetadataTest {
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(type).response(SC_OK, "Success", STRING_TYPE).build();
     assertThat(metadata.getRequestBodyType()).isSameAs(type);
-  }
-
-  @Test
-  void getResponseType_shouldGetDeclaredType() {
-    final SerializableTypeDefinition<String> type = STRING_TYPE;
-    final EndpointMetadata metadata = validBuilder().response(SC_OK, "Success", type).build();
-    assertThat(metadata.getResponseType(SC_OK, JSON_CONTENT_TYPE)).isSameAs(type);
   }
 
   @Test

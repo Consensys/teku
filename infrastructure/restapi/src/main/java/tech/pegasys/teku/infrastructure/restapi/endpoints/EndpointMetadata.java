@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -29,7 +28,9 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_R
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.HandlerType;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -40,6 +41,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -47,6 +49,8 @@ import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.ContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.JsonContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
 
 public class EndpointMetadata {
@@ -57,6 +61,7 @@ public class EndpointMetadata {
   private final Optional<String> security;
   private final String description;
   private final boolean deprecated;
+  private String defaultContentType;
   private final Map<String, OpenApiResponse> responses;
   private final Optional<OpenApiTypeDefinition> requestBodyType;
   private final Optional<BodyTypeSelector<?>> requestBodyTypeSelector;
@@ -73,6 +78,7 @@ public class EndpointMetadata {
       final Optional<String> security,
       final String description,
       final boolean deprecated,
+      final String defaultContentType,
       final Map<String, OpenApiResponse> responses,
       final Optional<OpenApiTypeDefinition> requestBodyType,
       final Optional<BodyTypeSelector<?>> requestBodyTypeSelector,
@@ -87,6 +93,7 @@ public class EndpointMetadata {
     this.security = security;
     this.description = description;
     this.deprecated = deprecated;
+    this.defaultContentType = defaultContentType;
     this.responses = responses;
     this.requestBodyType = requestBodyType;
     this.requestBodyTypeSelector = requestBodyTypeSelector;
@@ -170,12 +177,11 @@ public class EndpointMetadata {
     return queryParams.get(parameterName);
   }
 
-  public SerializableTypeDefinition<?> getResponseType(
-      final int statusCode, final String contentType) {
+  public ContentTypeDefinition<?> getResponseType(final int statusCode, final String contentType) {
     final OpenApiResponse response = responses.get(Integer.toString(statusCode));
     checkArgument(response != null, "Unexpected response for status code %s", statusCode);
 
-    final SerializableTypeDefinition<?> responseType = response.getType(contentType);
+    final ContentTypeDefinition<?> responseType = response.getType(contentType);
     checkArgument(
         responseType != null,
         "Unexpected content type %s for status code %s",
@@ -184,10 +190,18 @@ public class EndpointMetadata {
     return responseType;
   }
 
-  public Collection<String> getSupportedContentTypes(final int statusCode) {
+  public String selectContentType(final int statusCode, final Optional<String> acceptHeader) {
+    final Collection<String> supportedTypes = getSupportedContentTypes(statusCode);
+    final String selectedType =
+        ContentTypes.getContentType(supportedTypes, acceptHeader).orElse(defaultContentType);
+    checkState(supportedTypes.contains(selectedType), "Default content type is not supported.");
+    return selectedType;
+  }
+
+  private Collection<String> getSupportedContentTypes(final int statusCode) {
     final OpenApiResponse openApiResponse = responses.get(Integer.toString(statusCode));
     if (openApiResponse == null) {
-      return emptySet();
+      throw new IllegalArgumentException("Status code " + statusCode + " not supported");
     }
     return openApiResponse.getSupportedContentTypes();
   }
@@ -195,9 +209,17 @@ public class EndpointMetadata {
   @SuppressWarnings("unchecked")
   public <T> byte[] serialize(final int statusCode, final String contentType, final T response)
       throws JsonProcessingException {
-    final SerializableTypeDefinition<T> type =
-        (SerializableTypeDefinition<T>) getResponseType(statusCode, contentType);
-    return JsonUtil.serializeToBytes(response, type).toArrayUnsafe();
+    final ContentTypeDefinition<T> type =
+        (ContentTypeDefinition<T>) getResponseType(statusCode, contentType);
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try {
+      type.serialize(response, out);
+      return out.toByteArray();
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
@@ -312,6 +334,9 @@ public class EndpointMetadata {
     private Optional<OpenApiTypeDefinition> requestBodyType = Optional.empty();
     private Optional<BodyTypeSelector<?>> bodyTypeSelector = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
+
+    private String defaultResponseType = ContentTypes.APPLICATION_JSON;
+
     private List<String> tags = Collections.emptyList();
 
     public EndpointMetaDataBuilder method(final HandlerType method) {
@@ -385,6 +410,11 @@ public class EndpointMetadata {
       return response(responseCode, description, emptyMap());
     }
 
+    public EndpointMetaDataBuilder defaultResponseType(final String defaultContentType) {
+      this.defaultResponseType = defaultContentType;
+      return this;
+    }
+
     public EndpointMetaDataBuilder requestBodyType(
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyType = Optional.of(requestBodyType);
@@ -404,7 +434,10 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final SerializableTypeDefinition<?> content) {
-      return response(responseCode, description, Map.of(JSON_CONTENT_TYPE, content));
+      return response(
+          responseCode,
+          description,
+          Map.of(JSON_CONTENT_TYPE, new JsonContentTypeDefinition<>(content)));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
@@ -441,7 +474,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
-        final Map<String, SerializableTypeDefinition<?>> content) {
+        final Map<String, ? extends ContentTypeDefinition<?>> content) {
       this.responses.put(Integer.toString(responseCode), new OpenApiResponse(description, content));
       return this;
     }
@@ -469,6 +502,7 @@ public class EndpointMetadata {
           security,
           description,
           deprecated,
+          defaultResponseType,
           responses,
           requestBodyType,
           bodyTypeSelector,

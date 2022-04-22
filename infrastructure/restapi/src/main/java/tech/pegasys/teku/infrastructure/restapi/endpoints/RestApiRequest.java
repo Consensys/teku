@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -103,10 +101,8 @@ public class RestApiRequest {
   }
 
   private String selectContentType(final int statusCode) {
-    final Collection<String> supportedTypes = metadata.getSupportedContentTypes(statusCode);
-    return ContentTypes.getContentType(
-            supportedTypes, Optional.ofNullable(context.header(HEADER_ACCEPT)))
-        .orElse(ContentTypes.APPLICATION_JSON);
+    return metadata.selectContentType(
+        statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
   }
 
   /** This is only used when intending to return status code without a response body */
