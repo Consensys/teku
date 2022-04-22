@@ -23,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Performance optimizations for Gnosis beacon chain.
 - Improved performance when processing epoch transitions.
 - Added `is_optimistic` field to `/eth/v1/node/syncing` response.
+- Using execution engine endpoint as Eth1 endpoint when latter is not provided.
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 

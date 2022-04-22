@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
+
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,27 +28,23 @@ import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.teku.ethereum.executionlayer.client.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionengine.Web3JClient;
+import tech.pegasys.teku.ethereum.executionengine.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeaconBlockSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
-  public static final Duration EXECUTION_TIMEOUT = Duration.ofMinutes(2);
-  private static final Duration NON_EXECUTION_TIMEOUT = Duration.ofSeconds(12);
-
   private final Web3JClient web3JClient;
 
   static {
@@ -55,17 +53,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     ObjectMapperFactory.getObjectMapper().registerModule(module);
   }
 
-  public Web3JExecutionEngineClient(
-      final String eeEndpoint,
-      final TimeProvider timeProvider,
-      final Optional<JwtConfig> jwtConfig) {
-    Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
-    this.web3JClient =
-        web3JClientBuilder
-            .endpoint(eeEndpoint)
-            .jwtConfigOpt(jwtConfig)
-            .timeProvider(timeProvider)
-            .build();
+  public Web3JExecutionEngineClient(final Web3JClient web3JClient) {
+    this.web3JClient = web3JClient;
   }
 
   @Override

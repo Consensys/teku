@@ -218,9 +218,8 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
               result -> {
                 if (result == Result.FAILED) {
                   return SafeFuture.completedFuture(result);
-                } else {
-                  return validateSyncing();
                 }
+                return validateSyncing();
               })
           .thenApply(
               result -> {
@@ -245,8 +244,13 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
 
   private SafeFuture<Result> validateChainId() {
     return getChainId()
-        .thenApply(
-            chainId -> {
+        .handle(
+            (chainId, ex) -> {
+              if (ex != null) {
+                LOG.trace(
+                    "eth_chainId method is not supported by provider, skipping validation", ex);
+                return Result.NOT_SUPPORTED;
+              }
               if (chainId.intValueExact() != config.getDepositChainId()) {
                 STATUS_LOG.eth1DepositChainIdMismatch(
                     config.getDepositChainId(), chainId.intValueExact(), this.id);

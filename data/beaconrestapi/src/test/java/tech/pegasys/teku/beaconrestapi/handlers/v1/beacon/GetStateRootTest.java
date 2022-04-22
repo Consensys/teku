@@ -23,14 +23,12 @@ import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetStateRootTest extends AbstractBeaconHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+public class GetStateRootTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnRootInfo() throws Exception {
@@ -53,7 +51,7 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
         String.format(
             "{\"data\":{\"root\":\"%s\"}}",
             stateAndMetaData.getData().hashTreeRoot().toHexString());
-    AssertionsForClassTypes.assertThat(getResultString()).isEqualTo(expected);
+    AssertionsForClassTypes.assertThat(getFutureResultString()).isEqualTo(expected);
     verify(context, never()).status(any());
   }
 }

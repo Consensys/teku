@@ -27,10 +27,9 @@ import io.libp2p.core.crypto.PrivKey;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -54,7 +53,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -588,8 +586,10 @@ public class TekuNode extends Node {
 
   public static class Config {
     public static final String DEFAULT_NETWORK_NAME = "swift";
+    public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
 
-    private Optional<InputStream> maybeNetworkYaml = Optional.empty();
+    private Optional<URL> maybeNetworkYaml = Optional.empty();
+    private Optional<URL> maybeJwtFile = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -689,8 +689,8 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withNetwork(final InputStream stream, final String networkName) {
-      this.maybeNetworkYaml = Optional.of(stream);
+    public Config withNetwork(final URL networkYaml, final String networkName) {
+      this.maybeNetworkYaml = Optional.of(networkYaml);
       this.networkName = networkName;
       configMap.put("network", NETWORK_FILE_PATH);
       return this;
@@ -725,6 +725,12 @@ public class TekuNode extends Node {
 
     public Config withExecutionEngineEndpoint(final String eeEndpoint) {
       configMap.put("ee-endpoint", eeEndpoint);
+      return this;
+    }
+
+    public Config withJwtSecretFile(final URL jwtFile) {
+      this.maybeJwtFile = Optional.of(jwtFile);
+      configMap.put(EE_JWT_SECRET_FILE_KEY, JWT_SECRET_FILE_PATH);
       return this;
     }
 
@@ -767,18 +773,10 @@ public class TekuNode extends Node {
       configFiles.put(configFile, CONFIG_FILE_PATH);
 
       if (maybeNetworkYaml.isPresent()) {
-        final File networkFile = File.createTempFile("network", ".yaml");
-        networkFile.deleteOnExit();
-        try (FileOutputStream out = new FileOutputStream(networkFile)) {
-          IOUtils.copy(maybeNetworkYaml.get(), out);
-        } catch (Exception ex) {
-          LOG.error("Failed to write network yaml", ex);
-        } finally {
-          if (maybeNetworkYaml.isPresent()) {
-            maybeNetworkYaml.get().close();
-          }
-        }
-        configFiles.put(networkFile, NETWORK_FILE_PATH);
+        configFiles.put(copyToTmpFile(maybeNetworkYaml.get()), NETWORK_FILE_PATH);
+      }
+      if (maybeJwtFile.isPresent()) {
+        configFiles.put(copyToTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
       }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");

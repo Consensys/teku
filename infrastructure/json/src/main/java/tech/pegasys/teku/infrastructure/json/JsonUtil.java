@@ -18,10 +18,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
@@ -50,6 +52,24 @@ public class JsonUtil {
       throw new UncheckedIOException(e);
     }
     return writer.toString();
+  }
+
+  public static <T> Bytes serializeToBytes(final T value, final SerializableTypeDefinition<T> type)
+      throws JsonProcessingException {
+    return serializeToBytes(FACTORY, gen -> type.serialize(value, gen));
+  }
+
+  public static Bytes serializeToBytes(final JsonFactory factory, final JsonWriter serializer)
+      throws JsonProcessingException {
+    final ByteArrayOutputStream writer = new ByteArrayOutputStream();
+    try (final JsonGenerator gen = factory.createGenerator(writer)) {
+      serializer.accept(gen);
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return Bytes.wrap(writer.toByteArray());
   }
 
   public static <T> T parse(final String json, final DeserializableTypeDefinition<T> type)
