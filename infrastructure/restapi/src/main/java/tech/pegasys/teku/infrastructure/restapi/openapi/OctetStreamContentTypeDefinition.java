@@ -15,21 +15,30 @@ package tech.pegasys.teku.infrastructure.restapi.openapi;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
-public class JsonContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
+public class OctetStreamContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
     implements ContentTypeDefinition<T> {
-  private final SerializableTypeDefinition<T> typeDefinition;
+  private static final OpenApiTypeDefinition BYTES_TYPE =
+      DeserializableTypeDefinition.string(Bytes.class)
+          .formatter(Bytes::toHexString)
+          .parser(Bytes::fromHexString)
+          .format("binary")
+          .build();
+  private final Function<T, Bytes> toBytes;
 
-  public JsonContentTypeDefinition(final SerializableTypeDefinition<T> typeDefinition) {
-    super(typeDefinition);
-    this.typeDefinition = typeDefinition;
+  public OctetStreamContentTypeDefinition(final Function<T, Bytes> toBytes) {
+    super(BYTES_TYPE);
+    this.toBytes = toBytes;
   }
 
   @Override
   public void serialize(final T value, final OutputStream out) throws IOException {
-    JsonUtil.serializeToBytes(value, typeDefinition, out);
+    final Bytes data = toBytes.apply(value);
+    out.write(data.toArrayUnsafe());
   }
 }

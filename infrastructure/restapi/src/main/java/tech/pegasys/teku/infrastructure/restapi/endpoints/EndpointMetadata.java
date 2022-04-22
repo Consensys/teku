@@ -39,8 +39,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.ContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.JsonContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.OctetStreamContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
 
 public class EndpointMetadata {
@@ -438,6 +441,21 @@ public class EndpointMetadata {
           responseCode,
           description,
           Map.of(JSON_CONTENT_TYPE, new JsonContentTypeDefinition<>(content)));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<T> content,
+        final Function<T, Bytes> toOctetStreamBytes) {
+      return response(
+          responseCode,
+          description,
+          Map.of(
+              JSON_CONTENT_TYPE,
+              new JsonContentTypeDefinition<>(content),
+              ContentTypes.APPLICATION_OCTET_STREAM,
+              new OctetStreamContentTypeDefinition<>(toOctetStreamBytes)));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
