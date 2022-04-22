@@ -110,6 +110,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (syncDataProvider.isSyncing()) {
       request.respondError(SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.");
+      return;
     }
 
     final SafeFuture<SendSignedBlockResult> result =
