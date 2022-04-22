@@ -15,9 +15,9 @@ package tech.pegasys.teku.beaconrestapi.handlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
@@ -26,17 +26,15 @@ import io.javalin.http.Handler;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.commonjava.mimeparse.MIMEParse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public abstract class AbstractHandler implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
-  public static final List<String> ACCEPT_ALL = List.of(HEADER_ACCEPT_OCTET, HEADER_ACCEPT_JSON);
+  public static final List<String> SSZ_OR_JSON_CONTENT_TYPES =
+      List.of(APPLICATION_OCTET_STREAM, APPLICATION_JSON);
   protected final JsonProvider jsonProvider;
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
@@ -194,16 +192,6 @@ public abstract class AbstractHandler implements Handler {
 
   public static String getContentType(
       final List<String> types, final Optional<String> maybeContentType) {
-    if (maybeContentType.isEmpty()) {
-      return HEADER_ACCEPT_JSON;
-    }
-    try {
-      final String contentType = maybeContentType.get();
-      final String bestMatch = MIMEParse.bestMatch(types, contentType);
-      return bestMatch.isEmpty() ? HEADER_ACCEPT_JSON : bestMatch;
-    } catch (Exception e) {
-      LOG.trace("Failed to parse accept header", e);
-    }
-    return HEADER_ACCEPT_JSON;
+    return ContentTypes.getContentType(types, maybeContentType).orElse(APPLICATION_JSON);
   }
 }

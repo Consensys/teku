@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -181,6 +182,14 @@ public class EndpointMetadata {
         contentType,
         statusCode);
     return responseType;
+  }
+
+  public Collection<String> getSupportedContentTypes(final int statusCode) {
+    final OpenApiResponse openApiResponse = responses.get(Integer.toString(statusCode));
+    if (openApiResponse == null) {
+      return emptySet();
+    }
+    return openApiResponse.getSupportedContentTypes();
   }
 
   @SuppressWarnings("unchecked")

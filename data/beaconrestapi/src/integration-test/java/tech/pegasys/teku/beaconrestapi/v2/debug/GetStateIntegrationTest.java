@@ -15,8 +15,8 @@ package tech.pegasys.teku.beaconrestapi.v2.debug;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetPhase0StateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head", HEADER_ACCEPT_JSON);
+    final Response response = get("head", APPLICATION_JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateResponseV2 stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
@@ -47,7 +47,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetAltairStateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    final Response response = get("head", HEADER_ACCEPT_JSON);
+    final Response response = get("head", APPLICATION_JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateResponseV2 stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
@@ -60,7 +60,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetAltairStateAsSsz() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    final Response response = get("head", HEADER_ACCEPT_OCTET);
+    final Response response = get("head", APPLICATION_OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }

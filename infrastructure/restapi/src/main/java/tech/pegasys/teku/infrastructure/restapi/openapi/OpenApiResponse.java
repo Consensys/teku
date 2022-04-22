@@ -57,4 +57,8 @@ public class OpenApiResponse {
         .flatMap(type -> type.getSelfAndReferencedTypeDefinitions().stream())
         .collect(toSet());
   }
+
+  public Collection<String> getSupportedContentTypes() {
+    return content.keySet();
+  }
 }

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
@@ -74,8 +74,8 @@ public class GetBlock extends AbstractHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(type = HEADER_ACCEPT_JSON, from = GetBlockResponseV2.class),
-              @OpenApiContent(type = HEADER_ACCEPT_OCTET)
+              @OpenApiContent(type = APPLICATION_JSON, from = GetBlockResponseV2.class),
+              @OpenApiContent(type = APPLICATION_OCTET_STREAM)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
@@ -87,7 +87,8 @@ public class GetBlock extends AbstractHandler implements Handler {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final String blockIdentifier = pathParams.get(PARAM_BLOCK_ID);
 
-    if (getContentType(ACCEPT_ALL, maybeAcceptHeader).equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+    if (getContentType(SSZ_OR_JSON_CONTENT_TYPES, maybeAcceptHeader)
+        .equalsIgnoreCase(APPLICATION_OCTET_STREAM)) {
       final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBlockSsz(blockIdentifier);
       handleOptionalSszResult(

@@ -16,8 +16,8 @@ package tech.pegasys.teku.beaconrestapi.v1.debug;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
 
 import java.io.IOException;
 import okhttp3.Response;
@@ -34,7 +34,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetStateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head", HEADER_ACCEPT_JSON);
+    final Response response = get("head", APPLICATION_JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateResponse stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponse.class);
@@ -54,7 +54,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetStateAsOctetStream() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head", HEADER_ACCEPT_OCTET);
+    final Response response = get("head", APPLICATION_OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     final BeaconState state =
         spec.getGenesisSchemaDefinitions()
