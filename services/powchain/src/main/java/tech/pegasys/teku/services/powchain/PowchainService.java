@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -66,29 +68,48 @@ public class PowchainService extends Service {
   private final List<Web3j> web3js;
   private final OkHttpClient okHttpClient;
 
-  public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
-    checkArgument(powConfig.isEnabled());
+  public PowchainService(
+      final ServiceConfig serviceConfig,
+      final PowchainConfiguration powConfig,
+      final Optional<ExecutionClientProvider> maybeExecutionClientProvider) {
+    checkArgument(powConfig.isEnabled() || maybeExecutionClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     this.okHttpClient = createOkHttpClient();
-    this.web3js = createWeb3js(powConfig);
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
-    Eth1ProviderSelector eth1ProviderSelector =
-        new Eth1ProviderSelector(
-            IntStream.range(0, web3js.size())
-                .mapToObj(
-                    idx ->
-                        new Web3jEth1Provider(
-                            powConfig.getSpec().getGenesisSpecConfig(),
-                            serviceConfig.getMetricsSystem(),
-                            Eth1Provider.generateEth1ProviderId(
-                                idx + 1, powConfig.getEth1Endpoints().get(idx)),
-                            web3js.get(idx),
-                            asyncRunner,
-                            serviceConfig.getTimeProvider()))
-                .collect(Collectors.toList()));
-
+    final Eth1ProviderSelector eth1ProviderSelector;
+    if (!powConfig.isEnabled()) {
+      LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
+      this.web3js =
+          Collections.singletonList(maybeExecutionClientProvider.orElseThrow().getWeb3j());
+      eth1ProviderSelector =
+          new Eth1ProviderSelector(
+              Collections.singletonList(
+                  new Web3jEth1Provider(
+                      powConfig.getSpec().getGenesisSpecConfig(),
+                      serviceConfig.getMetricsSystem(),
+                      maybeExecutionClientProvider.get().getEndpoint(),
+                      web3js.get(0),
+                      asyncRunner,
+                      serviceConfig.getTimeProvider())));
+    } else {
+      this.web3js = createWeb3js(powConfig);
+      eth1ProviderSelector =
+          new Eth1ProviderSelector(
+              IntStream.range(0, web3js.size())
+                  .mapToObj(
+                      idx ->
+                          new Web3jEth1Provider(
+                              powConfig.getSpec().getGenesisSpecConfig(),
+                              serviceConfig.getMetricsSystem(),
+                              Eth1Provider.generateEth1ProviderId(
+                                  idx + 1, powConfig.getEth1Endpoints().get(idx)),
+                              web3js.get(idx),
+                              asyncRunner,
+                              serviceConfig.getTimeProvider()))
+                  .collect(Collectors.toList()));
+    }
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(
