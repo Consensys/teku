@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.UncheckedIOException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -26,14 +26,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 class JsonUtilTest {
 
   @Test
-  void getAttribute() {
+  void getAttribute() throws Exception {
     final Optional<String> result =
         JsonUtil.getAttribute("{\"slot\": \"1234567\"}", CoreTypes.STRING_TYPE, "slot");
     assertThat(result).contains("1234567");
   }
 
   @Test
-  void getAttribute_notFirstField() {
+  void getAttribute_notFirstField() throws Exception {
     final Optional<String> result =
         JsonUtil.getAttribute(
             "{\"a\":\"zzz\", \"slot\": \"1234567\"}", CoreTypes.STRING_TYPE, "slot");
@@ -41,20 +41,20 @@ class JsonUtilTest {
   }
 
   @Test
-  void getAttribute_missing() {
+  void getAttribute_missing() throws Exception {
     final Optional<String> result = JsonUtil.getAttribute("{}", CoreTypes.STRING_TYPE, "slot");
     assertThat(result).isEmpty();
   }
 
   @Test
-  void getAttribute_missingOnlyInChildObject() {
+  void getAttribute_missingOnlyInChildObject() throws Exception {
     final Optional<String> result =
         JsonUtil.getAttribute("{\"data\": { \"slot\": \"1\"}}", CoreTypes.STRING_TYPE, "slot");
     assertThat(result).isEmpty();
   }
 
   @Test
-  void getAttribute_deepSearch() {
+  void getAttribute_deepSearch() throws Exception {
     final Optional<String> result =
         JsonUtil.getAttribute(
             "{\"data\": { \"slot\": \"1\"}}", CoreTypes.STRING_TYPE, "data", "slot");
@@ -62,7 +62,7 @@ class JsonUtilTest {
   }
 
   @Test
-  void getAttribute_getsAttributeAtParent() {
+  void getAttribute_getsAttributeAtParent() throws Exception {
     final Optional<UInt64> result =
         JsonUtil.getAttribute(
             "{\"data\": { \"slot\": \"1\"},"
@@ -74,13 +74,13 @@ class JsonUtilTest {
   }
 
   @Test
-  void getAttribute_throwsUncheckedIoException() {
+  void getAttribute_throwsJsonProcessingException() {
     assertThatThrownBy(() -> JsonUtil.getAttribute("{", CoreTypes.STRING_TYPE, "slot"))
-        .isInstanceOf(UncheckedIOException.class);
+        .isInstanceOf(JsonProcessingException.class);
   }
 
   @Test
-  void getAttribute_shouldReadObject() {
+  void getAttribute_shouldReadObject() throws Exception {
     final Optional<OneOfTypeTestTypeDefinition.TestObjA> result =
         JsonUtil.getAttribute(
             "{\"data\": " + "{\"value1\":\"FOO\"}}", OneOfTypeTestTypeDefinition.TYPE_A, "data");
