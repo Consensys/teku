@@ -23,7 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PeersData;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 
-public class GetPeersTest extends AbstractBeaconHandlerTest {
+public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
   final MockNodeId peerId1 = new MockNodeId(123456);
   final Eth2Peer peer1 = mock(Eth2Peer.class);
 
