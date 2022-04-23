@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
@@ -440,5 +441,43 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verifyNoMoreInteractions(executionEngine);
+  }
+
+  @Test
+  void shouldCalculateTtdEta() {
+
+    setUpTTDConfig();
+
+    final UInt256 tdDiff = TTD.divide(5);
+
+    terminalPowBlockMonitor.start();
+
+    final UInt64 bellatrixSlot =
+        BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+
+    pollTtd(TTD.subtract(tdDiff.multiply(5)));
+    pollTtd(TTD.subtract(tdDiff.multiply(4)));
+    pollTtd(TTD.subtract(tdDiff.multiply(3)));
+    pollTtd(TTD.subtract(tdDiff.multiply(2)));
+    pollTtd(TTD.subtract(tdDiff.multiply(1)));
+
+    verify(eventLogger)
+        .terminalPowBlockTtdEta(
+            TTD, Duration.ofSeconds(spec.getSecondsPerEth1Block(bellatrixSlot)));
+    verifyNoMoreInteractions(eventLogger);
+  }
+
+  private void pollTtd(final UInt256 ttd) {
+    when(executionEngine.getPowChainHead())
+        .thenReturn(
+            completedFuture(
+                new PowBlock(
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomBytes32(),
+                    ttd,
+                    TIME_IN_PAST)));
+    asyncRunner.executeQueuedActions();
   }
 }
