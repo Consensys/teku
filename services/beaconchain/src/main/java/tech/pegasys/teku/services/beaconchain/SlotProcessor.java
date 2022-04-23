@@ -242,6 +242,7 @@ public class SlotProcessor {
                     head.getRoot(),
                     recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
                     recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
+                    !head.getExecutionBlockHash().isZero(),
                     p2pNetwork.getPeerCount()));
   }
 
