@@ -27,3 +27,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
 - Fixed issue with loading the optimised BLST library on Windows.
+- Reduced log level for notifications that the eth1 chain head could not be retrieved because no endpoints were available.
