@@ -225,9 +225,13 @@ public class ValidatorDataProvider {
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock) {
-    return validatorApiChannel
-        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
+    return submitSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
+  }
+
+  public SafeFuture<SendSignedBlockResult> submitSignedBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock) {
+    return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(

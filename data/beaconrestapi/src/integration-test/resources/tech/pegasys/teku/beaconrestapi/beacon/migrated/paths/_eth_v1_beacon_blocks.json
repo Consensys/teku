@@ -1,21 +1,21 @@
 {
   "post" : {
-    "tags" : [ "Validator", "Validator Required Api", "Experimental" ],
-    "operationId" : "publishBlindedBlock",
-    "summary" : "Publish a signed blinded block",
-    "description" : "Submit a signed blinded beacon block to the beacon node to be imported. The beacon node performs the required validation.",
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "publishBlock",
+    "summary" : "Publish a signed block",
+    "description" : "Submit a signed beacon block to the beacon node to be imported. The beacon node performs the required validation.",
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
-            "title" : "SignedBlindedBlock",
+            "title" : "SignedBeaconBlock",
             "type" : "object",
             "oneOf" : [ {
               "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
             }, {
               "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
             }, {
-              "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
+              "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
             } ]
           }
         }
