@@ -269,6 +269,7 @@ public class SlotProcessorTest {
             recentChainData.getBestBlockRoot().orElseThrow(),
             justifiedCheckpoint.getEpoch(),
             finalizedCheckpoint.getEpoch(),
+            false,
             1);
     verify(forkChoiceTrigger).onAttestationsDueForSlot(slot);
   }
