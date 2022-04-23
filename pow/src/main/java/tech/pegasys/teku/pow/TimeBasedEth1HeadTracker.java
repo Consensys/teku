@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.runloop.RunLoopLogic;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 
@@ -171,6 +172,8 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
       LOG.error(
           "Block number {} not yet available. Retrying after delay.",
           ((BlockUnavailableException) rootCause).getBlockNumber());
+    } else if (rootCause instanceof Eth1RequestException && rootCause.getSuppressed().length == 0) {
+      LOG.debug("Failed to update eth1 chain head - no endpoints available");
     } else {
       LOG.error("Failed to update eth1 chain head", t);
     }
