@@ -36,9 +36,9 @@ import java.io.UncheckedIOException;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes32Deserializer;
+import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.BytesSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.Bytes32Deserializer;
-import tech.pegasys.teku.provider.BytesSerializer;
 
 public class YamlProvider {
   private final ObjectMapper objectMapper;

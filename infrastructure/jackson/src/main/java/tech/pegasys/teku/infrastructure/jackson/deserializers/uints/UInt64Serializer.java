@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.infrastructure.jackson.deserializers.uints;
 
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.KeyDeserializer;
-import org.apache.tuweni.bytes.Bytes48;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class Bytes48KeyDeserializer extends KeyDeserializer {
-
+public class UInt64Serializer extends JsonSerializer<UInt64> {
   @Override
-  public Object deserializeKey(String key, DeserializationContext ctxt) {
-    return Bytes48.fromHexStringStrict(key);
+  public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toString());
   }
 }

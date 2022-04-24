@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes32;
+import com.fasterxml.jackson.databind.KeyDeserializer;
+import org.apache.tuweni.bytes.Bytes48;
 
-public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
+public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
-  public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
-    return Bytes32.fromHexString(p.getValueAsString());
+  public Object deserializeKey(String key, DeserializationContext ctxt) {
+    return Bytes48.fromHexStringStrict(key);
   }
 }
