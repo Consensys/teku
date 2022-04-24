@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;

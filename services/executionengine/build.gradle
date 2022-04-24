@@ -1,5 +1,4 @@
 dependencies {
-  implementation project(':data')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':ethereum:executionlayer')

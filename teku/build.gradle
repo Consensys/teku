@@ -1,6 +1,5 @@
 dependencies {
   implementation project(':beacon:validator')
-  implementation project(':data')
   implementation project(':data:serializer')
   implementation project(':data:publisher')
   implementation project(':data:beaconrestapi')

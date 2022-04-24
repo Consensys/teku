@@ -52,7 +52,7 @@ import tech.pegasys.teku.pow.ThrottlingEth1Provider;
 import tech.pegasys.teku.pow.TimeBasedEth1HeadTracker;
 import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;

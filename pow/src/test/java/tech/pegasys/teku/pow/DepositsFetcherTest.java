@@ -39,7 +39,7 @@ import org.web3j.utils.Numeric;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;

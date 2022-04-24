@@ -11,11 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.api;
+package tech.pegasys.teku.ethereum.pow.api;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
-import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
