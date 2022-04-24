@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:pow')
   implementation project(':beacon:validator')
   implementation project(':data:serializer')
   implementation project(':data:publisher')
@@ -28,7 +29,6 @@ dependencies {
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
   implementation project(':networking:nat')
-  implementation project(':pow')
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
   implementation project(':services:executionengine')
