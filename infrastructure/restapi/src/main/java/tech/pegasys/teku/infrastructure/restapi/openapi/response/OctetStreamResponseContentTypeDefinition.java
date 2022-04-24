@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.openapi;
+package tech.pegasys.teku.infrastructure.restapi.openapi.response;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,9 +21,9 @@ import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefiniti
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
-public class OctetStreamContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
-    implements ContentTypeDefinition<T> {
-  private static final OpenApiTypeDefinition BYTES_TYPE =
+public class OctetStreamResponseContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
+    implements ResponseContentTypeDefinition<T> {
+  public static final OpenApiTypeDefinition OCTET_STREAM_BYTES_TYPE =
       DeserializableTypeDefinition.string(Bytes.class)
           .formatter(Bytes::toHexString)
           .parser(Bytes::fromHexString)
@@ -31,8 +31,8 @@ public class OctetStreamContentTypeDefinition<T> extends DelegatingOpenApiTypeDe
           .build();
   private final Function<T, Bytes> toBytes;
 
-  public OctetStreamContentTypeDefinition(final Function<T, Bytes> toBytes) {
-    super(BYTES_TYPE);
+  public OctetStreamResponseContentTypeDefinition(final Function<T, Bytes> toBytes) {
+    super(OCTET_STREAM_BYTES_TYPE);
     this.toBytes = toBytes;
   }
 

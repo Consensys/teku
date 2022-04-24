@@ -11,25 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.openapi;
+package tech.pegasys.teku.infrastructure.restapi.openapi.request;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
-public class JsonContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
-    implements ContentTypeDefinition<T> {
-  private final SerializableTypeDefinition<T> typeDefinition;
+public class SimpleJsonRequestContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
+    implements RequestContentTypeDefinition<T> {
 
-  public JsonContentTypeDefinition(final SerializableTypeDefinition<T> typeDefinition) {
+  private DeserializableTypeDefinition<T> typeDefinition;
+
+  public SimpleJsonRequestContentTypeDefinition(
+      final DeserializableTypeDefinition<T> typeDefinition) {
     super(typeDefinition);
     this.typeDefinition = typeDefinition;
   }
 
   @Override
-  public void serialize(final T value, final OutputStream out) throws IOException {
-    JsonUtil.serializeToBytes(value, typeDefinition, out);
+  public T deserialize(final InputStream in) throws IOException {
+    return JsonUtil.parse(in, typeDefinition);
   }
 }

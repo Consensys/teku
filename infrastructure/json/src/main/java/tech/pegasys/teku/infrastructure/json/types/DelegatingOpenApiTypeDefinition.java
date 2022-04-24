@@ -19,44 +19,44 @@ import java.util.Collection;
 import java.util.Optional;
 
 public class DelegatingOpenApiTypeDefinition implements OpenApiTypeDefinition {
-  private final OpenApiTypeDefinition typeDefinition;
+  protected final OpenApiTypeDefinition openApiTypeDefinition;
 
-  protected DelegatingOpenApiTypeDefinition(final OpenApiTypeDefinition typeDefinition) {
-    this.typeDefinition = typeDefinition;
+  protected DelegatingOpenApiTypeDefinition(final OpenApiTypeDefinition openApiTypeDefinition) {
+    this.openApiTypeDefinition = openApiTypeDefinition;
   }
 
   @Override
   public Optional<String> getTypeName() {
-    return typeDefinition.getTypeName();
+    return openApiTypeDefinition.getTypeName();
   }
 
   @Override
   public OpenApiTypeDefinition withDescription(final String description) {
-    return typeDefinition.withDescription(description);
+    return openApiTypeDefinition.withDescription(description);
   }
 
   @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-    typeDefinition.serializeOpenApiType(gen);
+    openApiTypeDefinition.serializeOpenApiType(gen);
   }
 
   @Override
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-    return typeDefinition.getReferencedTypeDefinitions();
+    return openApiTypeDefinition.getReferencedTypeDefinitions();
   }
 
   @Override
   public Collection<OpenApiTypeDefinition> getSelfAndReferencedTypeDefinitions() {
-    return typeDefinition.getSelfAndReferencedTypeDefinitions();
+    return openApiTypeDefinition.getSelfAndReferencedTypeDefinitions();
   }
 
   @Override
   public boolean isEquivalentToDeserializableType(final DeserializableTypeDefinition<?> type) {
-    return typeDefinition.isEquivalentToDeserializableType(type);
+    return openApiTypeDefinition.isEquivalentToDeserializableType(type);
   }
 
   @Override
   public void serializeOpenApiTypeOrReference(final JsonGenerator gen) throws IOException {
-    typeDefinition.serializeOpenApiTypeOrReference(gen);
+    openApiTypeDefinition.serializeOpenApiTypeOrReference(gen);
   }
 }

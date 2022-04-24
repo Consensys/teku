@@ -11,18 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.openapi;
+package tech.pegasys.teku.infrastructure.restapi.openapi.request;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
-public interface ContentTypeDefinition<T> extends OpenApiTypeDefinition {
+public interface RequestContentTypeDefinition<T> extends OpenApiTypeDefinition {
 
-  static <T> ContentTypeDefinition<T> json(final SerializableTypeDefinition<T> type) {
-    return new JsonContentTypeDefinition<>(type);
-  }
-
-  void serialize(T value, OutputStream out) throws IOException;
+  T deserialize(InputStream in) throws IOException;
 }
