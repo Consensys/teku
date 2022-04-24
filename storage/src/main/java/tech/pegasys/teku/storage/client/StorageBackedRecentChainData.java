@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -134,17 +135,21 @@ public class StorageBackedRecentChainData extends RecentChainData {
   }
 
   private SafeFuture<RecentChainData> processStoreFuture(
-      SafeFuture<Optional<StoreBuilder>> storeFuture) {
+      SafeFuture<Optional<OnDiskStoreData>> storeFuture) {
     return storeFuture.thenApply(
-        maybeStoreBuilder -> {
-          if (maybeStoreBuilder.isEmpty()) {
+        maybeData -> {
+          if (maybeData.isEmpty()) {
             STATUS_LOG.finishInitializingChainData();
             return this;
           }
 
+          final OnDiskStoreData data = maybeData.get();
+
           final UpdatableStore store =
-              maybeStoreBuilder
-                  .get()
+              StoreBuilder.create()
+                  .metricsSystem(metricsSystem)
+                  .specProvider(spec)
+                  .onDiskStoreData(data)
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
                   .stateProvider(stateProvider)
@@ -156,11 +161,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
         });
   }
 
-  private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {
+  private SafeFuture<Optional<OnDiskStoreData>> requestInitialStore() {
     return storageQueryChannel.onStoreRequest().orTimeout(Constants.STORAGE_REQUEST_TIMEOUT);
   }
 
-  private SafeFuture<Optional<StoreBuilder>> requestInitialStoreWithRetry(
+  private SafeFuture<Optional<OnDiskStoreData>> requestInitialStoreWithRetry(
       final AsyncRunner asyncRunner) {
     return requestInitialStore()
         .exceptionallyCompose(

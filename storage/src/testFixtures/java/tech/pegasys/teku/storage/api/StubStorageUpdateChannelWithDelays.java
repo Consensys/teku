@@ -18,8 +18,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 
 public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();

@@ -32,22 +32,22 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.api.WeakSubjectivityState;
+import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
-import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class ChainStorage
     implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel, ChainStorageFacade {
 
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
-  private Optional<StoreBuilder> cachedStore = Optional.empty();
+  private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
 
   private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
     this.database = database;
@@ -60,21 +60,21 @@ public class ChainStorage
         database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
   }
 
-  private synchronized Optional<StoreBuilder> getStore() {
-    if (cachedStore.isEmpty()) {
+  private synchronized Optional<OnDiskStoreData> getStore() {
+    if (cachedStoreData.isEmpty()) {
       // Create store from database
-      cachedStore = database.createMemoryStore();
+      cachedStoreData = database.createMemoryStore();
     }
 
-    return cachedStore;
+    return cachedStoreData;
   }
 
   private synchronized void handleStoreUpdate() {
-    cachedStore = Optional.empty();
+    cachedStoreData = Optional.empty();
   }
 
   @Override
-  public SafeFuture<Optional<StoreBuilder>> onStoreRequest() {
+  public SafeFuture<Optional<OnDiskStoreData>> onStoreRequest() {
     if (database == null) {
       return SafeFuture.failedFuture(new IllegalStateException("Database not initialized yet"));
     }

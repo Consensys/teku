@@ -81,7 +81,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final MetricsSystem metricsSystem;
   private final ChainHeadChannel chainHeadChannel;
   private final StoreConfig storeConfig;
-  private final Spec spec;
+  protected final Spec spec;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -138,14 +138,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void initializeFromAnchorPoint(final AnchorPoint anchorPoint, final UInt64 currentTime) {
     final UpdatableStore store =
-        StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner,
-                metricsSystem,
-                spec,
-                blockProvider,
-                stateProvider,
-                anchorPoint,
-                currentTime)
+        StoreBuilder.create()
+            .onDiskStoreData(StoreBuilder.forkChoiceStoreBuilder(spec, anchorPoint, currentTime))
+            .asyncRunner(asyncRunner)
+            .metricsSystem(metricsSystem)
+            .specProvider(spec)
+            .blockProvider(blockProvider)
+            .stateProvider(stateProvider)
             .storeConfig(storeConfig)
             .build();
 

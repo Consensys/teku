@@ -26,12 +26,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public interface StorageQueryChannel extends ChannelInterface {
 
-  SafeFuture<Optional<StoreBuilder>> onStoreRequest();
+  SafeFuture<Optional<OnDiskStoreData>> onStoreRequest();
 
   SafeFuture<WeakSubjectivityState> getWeakSubjectivityState();
 
