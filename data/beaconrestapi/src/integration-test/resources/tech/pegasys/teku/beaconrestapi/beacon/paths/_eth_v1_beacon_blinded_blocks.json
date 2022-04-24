@@ -10,6 +10,11 @@
           "schema" : {
             "$ref" : "#/components/schemas/SignedBlindedBlock"
           }
+        },
+        "application/octet-stream" : {
+          "schema": {
+            "$ref": "#/components/schemas/Unit"
+          }
         }
       }
     },

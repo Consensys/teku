@@ -19,7 +19,8 @@ import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 public class PostBlindedBlockTest extends AbstractPostBlockTest {
   @Override
   public MigratingEndpointAdapter getHandler() {
-    return new PostBlindedBlock(validatorDataProvider, syncDataProvider, schemaDefinitionCache);
+    return new PostBlindedBlock(
+        validatorDataProvider, syncDataProvider, spec, schemaDefinitionCache);
   }
 
   @Override

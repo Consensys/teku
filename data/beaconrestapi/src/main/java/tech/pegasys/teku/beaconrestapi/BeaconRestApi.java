@@ -162,7 +162,7 @@ public class BeaconRestApi {
     addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
-    addStandardApiHandlers(dataProvider, eventChannels, asyncRunner, configuration);
+    addStandardApiHandlers(spec, dataProvider, eventChannels, asyncRunner, configuration);
     addTekuSpecificHandlers(dataProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
@@ -172,11 +172,12 @@ public class BeaconRestApi {
   }
 
   private void addStandardApiHandlers(
+      final Spec spec,
       final DataProvider dataProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final BeaconRestApiConfig configuration) {
-    addBeaconHandlers(dataProvider);
+    addBeaconHandlers(spec, dataProvider);
     addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
@@ -384,7 +385,7 @@ public class BeaconRestApi {
         PostPrepareBeaconProposer.ROUTE, new PostPrepareBeaconProposer(dataProvider, jsonProvider));
   }
 
-  private void addBeaconHandlers(final DataProvider dataProvider) {
+  private void addBeaconHandlers(final Spec spec, final DataProvider dataProvider) {
     addMigratedEndpoint(new GetGenesis(dataProvider));
     addMigratedEndpoint(new GetStateRoot(dataProvider));
     addMigratedEndpoint(new GetStateFork(dataProvider));
@@ -400,7 +401,7 @@ public class BeaconRestApi {
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
     addMigratedEndpoint(new PostBlock(dataProvider, schemaCache));
-    addMigratedEndpoint(new PostBlindedBlock(dataProvider, schemaCache));
+    addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
 
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
     app.get(
