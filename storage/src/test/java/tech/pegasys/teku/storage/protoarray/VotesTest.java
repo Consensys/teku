@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.forkchoice;
+package tech.pegasys.teku.storage.protoarray;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.createStoreToManipulateVotes;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.getHash;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
+import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
+import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.getHash;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.forkchoice;
+package tech.pegasys.teku.storage.protoarray;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoNodeValidationStatus.INVALID;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoNodeValidationStatus.OPTIMISTIC;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoNodeValidationStatus.VALID;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.INVALID;
+import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
+import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.VALID;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;

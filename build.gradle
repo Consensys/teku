@@ -92,13 +92,6 @@ dependencyRules {
     })
 
     // ethereum modules that need to be fixed. At least stop new dependencies being added
-    register(":ethereum:forkchoice") {
-      allowed = [
-          ":infrastructure:",
-          ":ethereum:",
-          ":storage"
-      ]
-    }
     register(":ethereum:statetransition") {
       allowed = [
           ":infrastructure:",

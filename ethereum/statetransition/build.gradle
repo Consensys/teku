@@ -13,7 +13,6 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
-  implementation project(':ethereum:forkchoice')
   implementation project(':infrastructure:serviceutils')
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
@@ -43,6 +42,5 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
-  testFixturesImplementation testFixtures(project(':ethereum:forkchoice'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
 }
