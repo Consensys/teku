@@ -15,12 +15,15 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -180,6 +183,19 @@ public class EventLogger {
             "Merge       *** Terminal Block detected: %s",
             LogFormatter.formatHashRoot(terminalBlockHash)),
         Color.GREEN);
+  }
+
+  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta) {
+
+    final String etaString =
+        String.format(
+            "%s days and %sh %sm %ss",
+            eta.toDays(),
+            eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
+            eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
+            eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
+
+    log.info(String.format("TTD (%s) ETA: %s", ttd, etaString));
   }
 
   public void transitionConfigurationTtdTbhMismatch(
