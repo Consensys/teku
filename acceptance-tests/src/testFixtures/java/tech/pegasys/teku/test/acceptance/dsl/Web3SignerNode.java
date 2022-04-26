@@ -48,7 +48,6 @@ public class Web3SignerNode extends Node {
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
         .waitingFor(new HttpWaitStrategy().forPort(HTTP_API_PORT).forPath("/upcheck"))
         .withCommand("--config-file=" + CONFIG_FILE_PATH, "eth2");
-    container.followOutput(outputFrame -> LOG.debug(outputFrame.getUtf8String().trim()));
     this.config = config;
   }
 
@@ -90,6 +89,13 @@ public class Web3SignerNode extends Node {
         });
     Thread.sleep(100);
     container.start();
+
+    LOG.info(
+        "Started Web3Signer container {} with imageId {}",
+        container.getDockerImageName(),
+        container.getContainerInfo().getImageId());
+
+    container.followOutput(outputFrame -> LOG.debug("{}", outputFrame.getUtf8String().trim()));
   }
 
   @Override
