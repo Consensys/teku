@@ -139,15 +139,15 @@ class EndpointMetadataTest {
                 SC_OK,
                 "Success",
                 Map.of(
-                    ContentTypes.APPLICATION_JSON,
+                    ContentTypes.JSON,
                     json(STRING_TYPE),
-                    ContentTypes.APPLICATION_OCTET_STREAM,
+                    ContentTypes.OCTET_STREAM,
                     json(STRING_TYPE)))
             .build();
     assertThat(
             metadata.selectResponseContentType(
-                SC_OK, Optional.of(ContentTypes.APPLICATION_OCTET_STREAM)))
-        .isEqualTo(ContentTypes.APPLICATION_OCTET_STREAM);
+                SC_OK, Optional.of(ContentTypes.OCTET_STREAM)))
+        .isEqualTo(ContentTypes.OCTET_STREAM);
   }
 
   @Test
@@ -331,7 +331,7 @@ class EndpointMetadataTest {
     final TestType body =
         metadata.getRequestBody(
             new ByteArrayInputStream(data.toArrayUnsafe()),
-            Optional.of(ContentTypes.APPLICATION_OCTET_STREAM));
+            Optional.of(ContentTypes.OCTET_STREAM));
     assertThat(body).isEqualTo(new TestObjA(data.toString()));
   }
 
@@ -342,7 +342,7 @@ class EndpointMetadataTest {
     assertThatThrownBy(
             () ->
                 metadata.getRequestBody(
-                    toStream("abc"), Optional.of(ContentTypes.APPLICATION_OCTET_STREAM)))
+                    toStream("abc"), Optional.of(ContentTypes.OCTET_STREAM)))
         .isInstanceOf(BadRequestException.class);
   }
 

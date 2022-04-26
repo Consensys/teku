@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
@@ -74,8 +74,8 @@ public class GetBlock extends AbstractHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(type = APPLICATION_JSON, from = GetBlockResponseV2.class),
-              @OpenApiContent(type = APPLICATION_OCTET_STREAM)
+              @OpenApiContent(type = JSON, from = GetBlockResponseV2.class),
+              @OpenApiContent(type = OCTET_STREAM)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
@@ -88,7 +88,7 @@ public class GetBlock extends AbstractHandler implements Handler {
     final String blockIdentifier = pathParams.get(PARAM_BLOCK_ID);
 
     if (getContentType(SSZ_OR_JSON_CONTENT_TYPES, maybeAcceptHeader)
-        .equalsIgnoreCase(APPLICATION_OCTET_STREAM)) {
+        .equalsIgnoreCase(OCTET_STREAM)) {
       final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBlockSsz(blockIdentifier);
       handleOptionalSszResult(

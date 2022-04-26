@@ -347,9 +347,9 @@ public class EndpointMetadata {
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private Optional<String> security = Optional.empty();
-    private String defaultRequestType = ContentTypes.APPLICATION_JSON;
+    private String defaultRequestType = ContentTypes.JSON;
     private final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes = new HashMap<>();
-    private String defaultResponseType = ContentTypes.APPLICATION_JSON;
+    private String defaultResponseType = ContentTypes.JSON;
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
 
     private List<String> tags = Collections.emptyList();
@@ -438,7 +438,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder requestBodyType(
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyTypes.put(
-          ContentTypes.APPLICATION_JSON,
+          ContentTypes.JSON,
           new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
       return this;
     }
@@ -447,7 +447,7 @@ public class EndpointMetadata {
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector) {
       this.requestBodyTypes.put(
-          ContentTypes.APPLICATION_JSON,
+          ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
       return this;
     }
@@ -457,10 +457,10 @@ public class EndpointMetadata {
         final BodyTypeSelector<T> bodyTypeSelector,
         final IOFunction<Bytes, T> octetStreamParser) {
       this.requestBodyTypes.put(
-          ContentTypes.APPLICATION_JSON,
+          ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
       this.requestBodyTypes.put(
-          ContentTypes.APPLICATION_OCTET_STREAM,
+          ContentTypes.OCTET_STREAM,
           OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
       return this;
     }
@@ -486,7 +486,7 @@ public class EndpointMetadata {
           Map.of(
               JSON_CONTENT_TYPE,
               new JsonResponseContentTypeDefinition<>(content),
-              ContentTypes.APPLICATION_OCTET_STREAM,
+              ContentTypes.OCTET_STREAM,
               new OctetStreamResponseContentTypeDefinition<>(toOctetStreamBytes)));
     }
 

@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -90,7 +90,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
           @OpenApiRequestBody(
               content = {
                 @OpenApiContent(from = SignedBlindedBlock.class),
-                @OpenApiContent(type = APPLICATION_OCTET_STREAM)
+                @OpenApiContent(type = OCTET_STREAM)
               }),
       description =
           "Submit a signed blinded beacon block to the beacon node to be imported."
