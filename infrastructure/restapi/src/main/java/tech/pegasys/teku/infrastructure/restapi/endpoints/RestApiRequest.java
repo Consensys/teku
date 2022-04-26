@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
@@ -52,7 +53,7 @@ public class RestApiRequest {
   }
 
   public void respondOk(final Object response) throws JsonProcessingException {
-    respond(HttpStatusCodes.SC_OK, response);
+    respond(SC_OK, response);
   }
 
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
@@ -74,7 +75,7 @@ public class RestApiRequest {
   public void respondOk(final Object response, final CacheLength cacheLength)
       throws JsonProcessingException {
     context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());
-    respond(HttpStatusCodes.SC_OK, response);
+    respond(SC_OK, response);
   }
 
   public void respondError(final int statusCode, final String message)
