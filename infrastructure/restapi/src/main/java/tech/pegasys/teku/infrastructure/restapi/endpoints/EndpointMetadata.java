@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
-import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -471,7 +470,7 @@ public class EndpointMetadata {
       return response(
           responseCode,
           description,
-          Map.of(JSON_CONTENT_TYPE, new JsonResponseContentTypeDefinition<>(content)));
+          Map.of(ContentTypes.JSON, new JsonResponseContentTypeDefinition<>(content)));
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -483,7 +482,7 @@ public class EndpointMetadata {
           responseCode,
           description,
           Map.of(
-              JSON_CONTENT_TYPE,
+              ContentTypes.JSON,
               new JsonResponseContentTypeDefinition<>(content),
               ContentTypes.OCTET_STREAM,
               new OctetStreamResponseContentTypeDefinition<>(toOctetStreamBytes)));

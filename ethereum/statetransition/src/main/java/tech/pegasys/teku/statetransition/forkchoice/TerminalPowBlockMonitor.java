@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +37,10 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
+  // number of samples to average out totalDifficulty
+  private static final int TD_DIFF_SAMPLES = 5;
+  // how many times
+  private static final int ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS = 5;
 
   private final EventLogger eventLogger;
   private final TimeProvider timeProvider;
@@ -46,11 +51,17 @@ public class TerminalPowBlockMonitor {
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
 
+  private Duration pollingPeriod;
+  private int pollingCounter = 0;
+
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
   private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
   private SpecConfigBellatrix specConfigBellatrix;
   private boolean isBellatrixActive = false;
   private boolean inSync = true;
+
+  private UInt256 lastTotalDifficulty;
+  private final ArrayDeque<UInt256> lastTotalDifficultyDiffs = new ArrayDeque<>();
 
   public TerminalPowBlockMonitor(
       final ExecutionEngineChannel executionEngine,
@@ -82,8 +93,7 @@ public class TerminalPowBlockMonitor {
     }
     specConfigBellatrix = maybeSpecConfigBellatrix.get();
 
-    final Duration pollingPeriod =
-        Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
+    pollingPeriod = Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
     timer =
         Optional.of(
             asyncRunner.runWithFixedDelay(
@@ -119,6 +129,8 @@ public class TerminalPowBlockMonitor {
         return;
       }
     }
+
+    pollingCounter++;
 
     if (isMergeTransitionComplete(recentChainData.getChainHead())) {
       LOG.info("MERGE is completed. Stopping.");
@@ -222,6 +234,7 @@ public class TerminalPowBlockMonitor {
               final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
+                checkTtdEta(totalDifficulty);
                 return SafeFuture.COMPLETE;
               }
               if (powBlock.getBlockTimestamp().isGreaterThan(timeProvider.getTimeInSeconds())) {
@@ -264,6 +277,35 @@ public class TerminalPowBlockMonitor {
               return totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty())
                   < 0;
             });
+  }
+
+  private void checkTtdEta(final UInt256 totalDifficulty) {
+    if (lastTotalDifficulty != null) {
+      final UInt256 diff = totalDifficulty.subtract(lastTotalDifficulty);
+      lastTotalDifficultyDiffs.addFirst(diff);
+      if (lastTotalDifficultyDiffs.size() > TD_DIFF_SAMPLES) {
+        lastTotalDifficultyDiffs.removeLast();
+      }
+      if (pollingCounter % ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS == 0) {
+        final UInt256 diffAverage =
+            lastTotalDifficultyDiffs.stream()
+                .reduce(UInt256::add)
+                .orElse(UInt256.ZERO)
+                .divide(lastTotalDifficultyDiffs.size());
+        final UInt256 averageDifficultyPerSecond = diffAverage.divide(pollingPeriod.getSeconds());
+
+        final UInt256 ttd = specConfigBellatrix.getTerminalTotalDifficulty();
+
+        final UInt256 secondsToTTD =
+            ttd.subtract(totalDifficulty).divide(averageDifficultyPerSecond);
+
+        final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
+
+        eventLogger.terminalPowBlockTtdEta(ttd, eta);
+      }
+    }
+
+    lastTotalDifficulty = totalDifficulty;
   }
 
   private void onTerminalPowBlockFound(Bytes32 blockHash) {
