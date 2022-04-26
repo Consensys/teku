@@ -193,9 +193,8 @@ jobs:
       - restore_cache:
           name: Restore cached gradle dependencies
           keys:
-            - windows-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
-            - windows-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
-            - windows-
+            - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
+            - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
       - run:
           name: Build
           command: |
@@ -210,12 +209,6 @@ jobs:
             Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
       - store_test_results:
           path: build/test-results
-      - save_cache:
-          name: Caching gradle dependencies
-          key: windows-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - .gradle
-            - ~/.gradle
 
   spotless:
     executor: small_executor
