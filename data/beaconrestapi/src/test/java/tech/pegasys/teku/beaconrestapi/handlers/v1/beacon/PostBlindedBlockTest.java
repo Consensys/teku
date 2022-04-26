@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,15 +16,14 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import tech.pegasys.teku.beaconrestapi.AbstractPostBlockTest;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 
-class PostBlockTest extends AbstractPostBlockTest {
-
+public class PostBlindedBlockTest extends AbstractPostBlockTest {
   @Override
   public MigratingEndpointAdapter getHandler() {
-    return new PostBlock(validatorDataProvider, syncDataProvider, schemaDefinitionCache);
+    return new PostBlindedBlock(validatorDataProvider, syncDataProvider, schemaDefinitionCache);
   }
 
   @Override
   public boolean isBlinded() {
-    return false;
+    return true;
   }
 }

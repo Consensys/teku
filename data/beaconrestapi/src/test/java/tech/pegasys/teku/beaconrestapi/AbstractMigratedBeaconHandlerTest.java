@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
@@ -85,5 +88,12 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected SafeFuture<ByteArrayInputStream> getResultFuture() {
     verify(context).future(futureArgs.capture());
     return futureArgs.getValue();
+  }
+
+  protected String getResultStringFromSuccessfulFuture() {
+    final SafeFuture<ByteArrayInputStream> resultFuture = getResultFuture();
+    assertThat(resultFuture).isCompleted();
+    final ByteArrayInputStream byteArrayInputStream = safeJoin(getResultFuture());
+    return new String(byteArrayInputStream.readAllBytes(), UTF_8);
   }
 }
