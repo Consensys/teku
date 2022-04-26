@@ -438,8 +438,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder requestBodyType(
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyTypes.put(
-          ContentTypes.JSON,
-          new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+          ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
       return this;
     }
 

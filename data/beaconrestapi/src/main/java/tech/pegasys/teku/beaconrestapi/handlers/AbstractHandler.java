@@ -33,8 +33,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public abstract class AbstractHandler implements Handler {
-  public static final List<String> SSZ_OR_JSON_CONTENT_TYPES =
-      List.of(OCTET_STREAM, JSON);
+  public static final List<String> SSZ_OR_JSON_CONTENT_TYPES = List.of(OCTET_STREAM, JSON);
   protected final JsonProvider jsonProvider;
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
