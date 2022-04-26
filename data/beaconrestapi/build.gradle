@@ -28,7 +28,6 @@ dependencies {
     implementation 'io.javalin:javalin-openapi'
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.webjars:swagger-ui'
-    implementation 'org.commonjava.mimeparse:mimeparse'
 
     testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':ethereum:spec'))

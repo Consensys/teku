@@ -216,6 +216,7 @@ public class BeaconRestApi {
     app.exception(NodeSyncingException.class, this::serviceUnavailable);
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
     app.exception(BadRequestException.class, this::badRequest);
+    app.exception(IllegalArgumentException.class, this::badRequest);
     // Add catch-all handler
     app.exception(
         Exception.class,

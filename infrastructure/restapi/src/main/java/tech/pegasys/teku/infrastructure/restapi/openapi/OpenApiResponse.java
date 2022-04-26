@@ -21,19 +21,18 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class OpenApiResponse {
   private final String description;
-  private final Map<String, SerializableTypeDefinition<?>> content;
+  private final Map<String, ? extends ContentTypeDefinition<?>> content;
 
   public OpenApiResponse(
-      final String description, final Map<String, SerializableTypeDefinition<?>> content) {
+      final String description, final Map<String, ? extends ContentTypeDefinition<?>> content) {
     this.description = description;
     this.content = content;
   }
 
-  public SerializableTypeDefinition<?> getType(final String contentType) {
+  public ContentTypeDefinition<?> getType(final String contentType) {
     return content.get(contentType);
   }
 
@@ -41,7 +40,7 @@ public class OpenApiResponse {
     gen.writeStartObject();
     gen.writeStringField("description", description);
     gen.writeObjectFieldStart("content");
-    for (Entry<String, SerializableTypeDefinition<?>> contentEntry : content.entrySet()) {
+    for (Entry<String, ? extends OpenApiTypeDefinition> contentEntry : content.entrySet()) {
       gen.writeObjectFieldStart(contentEntry.getKey());
       gen.writeFieldName("schema");
       contentEntry.getValue().serializeOpenApiTypeOrReference(gen);
@@ -56,5 +55,9 @@ public class OpenApiResponse {
     return content.values().stream()
         .flatMap(type -> type.getSelfAndReferencedTypeDefinitions().stream())
         .collect(toSet());
+  }
+
+  public Collection<String> getSupportedContentTypes() {
+    return content.keySet();
   }
 }
