@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
@@ -125,7 +125,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
             status = RES_OK,
             content = {
               @OpenApiContent(from = GetNewBlindedBlockResponse.class),
-              @OpenApiContent(type = APPLICATION_OCTET_STREAM)
+              @OpenApiContent(type = OCTET_STREAM)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),

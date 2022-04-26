@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
@@ -77,7 +77,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
   public void shouldGetAltairBlockAsSsz() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     createBlocksAtSlots(10);
-    final Response response = get("head", APPLICATION_OCTET_STREAM);
+    final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }

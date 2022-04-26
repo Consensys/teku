@@ -130,14 +130,13 @@ class EndpointMetadataTest {
                 SC_OK,
                 "Success",
                 Map.of(
-                    ContentTypes.APPLICATION_JSON,
+                    ContentTypes.JSON,
                     ContentTypeDefinition.json(STRING_TYPE),
-                    ContentTypes.APPLICATION_OCTET_STREAM,
+                    ContentTypes.OCTET_STREAM,
                     ContentTypeDefinition.json(STRING_TYPE)))
             .build();
-    assertThat(
-            metadata.selectContentType(SC_OK, Optional.of(ContentTypes.APPLICATION_OCTET_STREAM)))
-        .isEqualTo(ContentTypes.APPLICATION_OCTET_STREAM);
+    assertThat(metadata.selectContentType(SC_OK, Optional.of(ContentTypes.OCTET_STREAM)))
+        .isEqualTo(ContentTypes.OCTET_STREAM);
   }
 
   @Test

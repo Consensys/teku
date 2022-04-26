@@ -15,8 +15,8 @@ package tech.pegasys.teku.beaconrestapi.handlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,8 +33,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public abstract class AbstractHandler implements Handler {
-  public static final List<String> SSZ_OR_JSON_CONTENT_TYPES =
-      List.of(APPLICATION_OCTET_STREAM, APPLICATION_JSON);
+  public static final List<String> SSZ_OR_JSON_CONTENT_TYPES = List.of(OCTET_STREAM, JSON);
   protected final JsonProvider jsonProvider;
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
@@ -192,6 +191,6 @@ public abstract class AbstractHandler implements Handler {
 
   public static String getContentType(
       final List<String> types, final Optional<String> maybeContentType) {
-    return ContentTypes.getContentType(types, maybeContentType).orElse(APPLICATION_JSON);
+    return ContentTypes.getContentType(types, maybeContentType).orElse(JSON);
   }
 }

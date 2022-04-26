@@ -15,8 +15,7 @@ package tech.pegasys.teku.beaconrestapi.v2.debug;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_JSON;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.APPLICATION_OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
@@ -28,13 +27,14 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @Test
   public void shouldGetPhase0StateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head", APPLICATION_JSON);
+    final Response response = get("head", ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateResponseV2 stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
@@ -47,7 +47,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetAltairStateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    final Response response = get("head", APPLICATION_JSON);
+    final Response response = get("head", ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateResponseV2 stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
@@ -60,7 +60,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   @Test
   public void shouldGetAltairStateAsSsz() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    final Response response = get("head", APPLICATION_OCTET_STREAM);
+    final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }

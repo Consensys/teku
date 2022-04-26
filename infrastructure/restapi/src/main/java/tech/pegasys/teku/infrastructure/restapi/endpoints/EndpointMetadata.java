@@ -338,7 +338,7 @@ public class EndpointMetadata {
     private Optional<BodyTypeSelector<?>> bodyTypeSelector = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
 
-    private String defaultResponseType = ContentTypes.APPLICATION_JSON;
+    private String defaultResponseType = ContentTypes.JSON;
 
     private List<String> tags = Collections.emptyList();
 
@@ -454,7 +454,7 @@ public class EndpointMetadata {
           Map.of(
               JSON_CONTENT_TYPE,
               new JsonContentTypeDefinition<>(content),
-              ContentTypes.APPLICATION_OCTET_STREAM,
+              ContentTypes.OCTET_STREAM,
               new OctetStreamContentTypeDefinition<>(toOctetStreamBytes)));
     }
 
