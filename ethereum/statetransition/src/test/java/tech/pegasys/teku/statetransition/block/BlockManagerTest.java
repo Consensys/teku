@@ -580,6 +580,7 @@ public class BlockManagerTest {
         .lateBlockImport(
             block.getRoot(),
             block.getSlot(),
+            block.getProposerIndex(),
             ARRIVAL_EVENT_LABEL
                 + " 1000ms, "
                 + PRESTATE_RETRIEVED_EVENT_LABEL
