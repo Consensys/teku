@@ -89,13 +89,6 @@ public class Web3SignerNode extends Node {
         });
     Thread.sleep(100);
     container.start();
-
-    LOG.info(
-        "Started Web3Signer container {} with imageId {}",
-        container.getDockerImageName(),
-        container.getContainerInfo().getImageId());
-
-    container.followOutput(outputFrame -> LOG.debug("{}", outputFrame.getUtf8String().trim()));
   }
 
   @Override
