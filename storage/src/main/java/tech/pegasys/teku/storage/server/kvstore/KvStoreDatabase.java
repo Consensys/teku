@@ -59,10 +59,11 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.api.WeakSubjectivityState;
+import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
@@ -83,7 +84,6 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
-import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class KvStoreDatabase implements Database {
 
@@ -91,7 +91,6 @@ public class KvStoreDatabase implements Database {
 
   private static final int TX_BATCH_SIZE = 500;
 
-  private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
 
   final KvStoreHotDao hotDao;
@@ -102,7 +101,6 @@ public class KvStoreDatabase implements Database {
   private final boolean storeNonCanonicalBlocks;
 
   public static Database createV4(
-      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final StateStorageMode stateStorageMode,
@@ -110,7 +108,6 @@ public class KvStoreDatabase implements Database {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     return createWithStateSnapshots(
-        metricsSystem,
         hotDb,
         finalizedDb,
         new V4SchemaHot(spec),
@@ -122,7 +119,6 @@ public class KvStoreDatabase implements Database {
   }
 
   public static Database createWithStateSnapshots(
-      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final SchemaHot schemaHot,
@@ -134,7 +130,6 @@ public class KvStoreDatabase implements Database {
     final V4FinalizedStateSnapshotStorageLogic finalizedStateStorageLogic =
         new V4FinalizedStateSnapshotStorageLogic(stateStorageFrequency);
     return create(
-        metricsSystem,
         hotDb,
         finalizedDb,
         schemaHot,
@@ -157,7 +152,6 @@ public class KvStoreDatabase implements Database {
     final V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        metricsSystem,
         db,
         db,
         schemaHot,
@@ -169,7 +163,6 @@ public class KvStoreDatabase implements Database {
   }
 
   private static <S extends SchemaFinalized> KvStoreDatabase create(
-      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final SchemaHot schemaHot,
@@ -182,11 +175,10 @@ public class KvStoreDatabase implements Database {
     final KvStoreFinalizedDao finalizedDbDao =
         new V4FinalizedKvStoreDao<>(finalizedDb, schemaFinalized, finalizedStateStorageLogic);
     return new KvStoreDatabase(
-        metricsSystem, dao, finalizedDbDao, dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+        dao, finalizedDbDao, dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
   private KvStoreDatabase(
-      final MetricsSystem metricsSystem,
       final KvStoreHotDao hotDao,
       final KvStoreFinalizedDao finalizedDao,
       final KvStoreEth1Dao eth1Dao,
@@ -194,7 +186,6 @@ public class KvStoreDatabase implements Database {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     checkNotNull(spec);
-    this.metricsSystem = metricsSystem;
     this.finalizedDao = finalizedDao;
     this.eth1Dao = eth1Dao;
     this.stateStorageMode = stateStorageMode;
@@ -299,12 +290,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<StoreBuilder> createMemoryStore() {
+  public Optional<OnDiskStoreData> createMemoryStore() {
     return createMemoryStore(() -> Instant.now().getEpochSecond());
   }
 
   @VisibleForTesting
-  Optional<StoreBuilder> createMemoryStore(final Supplier<Long> timeSupplier) {
+  Optional<OnDiskStoreData> createMemoryStore(final Supplier<Long> timeSupplier) {
     Optional<UInt64> maybeGenesisTime = hotDao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
@@ -373,18 +364,16 @@ public class KvStoreDatabase implements Database {
     final UInt64 time = slotTime.max(clockTime);
 
     return Optional.of(
-        StoreBuilder.create()
-            .metricsSystem(metricsSystem)
-            .specProvider(spec)
-            .time(time)
-            .anchor(maybeAnchor)
-            .genesisTime(genesisTime)
-            .latestFinalized(latestFinalized)
-            .finalizedOptimisticTransitionPayload(finalizedOptimisticTransitionPayload)
-            .justifiedCheckpoint(justifiedCheckpoint)
-            .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
-            .blockInformation(blockInformation)
-            .votes(votes));
+        new OnDiskStoreData(
+            time,
+            maybeAnchor,
+            genesisTime,
+            latestFinalized,
+            finalizedOptimisticTransitionPayload,
+            justifiedCheckpoint,
+            bestJustifiedCheckpoint,
+            blockInformation,
+            votes));
   }
 
   @Override

@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.storage.events.FinalizedChainData;
+import tech.pegasys.teku.storage.api.FinalizedChainData;
 
 class StoreTransactionUpdatesFactory {
   private static final Logger LOG = LogManager.getLogger();

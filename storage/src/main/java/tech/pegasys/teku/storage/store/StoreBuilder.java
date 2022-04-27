@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
 
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
@@ -57,14 +58,8 @@ public class StoreBuilder {
     return new StoreBuilder();
   }
 
-  public static StoreBuilder forkChoiceStoreBuilder(
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem,
-      final Spec spec,
-      final BlockProvider blockProvider,
-      final StateAndBlockSummaryProvider stateAndBlockProvider,
-      final AnchorPoint anchor,
-      final UInt64 currentTime) {
+  public static OnDiskStoreData forkChoiceStoreBuilder(
+      final Spec spec, final AnchorPoint anchor, final UInt64 currentTime) {
     final UInt64 genesisTime = anchor.getState().getGenesisTime();
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot))).max(currentTime);
@@ -82,20 +77,28 @@ public class StoreBuilder {
                 new CheckpointEpochs(
                     anchor.getCheckpoint().getEpoch(), anchor.getCheckpoint().getEpoch()))));
 
-    return create()
-        .asyncRunner(asyncRunner)
-        .metricsSystem(metricsSystem)
-        .specProvider(spec)
-        .blockProvider(blockProvider)
-        .stateProvider(stateAndBlockProvider)
-        .anchor(anchor.getCheckpoint())
-        .time(time)
-        .genesisTime(genesisTime)
-        .latestFinalized(anchor)
-        .justifiedCheckpoint(anchor.getCheckpoint())
-        .bestJustifiedCheckpoint(anchor.getCheckpoint())
-        .blockInformation(blockInfo)
-        .votes(new HashMap<>());
+    return new OnDiskStoreData(
+        time,
+        Optional.of(anchor.getCheckpoint()),
+        genesisTime,
+        anchor,
+        Optional.empty(),
+        anchor.getCheckpoint(),
+        anchor.getCheckpoint(),
+        blockInfo,
+        new HashMap<>());
+  }
+
+  public StoreBuilder onDiskStoreData(final OnDiskStoreData data) {
+    return time(data.getTime())
+        .anchor(data.getAnchor())
+        .genesisTime(data.getGenesisTime())
+        .latestFinalized(data.getLatestFinalized())
+        .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
+        .justifiedCheckpoint(data.getJustifiedCheckpoint())
+        .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
+        .blockInformation(data.getBlockInformation())
+        .votes(data.getVotes());
   }
 
   public UpdatableStore build() {

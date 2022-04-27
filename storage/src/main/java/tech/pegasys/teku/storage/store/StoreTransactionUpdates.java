@@ -25,9 +25,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.FinalizedChainData;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.events.FinalizedChainData;
-import tech.pegasys.teku.storage.events.StorageUpdate;
 
 class StoreTransactionUpdates {
   private final StoreTransaction tx;

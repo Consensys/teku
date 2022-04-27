@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.events;
+package tech.pegasys.teku.storage.api;
 
 import java.util.Collections;
 import java.util.Map;
