@@ -2,10 +2,10 @@ dependencies {
   api project(':ethereum:spec')
 
   implementation project(':data')
+  implementation project(':ethereum:signingrecord')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:metrics')
-  implementation project(':data:signingrecord')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:ssz')
