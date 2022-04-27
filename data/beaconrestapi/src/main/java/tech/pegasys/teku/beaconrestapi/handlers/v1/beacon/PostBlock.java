@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -58,8 +59,10 @@ public class PostBlock extends MigratingEndpointAdapter {
   private final SyncDataProvider syncDataProvider;
 
   public PostBlock(
-      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(schemaDefinitionCache));
+      final DataProvider dataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(createMetadata(spec, schemaDefinitionCache));
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
   }
@@ -67,14 +70,15 @@ public class PostBlock extends MigratingEndpointAdapter {
   PostBlock(
       final ValidatorDataProvider validatorDataProvider,
       final SyncDataProvider syncDataProvider,
+      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(schemaDefinitionCache));
+    super(createMetadata(spec, schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
 
   private static EndpointMetadata createMetadata(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.post(ROUTE)
         .operationId("publishBlock")
         .summary("Publish a signed block")
@@ -91,7 +95,8 @@ public class PostBlock extends MigratingEndpointAdapter {
                     schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone)),
             json ->
                 slotBasedSelector(
-                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBeaconBlockSchema))
+                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBeaconBlockSchema),
+            spec::deserializeSignedBeaconBlock)
         .response(
             HttpStatusCodes.SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(

@@ -20,7 +20,7 @@ class PostBlockTest extends AbstractPostBlockTest {
 
   @Override
   public MigratingEndpointAdapter getHandler() {
-    return new PostBlock(validatorDataProvider, syncDataProvider, schemaDefinitionCache);
+    return new PostBlock(validatorDataProvider, syncDataProvider, spec, schemaDefinitionCache);
   }
 
   @Override
