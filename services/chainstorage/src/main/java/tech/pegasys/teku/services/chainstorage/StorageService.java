@@ -15,8 +15,8 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;

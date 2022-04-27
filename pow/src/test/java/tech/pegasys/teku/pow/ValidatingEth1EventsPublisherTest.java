@@ -19,9 +19,9 @@ import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
