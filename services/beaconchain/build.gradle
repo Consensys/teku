@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:pow')
   implementation project(':beacon:validator')
   implementation project(':infrastructure:events')
   implementation project(':data:beaconrestapi')
@@ -20,7 +21,6 @@ dependencies {
   implementation project(':infrastructure:version')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
-  implementation project(':pow')
   implementation project(':infrastructure:serviceutils')
   implementation project(':services:powchain')
   implementation project(':services:timer')

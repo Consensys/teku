@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:pow')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':ethereum:executionlayer')
@@ -9,7 +10,6 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:version')
-  implementation project(':pow')
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:client')
 

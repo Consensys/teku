@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:pow')
   implementation project(':ethereum:core')
   implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:forkchoice')
@@ -15,7 +16,6 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:ssz')
   implementation project(':infrastructure:time')
-  implementation project(':pow')
   implementation project(':storage:api')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -32,6 +32,7 @@ dependencies {
 
   testImplementation project(':ethereum:networks')
 
+  testImplementation testFixtures(project(':beacon:pow'))
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
@@ -39,7 +40,6 @@ dependencies {
   testImplementation project(':ethereum:networks')
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':pow'))
   testImplementation testFixtures(project(':storage'))
 
 
@@ -48,6 +48,7 @@ dependencies {
   testFixturesApi project(':storage:api')
   testFixturesApi project(':ethereum:spec')
 
+  testFixturesImplementation testFixtures(project(':beacon:pow'))
   testFixturesImplementation project(':ethereum:dataproviders')
   testFixturesImplementation testFixtures(project(':infrastructure:bls'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
@@ -57,7 +58,6 @@ dependencies {
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':infrastructure:events')
-  testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation 'org.mockito:mockito-core'
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-params'
