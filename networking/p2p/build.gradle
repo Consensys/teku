@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:pow')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
@@ -12,7 +13,6 @@ dependencies {
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
   implementation project(':infrastructure:version')
-  implementation project(':pow')
   implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':infrastructure:ssz')
