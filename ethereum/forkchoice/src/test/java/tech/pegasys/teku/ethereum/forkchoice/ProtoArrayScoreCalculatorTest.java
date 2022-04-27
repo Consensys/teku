@@ -23,8 +23,10 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,6 +42,7 @@ public class ProtoArrayScoreCalculatorTest {
   private Optional<Bytes32> newProposerBoostRoot = Optional.empty();
   private UInt64 oldProposerBoostAmount = ZERO;
   private UInt64 newProposerBoostAmount = ZERO;
+  private Set<UInt64> equivocatingIndices = new HashSet<>();
   private VoteUpdater store = createStoreToManipulateVotes();
 
   private Optional<Integer> getIndex(final Bytes32 root) {
@@ -67,7 +70,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(validatorCount);
 
     // Deltas should all be zero
@@ -98,7 +102,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(validatorCount);
 
     for (int i = 0; i < deltas.size(); i++) {
@@ -139,7 +144,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(validatorCount);
 
     // Each root should have the same delta
@@ -172,7 +178,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
 
     assertThat(deltas).hasSize(validatorCount);
     long totalDelta = balance.longValue() * Integer.toUnsignedLong(validatorCount);
@@ -226,7 +233,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(1);
 
     // The block should have lost both balances
@@ -262,7 +270,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(validatorCount);
 
     for (int i = 0; i < deltas.size(); i++) {
@@ -313,7 +322,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have only lost one balance
@@ -333,10 +343,10 @@ public class ProtoArrayScoreCalculatorTest {
     indices.put(getHash(1), 0);
     indices.put(getHash(2), 1);
 
-    // There is only one validator in the old balances.
+    // There are two validator in the old balances.
     oldBalances.addAll(List.of(balance, balance));
 
-    // There are two validators in the new balances.
+    // There is only one validator in the new balances.
     newBalances.add(balance);
 
     // Both validators move votes from block 1 to block 2.
@@ -356,7 +366,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have lost both balances
@@ -390,7 +401,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should be unchanged
@@ -423,7 +435,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should be unchanged
@@ -456,7 +469,8 @@ public class ProtoArrayScoreCalculatorTest {
             oldProposerBoostRoot,
             newProposerBoostRoot,
             oldProposerBoostAmount,
-            newProposerBoostAmount);
+            newProposerBoostAmount,
+            equivocatingIndices);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have old boost amount removed
@@ -464,6 +478,119 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Block 2 should have new boost amount added
     assertThat(deltas.get(1)).isEqualTo(newProposerBoostAmount.longValue());
+  }
+
+  @Test
+  void computeDeltas_validatorEquivocates() {
+    final UInt64 balance = UInt64.valueOf(42);
+
+    // There is one block.
+    indices.put(getHash(1), 0);
+
+    // There are two validator in the old balances.
+    oldBalances.addAll(List.of(balance, balance));
+
+    // Same two in new balances.
+    newBalances.addAll(List.of(balance, balance));
+
+    // One validator was added to equivocating indices
+    equivocatingIndices.add(ZERO);
+
+    // Both validators votes for block.
+    for (int i = 0; i < 2; i++) {
+      VoteTracker vote = store.getVote(UInt64.valueOf(i));
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(1), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
+    }
+
+    List<Long> deltas =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            equivocatingIndices);
+    assertThat(deltas).hasSize(1);
+
+    // Block should have only one counted vote
+    assertThat(deltas.get(0)).isEqualTo(balance.longValue());
+
+    // Votes should be updated for non-equivocating validators only
+    VoteTracker vote0 = store.getVote(ZERO);
+    assertThat(vote0.getCurrentRoot()).isEqualTo(Bytes32.ZERO);
+    VoteTracker vote1 = store.getVote(UInt64.ONE);
+    assertThat(vote1.getCurrentRoot()).isEqualTo(vote1.getNextRoot());
+  }
+
+  @Test
+  void computeDeltas_validatorEquivocatesChain() {
+    final UInt64 balance = UInt64.valueOf(42);
+
+    // There are 3 blocks
+    indices.put(getHash(1), 0);
+    indices.put(getHash(2), 1);
+    indices.put(getHash(3), 2);
+
+    // There are two validator in the old balances.
+    oldBalances.addAll(List.of(balance, balance));
+
+    // Same two in new balances.
+    newBalances.addAll(List.of(balance, balance));
+
+    // One validator was added to equivocating indices
+    equivocatingIndices.add(ZERO);
+
+    // Both validators moves vote to the last block.
+    for (int i = 0; i < 2; i++) {
+      VoteTracker vote = store.getVote(UInt64.valueOf(i));
+      VoteTracker newVote = new VoteTracker(getHash(2), getHash(3), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
+    }
+
+    List<Long> deltas =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            equivocatingIndices);
+    assertThat(deltas).hasSize(3);
+
+    assertThat(deltas.get(0)).isEqualTo(0);
+    // 2nd block should lose both votes
+    assertThat(deltas.get(1)).isEqualTo(-balance.longValue() * 2);
+    // Only non-equivocated should be added to 3rd
+    assertThat(deltas.get(2)).isEqualTo(balance.longValue());
+
+    // Verify that equivocation affects deltas only once
+    List<Long> deltas2 =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            equivocatingIndices);
+    assertThat(deltas2).hasSize(3);
+
+    // No subsequent penalty for equivocation 2nd run
+    for (int i = 0; i < 3; i++) {
+      assertThat(deltas2.get(i)).isEqualTo(0);
+    }
   }
 
   private void votesShouldBeUpdated(VoteUpdater store) {

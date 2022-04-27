@@ -23,9 +23,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -92,6 +94,7 @@ class Store implements UpdatableStore {
   UInt64 latestValidFinalizedSlot = UInt64.ZERO;
   Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  final Set<UInt64> equivocatingIndices = new HashSet<>();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
@@ -386,6 +389,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return proposerBoostRoot;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Set<UInt64> getEquivocatingIndices() {
+    readLock.lock();
+    try {
+      return equivocatingIndices;
     } finally {
       readLock.unlock();
     }

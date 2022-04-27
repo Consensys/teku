@@ -511,6 +511,7 @@ class ProtoArrayTest {
         Optional.empty(),
         Optional.empty(),
         UInt64.ZERO,
-        UInt64.ZERO);
+        UInt64.ZERO,
+        Collections.emptySet());
   }
 }

@@ -23,6 +23,8 @@ import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -142,7 +144,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             anchor.getCheckpoint(),
             anchor.getCheckpoint(),
             effectiveBalances,
-            ZERO);
+            ZERO,
+            Collections.emptySet());
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -331,7 +334,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(strategy.contains(block4.getRoot())).isTrue();
 
     final VoteUpdater transaction = storageSystem.recentChainData().startVoteUpdate();
-    strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch);
+    strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch, false);
 
     final BeaconState block3State = block3.getState();
 
@@ -347,7 +350,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
             effectiveBalances,
-            ZERO);
+            ZERO,
+            Collections.emptySet());
     transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());
@@ -383,6 +387,47 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                 .orElseThrow()
                 .executionBlockHash(block1.getRoot()))
         .isEqualTo(block1.getExecutionBlockHash());
+  }
+
+  @Test
+  void applyPendingVotes_shouldMarkEquivocation() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
+
+    final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
+    final VoteUpdater transaction1 = storageSystem.recentChainData().startVoteUpdate();
+    final UInt64 block1Epoch = spec.computeEpochAtSlot(block1.getSlot());
+    strategy.processAttestation(transaction1, ZERO, block1.getRoot(), block1Epoch, false);
+    transaction1.commit();
+
+    final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
+    final VoteUpdater transaction2 = storageSystem.recentChainData().startVoteUpdate();
+    final UInt64 block2Epoch = spec.computeEpochAtSlot(block2.getSlot());
+    strategy.processAttestation(transaction2, ZERO, block2.getRoot(), block2Epoch, true);
+
+    final BeaconState block2State = block2.getState();
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(block2State.getSlot())
+            .getEffectiveBalances(block2State);
+    final Set<UInt64> equivocatingIndices = new HashSet<>();
+    equivocatingIndices.add(ZERO);
+    final Bytes32 bestHead =
+        strategy.applyPendingVotes(
+            transaction2,
+            Optional.empty(),
+            storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
+            storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
+            effectiveBalances,
+            ZERO,
+            equivocatingIndices);
+    transaction2.commit();
+    assertThat(bestHead).isEqualTo(block2.getRoot());
+
+    assertThat(transaction2.getVote(ZERO).isEquivocated()).isTrue();
+    // Not updated after equivocation
+    assertThat(transaction2.getVote(ZERO).getNextRoot()).isEqualTo(block1.getRoot());
   }
 
   private StorageSystem initStorageSystem() {

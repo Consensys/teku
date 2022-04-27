@@ -16,9 +16,11 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,6 +49,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  protected Set<UInt64> equivocatingIndices = new HashSet<>();
   protected UInt64 latestValidFinalizedSlot;
 
   TestStoreImpl(
@@ -291,6 +294,16 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void addEquivocatingIndex(UInt64 equivocatingIndex) {
+    equivocatingIndices.add(equivocatingIndex);
+  }
+
+  @Override
+  public Set<UInt64> getEquivocatingIndices() {
+    return equivocatingIndices;
+  }
+
+  @Override
   public void setLatestValidFinalizedSlot(UInt64 latestValidFinalizedSlot) {
     this.latestValidFinalizedSlot = latestValidFinalizedSlot;
   }
@@ -323,7 +336,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedCheckpointEffectiveBalances,
       final Optional<Bytes32> proposerBoostRoot,
-      final UInt64 proposerScoreBoostAmount) {
+      final UInt64 proposerScoreBoostAmount,
+      final Set<UInt64> equivocatingIndices) {
     throw new UnsupportedOperationException("Not implemented");
   }
 }

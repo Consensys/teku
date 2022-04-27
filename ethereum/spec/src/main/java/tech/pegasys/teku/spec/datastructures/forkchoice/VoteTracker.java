@@ -26,11 +26,25 @@ public class VoteTracker {
   private final Bytes32 currentRoot;
   private final Bytes32 nextRoot;
   private final UInt64 nextEpoch;
+  private final boolean equivocated;
 
   public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
+    this.equivocated = false;
+  }
+
+  public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch, boolean equivocated) {
+    this.currentRoot = currentRoot;
+    this.nextRoot = nextRoot;
+    this.nextEpoch = nextEpoch;
+    this.equivocated = equivocated;
+  }
+
+  public static VoteTracker createEquivocated(final VoteTracker voteTracker) {
+    return new VoteTracker(
+        voteTracker.getCurrentRoot(), voteTracker.getNextRoot(), voteTracker.getNextEpoch(), true);
   }
 
   public Bytes32 getCurrentRoot() {
@@ -45,6 +59,10 @@ public class VoteTracker {
     return nextEpoch;
   }
 
+  public boolean isEquivocated() {
+    return equivocated;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -54,14 +72,15 @@ public class VoteTracker {
       return false;
     }
     final VoteTracker that = (VoteTracker) o;
-    return Objects.equals(currentRoot, that.currentRoot)
+    return equivocated == that.equivocated
+        && Objects.equals(currentRoot, that.currentRoot)
         && Objects.equals(nextRoot, that.nextRoot)
         && Objects.equals(nextEpoch, that.nextEpoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(currentRoot, nextRoot, nextEpoch);
+    return Objects.hash(currentRoot, nextRoot, nextEpoch, equivocated);
   }
 
   @Override
@@ -70,6 +89,7 @@ public class VoteTracker {
         .add("currentRoot", currentRoot)
         .add("nextRoot", nextRoot)
         .add("nextEpoch", nextEpoch)
+        .add("equivocated", equivocated)
         .toString();
   }
 }

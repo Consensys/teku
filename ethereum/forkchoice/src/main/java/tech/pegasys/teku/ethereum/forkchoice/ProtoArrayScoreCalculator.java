@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -55,14 +56,21 @@ class ProtoArrayScoreCalculator {
       Optional<Bytes32> previousProposerBoostRoot,
       Optional<Bytes32> newProposerBoostRoot,
       UInt64 previousBoostAmount,
-      UInt64 newBoostAmount) {
+      UInt64 newBoostAmount,
+      Set<UInt64> equivocatingIndices) {
     LongList deltas = new LongArrayList(Collections.nCopies(protoArraySize, 0L));
 
     UInt64.rangeClosed(UInt64.ZERO, store.getHighestVotedValidatorIndex())
         .forEach(
             validatorIndex ->
                 computeDelta(
-                    store, getIndexByRoot, oldBalances, newBalances, deltas, validatorIndex));
+                    store,
+                    getIndexByRoot,
+                    oldBalances,
+                    newBalances,
+                    deltas,
+                    validatorIndex,
+                    equivocatingIndices.contains(validatorIndex)));
 
     previousProposerBoostRoot.ifPresent(
         root -> subtractBalance(getIndexByRoot, deltas, root, previousBoostAmount));
@@ -77,12 +85,17 @@ class ProtoArrayScoreCalculator {
       final List<UInt64> oldBalances,
       final List<UInt64> newBalances,
       final LongList deltas,
-      final UInt64 validatorIndex) {
+      final UInt64 validatorIndex,
+      final boolean equivocatingValidator) {
     VoteTracker vote = store.getVote(validatorIndex);
 
     // There is no need to create a score change if the validator has never voted
     // or both their votes are for the zero hash (alias to the genesis block).
     if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
+      return;
+    }
+    // If vote is already count as equivocated, we don't need to do anything more
+    if (vote.isEquivocated()) {
       return;
     }
 
@@ -97,14 +110,19 @@ class ProtoArrayScoreCalculator {
     // justified state to a new state with a higher epoch that is on a different fork
     // because that may have on-boarded less validators than the prior fork.
     UInt64 newBalance =
-        newBalances.size() > validatorIndexInt ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
+        newBalances.size() > validatorIndexInt && !equivocatingValidator
+            ? newBalances.get(validatorIndexInt)
+            : UInt64.ZERO;
 
     if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
       subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
       addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
-
-      VoteTracker newVote =
-          new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
+      final VoteTracker newVote;
+      if (equivocatingValidator) {
+        newVote = VoteTracker.createEquivocated(vote);
+      } else {
+        newVote = new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
+      }
       store.putVote(validatorIndex, newVote);
     }
   }

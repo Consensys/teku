@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -69,6 +71,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean proposerBoostEnabled;
+  private final boolean equivocatingIndicesEnabled;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
@@ -80,13 +83,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean proposerBoostEnabled) {
+      final boolean proposerBoostEnabled,
+      final boolean equivocatingIndicesEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
+    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -108,6 +113,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         recentChainData,
         forkChoiceNotifier,
         transitionBlockValidator,
+        false,
         false);
   }
 
@@ -178,7 +184,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                               justifiedCheckpoint,
                               justifiedEffectiveBalances,
                               recentChainData.getStore().getProposerBoostRoot(),
-                              spec.getProposerBoostAmount(justifiedState));
+                              spec.getProposerBoostAmount(justifiedState),
+                              recentChainData.getStore().getEquivocatingIndices());
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -491,7 +498,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
             attestation -> validateBlockAttestation(forkChoiceStrategy, currentEpoch, attestation))
-        .forEach(attestation -> forkChoiceStrategy.onAttestation(voteUpdater, attestation));
+        .forEach(
+            attestation ->
+                forkChoiceStrategy.onAttestation(
+                    voteUpdater, attestation, recentChainData.getStore().getEquivocatingIndices()));
     voteUpdater.commit();
   }
 
@@ -522,7 +532,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       () -> {
                         final VoteUpdater transaction = recentChainData.startVoteUpdate();
                         getForkChoiceStrategy()
-                            .onAttestation(transaction, getIndexedAttestation(attestation));
+                            .onAttestation(
+                                transaction,
+                                getIndexedAttestation(attestation),
+                                store.getEquivocatingIndices());
                         transaction.commit();
                       })
                   .thenApply(__ -> validationResult);
@@ -546,9 +559,37 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               attestations.stream()
                   .map(this::getIndexedAttestation)
                   .forEach(
-                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
+                      attestation ->
+                          forkChoiceStrategy.onAttestation(
+                              transaction,
+                              attestation,
+                              recentChainData.getStore().getEquivocatingIndices()));
               transaction.commit();
             })
+        .reportExceptions();
+  }
+
+  public void onAttesterSlashing(
+      final AttesterSlashing slashing,
+      InternalValidationResult validationStatus,
+      boolean fromNetwork) {
+    if (!equivocatingIndicesEnabled || !validationStatus.isAccept()) {
+      return;
+    }
+    final Checkpoint retrievedJustifiedCheckpoint =
+        recentChainData.getStore().getJustifiedCheckpoint();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    recentChainData
+        .retrieveCheckpointState(retrievedJustifiedCheckpoint)
+        .thenPeek(
+            justifiedCheckpointState ->
+                onForkChoiceThread(
+                        () ->
+                            slashing
+                                .getIntersectingValidatorIndices()
+                                .forEach(transaction::addEquivocatingIndex))
+                    .reportExceptions())
+        .thenPeek(__ -> transaction.commit().join())
         .reportExceptions();
   }
 

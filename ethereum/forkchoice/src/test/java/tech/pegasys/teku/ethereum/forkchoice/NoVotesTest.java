@@ -208,7 +208,8 @@ public class NoVotesTest {
         finalizedCheckpoint,
         justifiedCheckpoint,
         justifiedStateEffectiveBalances,
-        ZERO);
+        ZERO,
+        Collections.emptySet());
   }
 
   private UInt64 unsigned(final int i) {

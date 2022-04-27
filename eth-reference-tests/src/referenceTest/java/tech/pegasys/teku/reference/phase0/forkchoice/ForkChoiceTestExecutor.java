@@ -14,6 +14,7 @@
 package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.google.common.collect.ImmutableMap;
 import java.nio.ByteOrder;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -105,6 +108,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             recentChainData,
             new StubForkChoiceNotifier(),
             transitionBlockValidator,
+            true,
             true);
     final ExecutionEngineChannelStub executionEngine = new ExecutionEngineChannelStub(spec, false);
 
@@ -151,6 +155,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
       } else if (step.containsKey("pow_block")) {
         applyPowBlock(testDefinition, step, executionEngine);
+
+      } else if (step.containsKey("attester_slashing")) {
+        applyAttesterSlashing(testDefinition, forkChoice, step);
 
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
@@ -199,6 +206,21 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final Spec spec = testDefinition.getSpec();
     assertThat(forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation)))
         .isCompleted();
+  }
+
+  private void applyAttesterSlashing(
+      final TestDefinition testDefinition,
+      final ForkChoice forkChoice,
+      final Map<String, Object> step) {
+    final String slashingName = get(step, "attester_slashing");
+    final AttesterSlashing attesterSlashing =
+        TestDataUtils.loadSsz(
+            testDefinition,
+            slashingName + ".ssz_snappy",
+            testDefinition.getSpec().getGenesisSchemaDefinitions().getAttesterSlashingSchema());
+    assertDoesNotThrow(
+        () ->
+            forkChoice.onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
   }
 
   private void applyBlock(

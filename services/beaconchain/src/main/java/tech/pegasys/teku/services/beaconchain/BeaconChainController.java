@@ -439,6 +439,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     slashing -> slashing.getIntersectingValidatorIndices().size())
                 .reversed());
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
+    attesterSlashingPool.subscribeOperationAdded(forkChoice::onAttesterSlashing);
   }
 
   protected void initProposerSlashingPool() {
@@ -486,6 +487,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     final boolean proposerBoostEnabled = beaconConfig.eth2NetworkConfig().isProposerBoostEnabled();
+    final boolean equivocatingIndicesEnabled =
+        beaconConfig.eth2NetworkConfig().isEquivocatingIndicesEnabled();
     forkChoice =
         new ForkChoice(
             spec,
@@ -493,7 +496,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             forkChoiceNotifier,
             new MergeTransitionBlockValidator(spec, recentChainData, executionEngine),
-            proposerBoostEnabled);
+            proposerBoostEnabled,
+            equivocatingIndicesEnabled);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
 

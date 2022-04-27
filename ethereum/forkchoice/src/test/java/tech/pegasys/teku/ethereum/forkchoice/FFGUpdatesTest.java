@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -181,7 +182,7 @@ public class FFGUpdatesTest {
     //               7   8
     //               |   |
     //               9  10
-    forkChoice.processAttestation(store, unsigned(0), getHash(1), unsigned(0));
+    forkChoice.processAttestation(store, unsigned(0), getHash(1), unsigned(0), false);
 
     // Ensure that if we start at 0 we find 9 (just: 0, fin: 0).
     //
@@ -220,7 +221,7 @@ public class FFGUpdatesTest {
     //               7   8
     //               |   |
     //               9  10
-    forkChoice.processAttestation(store, unsigned(1), getHash(2), unsigned(0));
+    forkChoice.processAttestation(store, unsigned(1), getHash(2), unsigned(0), false);
 
     // Ensure that if we start at 0 we find 10 (just: 0, fin: 0).
     //
@@ -313,6 +314,7 @@ public class FFGUpdatesTest {
         finalizedCheckpoint,
         justifiedCheckpoint,
         justifiedStateEffectiveBalances,
-        ZERO);
+        ZERO,
+        Collections.emptySet());
   }
 }

@@ -119,6 +119,7 @@ class StoreTransactionUpdates {
     if (tx.proposerBoostRootSet) {
       store.proposerBoostRoot = tx.proposerBoostRoot;
     }
+    store.equivocatingIndices.addAll(tx.equivocatingIndices);
 
     store.forkChoiceStrategy.applyUpdate(
         hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());

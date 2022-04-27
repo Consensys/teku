@@ -19,9 +19,11 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -66,6 +68,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
+  Set<UInt64> equivocatingIndices = new HashSet<>();
 
   StoreTransaction(
       final Spec spec,
@@ -158,6 +161,18 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void removeProposerBoostRoot() {
     proposerBoostRoot = Optional.empty();
     proposerBoostRootSet = true;
+  }
+
+  @Override
+  public void addEquivocatingIndex(UInt64 equivocatingIndex) {
+    if (!store.equivocatingIndices.contains(equivocatingIndex)) {
+      equivocatingIndices.add(equivocatingIndex);
+    }
+  }
+
+  @Override
+  public Set<UInt64> getEquivocatingIndices() {
+    return equivocatingIndices;
   }
 
   @Override
