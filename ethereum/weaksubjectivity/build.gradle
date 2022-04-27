@@ -5,6 +5,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:logging')
     implementation project(':infrastructure:time')
+    implementation project(':storage:api')
     implementation project(':storage')
     implementation 'com.google.guava:guava'
 

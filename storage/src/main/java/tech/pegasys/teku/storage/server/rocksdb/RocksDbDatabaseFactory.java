@@ -52,13 +52,7 @@ public class RocksDbDatabaseFactory {
             finalizedConfiguration,
             new V4SchemaFinalized(spec).getAllColumns());
     return KvStoreDatabase.createV4(
-        metricsSystem,
-        hotDb,
-        finalizedDb,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+        hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createV6(
@@ -77,7 +71,6 @@ public class RocksDbDatabaseFactory {
         RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
 
     return KvStoreDatabase.createWithStateSnapshots(
-        metricsSystem,
         db,
         db,
         schemaHot,

@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
-import tech.pegasys.teku.storage.events.FinalizedChainData;
 
 public class UpdateResult {
 

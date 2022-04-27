@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubChainHeadChannel;
@@ -65,7 +66,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<OnDiskStoreData>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final StoreConfig storeConfig =
@@ -89,27 +90,30 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final StoreBuilder genesisStoreBuilder =
+    final OnDiskStoreData storeData =
         StoreBuilder.forkChoiceStoreBuilder(
-            SYNC_RUNNER,
-            new StubMetricsSystem(),
-            spec,
-            BlockProvider.NOOP,
-            StateAndBlockSummaryProvider.NOOP,
-            AnchorPoint.fromGenesisState(spec, initialState),
-            UInt64.ZERO);
-    storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
+            spec, AnchorPoint.fromGenesisState(spec, initialState), UInt64.ZERO);
+    storeRequestFuture.complete(Optional.of(storeData));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    final UpdatableStore expectedStore = genesisStoreBuilder.storeConfig(storeConfig).build();
+    final UpdatableStore expectedStore =
+        StoreBuilder.create()
+            .onDiskStoreData(storeData)
+            .asyncRunner(asyncRunner)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(BlockProvider.NOOP)
+            .stateProvider(StateAndBlockSummaryProvider.NOOP)
+            .storeConfig(storeConfig)
+            .build();
     StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
   @Test
   public void storageBackedClient_storeInitializeViaNewGenesisState()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<OnDiskStoreData>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final StoreConfig storeConfig =
@@ -139,14 +143,15 @@ public class StorageBackedRecentChainDataTest {
 
     // Now set the genesis state
     final UpdatableStore genesisStore =
-        StoreBuilder.forkChoiceStoreBuilder(
-                SYNC_RUNNER,
-                new StubMetricsSystem(),
-                spec,
-                BlockProvider.NOOP,
-                StateAndBlockSummaryProvider.NOOP,
-                AnchorPoint.fromGenesisState(spec, initialState),
-                UInt64.ZERO)
+        StoreBuilder.create()
+            .onDiskStoreData(
+                StoreBuilder.forkChoiceStoreBuilder(
+                    spec, AnchorPoint.fromGenesisState(spec, initialState), UInt64.ZERO))
+            .asyncRunner(SYNC_RUNNER)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(BlockProvider.NOOP)
+            .stateProvider(StateAndBlockSummaryProvider.NOOP)
             .storeConfig(storeConfig)
             .build();
     client.get().initializeFromGenesis(initialState, UInt64.ZERO);
@@ -158,7 +163,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequestAfterTimeout()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<OnDiskStoreData>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new TimeoutException()))
         .thenReturn(storeRequestFuture);
@@ -184,16 +189,18 @@ public class StorageBackedRecentChainDataTest {
     asyncRunner.executeQueuedActions();
 
     // Now set the genesis state
-    final StoreBuilder genesisStoreBuilder =
+    final OnDiskStoreData storeData =
         StoreBuilder.forkChoiceStoreBuilder(
-            SYNC_RUNNER,
-            new StubMetricsSystem(),
-            spec,
-            BlockProvider.NOOP,
-            StateAndBlockSummaryProvider.NOOP,
-            AnchorPoint.fromGenesisState(spec, initialState),
-            UInt64.ZERO);
-    storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
+            spec, AnchorPoint.fromGenesisState(spec, initialState), UInt64.ZERO);
+    final StoreBuilder genesisStoreBuilder =
+        StoreBuilder.create()
+            .onDiskStoreData(storeData)
+            .asyncRunner(SYNC_RUNNER)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(BlockProvider.NOOP)
+            .stateProvider(StateAndBlockSummaryProvider.NOOP);
+    storeRequestFuture.complete(Optional.of(storeData));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -202,7 +209,7 @@ public class StorageBackedRecentChainDataTest {
 
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequestAfterIOException() {
-    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<OnDiskStoreData>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new IOException()))
         .thenReturn(storeRequestFuture);
