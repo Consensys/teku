@@ -194,7 +194,8 @@ public class ValidatorRestApiConfig {
               },
               () -> {
                 throw new InvalidConfigurationException(
-                    "Validator api requires ssl keystore to be defined.");
+                    "Could not start the validator API as no SSL keystore was provided. "
+                        + "Please specify one via the --validator-api-keystore-file and --validator-api-keystore-password-file options.");
               });
         } else {
           restApiKeystoreFile = Optional.empty();
