@@ -14,8 +14,8 @@
 package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.collect.ImmutableMap;
 import java.nio.ByteOrder;
