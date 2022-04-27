@@ -42,7 +42,7 @@ public class Web3SignerNode extends Node {
   private Set<File> configFiles;
 
   private Web3SignerNode(final Network network, final Web3SignerNode.Config config) {
-    super(network, "consensys/web3signer:develop", LOG);
+    super(network, "consensys/web3signer:22.4.0", LOG);
     container
         .withExposedPorts(HTTP_API_PORT)
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
