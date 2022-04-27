@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
+import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 

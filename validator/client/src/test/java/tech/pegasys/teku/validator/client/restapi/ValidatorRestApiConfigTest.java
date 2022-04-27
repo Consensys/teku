@@ -35,7 +35,7 @@ class ValidatorRestApiConfigTest {
   void validatorApiRequiresSsl() {
     assertThatThrownBy(() -> ValidatorRestApiConfig.builder().restApiEnabled(true).build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining("requires ssl keystore");
+        .hasMessageContaining("no SSL keystore was provided");
   }
 
   @Test

@@ -8,6 +8,7 @@ dependencies {
   implementation project(':ethereum:events')
   implementation project(':ethereum:forkchoice')
   implementation project(':ethereum:networks')
+  implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:weaksubjectivity')

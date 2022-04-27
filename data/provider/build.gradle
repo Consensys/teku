@@ -1,7 +1,6 @@
 dependencies {
     api project(':ethereum:spec')
 
-    implementation project(':data')
     implementation project(':data:serializer')
     implementation project(':ethereum:core')
     implementation project(':ethereum:forkchoice')
