@@ -1,6 +1,5 @@
 dependencies {
     implementation project(':beacon:validator')
-    implementation project(':data')
     implementation project(':data:provider')
     implementation project(':data:serializer')
     implementation project(':ethereum:spec')

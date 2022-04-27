@@ -2,6 +2,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:forkchoice')
   implementation project(':ethereum:networks')
+  implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:exceptions')
@@ -9,7 +10,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':storage:api')
-  implementation project(':pow')
   implementation project(':infrastructure:events')
 
   implementation 'org.hyperledger.besu:plugin-api'

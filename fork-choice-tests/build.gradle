@@ -1,7 +1,6 @@
 jar { enabled = false }
 
 dependencies {
-    integrationTestImplementation project(':data')
     integrationTestImplementation project(':ethereum:core')
     integrationTestImplementation project(':ethereum:forkchoice')
     integrationTestImplementation testFixtures(project(':ethereum:spec'))
