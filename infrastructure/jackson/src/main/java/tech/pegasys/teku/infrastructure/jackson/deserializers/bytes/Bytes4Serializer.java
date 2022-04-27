@@ -11,24 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import java.math.BigInteger;
-import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
-public class UInt256Deserializer extends JsonDeserializer<UInt256> {
-
+public class Bytes4Serializer extends JsonSerializer<Bytes4> {
   @Override
-  public UInt256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    String value = p.getValueAsString();
-    if (value.startsWith("0x")) {
-      return UInt256.fromHexString(p.getValueAsString());
-    }
-
-    return UInt256.valueOf(new BigInteger(value));
+  public void serialize(Bytes4 value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase());
   }
 }

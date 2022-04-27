@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
-public class Bytes4Serializer extends JsonSerializer<Bytes4> {
+public class ByteArraySerializer extends JsonSerializer<byte[]> {
   @Override
-  public void serialize(Bytes4 value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final byte[] value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.toHexString().toLowerCase());
+    gen.writeStartArray();
+    for (int i = 0; i < value.length; i++) {
+      final int s = value[i] & 0xff;
+      gen.writeString(String.format("%d", s));
+    }
+    gen.writeEndArray();
   }
 }
