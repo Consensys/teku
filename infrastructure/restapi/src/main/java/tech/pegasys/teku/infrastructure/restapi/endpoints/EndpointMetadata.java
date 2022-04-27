@@ -151,17 +151,14 @@ public class EndpointMetadata {
     if (maybeContentType.isEmpty()) {
       return defaultRequestContentType;
     }
-    final String providedContentType = maybeContentType.get();
-    for (String supportedContentType : requestBodyTypes.keySet()) {
-      if (supportedContentType.equalsIgnoreCase(providedContentType)) {
-        return supportedContentType;
-      }
-    }
-    throw new BadRequestException(
-        "Request content type "
-            + maybeContentType.get()
-            + " is not supported. Must be one of: "
-            + requestBodyTypes.keySet());
+    return ContentTypes.getContentType(requestBodyTypes.keySet(), maybeContentType)
+        .orElseThrow(
+            () ->
+                new BadRequestException(
+                    "Request content type "
+                        + maybeContentType.get()
+                        + " is not supported. Must be one of: "
+                        + requestBodyTypes.keySet()));
   }
 
   public HandlerType getMethod() {

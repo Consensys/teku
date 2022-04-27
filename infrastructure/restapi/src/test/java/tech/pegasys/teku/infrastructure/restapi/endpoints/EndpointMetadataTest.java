@@ -333,6 +333,22 @@ class EndpointMetadataTest {
   }
 
   @Test
+  void getRequestBody_shouldSupportJsonWithCharset() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(
+                SERIALIZABLE_ONE_OF_TYPE_DEFINITION,
+                this::selector,
+                bytes -> new TestObjA(bytes.toString()))
+            .response(SC_OK, "Success")
+            .build();
+    final TestType body =
+        metadata.getRequestBody(
+            toStream("{\"value1\":\"FOO\"}"), Optional.of("application/json; charset=UTF-8"));
+    assertThat(body).isEqualTo(new TestObjA("FOO"));
+  }
+
+  @Test
   void getRequestBody_shouldThrowExceptionWhenContentTypeNotSupported() throws Exception {
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(STRING_TYPE).response(SC_OK, "Success").build();
