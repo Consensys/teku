@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord.NEVER_SIGNED;
+import static tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord.NEVER_SIGNED;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
-import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
+import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

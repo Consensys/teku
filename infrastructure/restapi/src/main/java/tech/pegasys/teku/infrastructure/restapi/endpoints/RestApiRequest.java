@@ -14,22 +14,23 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class RestApiRequest {
   private static final Logger LOG = LogManager.getLogger();
@@ -51,53 +52,57 @@ public class RestApiRequest {
   }
 
   public void respondOk(final Object response) throws JsonProcessingException {
-    respond(HttpStatusCodes.SC_OK, JSON_CONTENT_TYPE, response);
+    respond(SC_OK, response);
   }
 
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
     context.future(
-        futureResponse.thenApply(
-            result -> {
-              try {
-                return respond(
-                    result.getResponseCode(), JSON_CONTENT_TYPE, result.getResponseBody());
-              } catch (JsonProcessingException e) {
-                LOG.trace("Failed to generate API response", e);
-                context.status(SC_INTERNAL_SERVER_ERROR);
-              }
-              return "";
-            }));
+        futureResponse
+            .thenApply(
+                result -> {
+                  try {
+                    return respond(result.getResponseCode(), result.getResponseBody());
+                  } catch (JsonProcessingException e) {
+                    LOG.trace("Failed to generate API response", e);
+                    context.status(SC_INTERNAL_SERVER_ERROR);
+                    return Bytes.EMPTY.toArrayUnsafe();
+                  }
+                })
+            .thenApply(ByteArrayInputStream::new));
   }
 
   public void respondOk(final Object response, final CacheLength cacheLength)
       throws JsonProcessingException {
     context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());
-    respond(HttpStatusCodes.SC_OK, JSON_CONTENT_TYPE, response);
+    respond(SC_OK, response);
   }
 
   public void respondError(final int statusCode, final String message)
       throws JsonProcessingException {
-    respond(statusCode, JSON_CONTENT_TYPE, new HttpErrorResponse(statusCode, message));
+    respond(statusCode, new HttpErrorResponse(statusCode, message));
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private String respond(
-      final int statusCode, final String contentType, final Optional<Object> response)
+  private byte[] respond(final int statusCode, final Optional<Object> response)
       throws JsonProcessingException {
     context.status(statusCode);
     if (response.isPresent()) {
-      final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
-      return JsonUtil.serialize(response.get(), type);
+      final String contentType = selectContentType(statusCode);
+      context.contentType(contentType);
+      return metadata.serialize(statusCode, contentType, response.get());
     }
-    return "";
+    return Bytes.EMPTY.toArrayUnsafe();
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private void respond(final int statusCode, final String contentType, final Object response)
-      throws JsonProcessingException {
-    final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
+  private void respond(final int statusCode, final Object response) throws JsonProcessingException {
     context.status(statusCode);
-    context.result(JsonUtil.serialize(response, type));
+    final String contentType = selectContentType(statusCode);
+    context.contentType(contentType);
+    context.result(metadata.serialize(statusCode, contentType, response));
+  }
+
+  private String selectContentType(final int statusCode) {
+    return metadata.selectContentType(
+        statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
   }
 
   /** This is only used when intending to return status code without a response body */

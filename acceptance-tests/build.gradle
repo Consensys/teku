@@ -4,12 +4,12 @@ dependencies {
   acceptanceTestImplementation project(':data:serializer')
   acceptanceTestImplementation project(':ethereum:spec')
 
+  testFixturesImplementation project(':beacon:pow')
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
   testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
-  testFixturesImplementation project(':pow')
   testFixturesImplementation project(':data:publisher')
   testFixturesImplementation testFixtures(project(':data:publisher'))
   testFixturesImplementation project(':infrastructure:async')

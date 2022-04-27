@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.data.slashinginterchange;
 
-import static tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord.isNeverSigned;
+import static tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord.isNeverSigned;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
+import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SigningHistory {

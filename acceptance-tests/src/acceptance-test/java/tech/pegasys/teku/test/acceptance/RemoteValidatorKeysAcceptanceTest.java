@@ -37,7 +37,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "less-swift";
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
-    final URL resource =
+    final URL networkYaml =
         Resources.getResource("tech/pegasys/teku/spec/config/configs/less-swift.yaml");
 
     final ValidatorKeystores validatorKeystores =
@@ -45,22 +45,9 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final TekuNode beaconNode =
         createTekuNode(
-            config -> {
-              try {
-                config.withNetwork(resource.openStream(), networkName).withDepositsFrom(eth1Node);
-              } catch (IOException e) {
-                LOG.error("BN configuration failed", e);
-              }
-            });
+            config -> config.withNetwork(networkYaml, networkName).withDepositsFrom(eth1Node));
     final Web3SignerNode web3SignerNode =
-        createWeb3SignerNode(
-            config -> {
-              try {
-                config.withNetwork(resource.openStream());
-              } catch (IOException e) {
-                LOG.error("Signer configuration failed", e);
-              }
-            });
+        createWeb3SignerNode(config -> config.withNetwork(networkYaml));
     web3SignerNode.start();
     final ValidatorKeysApi signerApi = web3SignerNode.getValidatorKeysApi();
 
@@ -69,7 +56,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
             config -> {
               try {
                 config
-                    .withNetwork(resource.openStream())
+                    .withNetwork(networkYaml.openStream())
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()

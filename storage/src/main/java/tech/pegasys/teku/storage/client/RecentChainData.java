@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +30,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.ethereum.forkchoice.ForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -79,7 +81,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final MetricsSystem metricsSystem;
   private final ChainHeadChannel chainHeadChannel;
   private final StoreConfig storeConfig;
-  private final Spec spec;
+  protected final Spec spec;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -136,14 +138,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void initializeFromAnchorPoint(final AnchorPoint anchorPoint, final UInt64 currentTime) {
     final UpdatableStore store =
-        StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner,
-                metricsSystem,
-                spec,
-                blockProvider,
-                stateProvider,
-                anchorPoint,
-                currentTime)
+        StoreBuilder.create()
+            .onDiskStoreData(StoreBuilder.forkChoiceStoreBuilder(spec, anchorPoint, currentTime))
+            .asyncRunner(asyncRunner)
+            .metricsSystem(metricsSystem)
+            .specProvider(spec)
+            .blockProvider(blockProvider)
+            .stateProvider(stateProvider)
             .storeConfig(storeConfig)
             .build();
 
@@ -162,12 +163,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return genesisTime;
   }
 
-  public UInt64 computeTimeAtSlot(UInt64 slot) {
-    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+  public UInt64 getGenesisTimeMillis() {
+    return secondsToMillis(genesisTime);
   }
 
-  public UInt64 computeMillisSinceSlotStart(UInt64 currentTimeMs, UInt64 slot) {
-    return currentTimeMs.minus(computeTimeAtSlot(slot).times(1000));
+  public UInt64 computeTimeAtSlot(UInt64 slot) {
+    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
   }
 
   public Optional<GenesisData> getGenesisData() {

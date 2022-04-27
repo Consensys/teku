@@ -62,8 +62,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** JMH base class for measuring state transitions performance */
-@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @Threads(1)
 @Fork(1)
@@ -82,11 +82,12 @@ public class EpochTransitionBenchmark {
   ValidatorStatuses validatorStatuses;
   RewardAndPenaltyDeltas attestationDeltas;
 
-  @Param({"32768"})
-  int validatorsCount = 32768;
+  @Param({"400000"})
+  int validatorsCount = 400000;
 
   @Setup(Level.Trial)
   public void init() throws Exception {
+    spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.blsVerifyDeposit = false;
 
     spec = TestSpecFactory.createMainnetAltair();
@@ -96,7 +97,7 @@ public class EpochTransitionBenchmark {
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz";
+    String keysFile = "/bls-key-pairs/bls-key-pairs-400k-seed-0.txt.gz";
 
     System.out.println("Generating keypairs from " + keysFile);
     List<BLSKeyPair> validatorKeys =

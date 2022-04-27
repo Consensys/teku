@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -41,14 +42,23 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForSignBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    final SpecVersion specVersion = spec.atSlot(block.getSlot());
+    return spec.computeSigningRoot(block, getDomainForSignBlock(block.getSlot(), forkInfo));
+  }
+
+  public Bytes signingRootForSignBlockHeader(
+      final BeaconBlockHeader blockHeader, final ForkInfo forkInfo) {
+    return spec.computeSigningRoot(
+        blockHeader, getDomainForSignBlock(blockHeader.getSlot(), forkInfo));
+  }
+
+  private Bytes32 getDomainForSignBlock(UInt64 slot, ForkInfo forkInfo) {
     final Bytes32 domain =
         spec.getDomain(
             Domain.BEACON_PROPOSER,
-            spec.computeEpochAtSlot(block.getSlot()),
+            spec.computeEpochAtSlot(slot),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return specVersion.miscHelpers().computeSigningRoot(block, domain);
+    return domain;
   }
 
   public Bytes signingRootForSignAttestationData(

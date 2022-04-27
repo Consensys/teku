@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.Optional;
@@ -52,6 +53,24 @@ public class JsonUtil {
     return writer.toString();
   }
 
+  public static <T> void serializeToBytes(
+      final T value, final SerializableTypeDefinition<T> type, final OutputStream out)
+      throws JsonProcessingException {
+    serializeToBytes(FACTORY, gen -> type.serialize(value, gen), out);
+  }
+
+  public static void serializeToBytes(
+      final JsonFactory factory, final JsonWriter serializer, final OutputStream out)
+      throws JsonProcessingException {
+    try (final JsonGenerator gen = factory.createGenerator(out)) {
+      serializer.accept(gen);
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   public static <T> T parse(final String json, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
     try (final JsonParser parser = FACTORY.createParser(json)) {
@@ -65,9 +84,12 @@ public class JsonUtil {
   }
 
   public static <T> Optional<T> getAttribute(
-      final String json, final DeserializableTypeDefinition<T> type, final String... path) {
+      final String json, final DeserializableTypeDefinition<T> type, final String... path)
+      throws JsonProcessingException {
     try (final JsonParser parser = FACTORY.createParser(json)) {
       return getAttributeFromParser(parser, type, 0, path);
+    } catch (final JsonProcessingException e) {
+      throw e;
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }

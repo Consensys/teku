@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -126,6 +129,10 @@ public class Spec {
     return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
   }
 
+  private SpecVersion atTimeMillis(final UInt64 genesisTimeMillis, final UInt64 currentTimeMillis) {
+    return atTime(millisToSeconds(genesisTimeMillis), millisToSeconds(currentTimeMillis));
+  }
+
   public SpecConfig getSpecConfig(final UInt64 epoch) {
     return atEpoch(epoch).getConfig();
   }
@@ -195,6 +202,10 @@ public class Spec {
 
   public int getSecondsPerSlot(final UInt64 slot) {
     return atSlot(slot).getConfig().getSecondsPerSlot();
+  }
+
+  public UInt64 getMillisPerSlot(final UInt64 slot) {
+    return secondsToMillis(getSecondsPerSlot(slot));
   }
 
   public long getMaxDeposits(final BeaconState state) {
@@ -289,6 +300,10 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
+  }
+
+  public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
+    return atSlot(blockHeader.getSlot()).miscHelpers().computeSigningRoot(blockHeader, domain);
   }
 
   public Bytes computeSigningRoot(AggregateAndProof proof, Bytes32 domain) {
@@ -391,6 +406,12 @@ public class Spec {
         .getCurrentSlot(currentTime, genesisTime);
   }
 
+  public UInt64 getCurrentSlotForMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
+    return atTimeMillis(genesisTimeMillis, currentTimeMillis)
+        .getForkChoiceUtil()
+        .getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
+  }
+
   public UInt64 getCurrentSlot(ReadOnlyStore store) {
     return atTime(store.getGenesisTime(), store.getTimeSeconds())
         .getForkChoiceUtil()
@@ -399,6 +420,12 @@ public class Spec {
 
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
     return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
+  }
+
+  public UInt64 getSlotStartTimeMillis(UInt64 slotNumber, UInt64 genesisTimeMillis) {
+    return atSlot(slotNumber)
+        .getForkChoiceUtil()
+        .getSlotStartTimeMillis(slotNumber, genesisTimeMillis);
   }
 
   public Optional<Bytes32> getAncestor(
@@ -433,8 +460,10 @@ public class Spec {
     return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
-  public void onTick(MutableStore store, UInt64 time) {
-    atTime(store.getGenesisTime(), time).getForkChoiceUtil().onTick(store, time);
+  public void onTick(MutableStore store, UInt64 timeMillis) {
+    atTimeMillis(store.getGenesisTimeMillis(), timeMillis)
+        .getForkChoiceUtil()
+        .onTick(store, timeMillis);
   }
 
   public AttestationProcessingResult validateAttestation(

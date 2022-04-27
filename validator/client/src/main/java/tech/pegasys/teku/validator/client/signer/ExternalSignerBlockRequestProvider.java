@@ -19,16 +19,20 @@ import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 
 public class ExternalSignerBlockRequestProvider {
   private final Spec spec;
   private final SchemaObjectProvider schemaObjectProvider;
   private final BeaconBlock block;
+  private final BeaconBlockHeader blockHeader;
+
   private final SignType signType;
 
   public ExternalSignerBlockRequestProvider(final Spec spec, final BeaconBlock block) {
     this.spec = spec;
     this.block = block;
+    this.blockHeader = BeaconBlockHeader.fromBlock(block);
     schemaObjectProvider = new SchemaObjectProvider(spec);
     // backward compatible with phase 0
     if (spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.PHASE0)) {
@@ -43,12 +47,20 @@ public class ExternalSignerBlockRequestProvider {
 
     final tech.pegasys.teku.api.schema.BeaconBlock beaconBlock =
         schemaObjectProvider.getBeaconBlock(block);
-    if (signType == SignType.BLOCK) {
-      metadata.put("block", beaconBlock); // backward compatible with phase0
-    } else {
-      metadata.put(
-          "beacon_block",
-          new BlockRequestBody(spec.atSlot(block.getSlot()).getMilestone(), beaconBlock));
+    final tech.pegasys.teku.api.schema.BeaconBlockHeader beaconBlockHeader =
+        new tech.pegasys.teku.api.schema.BeaconBlockHeader(blockHeader);
+
+    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
+    switch (milestone) {
+      case PHASE0:
+        metadata.put("block", beaconBlock); // backward compatible with phase0
+        break;
+      case ALTAIR:
+        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlock));
+        break;
+      default:
+        // use block header for BELLATRIX and onward milestones
+        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlockHeader));
     }
 
     return metadata;

@@ -52,13 +52,7 @@ public class LevelDbDatabaseFactory {
         LevelDbInstanceFactory.create(
             metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, v4FinalizedColumns);
     return KvStoreDatabase.createV4(
-        metricsSystem,
-        hotDb,
-        finalizedDb,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+        hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createLevelDbV2(
@@ -76,7 +70,6 @@ public class LevelDbDatabaseFactory {
     db = LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
 
     return KvStoreDatabase.createWithStateSnapshots(
-        metricsSystem,
         db,
         db,
         schemaHot,

@@ -8,7 +8,6 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:serviceutils')
-  implementation project(':storage:api')
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
   implementation project(':validator:eventadapter')

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -78,8 +78,8 @@ public class GetState extends AbstractHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(type = HEADER_ACCEPT_JSON, from = GetStateResponseV2.class),
-              @OpenApiContent(type = HEADER_ACCEPT_OCTET)
+              @OpenApiContent(type = JSON, from = GetStateResponseV2.class),
+              @OpenApiContent(type = OCTET_STREAM)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
@@ -90,7 +90,8 @@ public class GetState extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (getContentType(ACCEPT_ALL, maybeAcceptHeader).equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+    if (getContentType(SSZ_OR_JSON_CONTENT_TYPES, maybeAcceptHeader)
+        .equalsIgnoreCase(OCTET_STREAM)) {
       final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalSszResult(

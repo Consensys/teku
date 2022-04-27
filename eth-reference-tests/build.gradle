@@ -15,6 +15,7 @@ dependencies {
   referenceTestImplementation testFixtures(project(':storage'))
   referenceTestImplementation project(':infrastructure:async')
   referenceTestImplementation testFixtures(project(':infrastructure:async'))
+  referenceTestImplementation project(':infrastructure:time')
 
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

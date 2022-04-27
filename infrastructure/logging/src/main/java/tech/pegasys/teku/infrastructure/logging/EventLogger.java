@@ -15,12 +15,15 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -134,15 +137,20 @@ public class EventLogger {
       final Bytes32 bestBlockRoot,
       final UInt64 justifiedCheckpoint,
       final UInt64 finalizedCheckpoint,
+      final boolean mergeComplete,
       final int numPeers) {
     String blockRoot = "                                                       ... empty";
     if (nodeSlot.equals(headSlot)) {
       blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
     }
+    final String panda =
+        mergeComplete && System.getProperty("teku.pandas", "false").equalsIgnoreCase("true")
+            ? "🐼 "
+            : "";
     final String slotEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
-            nodeSlot, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
+            "Slot Event  *** Slot: %s, %sBlock: %s, Justified: %s, Finalized: %s, Peers: %d",
+            nodeSlot, panda, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
     info(slotEventLog, Color.WHITE);
   }
 
@@ -177,6 +185,19 @@ public class EventLogger {
         Color.GREEN);
   }
 
+  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta) {
+
+    final String etaString =
+        String.format(
+            "%s days and %sh %sm %ss",
+            eta.toDays(),
+            eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
+            eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
+            eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
+
+    log.info(String.format("TTD (%s) ETA: %s", ttd, etaString));
+  }
+
   public void transitionConfigurationTtdTbhMismatch(
       final String localConfig, final String remoteConfig) {
     final String configurationErrorEventLog =
@@ -197,10 +218,12 @@ public class EventLogger {
     error(configurationErrorEventLog, Color.RED);
   }
 
-  public void lateBlockImport(final Bytes32 root, final UInt64 slot, final String timings) {
+  public void lateBlockImport(
+      final Bytes32 root, final UInt64 slot, final UInt64 proposer, final String timings) {
     String reorgEventLog =
         String.format(
-            "Late Block Import *** Block: %s %s", LogFormatter.formatBlock(slot, root), timings);
+            "Late Block Import *** Block: %s proposer %s %s",
+            LogFormatter.formatBlock(slot, root), proposer, timings);
     warn(reorgEventLog, Color.YELLOW);
   }
 

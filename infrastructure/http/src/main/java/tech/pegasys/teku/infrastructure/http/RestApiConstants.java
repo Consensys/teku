@@ -109,8 +109,6 @@ public class RestApiConstants {
           + " status code when current peer count is below than target";
 
   public static final String HEADER_ACCEPT = "Accept";
-  public static final String HEADER_ACCEPT_JSON = "application/json";
-  public static final String HEADER_ACCEPT_OCTET = "application/octet-stream";
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
 

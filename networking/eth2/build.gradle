@@ -1,9 +1,7 @@
 dependencies {
   api project(':networking:p2p')
-  implementation project(':data')
   implementation project(':ethereum:core')
   implementation project(':ethereum:events')
-  implementation project(':ethereum:forkchoice')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')

@@ -58,7 +58,7 @@ executors:
 
   machine_executor_amd64:
     machine:
-      image: ubuntu-2004:202008-01 #Ubuntu 20.04, docker 19.03, docker-compose 1.27.4
+      image: ubuntu-2004:202201-02 # Ubuntu 20.04, Docker v20.10.12, Docker Compose v1.29.2
       docker_layer_caching: true
     working_directory: ~/project
     environment:
@@ -67,7 +67,7 @@ executors:
 
   machine_executor_arm64:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2004:202201-02 # Ubuntu 20.04, Docker v20.10.12, Docker Compose v1.29.2
     resource_class: arm.medium
     environment:
       architecture: "arm64"
@@ -193,9 +193,8 @@ jobs:
       - restore_cache:
           name: Restore cached gradle dependencies
           keys:
-            - windows-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
-            - windows-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
-            - windows-
+            - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
+            - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
       - run:
           name: Build
           command: |
@@ -210,12 +209,6 @@ jobs:
             Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
       - store_test_results:
           path: build/test-results
-      - save_cache:
-          name: Caching gradle dependencies
-          key: windows-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - .gradle
-            - ~/.gradle
 
   spotless:
     executor: small_executor

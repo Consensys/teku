@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
@@ -38,6 +39,7 @@ import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,7 +64,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.timer.TimerService;
@@ -1054,20 +1055,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (recentChainData.isPreGenesis()) {
       return;
     }
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    forkChoice.onTick(currentTime);
+
+    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final UInt64 currentTimeSeconds = millisToSeconds(currentTimeMillis);
+
+    forkChoice.onTick(currentTimeMillis);
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    if (genesisTime.isGreaterThan(currentTime)) {
+    if (genesisTime.isGreaterThan(currentTimeSeconds)) {
       // notify every 10 minutes
-      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTime)) {
-        genesisTimeTracker = currentTime;
+      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTimeSeconds)) {
+        genesisTimeTracker = currentTimeSeconds;
         STATUS_LOG.timeUntilGenesis(
-            genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());
+            genesisTime.minus(currentTimeSeconds).longValue(), p2pNetwork.getPeerCount());
       }
     }
 
-    slotProcessor.onTick(currentTime);
+    slotProcessor.onTick(currentTimeMillis);
   }
 
   @Override

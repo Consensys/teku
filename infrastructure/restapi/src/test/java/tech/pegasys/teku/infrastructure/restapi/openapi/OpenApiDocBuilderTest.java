@@ -124,7 +124,8 @@ class OpenApiDocBuilderTest {
                     200,
                     "It depends",
                     Map.of(
-                        "application/json", CoreTypes.STRING_TYPE, "uint", CoreTypes.UINT64_TYPE))
+                        "application/json", ContentTypeDefinition.json(CoreTypes.STRING_TYPE),
+                        "uint", ContentTypeDefinition.json(CoreTypes.UINT64_TYPE)))
                 .response(404, "Not 'ere gov", CoreTypes.HTTP_ERROR_RESPONSE_TYPE)
                 .build());
     final Map<String, Object> result = parse(validBuilder().endpoint(endpoint).build());

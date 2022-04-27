@@ -14,9 +14,10 @@
 package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
+import static tech.pegasys.teku.beacon.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -29,28 +30,29 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.beacon.pow.BlockBasedEth1HeadTracker;
+import tech.pegasys.teku.beacon.pow.DepositEventsAccessor;
+import tech.pegasys.teku.beacon.pow.DepositFetcher;
+import tech.pegasys.teku.beacon.pow.DepositProcessingController;
+import tech.pegasys.teku.beacon.pow.ErrorTrackingEth1Provider;
+import tech.pegasys.teku.beacon.pow.Eth1BlockFetcher;
+import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
+import tech.pegasys.teku.beacon.pow.Eth1HeadTracker;
+import tech.pegasys.teku.beacon.pow.Eth1Provider;
+import tech.pegasys.teku.beacon.pow.Eth1ProviderSelector;
+import tech.pegasys.teku.beacon.pow.FallbackAwareEth1Provider;
+import tech.pegasys.teku.beacon.pow.MinimumGenesisTimeBlockFinder;
+import tech.pegasys.teku.beacon.pow.ThrottlingEth1Provider;
+import tech.pegasys.teku.beacon.pow.TimeBasedEth1HeadTracker;
+import tech.pegasys.teku.beacon.pow.ValidatingEth1EventsPublisher;
+import tech.pegasys.teku.beacon.pow.Web3jEth1Provider;
+import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
+import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.pow.BlockBasedEth1HeadTracker;
-import tech.pegasys.teku.pow.DepositEventsAccessor;
-import tech.pegasys.teku.pow.DepositFetcher;
-import tech.pegasys.teku.pow.DepositProcessingController;
-import tech.pegasys.teku.pow.ErrorTrackingEth1Provider;
-import tech.pegasys.teku.pow.Eth1BlockFetcher;
-import tech.pegasys.teku.pow.Eth1DepositManager;
-import tech.pegasys.teku.pow.Eth1HeadTracker;
-import tech.pegasys.teku.pow.Eth1Provider;
-import tech.pegasys.teku.pow.Eth1ProviderSelector;
-import tech.pegasys.teku.pow.FallbackAwareEth1Provider;
-import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
-import tech.pegasys.teku.pow.ThrottlingEth1Provider;
-import tech.pegasys.teku.pow.TimeBasedEth1HeadTracker;
-import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
-import tech.pegasys.teku.pow.Web3jEth1Provider;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -66,29 +68,48 @@ public class PowchainService extends Service {
   private final List<Web3j> web3js;
   private final OkHttpClient okHttpClient;
 
-  public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
-    checkArgument(powConfig.isEnabled());
+  public PowchainService(
+      final ServiceConfig serviceConfig,
+      final PowchainConfiguration powConfig,
+      final Optional<ExecutionClientProvider> maybeExecutionClientProvider) {
+    checkArgument(powConfig.isEnabled() || maybeExecutionClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     this.okHttpClient = createOkHttpClient();
-    this.web3js = createWeb3js(powConfig);
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
-    Eth1ProviderSelector eth1ProviderSelector =
-        new Eth1ProviderSelector(
-            IntStream.range(0, web3js.size())
-                .mapToObj(
-                    idx ->
-                        new Web3jEth1Provider(
-                            powConfig.getSpec().getGenesisSpecConfig(),
-                            serviceConfig.getMetricsSystem(),
-                            Eth1Provider.generateEth1ProviderId(
-                                idx + 1, powConfig.getEth1Endpoints().get(idx)),
-                            web3js.get(idx),
-                            asyncRunner,
-                            serviceConfig.getTimeProvider()))
-                .collect(Collectors.toList()));
-
+    final Eth1ProviderSelector eth1ProviderSelector;
+    if (!powConfig.isEnabled()) {
+      LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
+      this.web3js =
+          Collections.singletonList(maybeExecutionClientProvider.orElseThrow().getWeb3j());
+      eth1ProviderSelector =
+          new Eth1ProviderSelector(
+              Collections.singletonList(
+                  new Web3jEth1Provider(
+                      powConfig.getSpec().getGenesisSpecConfig(),
+                      serviceConfig.getMetricsSystem(),
+                      maybeExecutionClientProvider.get().getEndpoint(),
+                      web3js.get(0),
+                      asyncRunner,
+                      serviceConfig.getTimeProvider())));
+    } else {
+      this.web3js = createWeb3js(powConfig);
+      eth1ProviderSelector =
+          new Eth1ProviderSelector(
+              IntStream.range(0, web3js.size())
+                  .mapToObj(
+                      idx ->
+                          new Web3jEth1Provider(
+                              powConfig.getSpec().getGenesisSpecConfig(),
+                              serviceConfig.getMetricsSystem(),
+                              Eth1Provider.generateEth1ProviderId(
+                                  idx + 1, powConfig.getEth1Endpoints().get(idx)),
+                              web3js.get(idx),
+                              asyncRunner,
+                              serviceConfig.getTimeProvider()))
+                  .collect(Collectors.toList()));
+    }
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(

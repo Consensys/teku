@@ -81,6 +81,31 @@ dependencyRules {
     register(":infrastructure:logging") {
       allowed = [":infrastructure:unsigned"]
     }
+
+    ['core', 'dataproviders', 'events', 'executionengine', 'executionlayer', 'networks', 'pow', 'signingrecord', 'spec'].forEach( {
+      register(":ethereum:${it}") {
+        allowed = [
+            ":infrastructure:",
+            ":ethereum:"
+        ]
+      }
+    })
+
+    // ethereum modules that need to be fixed. At least stop new dependencies being added
+    register(":ethereum:statetransition") {
+      allowed = [
+          ":infrastructure:",
+          ":ethereum:",
+          ":storage"
+      ]
+    }
+    register(":ethereum:weaksubjectivity") {
+      allowed = [
+          ":infrastructure:",
+          ":ethereum:",
+          ":storage"
+      ]
+    }
   }
 }
 

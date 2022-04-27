@@ -101,6 +101,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -215,6 +216,7 @@ public class BeaconRestApi {
     app.exception(NodeSyncingException.class, this::serviceUnavailable);
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
     app.exception(BadRequestException.class, this::badRequest);
+    app.exception(IllegalArgumentException.class, this::badRequest);
     // Add catch-all handler
     app.exception(
         Exception.class,
@@ -361,10 +363,7 @@ public class BeaconRestApi {
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, jsonProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
-        new tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock(
-            dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetNewBlock(dataProvider, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, schemaCache));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
@@ -400,7 +399,7 @@ public class BeaconRestApi {
     app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
-    app.post(PostBlock.ROUTE, new PostBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostBlock(dataProvider, schemaCache));
     addMigratedEndpoint(new PostBlindedBlock(dataProvider, schemaCache));
 
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));

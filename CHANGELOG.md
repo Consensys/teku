@@ -15,15 +15,16 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-
+- For Bellatrix fork and later, send `block_header` instead of `block` for external signer block signing request (`BLOCK_V2`)
 
 ### Additions and Improvements
 - Improved performance when regenerating non-finalized states that had to be dropped from memory.
-- Performance optimizations for Gnosis beacon chain
 - Performance optimizations for Gnosis beacon chain.
 - Improved performance when processing epoch transitions.
 - Added `is_optimistic` field to `/eth/v1/node/syncing` response.
+- Using execution engine endpoint as Eth1 endpoint when latter is not provided.
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
 - Fixed issue with loading the optimised BLST library on Windows.
+- Reduced log level for notifications that the eth1 chain head could not be retrieved because no endpoints were available.

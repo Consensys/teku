@@ -111,7 +111,8 @@ public class BlockImportPerformance {
 
     if (isLateEvent) {
       final String combinedTimings = String.join(", ", lateBlockEventTimings);
-      eventLogger.lateBlockImport(block.getRoot(), block.getSlot(), combinedTimings);
+      eventLogger.lateBlockImport(
+          block.getRoot(), block.getSlot(), block.getProposerIndex(), combinedTimings);
     }
   }
 
