@@ -19,6 +19,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -113,7 +114,12 @@ public class PostBlock extends MigratingEndpointAdapter {
       method = HttpMethod.POST,
       summary = "Publish a signed block",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBlock.class)}),
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(from = SignedBlock.class),
+                @OpenApiContent(type = OCTET_STREAM)
+              }),
       description =
           "Submit a signed beacon block to the beacon node to be imported."
               + " The beacon node performs the required validation.",
