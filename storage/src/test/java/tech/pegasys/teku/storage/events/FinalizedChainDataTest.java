@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.api.FinalizedChainData;
 
 public class FinalizedChainDataTest {
   private final Spec spec = TestSpecFactory.createDefault();

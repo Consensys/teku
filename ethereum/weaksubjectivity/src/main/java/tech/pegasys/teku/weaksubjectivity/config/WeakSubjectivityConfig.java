@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
+import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 
 public class WeakSubjectivityConfig {
   public static final UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);

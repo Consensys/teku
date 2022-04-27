@@ -30,12 +30,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.api.WeakSubjectivityState;
+import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class NoOpDatabase implements Database {
 
@@ -54,7 +54,7 @@ public class NoOpDatabase implements Database {
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {}
 
   @Override
-  public Optional<StoreBuilder> createMemoryStore() {
+  public Optional<OnDiskStoreData> createMemoryStore() {
     return Optional.empty();
   }
 

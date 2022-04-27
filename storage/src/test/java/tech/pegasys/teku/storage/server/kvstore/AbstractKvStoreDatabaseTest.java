@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -80,13 +82,24 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   public void createMemoryStore_priorToGenesisTime() {
     database.storeInitialAnchor(genesisAnchor);
 
-    final Optional<StoreBuilder> storeBuilder =
+    final Optional<OnDiskStoreData> maybeData =
         ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
-    assertThat(storeBuilder).isNotEmpty();
+    assertThat(maybeData).isNotEmpty();
 
+    final OnDiskStoreData data = maybeData.get();
     final UpdatableStore store =
-        storeBuilder
-            .get()
+        StoreBuilder.create()
+            .metricsSystem(new NoOpMetricsSystem())
+            .specProvider(spec)
+            .time(data.getTime())
+            .anchor(data.getAnchor())
+            .genesisTime(data.getGenesisTime())
+            .latestFinalized(data.getLatestFinalized())
+            .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
+            .justifiedCheckpoint(data.getJustifiedCheckpoint())
+            .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
+            .blockInformation(data.getBlockInformation())
+            .votes(data.getVotes())
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))

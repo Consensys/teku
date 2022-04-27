@@ -29,11 +29,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.api.WeakSubjectivityState;
+import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 public interface Database extends AutoCloseable {
 
@@ -45,7 +45,7 @@ public interface Database extends AutoCloseable {
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
-  Optional<StoreBuilder> createMemoryStore();
+  Optional<OnDiskStoreData> createMemoryStore();
 
   WeakSubjectivityState getWeakSubjectivityState();
 

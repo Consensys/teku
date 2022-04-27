@@ -7,7 +7,6 @@ dependencies {
   implementation project(':data:provider')
   implementation project(':ethereum:core')
   implementation project(':ethereum:events')
-  implementation project(':ethereum:forkchoice')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
