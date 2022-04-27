@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.forkchoice.StoredBlockMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -34,7 +33,7 @@ public class OnDiskStoreData {
   private final Checkpoint bestJustifiedCheckpoint;
   private final Map<Bytes32, StoredBlockMetadata> blockInformation;
   private final Map<UInt64, VoteTracker> votes;
-  private Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload = Optional.empty();
+  private final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
 
   public OnDiskStoreData(
       final UInt64 time,
@@ -44,8 +43,7 @@ public class OnDiskStoreData {
       final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
-      final Map<Bytes32, tech.pegasys.teku.ethereum.forkchoice.StoredBlockMetadata>
-          blockInformation,
+      final Map<Bytes32, StoredBlockMetadata> blockInformation,
       final Map<UInt64, VoteTracker> votes) {
 
     this.time = time;

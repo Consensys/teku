@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.forkchoice;
+package tech.pegasys.teku.storage.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayScoreCalculator.computeDeltas;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.createStoreToManipulateVotes;
-import static tech.pegasys.teku.ethereum.forkchoice.ProtoArrayTestUtil.getHash;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.storage.protoarray.ProtoArrayScoreCalculator.computeDeltas;
+import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
+import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.getHash;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;

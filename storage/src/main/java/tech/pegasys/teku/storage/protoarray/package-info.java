@@ -7,4 +7,4 @@
  * Hauner and others for the implementation.
  * https://github.com/sigp/lighthouse/tree/master/eth2/proto_array_fork_choice
  */
-package tech.pegasys.teku.ethereum.forkchoice;
+package tech.pegasys.teku.storage.protoarray;

@@ -1,7 +1,6 @@
 dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:events')
-    implementation project(':ethereum:forkchoice')
     implementation project(':ethereum:spec')
 
     implementation 'org.apache.tuweni:tuweni-bytes'
