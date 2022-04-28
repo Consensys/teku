@@ -180,7 +180,7 @@ public class BeaconRestApi {
     addBeaconHandlers(dataProvider, spec);
     addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
     addNodeHandlers(dataProvider);
-    addValidatorHandlers(dataProvider);
+    addValidatorHandlers(dataProvider, spec);
     addConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
     addDebugHandlers(dataProvider);
   }
@@ -357,15 +357,15 @@ public class BeaconRestApi {
     openApiDocBuilder.endpoint(endpoint);
   }
 
-  private void addValidatorHandlers(final DataProvider dataProvider) {
+  private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, jsonProvider));
-    addMigratedEndpoint(new GetNewBlock(dataProvider, schemaCache));
-    addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, schemaCache));
+    addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
+    addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));

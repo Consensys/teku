@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.restapi.openapi.response;
 
+import static java.util.Collections.emptyMap;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -31,5 +34,10 @@ public class JsonResponseContentTypeDefinition<T> extends DelegatingOpenApiTypeD
   @Override
   public void serialize(final T value, final OutputStream out) throws IOException {
     JsonUtil.serializeToBytes(value, typeDefinition, out);
+  }
+
+  @Override
+  public Map<String, String> getAdditionalHeaders(final T value) {
+    return emptyMap();
   }
 }

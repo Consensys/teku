@@ -111,6 +111,7 @@ public class RestApiConstants {
   public static final String HEADER_ACCEPT = "Accept";
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
+  public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
 
   public static final String CACHE_NONE = "max-age=0";
 }
