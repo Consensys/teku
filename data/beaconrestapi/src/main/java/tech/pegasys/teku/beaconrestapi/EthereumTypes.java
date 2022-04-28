@@ -51,7 +51,7 @@ public class EthereumTypes {
                 RestApiConstants.HEADER_CONTENT_DISPOSITION,
                 String.format(
                     "filename=\"%s%s.ssz\"",
-                    value.getSchema().getName().map(name -> name = "-").orElse(""),
+                    value.getSchema().getName().map(name -> name + "-").orElse(""),
                     value.hashTreeRoot().toUnprefixedHexString())));
   }
 }
