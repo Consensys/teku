@@ -84,7 +84,6 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
       MigrateDatabaseCommand.class,
       DebugToolsCommand.class,
       UnstableOptionsCommand.class,
-      ValidatorClientCommand.class,
       VoluntaryExitCommand.class,
       InternalToolsCommand.class,
     },
@@ -154,7 +153,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ExecutionEngineOptions executionEngineOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  private final LoggingOptions loggingOptions = new LoggingOptions();
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -182,6 +181,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
+  private final ValidatorClientCommand validatorClientSubcommand;
+
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
@@ -196,6 +197,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
     metricCategoryConverter.addCategories(TekuMetricCategory.class);
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
+    this.validatorClientSubcommand = new ValidatorClientCommand(loggingOptions);
   }
 
   private CommandLine configureCommandLine(final CommandLine commandLine) {
@@ -210,7 +212,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine getCommandLine() {
-    return configureCommandLine(new CommandLine(this));
+    return configureCommandLine(new CommandLine(this)).addSubcommand(validatorClientSubcommand);
   }
 
   public int parse(final String[] args) {
@@ -331,17 +333,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private void startLogging() {
-    LoggingConfig loggingConfig =
-        buildLoggingConfig(loggingOptions, dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
     loggingConfigurator.startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
   public LoggingConfig buildLoggingConfig(
-      final LoggingOptions loggingOptions,
-      final String logDirectoryPath,
-      final String logFilePrefix) {
+      final String logDirectoryPath, final String logFilePrefix) {
     return loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
   }
 

@@ -73,7 +73,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  @SuppressWarnings("unused")
+  private final LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -94,6 +95,10 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @ParentCommand private BeaconNodeCommand parentCommand;
 
   private static final String AUTO_NETWORK_OPTION = "auto";
+
+  public ValidatorClientCommand(final LoggingOptions sharedLoggingOptions) {
+    this.loggingOptions = sharedLoggingOptions;
+  }
 
   @Override
   public Integer call() {
@@ -118,8 +123,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private void startLogging() {
     LoggingConfig loggingConfig =
-        parentCommand.buildLoggingConfig(
-            loggingOptions, dataOptions.getDataPath(), LOG_FILE_PREFIX);
+        parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
     parentCommand.getLoggingConfigurator().startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
