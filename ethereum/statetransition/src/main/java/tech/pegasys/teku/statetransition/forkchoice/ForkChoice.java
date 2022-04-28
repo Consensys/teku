@@ -357,9 +357,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     // We only need to apply attestations from the current or previous epoch. If the block is from
     // before that, none of the attestations will be applicable so just skip the whole step.
+    // Same applies to AttesterSlashings.
     if (spec.computeEpochAtSlot(block.getSlot())
         .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
       applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
+      applyAttesterSlashingsFromBlock(block);
     }
 
     final BlockImportResult result;
@@ -574,6 +576,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               transaction.commit();
             })
         .reportExceptions();
+  }
+
+  private void applyAttesterSlashingsFromBlock(final SignedBeaconBlock signedBeaconBlock) {
+    signedBeaconBlock
+        .getBeaconBlock()
+        .ifPresent(
+            beaconBlock ->
+                beaconBlock
+                    .getBody()
+                    .getAttesterSlashings()
+                    .forEach(
+                        attesterSlashing ->
+                            onAttesterSlashing(
+                                attesterSlashing, InternalValidationResult.ACCEPT, true)));
   }
 
   public void onAttesterSlashing(
