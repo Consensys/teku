@@ -73,7 +73,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  @SuppressWarnings("unused")
   private final LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
