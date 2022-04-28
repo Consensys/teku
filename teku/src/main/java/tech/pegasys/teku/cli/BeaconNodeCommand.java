@@ -344,10 +344,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
   }
 
-  public LoggingOptions getLoggingOptions() {
-    return loggingOptions;
-  }
-
   public StartAction getStartAction() {
     return startAction;
   }

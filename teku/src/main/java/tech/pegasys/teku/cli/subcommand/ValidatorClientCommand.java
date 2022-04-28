@@ -172,7 +172,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     validatorRestApiOptions.configure(builder);
-    parentCommand.getLoggingOptions().configureWireLogs(builder);
+    loggingOptions.configureWireLogs(builder);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
     return builder.build();
