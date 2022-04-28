@@ -73,8 +73,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  @SuppressWarnings("FieldMayBeFinal")
-  private LoggingOptions loggingOptions = new LoggingOptions();
+  private LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -119,7 +118,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private void startLogging() {
     LoggingConfig loggingConfig =
-        parentCommand.buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+        parentCommand.buildLoggingConfig(
+            loggingOptions, dataOptions.getDataPath(), LOG_FILE_PREFIX);
     parentCommand.getLoggingConfigurator().startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
@@ -168,7 +168,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     validatorRestApiOptions.configure(builder);
-    loggingOptions.configureWireLogs(builder);
+    parentCommand.getLoggingOptions().configureWireLogs(builder);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
     return builder.build();

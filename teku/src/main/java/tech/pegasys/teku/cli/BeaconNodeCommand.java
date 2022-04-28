@@ -331,15 +331,22 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private void startLogging() {
-    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfig loggingConfig =
+        buildLoggingConfig(loggingOptions, dataOptions.getDataPath(), LOG_FILE_PREFIX);
     loggingConfigurator.startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
   public LoggingConfig buildLoggingConfig(
-      final String logDirectoryPath, final String logFilePrefix) {
+      final LoggingOptions loggingOptions,
+      final String logDirectoryPath,
+      final String logFilePrefix) {
     return loggingOptions.applyLoggingConfiguration(logDirectoryPath, logFilePrefix);
+  }
+
+  public LoggingOptions getLoggingOptions() {
+    return loggingOptions;
   }
 
   public StartAction getStartAction() {

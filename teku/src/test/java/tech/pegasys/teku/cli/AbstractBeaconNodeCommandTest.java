@@ -79,6 +79,7 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   public LoggingConfig getResultingLoggingConfiguration() {
     return beaconNodeCommand.buildLoggingConfig(
+        beaconNodeCommand.getLoggingOptions(),
         getResultingTekuConfiguration().dataConfig().getDataBasePath().toString(),
         BeaconNodeCommand.LOG_FILE_PREFIX);
   }
