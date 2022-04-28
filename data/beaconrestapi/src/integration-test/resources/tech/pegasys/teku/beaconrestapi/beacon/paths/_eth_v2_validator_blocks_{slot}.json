@@ -36,6 +36,11 @@
             "schema" : {
               "$ref" : "#/components/schemas/GetNewBlockResponseV2"
             }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Unit"
+            }
           }
         }
       },

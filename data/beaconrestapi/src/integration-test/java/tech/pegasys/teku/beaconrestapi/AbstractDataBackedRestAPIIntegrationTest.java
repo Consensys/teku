@@ -290,6 +290,16 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return "http://localhost:" + beaconRestApi.getListenPort() + path;
   }
 
+  protected Response getResponse(
+      final String route, Map<String, String> getParams, final String contentType)
+      throws IOException {
+    final String params =
+        getParams.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining("&"));
+    return getResponse(route + "?" + params, contentType);
+  }
+
   protected Response getResponse(final String route, Map<String, String> getParams)
       throws IOException {
     final String params =
