@@ -87,23 +87,25 @@ public class RestApiRequest {
       throws JsonProcessingException {
     context.status(statusCode);
     if (response.isPresent()) {
-      final String contentType = selectContentType(statusCode);
-      context.contentType(contentType);
-      return metadata.serialize(statusCode, contentType, response.get());
+      return respondImpl(statusCode, response.get());
     }
     return Bytes.EMPTY.toArrayUnsafe();
   }
 
   private void respond(final int statusCode, final Object response) throws JsonProcessingException {
     context.status(statusCode);
-    final String contentType = selectContentType(statusCode);
-    context.contentType(contentType);
-    context.result(metadata.serialize(statusCode, contentType, response));
+    final byte[] responseData = respondImpl(statusCode, response);
+    context.result(responseData);
   }
 
-  private String selectContentType(final int statusCode) {
-    return metadata.selectResponseContentType(
-        statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
+  private byte[] respondImpl(final int statusCode, final Object response)
+      throws JsonProcessingException {
+    final ResponseMetadata responseMetadata =
+        metadata.createResponseMetadata(
+            statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)), response);
+    context.contentType(responseMetadata.getContentType());
+    responseMetadata.getAdditionalHeaders().forEach(context::header);
+    return metadata.serialize(statusCode, responseMetadata.getContentType(), response);
   }
 
   /** This is only used when intending to return status code without a response body */

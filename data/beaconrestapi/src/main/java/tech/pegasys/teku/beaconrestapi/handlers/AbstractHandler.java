@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public abstract class AbstractHandler implements Handler {
@@ -126,7 +127,7 @@ public abstract class AbstractHandler implements Handler {
               if (result.isPresent()) {
                 ctx.contentType("application/octet-stream");
                 ctx.header(
-                    "Content-Disposition",
+                    RestApiConstants.HEADER_CONTENT_DISPOSITION,
                     "filename=\"" + resultFilename.getFilename(result.get()) + "\"");
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
