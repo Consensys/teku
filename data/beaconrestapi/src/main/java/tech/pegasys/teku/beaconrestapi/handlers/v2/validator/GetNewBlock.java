@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -116,7 +118,10 @@ public class GetNewBlock extends MigratingEndpointAdapter {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetNewBlockResponseV2.class)),
+            content = {
+              @OpenApiContent(from = GetNewBlockResponseV2.class),
+              @OpenApiContent(type = OCTET_STREAM)
+            }),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
@@ -150,7 +155,8 @@ public class GetNewBlock extends MigratingEndpointAdapter {
                     "version",
                     SPEC_VERSION,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
-                .build())
+                .build(),
+            SszData::sszSerialize)
         .build();
   }
 
