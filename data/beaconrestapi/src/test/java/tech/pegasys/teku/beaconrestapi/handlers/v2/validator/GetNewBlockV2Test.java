@@ -19,7 +19,7 @@ import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 public class GetNewBlockV2Test extends AbstractGetNewBlockTest {
   @Override
   public MigratingEndpointAdapter getHandler() {
-    return new GetNewBlock(validatorDataProvider, schemaDefinitionCache);
+    return new GetNewBlock(validatorDataProvider, spec, schemaDefinitionCache);
   }
 
   @Override

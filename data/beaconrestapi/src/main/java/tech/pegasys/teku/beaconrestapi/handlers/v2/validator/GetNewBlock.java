@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -55,8 +56,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -86,13 +87,18 @@ public class GetNewBlock extends MigratingEndpointAdapter {
 
   protected final ValidatorDataProvider provider;
 
-  public GetNewBlock(final DataProvider dataProvider, SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
+  public GetNewBlock(
+      final DataProvider dataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getValidatorDataProvider(), spec, schemaDefinitionCache);
   }
 
   public GetNewBlock(
-      final ValidatorDataProvider provider, SchemaDefinitionCache schemaDefinitionCache) {
-    super(getEndpointMetaData(schemaDefinitionCache));
+      final ValidatorDataProvider provider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(getEndpointMetaData(spec, schemaDefinitionCache));
     this.provider = provider;
   }
 
@@ -132,7 +138,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
   }
 
   private static EndpointMetadata getEndpointMetaData(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.get(ROUTE)
         .operationId("getNewBlock")
         .summary("Produce unsigned block")
@@ -156,7 +162,8 @@ public class GetNewBlock extends MigratingEndpointAdapter {
                     SPEC_VERSION,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build(),
-            SszData::sszSerialize)
+            sszResponseType(
+                block -> spec.getForkSchedule().getSpecMilestoneAtSlot(block.getSlot())))
         .build();
   }
 

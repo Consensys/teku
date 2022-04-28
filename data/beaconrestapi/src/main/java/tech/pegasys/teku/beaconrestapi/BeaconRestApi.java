@@ -364,7 +364,7 @@ public class BeaconRestApi {
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, jsonProvider));
-    addMigratedEndpoint(new GetNewBlock(dataProvider, schemaCache));
+    addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
