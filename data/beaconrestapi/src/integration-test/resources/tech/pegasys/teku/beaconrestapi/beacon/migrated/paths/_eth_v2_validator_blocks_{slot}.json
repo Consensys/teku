@@ -38,6 +38,12 @@
       "200" : {
         "description" : "Request successful",
         "content" : {
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
+          },
           "application/json" : {
             "schema" : {
               "$ref" : "#/components/schemas/ProduceBlockV2Response"
