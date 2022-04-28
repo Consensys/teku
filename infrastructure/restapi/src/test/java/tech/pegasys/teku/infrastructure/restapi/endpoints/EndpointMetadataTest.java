@@ -30,19 +30,28 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.HandlerType;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TestObjA;
+import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TestType;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
-import tech.pegasys.teku.infrastructure.restapi.openapi.ContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 class EndpointMetadataTest {
 
@@ -75,8 +84,8 @@ class EndpointMetadataTest {
                 500,
                 "foo",
                 Map.of(
-                    "application/json", ContentTypeDefinition.json(objectType1),
-                    "application/ssz", ContentTypeDefinition.json(objectType3)))
+                    "application/json", json(objectType1),
+                    "application/ssz", json(objectType3)))
             .build();
 
     assertThat(metadata.getReferencedTypeDefinitions())
@@ -91,39 +100,39 @@ class EndpointMetadataTest {
   }
 
   @Test
-  void selectContentType_shouldUseDefaultContentTypeWhenRequestedType() {
+  void selectResponseContentType_shouldUseDefaultContentTypeWhenRequestedType() {
     final String contentType = "application/foo";
     final EndpointMetadata metadata =
         validBuilder()
-            .response(
-                SC_OK, "Success", Map.of(contentType, ContentTypeDefinition.json(STRING_TYPE)))
+            .response(SC_OK, "Success", Map.of(contentType, json(STRING_TYPE)))
             .defaultResponseType(contentType)
             .build();
-    assertThat(metadata.selectContentType(SC_OK, Optional.empty())).isEqualTo(contentType);
+    assertThat(metadata.selectResponseContentType(SC_OK, Optional.empty())).isEqualTo(contentType);
   }
 
   @Test
-  void selectContentType_shouldThrowExceptionWhenStatusCodeNotDeclared() {
+  void selectResponseContentType_shouldThrowExceptionWhenStatusCodeNotDeclared() {
     final EndpointMetadata metadata =
         validBuilder().response(SC_OK, "Success", STRING_TYPE).build();
-    assertThatThrownBy(() -> metadata.selectContentType(SC_NOT_FOUND, Optional.empty()))
+    assertThatThrownBy(() -> metadata.selectResponseContentType(SC_NOT_FOUND, Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  void selectContentType_shouldReturnDefaultContentTypeWhenRequestedContentTypeNotSupported() {
+  void
+      selectResponseContentType_shouldReturnDefaultContentTypeWhenRequestedContentTypeNotSupported() {
     final String contentType = "application/foo";
     final EndpointMetadata metadata =
         validBuilder()
-            .response(
-                SC_OK, "Success", Map.of(contentType, ContentTypeDefinition.json(STRING_TYPE)))
+            .response(SC_OK, "Success", Map.of(contentType, json(STRING_TYPE)))
             .defaultResponseType(contentType)
             .build();
-    assertThat(metadata.selectContentType(SC_OK, Optional.of("foo"))).isEqualTo(contentType);
+    assertThat(metadata.selectResponseContentType(SC_OK, Optional.of("foo")))
+        .isEqualTo(contentType);
   }
 
   @Test
-  void selectContentType_shouldReturnRequestedTypeWhenAvailable() {
+  void selectResponseContentType_shouldReturnRequestedTypeWhenAvailable() {
     final EndpointMetadata metadata =
         validBuilder()
             .response(
@@ -131,19 +140,19 @@ class EndpointMetadataTest {
                 "Success",
                 Map.of(
                     ContentTypes.JSON,
-                    ContentTypeDefinition.json(STRING_TYPE),
+                    json(STRING_TYPE),
                     ContentTypes.OCTET_STREAM,
-                    ContentTypeDefinition.json(STRING_TYPE)))
+                    json(STRING_TYPE)))
             .build();
-    assertThat(metadata.selectContentType(SC_OK, Optional.of(ContentTypes.OCTET_STREAM)))
+    assertThat(metadata.selectResponseContentType(SC_OK, Optional.of(ContentTypes.OCTET_STREAM)))
         .isEqualTo(ContentTypes.OCTET_STREAM);
   }
 
   @Test
-  void selectContentType_shouldThrowExceptionWhenDefaultContentTypeNotSupported() {
+  void selectResponseContentType_shouldThrowExceptionWhenDefaultContentTypeNotSupported() {
     final EndpointMetadata metadata =
         validBuilder().response(SC_OK, "Foo").defaultResponseType("baa").build();
-    assertThatThrownBy(() -> metadata.selectContentType(SC_OK, Optional.empty()))
+    assertThatThrownBy(() -> metadata.selectResponseContentType(SC_OK, Optional.empty()))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -207,11 +216,11 @@ class EndpointMetadataTest {
   }
 
   @Test
-  void requestBodyType_shouldAcceptTypes() {
-    final DeserializableTypeDefinition<String> type = STRING_TYPE;
+  void getRequestBody_shouldAcceptTypes() throws Exception {
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(STRING_TYPE).response(SC_OK, "Success", STRING_TYPE).build();
-    assertThat(metadata.getRequestBodyType()).isSameAs(type);
+    final String body = metadata.getRequestBody(toStream("\"abcdef\""), Optional.empty());
+    assertThat(body).isEqualTo("abcdef");
   }
 
   @Test
@@ -242,58 +251,117 @@ class EndpointMetadataTest {
 
   @Test
   @SuppressWarnings({"unchecked", "rawtypes"})
-  void requestBodyType_shouldAcceptLists() {
+  void getRequestBody_shouldAcceptLists() throws Exception {
     final DeserializableListTypeDefinition<String> type =
         new DeserializableListTypeDefinition(STRING_TYPE);
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(type).response(SC_OK, "Success", STRING_TYPE).build();
-    assertThat(metadata.getRequestBodyType()).isSameAs(type);
+    final List<String> requestBody =
+        metadata.getRequestBody(toStream("[\"a\", \"b\", \"c\"]"), Optional.empty());
+    assertThat(requestBody).isEqualTo(List.of("a", "b", "c"));
   }
 
   @Test
-  void requestBodyType_shouldDetermineOneOf() {
+  void getRequestBody_shouldDetermineOneOf() throws Exception {
     final EndpointMetadata metadata =
         validBuilder()
             .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, this::selector)
             .response(SC_OK, "Success")
             .build();
 
-    assertThat(metadata.getRequestBodyType("{\"value1\":\"FOO\"}")).isEqualTo(TYPE_A);
+    final TestType body =
+        metadata.getRequestBody(toStream("{\"value1\":\"FOO\"}"), Optional.empty());
+    assertThat(body).isEqualTo(new TestObjA("FOO"));
   }
 
   @Test
-  void requestBody_shouldGetBodyAsObject() throws JsonProcessingException {
+  void getRequestBody_shouldGetBodyAsObject() throws JsonProcessingException {
     final EndpointMetadata metadata =
         validBuilder()
             .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, this::selector)
             .response(SC_OK, "Success")
             .build();
-    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    final OneOfTypeTestTypeDefinition.TestObjA a =
+        metadata.getRequestBody(toStream("{\"value1\":\"FOO\"}"), Optional.empty());
     assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
   }
 
   @Test
-  void requestBody_shouldMatchSameType() throws JsonProcessingException {
+  void getRequestBody_shouldMatchSameType() throws JsonProcessingException {
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(TYPE_A).response(SC_OK, "Success").build();
 
-    final OneOfTypeTestTypeDefinition.TestObjA a = metadata.getRequestBody("{\"value1\":\"FOO\"}");
+    final OneOfTypeTestTypeDefinition.TestObjA a =
+        metadata.getRequestBody(toStream("{\"value1\":\"FOO\"}"), Optional.empty());
     assertThat(a).isEqualTo(new OneOfTypeTestTypeDefinition.TestObjA("FOO"));
   }
 
   @Test
-  void requestBodyType_shouldErrorIfSelectorDeterminesUndocumentedResult() {
+  void getRequestBody_shouldErrorIfSelectorDeterminesUndocumentedResult() {
     final EndpointMetadata metadata =
         validBuilder()
-            .requestBodyType(SERIALIZABLE_ONE_OF_TYPE_DEFINITION, (__) -> STRING_TYPE)
+            .requestBodyType(
+                SERIALIZABLE_ONE_OF_TYPE_DEFINITION,
+                __ ->
+                    DeserializableTypeDefinition.string(TestType.class)
+                        .parser(TestObjA::new)
+                        .formatter(TestType::toString)
+                        .build())
             .response(SC_OK, "Success")
             .build();
 
-    assertThatThrownBy(() -> metadata.getRequestBody("{\"value1\":\"FOO\"}"))
+    assertThatThrownBy(
+            () -> metadata.getRequestBody(toStream("{\"value1\":\"FOO\"}"), Optional.empty()))
         .isInstanceOf(IllegalStateException.class);
   }
 
-  private <T> DeserializableTypeDefinition<?> selector(final String jsonData) {
+  @Test
+  void getRequestBody_shouldSupportOctetStream() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(
+                SERIALIZABLE_ONE_OF_TYPE_DEFINITION,
+                this::selector,
+                bytes -> new TestObjA(bytes.toString()))
+            .response(SC_OK, "Success")
+            .build();
+    final Bytes data = Bytes.fromHexString("0xABCD1234");
+    final TestType body =
+        metadata.getRequestBody(
+            new ByteArrayInputStream(data.toArrayUnsafe()), Optional.of(ContentTypes.OCTET_STREAM));
+    assertThat(body).isEqualTo(new TestObjA(data.toString()));
+  }
+
+  @Test
+  void getRequestBody_shouldSupportJsonWithCharset() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(
+                SERIALIZABLE_ONE_OF_TYPE_DEFINITION,
+                this::selector,
+                bytes -> new TestObjA(bytes.toString()))
+            .response(SC_OK, "Success")
+            .build();
+    final TestType body =
+        metadata.getRequestBody(
+            toStream("{\"value1\":\"FOO\"}"), Optional.of("application/json; charset=UTF-8"));
+    assertThat(body).isEqualTo(new TestObjA("FOO"));
+  }
+
+  @Test
+  void getRequestBody_shouldThrowExceptionWhenContentTypeNotSupported() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder().requestBodyType(STRING_TYPE).response(SC_OK, "Success").build();
+    assertThatThrownBy(
+            () -> metadata.getRequestBody(toStream("abc"), Optional.of(ContentTypes.OCTET_STREAM)))
+        .isInstanceOf(BadRequestException.class);
+  }
+
+  private InputStream toStream(final String json) {
+    return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private DeserializableTypeDefinition<? extends TestType> selector(final String jsonData) {
     final ObjectMapper mapper = new ObjectMapper();
     try {
       final JsonNode jsonNode = mapper.readTree(jsonData);
@@ -314,5 +382,9 @@ class EndpointMetadataTest {
         .operationId("fooId")
         .summary("foo summary")
         .description("foo description");
+  }
+
+  static <T> ResponseContentTypeDefinition<T> json(final SerializableTypeDefinition<T> type) {
+    return new JsonResponseContentTypeDefinition<>(type);
   }
 }

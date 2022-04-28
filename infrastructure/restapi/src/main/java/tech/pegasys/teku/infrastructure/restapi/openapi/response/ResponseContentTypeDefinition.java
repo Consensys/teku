@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
+package tech.pegasys.teku.infrastructure.restapi.openapi.response;
 
-import tech.pegasys.teku.beaconrestapi.AbstractPostBlockTest;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import java.io.IOException;
+import java.io.OutputStream;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
-class PostBlockTest extends AbstractPostBlockTest {
-
-  @Override
-  public MigratingEndpointAdapter getHandler() {
-    return new PostBlock(validatorDataProvider, syncDataProvider, spec, schemaDefinitionCache);
-  }
-
-  @Override
-  public boolean isBlinded() {
-    return false;
-  }
+public interface ResponseContentTypeDefinition<T> extends OpenApiTypeDefinition {
+  void serialize(T value, OutputStream out) throws IOException;
 }

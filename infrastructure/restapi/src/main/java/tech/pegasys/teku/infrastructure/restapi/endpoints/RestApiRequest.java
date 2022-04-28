@@ -41,7 +41,8 @@ public class RestApiRequest {
 
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
-    return metadata.getRequestBody(context.body());
+    return metadata.getRequestBody(
+        context.bodyAsInputStream(), Optional.ofNullable(context.header("Content-Type")));
   }
 
   public RestApiRequest(final Context context, final EndpointMetadata metadata) {
@@ -101,7 +102,7 @@ public class RestApiRequest {
   }
 
   private String selectContentType(final int statusCode) {
-    return metadata.selectContentType(
+    return metadata.selectResponseContentType(
         statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
   }
 
