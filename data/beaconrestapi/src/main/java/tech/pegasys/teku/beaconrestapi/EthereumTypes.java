@@ -50,6 +50,8 @@ public class EthereumTypes {
                 Version.fromMilestone(milestoneSelector.apply(value)).name(),
                 RestApiConstants.HEADER_CONTENT_DISPOSITION,
                 String.format(
-                    "filename=\"%s.ssz\"", value.hashTreeRoot().toUnprefixedHexString())));
+                    "filename=\"%s%s.ssz\"",
+                    value.getSchema().getName().map(name -> name = "-").orElse(""),
+                    value.hashTreeRoot().toUnprefixedHexString())));
   }
 }
