@@ -398,7 +398,7 @@ class Store implements UpdatableStore {
   public Set<UInt64> getEquivocatingIndices() {
     readLock.lock();
     try {
-      return equivocatingIndices;
+      return new HashSet<>(equivocatingIndices);
     } finally {
       readLock.unlock();
     }
