@@ -583,20 +583,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (!equivocatingIndicesEnabled || !validationStatus.isAccept()) {
       return;
     }
-    final Checkpoint retrievedJustifiedCheckpoint =
-        recentChainData.getStore().getJustifiedCheckpoint();
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    recentChainData
-        .retrieveCheckpointState(retrievedJustifiedCheckpoint)
-        .thenPeek(
-            justifiedCheckpointState ->
-                onForkChoiceThread(
-                        () ->
-                            slashing
-                                .getIntersectingValidatorIndices()
-                                .forEach(transaction::addEquivocatingIndex))
-                    .reportExceptions())
-        .thenPeek(__ -> transaction.commit().join())
+    onForkChoiceThread(
+            () -> {
+              final StoreTransaction transaction = recentChainData.startStoreTransaction();
+              slashing.getIntersectingValidatorIndices().forEach(transaction::addEquivocatingIndex);
+              transaction.commit().join();
+            })
         .reportExceptions();
   }
 
