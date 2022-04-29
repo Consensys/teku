@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -107,14 +108,15 @@ class EndpointMetadataTest {
             .response(SC_OK, "Success", Map.of(contentType, json(STRING_TYPE)))
             .defaultResponseType(contentType)
             .build();
-    assertThat(metadata.selectResponseContentType(SC_OK, Optional.empty())).isEqualTo(contentType);
+    assertThat(metadata.createResponseMetadata(SC_OK, Optional.empty(), "foo"))
+        .isEqualTo(new ResponseMetadata(contentType, emptyMap()));
   }
 
   @Test
   void selectResponseContentType_shouldThrowExceptionWhenStatusCodeNotDeclared() {
     final EndpointMetadata metadata =
         validBuilder().response(SC_OK, "Success", STRING_TYPE).build();
-    assertThatThrownBy(() -> metadata.selectResponseContentType(SC_NOT_FOUND, Optional.empty()))
+    assertThatThrownBy(() -> metadata.createResponseMetadata(SC_NOT_FOUND, Optional.empty(), "foo"))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -127,8 +129,8 @@ class EndpointMetadataTest {
             .response(SC_OK, "Success", Map.of(contentType, json(STRING_TYPE)))
             .defaultResponseType(contentType)
             .build();
-    assertThat(metadata.selectResponseContentType(SC_OK, Optional.of("foo")))
-        .isEqualTo(contentType);
+    assertThat(metadata.createResponseMetadata(SC_OK, Optional.of("foo"), "bar"))
+        .isEqualTo(new ResponseMetadata(contentType, emptyMap()));
   }
 
   @Test
@@ -144,15 +146,16 @@ class EndpointMetadataTest {
                     ContentTypes.OCTET_STREAM,
                     json(STRING_TYPE)))
             .build();
-    assertThat(metadata.selectResponseContentType(SC_OK, Optional.of(ContentTypes.OCTET_STREAM)))
-        .isEqualTo(ContentTypes.OCTET_STREAM);
+    assertThat(
+            metadata.createResponseMetadata(SC_OK, Optional.of(ContentTypes.OCTET_STREAM), "foo"))
+        .isEqualTo(new ResponseMetadata(ContentTypes.OCTET_STREAM, emptyMap()));
   }
 
   @Test
   void selectResponseContentType_shouldThrowExceptionWhenDefaultContentTypeNotSupported() {
     final EndpointMetadata metadata =
         validBuilder().response(SC_OK, "Foo").defaultResponseType("baa").build();
-    assertThatThrownBy(() -> metadata.selectResponseContentType(SC_OK, Optional.empty()))
+    assertThatThrownBy(() -> metadata.createResponseMetadata(SC_OK, Optional.empty(), "foo"))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -349,7 +352,7 @@ class EndpointMetadataTest {
   }
 
   @Test
-  void getRequestBody_shouldThrowExceptionWhenContentTypeNotSupported() throws Exception {
+  void getRequestBody_shouldThrowExceptionWhenContentTypeNotSupported() {
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(STRING_TYPE).response(SC_OK, "Success").build();
     assertThatThrownBy(

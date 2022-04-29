@@ -40,7 +40,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.function.IOFunction;
@@ -60,7 +59,6 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequest
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.RequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.SimpleJsonRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class EndpointMetadata {
@@ -208,22 +206,27 @@ public class EndpointMetadata {
     return responseType;
   }
 
-  public String selectResponseContentType(
-      final int statusCode, final Optional<String> acceptHeader) {
-    final Collection<String> supportedTypes = getSupportedResponseContentTypes(statusCode);
+  @SuppressWarnings("unchecked")
+  public <T> ResponseMetadata createResponseMetadata(
+      final int statusCode, final Optional<String> acceptHeader, final T response) {
+    final OpenApiResponse openApiResponse = responses.get(Integer.toString(statusCode));
+    if (openApiResponse == null) {
+      throw new IllegalArgumentException("Status code " + statusCode + " not supported");
+    }
+    final String selectedType = selectContentType(openApiResponse, acceptHeader);
+    final ResponseContentTypeDefinition<T> typeDefinition =
+        (ResponseContentTypeDefinition<T>) openApiResponse.getType(selectedType);
+    return new ResponseMetadata(selectedType, typeDefinition.getAdditionalHeaders(response));
+  }
+
+  private String selectContentType(
+      final OpenApiResponse openApiResponse, final Optional<String> acceptHeader) {
+    final Collection<String> supportedTypes = openApiResponse.getSupportedContentTypes();
     final String selectedType =
         ContentTypes.getContentType(supportedTypes, acceptHeader)
             .orElse(defaultResponseContentType);
     checkState(supportedTypes.contains(selectedType), "Default content type is not supported.");
     return selectedType;
-  }
-
-  private Collection<String> getSupportedResponseContentTypes(final int statusCode) {
-    final OpenApiResponse openApiResponse = responses.get(Integer.toString(statusCode));
-    if (openApiResponse == null) {
-      throw new IllegalArgumentException("Status code " + statusCode + " not supported");
-    }
-    return openApiResponse.getSupportedContentTypes();
   }
 
   @SuppressWarnings("unchecked")
@@ -474,7 +477,7 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final SerializableTypeDefinition<T> content,
-        final Function<T, Bytes> toOctetStreamBytes) {
+        final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
       return response(
           responseCode,
           description,
@@ -482,7 +485,7 @@ public class EndpointMetadata {
               ContentTypes.JSON,
               new JsonResponseContentTypeDefinition<>(content),
               ContentTypes.OCTET_STREAM,
-              new OctetStreamResponseContentTypeDefinition<>(toOctetStreamBytes)));
+              octetStreamTypeDefinition));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {

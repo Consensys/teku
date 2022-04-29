@@ -15,8 +15,11 @@ package tech.pegasys.teku.infrastructure.restapi.openapi.response;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
 public interface ResponseContentTypeDefinition<T> extends OpenApiTypeDefinition {
   void serialize(T value, OutputStream out) throws IOException;
+
+  Map<String, String> getAdditionalHeaders(T value);
 }

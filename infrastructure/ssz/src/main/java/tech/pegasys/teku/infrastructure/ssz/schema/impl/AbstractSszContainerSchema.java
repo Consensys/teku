@@ -24,6 +24,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -137,6 +138,11 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
     return jsonTypeDefinition;
+  }
+
+  @Override
+  public Optional<String> getName() {
+    return Optional.of(containerName);
   }
 
   @Override

@@ -15,14 +15,22 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   private final String[] argsNetworkOptOnParent =
       new String[] {
         "--network", "auto", "vc",
       };
+
+  @BeforeEach
+  void setUp() {
+    expectValidatorClient = true;
+  }
 
   @Test
   public void networkOption_ShouldFail_IfSpecifiedOnParentCommand() {
@@ -31,5 +39,21 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
         .contains("--network option should not be specified before the validator-client command");
+  }
+
+  @Test
+  void loggingOptions_shouldUseLoggingOptionsFromBeforeSubcommand() {
+    final LoggingConfig config =
+        getLoggingConfigurationFromArguments(
+            "--log-destination=console", "vc", "--network=mainnet");
+    assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
+  }
+
+  @Test
+  void loggingOptions_shouldUseLoggingOptionsFromAfterSubcommand() {
+    final LoggingConfig config =
+        getLoggingConfigurationFromArguments(
+            "vc", "--network=mainnet", "--log-destination=console");
+    assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 }
