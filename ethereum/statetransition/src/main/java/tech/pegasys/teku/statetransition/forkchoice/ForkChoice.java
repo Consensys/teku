@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -392,7 +391,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     transitionValidatedStatus.finishAsync(
         result -> {
-          if (result.getStatus().hasStatus(ExecutionPayloadStatus.VALID)) {
+          PayloadStatus resultStatus = result.getStatus();
+
+          if (resultStatus.hasValidStatus()) {
             UInt64 latestValidFinalizedSlotInStore = recentChainData.getLatestValidFinalizedSlot();
 
             if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
@@ -402,9 +403,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             }
           }
 
-          getForkChoiceStrategy()
-              .onExecutionPayloadResult(
-                  result.getInvalidTransitionBlockRoot().orElse(blockRoot), result.getStatus());
+          Bytes32 validatedBlockRoot = result.getInvalidTransitionBlockRoot().orElse(blockRoot);
+
+          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
+
+          if (resultStatus.hasInvalidStatus()) {
+            LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
+            processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
+          }
         },
         error -> {
           // Pass FatalServiceFailureException up to the uncaught exception handler.
