@@ -24,12 +24,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
@@ -57,7 +60,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
   @Test
   void shouldReturnBadRequestIfArgumentNotJSON() {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.body()).thenReturn("Not a beacon block.");
+    withRequestBody("Not a beacon block.");
 
     assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(BadRequestException.class);
   }
@@ -68,7 +71,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
         jsonProvider.objectToJSON(new BeaconBlockPhase0(dataStructureUtil.randomBeaconBlock(3)));
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.body()).thenReturn(notASignedBlock);
+    withRequestBody(notASignedBlock);
     when(validatorDataProvider.parseBlock(any(), any()))
         .thenThrow(mock(JsonProcessingException.class));
 
@@ -81,10 +84,28 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
         SendSignedBlockResult.success(dataStructureUtil.randomBytes32());
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.body()).thenReturn(buildSignedBeaconBlock());
+    withRequestBody(buildSignedBeaconBlock());
     setupValidatorDataProviderSubmit(SafeFuture.completedFuture(successResult));
-    //    when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any()))
-    //        .thenReturn(SafeFuture.completedFuture(successResult));
+
+    handler.handle(context);
+
+    verify(context).status(SC_OK);
+    assertThat(getResultStringFromSuccessfulFuture()).isEqualTo("");
+  }
+
+  @Test
+  void shouldAcceptBlockAsSsz() throws Exception {
+    final SendSignedBlockResult successResult =
+        SendSignedBlockResult.success(dataStructureUtil.randomBytes32());
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    final SignedBeaconBlock data = dataStructureUtil.randomSignedBeaconBlock(3);
+
+    when(context.header("Content-Type")).thenReturn(ContentTypes.OCTET_STREAM);
+    when(context.bodyAsInputStream())
+        .thenReturn(new ByteArrayInputStream(data.sszSerialize().toArrayUnsafe()));
+
+    setupValidatorDataProviderSubmit(SafeFuture.completedFuture(successResult));
 
     handler.handle(context);
 
@@ -108,11 +129,9 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
         SafeFuture.completedFuture(failResult);
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.body()).thenReturn(buildSignedBeaconBlock());
+    withRequestBody(buildSignedBeaconBlock());
 
     setupValidatorDataProviderSubmit(validatorBlockResultSafeFuture);
-    //    when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any()))
-    //        .thenReturn(validatorBlockResultSafeFuture);
 
     handler.handle(context);
 
@@ -124,5 +143,10 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
     return jsonProvider.objectToJSON(
         tech.pegasys.teku.api.schema.SignedBeaconBlock.create(
             dataStructureUtil.randomSignedBeaconBlock(3)));
+  }
+
+  private void withRequestBody(final String data) {
+    when(context.bodyAsInputStream())
+        .thenReturn(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
   }
 }

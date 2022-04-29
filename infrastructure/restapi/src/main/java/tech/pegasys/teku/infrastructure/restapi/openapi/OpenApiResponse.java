@@ -21,18 +21,20 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class OpenApiResponse {
   private final String description;
-  private final Map<String, ? extends ContentTypeDefinition<?>> content;
+  private final Map<String, ? extends ResponseContentTypeDefinition<?>> content;
 
   public OpenApiResponse(
-      final String description, final Map<String, ? extends ContentTypeDefinition<?>> content) {
+      final String description,
+      final Map<String, ? extends ResponseContentTypeDefinition<?>> content) {
     this.description = description;
     this.content = content;
   }
 
-  public ContentTypeDefinition<?> getType(final String contentType) {
+  public ResponseContentTypeDefinition<?> getType(final String contentType) {
     return content.get(contentType);
   }
 

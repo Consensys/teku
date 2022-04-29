@@ -6,6 +6,12 @@
     "description" : "Submit a signed beacon block to the beacon node to be imported. The beacon node performs the required validation.",
     "requestBody" : {
       "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
         "application/json" : {
           "schema" : {
             "title" : "SignedBeaconBlock",

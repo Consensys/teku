@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
+package tech.pegasys.teku.infrastructure.restapi.openapi.response;
 
-import tech.pegasys.teku.beaconrestapi.AbstractGetNewBlockTest;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Map;
+import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
-public class GetNewBlockV2Test extends AbstractGetNewBlockTest {
-  @Override
-  public MigratingEndpointAdapter getHandler() {
-    return new GetNewBlock(validatorDataProvider, spec, schemaDefinitionCache);
-  }
+public interface ResponseContentTypeDefinition<T> extends OpenApiTypeDefinition {
+  void serialize(T value, OutputStream out) throws IOException;
 
-  @Override
-  public boolean isBlindedBlocks() {
-    return false;
-  }
+  Map<String, String> getAdditionalHeaders(T value);
 }

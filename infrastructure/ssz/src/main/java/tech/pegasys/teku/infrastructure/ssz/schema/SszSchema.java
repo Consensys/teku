@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -36,6 +37,10 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
   @SuppressWarnings("unchecked")
   static <X extends SszData> SszSchema<X> as(final Class<X> clazz, final SszSchema<?> schema) {
     return (SszSchema<X>) schema;
+  }
+
+  default Optional<String> getName() {
+    return Optional.empty();
   }
 
   /**

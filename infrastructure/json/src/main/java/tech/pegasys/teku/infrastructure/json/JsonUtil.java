@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
@@ -73,7 +74,18 @@ public class JsonUtil {
 
   public static <T> T parse(final String json, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
-    try (final JsonParser parser = FACTORY.createParser(json)) {
+    return parse(() -> FACTORY.createParser(json), type);
+  }
+
+  public static <T> T parse(final InputStream json, final DeserializableTypeDefinition<T> type)
+      throws JsonProcessingException {
+    return parse(() -> FACTORY.createParser(json), type);
+  }
+
+  private static <T> T parse(
+      final ParserSupplier parserSupplier, final DeserializableTypeDefinition<T> type)
+      throws JsonProcessingException {
+    try (final JsonParser parser = parserSupplier.get()) {
       parser.nextToken();
       return type.deserialize(parser);
     } catch (final JsonProcessingException e) {
@@ -124,5 +136,9 @@ public class JsonUtil {
 
   public interface JsonWriter {
     void accept(JsonGenerator gen) throws IOException;
+  }
+
+  private interface ParserSupplier {
+    JsonParser get() throws IOException;
   }
 }

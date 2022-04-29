@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -59,18 +61,22 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
   private final SyncDataProvider syncDataProvider;
 
   public PostBlindedBlock(
-      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+      final DataProvider dataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     this(
         dataProvider.getValidatorDataProvider(),
         dataProvider.getSyncDataProvider(),
+        spec,
         schemaDefinitionCache);
   }
 
   PostBlindedBlock(
       final ValidatorDataProvider validatorDataProvider,
       final SyncDataProvider syncDataProvider,
+      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(getEndpointMetaData(schemaDefinitionCache));
+    super(getEndpointMetaData(spec, schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
@@ -81,7 +87,11 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
       summary = "Publish a signed blinded block",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL},
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBlindedBlock.class)}),
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(from = SignedBlindedBlock.class),
+                @OpenApiContent(type = OCTET_STREAM)
+              }),
       description =
           "Submit a signed blinded beacon block to the beacon node to be imported."
               + " The beacon node performs the required validation.",
@@ -134,7 +144,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
   }
 
   private static EndpointMetadata getEndpointMetaData(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.post(ROUTE)
         .operationId("publishBlindedBlock")
         .summary("Publish a signed blinded block")
@@ -153,7 +163,8 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
                 MilestoneDependentTypesUtil.slotBasedSelector(
                     json,
                     schemaDefinitionCache,
-                    SchemaDefinitions::getSignedBlindedBeaconBlockSchema))
+                    SchemaDefinitions::getSignedBlindedBeaconBlockSchema),
+            spec::deserializeSignedBeaconBlock)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,
