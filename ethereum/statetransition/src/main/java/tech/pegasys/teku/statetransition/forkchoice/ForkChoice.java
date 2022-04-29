@@ -360,8 +360,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Same applies to AttesterSlashings.
     if (spec.computeEpochAtSlot(block.getSlot())
         .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
-      applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
       applyAttesterSlashingsFromBlock(block);
+      applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
     }
 
     final BlockImportResult result;
