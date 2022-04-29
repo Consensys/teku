@@ -86,7 +86,7 @@ class ProtoArrayScoreCalculator {
       return;
     }
     // If vote is already count as equivocated, we don't need to do anything more
-    if (vote.isEquivocated()) {
+    if (vote.isCurrentEquivocating()) {
       return;
     }
 
@@ -101,7 +101,7 @@ class ProtoArrayScoreCalculator {
     // justified state to a new state with a higher epoch that is on a different fork
     // because that may have on-boarded less validators than the prior fork.
     UInt64 newBalance =
-        newBalances.size() > validatorIndexInt && !vote.isMarkedToEquivocate()
+        newBalances.size() > validatorIndexInt && !vote.isNextEquivocating()
             ? newBalances.get(validatorIndexInt)
             : UInt64.ZERO;
 
@@ -109,8 +109,8 @@ class ProtoArrayScoreCalculator {
       subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
       addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
       final VoteTracker newVote;
-      if (vote.isMarkedToEquivocate()) {
-        newVote = VoteTracker.createEquivocated(vote);
+      if (vote.isNextEquivocating()) {
+        newVote = VoteTracker.markCurrentEquivocating(vote);
       } else {
         newVote = VoteTracker.create(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
       }

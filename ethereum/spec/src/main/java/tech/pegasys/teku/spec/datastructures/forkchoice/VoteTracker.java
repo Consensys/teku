@@ -24,7 +24,7 @@ public interface VoteTracker {
     return new VoteTrackerV1(currentRoot, nextRoot, nextEpoch);
   }
 
-  static VoteTracker markToEquivocate(final VoteTracker voteTracker) {
+  static VoteTracker markNextEquivocating(final VoteTracker voteTracker) {
     return new VoteTrackerV2(
         voteTracker.getCurrentRoot(),
         voteTracker.getNextRoot(),
@@ -33,7 +33,7 @@ public interface VoteTracker {
         false);
   }
 
-  static VoteTracker createEquivocated(final VoteTracker voteTracker) {
+  static VoteTracker markCurrentEquivocating(final VoteTracker voteTracker) {
     return new VoteTrackerV2(
         voteTracker.getCurrentRoot(),
         voteTracker.getNextRoot(),
@@ -48,11 +48,11 @@ public interface VoteTracker {
 
   UInt64 getNextEpoch();
 
-  default boolean isMarkedToEquivocate() {
+  default boolean isNextEquivocating() {
     return false;
   }
 
-  default boolean isEquivocated() {
+  default boolean isCurrentEquivocating() {
     return false;
   }
 

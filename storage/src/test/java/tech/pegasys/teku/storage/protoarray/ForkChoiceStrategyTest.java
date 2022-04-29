@@ -400,7 +400,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     // Mark our Validator as going to be equivocated like when AttesterSlashing received
     final VoteUpdater transaction2 = storageSystem.recentChainData().startVoteUpdate();
     VoteTracker voteTracker = transaction2.getVote(ZERO);
-    transaction2.putVote(ZERO, VoteTracker.markToEquivocate(voteTracker));
+    transaction2.putVote(ZERO, VoteTracker.markNextEquivocating(voteTracker));
     transaction2.commit();
 
     final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
@@ -425,7 +425,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     transaction3.commit();
     assertThat(bestHead).isEqualTo(block2.getRoot());
 
-    assertThat(transaction3.getVote(ZERO).isEquivocated()).isTrue();
+    assertThat(transaction3.getVote(ZERO).isCurrentEquivocating()).isTrue();
     // Not updated after equivocation
     assertThat(transaction3.getVote(ZERO).getNextRoot()).isEqualTo(block1.getRoot());
   }

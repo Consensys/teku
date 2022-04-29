@@ -598,7 +598,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       validatorIndex -> {
                         final VoteTracker voteTracker = transaction.getVote(validatorIndex);
                         transaction.putVote(
-                            validatorIndex, VoteTracker.markToEquivocate(voteTracker));
+                            validatorIndex, VoteTracker.markNextEquivocating(voteTracker));
                       });
               transaction.commit();
             })

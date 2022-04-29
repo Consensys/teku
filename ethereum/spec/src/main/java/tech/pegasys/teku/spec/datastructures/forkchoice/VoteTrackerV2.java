@@ -24,7 +24,7 @@ public class VoteTrackerV2 implements VoteTracker {
   private final Bytes32 nextRoot;
   private final UInt64 nextEpoch;
   private final boolean nextEquivocating;
-  private final boolean equivocated;
+  private final boolean currentEquivocating;
 
   public VoteTrackerV2(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
     this(currentRoot, nextRoot, nextEpoch, false, false);
@@ -35,12 +35,12 @@ public class VoteTrackerV2 implements VoteTracker {
       Bytes32 nextRoot,
       UInt64 nextEpoch,
       boolean nextEquivocating,
-      boolean equivocated) {
+      boolean currentEquivocating) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
     this.nextEquivocating = nextEquivocating;
-    this.equivocated = equivocated;
+    this.currentEquivocating = currentEquivocating;
   }
 
   @Override
@@ -64,13 +64,13 @@ public class VoteTrackerV2 implements VoteTracker {
   }
 
   @Override
-  public boolean isMarkedToEquivocate() {
+  public boolean isNextEquivocating() {
     return nextEquivocating;
   }
 
   @Override
-  public boolean isEquivocated() {
-    return equivocated;
+  public boolean isCurrentEquivocating() {
+    return currentEquivocating;
   }
 
   @Override
@@ -83,7 +83,7 @@ public class VoteTrackerV2 implements VoteTracker {
     }
     VoteTrackerV2 that = (VoteTrackerV2) o;
     return nextEquivocating == that.nextEquivocating
-        && equivocated == that.equivocated
+        && currentEquivocating == that.currentEquivocating
         && Objects.equals(currentRoot, that.currentRoot)
         && Objects.equals(nextRoot, that.nextRoot)
         && Objects.equals(nextEpoch, that.nextEpoch);
@@ -91,7 +91,7 @@ public class VoteTrackerV2 implements VoteTracker {
 
   @Override
   public int hashCode() {
-    return Objects.hash(currentRoot, nextRoot, nextEpoch, nextEquivocating, equivocated);
+    return Objects.hash(currentRoot, nextRoot, nextEpoch, nextEquivocating, currentEquivocating);
   }
 
   @Override
@@ -101,7 +101,7 @@ public class VoteTrackerV2 implements VoteTracker {
         .add("nextRoot", nextRoot)
         .add("nextEpoch", nextEpoch)
         .add("nextEquivocating", nextEquivocating)
-        .add("equivocated", equivocated)
+        .add("currentEquivocating", currentEquivocating)
         .toString();
   }
 }

@@ -492,7 +492,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Validator #0 is marked as equivocated
     VoteTracker vote = store.getVote(ZERO);
-    store.putVote(ZERO, VoteTracker.createEquivocated(vote));
+    store.putVote(ZERO, VoteTracker.markCurrentEquivocating(vote));
 
     List<Long> deltas =
         computeDeltas(
@@ -541,7 +541,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Validator #0 is set to be marked as equivocated
     VoteTracker vote = store.getVote(ZERO);
-    store.putVote(ZERO, VoteTracker.markToEquivocate(vote));
+    store.putVote(ZERO, VoteTracker.markNextEquivocating(vote));
 
     List<Long> deltas =
         computeDeltas(

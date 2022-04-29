@@ -51,7 +51,7 @@ public class VoteTrackerSerializerTest {
 
   @Test
   public void serializesDeserializesV2Consistently() {
-    VoteTracker votesV2 = VoteTracker.markToEquivocate(VOTES_V1);
+    VoteTracker votesV2 = VoteTracker.markNextEquivocating(VOTES_V1);
     VoteTracker votesV2deserialized = SERIALIZER.deserialize(SERIALIZER.serialize(votesV2));
     assertThat(votesV2deserialized).isEqualTo(votesV2);
     assertThat(votesV2deserialized.getVersion()).isEqualTo(Version.V2);
@@ -59,7 +59,7 @@ public class VoteTrackerSerializerTest {
 
   @Test
   public void serializesDeserializesV2EquivocatedConsistently() {
-    VoteTracker votesV2 = VoteTracker.createEquivocated(VOTES_V1);
+    VoteTracker votesV2 = VoteTracker.markCurrentEquivocating(VOTES_V1);
     VoteTracker votesV2deserialized = SERIALIZER.deserialize(SERIALIZER.serialize(votesV2));
     assertThat(votesV2deserialized).isEqualTo(votesV2);
     assertThat(votesV2deserialized.getVersion()).isEqualTo(Version.V2);

@@ -211,7 +211,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
-    if (vote.isEquivocated() || vote.isMarkedToEquivocate()) {
+    if (vote.isCurrentEquivocating() || vote.isNextEquivocating()) {
       return;
     }
 

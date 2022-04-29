@@ -457,7 +457,7 @@ public class VotesTest {
         .isEqualTo(getHash(10));
 
     // Equivocate one of the votes on 10
-    store.putVote(unsigned(3), VoteTracker.markToEquivocate(store.getVote(unsigned(3))));
+    store.putVote(unsigned(3), VoteTracker.markNextEquivocating(store.getVote(unsigned(3))));
 
     // Ensure the head is now 9 again (2 votes > 1)
     //

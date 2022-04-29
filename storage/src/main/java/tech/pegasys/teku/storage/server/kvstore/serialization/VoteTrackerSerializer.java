@@ -52,8 +52,8 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
               writer.writeUInt64(value.getNextEpoch().longValue());
               // Version with equivocation
               if (value.getVersion() == Version.V2) {
-                writer.writeBoolean(value.isMarkedToEquivocate());
-                writer.writeBoolean(value.isEquivocated());
+                writer.writeBoolean(value.isNextEquivocating());
+                writer.writeBoolean(value.isCurrentEquivocating());
               }
             });
     return bytes.toArrayUnsafe();
