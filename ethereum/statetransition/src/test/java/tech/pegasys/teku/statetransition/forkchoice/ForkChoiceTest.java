@@ -711,7 +711,7 @@ class ForkChoiceTest {
 
     // first time, fork choice update block will be invalid and after that it will be valid
     setForkChoiceNotifierConsecutiveForkChoiceUpdatedResults(
-        invalidWithLastValidBlockHash, PayloadStatus.VALID);
+        List.of(invalidWithLastValidBlockHash, PayloadStatus.VALID));
 
     storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot.increment());
     final SignedBlockAndState blockAndStatePlus1 =
@@ -981,19 +981,22 @@ class ForkChoiceTest {
   }
 
   private void setForkChoiceNotifierForkChoiceUpdatedResult(final PayloadStatus status) {
-    setForkChoiceNotifierConsecutiveForkChoiceUpdatedResults(status);
+    setForkChoiceNotifierConsecutiveForkChoiceUpdatedResults(List.of(status));
   }
 
   private void setForkChoiceNotifierConsecutiveForkChoiceUpdatedResults(
-      final PayloadStatus... statuses) {
-    if (statuses.length == 0) {
+      final List<PayloadStatus> statuses) {
+    if (statuses.isEmpty()) {
       return;
     }
     Stubber stubber = null;
-    for (int i = 0; i < statuses.length; i++) {
-      ForkChoiceUpdatedResult result = new ForkChoiceUpdatedResult(statuses[i], Optional.empty());
+    for (PayloadStatus status : statuses) {
+      ForkChoiceUpdatedResult result =
+          Optional.ofNullable(status)
+              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()))
+              .orElse(null);
       Answer<Void> onForkChoiceUpdatedResultAnswer = getOnForkChoiceUpdatedResultAnswer(result);
-      if (i == 0) {
+      if (stubber == null) {
         stubber = doAnswer(onForkChoiceUpdatedResultAnswer);
       } else {
         stubber.doAnswer(onForkChoiceUpdatedResultAnswer);
