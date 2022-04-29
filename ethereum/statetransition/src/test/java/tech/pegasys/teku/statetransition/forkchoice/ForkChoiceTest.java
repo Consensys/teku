@@ -112,6 +112,7 @@ class ForkChoiceTest {
           recentChainData,
           forkChoiceNotifier,
           transitionBlockValidator,
+          false,
           false);
 
   @BeforeEach
@@ -199,7 +200,8 @@ class ForkChoiceTest {
             recentChainData,
             forkChoiceNotifier,
             transitionBlockValidator,
-            true);
+            true,
+            false);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

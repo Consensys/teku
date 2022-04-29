@@ -30,7 +30,7 @@ public class VoteTrackerSerializerTest {
   private static final UInt64 EXPECTED_NEXT_EPOCH = UInt64.valueOf(4669978815449698508L);
 
   private static VoteTracker votes =
-      new VoteTracker(EXPECTED_CURRENT_ROOT, EXPECTED_NEXT_ROOT, EXPECTED_NEXT_EPOCH);
+      VoteTracker.create(EXPECTED_CURRENT_ROOT, EXPECTED_NEXT_ROOT, EXPECTED_NEXT_EPOCH);
   private static Bytes votesSerialized =
       Bytes.fromHexString(
           "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41befcc907a73fd18cf40");

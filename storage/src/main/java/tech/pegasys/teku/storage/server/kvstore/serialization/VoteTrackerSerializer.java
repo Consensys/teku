@@ -18,6 +18,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker.Version;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTrackerV1;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTrackerV2;
 
 class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
   @Override
@@ -28,7 +31,14 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           final Bytes32 currentRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 nextRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final UInt64 nextEpoch = UInt64.fromLongBits(reader.readUInt64());
-          return new VoteTracker(currentRoot, nextRoot, nextEpoch);
+          if (reader.isComplete()) {
+            // Old version
+            return new VoteTrackerV1(currentRoot, nextRoot, nextEpoch);
+          } else {
+            // Version with equivocation
+            return new VoteTrackerV2(
+                currentRoot, nextRoot, nextEpoch, reader.readBoolean(), reader.readBoolean());
+          }
         });
   }
 
@@ -40,6 +50,11 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
               writer.writeFixedBytes(value.getCurrentRoot());
               writer.writeFixedBytes(value.getNextRoot());
               writer.writeUInt64(value.getNextEpoch().longValue());
+              // Version with equivocation
+              if (value.getVersion() == Version.V2) {
+                writer.writeBoolean(value.isMarkedToEquivocate());
+                writer.writeBoolean(value.isEquivocated());
+              }
             });
     return bytes.toArrayUnsafe();
   }

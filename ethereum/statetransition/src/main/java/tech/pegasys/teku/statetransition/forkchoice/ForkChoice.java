@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -184,8 +185,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                               justifiedCheckpoint,
                               justifiedEffectiveBalances,
                               recentChainData.getStore().getProposerBoostRoot(),
-                              spec.getProposerBoostAmount(justifiedState),
-                              recentChainData.getStore().getEquivocatingIndices());
+                              spec.getProposerBoostAmount(justifiedState));
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -507,10 +507,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
             attestation -> validateBlockAttestation(forkChoiceStrategy, currentEpoch, attestation))
-        .forEach(
-            attestation ->
-                forkChoiceStrategy.onAttestation(
-                    voteUpdater, attestation, recentChainData.getStore().getEquivocatingIndices()));
+        .forEach(attestation -> forkChoiceStrategy.onAttestation(voteUpdater, attestation));
     voteUpdater.commit();
   }
 
@@ -541,10 +538,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       () -> {
                         final VoteUpdater transaction = recentChainData.startVoteUpdate();
                         getForkChoiceStrategy()
-                            .onAttestation(
-                                transaction,
-                                getIndexedAttestation(attestation),
-                                store.getEquivocatingIndices());
+                            .onAttestation(transaction, getIndexedAttestation(attestation));
                         transaction.commit();
                       })
                   .thenApply(__ -> validationResult);
@@ -568,11 +562,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               attestations.stream()
                   .map(this::getIndexedAttestation)
                   .forEach(
-                      attestation ->
-                          forkChoiceStrategy.onAttestation(
-                              transaction,
-                              attestation,
-                              recentChainData.getStore().getEquivocatingIndices()));
+                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               transaction.commit();
             })
         .reportExceptions();
@@ -601,9 +591,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     onForkChoiceThread(
             () -> {
-              final StoreTransaction transaction = recentChainData.startStoreTransaction();
-              slashing.getIntersectingValidatorIndices().forEach(transaction::addEquivocatingIndex);
-              transaction.commit().join();
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              slashing
+                  .getIntersectingValidatorIndices()
+                  .forEach(
+                      validatorIndex -> {
+                        final VoteTracker voteTracker = transaction.getVote(validatorIndex);
+                        transaction.putVote(
+                            validatorIndex, VoteTracker.markToEquivocate(voteTracker));
+                      });
+              transaction.commit();
             })
         .reportExceptions();
   }

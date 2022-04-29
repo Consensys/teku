@@ -47,8 +47,6 @@ public interface MutableStore extends ReadOnlyStore {
 
   void removeProposerBoostRoot();
 
-  void addEquivocatingIndex(UInt64 equivocatingIndex);
-
   void setLatestValidFinalizedSlot(UInt64 slot);
 
   void removeFinalizedOptimisticTransitionPayload();

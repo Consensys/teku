@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -49,8 +48,7 @@ public class StubVoteUpdater implements VoteUpdater {
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedCheckpointEffectiveBalances,
       final Optional<Bytes32> proposerBoostRoot,
-      final UInt64 proposerScoreBoostAmount,
-      final Set<UInt64> equivocatingIndices) {
+      final UInt64 proposerScoreBoostAmount) {
     throw new UnsupportedOperationException("Not implemented");
   }
 

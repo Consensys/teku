@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,83 +13,53 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
-import com.google.common.base.MoreObjects;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class VoteTracker {
+public interface VoteTracker {
 
-  public static final VoteTracker DEFAULT =
-      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
+  VoteTracker DEFAULT = new VoteTrackerV1(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
 
-  private final Bytes32 currentRoot;
-  private final Bytes32 nextRoot;
-  private final UInt64 nextEpoch;
-  private final boolean equivocated;
-
-  public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
-    this.currentRoot = currentRoot;
-    this.nextRoot = nextRoot;
-    this.nextEpoch = nextEpoch;
-    this.equivocated = false;
+  static VoteTracker create(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
+    return new VoteTrackerV1(currentRoot, nextRoot, nextEpoch);
   }
 
-  public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch, boolean equivocated) {
-    this.currentRoot = currentRoot;
-    this.nextRoot = nextRoot;
-    this.nextEpoch = nextEpoch;
-    this.equivocated = equivocated;
+  static VoteTracker markToEquivocate(final VoteTracker voteTracker) {
+    return new VoteTrackerV2(
+        voteTracker.getCurrentRoot(),
+        voteTracker.getNextRoot(),
+        voteTracker.getNextEpoch(),
+        true,
+        false);
   }
 
-  public static VoteTracker createEquivocated(final VoteTracker voteTracker) {
-    return new VoteTracker(
-        voteTracker.getCurrentRoot(), voteTracker.getNextRoot(), voteTracker.getNextEpoch(), true);
+  static VoteTracker createEquivocated(final VoteTracker voteTracker) {
+    return new VoteTrackerV2(
+        voteTracker.getCurrentRoot(),
+        voteTracker.getNextRoot(),
+        voteTracker.getNextEpoch(),
+        false,
+        true);
   }
 
-  public Bytes32 getCurrentRoot() {
-    return currentRoot;
+  Bytes32 getCurrentRoot();
+
+  Bytes32 getNextRoot();
+
+  UInt64 getNextEpoch();
+
+  default boolean isMarkedToEquivocate() {
+    return false;
   }
 
-  public Bytes32 getNextRoot() {
-    return nextRoot;
+  default boolean isEquivocated() {
+    return false;
   }
 
-  public UInt64 getNextEpoch() {
-    return nextEpoch;
-  }
+  Version getVersion();
 
-  public boolean isEquivocated() {
-    return equivocated;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final VoteTracker that = (VoteTracker) o;
-    return equivocated == that.equivocated
-        && Objects.equals(currentRoot, that.currentRoot)
-        && Objects.equals(nextRoot, that.nextRoot)
-        && Objects.equals(nextEpoch, that.nextEpoch);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(currentRoot, nextRoot, nextEpoch, equivocated);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("currentRoot", currentRoot)
-        .add("nextRoot", nextRoot)
-        .add("nextEpoch", nextEpoch)
-        .add("equivocated", equivocated)
-        .toString();
+  enum Version {
+    V1,
+    V2
   }
 }

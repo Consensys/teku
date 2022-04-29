@@ -95,7 +95,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    * @param justifiedCheckpoint the current justified checkpoint
    * @param justifiedStateEffectiveBalances the effective validator balances at the justified
    *     checkpoint
-   * @param equivocatingIndices indices for which we don't count votes
    * @return the best chain head block root
    */
   public Bytes32 applyPendingVotes(
@@ -104,8 +103,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances,
-      final UInt64 proposerBoostAmount,
-      final Set<UInt64> equivocatingIndices) {
+      final UInt64 proposerBoostAmount) {
     protoArrayLock.writeLock().lock();
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
@@ -120,8 +118,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               this.proposerBoostRoot,
               proposerBoostRoot,
               this.proposerBoostAmount,
-              proposerBoostAmount,
-              equivocatingIndices);
+              proposerBoostAmount);
 
       protoArray.applyScoreChanges(
           deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
@@ -137,10 +134,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  public void onAttestation(
-      final VoteUpdater voteUpdater,
-      final IndexedAttestation attestation,
-      final Set<UInt64> equivocatingIndices) {
+  public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
       attestation
@@ -152,8 +146,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       voteUpdater,
                       validatorIndex,
                       attestation.getData().getBeaconBlockRoot(),
-                      attestation.getData().getTarget().getEpoch(),
-                      equivocatingIndices.contains(validatorIndex)));
+                      attestation.getData().getTarget().getEpoch()));
     } finally {
       votesLock.writeLock().unlock();
     }
@@ -215,18 +208,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   void processAttestation(
-      VoteUpdater voteUpdater,
-      UInt64 validatorIndex,
-      Bytes32 blockRoot,
-      UInt64 targetEpoch,
-      boolean equivocatingValidator) {
-    if (equivocatingValidator) {
+      VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
+    VoteTracker vote = voteUpdater.getVote(validatorIndex);
+    // Not updating anything for equivocated validators
+    if (vote.isEquivocated() || vote.isMarkedToEquivocate()) {
       return;
     }
-    VoteTracker vote = voteUpdater.getVote(validatorIndex);
 
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
-      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
+      VoteTracker newVote = VoteTracker.create(vote.getCurrentRoot(), blockRoot, targetEpoch);
       voteUpdater.putVote(validatorIndex, newVote);
     }
   }

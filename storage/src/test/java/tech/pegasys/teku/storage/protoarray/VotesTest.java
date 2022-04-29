@@ -23,7 +23,6 @@ import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.createStor
 import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.getHash;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -92,7 +91,7 @@ public class VotesTest {
     //          0
     //         / \
     //        2   1 <- +vote
-    forkChoice.processAttestation(store, unsigned(0), getHash(1), unsigned(2), false);
+    forkChoice.processAttestation(store, unsigned(0), getHash(1), unsigned(2));
 
     // Ensure that the head is now 1, because 1 has a vote.
     //
@@ -109,7 +108,7 @@ public class VotesTest {
     //           0
     //          / \
     // +vote-> 2   1
-    forkChoice.processAttestation(store, unsigned(1), getHash(2), unsigned(2), false);
+    forkChoice.processAttestation(store, unsigned(1), getHash(2), unsigned(2));
 
     // Ensure that the head is 2 since 1 and 2 both have a vote
     //
@@ -149,7 +148,7 @@ public class VotesTest {
     //        2   1 <- -vote
     //            |
     //            3 <- +vote
-    forkChoice.processAttestation(store, unsigned(0), getHash(3), unsigned(3), false);
+    forkChoice.processAttestation(store, unsigned(0), getHash(3), unsigned(3));
 
     // Ensure that the head is still 2
     //
@@ -171,7 +170,7 @@ public class VotesTest {
     // -vote-> 2   1 <- +vote
     //             |
     //             3
-    forkChoice.processAttestation(store, unsigned(1), getHash(1), unsigned(3), false);
+    forkChoice.processAttestation(store, unsigned(1), getHash(1), unsigned(3));
 
     // Ensure that the head is now 3
     //
@@ -265,8 +264,8 @@ public class VotesTest {
     //             4
     //            / \
     // +2 vote-> 5   6
-    forkChoice.processAttestation(store, unsigned(0), getHash(5), unsigned(4), false);
-    forkChoice.processAttestation(store, unsigned(1), getHash(5), unsigned(4), false);
+    forkChoice.processAttestation(store, unsigned(0), getHash(5), unsigned(4));
+    forkChoice.processAttestation(store, unsigned(1), getHash(5), unsigned(4));
 
     // Add blocks 7, 8 and 9. Adding these blocks helps test the `best_descendant`
     // functionality.
@@ -355,8 +354,8 @@ public class VotesTest {
     //          8
     //         /
     //        9 <- +2 votes
-    forkChoice.processAttestation(store, unsigned(0), getHash(9), unsigned(5), false);
-    forkChoice.processAttestation(store, unsigned(1), getHash(9), unsigned(5), false);
+    forkChoice.processAttestation(store, unsigned(0), getHash(9), unsigned(5));
+    forkChoice.processAttestation(store, unsigned(1), getHash(9), unsigned(5));
 
     // Add block 10
     //
@@ -402,8 +401,8 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- +2 votes
-    forkChoice.processAttestation(store, unsigned(2), getHash(10), unsigned(5), false);
-    forkChoice.processAttestation(store, unsigned(3), getHash(10), unsigned(5), false);
+    forkChoice.processAttestation(store, unsigned(2), getHash(10), unsigned(5));
+    forkChoice.processAttestation(store, unsigned(3), getHash(10), unsigned(5));
 
     // Check the head is now 10. (due to lexicographical ordering
     // (when blocks have the same amount of votes))
@@ -554,7 +553,6 @@ public class VotesTest {
         finalizedCheckpoint,
         justifiedCheckpoint,
         justifiedStateEffectiveBalances,
-        ZERO,
-        Collections.emptySet());
+        ZERO);
   }
 }

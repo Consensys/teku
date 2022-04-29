@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -80,8 +79,6 @@ public interface ReadOnlyStore {
   Checkpoint getBestJustifiedCheckpoint();
 
   Optional<Bytes32> getProposerBoostRoot();
-
-  Set<UInt64> getEquivocatingIndices();
 
   UInt64 getLatestValidFinalizedSlot();
 
