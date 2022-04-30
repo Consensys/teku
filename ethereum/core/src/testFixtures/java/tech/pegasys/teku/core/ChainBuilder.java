@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerat
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -75,6 +76,7 @@ public class ChainBuilder {
   private final Spec spec;
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
+  private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
@@ -88,6 +90,7 @@ public class ChainBuilder {
     this.validatorKeys = validatorKeys;
 
     attestationGenerator = new AttestationGenerator(spec, validatorKeys);
+    attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     blockProposalTestUtil = new BlockProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
@@ -370,6 +373,12 @@ public class ChainBuilder {
     return attestationGenerator.streamAttestations(attestedHead, attestedHead.getSlot());
   }
 
+  public AttesterSlashing createAttesterSlashingForAttestation(
+      final Attestation attestation, final SignedBlockAndState blockAndState) {
+    return attesterSlashingGenerator.createAttesterSlashingForAttestation(
+        attestation, blockAndState);
+  }
+
   private void assertChainIsNotEmpty() {
     checkState(!blocks.isEmpty(), "Unable to execute operation on empty chain");
   }
@@ -398,6 +407,10 @@ public class ChainBuilder {
       SszList<Attestation> attestations =
           BeaconBlockBodyLists.ofSpec(spec)
               .createAttestations(options.getAttestations().toArray(new Attestation[0]));
+      SszList<AttesterSlashing> attesterSlashings =
+          BeaconBlockBodyLists.ofSpec(spec)
+              .createAttesterSlashings(
+                  options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
       nextBlockAndState =
           blockProposalTestUtil.createBlock(
               signer,
@@ -406,6 +419,7 @@ public class ChainBuilder {
               parentRoot,
               Optional.of(attestations),
               Optional.empty(),
+              Optional.of(attesterSlashings),
               Optional.empty(),
               options.getEth1Data(),
               options.getTransactions(),
@@ -519,6 +533,7 @@ public class ChainBuilder {
   public static final class BlockOptions {
 
     private final List<Attestation> attestations = new ArrayList<>();
+    private final List<AttesterSlashing> attesterSlashings = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
@@ -534,6 +549,11 @@ public class ChainBuilder {
 
     public BlockOptions addAttestation(final Attestation attestation) {
       attestations.add(attestation);
+      return this;
+    }
+
+    public BlockOptions addAttesterSlashing(final AttesterSlashing attesterSlashing) {
+      attesterSlashings.add(attesterSlashing);
       return this;
     }
 
@@ -593,6 +613,10 @@ public class ChainBuilder {
 
     public boolean getWrongProposer() {
       return wrongProposer;
+    }
+
+    public List<AttesterSlashing> getAttesterSlashings() {
+      return attesterSlashings;
     }
   }
 }

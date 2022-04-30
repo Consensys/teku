@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -68,7 +69,8 @@ public class BlockProposalTestUtil {
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final SszList<Attestation> attestations,
-      final SszList<ProposerSlashing> slashings,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
@@ -93,8 +95,8 @@ public class BlockProposalTestUtil {
                     .eth1Data(eth1Data)
                     .graffiti(Bytes32.ZERO)
                     .attestations(attestations)
-                    .proposerSlashings(slashings)
-                    .attesterSlashings(blockBodyLists.createAttesterSlashings())
+                    .proposerSlashings(proposerSlashings)
+                    .attesterSlashings(attesterSlashings)
                     .deposits(deposits)
                     .voluntaryExits(exits)
                     .syncAggregate(
@@ -122,7 +124,8 @@ public class BlockProposalTestUtil {
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final SszList<Attestation> attestations,
-      final SszList<ProposerSlashing> slashings,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
@@ -149,8 +152,8 @@ public class BlockProposalTestUtil {
                         .eth1Data(eth1Data)
                         .graffiti(Bytes32.ZERO)
                         .attestations(attestations)
-                        .proposerSlashings(slashings)
-                        .attesterSlashings(blockBodyLists.createAttesterSlashings())
+                        .proposerSlashings(proposerSlashings)
+                        .attesterSlashings(attesterSlashings)
                         .deposits(deposits)
                         .voluntaryExits(exits)
                         .syncAggregate(
@@ -231,6 +234,7 @@ public class BlockProposalTestUtil {
       final Bytes32 parentBlockSigningRoot,
       final Optional<SszList<Attestation>> attestations,
       final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<AttesterSlashing>> attesterSlashings,
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data,
       final Optional<List<Bytes>> transactions,
@@ -248,6 +252,7 @@ public class BlockProposalTestUtil {
           eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
           attestations.orElse(blockBodyLists.createAttestations()),
           blockBodyLists.createProposerSlashings(),
+          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
           deposits.orElse(blockBodyLists.createDeposits()),
           exits.orElse(blockBodyLists.createVoluntaryExits()),
           transactions,
@@ -262,6 +267,7 @@ public class BlockProposalTestUtil {
         eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
         attestations.orElse(blockBodyLists.createAttestations()),
         blockBodyLists.createProposerSlashings(),
+        attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
         deposits.orElse(blockBodyLists.createDeposits()),
         exits.orElse(blockBodyLists.createVoluntaryExits()),
         transactions,

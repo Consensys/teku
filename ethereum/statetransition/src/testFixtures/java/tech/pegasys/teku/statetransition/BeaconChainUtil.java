@@ -320,6 +320,7 @@ public class BeaconChainUtil {
         bestBlockRoot,
         attestations,
         deposits,
+        Optional.empty(),
         exits,
         eth1Data,
         Optional.empty(),
