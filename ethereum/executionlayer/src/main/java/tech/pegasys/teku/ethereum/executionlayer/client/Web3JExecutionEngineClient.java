@@ -16,15 +16,12 @@ package tech.pegasys.teku.ethereum.executionlayer.client;
 import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
 
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -37,7 +34,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdated
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.TransitionConfigurationV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.serialization.SignedBeaconBlockSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,12 +42,6 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private final Web3JClient web3JClient;
-
-  static {
-    SimpleModule module = new SimpleModule("TekuEESsz", new Version(1, 0, 0, null, null, null));
-    module.addSerializer(SignedBeaconBlock.class, new SignedBeaconBlockSerializer());
-    ObjectMapperFactory.getObjectMapper().registerModule(module);
-  }
 
   public Web3JExecutionEngineClient(final Web3JClient web3JClient) {
     this.web3JClient = web3JClient;

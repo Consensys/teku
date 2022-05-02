@@ -20,7 +20,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -74,7 +73,6 @@ public class Web3JExecutionEngineClientTest {
   Writer jsonWriter;
   JsonGenerator jsonGenerator;
   ObjectMapper objectMapper;
-  SerializerProvider serializerProvider;
   DataStructureUtil dataStructureUtil;
   Spec spec;
 
@@ -85,7 +83,6 @@ public class Web3JExecutionEngineClientTest {
     jsonWriter = new StringWriter();
     jsonGenerator = new JsonFactory().createGenerator(jsonWriter);
     objectMapper = new ObjectMapper();
-    serializerProvider = objectMapper.getSerializerProvider();
     dataStructureUtil = specContext.getDataStructureUtil();
     spec = specContext.getSpec();
     mockWebServer.start();

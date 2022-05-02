@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.serialization;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.BLSSignature;
 
-public class SignedBeaconBlockSerializer extends JsonSerializer<SignedBeaconBlock> {
+public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
   @Override
-  public void serialize(SignedBeaconBlock value, JsonGenerator gen, SerializerProvider provider)
-      throws IOException {
-    value.getSchema().jsonSerialize(value, gen);
+  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    return BLSSignature.fromHexString(p.getValueAsString());
   }
 }
