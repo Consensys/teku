@@ -33,7 +33,6 @@ import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.AfterEach;
@@ -96,7 +95,6 @@ public class Web3JExecutionBuilderClientTest {
   }
 
   @TestTemplate
-  @SuppressWarnings("unchecked")
   void getPayload_shouldRoundtripWithMockedWebServer() throws Exception {
     final String jsonGetPayloadResponse =
         Resources.toString(
@@ -209,13 +207,5 @@ public class Web3JExecutionBuilderClientTest {
         .asInstanceOf(INTEGER)
         .isGreaterThanOrEqualTo(0);
     assertThat(requestBodyJsonNode.get("jsonrpc").asText()).asInstanceOf(STRING).isEqualTo("2.0");
-  }
-
-  private UInt64 deserializeToUInt64(final String value) {
-    return UInt64.valueOf(Bytes.fromHexStringLenient(value).toUnsignedBigInteger());
-  }
-
-  private Bytes32 deserializeToBytes32(final String value) {
-    return Bytes32.fromHexStringStrict(value);
   }
 }
