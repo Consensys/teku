@@ -17,16 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
@@ -48,7 +43,6 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.SignedMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
@@ -60,23 +54,15 @@ public class Web3JExecutionBuilderClientTest {
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
-  Writer jsonWriter;
-  JsonGenerator jsonGenerator;
   ObjectMapper objectMapper;
-  SerializerProvider serializerProvider;
   DataStructureUtil dataStructureUtil;
-  Spec spec;
 
   Web3JExecutionBuilderClient ebClient;
 
   @BeforeEach
   void setUp(SpecContext specContext) throws IOException {
-    jsonWriter = new StringWriter();
-    jsonGenerator = new JsonFactory().createGenerator(jsonWriter);
     objectMapper = new ObjectMapper();
-    serializerProvider = objectMapper.getSerializerProvider();
     dataStructureUtil = specContext.getDataStructureUtil();
-    spec = specContext.getSpec();
     mockWebServer.start();
     Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
     Web3JClient web3JClient =
