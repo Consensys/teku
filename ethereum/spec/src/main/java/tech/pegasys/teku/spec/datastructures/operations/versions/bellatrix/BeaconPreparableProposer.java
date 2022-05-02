@@ -13,12 +13,36 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES20_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconPreparableProposer {
+  private static final DeserializableTypeDefinition<BeaconPreparableProposer>
+      BEACON_PREPARABLE_PROPOSER_TYPE =
+          DeserializableTypeDefinition.object(BeaconPreparableProposer.class, Builder.class)
+              .name("BeaconPreparableProposer")
+              .finisher(Builder::build)
+              .initializer(BeaconPreparableProposer::builder)
+              .description(
+                  "The fee recipient that should be used by an associated validator index.")
+              .withField(
+                  "validator_index",
+                  UINT64_TYPE,
+                  BeaconPreparableProposer::getValidatorIndex,
+                  Builder::validatorIndex)
+              .withField(
+                  "fee_recipient",
+                  BYTES20_TYPE,
+                  BeaconPreparableProposer::getFeeRecipient,
+                  Builder::feeRecipient)
+              .build();
+
   private final UInt64 validatorIndex;
   private final Bytes20 feeRecipient;
 
@@ -59,5 +83,34 @@ public class BeaconPreparableProposer {
         .add("validatorIndex", validatorIndex)
         .add("feeRecipient", feeRecipient)
         .toString();
+  }
+
+  public static DeserializableTypeDefinition<BeaconPreparableProposer> getJsonTypeDefinition() {
+    return BEACON_PREPARABLE_PROPOSER_TYPE;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private UInt64 validatorIndex;
+    private Bytes20 feeRecipient;
+
+    public Builder() {}
+
+    public Builder feeRecipient(final Bytes20 feeRecipient) {
+      this.feeRecipient = feeRecipient;
+      return this;
+    }
+
+    public Builder validatorIndex(final UInt64 validatorIndex) {
+      this.validatorIndex = validatorIndex;
+      return this;
+    }
+
+    public BeaconPreparableProposer build() {
+      return new BeaconPreparableProposer(validatorIndex, feeRecipient);
+    }
   }
 }
