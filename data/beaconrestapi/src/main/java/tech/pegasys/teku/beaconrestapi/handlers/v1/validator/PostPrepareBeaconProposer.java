@@ -19,6 +19,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES20_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,15 +34,36 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 
 public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
+
+  private static final DeserializableTypeDefinition<BeaconPreparableProposer>
+      BEACON_PREPARABLE_PROPOSER_TYPE =
+          DeserializableTypeDefinition.object(
+                  BeaconPreparableProposer.class, BeaconPreparableProposer.Builder.class)
+              .name("BeaconPreparableProposer")
+              .finisher(BeaconPreparableProposer.Builder::build)
+              .initializer(BeaconPreparableProposer::builder)
+              .description(
+                  "The fee recipient that should be used by an associated validator index.")
+              .withField(
+                  "validator_index",
+                  UINT64_TYPE,
+                  BeaconPreparableProposer::getValidatorIndex,
+                  BeaconPreparableProposer.Builder::validatorIndex)
+              .withField(
+                  "fee_recipient",
+                  BYTES20_TYPE,
+                  BeaconPreparableProposer::getFeeRecipient,
+                  BeaconPreparableProposer.Builder::feeRecipient)
+              .build();
 
   private final ValidatorDataProvider validatorDataProvider;
   private final boolean isProposerDefaultFeeRecipientDefined;
@@ -65,7 +88,11 @@ public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
       summary = "Provide beacon node with proposals for the given validators.",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = BeaconPreparableProposer[].class)}),
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer[].class)
+              }),
       description =
           "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
               + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
@@ -100,10 +127,7 @@ public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
                 + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
                 + "Also note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-        .requestBodyType(
-            DeserializableTypeDefinition.listOf(
-                tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix
-                    .BeaconPreparableProposer.getJsonTypeDefinition()))
+        .requestBodyType(DeserializableTypeDefinition.listOf(BEACON_PREPARABLE_PROPOSER_TYPE))
         .response(SC_OK, "Preparation information has been received.")
         .response(
             HttpStatusCodes.SC_ACCEPTED,

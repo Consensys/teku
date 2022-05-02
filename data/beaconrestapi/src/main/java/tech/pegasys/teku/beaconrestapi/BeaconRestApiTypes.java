@@ -16,16 +16,10 @@ package tech.pegasys.teku.beaconrestapi;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 
-import java.util.List;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 
 public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
       new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
-  public static final DeserializableTypeDefinition<List<BeaconPreparableProposer>>
-      PREPARE_BEACON_PROPOSER_REQUEST =
-          DeserializableTypeDefinition.listOf(BeaconPreparableProposer.getJsonTypeDefinition());
 }
