@@ -109,11 +109,7 @@ class ProtoArrayScoreCalculator {
       subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
       addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
       final VoteTracker newVote;
-      if (vote.isNextEquivocating()) {
-        newVote = VoteTracker.markCurrentEquivocating(vote);
-      } else {
-        newVote = VoteTracker.create(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
-      }
+      newVote = new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch(), vote.isNextEquivocating(), vote.isNextEquivocating());
       store.putVote(validatorIndex, newVote);
     }
   }
