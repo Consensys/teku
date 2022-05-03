@@ -120,62 +120,61 @@ public class BlindedBeaconBlockBodyV1 {
     final BeaconBlockBodySchema<?> schema = getBeaconBlockBodySchema(spec);
 
     return schema.createBlockBody(
-        builder -> {
-          builder
-              .randaoReveal(randaoReveal.asInternalBLSSignature())
-              .eth1Data(
-                  new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
-                      eth1Data.depositRoot, eth1Data.depositCount, eth1Data.blockHash))
-              .graffiti(graffiti)
-              .attestations(
-                  attestations.stream()
-                      .map(attestation -> attestation.asInternalAttestation(spec))
-                      .collect(schema.getAttestationsSchema().collector()))
-              .proposerSlashings(
-                  proposerSlashings.stream()
-                      .map(ProposerSlashingV1::asInternalProposerSlashing)
-                      .collect(schema.getProposerSlashingsSchema().collector()))
-              .attesterSlashings(
-                  attesterSlashings.stream()
-                      .map(slashing -> slashing.asInternalAttesterSlashing(spec))
-                      .collect(schema.getAttesterSlashingsSchema().collector()))
-              .deposits(
-                  deposits.stream()
-                      .map(DepositV1::asInternalDeposit)
-                      .collect(schema.getDepositsSchema().collector()))
-              .voluntaryExits(
-                  voluntaryExits.stream()
-                      .map(
-                          voluntaryExit ->
-                              new SignedVoluntaryExit(
-                                  voluntaryExit.getMessage().asInternalVoluntaryExit(),
-                                  voluntaryExit.getSignature().asInternalBLSSignature()))
-                      .collect(schema.getVoluntaryExitsSchema().collector()))
-              .syncAggregate(
-                  () ->
-                      syncAggregateSchema.create(
-                          syncAggregateSchema
-                              .getSyncCommitteeBitsSchema()
-                              .fromBytes(syncAggregate.syncCommitteeBits)
-                              .getAllSetBits(),
-                          syncAggregate.syncCommitteeSignature.asInternalBLSSignature()))
-              .executionPayloadHeader(
-                  () ->
-                      executionPayloadHeaderSchema.create(
-                          executionPayloadHeader.parentHash,
-                          executionPayloadHeader.feeRecipient,
-                          executionPayloadHeader.stateRoot,
-                          executionPayloadHeader.receiptsRoot,
-                          executionPayloadHeader.logsBloom,
-                          executionPayloadHeader.prevRandao,
-                          executionPayloadHeader.blockNumber,
-                          executionPayloadHeader.gasLimit,
-                          executionPayloadHeader.gasUsed,
-                          executionPayloadHeader.timestamp,
-                          executionPayloadHeader.extraData,
-                          executionPayloadHeader.baseFeePerGas,
-                          executionPayloadHeader.blockHash,
-                          executionPayloadHeader.transactionsRoot));
-        });
+        builder ->
+            builder
+                .randaoReveal(randaoReveal.asInternalBLSSignature())
+                .eth1Data(
+                    new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
+                        eth1Data.depositRoot, eth1Data.depositCount, eth1Data.blockHash))
+                .graffiti(graffiti)
+                .attestations(
+                    attestations.stream()
+                        .map(attestation -> attestation.asInternalAttestation(spec))
+                        .collect(schema.getAttestationsSchema().collector()))
+                .proposerSlashings(
+                    proposerSlashings.stream()
+                        .map(ProposerSlashingV1::asInternalProposerSlashing)
+                        .collect(schema.getProposerSlashingsSchema().collector()))
+                .attesterSlashings(
+                    attesterSlashings.stream()
+                        .map(slashing -> slashing.asInternalAttesterSlashing(spec))
+                        .collect(schema.getAttesterSlashingsSchema().collector()))
+                .deposits(
+                    deposits.stream()
+                        .map(DepositV1::asInternalDeposit)
+                        .collect(schema.getDepositsSchema().collector()))
+                .voluntaryExits(
+                    voluntaryExits.stream()
+                        .map(
+                            voluntaryExit ->
+                                new SignedVoluntaryExit(
+                                    voluntaryExit.getMessage().asInternalVoluntaryExit(),
+                                    voluntaryExit.getSignature().asInternalBLSSignature()))
+                        .collect(schema.getVoluntaryExitsSchema().collector()))
+                .syncAggregate(
+                    () ->
+                        syncAggregateSchema.create(
+                            syncAggregateSchema
+                                .getSyncCommitteeBitsSchema()
+                                .fromBytes(syncAggregate.syncCommitteeBits)
+                                .getAllSetBits(),
+                            syncAggregate.syncCommitteeSignature.asInternalBLSSignature()))
+                .executionPayloadHeader(
+                    () ->
+                        executionPayloadHeaderSchema.create(
+                            executionPayloadHeader.parentHash,
+                            executionPayloadHeader.feeRecipient,
+                            executionPayloadHeader.stateRoot,
+                            executionPayloadHeader.receiptsRoot,
+                            executionPayloadHeader.logsBloom,
+                            executionPayloadHeader.prevRandao,
+                            executionPayloadHeader.blockNumber,
+                            executionPayloadHeader.gasLimit,
+                            executionPayloadHeader.gasUsed,
+                            executionPayloadHeader.timestamp,
+                            executionPayloadHeader.extraData,
+                            executionPayloadHeader.baseFeePerGas,
+                            executionPayloadHeader.blockHash,
+                            executionPayloadHeader.transactionsRoot)));
   }
 }

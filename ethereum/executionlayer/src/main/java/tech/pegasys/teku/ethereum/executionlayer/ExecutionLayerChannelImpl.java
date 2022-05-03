@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -30,22 +32,25 @@ import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClien
 import tech.pegasys.teku.ethereum.executionclient.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.Web3JExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.Web3JExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -58,8 +63,6 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionEngineClient executionEngineClient;
-
-  @SuppressWarnings("UnusedVariable") // will be removed in upcoming PR
   private final Optional<ExecutionBuilderClient> executionBuilderClient;
 
   private final Spec spec;
@@ -160,11 +163,13 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(final Bytes8 payloadId, final UInt64 slot) {
-    LOG.trace("calling getPayload(payloadId={}, slot={})", payloadId, slot);
+  public SafeFuture<ExecutionPayload> engineGetPayload(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    LOG.trace(
+        "calling getPayload(executionPayloadContext={}, slot={})", executionPayloadContext, slot);
 
     return executionEngineClient
-        .getPayload(payloadId)
+        .getPayload(executionPayloadContext.getPayloadId())
         .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
@@ -175,7 +180,10 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenPeek(
             executionPayload ->
                 LOG.trace(
-                    "getPayload(payloadId={}, slot={}) -> {}", payloadId, slot, executionPayload));
+                    "getPayload(executionPayloadContext={}, slot={}) -> {}",
+                    executionPayloadContext,
+                    slot,
+                    executionPayload));
   }
 
   @Override
@@ -213,39 +221,59 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(
-      final Bytes8 payloadId, final UInt64 slot) {
-    LOG.trace("calling getPayloadHeader(payloadId={}, slot={})", payloadId, slot);
+  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    checkState(executionBuilderClient.isPresent());
 
-    return executionEngineClient
-        .getPayloadHeader(payloadId)
+    LOG.trace(
+        "calling builder builderGetHeader(payloadId={}, slot={})", executionPayloadContext, slot);
+
+    return executionBuilderClient
+        .get()
+        .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                        .getExecutionPayloadHeaderSchema()),
-            ExecutionPayloadHeaderV1::asInternalExecutionPayloadHeader)
+        .thenApply(
+            builderBidV1SignedMessage ->
+                getExecutionHeaderFromBuilderBid(builderBidV1SignedMessage, slot))
         .thenPeek(
             executionPayloadHeader ->
                 LOG.trace(
-                    "getPayloadHeader(payloadId={}, slot={}) -> {}",
-                    payloadId,
+                    "builderGetHeader(payloadId={}, slot={}) -> {}",
+                    executionPayloadContext,
                     slot,
                     executionPayloadHeader));
   }
 
+  private ExecutionPayloadHeader getExecutionHeaderFromBuilderBid(
+      SignedMessage<BuilderBidV1> signedBuilderBid, UInt64 slot) {
+    ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
+        SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema();
+    // validate signature
+
+    return signedBuilderBid
+        .getMessage()
+        .getHeader()
+        .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema);
+  }
+
   @Override
-  public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+  public SafeFuture<ExecutionPayload> builderGetPayload(
       SignedBeaconBlock signedBlindedBeaconBlock) {
-    LOG.trace("calling proposeBlindedBlock(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     checkArgument(
         signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
         "SignedBeaconBlock must be blind");
 
-    return executionEngineClient
-        .proposeBlindedBlock(signedBlindedBeaconBlock)
+    checkState(executionBuilderClient.isPresent());
+
+    return executionBuilderClient
+        .get()
+        .getPayload(
+            new SignedMessage<>(
+                new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
+                signedBlindedBeaconBlock.getSignature()))
         .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
@@ -257,7 +285,7 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenPeek(
             executionPayload ->
                 LOG.trace(
-                    "proposeBlindedBlock(signedBlindedBeaconBlock={}) -> {}",
+                    "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
                     signedBlindedBeaconBlock,
                     executionPayload));
   }
