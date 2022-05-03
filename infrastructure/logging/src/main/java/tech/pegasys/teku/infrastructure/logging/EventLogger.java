@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -185,15 +186,19 @@ public class EventLogger {
         Color.GREEN);
   }
 
-  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta) {
+  public void terminalPowBlockTtdEta(final UInt256 ttd, final Optional<Duration> maybeEta) {
 
     final String etaString =
-        String.format(
-            "%s days and %sh %sm %ss",
-            eta.toDays(),
-            eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
-            eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
-            eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
+        maybeEta
+            .map(
+                eta ->
+                    String.format(
+                        "%s days and %sh %sm %ss",
+                        eta.toDays(),
+                        eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
+                        eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
+                        eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes())))
+            .orElse("N/A");
 
     log.info(String.format("TTD (%s) ETA: %s", ttd, etaString));
   }

@@ -293,15 +293,18 @@ public class TerminalPowBlockMonitor {
                 .orElse(UInt256.ZERO)
                 .divide(lastTotalDifficultyDiffs.size());
         final UInt256 averageDifficultyPerSecond = diffAverage.divide(pollingPeriod.getSeconds());
-
         final UInt256 ttd = specConfigBellatrix.getTerminalTotalDifficulty();
 
-        final UInt256 secondsToTTD =
-            ttd.subtract(totalDifficulty).divide(averageDifficultyPerSecond);
+        if (averageDifficultyPerSecond.isZero()) {
+          eventLogger.terminalPowBlockTtdEta(ttd, Optional.empty());
+        } else {
+          final UInt256 secondsToTTD =
+              ttd.subtract(totalDifficulty).divide(averageDifficultyPerSecond);
 
-        final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
+          final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
 
-        eventLogger.terminalPowBlockTtdEta(ttd, eta);
+          eventLogger.terminalPowBlockTtdEta(ttd, Optional.of(eta));
+        }
       }
     }
 

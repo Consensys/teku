@@ -452,10 +452,15 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor.start();
 
-    final UInt64 bellatrixSlot =
-        BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch());
-
     goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+
+    pollTtd(UInt256.ZERO);
+    pollTtd(UInt256.ZERO);
+    pollTtd(UInt256.ZERO);
+    pollTtd(UInt256.ZERO);
+    pollTtd(UInt256.ZERO);
+
+    verify(eventLogger).terminalPowBlockTtdEta(TTD, Optional.empty());
 
     pollTtd(TTD.subtract(tdDiff.multiply(5)));
     pollTtd(TTD.subtract(tdDiff.multiply(4)));
@@ -463,9 +468,8 @@ public class TerminalPowBlockMonitorTest {
     pollTtd(TTD.subtract(tdDiff.multiply(2)));
     pollTtd(TTD.subtract(tdDiff.multiply(1)));
 
-    verify(eventLogger)
-        .terminalPowBlockTtdEta(
-            TTD, Duration.ofSeconds(spec.getSecondsPerEth1Block(bellatrixSlot)));
+    verify(eventLogger).terminalPowBlockTtdEta(TTD, Optional.of(Duration.ofSeconds(17)));
+
     verifyNoMoreInteractions(eventLogger);
   }
 
