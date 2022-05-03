@@ -460,15 +460,15 @@ public class TerminalPowBlockMonitorTest {
     pollTtd(UInt256.ZERO);
     pollTtd(UInt256.ZERO);
 
-    verify(eventLogger).terminalPowBlockTtdEta(TTD, Optional.empty());
-
     pollTtd(TTD.subtract(tdDiff.multiply(5)));
     pollTtd(TTD.subtract(tdDiff.multiply(4)));
     pollTtd(TTD.subtract(tdDiff.multiply(3)));
     pollTtd(TTD.subtract(tdDiff.multiply(2)));
-    pollTtd(TTD.subtract(tdDiff.multiply(1)));
 
-    verify(eventLogger).terminalPowBlockTtdEta(TTD, Optional.of(Duration.ofSeconds(17)));
+    final UInt256 expectedEventTD = TTD.subtract(tdDiff.multiply(1));
+    pollTtd(expectedEventTD);
+
+    verify(eventLogger).terminalPowBlockTtdEta(expectedEventTD, Duration.ofSeconds(17));
 
     verifyNoMoreInteractions(eventLogger);
   }
