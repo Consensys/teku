@@ -31,14 +31,16 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           final Bytes32 currentRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 nextRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final UInt64 nextEpoch = UInt64.fromLongBits(reader.readUInt64());
+          final boolean currentEquivocating;
+          final boolean nextEquivocating;
           if (reader.isComplete()) {
-            // Old version
-            return new VoteTrackerV1(currentRoot, nextRoot, nextEpoch);
+            currentEquivocating = false;
+            nextEquivocating = false;
           } else {
-            // Version with equivocation
-            return new VoteTrackerV2(
-                currentRoot, nextRoot, nextEpoch, reader.readBoolean(), reader.readBoolean());
+            currentEquivocating = reader.readBoolean();
+            nextEquivocating = reader.readBoolean();
           }
+          return new VoteTracker(currentRoot, nextRoot, nextEpoch, currentEquivocating, nextEquivocating);
         });
   }
 
