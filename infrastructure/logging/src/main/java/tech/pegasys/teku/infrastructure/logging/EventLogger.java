@@ -87,6 +87,15 @@ public class EventLogger {
     info(syncEventLog, Color.WHITE);
   }
 
+  public void syncEventAwaitingEL(
+      final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
+    final String syncEventLog =
+        String.format(
+            "Syncing     *** Target slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
+            nodeSlot, headSlot, numPeers);
+    info(syncEventLog, Color.WHITE);
+  }
+
   public void syncCompleted() {
     info("Syncing completed", Color.GREEN);
   }
@@ -195,7 +204,7 @@ public class EventLogger {
             eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
             eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
 
-    log.info(String.format("TTD (%s) ETA: %s", ttd, etaString));
+    log.info(String.format("TTD ETA: %s - Current Total Difficulty: %s", etaString, ttd));
   }
 
   public void transitionConfigurationTtdTbhMismatch(

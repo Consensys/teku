@@ -814,6 +814,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig.beaconRestApiConfig(),
                   eventChannels,
                   eventAsyncRunner,
+                  timeProvider,
                   spec));
 
       if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {

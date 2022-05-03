@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -114,8 +113,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   @Override
   public void onForkChoiceUpdatedResult(
       final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
-    final UInt64 latestFinalizedBlockSlot =
-        recentChainData.getStore().getLatestFinalizedBlockSlot();
     forkChoiceUpdatedResultNotification
         .getForkChoiceUpdatedResult()
         .thenAccept(
@@ -126,8 +123,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             forkChoiceUpdatedResultNotification
                                 .getForkChoiceState()
                                 .getHeadBlockRoot(),
-                            forkChoiceUpdatedResult.getPayloadStatus(),
-                            latestFinalizedBlockSlot)))
+                            forkChoiceUpdatedResult.getPayloadStatus())))
         .reportExceptions();
   }
 
@@ -333,13 +329,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       }
     }
 
-    if (payloadResult.hasValidStatus()) {
-      UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
-      if (latestValidFinalizedSlot.isGreaterThan(transaction.getLatestValidFinalizedSlot())) {
-        transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
-      }
-    }
-
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionReady);
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
@@ -380,9 +369,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void onExecutionPayloadResult(
-      final Bytes32 blockRoot,
-      final PayloadStatus payloadResult,
-      final UInt64 latestFinalizedBlockSlot) {
+      final Bytes32 blockRoot, final PayloadStatus payloadResult) {
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
       transitionValidatedStatus = transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot);
@@ -392,19 +379,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     transitionValidatedStatus.finishAsync(
         result -> {
-          if (result.getStatus().hasStatus(ExecutionPayloadStatus.VALID)) {
-            UInt64 latestValidFinalizedSlotInStore = recentChainData.getLatestValidFinalizedSlot();
+          final PayloadStatus resultStatus = result.getStatus();
+          final Bytes32 validatedBlockRoot =
+              result.getInvalidTransitionBlockRoot().orElse(blockRoot);
 
-            if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
-              final StoreTransaction transaction = recentChainData.startStoreTransaction();
-              transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
-              transaction.commit().join();
-            }
+          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
+
+          if (resultStatus.hasInvalidStatus()) {
+            LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
+            processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
           }
-
-          getForkChoiceStrategy()
-              .onExecutionPayloadResult(
-                  result.getInvalidTransitionBlockRoot().orElse(blockRoot), result.getStatus());
         },
         error -> {
           // Pass FatalServiceFailureException up to the uncaught exception handler.

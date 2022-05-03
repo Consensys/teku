@@ -108,6 +108,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -130,6 +131,7 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Spec spec) {
     final Info applicationInfo = createApplicationInfo();
     openApiDocBuilder =
@@ -162,7 +164,8 @@ public class BeaconRestApi {
     addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
-    addStandardApiHandlers(dataProvider, spec, eventChannels, asyncRunner, configuration);
+    addStandardApiHandlers(
+        dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
     addTekuSpecificHandlers(dataProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
@@ -176,9 +179,10 @@ public class BeaconRestApi {
       final Spec spec,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final BeaconRestApiConfig configuration) {
     addBeaconHandlers(dataProvider, spec);
-    addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
+    addEventHandler(dataProvider, eventChannels, asyncRunner, timeProvider, configuration);
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider, spec);
     addConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
@@ -252,6 +256,7 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Spec spec) {
     this.app =
         Javalin.create(
@@ -270,7 +275,7 @@ public class BeaconRestApi {
                 }
               }
             });
-    initialize(dataProvider, configuration, eventChannels, asyncRunner, spec);
+    initialize(dataProvider, configuration, eventChannels, asyncRunner, timeProvider, spec);
   }
 
   BeaconRestApi(
@@ -278,10 +283,11 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Javalin app,
       final Spec spec) {
     this.app = app;
-    initialize(dataProvider, configuration, eventChannels, asyncRunner, spec);
+    initialize(dataProvider, configuration, eventChannels, asyncRunner, timeProvider, spec);
   }
 
   public void start() {
@@ -428,11 +434,16 @@ public class BeaconRestApi {
       final DataProvider dataProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final BeaconRestApiConfig configuration) {
     app.get(
         GetEvents.ROUTE,
         new GetEvents(
-            dataProvider, eventChannels, asyncRunner, configuration.getMaxPendingEvents()));
+            dataProvider,
+            eventChannels,
+            asyncRunner,
+            timeProvider,
+            configuration.getMaxPendingEvents()));
   }
 
   public void stop() {
