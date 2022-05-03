@@ -138,7 +138,7 @@ public interface SpecConfig {
 
   int getDepositNetworkId();
 
-  Bytes getDepositContractAddress();
+  String getDepositContractAddress();
 
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();

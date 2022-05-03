@@ -25,14 +25,25 @@ public class MessageDigestFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String SHA_256 = "SHA-256";
-  private static final Provider SECURITY_PROVIDER = selectSecurityProvider();
+  public static final String KECCAK_256 = "KECCAK-256";
+  private static final Provider SHA_256_SECURITY_PROVIDER = selectSha256SecurityProvider();
+  private static final Provider KECCAK_256_SECURITY_PROVIDER = new BouncyCastleProvider();
 
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   public static MessageDigest createSha256() {
     try {
-      return MessageDigest.getInstance(SHA_256, SECURITY_PROVIDER);
+      return MessageDigest.getInstance(SHA_256, SHA_256_SECURITY_PROVIDER);
     } catch (final NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 algorithm not available", e);
+    }
+  }
+
+  @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
+  public static MessageDigest createKeccak256() {
+    try {
+      return MessageDigest.getInstance(KECCAK_256, KECCAK_256_SECURITY_PROVIDER);
+    } catch (final NoSuchAlgorithmException e) {
+      throw new IllegalStateException("KECCAK-256 algorithm not available", e);
     }
   }
 
@@ -49,7 +60,7 @@ public class MessageDigestFactory {
    * @return the security provider.
    */
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
-  private static Provider selectSecurityProvider() {
+  private static Provider selectSha256SecurityProvider() {
     final Provider sunProvider = Security.getProvider("SUN");
     if (sunProvider == null) {
       return new BouncyCastleProvider();

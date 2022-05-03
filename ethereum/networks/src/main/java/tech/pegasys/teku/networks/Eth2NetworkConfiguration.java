@@ -88,7 +88,7 @@ public class Eth2NetworkConfiguration {
     this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
-            ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
+            ? Eth1Address.fromHexString(spec.getGenesisSpecConfig().getDepositContractAddress())
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.proposerBoostEnabled = proposerBoostEnabled;
@@ -230,7 +230,7 @@ public class Eth2NetworkConfiguration {
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         final String contractAddress =
-            spec.getGenesisSpec().getConfig().getDepositContractAddress().toUnprefixedHexString();
+            spec.getGenesisSpec().getConfig().getDepositContractAddress().replace("0x", "");
         if (contractAddress.length() < 40) {
           eth1DepositContractAddress("0x" + Strings.padStart(contractAddress, 40, '0'));
         } else {

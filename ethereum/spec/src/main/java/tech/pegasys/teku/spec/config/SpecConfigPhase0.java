@@ -97,7 +97,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   // Deposit Contract
   private final int depositChainId;
   private final int depositNetworkId;
-  private final Bytes depositContractAddress;
+  private final String depositContractAddress;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -149,7 +149,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int proposerScoreBoost,
       final int depositChainId,
       final int depositNetworkId,
-      final Bytes depositContractAddress) {
+      final String depositContractAddress) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -474,7 +474,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Bytes getDepositContractAddress() {
+  public String getDepositContractAddress() {
     return depositContractAddress;
   }
 

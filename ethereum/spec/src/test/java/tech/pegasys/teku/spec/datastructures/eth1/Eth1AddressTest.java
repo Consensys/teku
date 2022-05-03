@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.eth1;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
 
 import org.junit.jupiter.api.Test;
@@ -24,5 +25,34 @@ class Eth1AddressTest {
     assertRoundTrip(
         Eth1Address.fromHexString("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6"),
         Eth1Address.getJsonTypeDefinition());
+  }
+
+  @Test
+  void eth1Address_checksumAllCaps() throws Exception {
+    Eth1Address.fromHexString("0x52908400098527886E0F7030069857D2E4169EE7");
+    Eth1Address.fromHexString("0x8617E340B3D01FA5F11F306F4090FD50E238070D");
+  }
+
+  @Test
+  void eth1Address_checksumAllLower() throws Exception {
+    Eth1Address.fromHexString("0xde709f2102306220921060314715629080e2fb77");
+    Eth1Address.fromHexString("0x27b1fdb04752bbc536007a920d24acb045561c26");
+  }
+
+  @Test
+  void eth1Address_checksumNormal() throws Exception {
+    Eth1Address.fromHexString("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
+    Eth1Address.fromHexString("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359");
+    Eth1Address.fromHexString("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB");
+    Eth1Address.fromHexString("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb");
+  }
+
+  @Test
+  void eth1Address_checksumInvalid() throws Exception {
+    assertThatThrownBy(
+            // The first "normal" address with the last character made uppercase.
+            () -> Eth1Address.fromHexString("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
   }
 }

@@ -181,7 +181,7 @@ public final class DataStructureUtil {
   }
 
   public Eth1Address randomEth1Address() {
-    return new Eth1Address(randomBytes32().slice(0, 20));
+    return Eth1Address.fromHexStringWithChecksum(randomBytes32().slice(0, 20).toHexString());
   }
 
   public Bytes4 randomBytes4() {

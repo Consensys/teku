@@ -24,7 +24,6 @@ import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
 import io.javalin.jetty.JettyServer;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -126,7 +125,7 @@ public class BeaconRestApiV1Test {
   @BeforeEach
   public void setup() {
     final Eth1Address depositContractAddress =
-        new Eth1Address(Bytes.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd"));
+        Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd");
     BeaconRestApiConfig beaconRestApiConfig =
         BeaconRestApiConfig.builder()
             .restApiDocsEnabled(false)

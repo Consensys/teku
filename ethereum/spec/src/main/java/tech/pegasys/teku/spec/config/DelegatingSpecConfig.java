@@ -291,7 +291,7 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes getDepositContractAddress() {
+  public String getDepositContractAddress() {
     return specConfig.getDepositContractAddress();
   }
 
