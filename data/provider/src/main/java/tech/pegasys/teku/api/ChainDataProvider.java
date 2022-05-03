@@ -96,6 +96,11 @@ public class ChainDataProvider {
     this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
   }
 
+  public UInt64 getCurrentEpoch(
+      tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    return spec.getCurrentEpoch(state);
+  }
+
   public boolean isBellatrixEnabled() {
     return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
   }
@@ -466,7 +471,7 @@ public class ChainDataProvider {
         : i -> statusFilter.contains(getValidatorStatus(state, i, epoch, FAR_FUTURE_EPOCH));
   }
 
-  private IntStream getValidatorSelector(
+  public IntStream getValidatorSelector(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final List<String> validators) {
     return validators.isEmpty()
