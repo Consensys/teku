@@ -191,6 +191,22 @@ public class SlotProcessorTest {
   }
 
   @Test
+  public void onTick_shouldChangeSyncingMessageWhenWaitingForExecutionSync() {
+    ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.AWAITING_EL);
+    when(p2pNetwork.getPeerCount()).thenReturn(1);
+
+    slotProcessor.onTick(genesisTimeMillis);
+    assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
+
+    verify(slotEventsChannel).onSlot(captor.capture());
+    assertThat(captor.getValue()).isEqualTo(ZERO);
+
+    verify(syncStateProvider).getCurrentSyncState();
+    verify(eventLogger).syncEventAwaitingEL(ZERO, ZERO, 1);
+  }
+
+  @Test
   public void onTick_shouldRunStartSlotAtGenesis() {
     ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
