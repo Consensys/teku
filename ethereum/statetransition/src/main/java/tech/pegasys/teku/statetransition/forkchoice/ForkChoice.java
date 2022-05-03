@@ -391,7 +391,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     transitionValidatedStatus.finishAsync(
         result -> {
-          PayloadStatus resultStatus = result.getStatus();
+          final PayloadStatus resultStatus = result.getStatus();
 
           if (resultStatus.hasValidStatus()) {
             UInt64 latestValidFinalizedSlotInStore = recentChainData.getLatestValidFinalizedSlot();
@@ -403,7 +403,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             }
           }
 
-          Bytes32 validatedBlockRoot = result.getInvalidTransitionBlockRoot().orElse(blockRoot);
+          final Bytes32 validatedBlockRoot = result.getInvalidTransitionBlockRoot().orElse(blockRoot);
 
           getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
 
