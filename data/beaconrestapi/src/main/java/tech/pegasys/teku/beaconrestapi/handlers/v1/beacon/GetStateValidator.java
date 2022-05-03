@@ -105,7 +105,7 @@ public class GetStateValidator extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_VALIDATOR_ID)
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .response(HttpServletResponse.SC_NOT_FOUND, "Peer not found")
+            .withNotFoundResponse()
             .build());
     this.chainDataProvider = provider;
   }
