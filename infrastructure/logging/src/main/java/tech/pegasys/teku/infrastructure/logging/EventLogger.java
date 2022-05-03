@@ -204,7 +204,7 @@ public class EventLogger {
             eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
             eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
 
-    log.info(String.format("Current Total Difficulty: %s - TTD ETA: %s", ttd, etaString));
+    log.info(String.format("TTD ETA: %s - Current Total Difficulty: %s", etaString, ttd));
   }
 
   public void transitionConfigurationTtdTbhMismatch(
