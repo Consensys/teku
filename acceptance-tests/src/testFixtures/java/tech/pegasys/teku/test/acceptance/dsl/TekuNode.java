@@ -77,6 +77,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
@@ -625,7 +626,10 @@ public class TekuNode extends Node {
       configMap.put("metrics-interface", "0.0.0.0");
       configMap.put("metrics-host-allowlist", "*");
       configMap.put("data-path", DATA_PATH);
-      configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
+      configMap.put(
+          "eth1-deposit-contract-address",
+          Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd")
+              .toHexString());
       configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
       configMap.put("rest-api-host-allowlist", "*");
