@@ -34,29 +34,18 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
-import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AttesterSlashingGenerator {
   private final Spec spec;
   private final List<BLSKeyPair> validatorKeys;
-  private final AttestationUtil attestationUtil;
   private final DataStructureUtil dataStructureUtil;
 
   public AttesterSlashingGenerator(final Spec spec, final List<BLSKeyPair> validatorKeys) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.dataStructureUtil = new DataStructureUtil(spec);
-    final Predicates predicates = new Predicates();
-    final MiscHelpers miscHelpers = new MiscHelpers(spec.getGenesisSpecConfig());
-    final BeaconStateAccessors beaconStateAccessors =
-        new BeaconStateAccessorsPhase0(spec.getGenesisSpecConfig(), predicates, miscHelpers);
-    this.attestationUtil =
-        new AttestationUtil(spec.getGenesisSchemaDefinitions(), beaconStateAccessors, miscHelpers);
   }
 
   public AttesterSlashing createAttesterSlashingForAttestation(
@@ -64,6 +53,7 @@ public class AttesterSlashingGenerator {
     if (!goodAttestation.getData().getSlot().equals(blockAndState.getSlot())) {
       throw new RuntimeException("Good attestation slot and input block slot should match");
     }
+    AttestationUtil attestationUtil = spec.atSlot(blockAndState.getSlot()).getAttestationUtil();
     IndexedAttestation indexedGoodAttestation =
         attestationUtil.getIndexedAttestation(blockAndState.getState(), goodAttestation);
     int validatorIndex = indexedGoodAttestation.getAttestingIndices().get(0).get().intValue();
