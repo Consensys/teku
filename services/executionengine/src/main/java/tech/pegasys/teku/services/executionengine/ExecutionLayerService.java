@@ -16,7 +16,6 @@ package tech.pegasys.teku.services.executionengine;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerChannelImpl;
-import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -92,12 +90,10 @@ public class ExecutionLayerService extends Service {
               engineWeb3jClientProvider.getWeb3JClient(),
               builderWeb3jClientProvider.map(ExecutionClientProvider::getWeb3JClient),
               config.getEngineVersion(),
-              config.getSpec());
+              config.getSpec(),
+              metricsSystem);
     }
-    final ExecutionLayerChannel executionEngine =
-        new ThrottlingExecutionEngineChannel(
-            executionEngineChannel, MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
-    eventChannels.subscribe(ExecutionLayerChannel.class, executionEngine);
+    eventChannels.subscribe(ExecutionLayerChannel.class, executionEngineChannel);
     return SafeFuture.COMPLETE;
   }
 

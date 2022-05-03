@@ -15,15 +15,20 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionengine.Web3JClient;
 import tech.pegasys.teku.ethereum.executionengine.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.ThrottlingExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.ThrottlingExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
@@ -63,32 +68,40 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
       final Web3JClient engineWeb3JClient,
       final Optional<Web3JClient> builderWeb3JClient,
       final Version version,
-      final Spec spec) {
+      final Spec spec,
+      final MetricsSystem metricsSystem) {
     checkNotNull(version);
     return new ExecutionLayerChannelImpl(
-        createEngineClient(version, engineWeb3JClient),
-        createBuilderClient(builderWeb3JClient),
+        createEngineClient(version, engineWeb3JClient, metricsSystem),
+        createBuilderClient(builderWeb3JClient, metricsSystem),
         spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
-      final Version version, final Web3JClient web3JClient) {
+      final Version version, final Web3JClient web3JClient, final MetricsSystem metricsSystem) {
     LOG.info("Execution Engine version: {}", version);
     if (version != Version.KILNV2) {
       throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
     }
-    return new Web3JExecutionEngineClient(web3JClient);
+    return new ThrottlingExecutionEngineClient(
+        new Web3JExecutionEngineClient(web3JClient), MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
   }
 
   private static Optional<ExecutionBuilderClient> createBuilderClient(
-      final Optional<Web3JClient> web3JClient) {
-    return web3JClient.flatMap(client -> Optional.of(new Web3JExecutionBuilderClient(client)));
+      final Optional<Web3JClient> web3JClient, final MetricsSystem metricsSystem) {
+    return web3JClient.flatMap(
+        client ->
+            Optional.of(
+                new ThrottlingExecutionBuilderClient(
+                    new Web3JExecutionBuilderClient(client),
+                    MAXIMUM_CONCURRENT_EB_REQUESTS,
+                    metricsSystem)));
   }
 
   private ExecutionLayerChannelImpl(
       final ExecutionEngineClient executionEngineClient,
       final Optional<ExecutionBuilderClient> executionBuilderClient,
-      Spec spec) {
+      final Spec spec) {
     this.spec = spec;
     this.executionEngineClient = executionEngineClient;
     this.executionBuilderClient = executionBuilderClient;
