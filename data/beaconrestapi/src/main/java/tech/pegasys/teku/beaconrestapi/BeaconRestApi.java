@@ -381,8 +381,7 @@ public class BeaconRestApi {
         new PostSyncCommitteeSubscriptions(dataProvider, jsonProvider));
     app.post(
         PostContributionAndProofs.ROUTE, new PostContributionAndProofs(dataProvider, jsonProvider));
-    app.post(
-        PostPrepareBeaconProposer.ROUTE, new PostPrepareBeaconProposer(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostPrepareBeaconProposer(dataProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider, final Spec spec) {
