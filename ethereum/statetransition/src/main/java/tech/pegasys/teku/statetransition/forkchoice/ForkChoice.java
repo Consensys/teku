@@ -570,16 +570,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void applyAttesterSlashingsFromBlock(final SignedBeaconBlock signedBeaconBlock) {
     signedBeaconBlock
-        .getBeaconBlock()
-        .ifPresent(
-            beaconBlock ->
-                beaconBlock
-                    .getBody()
-                    .getAttesterSlashings()
-                    .forEach(
-                        attesterSlashing ->
-                            onAttesterSlashing(
-                                attesterSlashing, InternalValidationResult.ACCEPT, true)));
+        .getMessage()
+        .getBody()
+        .getAttesterSlashings()
+        .forEach(
+            attesterSlashing ->
+                onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
   }
 
   public void onAttesterSlashing(
