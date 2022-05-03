@@ -31,7 +31,6 @@ public class StorageUpdate {
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
-  private final Optional<UInt64> lastValidFinalizedSlot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
@@ -42,7 +41,6 @@ public class StorageUpdate {
   public StorageUpdate(
       final Optional<UInt64> genesisTime,
       final Optional<FinalizedChainData> finalizedChainData,
-      final Optional<UInt64> lastValidFinalizedSlot,
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
@@ -53,7 +51,6 @@ public class StorageUpdate {
       final Optional<Bytes32> optimisticTransitionBlockRoot) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
-    this.lastValidFinalizedSlot = lastValidFinalizedSlot;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
@@ -80,10 +77,6 @@ public class StorageUpdate {
 
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return justifiedCheckpoint;
-  }
-
-  public Optional<UInt64> getLastValidFinalizedSlot() {
-    return lastValidFinalizedSlot;
   }
 
   public Optional<Checkpoint> getFinalizedCheckpoint() {

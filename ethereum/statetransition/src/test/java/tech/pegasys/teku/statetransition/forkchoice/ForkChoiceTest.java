@@ -417,36 +417,6 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldUpdateLatestValidFinalizedSlotPreMergeBlock() {
-    // make EL returning INVALID, but will never be called
-    executionEngine.setPayloadStatus(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
-
-    UInt64 slotToImport = prepFinalizeEpoch(2);
-
-    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
-    importBlock(epoch4Block);
-
-    // Should now have finalized epoch 2
-    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
-    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
-  }
-
-  @Test
-  void onBlock_shouldUpdateLatestValidFinalizedSlotPostMergeBlock() {
-    doMerge();
-    UInt64 slotToImport = prepFinalizeEpoch(2);
-
-    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
-    importBlock(epoch4Block);
-
-    // Should now have finalized epoch 2
-    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
-
-    // latest valid finalized should have advanced to 16
-    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
-  }
-
-  @Test
   void onBlock_shouldNotOptimisticallyImportRecentMergeBlock() {
     final SignedBlockAndState epoch4Block = generateMergeBlock();
     // make EL returning SYNCING
@@ -482,48 +452,6 @@ class ForkChoiceTest {
 
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockWithError(chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
-  }
-
-  @Test
-  void onBlock_shouldNotUpdateLatestValidFinalizedSlotWhenOptimisticallyImported() {
-    doMerge();
-    UInt64 slotToImport = prepFinalizeEpoch(2);
-
-    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
-    importBlock(epoch4Block);
-
-    slotToImport = prepFinalizeEpoch(4);
-
-    // make EL returning SYNCING
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
-    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
-
-    // generate block which finalize epoch 4
-    final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
-    importBlockOptimistically(epoch6Block);
-
-    assertForkChoiceUpdateNotification(epoch6Block, true);
-    assertHeadIsOptimistic(epoch6Block);
-
-    // Should now have finalized epoch 3
-    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(4));
-
-    // latest valid finalized slot should remain 16
-    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(24));
-
-    // import another block which EL is going to validate
-    executionEngine.setPayloadStatus(PayloadStatus.VALID);
-    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
-    storageSystem.chainUpdater().setCurrentSlot(slotToImport.plus(1));
-    final SignedBlockAndState epoch6BlockPlus1 =
-        chainBuilder.generateBlockAtSlot(slotToImport.plus(1));
-    importBlock(epoch6BlockPlus1);
-
-    assertForkChoiceUpdateNotification(epoch6BlockPlus1, false);
-    assertThat(recentChainData.isChainHeadOptimistic()).isFalse();
-
-    // latest valid finalized should have advanced to 32
-    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(32));
   }
 
   @Test

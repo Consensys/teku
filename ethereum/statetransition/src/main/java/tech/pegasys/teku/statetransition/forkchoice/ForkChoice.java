@@ -113,8 +113,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   @Override
   public void onForkChoiceUpdatedResult(
       final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
-    final UInt64 latestFinalizedBlockSlot =
-        recentChainData.getStore().getLatestFinalizedBlockSlot();
     forkChoiceUpdatedResultNotification
         .getForkChoiceUpdatedResult()
         .thenAccept(
@@ -125,8 +123,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             forkChoiceUpdatedResultNotification
                                 .getForkChoiceState()
                                 .getHeadBlockRoot(),
-                            forkChoiceUpdatedResult.getPayloadStatus(),
-                            latestFinalizedBlockSlot)))
+                            forkChoiceUpdatedResult.getPayloadStatus())))
         .reportExceptions();
   }
 
@@ -332,13 +329,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       }
     }
 
-    if (payloadResult.hasValidStatus()) {
-      UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
-      if (latestValidFinalizedSlot.isGreaterThan(transaction.getLatestValidFinalizedSlot())) {
-        transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
-      }
-    }
-
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionReady);
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
@@ -379,9 +369,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void onExecutionPayloadResult(
-      final Bytes32 blockRoot,
-      final PayloadStatus payloadResult,
-      final UInt64 latestFinalizedBlockSlot) {
+      final Bytes32 blockRoot, final PayloadStatus payloadResult) {
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
       transitionValidatedStatus = transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot);
@@ -392,17 +380,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     transitionValidatedStatus.finishAsync(
         result -> {
           final PayloadStatus resultStatus = result.getStatus();
-
-          if (resultStatus.hasValidStatus()) {
-            UInt64 latestValidFinalizedSlotInStore = recentChainData.getLatestValidFinalizedSlot();
-
-            if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
-              final StoreTransaction transaction = recentChainData.startStoreTransaction();
-              transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
-              transaction.commit().join();
-            }
-          }
-
           final Bytes32 validatedBlockRoot =
               result.getInvalidTransitionBlockRoot().orElse(blockRoot);
 
