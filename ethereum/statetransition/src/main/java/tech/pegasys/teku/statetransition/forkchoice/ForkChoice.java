@@ -403,7 +403,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             }
           }
 
-          final Bytes32 validatedBlockRoot = result.getInvalidTransitionBlockRoot().orElse(blockRoot);
+          final Bytes32 validatedBlockRoot =
+              result.getInvalidTransitionBlockRoot().orElse(blockRoot);
 
           getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
 
