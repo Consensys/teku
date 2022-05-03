@@ -82,7 +82,7 @@ public class EventSubscriber {
         closeCallback.run();
       }
     } else {
-      if (now + EXCESSIVE_QUEUING_TOLERANCE_MS < now) {
+      if (now + EXCESSIVE_QUEUING_TOLERANCE_MS < queuingDisconnectTime) {
         excessiveQueueingDisconnectionTime.set(now + EXCESSIVE_QUEUING_TOLERANCE_MS);
       }
       addEventToQueue(eventType, message);
