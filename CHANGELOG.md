@@ -15,7 +15,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- For Bellatrix fork and later, send `block_header` instead of `block` for external signer block signing request (`BLOCK_V2`)
+- For Bellatrix fork and later, send `block_header` instead of `block` for external signer block signing request (`BLOCK_V2`).
+- Check address checksum for `--eth1-deposit-contract-address` and `--validators-proposer-default-fee-recipient`.
 
 ### Additions and Improvements
 - Improved performance when regenerating non-finalized states that had to be dropped from memory.
