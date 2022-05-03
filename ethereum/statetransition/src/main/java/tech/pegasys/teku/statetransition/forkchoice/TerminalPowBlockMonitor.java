@@ -39,7 +39,7 @@ public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
   // number of samples to average out totalDifficulty
   private static final int TD_DIFF_SAMPLES = 5;
-  // how many times
+  // how many times we produce the event, based on polling period (secondsPerEth1Block)
   private static final int ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS = 5;
 
   private final EventLogger eventLogger;
