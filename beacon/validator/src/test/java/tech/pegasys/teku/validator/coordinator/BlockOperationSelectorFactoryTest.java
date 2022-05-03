@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
@@ -122,7 +122,7 @@ class BlockOperationSelectorFactoryTest {
   private final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  private final ExecutionLayerChannel executionEngine = mock(ExecutionLayerChannel.class);
 
   private final ExecutionPayload defaultExecutionPayload =
       SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
@@ -309,7 +309,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionEngine.getPayload(payloadId, slot))
+    when(executionEngine.engineGetPayload(payloadId, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factory
@@ -352,7 +352,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionEngine.getPayload(payloadId, slot))
+    when(executionEngine.engineGetPayload(payloadId, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factoryWithMevBoost

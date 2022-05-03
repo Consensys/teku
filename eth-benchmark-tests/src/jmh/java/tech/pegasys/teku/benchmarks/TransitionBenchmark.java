@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -89,7 +89,7 @@ public abstract class TransitionBenchmark {
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
     ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -107,7 +107,7 @@ public abstract class TransitionBenchmark {
             recentChainData,
             forkChoice,
             wsValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
     blockIterator = BlockIO.createResourceReader(spec, blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }

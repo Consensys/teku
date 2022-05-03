@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
@@ -62,7 +62,8 @@ class MergeTransitionBlockValidatorTest {
   /**
    * The details of how we validate the merge block are all handled by {@link
    * BellatrixTransitionHelpers} so we don't want to retest all that here. Instead, we check that
-   * those extra checks started (the call to {@link ExecutionEngineChannel#getPowBlock(Bytes32)}).
+   * those extra checks started (the call to {@link
+   * ExecutionLayerChannel#eth1GetPowBlock(Bytes32)}).
    *
    * <p>Since the future we return from getPowBlock is never completed we never complete the
    * validations which saves us a bunch of mocking.

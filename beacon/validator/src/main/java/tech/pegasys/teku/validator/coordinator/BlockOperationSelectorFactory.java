@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -59,7 +59,7 @@ public class BlockOperationSelectorFactory {
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final ExecutionEngineChannel executionEngineChannel;
+  private final ExecutionLayerChannel executionEngineChannel;
   private final boolean isMevBoostEnabled;
 
   public BlockOperationSelectorFactory(
@@ -73,7 +73,7 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionEngineChannel executionEngineChannel,
+      final ExecutionLayerChannel executionEngineChannel,
       final boolean isMevBoostEnabled) {
     this.spec = spec;
     this.attestationPool = attestationPool;
@@ -185,7 +185,9 @@ public class BlockOperationSelectorFactory {
                       .getExecutionPayloadSchema()
                       .getDefault(),
               (payloadId) ->
-                  executionEngineChannel.getPayload(payloadId, blockSlotState.getSlot()).join()));
+                  executionEngineChannel
+                      .engineGetPayload(payloadId, blockSlotState.getSlot())
+                      .join()));
     };
   }
 

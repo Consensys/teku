@@ -24,22 +24,22 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
-public interface ExecutionEngineChannel extends ChannelInterface {
+public interface ExecutionLayerChannel extends ChannelInterface {
   String STUB_ENDPOINT_IDENTIFIER = "stub";
-  ExecutionEngineChannel NOOP =
-      new ExecutionEngineChannel() {
+  ExecutionLayerChannel NOOP =
+      new ExecutionLayerChannel() {
         @Override
-        public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+        public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
-        public SafeFuture<PowBlock> getPowChainHead() {
+        public SafeFuture<PowBlock> eth1GetPowChainHead() {
           throw new UnsupportedOperationException();
         }
 
         @Override
-        public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
+        public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
             final ForkChoiceState forkChoiceState,
             final Optional<PayloadAttributes> payloadAttributes) {
           return SafeFuture.completedFuture(
@@ -47,17 +47,18 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
+        public SafeFuture<ExecutionPayload> engineGetPayload(
+            final Bytes8 payloadId, final UInt64 slot) {
           return SafeFuture.completedFuture(null);
         }
 
         @Override
-        public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
+        public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
           return SafeFuture.completedFuture(PayloadStatus.SYNCING);
         }
 
         @Override
-        public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+        public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
             TransitionConfiguration transitionConfiguration) {
           return SafeFuture.completedFuture(transitionConfiguration);
         }
@@ -76,19 +77,19 @@ public interface ExecutionEngineChannel extends ChannelInterface {
       };
 
   // eth namespace
-  SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash);
+  SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash);
 
-  SafeFuture<PowBlock> getPowChainHead();
+  SafeFuture<PowBlock> eth1GetPowChainHead();
 
   // engine namespace
-  SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
+  SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes);
 
-  SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot);
+  SafeFuture<ExecutionPayload> engineGetPayload(final Bytes8 payloadId, final UInt64 slot);
 
-  SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload);
+  SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload);
 
-  SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+  SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       final TransitionConfiguration transitionConfiguration);
 
   // builder namespace

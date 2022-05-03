@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationS
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
@@ -69,7 +69,7 @@ class AttestationManagerIntegrationTest {
       new AggregatingAttestationPool(
           spec, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
   private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,

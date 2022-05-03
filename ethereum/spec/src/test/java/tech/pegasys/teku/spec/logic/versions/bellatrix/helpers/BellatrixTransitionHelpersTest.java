@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -39,7 +39,7 @@ class BellatrixTransitionHelpersTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  private final ExecutionLayerChannel executionEngine = mock(ExecutionLayerChannel.class);
   private final UInt256 terminalDifficulty =
       spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
 
@@ -49,7 +49,7 @@ class BellatrixTransitionHelpersTest {
 
   @BeforeEach
   void setUp() {
-    when(executionEngine.getPowBlock(any())).thenReturn(completedFuture(Optional.empty()));
+    when(executionEngine.eth1GetPowBlock(any())).thenReturn(completedFuture(Optional.empty()));
   }
 
   @Test
@@ -152,7 +152,7 @@ class BellatrixTransitionHelpersTest {
   private PowBlock withPowBlock(final Bytes32 hash, final UInt256 totalDifficulty) {
     final PowBlock powBlock =
         new PowBlock(hash, dataStructureUtil.randomBytes32(), totalDifficulty, UInt64.ZERO);
-    when(executionEngine.getPowBlock(powBlock.getBlockHash()))
+    when(executionEngine.eth1GetPowBlock(powBlock.getBlockHash()))
         .thenReturn(completedFuture(Optional.of(powBlock)));
     return powBlock;
   }

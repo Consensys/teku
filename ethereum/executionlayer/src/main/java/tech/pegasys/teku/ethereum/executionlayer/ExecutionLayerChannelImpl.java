@@ -22,7 +22,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionengine.Web3JClient;
 import tech.pegasys.teku.ethereum.executionengine.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
@@ -40,23 +42,33 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
+public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionEngineClient executionEngineClient;
+
+  @SuppressWarnings("UnusedVariable") // will be removed in upcoming PR
+  private final Optional<ExecutionBuilderClient> executionBuilderClient;
+
   private final Spec spec;
 
-  public static ExecutionEngineChannelImpl create(
-      final Web3JClient web3JClient, final Version version, final Spec spec) {
+  public static ExecutionLayerChannelImpl create(
+      final Web3JClient engineWeb3JClient,
+      final Optional<Web3JClient> builderWeb3JClient,
+      final Version version,
+      final Spec spec) {
     checkNotNull(version);
-    return new ExecutionEngineChannelImpl(createEngineClient(version, web3JClient), spec);
+    return new ExecutionLayerChannelImpl(
+        createEngineClient(version, engineWeb3JClient),
+        createBuilderClient(builderWeb3JClient),
+        spec);
   }
 
   private static ExecutionEngineClient createEngineClient(
@@ -68,9 +80,18 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
     return new Web3JExecutionEngineClient(web3JClient);
   }
 
-  private ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {
+  private static Optional<ExecutionBuilderClient> createBuilderClient(
+      final Optional<Web3JClient> web3JClient) {
+    return web3JClient.flatMap(client -> Optional.of(new Web3JExecutionBuilderClient(client)));
+  }
+
+  private ExecutionLayerChannelImpl(
+      final ExecutionEngineClient executionEngineClient,
+      final Optional<ExecutionBuilderClient> executionBuilderClient,
+      Spec spec) {
     this.spec = spec;
     this.executionEngineClient = executionEngineClient;
+    this.executionBuilderClient = executionBuilderClient;
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
@@ -82,7 +103,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+  public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
     LOG.trace("calling getPowBlock(blockHash={})", blockHash);
 
     return executionEngineClient
@@ -91,7 +112,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<PowBlock> getPowChainHead() {
+  public SafeFuture<PowBlock> eth1GetPowChainHead() {
     LOG.trace("calling getPowChainHead()");
 
     return executionEngineClient
@@ -101,7 +122,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult>
-      forkChoiceUpdated(
+      engineForkChoiceUpdated(
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadAttributes> payloadAttributes) {
 
@@ -114,7 +135,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
         .forkChoiceUpdated(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
             PayloadAttributesV1.fromInternalForkChoiceState(payloadAttributes))
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
         .thenPeek(
             forkChoiceUpdatedResult ->
@@ -126,12 +147,12 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
+  public SafeFuture<ExecutionPayload> engineGetPayload(final Bytes8 payloadId, final UInt64 slot) {
     LOG.trace("calling getPayload(payloadId={}, slot={})", payloadId, slot);
 
     return executionEngineClient
         .getPayload(payloadId)
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
                 () ->
@@ -145,12 +166,12 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
+  public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
     LOG.trace("calling newPayload(executionPayload={})", executionPayload);
 
     return executionEngineClient
         .newPayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(
             payloadStatus ->
@@ -159,7 +180,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration) {
     LOG.trace(
         "calling exchangeTransitionConfiguration(transitionConfiguration={})",
@@ -168,7 +189,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
     return executionEngineClient
         .exchangeTransitionConfiguration(
             TransitionConfigurationV1.fromInternalTransitionConfiguration(transitionConfiguration))
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenApply(TransitionConfigurationV1::asInternalTransitionConfiguration)
         .thenPeek(
             remoteTransitionConfiguration ->
@@ -185,7 +206,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
     return executionEngineClient
         .getPayloadHeader(payloadId)
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
                 () ->
@@ -212,7 +233,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
     return executionEngineClient
         .proposeBlindedBlock(signedBlindedBeaconBlock)
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
                 () ->

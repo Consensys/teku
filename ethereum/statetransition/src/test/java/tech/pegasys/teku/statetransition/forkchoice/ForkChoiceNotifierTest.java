@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
@@ -73,7 +73,7 @@ class ForkChoiceNotifierTest {
   private Optional<Bytes20> defaultFeeRecipient =
       Optional.of(Bytes20.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
-  private final ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
+  private final ExecutionLayerChannel executionEngineChannel = mock(ExecutionLayerChannel.class);
 
   private ForkChoiceNotifierImpl notifier;
   private ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification;
@@ -119,9 +119,9 @@ class ForkChoiceNotifierTest {
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 
-    when(executionEngineChannel.newPayload(any()))
+    when(executionEngineChannel.engineNewPayload(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
-    when(executionEngineChannel.forkChoiceUpdated(any(), any()))
+    when(executionEngineChannel.engineForkChoiceUpdated(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.empty())));
@@ -167,7 +167,7 @@ class ForkChoiceNotifierTest {
   void onForkChoiceUpdated_shouldSendNotificationToExecutionEngine() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifyForkChoiceUpdated(forkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
   }
 
   @Test
@@ -179,7 +179,7 @@ class ForkChoiceNotifierTest {
 
     notifyForkChoiceUpdated(forkChoiceState);
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
   }
 
   @Test
@@ -195,7 +195,7 @@ class ForkChoiceNotifierTest {
                 UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomBytes20())));
 
     notifyForkChoiceUpdated(forkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
   }
 
   @Test
@@ -237,7 +237,7 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(forkChoiceState); // calculate attributes for slot 2
 
     // it is called once with no attributes. the one with attributes is pending
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
 
     // forward to real method call
     doAnswer(InvocationOnMock::callRealMethod)
@@ -252,7 +252,7 @@ class ForkChoiceNotifierTest {
 
     // expect a call with second attributes
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
 
     // let the payload attributes for slot 2 return
     actualResponseA.get().propagateTo(deferredResponseA);
@@ -277,7 +277,7 @@ class ForkChoiceNotifierTest {
 
     // expect attributes for slot 2
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
 
     storageSystem
         .chainUpdater()
@@ -287,7 +287,7 @@ class ForkChoiceNotifierTest {
 
     // expect attributes for slot 3
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
 
     verifyNoMoreInteractions(executionEngineChannel);
   }
@@ -311,7 +311,7 @@ class ForkChoiceNotifierTest {
 
     // expect attributes for slot 2
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
 
     // advance chain (generate block at slot 2), we get a new forkChoiceState
     storageSystem.chainUpdater().addNewBestBlock();
@@ -344,14 +344,14 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(forkChoiceStateSlot3); // calculate attributes for slot 2
 
     // it is called once with no attributes. the one with attributes is pending
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceStateSlot3, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceStateSlot3, Optional.empty());
 
     // let the payload attributes for slot 3 return
     actualResponseA.get().propagateTo(deferredResponseA);
 
     // expect attributes for slot 3
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceStateSlot3, Optional.of(payloadAttributesSlot3));
+        .engineForkChoiceUpdated(forkChoiceStateSlot3, Optional.of(payloadAttributesSlot3));
 
     verifyNoMoreInteractions(executionEngineChannel);
   }
@@ -361,7 +361,7 @@ class ForkChoiceNotifierTest {
     final BeaconState headState = getHeadState();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifyForkChoiceUpdated(forkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
 
     notifier.onAttestationsDue(headState.getSlot());
     verifyNoMoreInteractions(executionEngineChannel);
@@ -387,7 +387,7 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(forkChoiceState);
     // We are proposing block on slot 2
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
 
     // onAttestationsDue for slot 1 (attributes for slot2)
     notifier.onAttestationsDue(headState.getSlot());
@@ -401,7 +401,7 @@ class ForkChoiceNotifierTest {
     // Slot 2 is now assumed empty so prepare to propose in slot 3
     notifier.onAttestationsDue(recentChainData.getCurrentSlot().orElseThrow());
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
 
     // Shouldn't resend with added payload attributes
     verifyNoMoreInteractions(executionEngineChannel);
@@ -424,7 +424,7 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(getCurrentForkChoiceState());
 
     verify(executionEngineChannel)
-        .forkChoiceUpdated(getCurrentForkChoiceState(), Optional.of(payloadAttributes));
+        .engineForkChoiceUpdated(getCurrentForkChoiceState(), Optional.of(payloadAttributes));
   }
 
   @Test
@@ -436,14 +436,14 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(forkChoiceState);
 
     // We're syncing so don't include payload attributes
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
   }
 
   @Test
   void onUpdatePreparableProposers_shouldNotIncludePayloadAttributesWhileSyncing() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifyForkChoiceUpdated(forkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
 
     notifier.onSyncingStatusChanged(false);
     withProposerForSlot(recentChainData.getHeadSlot().plus(1));
@@ -459,11 +459,11 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(1);
 
     notifyForkChoiceUpdated(forkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
 
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
   }
 
   @Test
@@ -476,7 +476,8 @@ class ForkChoiceNotifierTest {
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
-    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+    when(executionEngineChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
     notifyForkChoiceUpdated(forkChoiceState);
@@ -503,7 +504,8 @@ class ForkChoiceNotifierTest {
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
-    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+    when(executionEngineChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
     notifyForkChoiceUpdated(forkChoiceState);
@@ -568,7 +570,8 @@ class ForkChoiceNotifierTest {
     assertThat(nonFinalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(nonFinalizedForkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(nonFinalizedForkChoiceState, Optional.empty());
+    verify(executionEngineChannel)
+        .engineForkChoiceUpdated(nonFinalizedForkChoiceState, Optional.empty());
 
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
 
@@ -587,7 +590,8 @@ class ForkChoiceNotifierTest {
     assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isNotEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(finalizedForkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
+    verify(executionEngineChannel)
+        .engineForkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
 
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
@@ -609,7 +613,8 @@ class ForkChoiceNotifierTest {
     assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isNotEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(finalizedForkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
+    verify(executionEngineChannel)
+        .engineForkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
 
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
@@ -633,7 +638,8 @@ class ForkChoiceNotifierTest {
     assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
         .isNotEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(finalizedForkChoiceState);
-    verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
+    verify(executionEngineChannel)
+        .engineForkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
 
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
@@ -654,7 +660,8 @@ class ForkChoiceNotifierTest {
 
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
-    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+    when(executionEngineChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
@@ -674,7 +681,8 @@ class ForkChoiceNotifierTest {
 
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
-    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+    when(executionEngineChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
@@ -702,7 +710,8 @@ class ForkChoiceNotifierTest {
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
-    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+    when(executionEngineChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);
 
     // Initially has no payload ID.

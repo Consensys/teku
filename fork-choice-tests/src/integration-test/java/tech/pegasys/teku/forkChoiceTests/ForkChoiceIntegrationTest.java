@@ -47,8 +47,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -177,7 +177,7 @@ public class ForkChoiceIntegrationTest {
 
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(SPEC, storageClient, ExecutionEngineChannel.NOOP);
+        new MergeTransitionBlockValidator(SPEC, storageClient, ExecutionLayerChannel.NOOP);
     ForkChoice forkChoice =
         new ForkChoice(
             SPEC,

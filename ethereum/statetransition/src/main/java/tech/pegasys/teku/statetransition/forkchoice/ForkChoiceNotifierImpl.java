@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
@@ -39,7 +39,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final ExecutionEngineChannel executionEngineChannel;
+  private final ExecutionLayerChannel executionEngineChannel;
   private final RecentChainData recentChainData;
   private final PayloadAttributesCalculator payloadAttributesCalculator;
   private final Spec spec;
@@ -54,7 +54,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   ForkChoiceNotifierImpl(
       final EventThread eventThread,
       final Spec spec,
-      final ExecutionEngineChannel executionEngineChannel,
+      final ExecutionLayerChannel executionEngineChannel,
       final RecentChainData recentChainData,
       final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.eventThread = eventThread;
@@ -67,7 +67,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   public static ForkChoiceNotifier create(
       final AsyncRunnerFactory asyncRunnerFactory,
       final Spec spec,
-      final ExecutionEngineChannel executionEngineChannel,
+      final ExecutionLayerChannel executionEngineChannel,
       final RecentChainData recentChainData,
       final Optional<? extends Bytes20> proposerDefaultFeeRecipient) {
     final AsyncRunnerEventThread eventThread =

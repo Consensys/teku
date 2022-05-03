@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -163,7 +163,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 recentChainData,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionEngineChannel.NOOP));
+                    spec, recentChainData, ExecutionLayerChannel.NOOP));
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionengine;
 
-import static tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.STUB_ENDPOINT_IDENTIFIER;
+import static tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -47,16 +47,16 @@ public interface ExecutionClientProvider {
       };
 
   static ExecutionClientProvider create(
-      final String eeEndpoint,
+      final String endpoint,
       final TimeProvider timeProvider,
       final Duration timeout,
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory) {
-    if (eeEndpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {
+    if (endpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {
       return STUB;
     } else {
       return new DefaultExecutionClientProvider(
-          eeEndpoint, timeProvider, timeout, jwtSecretFile, beaconDataDirectory);
+          endpoint, timeProvider, timeout, jwtSecretFile, beaconDataDirectory);
     }
   }
 

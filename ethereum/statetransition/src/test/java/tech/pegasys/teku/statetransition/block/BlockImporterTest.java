@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -81,7 +81,7 @@ public class BlockImporterTest {
       mock(WeakSubjectivityValidator.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,
@@ -103,7 +103,7 @@ public class BlockImporterTest {
           recentChainData,
           forkChoice,
           weakSubjectivityValidator,
-          ExecutionEngineChannel.NOOP);
+          ExecutionLayerChannel.NOOP);
 
   @BeforeAll
   public static void init() {
@@ -382,7 +382,7 @@ public class BlockImporterTest {
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     final BlockImportResult result = blockImporter.importBlock(otherBlock).get();
     assertImportFailed(result, FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS);
@@ -412,7 +412,7 @@ public class BlockImporterTest {
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     // Import wsBlock
     final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
@@ -440,7 +440,7 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     // The current slot is far ahead of the block being imported
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -483,7 +483,7 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -534,7 +534,7 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -577,7 +577,7 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 
@@ -608,7 +608,7 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            ExecutionLayerChannel.NOOP);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 

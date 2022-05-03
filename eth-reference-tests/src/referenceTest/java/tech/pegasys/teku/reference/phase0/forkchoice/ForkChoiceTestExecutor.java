@@ -46,8 +46,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -98,7 +98,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,

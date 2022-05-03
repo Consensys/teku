@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 
 public class MergeTransitionConfigCheck extends Service {
@@ -47,7 +47,7 @@ public class MergeTransitionConfigCheck extends Service {
 
   private final EventLogger eventLogger;
   private final Spec spec;
-  private final ExecutionEngineChannel executionEngine;
+  private final ExecutionLayerChannel executionEngine;
   private final AsyncRunner asyncRunner;
 
   private Optional<Cancellable> timer = Optional.empty();
@@ -56,7 +56,7 @@ public class MergeTransitionConfigCheck extends Service {
   public MergeTransitionConfigCheck(
       final EventLogger eventLogger,
       final Spec spec,
-      final ExecutionEngineChannel executionEngine,
+      final ExecutionLayerChannel executionEngine,
       final AsyncRunner asyncRunner) {
     this.eventLogger = eventLogger;
     this.spec = spec;
@@ -98,7 +98,7 @@ public class MergeTransitionConfigCheck extends Service {
 
   private synchronized void verifyTransitionConfiguration() {
     executionEngine
-        .exchangeTransitionConfiguration(localTransitionConfiguration)
+        .engineExchangeTransitionConfiguration(localTransitionConfiguration)
         .thenAccept(
             remoteTransitionConfiguration -> {
               if (!localTransitionConfiguration

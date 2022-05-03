@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -39,12 +39,12 @@ public class MergeTransitionBlockValidator {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final ExecutionEngineChannel executionEngine;
+  private final ExecutionLayerChannel executionEngine;
 
   public MergeTransitionBlockValidator(
       final Spec spec,
       final RecentChainData recentChainData,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionEngine) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.executionEngine = executionEngine;

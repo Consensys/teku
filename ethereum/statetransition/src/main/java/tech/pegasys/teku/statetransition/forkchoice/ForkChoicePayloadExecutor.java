@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -29,14 +29,14 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ExecutionEngineChannel executionEngine;
+  private final ExecutionLayerChannel executionEngine;
   private final SignedBeaconBlock block;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private Optional<SafeFuture<PayloadValidationResult>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
       final SignedBeaconBlock block,
-      final ExecutionEngineChannel executionEngine,
+      final ExecutionLayerChannel executionEngine,
       final MergeTransitionBlockValidator transitionBlockValidator) {
     this.block = block;
     this.transitionBlockValidator = transitionBlockValidator;
@@ -47,7 +47,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final SignedBeaconBlock block,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionEngine) {
     return new ForkChoicePayloadExecutor(
         block,
         executionEngine,
@@ -73,7 +73,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     result =
         Optional.of(
             executionEngine
-                .newPayload(executionPayload)
+                .engineNewPayload(executionPayload)
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

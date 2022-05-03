@@ -16,8 +16,6 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -32,8 +30,9 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromFile("executionEngineOptions_config.yaml");
 
     // Spec doesn't include the merge so execution engine is disabled
-    assertThat(config.executionEngine().isEnabled()).isFalse();
-    assertThat(config.executionEngine().getEndpoint()).isEqualTo("http://example.com:1234/path/");
+    assertThat(config.executionLayer().isEnabled()).isFalse();
+    assertThat(config.executionLayer().getEngineEndpoint())
+        .isEqualTo("http://example.com:1234/path/");
   }
 
   @Test
@@ -47,13 +46,41 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
       "http://example.com:1234/path/"
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.executionEngine().isEnabled()).isTrue();
+    assertThat(config.executionLayer().isEnabled()).isTrue();
 
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(
                     b -> b.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ONE))
-                .executionEngine(b -> b.endpoint("http://example.com:1234/path/"))
+                .executionLayer(b -> b.engineEndpoint("http://example.com:1234/path/"))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
+  }
+
+  @Test
+  public void shouldAcceptEngineAndBuilderEndpointIfSpecEnablesBellatrix() {
+    final String[] args = {
+      "--Xnetwork-altair-fork-epoch",
+      "0",
+      "--Xnetwork-bellatrix-fork-epoch",
+      "1",
+      "--ee-endpoint",
+      "http://example.com:1234/path/",
+      "--Xeb-endpoint",
+      "http://example2.com:1234/path2/"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.executionLayer().isEnabled()).isTrue();
+
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> b.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ONE))
+                .executionLayer(
+                    b ->
+                        b.engineEndpoint("http://example.com:1234/path/")
+                            .builderEndpoint("http://example2.com:1234/path2/"))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
@@ -62,7 +89,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReportEEDisabledIfEndpointNotSpecified() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.executionEngine().isEnabled()).isFalse();
+    assertThat(config.executionLayer().isEnabled()).isFalse();
   }
 
   @Test
@@ -71,15 +98,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
       "--Xnetwork-altair-fork-epoch", "0", "--Xnetwork-bellatrix-fork-epoch", "1"
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThatThrownBy(config.executionEngine()::getEndpoint)
+    assertThatThrownBy(config.executionLayer()::getEngineEndpoint)
         .isInstanceOf(InvalidConfigurationException.class);
-  }
-
-  @Test
-  void shouldAllowMultipleMevBoostUrls() throws MalformedURLException {
-    final String[] args = {"--Xee-payload-builders", "http://a.com,http://b.com"};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.executionEngine().getMevBoostUrls())
-        .containsOnly(new URL("http://a.com"), new URL("http://b.com"));
   }
 }

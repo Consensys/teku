@@ -78,7 +78,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -200,7 +200,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
-  protected volatile ExecutionEngineChannel executionEngine;
+  protected volatile ExecutionLayerChannel executionEngine;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -379,7 +379,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initExecutionEngine() {
-    executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
+    executionEngine = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 
   protected void initMergeMonitors() {

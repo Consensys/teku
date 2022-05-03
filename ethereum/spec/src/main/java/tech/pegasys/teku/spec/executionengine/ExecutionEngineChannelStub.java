@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
+public class ExecutionEngineChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
@@ -87,7 +87,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+  public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
     if (!transitionEmulationEnabled) {
       requestedPowBlocks.add(blockHash);
       return SafeFuture.completedFuture(Optional.ofNullable(knownBlocks.get(blockHash)));
@@ -112,7 +112,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<PowBlock> getPowChainHead() {
+  public SafeFuture<PowBlock> eth1GetPowChainHead() {
     if (!transitionEmulationEnabled) {
       return SafeFuture.failedFuture(
           new UnsupportedOperationException("getPowChainHead not supported"));
@@ -133,7 +133,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
+  public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes) {
     if (!bellatrixActivationDetected) {
       LOG.info(
@@ -159,7 +159,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
+  public SafeFuture<ExecutionPayload> engineGetPayload(final Bytes8 payloadId, final UInt64 slot) {
     if (!bellatrixActivationDetected) {
       LOG.info(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
@@ -225,7 +225,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> newPayload(final ExecutionPayload executionPayload) {
+  public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
     LOG.info(
         "newPayload: executionPayload blockHash: {} -> {}",
         executionPayload.getBlockHash(),
@@ -234,7 +234,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration) {
     final TransitionConfiguration transitionConfigurationResponse;
 
@@ -264,7 +264,7 @@ public class ExecutionEngineChannelStub implements ExecutionEngineChannel {
         payloadId,
         slot);
 
-    return getPayload(payloadId, slot)
+    return engineGetPayload(payloadId, slot)
         .thenApply(
             executionPayload -> {
               LOG.info(

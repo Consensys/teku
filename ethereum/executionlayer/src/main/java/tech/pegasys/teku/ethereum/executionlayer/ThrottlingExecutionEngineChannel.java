@@ -25,19 +25,19 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
 
-public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel {
-  private final ExecutionEngineChannel delegate;
+public class ThrottlingExecutionEngineChannel implements ExecutionLayerChannel {
+  private final ExecutionLayerChannel delegate;
   private final ThrottlingTaskQueue taskQueue;
 
   public ThrottlingExecutionEngineChannel(
-      final ExecutionEngineChannel delegate,
+      final ExecutionLayerChannel delegate,
       final int maximumConcurrentRequests,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
@@ -50,37 +50,37 @@ public class ThrottlingExecutionEngineChannel implements ExecutionEngineChannel 
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
-    return taskQueue.queueTask(() -> delegate.getPowBlock(blockHash));
+  public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(Bytes32 blockHash) {
+    return taskQueue.queueTask(() -> delegate.eth1GetPowBlock(blockHash));
   }
 
   @Override
-  public SafeFuture<PowBlock> getPowChainHead() {
-    return taskQueue.queueTask(delegate::getPowChainHead);
+  public SafeFuture<PowBlock> eth1GetPowChainHead() {
+    return taskQueue.queueTask(delegate::eth1GetPowChainHead);
   }
 
   @Override
-  public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
+  public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       ForkChoiceState forkChoiceState, Optional<PayloadAttributes> payloadAttributes) {
     return taskQueue.queueTask(
-        () -> delegate.forkChoiceUpdated(forkChoiceState, payloadAttributes));
+        () -> delegate.engineForkChoiceUpdated(forkChoiceState, payloadAttributes));
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId, UInt64 slot) {
-    return taskQueue.queueTask(() -> delegate.getPayload(payloadId, slot));
+  public SafeFuture<ExecutionPayload> engineGetPayload(Bytes8 payloadId, UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.engineGetPayload(payloadId, slot));
   }
 
   @Override
-  public SafeFuture<PayloadStatus> newPayload(ExecutionPayload executionPayload) {
-    return taskQueue.queueTask(() -> delegate.newPayload(executionPayload));
+  public SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload) {
+    return taskQueue.queueTask(() -> delegate.engineNewPayload(executionPayload));
   }
 
   @Override
-  public SafeFuture<TransitionConfiguration> exchangeTransitionConfiguration(
+  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration) {
     return taskQueue.queueTask(
-        () -> delegate.exchangeTransitionConfiguration(transitionConfiguration));
+        () -> delegate.engineExchangeTransitionConfiguration(transitionConfiguration));
   }
 
   @Override

@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -197,7 +197,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionEngine) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
@@ -214,7 +214,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionEngine) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }

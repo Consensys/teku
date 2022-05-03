@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.executionengine;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
@@ -22,58 +23,81 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
-import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerChannelImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 
-public class ExecutionEngineService extends Service {
+public class ExecutionLayerService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
-  private final ExecutionEngineConfiguration config;
+  private final ExecutionLayerConfiguration config;
   private final MetricsSystem metricsSystem;
-  private final ExecutionClientProvider web3jClientProvider;
+  private final ExecutionClientProvider engineWeb3jClientProvider;
+  private final Optional<ExecutionClientProvider> builderWeb3jClientProvider;
   private final TimeProvider timeProvider;
 
-  public ExecutionEngineService(
-      final ServiceConfig serviceConfig, final ExecutionEngineConfiguration config) {
+  public ExecutionLayerService(
+      final ServiceConfig serviceConfig, final ExecutionLayerConfiguration config) {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.config = config;
-    this.web3jClientProvider =
+    this.engineWeb3jClientProvider =
         ExecutionClientProvider.create(
-            config.getEndpoint(),
+            config.getEngineEndpoint(),
             serviceConfig.getTimeProvider(),
             EXECUTION_TIMEOUT,
-            config.getJwtSecretFile(),
+            config.getEngineJwtSecretFile(),
             serviceConfig.getDataDirLayout().getBeaconDataDirectory());
+
+    this.builderWeb3jClientProvider =
+        config
+            .getBuilderEndpoint()
+            .map(
+                builderEndpoint ->
+                    ExecutionClientProvider.create(
+                        builderEndpoint,
+                        serviceConfig.getTimeProvider(),
+                        EXECUTION_TIMEOUT,
+                        Optional.empty(),
+                        serviceConfig.getDataDirLayout().getBeaconDataDirectory()));
+
+    final boolean builderIsStub =
+        builderWeb3jClientProvider.map(ExecutionClientProvider::isStub).orElse(false);
+
+    checkState(
+        engineWeb3jClientProvider.isStub() == builderIsStub,
+        "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
     this.timeProvider = serviceConfig.getTimeProvider();
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    final String endpoint = web3jClientProvider.getEndpoint();
+    final String endpoint = engineWeb3jClientProvider.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
-    final ExecutionEngineChannel executionEngineChannel;
-    if (web3jClientProvider.isStub()) {
+    final ExecutionLayerChannel executionEngineChannel;
+    if (engineWeb3jClientProvider.isStub()) {
       EVENT_LOG.executionEngineStubEnabled();
       executionEngineChannel = new ExecutionEngineChannelStub(config.getSpec(), timeProvider, true);
     } else {
       executionEngineChannel =
-          ExecutionEngineChannelImpl.create(
-              web3jClientProvider.getWeb3JClient(), config.getVersion(), config.getSpec());
+          ExecutionLayerChannelImpl.create(
+              engineWeb3jClientProvider.getWeb3JClient(),
+              builderWeb3jClientProvider.map(ExecutionClientProvider::getWeb3JClient),
+              config.getEngineVersion(),
+              config.getSpec());
     }
-    final ExecutionEngineChannel executionEngine =
+    final ExecutionLayerChannel executionEngine =
         new ThrottlingExecutionEngineChannel(
             executionEngineChannel, MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
-    eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);
+    eventChannels.subscribe(ExecutionLayerChannel.class, executionEngine);
     return SafeFuture.COMPLETE;
   }
 
@@ -82,7 +106,9 @@ public class ExecutionEngineService extends Service {
     return SafeFuture.COMPLETE;
   }
 
-  public Optional<ExecutionClientProvider> getWeb3jClientProvider() {
-    return web3jClientProvider.isStub() ? Optional.empty() : Optional.of(web3jClientProvider);
+  public Optional<ExecutionClientProvider> getEngineWeb3jClientProvider() {
+    return engineWeb3jClientProvider.isStub()
+        ? Optional.empty()
+        : Optional.of(engineWeb3jClientProvider);
   }
 }

@@ -54,8 +54,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -98,7 +98,7 @@ public class BlockManagerTest {
 
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionEngineChannel.NOOP);
+      new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionLayerChannel.NOOP);
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,

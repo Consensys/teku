@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 
 public class BellatrixTransitionHelpers {
@@ -52,14 +52,14 @@ public class BellatrixTransitionHelpers {
    * @return a future containing the validation result for the execution payload
    */
   public SafeFuture<PayloadStatus> validateMergeBlock(
-      final ExecutionEngineChannel executionEngine,
+      final ExecutionLayerChannel executionEngine,
       final ExecutionPayload executionPayload,
       final UInt64 blockSlot) {
     if (!specConfig.getTerminalBlockHash().isZero()) {
       return validateWithTerminalBlockHash(executionPayload, blockSlot);
     }
     return executionEngine
-        .getPowBlock(executionPayload.getParentHash())
+        .eth1GetPowBlock(executionPayload.getParentHash())
         .thenCompose(maybePowBlock -> validatePowBlock(executionEngine, maybePowBlock));
   }
 
@@ -77,7 +77,7 @@ public class BellatrixTransitionHelpers {
   }
 
   private SafeFuture<PayloadStatus> validatePowBlock(
-      final ExecutionEngineChannel executionEngine, final Optional<PowBlock> maybePowBlock) {
+      final ExecutionLayerChannel executionEngine, final Optional<PowBlock> maybePowBlock) {
     if (maybePowBlock.isEmpty()) {
       return completedFuture(PayloadStatus.SYNCING);
     }
@@ -93,9 +93,9 @@ public class BellatrixTransitionHelpers {
   }
 
   private SafeFuture<PayloadStatus> validateParentPowBlock(
-      final ExecutionEngineChannel executionEngine, final Bytes32 parentBlockHash) {
+      final ExecutionLayerChannel executionEngine, final Bytes32 parentBlockHash) {
     return executionEngine
-        .getPowBlock(parentBlockHash)
+        .eth1GetPowBlock(parentBlockHash)
         .thenCompose(
             maybeParentPowBlock -> {
               if (maybeParentPowBlock.isEmpty()) {

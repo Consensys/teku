@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -90,7 +90,7 @@ public class ProfilingRun {
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
-          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -107,7 +107,7 @@ public class ProfilingRun {
               recentChainData,
               forkChoice,
               wsValidator,
-              ExecutionEngineChannel.NOOP);
+              ExecutionLayerChannel.NOOP);
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
@@ -180,7 +180,7 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       final MergeTransitionBlockValidator transitionBlockValidator =
-          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -195,7 +195,7 @@ public class ProfilingRun {
               recentChainData,
               forkChoice,
               wsValidator,
-              ExecutionEngineChannel.NOOP);
+              ExecutionLayerChannel.NOOP);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;

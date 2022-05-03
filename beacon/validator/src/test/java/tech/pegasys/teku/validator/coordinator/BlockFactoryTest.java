@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -72,7 +72,7 @@ class BlockFactoryTest {
   final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  final ExecutionLayerChannel executionEngine = mock(ExecutionLayerChannel.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
@@ -321,7 +321,7 @@ class BlockFactoryTest {
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
-    when(executionEngine.getPayload(any(), any()))
+    when(executionEngine.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
     when(executionEngine.getPayloadHeader(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));

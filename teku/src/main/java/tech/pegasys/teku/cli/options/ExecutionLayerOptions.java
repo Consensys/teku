@@ -15,15 +15,10 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.Version;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel.Version;
 
-public class ExecutionEngineOptions {
+public class ExecutionLayerOptions {
 
   @Option(
       names = {"--ee-endpoint"},
@@ -41,45 +36,27 @@ public class ExecutionEngineOptions {
   private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
   @Option(
-      names = {"--Xee-payload-builders"},
-      paramLabel = "<MEV_BUILDER_URL>",
-      description = "List of MEV boost api compatible endpoints to get execution payloads",
-      arity = "1..*",
-      split = ",",
-      hidden = true)
-  private List<String> mevUrls = new ArrayList<>();
-
-  @Option(
       names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
           "Location of the file specifying the hex-encoded 256 bit secret key to be used for verifying/generating jwt tokens",
       arity = "1")
-  private String jwtSecretFile = null;
+  private String engineJwtSecretFile = null;
+
+  @Option(
+      names = {"--Xeb-endpoint"},
+      paramLabel = "<NETWORK>",
+      description = "URL for Execution Builder node.",
+      arity = "1",
+      hidden = true)
+  private String executionBuilderEndpoint = null;
 
   public void configure(final Builder builder) {
-    builder.executionEngine(
+    builder.executionLayer(
         b ->
-            b.endpoint(executionEngineEndpoint)
-                .version(executionEngineVersion)
-                .jwtSecretFile(jwtSecretFile)
-                .mevBoostUrls(parseMevBoostUrls()));
-  }
-
-  private List<URL> parseMevBoostUrls() {
-    if (mevUrls.isEmpty()) {
-      return List.of();
-    }
-
-    try {
-      final List<URL> result = new ArrayList<>();
-      for (String mevUrl : mevUrls) {
-        result.add(new URL(mevUrl));
-      }
-      return result;
-    } catch (MalformedURLException e) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. MEV boost URL did not appear to be a valid URL.", e);
-    }
+            b.engineEndpoint(executionEngineEndpoint)
+                .engineVersion(executionEngineVersion)
+                .engineJwtSecretFile(engineJwtSecretFile)
+                .builderEndpoint(executionBuilderEndpoint));
   }
 }

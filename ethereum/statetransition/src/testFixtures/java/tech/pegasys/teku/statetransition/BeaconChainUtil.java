@@ -43,8 +43,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -117,7 +117,7 @@ public class BeaconChainUtil {
             new InlineEventThread(),
             storageClient,
             new StubForkChoiceNotifier(),
-            new MergeTransitionBlockValidator(spec, storageClient, ExecutionEngineChannel.NOOP)),
+            new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP)),
         true);
   }
 
@@ -143,7 +143,7 @@ public class BeaconChainUtil {
             new InlineEventThread(),
             storageClient,
             new StubForkChoiceNotifier(),
-            new MergeTransitionBlockValidator(spec, storageClient, ExecutionEngineChannel.NOOP)),
+            new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP)),
         signDeposits);
   }
 
@@ -391,7 +391,7 @@ public class BeaconChainUtil {
                 recentChainData,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionEngineChannel.NOOP));
+                    spec, recentChainData, ExecutionLayerChannel.NOOP));
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
