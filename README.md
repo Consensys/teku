@@ -81,12 +81,12 @@ After a successful build, distribution packages are available in `build/distribu
 
 ### Other Useful Gradle Targets
 
-| Target       | Builds                              |
-|--------------|--------------------------------------------
-| distTar      | Full distribution in build/distributions (as `.tar.gz`)
-| distZip      | Full distribution in build/distributions (as `.zip`)
-| installDist  | Expanded distribution in `build/install/teku`
-| distDocker   | The `consensys/teku` docker image
+| Target      | Builds                                                  |
+|-------------|---------------------------------------------------------|
+| distTar     | Full distribution in build/distributions (as `.tar.gz`) |
+| distZip     | Full distribution in build/distributions (as `.zip`)    |
+| installDist | Expanded distribution in `build/install/teku`           |
+| distDocker  | The `consensys/teku` docker image                       |
 
 ## Code Style
 
