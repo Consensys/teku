@@ -378,10 +378,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           SafeFuture.completedFuture(new PayloadValidationResult(payloadResult));
     }
     transitionValidatedStatus.finishAsync(
-        result ->
-            getForkChoiceStrategy()
-                .onExecutionPayloadResult(
-                    result.getInvalidTransitionBlockRoot().orElse(blockRoot), result.getStatus()),
+        result -> {
+          final PayloadStatus resultStatus = result.getStatus();
+          final Bytes32 validatedBlockRoot =
+              result.getInvalidTransitionBlockRoot().orElse(blockRoot);
+
+          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
+
+          if (resultStatus.hasInvalidStatus()) {
+            LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
+            processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
+          }
+        },
         error -> {
           // Pass FatalServiceFailureException up to the uncaught exception handler.
           // This will cause teku to exit because the error is unrecoverable.
