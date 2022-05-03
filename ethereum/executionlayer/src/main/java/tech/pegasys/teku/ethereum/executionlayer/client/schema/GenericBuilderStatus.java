@@ -13,4 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client.schema;
 
-public class MEVPayloadHeader {}
+public enum GenericBuilderStatus {
+  OK
+}
