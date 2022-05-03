@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class GetHealthTest extends AbstractBeaconHandlerTest {
+public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {

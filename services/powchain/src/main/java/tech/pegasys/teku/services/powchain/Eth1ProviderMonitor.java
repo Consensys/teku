@@ -16,10 +16,10 @@ package tech.pegasys.teku.services.powchain;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.beacon.pow.Eth1ProviderSelector;
+import tech.pegasys.teku.beacon.pow.MonitorableProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.pow.Eth1ProviderSelector;
-import tech.pegasys.teku.pow.MonitorableProvider;
 import tech.pegasys.teku.spec.config.Constants;
 
 public class Eth1ProviderMonitor {

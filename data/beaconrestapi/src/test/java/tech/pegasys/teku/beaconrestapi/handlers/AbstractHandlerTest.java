@@ -14,9 +14,9 @@
 package tech.pegasys.teku.beaconrestapi.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.ACCEPT_ALL;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.SSZ_OR_JSON_CONTENT_TYPES;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +26,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AbstractHandlerTest {
 
-  private static final List<String> JSON_ONLY = List.of(HEADER_ACCEPT_JSON);
+  private static final List<String> JSON_ONLY = List.of(JSON);
 
   @Test
   void shouldHandleParameterAtEnd() {
@@ -57,8 +57,8 @@ class AbstractHandlerTest {
 
   @Test
   void accept_shouldReturnJsonIfNotSpecified() {
-    assertThat(AbstractHandler.getContentType(ACCEPT_ALL, Optional.empty()))
-        .isEqualTo(HEADER_ACCEPT_JSON);
+    assertThat(AbstractHandler.getContentType(SSZ_OR_JSON_CONTENT_TYPES, Optional.empty()))
+        .isEqualTo(JSON);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -76,30 +76,32 @@ class AbstractHandlerTest {
       })
   void accept_errorsAgainstJsonHeaderRequirement(final String invalidMimeString) {
     assertThat(AbstractHandler.getContentType(JSON_ONLY, Optional.of(invalidMimeString)))
-        .isEqualTo(HEADER_ACCEPT_JSON);
+        .isEqualTo(JSON);
   }
 
   @Test
   void accept_shouldPreferenceFirstSpecified() {
     assertThat(
             AbstractHandler.getContentType(
-                ACCEPT_ALL, Optional.of("application/octet-stream,application/json;q=0.9")))
-        .isEqualTo(HEADER_ACCEPT_OCTET);
+                SSZ_OR_JSON_CONTENT_TYPES,
+                Optional.of("application/octet-stream,application/json;q=0.9")))
+        .isEqualTo(OCTET_STREAM);
   }
 
   @Test
   void accept_shouldPreferenceHighestQValue() {
     assertThat(
             AbstractHandler.getContentType(
-                ACCEPT_ALL, Optional.of("application/octet-stream;q=0.1,application/json;q=0.9")))
-        .isEqualTo(HEADER_ACCEPT_JSON);
+                SSZ_OR_JSON_CONTENT_TYPES,
+                Optional.of("application/octet-stream;q=0.1,application/json;q=0.9")))
+        .isEqualTo(JSON);
   }
 
   @Test
   void accept_shouldHandleSingleArgWithQSet() {
     assertThat(
             AbstractHandler.getContentType(
-                ACCEPT_ALL, Optional.of("application/octet-stream;q=1.0")))
-        .isEqualTo(HEADER_ACCEPT_OCTET);
+                SSZ_OR_JSON_CONTENT_TYPES, Optional.of("application/octet-stream;q=1.0")))
+        .isEqualTo(OCTET_STREAM);
   }
 }

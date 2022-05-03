@@ -14,6 +14,8 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -26,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -43,18 +46,12 @@ import tech.pegasys.teku.api.schema.interfaces.SignedBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class PostBlindedBlock extends MigratingEndpointAdapter {
@@ -64,18 +61,22 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
   private final SyncDataProvider syncDataProvider;
 
   public PostBlindedBlock(
-      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+      final DataProvider dataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     this(
         dataProvider.getValidatorDataProvider(),
         dataProvider.getSyncDataProvider(),
+        spec,
         schemaDefinitionCache);
   }
 
   PostBlindedBlock(
       final ValidatorDataProvider validatorDataProvider,
       final SyncDataProvider syncDataProvider,
+      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(getEndpointMetaData(schemaDefinitionCache));
+    super(getEndpointMetaData(spec, schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
@@ -86,7 +87,11 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
       summary = "Publish a signed blinded block",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL},
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBlindedBlock.class)}),
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(from = SignedBlindedBlock.class),
+                @OpenApiContent(type = OCTET_STREAM)
+              }),
       description =
           "Submit a signed blinded beacon block to the beacon node to be imported."
               + " The beacon node performs the required validation.",
@@ -115,6 +120,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (syncDataProvider.isSyncing()) {
       request.respondError(SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.");
+      return;
     }
 
     final SafeFuture<SendSignedBlockResult> result =
@@ -138,7 +144,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
   }
 
   private static EndpointMetadata getEndpointMetaData(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.post(ROUTE)
         .operationId("publishBlindedBlock")
         .summary("Publish a signed blinded block")
@@ -147,40 +153,25 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
                 + " The beacon node performs the required validation.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
         .requestBodyType(
-            getSignedBlindedBlockSchemaDefinition(schemaDefinitionCache),
-            (json) -> signedBlockTypeSelector(json, schemaDefinitionCache))
+            getSchemaDefinitionForAllMilestones(
+                schemaDefinitionCache,
+                "SignedBlindedBlock",
+                SchemaDefinitions::getSignedBlindedBeaconBlockSchema,
+                (block, milestone) ->
+                    schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone)),
+            (json) ->
+                MilestoneDependentTypesUtil.slotBasedSelector(
+                    json,
+                    schemaDefinitionCache,
+                    SchemaDefinitions::getSignedBlindedBeaconBlockSchema),
+            spec::deserializeSignedBeaconBlock)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,
             "Block has been successfully broadcast, but failed validation and has not been imported.")
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
-        .response(SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.")
+        .response(
+            SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
         .build();
-  }
-
-  private static SerializableOneOfTypeDefinition<SignedBeaconBlock>
-      getSignedBlindedBlockSchemaDefinition(final SchemaDefinitionCache schemaDefinitionCache) {
-    final SerializableOneOfTypeDefinitionBuilder<SignedBeaconBlock> builder =
-        new SerializableOneOfTypeDefinitionBuilder<SignedBeaconBlock>().title("SignedBlindedBlock");
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      builder.withType(
-          block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone),
-          schemaDefinitionCache
-              .getSchemaDefinition(milestone)
-              .getSignedBlindedBeaconBlockSchema()
-              .getJsonTypeDefinition());
-    }
-    return builder.build();
-  }
-
-  private static DeserializableTypeDefinition<SignedBeaconBlock> signedBlockTypeSelector(
-      final String json, final SchemaDefinitionCache schemaDefinitionCache) {
-    final Optional<UInt64> slot =
-        JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "message", "slot");
-    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot.orElseThrow());
-    return schemaDefinitionCache
-        .getSchemaDefinition(milestone)
-        .getSignedBlindedBeaconBlockSchema()
-        .getJsonTypeDefinition();
   }
 }

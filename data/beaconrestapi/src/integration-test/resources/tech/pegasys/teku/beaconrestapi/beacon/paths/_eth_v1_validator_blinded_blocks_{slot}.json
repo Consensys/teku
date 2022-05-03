@@ -36,6 +36,11 @@
             "schema" : {
               "$ref" : "#/components/schemas/GetNewBlindedBlockResponse"
             }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Unit"
+            }
           }
         }
       },

@@ -13,10 +13,18 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import java.util.Map;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class EthereumTypes {
 
@@ -31,4 +39,19 @@ public class EthereumTypes {
           .description("`BLSSignature Hex` BLS12-381 signature for the current epoch.")
           .format("byte")
           .build();
+
+  public static <T extends SszData> ResponseContentTypeDefinition<T> sszResponseType(
+      final Function<T, SpecMilestone> milestoneSelector) {
+    return new OctetStreamResponseContentTypeDefinition<>(
+        SszData::sszSerialize,
+        value ->
+            Map.of(
+                RestApiConstants.HEADER_CONSENSUS_VERSION,
+                Version.fromMilestone(milestoneSelector.apply(value)).name(),
+                RestApiConstants.HEADER_CONTENT_DISPOSITION,
+                String.format(
+                    "filename=\"%s%s.ssz\"",
+                    value.getSchema().getName().map(name -> name + "-").orElse(""),
+                    value.hashTreeRoot().toUnprefixedHexString())));
+  }
 }

@@ -14,7 +14,7 @@ dependencies {
   implementation project(':networking:eth2')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:ssz')
-  implementation project(':pow')
+  implementation project(':beacon:pow')
   implementation project(':beacon:sync')
   implementation project(':data:serializer')
   implementation project(':data:provider')
@@ -25,7 +25,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
-  testImplementation project(':data')
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:core'))

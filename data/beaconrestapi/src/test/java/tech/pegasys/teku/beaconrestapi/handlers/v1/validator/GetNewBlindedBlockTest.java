@@ -20,7 +20,7 @@ public class GetNewBlindedBlockTest extends AbstractGetNewBlockTest {
 
   @Override
   public MigratingEndpointAdapter getHandler() {
-    return new GetNewBlindedBlock(validatorDataProvider, schemaDefinitionCache);
+    return new GetNewBlindedBlock(validatorDataProvider, spec, schemaDefinitionCache);
   }
 
   @Override

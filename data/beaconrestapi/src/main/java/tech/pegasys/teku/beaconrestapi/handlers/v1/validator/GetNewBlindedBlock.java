@@ -14,7 +14,9 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -85,13 +88,17 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
       DeserializableTypeDefinition.enumOf(SpecMilestone.class);
 
   public GetNewBlindedBlock(
-      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
+      final DataProvider dataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getValidatorDataProvider(), spec, schemaDefinitionCache);
   }
 
   public GetNewBlindedBlock(
-      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
-    super(getEndpointMetaData(schemaDefinitionCache));
+      final ValidatorDataProvider provider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(getEndpointMetaData(spec, schemaDefinitionCache));
     this.provider = provider;
   }
 
@@ -121,7 +128,10 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetNewBlindedBlockResponse.class)),
+            content = {
+              @OpenApiContent(from = GetNewBlindedBlockResponse.class),
+              @OpenApiContent(type = OCTET_STREAM)
+            }),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
@@ -149,7 +159,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   }
 
   private static EndpointMetadata getEndpointMetaData(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.get(ROUTE)
         .operationId("getNewBlindedBlock")
         .summary("Produce unsigned blinded block")
@@ -176,7 +186,9 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                     "version",
                     SPEC_VERSION,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
-                .build())
+                .build(),
+            sszResponseType(
+                block -> spec.getForkSchedule().getSpecMilestoneAtSlot(block.getSlot())))
         .build();
   }
 

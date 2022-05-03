@@ -24,19 +24,16 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 
-public class GetPeerByIdTest extends AbstractBeaconHandlerTest {
+public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
   final MockNodeId peerId = new MockNodeId(123456);
   final Eth2Peer peer = mock(Eth2Peer.class);
-
-  private final ArgumentCaptor<String> args = ArgumentCaptor.forClass(String.class);
 
   @BeforeEach
   void setUp() {
@@ -77,8 +74,6 @@ public class GetPeerByIdTest extends AbstractBeaconHandlerTest {
             "{\"data\":{\"peer_id\":\"%s\",\"last_seen_p2p_address\":\"%s\",\"state\":\"%s\",\"direction\":\"%s\"}}",
             peerId, address, state, direction);
 
-    verify(context).result(args.capture());
-    String response = args.getValue();
-    assertThat(response).isEqualTo(expectedResponse);
+    assertThat(getResultString()).isEqualTo(expectedResponse);
   }
 }

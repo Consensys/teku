@@ -1,6 +1,5 @@
 dependencies {
     implementation project(':beacon:validator')
-    implementation project(':data')
     implementation project(':data:provider')
     implementation project(':data:serializer')
     implementation project(':ethereum:spec')
@@ -28,7 +27,6 @@ dependencies {
     implementation 'io.javalin:javalin-openapi'
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.webjars:swagger-ui'
-    implementation 'org.commonjava.mimeparse:mimeparse'
 
     testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':ethereum:spec'))

@@ -60,4 +60,29 @@ public class BeaconPreparableProposer {
         .add("feeRecipient", feeRecipient)
         .toString();
   }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private UInt64 validatorIndex;
+    private Bytes20 feeRecipient;
+
+    public Builder() {}
+
+    public Builder feeRecipient(final Bytes20 feeRecipient) {
+      this.feeRecipient = feeRecipient;
+      return this;
+    }
+
+    public Builder validatorIndex(final UInt64 validatorIndex) {
+      this.validatorIndex = validatorIndex;
+      return this;
+    }
+
+    public BeaconPreparableProposer build() {
+      return new BeaconPreparableProposer(validatorIndex, feeRecipient);
+    }
+  }
 }

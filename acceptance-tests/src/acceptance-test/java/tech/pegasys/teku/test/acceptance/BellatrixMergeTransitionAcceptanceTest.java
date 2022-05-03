@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import com.google.common.io.Resources;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -40,7 +41,6 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
     final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(NETWORK_NAME).sendValidatorDeposits(eth1Node, totalValidators);
-
     tekuNode =
         createTekuNode(
             config ->
@@ -50,7 +50,8 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorKeystores(validatorKeystores)
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")
-                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl()));
+                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
+                    .withJwtSecretFile(Resources.getResource("teku/ee-jwt-secret.hex")));
     tekuNode.start();
   }
 

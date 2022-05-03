@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,12 +39,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.executionengine.Web3JClient;
+import tech.pegasys.teku.ethereum.executionengine.Web3jClientBuilder;
+import tech.pegasys.teku.ethereum.executionengine.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -64,6 +67,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class Web3JExecutionEngineClientTest {
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
@@ -85,10 +89,15 @@ public class Web3JExecutionEngineClientTest {
     dataStructureUtil = specContext.getDataStructureUtil();
     spec = specContext.getSpec();
     mockWebServer.start();
-
-    eeClient =
-        new Web3JExecutionEngineClient(
-            "http://localhost:" + mockWebServer.getPort(), timeProvider, Optional.empty());
+    Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
+    Web3JClient web3JClient =
+        web3JClientBuilder
+            .endpoint("http://localhost:" + mockWebServer.getPort())
+            .timeout(DEFAULT_TIMEOUT)
+            .jwtConfigOpt(Optional.empty())
+            .timeProvider(timeProvider)
+            .build();
+    eeClient = new Web3JExecutionEngineClient(web3JClient);
   }
 
   @AfterEach

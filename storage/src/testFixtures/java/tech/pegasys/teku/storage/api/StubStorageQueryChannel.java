@@ -27,13 +27,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
 
   @Override
-  public SafeFuture<Optional<StoreBuilder>> onStoreRequest() {
+  public SafeFuture<Optional<OnDiskStoreData>> onStoreRequest() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 

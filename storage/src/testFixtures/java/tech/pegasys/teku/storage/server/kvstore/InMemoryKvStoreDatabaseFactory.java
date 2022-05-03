@@ -31,13 +31,7 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     return KvStoreDatabase.createV4(
-        new StubMetricsSystem(),
-        hotDb,
-        coldDb,
-        storageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createV6(
@@ -47,7 +41,6 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     return KvStoreDatabase.createWithStateSnapshots(
-        new StubMetricsSystem(),
         db,
         db,
         new V4SchemaHot(spec),

@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
 
 class OpenApiDocBuilderTest {
 
@@ -124,7 +125,9 @@ class OpenApiDocBuilderTest {
                     200,
                     "It depends",
                     Map.of(
-                        "application/json", CoreTypes.STRING_TYPE, "uint", CoreTypes.UINT64_TYPE))
+                        "application/json",
+                            new JsonResponseContentTypeDefinition<>(CoreTypes.STRING_TYPE),
+                        "uint", new JsonResponseContentTypeDefinition<>(CoreTypes.UINT64_TYPE)))
                 .response(404, "Not 'ere gov", CoreTypes.HTTP_ERROR_RESPONSE_TYPE)
                 .build());
     final Map<String, Object> result = parse(validBuilder().endpoint(endpoint).build());

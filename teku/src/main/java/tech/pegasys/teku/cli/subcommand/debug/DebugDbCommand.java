@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 @Command(
@@ -156,8 +157,11 @@ public class DebugDbCommand implements Runnable {
           database
               .createMemoryStore()
               .map(
-                  builder ->
-                      builder
+                  storeData ->
+                      StoreBuilder.create()
+                          .onDiskStoreData(storeData)
+                          .metricsSystem(new NoOpMetricsSystem())
+                          .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
                           .blockProvider(BlockProvider.NOOP)
                           .asyncRunner(asyncRunner)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)

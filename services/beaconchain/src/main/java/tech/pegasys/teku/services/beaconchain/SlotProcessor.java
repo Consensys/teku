@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
@@ -101,19 +100,21 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
-  public void onTick(final UInt64 currentTime) {
-    final UInt64 genesisTime = recentChainData.getGenesisTime();
-    if (currentTime.isLessThan(genesisTime)) {
+  public void onTick(final UInt64 currentTimeMillis) {
+
+    final UInt64 genesisTimeMillis = recentChainData.getGenesisTimeMillis();
+    if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
       return;
     }
-    if (isNextSlotDue(currentTime, genesisTime)
+    if (isNextSlotDue(currentTimeMillis, genesisTimeMillis)
         && !syncStateProvider.getCurrentSyncState().isInSync()) {
       processSlotWhileSyncing();
       nodeSlot.inc();
       return;
     }
 
-    final UInt64 calculatedSlot = spec.getCurrentSlot(currentTime, genesisTime);
+    final UInt64 calculatedSlot =
+        spec.getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
     // tolerate 1 slot difference, not more
     if (calculatedSlot.isGreaterThan(nodeSlot.getValue().plus(ONE))) {
       eventLog.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
@@ -121,17 +122,18 @@ public class SlotProcessor {
     }
 
     final UInt64 epoch = spec.computeEpochAtSlot(nodeSlot.getValue());
-    final UInt64 nodeSlotStartTime = spec.getSlotStartTime(nodeSlot.getValue(), genesisTime);
+    final UInt64 nodeSlotStartTimeMillis =
+        spec.getSlotStartTimeMillis(nodeSlot.getValue(), genesisTimeMillis);
 
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
     }
-    if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
+    if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       processSlotAttestation();
       nodeSlot.inc();
     }
 
-    if (isEpochPrecalculationDue(epoch, currentTime, genesisTime)) {
+    if (isEpochPrecalculationDue(epoch, currentTimeMillis, genesisTimeMillis)) {
       processEpochPrecompute(epoch);
     }
   }
@@ -153,17 +155,14 @@ public class SlotProcessor {
     }
   }
 
-  boolean isNextSlotDue(final UInt64 currentTime, final UInt64 genesisTime) {
-    final UInt64 slotStartTime = spec.getSlotStartTime(nodeSlot.getValue(), genesisTime);
-    return currentTime.isGreaterThanOrEqualTo(slotStartTime);
+  boolean isNextSlotDue(final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
+    final UInt64 slotStartTimeMillis =
+        spec.getSlotStartTimeMillis(nodeSlot.getValue(), genesisTimeMillis);
+    return currentTimeMillis.isGreaterThanOrEqualTo(slotStartTimeMillis);
   }
 
   boolean isProcessingDueForSlot(final UInt64 calculatedSlot, final UInt64 currentPosition) {
     return currentPosition == null || calculatedSlot.isGreaterThan(currentPosition);
-  }
-
-  boolean isTimeReached(final UInt64 currentTime, final UInt64 earliestTimeInMillis) {
-    return secondsToMillis(currentTime).isGreaterThanOrEqualTo(earliestTimeInMillis);
   }
 
   boolean isSlotStartDue(final UInt64 calculatedSlot) {
@@ -172,33 +171,41 @@ public class SlotProcessor {
 
   // Attestations are due 1/3 of the way through the slots time period
   boolean isSlotAttestationDue(
-      final UInt64 calculatedSlot, final UInt64 currentTime, final UInt64 nodeSlotStartTime) {
+      final UInt64 calculatedSlot,
+      final UInt64 currentTimeMillis,
+      final UInt64 nodeSlotStartTimeMillis) {
     final UInt64 earliestTimeInMillis =
-        secondsToMillis(nodeSlotStartTime).plus(oneThirdSlotMillis(calculatedSlot));
-    return isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)
-        && isTimeReached(currentTime, earliestTimeInMillis);
+        nodeSlotStartTimeMillis.plus(oneThirdSlotMillis(calculatedSlot));
+    final boolean processingDueForSlot =
+        isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation);
+    return processingDueForSlot && isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   // Precalculate epoch transition 2/3 of the way through the last slot of the epoch
   boolean isEpochPrecalculationDue(
-      final UInt64 epoch, final UInt64 currentTime, final UInt64 genesisTime) {
+      final UInt64 epoch, final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
     final UInt64 firstSlotOfNextEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (onTickEpochPrecompute == null) {
       onTickEpochPrecompute =
           firstSlotOfNextEpoch.minusMinZero(spec.getSlotsPerEpoch(firstSlotOfNextEpoch));
       return false;
     }
-    final UInt64 nextEpochStartTime = spec.getSlotStartTime(firstSlotOfNextEpoch, genesisTime);
+    final UInt64 nextEpochStartTimeMillis =
+        spec.getSlotStartTimeMillis(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
-        secondsToMillis(nextEpochStartTime).minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
+        nextEpochStartTimeMillis.minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
     final boolean processingDueForSlot =
         isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
-    final boolean timeReached = isTimeReached(currentTime, earliestTimeInMillis);
+    final boolean timeReached = isTimeReached(currentTimeMillis, earliestTimeInMillis);
     return processingDueForSlot && timeReached;
   }
 
   private UInt64 oneThirdSlotMillis(final UInt64 slot) {
     return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
+  }
+
+  boolean isTimeReached(final UInt64 currentTime, final UInt64 earliestTime) {
+    return currentTime.isGreaterThanOrEqualTo(earliestTime);
   }
 
   private void processSlotStart(final UInt64 nodeEpoch) {
@@ -235,6 +242,7 @@ public class SlotProcessor {
                     head.getRoot(),
                     recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
                     recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
+                    !head.getExecutionBlockHash().isZero(),
                     p2pNetwork.getPeerCount()));
   }
 

@@ -13,49 +13,71 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES20_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 
-public class PostPrepareBeaconProposer extends AbstractHandler implements Handler {
+public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
+
+  private static final DeserializableTypeDefinition<BeaconPreparableProposer>
+      BEACON_PREPARABLE_PROPOSER_TYPE =
+          DeserializableTypeDefinition.object(
+                  BeaconPreparableProposer.class, BeaconPreparableProposer.Builder.class)
+              .name("BeaconPreparableProposer")
+              .finisher(BeaconPreparableProposer.Builder::build)
+              .initializer(BeaconPreparableProposer::builder)
+              .description(
+                  "The fee recipient that should be used by an associated validator index.")
+              .withField(
+                  "validator_index",
+                  UINT64_TYPE,
+                  BeaconPreparableProposer::getValidatorIndex,
+                  BeaconPreparableProposer.Builder::validatorIndex)
+              .withField(
+                  "fee_recipient",
+                  BYTES20_TYPE,
+                  BeaconPreparableProposer::getFeeRecipient,
+                  BeaconPreparableProposer.Builder::feeRecipient)
+              .build();
 
   private final ValidatorDataProvider validatorDataProvider;
   private final boolean isProposerDefaultFeeRecipientDefined;
 
-  public PostPrepareBeaconProposer(final DataProvider provider, final JsonProvider jsonProvider) {
+  public PostPrepareBeaconProposer(final DataProvider provider) {
     this(
         provider.getValidatorDataProvider(),
-        provider.getNodeDataProvider().isProposerDefaultFeeRecipientDefined(),
-        jsonProvider);
+        provider.getNodeDataProvider().isProposerDefaultFeeRecipientDefined());
   }
 
   public PostPrepareBeaconProposer(
       final ValidatorDataProvider validatorDataProvider,
-      final boolean isProposerDefaultFeeRecipientDefined,
-      final JsonProvider jsonProvider) {
-    super(jsonProvider);
+      final boolean isProposerDefaultFeeRecipientDefined) {
+    super(createMetadata());
     this.validatorDataProvider = validatorDataProvider;
     this.isProposerDefaultFeeRecipientDefined = isProposerDefaultFeeRecipientDefined;
   }
@@ -66,7 +88,11 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
       summary = "Provide beacon node with proposals for the given validators.",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = BeaconPreparableProposer[].class)}),
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer[].class)
+              }),
       description =
           "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
               + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
@@ -80,20 +106,33 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final BeaconPreparableProposer[] request =
-          parseRequestBody(ctx.body(), BeaconPreparableProposer[].class);
+    adapt(ctx);
+  }
 
-      if (!isProposerDefaultFeeRecipientDefined) {
-        STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
-      }
-
-      validatorDataProvider.prepareBeaconProposer(List.of(request));
-
-      ctx.status(SC_OK);
-    } catch (final IllegalArgumentException e) {
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    if (!isProposerDefaultFeeRecipientDefined) {
+      STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
     }
+    validatorDataProvider.prepareBeaconProposer(request.getRequestBody());
+    request.respondWithCode(SC_OK);
+  }
+
+  private static EndpointMetadata createMetadata() {
+    return EndpointMetadata.post(ROUTE)
+        .operationId("prepareBeaconProposer")
+        .summary("Prepare Beacon Proposers")
+        .description(
+            "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
+                + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
+                + "Also note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.")
+        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+        .requestBodyType(DeserializableTypeDefinition.listOf(BEACON_PREPARABLE_PROPOSER_TYPE))
+        .response(SC_OK, "Preparation information has been received.")
+        .response(
+            HttpStatusCodes.SC_ACCEPTED,
+            "Block has been successfully broadcast, but failed validation and has not been imported.")
+        .withBadRequestResponse(Optional.of("Invalid parameter supplied."))
+        .build();
   }
 }

@@ -73,8 +73,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  @SuppressWarnings("FieldMayBeFinal")
-  private LoggingOptions loggingOptions = new LoggingOptions();
+  private final LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -95,6 +94,10 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @ParentCommand private BeaconNodeCommand parentCommand;
 
   private static final String AUTO_NETWORK_OPTION = "auto";
+
+  public ValidatorClientCommand(final LoggingOptions sharedLoggingOptions) {
+    this.loggingOptions = sharedLoggingOptions;
+  }
 
   @Override
   public Integer call() {

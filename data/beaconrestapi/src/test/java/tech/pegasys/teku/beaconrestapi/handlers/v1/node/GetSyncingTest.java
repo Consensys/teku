@@ -14,17 +14,14 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class GetSyncingTest extends AbstractBeaconHandlerTest {
-  private final ArgumentCaptor<String> args = ArgumentCaptor.forClass(String.class);
+public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {
@@ -54,8 +51,6 @@ public class GetSyncingTest extends AbstractBeaconHandlerTest {
             "{\"data\":{\"head_slot\":\"%s\",\"sync_distance\":\"%s\",\"is_syncing\":%s,\"is_optimistic\":false}}",
             headSlot, syncDistance, isSyncing);
 
-    verify(context).result(args.capture());
-    String response = args.getValue();
-    assertThat(response).isEqualTo(expectedResponse);
+    assertThat(getResultString()).isEqualTo(expectedResponse);
   }
 }

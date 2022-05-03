@@ -6,6 +6,12 @@
     "description" : "Submit a signed blinded beacon block to the beacon node to be imported. The beacon node performs the required validation.",
     "requestBody" : {
       "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
         "application/json" : {
           "schema" : {
             "title" : "SignedBlindedBlock",
@@ -42,7 +48,13 @@
       },
       "503" : {
         "description" : "Beacon node is currently syncing.",
-        "content" : { }
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
         "description" : "Internal server error",

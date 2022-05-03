@@ -42,6 +42,12 @@
             "schema" : {
               "$ref" : "#/components/schemas/GetNewBlindedBlockResponse"
             }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
           }
         }
       },

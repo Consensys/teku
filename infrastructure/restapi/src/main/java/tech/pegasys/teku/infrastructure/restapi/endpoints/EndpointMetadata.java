@@ -22,15 +22,18 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
-import static tech.pegasys.teku.infrastructure.json.JsonUtil.JSON_CONTENT_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.HandlerType;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,7 +42,10 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import org.apache.commons.io.function.IOFunction;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
@@ -47,6 +53,13 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefiniti
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.OctetStreamRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition.BodyTypeSelector;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.RequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.SimpleJsonRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class EndpointMetadata {
   private final HandlerType method;
@@ -56,9 +69,10 @@ public class EndpointMetadata {
   private final Optional<String> security;
   private final String description;
   private final boolean deprecated;
+  private final String defaultResponseContentType;
   private final Map<String, OpenApiResponse> responses;
-  private final Optional<OpenApiTypeDefinition> requestBodyType;
-  private final Optional<BodyTypeSelector<?>> requestBodyTypeSelector;
+  private final String defaultRequestContentType;
+  private final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes;
   private final List<String> tags;
   private final Map<String, StringValueTypeDefinition<?>> pathParams;
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
@@ -72,9 +86,10 @@ public class EndpointMetadata {
       final Optional<String> security,
       final String description,
       final boolean deprecated,
+      final String defaultResponseContentType,
       final Map<String, OpenApiResponse> responses,
-      final Optional<OpenApiTypeDefinition> requestBodyType,
-      final Optional<BodyTypeSelector<?>> requestBodyTypeSelector,
+      final String defaultRequestContentType,
+      final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes,
       final List<String> tags,
       final Map<String, StringValueTypeDefinition<?>> pathParams,
       final Map<String, StringValueTypeDefinition<?>> queryParams,
@@ -86,9 +101,10 @@ public class EndpointMetadata {
     this.security = security;
     this.description = description;
     this.deprecated = deprecated;
+    this.defaultResponseContentType = defaultResponseContentType;
     this.responses = responses;
-    this.requestBodyType = requestBodyType;
-    this.requestBodyTypeSelector = requestBodyTypeSelector;
+    this.defaultRequestContentType = defaultRequestContentType;
+    this.requestBodyTypes = requestBodyTypes;
     this.tags = tags;
     this.pathParams = pathParams;
     this.queryParams = queryParams;
@@ -108,32 +124,39 @@ public class EndpointMetadata {
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  public <T> T getRequestBody(final String body) throws JsonProcessingException {
-    checkArgument(requestBodyType.isPresent(), "requestBodyType has not been defined");
-    checkArgument(
-        requestBodyTypeSelector.isPresent(), "requestBodyTypeSelector has not been defined");
+  public <T> T getRequestBody(final InputStream body, final Optional<String> maybeContentType)
+      throws JsonProcessingException {
+    checkArgument(!requestBodyTypes.isEmpty(), "requestBodyType has not been defined");
 
-    final DeserializableTypeDefinition<T> bodySchema =
-        (DeserializableTypeDefinition<T>) getRequestBodyType(body);
-
-    if (bodySchema == null) {
-      throw new MissingRequestBodyException();
+    try {
+      final String contentType = selectRequestContentType(maybeContentType);
+      final RequestContentTypeDefinition<T> requestContentTypeDefinition =
+          (RequestContentTypeDefinition<T>) requestBodyTypes.get(contentType);
+      final T result = requestContentTypeDefinition.deserialize(body);
+      if (result == null) {
+        throw new MissingRequestBodyException();
+      }
+      return result;
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
     }
-
-    if (!getRequestBodyType().isEquivalentToDeserializableType(bodySchema)) {
-      throw new IllegalStateException(
-          "schema determined for parsing request body is not listed in requestBodyTypes");
-    }
-
-    final T result = JsonUtil.parse(body, bodySchema);
-    if (result == null) {
-      throw new MissingRequestBodyException();
-    }
-    return result;
   }
 
-  public interface BodyTypeSelector<T> {
-    DeserializableTypeDefinition<?> selectType(final String jsonContent);
+  private String selectRequestContentType(final Optional<String> maybeContentType)
+      throws BadRequestException {
+    if (maybeContentType.isEmpty()) {
+      return defaultRequestContentType;
+    }
+    return ContentTypes.getContentType(requestBodyTypes.keySet(), maybeContentType)
+        .orElseThrow(
+            () ->
+                new BadRequestException(
+                    "Request content type "
+                        + maybeContentType.get()
+                        + " is not supported. Must be one of: "
+                        + requestBodyTypes.keySet()));
   }
 
   public HandlerType getMethod() {
@@ -169,18 +192,57 @@ public class EndpointMetadata {
     return queryParams.get(parameterName);
   }
 
-  public SerializableTypeDefinition<?> getResponseType(
+  public ResponseContentTypeDefinition<?> getResponseType(
       final int statusCode, final String contentType) {
     final OpenApiResponse response = responses.get(Integer.toString(statusCode));
     checkArgument(response != null, "Unexpected response for status code %s", statusCode);
 
-    final SerializableTypeDefinition<?> responseType = response.getType(contentType);
+    final ResponseContentTypeDefinition<?> responseType = response.getType(contentType);
     checkArgument(
         responseType != null,
         "Unexpected content type %s for status code %s",
         contentType,
         statusCode);
     return responseType;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> ResponseMetadata createResponseMetadata(
+      final int statusCode, final Optional<String> acceptHeader, final T response) {
+    final OpenApiResponse openApiResponse = responses.get(Integer.toString(statusCode));
+    if (openApiResponse == null) {
+      throw new IllegalArgumentException("Status code " + statusCode + " not supported");
+    }
+    final String selectedType = selectContentType(openApiResponse, acceptHeader);
+    final ResponseContentTypeDefinition<T> typeDefinition =
+        (ResponseContentTypeDefinition<T>) openApiResponse.getType(selectedType);
+    return new ResponseMetadata(selectedType, typeDefinition.getAdditionalHeaders(response));
+  }
+
+  private String selectContentType(
+      final OpenApiResponse openApiResponse, final Optional<String> acceptHeader) {
+    final Collection<String> supportedTypes = openApiResponse.getSupportedContentTypes();
+    final String selectedType =
+        ContentTypes.getContentType(supportedTypes, acceptHeader)
+            .orElse(defaultResponseContentType);
+    checkState(supportedTypes.contains(selectedType), "Default content type is not supported.");
+    return selectedType;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> byte[] serialize(final int statusCode, final String contentType, final T response)
+      throws JsonProcessingException {
+    final ResponseContentTypeDefinition<T> type =
+        (ResponseContentTypeDefinition<T>) getResponseType(statusCode, contentType);
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try {
+      type.serialize(response, out);
+      return out.toByteArray();
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
@@ -200,15 +262,16 @@ public class EndpointMetadata {
       gen.writeEndArray();
     }
 
-    if (requestBodyType.isPresent()) {
-      final OpenApiTypeDefinition content = requestBodyType.get();
+    if (!requestBodyTypes.isEmpty()) {
       gen.writeObjectFieldStart("requestBody");
       gen.writeObjectFieldStart("content");
-      gen.writeObjectFieldStart(JSON_CONTENT_TYPE);
-      gen.writeFieldName("schema");
-      content.serializeOpenApiTypeOrReference(gen);
-      gen.writeEndObject();
-
+      for (Map.Entry<String, RequestContentTypeDefinition<?>> requestTypeEntry :
+          requestBodyTypes.entrySet()) {
+        gen.writeObjectFieldStart(requestTypeEntry.getKey());
+        gen.writeFieldName("schema");
+        requestTypeEntry.getValue().serializeOpenApiTypeOrReference(gen);
+        gen.writeEndObject();
+      }
       gen.writeEndObject();
       gen.writeEndObject();
     }
@@ -266,18 +329,9 @@ public class EndpointMetadata {
     return Stream.concat(
             responses.values().stream()
                 .flatMap(response -> response.getReferencedTypeDefinitions().stream()),
-            requestBodyType.stream()
+            requestBodyTypes.values().stream()
                 .flatMap(bodyType -> bodyType.getSelfAndReferencedTypeDefinitions().stream()))
         .collect(Collectors.toSet());
-  }
-
-  OpenApiTypeDefinition getRequestBodyType() {
-    return requestBodyType.orElseThrow();
-  }
-
-  DeserializableTypeDefinition<?> getRequestBodyType(final String json) {
-    final BodyTypeSelector<?> selector = requestBodyTypeSelector.orElseThrow();
-    return selector.selectType(json);
   }
 
   public static class EndpointMetaDataBuilder {
@@ -292,9 +346,11 @@ public class EndpointMetadata {
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private Optional<String> security = Optional.empty();
-    private Optional<OpenApiTypeDefinition> requestBodyType = Optional.empty();
-    private Optional<BodyTypeSelector<?>> bodyTypeSelector = Optional.empty();
+    private String defaultRequestType = ContentTypes.JSON;
+    private final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes = new HashMap<>();
+    private String defaultResponseType = ContentTypes.JSON;
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
+
     private List<String> tags = Collections.emptyList();
 
     public EndpointMetaDataBuilder method(final HandlerType method) {
@@ -368,18 +424,42 @@ public class EndpointMetadata {
       return response(responseCode, description, emptyMap());
     }
 
+    public EndpointMetaDataBuilder defaultResponseType(final String defaultContentType) {
+      this.defaultResponseType = defaultContentType;
+      return this;
+    }
+
+    public EndpointMetaDataBuilder defaultRequestType(final String defaultRequestType) {
+      this.defaultRequestType = defaultRequestType;
+      return this;
+    }
+
     public EndpointMetaDataBuilder requestBodyType(
         final DeserializableTypeDefinition<?> requestBodyType) {
-      this.requestBodyType = Optional.of(requestBodyType);
-      this.bodyTypeSelector = Optional.of((__) -> requestBodyType);
+      this.requestBodyTypes.put(
+          ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
       return this;
     }
 
     public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector) {
-      this.requestBodyType = Optional.of(requestBodyType);
-      this.bodyTypeSelector = Optional.of(bodyTypeSelector);
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableOneOfTypeDefinition<T> requestBodyType,
+        final BodyTypeSelector<T> bodyTypeSelector,
+        final IOFunction<Bytes, T> octetStreamParser) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      this.requestBodyTypes.put(
+          ContentTypes.OCTET_STREAM,
+          OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
       return this;
     }
 
@@ -387,7 +467,25 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final SerializableTypeDefinition<?> content) {
-      return response(responseCode, description, Map.of(JSON_CONTENT_TYPE, content));
+      return response(
+          responseCode,
+          description,
+          Map.of(ContentTypes.JSON, new JsonResponseContentTypeDefinition<>(content)));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<T> content,
+        final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
+      return response(
+          responseCode,
+          description,
+          Map.of(
+              ContentTypes.JSON,
+              new JsonResponseContentTypeDefinition<>(content),
+              ContentTypes.OCTET_STREAM,
+              octetStreamTypeDefinition));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
@@ -424,7 +522,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
-        final Map<String, SerializableTypeDefinition<?>> content) {
+        final Map<String, ? extends ResponseContentTypeDefinition<?>> content) {
       this.responses.put(Integer.toString(responseCode), new OpenApiResponse(description, content));
       return this;
     }
@@ -436,6 +534,9 @@ public class EndpointMetadata {
       checkNotNull(summary, "summary must be specified");
       checkNotNull(description, "description must be specified");
       checkState(!responses.isEmpty(), "Must specify at least one response");
+      checkState(
+          requestBodyTypes.isEmpty() || requestBodyTypes.containsKey(defaultRequestType),
+          "Default request body type is not a supported request type");
 
       if (!responses.containsKey(Integer.toString(SC_BAD_REQUEST))) {
         withBadRequestResponse(Optional.empty());
@@ -452,9 +553,10 @@ public class EndpointMetadata {
           security,
           description,
           deprecated,
+          defaultResponseType,
           responses,
-          requestBodyType,
-          bodyTypeSelector,
+          defaultRequestType,
+          requestBodyTypes,
           tags,
           pathParams,
           queryParams,
