@@ -15,55 +15,46 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.SpecMilestone;
 
-public class GetStateForkTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetStateFork handler = new GetStateFork(chainDataProvider);
+public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private RestApiRequest request;
-  private final StateAndMetaData stateAndMetaData =
-      new StateAndMetaData(
-          dataStructureUtil.randomBeaconState(),
-          spec.getGenesisSpec().getMilestone(),
-          false,
-          false,
-          true);
+  private GetStateFork handler;
 
   @BeforeEach
   void setUp() {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
+    initialise(SpecMilestone.PHASE0);
+    genesis();
+    handler = new GetStateFork(chainDataProvider);
   }
 
   @Test
   public void shouldReturnForkInfo() throws Exception {
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 
     assertThat(getFutureResultString())
         .isEqualTo(
-            "{\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
+            "{\"data\":{\"previous_version\":\"0x00000001\",\"current_version\":\"0x00000001\",\"epoch\":\"0\"}}");
     verify(context, never()).status(any());
   }
 
   @Test
   public void shouldReturnNotFound() throws Exception {
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(context.pathParamMap())
+        .thenReturn(Map.of("state_id", dataStructureUtil.randomBytes32().toHexString()));
     request = new RestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);

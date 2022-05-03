@@ -36,6 +36,7 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:restapi'))
 
     testImplementation testFixtures(project(':infrastructure:json'))
+    testImplementation testFixtures(project(':ethereum:core'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 

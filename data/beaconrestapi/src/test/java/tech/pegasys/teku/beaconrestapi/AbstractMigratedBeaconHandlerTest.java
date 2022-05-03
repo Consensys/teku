@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected Spec spec = TestSpecFactory.createMinimalPhase0();
 
   protected final Context context = mock(Context.class);
   protected final JsonProvider jsonProvider = new JsonProvider();
@@ -58,7 +58,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
 
   private final ArgumentCaptor<byte[]> args = ArgumentCaptor.forClass(byte[].class);
 
-  protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  protected ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
 
   protected SyncingStatus getSyncStatus(
