@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -68,6 +69,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final Optional<ExecutionBuilderClient> executionBuilderClient;
 
   private final AtomicBoolean latestBuilderAvailability;
+
+  private Optional<UInt64> lastExecutionEngineGetPayloadSlot = Optional.empty();
+  private Optional<SafeFuture<ExecutionPayload>> lastExecutionEngineGetPayloadExecutionPayload =
+      Optional.empty();
 
   private final Spec spec;
 
@@ -178,6 +183,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         executionPayloadContext.getPayloadId(),
         slot);
 
+    if (executionBuilderClient.isPresent()
+        && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
+    }
+
     return executionEngineClient
         .getPayload(executionPayloadContext.getPayloadId())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
@@ -238,7 +248,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    checkState(executionBuilderClient.isPresent());
+
+    final SafeFuture<ExecutionPayload> localExecutionPayload =
+        engineGetPayload(executionPayloadContext, slot);
+
+    lastExecutionEngineGetPayloadSlot = Optional.of(slot);
+    lastExecutionEngineGetPayloadExecutionPayload = Optional.of(localExecutionPayload);
+
+    if (executionBuilderClient.isEmpty()) {
+      // fallback to local execution engine
+      return getExecutionHeaderFromLocalExecutionEngine(localExecutionPayload, slot);
+    }
 
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
@@ -260,7 +280,26 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     slot,
                     Bytes48.ZERO,
                     executionPayloadContext.getParentHash(),
-                    executionPayloadHeader));
+                    executionPayloadHeader))
+        .exceptionallyCompose(
+            error -> {
+              LOG.error(
+                  "builderGetHeader returned an error. Falling back to local execution engine",
+                  error);
+              return getExecutionHeaderFromLocalExecutionEngine(localExecutionPayload, slot);
+            });
+  }
+
+  private SafeFuture<ExecutionPayloadHeader> getExecutionHeaderFromLocalExecutionEngine(
+      final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
+    return localExecutionPayload.thenApply(
+        executionPayload ->
+            spec.atSlot(slot)
+                .getSchemaDefinitions()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getExecutionPayloadHeaderSchema()
+                .createFromExecutionPayload(executionPayload));
   }
 
   private ExecutionPayloadHeader getExecutionHeaderFromBuilderBid(
@@ -278,14 +317,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock) {
-    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
 
     checkArgument(
         signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
         "SignedBeaconBlock must be blind");
 
-    checkState(executionBuilderClient.isPresent());
+    if (executionBuilderClient.isEmpty()) {
+      // fallback to local execution engine
+      return getExecutionFromLastLocalExecutionEngineCall(signedBlindedBeaconBlock);
+    }
+
+    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return executionBuilderClient
         .get()
@@ -302,11 +345,53 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(
-            executionPayload ->
-                LOG.trace(
-                    "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
-                    signedBlindedBeaconBlock,
-                    executionPayload));
+            executionPayload -> {
+              // release cached local execution engine payload
+              if (lastExecutionEngineGetPayloadSlot
+                  .map(slot -> slot.equals(signedBlindedBeaconBlock.getSlot()))
+                  .orElse(false)) {
+                lastExecutionEngineGetPayloadSlot = Optional.empty();
+                lastExecutionEngineGetPayloadExecutionPayload = Optional.empty();
+              }
+
+              LOG.trace(
+                  "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
+                  signedBlindedBeaconBlock,
+                  executionPayload);
+            })
+        .exceptionallyCompose(
+            error -> {
+              LOG.error(
+                  "builderGetPayload returned an error. Falling back to local execution engine",
+                  error);
+              return getExecutionFromLastLocalExecutionEngineCall(signedBlindedBeaconBlock);
+            });
+  }
+
+  private SafeFuture<ExecutionPayload> getExecutionFromLastLocalExecutionEngineCall(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    try {
+      if (lastExecutionEngineGetPayloadSlot.isEmpty()
+          || lastExecutionEngineGetPayloadExecutionPayload.isEmpty()) {
+        return SafeFuture.failedFuture(
+            new IllegalStateException(
+                "unable to fallback to local execution engine: missing cached calls"));
+      }
+
+      if (!lastExecutionEngineGetPayloadSlot.get().equals(signedBlindedBeaconBlock.getSlot())) {
+        return SafeFuture.failedFuture(
+            new IllegalStateException(
+                "unable to fallback to local execution engine: cached call is for slot "
+                    + lastExecutionEngineGetPayloadSlot.get()
+                    + " while blinded beacon block is for slot "
+                    + signedBlindedBeaconBlock.getSlot()));
+      }
+
+      return lastExecutionEngineGetPayloadExecutionPayload.get();
+    } finally {
+      lastExecutionEngineGetPayloadSlot = Optional.empty();
+      lastExecutionEngineGetPayloadExecutionPayload = Optional.empty();
+    }
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {

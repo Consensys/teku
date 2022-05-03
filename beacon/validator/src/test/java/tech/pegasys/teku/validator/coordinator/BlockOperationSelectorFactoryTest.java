@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -147,23 +146,7 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionLayer,
-          false);
-
-  private final BlockOperationSelectorFactory factoryWithMevBoost =
-      new BlockOperationSelectorFactory(
-          spec,
-          attestationPool,
-          attesterSlashingPool,
-          proposerSlashingPool,
-          voluntaryExitPool,
-          contributionPool,
-          depositProvider,
-          eth1DataCache,
-          defaultGraffiti,
-          forkChoiceNotifier,
-          executionLayer,
-          true);
+          executionLayer);
 
   @BeforeEach
   void setUp() {
@@ -322,7 +305,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldIncludeExecutionPayloadHeaderIfMevBoostEnabledAndBlindedBlockRequested() {
+  void shouldIncludeExecutionPayloadHeaderIfBlindedBlockRequested() {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
@@ -336,7 +319,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.builderGetHeader(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
-    factoryWithMevBoost
+    factory
         .createSelector(
             parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
         .accept(blindedBodyBuilder);
@@ -345,7 +328,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldIncludeExecutionPayloadIfMevBoostEnabledButNoBlindedBlockRequested() {
+  void shouldIncludeExecutionPayloadIfNoBlindedBlockRequested() {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
@@ -358,7 +341,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
-    factoryWithMevBoost
+    factory
         .createSelector(
             parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
         .accept(bodyBuilder);
@@ -367,7 +350,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldUnblindSignedBlindedBeaconBlockIfMevBoostEnabled() {
+  void shouldUnblindSignedBlindedBeaconBlock() {
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
     final SignedBeaconBlock blindedSignedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
     final CapturingBeaconBlockUnblinder blockUnblinder =
@@ -376,23 +359,9 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.builderGetPayload(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
-    factoryWithMevBoost.createUnblinderSelector().accept(blockUnblinder);
+    factory.createUnblinderSelector().accept(blockUnblinder);
 
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
-  }
-
-  @Test
-  void shouldThrowUnblindSignedBlindedBeaconBlockIfMevBoostDisabled() {
-    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
-    final SignedBeaconBlock blindedSignedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
-    final CapturingBeaconBlockUnblinder blockUnblinder =
-        new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
-
-    when(executionLayer.builderGetPayload(blindedSignedBlock))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
-
-    assertThatThrownBy(() -> factory.createUnblinderSelector().accept(blockUnblinder))
-        .isInstanceOf(UnsupportedOperationException.class);
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
