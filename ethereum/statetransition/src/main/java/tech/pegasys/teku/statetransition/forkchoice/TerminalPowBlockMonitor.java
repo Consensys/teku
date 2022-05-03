@@ -39,7 +39,7 @@ public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
   // number of samples to average out totalDifficulty
   private static final int TD_DIFF_SAMPLES = 5;
-  // how many times
+  // how many times we produce the event, based on polling period (secondsPerEth1Block)
   private static final int ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS = 5;
 
   private final EventLogger eventLogger;
@@ -293,15 +293,16 @@ public class TerminalPowBlockMonitor {
                 .orElse(UInt256.ZERO)
                 .divide(lastTotalDifficultyDiffs.size());
         final UInt256 averageDifficultyPerSecond = diffAverage.divide(pollingPeriod.getSeconds());
-
         final UInt256 ttd = specConfigBellatrix.getTerminalTotalDifficulty();
 
-        final UInt256 secondsToTTD =
-            ttd.subtract(totalDifficulty).divide(averageDifficultyPerSecond);
+        if (!averageDifficultyPerSecond.isZero()) {
+          final UInt256 secondsToTTD =
+              ttd.subtract(totalDifficulty).divide(averageDifficultyPerSecond);
 
-        final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
+          final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
 
-        eventLogger.terminalPowBlockTtdEta(ttd, eta);
+          eventLogger.terminalPowBlockTtdEta(totalDifficulty, eta);
+        }
       }
     }
 

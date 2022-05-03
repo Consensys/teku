@@ -42,6 +42,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -186,7 +187,13 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .build();
 
     beaconRestApi =
-        new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER, spec);
+        new BeaconRestApi(
+            dataProvider,
+            config,
+            eventChannels,
+            SyncAsyncRunner.SYNC_RUNNER,
+            StubTimeProvider.withTimeInMillis(1000),
+            spec);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -97,6 +98,7 @@ class BeaconRestApiTest {
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
+        StubTimeProvider.withTimeInMillis(1000),
         app,
         storageClient.getSpec());
   }

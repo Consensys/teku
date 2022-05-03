@@ -547,10 +547,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         && store.getForkChoiceStrategy().isFullyValidated(store.getJustifiedCheckpoint().getRoot());
   }
 
-  public UInt64 getLatestValidFinalizedSlot() {
-    return store == null ? UInt64.ZERO : store.getLatestValidFinalizedSlot();
-  }
-
   /**
    * Returns empty if the block is unknown, or an optional indicating whether the block is
    * optimistically imported or not.

@@ -40,6 +40,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -122,6 +123,7 @@ public class EventSubscriptionManagerTest {
             configProvider,
             asyncRunner,
             channels,
+            StubTimeProvider.withTimeInMillis(1000),
             10);
     client1 = new SseClient(ctx);
   }

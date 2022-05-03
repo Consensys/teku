@@ -75,7 +75,6 @@ class StoreTransactionUpdates {
     return new StorageUpdate(
         tx.genesisTime,
         finalizedChainData,
-        tx.latestValidFinalizedSlot,
         tx.justifiedCheckpoint,
         tx.bestJustifiedCheckpoint,
         hotBlocks,
@@ -114,7 +113,6 @@ class StoreTransactionUpdates {
 
     store.checkpointStates.removeIf(
         slotAndBlockRoot -> prunedHotBlockRoots.contains(slotAndBlockRoot.getBlockRoot()));
-    tx.latestValidFinalizedSlot.ifPresent(value -> store.latestValidFinalizedSlot = value);
 
     if (tx.proposerBoostRootSet) {
       store.proposerBoostRoot = tx.proposerBoostRoot;
