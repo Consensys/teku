@@ -197,12 +197,13 @@ public class EventLogger {
   public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta) {
 
     final String etaString =
-        String.format(
-            "%s days and %sh %sm %ss",
-            eta.toDays(),
-            eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
-            eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
-            eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
+        eta.toMinutes() <= 1
+            ? "imminent"
+            : String.format(
+                "%s days, %s hours and  %s minutes",
+                eta.toDays(),
+                eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
+                eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()));
 
     log.info(String.format("TTD ETA: %s - Current Total Difficulty: %s", etaString, ttd));
   }
