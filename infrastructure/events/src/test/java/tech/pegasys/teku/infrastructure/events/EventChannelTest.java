@@ -284,6 +284,7 @@ class EventChannelTest {
   }
 
   private interface WithException {
+    @SuppressWarnings("unused")
     void someMethod() throws Exception;
   }
 
@@ -292,6 +293,7 @@ class EventChannelTest {
 
     void method2();
 
+    @SuppressWarnings("unused")
     void method3();
   }
 
