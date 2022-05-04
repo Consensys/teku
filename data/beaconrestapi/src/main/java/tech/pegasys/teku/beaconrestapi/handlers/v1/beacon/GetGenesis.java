@@ -30,6 +30,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -149,6 +150,25 @@ public class GetGenesis extends MigratingEndpointAdapter {
 
     public Bytes4 getGenesisForkVersion() {
       return genesisForkVersion;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ResponseData that = (ResponseData) o;
+      return Objects.equals(genesisTime, that.genesisTime)
+          && Objects.equals(genesisValidatorsRoot, that.genesisValidatorsRoot)
+          && Objects.equals(genesisForkVersion, that.genesisForkVersion);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(genesisTime, genesisValidatorsRoot, genesisForkVersion);
     }
   }
 }
