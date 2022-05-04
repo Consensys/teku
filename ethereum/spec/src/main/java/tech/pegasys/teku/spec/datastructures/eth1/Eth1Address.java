@@ -96,6 +96,23 @@ public class Eth1Address extends Bytes20 {
   }
 
   @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final Eth1Address a = (Eth1Address) o;
+    return address.equals(a.address);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(address);
+  }
+
+  @Override
   public String toUnprefixedHexString() {
     return toHexString().substring(2);
   }
