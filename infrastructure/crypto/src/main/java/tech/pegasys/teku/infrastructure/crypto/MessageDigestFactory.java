@@ -26,8 +26,8 @@ public class MessageDigestFactory {
 
   public static final String SHA_256 = "SHA-256";
   public static final String KECCAK_256 = "KECCAK-256";
+  private static final Provider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
   private static final Provider SHA_256_SECURITY_PROVIDER = selectSha256SecurityProvider();
-  private static final Provider KECCAK_256_SECURITY_PROVIDER = new BouncyCastleProvider();
 
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   public static MessageDigest createSha256() {
@@ -41,7 +41,7 @@ public class MessageDigestFactory {
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   public static MessageDigest createKeccak256() {
     try {
-      return MessageDigest.getInstance(KECCAK_256, KECCAK_256_SECURITY_PROVIDER);
+      return MessageDigest.getInstance(KECCAK_256, BOUNCY_CASTLE_PROVIDER);
     } catch (final NoSuchAlgorithmException e) {
       throw new IllegalStateException("KECCAK-256 algorithm not available", e);
     }
@@ -72,7 +72,7 @@ public class MessageDigestFactory {
       LOG.warn(
           "SUN security provider available but does not support SHA-256, falling back to BouncyCastle.",
           t);
-      return new BouncyCastleProvider();
+      return BOUNCY_CASTLE_PROVIDER;
     }
   }
 }
