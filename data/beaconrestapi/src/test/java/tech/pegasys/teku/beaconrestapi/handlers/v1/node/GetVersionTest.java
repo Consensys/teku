@@ -20,14 +20,13 @@ import static org.mockito.Mockito.verify;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class GetVersionTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnVersionString() throws Exception {
-    final RestApiRequest request = mock(RestApiRequestImpl.class);
+    final RestApiRequest request = mock(RestApiRequest.class);
     final GetVersion handler = new GetVersion();
 
     handler.handleRequest(request);

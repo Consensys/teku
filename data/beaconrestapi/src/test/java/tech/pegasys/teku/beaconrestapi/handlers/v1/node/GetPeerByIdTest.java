@@ -26,8 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -46,7 +46,7 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnNotFoundIfPeerNotFound() throws Exception {
-    final RestApiRequest request = mock(RestApiRequestImpl.class);
+    final RestApiRequest request = mock(RestApiRequest.class);
     final GetPeerById handler = new GetPeerById(network);
     when(network.getEth2PeerById(peerId.toBase58())).thenReturn(Optional.empty());
     when(context.pathParamMap()).thenReturn(Map.of("peer_id", peerId.toBase58()));
@@ -62,7 +62,7 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("peer_id", peerId.toBase58()));
     when(networkDataProvider.getEth2PeerById(eq(peerId.toBase58()))).thenReturn(Optional.of(peer));
 
-    final RestApiRequest request = new RestApiRequestImpl(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 

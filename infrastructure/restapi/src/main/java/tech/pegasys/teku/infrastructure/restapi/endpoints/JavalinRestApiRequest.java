@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
@@ -30,9 +29,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
-public class RestApiRequestImpl implements RestApiRequest {
+public class JavalinRestApiRequest implements RestApiRequest {
   private static final Logger LOG = LogManager.getLogger();
   private final Context context;
   private final EndpointMetadata metadata;
@@ -46,7 +44,7 @@ public class RestApiRequestImpl implements RestApiRequest {
         context.bodyAsInputStream(), Optional.ofNullable(context.header("Content-Type")));
   }
 
-  public RestApiRequestImpl(final Context context, final EndpointMetadata metadata) {
+  public JavalinRestApiRequest(final Context context, final EndpointMetadata metadata) {
     this.context = context;
     this.metadata = metadata;
     this.pathParamMap = context.pathParamMap();
@@ -146,22 +144,6 @@ public class RestApiRequestImpl implements RestApiRequest {
         .deserializeFromString(
             SingleQueryParameterUtils.validateQueryParameter(
                 queryParamMap, parameterMetadata.getName()));
-  }
-
-  @Override
-  public <T> void handleOptionalResult(
-      SafeFuture<Optional<T>> future, ResultProcessor<T> resultProcessor, final int missingStatus) {
-    context.future(
-        future.thenApplyChecked(
-            result -> {
-              if (result.isPresent()) {
-                return resultProcessor.process(context, result.get()).orElse(null);
-              } else {
-                context.status(missingStatus);
-                return JsonUtil.serialize(
-                    new BadRequest(missingStatus, "Not found"), BAD_REQUEST_TYPE);
-              }
-            }));
   }
 
   @FunctionalInterface

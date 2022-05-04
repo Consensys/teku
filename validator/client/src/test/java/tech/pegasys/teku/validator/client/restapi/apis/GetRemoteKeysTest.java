@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
@@ -48,7 +47,7 @@ class GetRemoteKeysTest {
             .collect(Collectors.toList());
     when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
     final GetRemoteKeys endpoint = new GetRemoteKeys(keyManager);
-    final RestApiRequest request = mock(RestApiRequestImpl.class);
+    final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handleRequest(request);
 
     verify(request).respondOk(activeRemoteValidatorList);
@@ -59,7 +58,7 @@ class GetRemoteKeysTest {
     final List<ExternalValidator> activeRemoteValidatorList = Collections.emptyList();
     when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
     final GetRemoteKeys endpoint = new GetRemoteKeys(keyManager);
-    final RestApiRequest request = mock(RestApiRequestImpl.class);
+    final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handleRequest(request);
 
     verify(request).respondOk(Collections.emptyList());

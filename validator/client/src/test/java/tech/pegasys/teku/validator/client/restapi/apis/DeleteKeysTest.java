@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
@@ -51,7 +50,7 @@ public class DeleteKeysTest {
   private DeleteKeys endpoint;
 
   private final DeleteKeysRequest requestData = new DeleteKeysRequest();
-  private final RestApiRequest request = mock(RestApiRequestImpl.class);
+  private final RestApiRequest request = mock(RestApiRequest.class);
 
   @BeforeEach
   void setup() throws IOException {

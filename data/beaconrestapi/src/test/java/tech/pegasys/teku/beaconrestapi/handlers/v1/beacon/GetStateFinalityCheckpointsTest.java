@@ -22,8 +22,8 @@ import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -38,7 +38,7 @@ public class GetStateFinalityCheckpointsTest extends AbstractMigratedBeaconHandl
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    RestApiRequest request = new RestApiRequestImpl(context, handler.getMetadata());
+    RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 

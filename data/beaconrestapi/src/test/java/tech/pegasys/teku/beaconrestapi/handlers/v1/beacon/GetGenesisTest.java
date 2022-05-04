@@ -23,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
@@ -31,7 +30,7 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    final RestApiRequest request = mock(RestApiRequestImpl.class);
+    final RestApiRequest request = mock(RestApiRequest.class);
     final GetGenesis handler = new GetGenesis(chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
@@ -41,7 +40,7 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnGenesisInformation() throws Exception {
-    final RestApiRequest request = mock(RestApiRequestImpl.class);
+    final RestApiRequest request = mock(RestApiRequest.class);
     final GetGenesis handler = new GetGenesis(chainDataProvider);
 
     final UInt64 genesisTime = dataStructureUtil.randomUInt64();

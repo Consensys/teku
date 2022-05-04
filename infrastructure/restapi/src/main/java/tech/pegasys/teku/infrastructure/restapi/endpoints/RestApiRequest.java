@@ -36,9 +36,4 @@ public interface RestApiRequest {
   <T> Optional<T> getOptionalQueryParameter(ParameterMetadata<T> parameterMetadata);
 
   <T> T getQueryParameter(ParameterMetadata<T> parameterMetadata);
-
-  <T> void handleOptionalResult(
-      SafeFuture<Optional<T>> future,
-      RestApiRequestImpl.ResultProcessor<T> resultProcessor,
-      int missingStatus);
 }

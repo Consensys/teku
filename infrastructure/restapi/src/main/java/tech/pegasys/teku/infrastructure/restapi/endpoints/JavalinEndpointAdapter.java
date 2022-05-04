@@ -32,7 +32,7 @@ public class JavalinEndpointAdapter implements Handler {
 
   @Override
   public void handle(final Context ctx) throws Exception {
-    final RestApiRequest request = new RestApiRequestImpl(ctx, endpoint.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(ctx, endpoint.getMetadata());
     endpoint.handleRequest(request);
   }
 }
