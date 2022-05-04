@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,12 +29,6 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private StubRestApiRequest request;
@@ -66,8 +66,7 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataPr
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody())
-        .isEqualTo(expectedData);
+    assertThat(request.getResponseBody()).isEqualTo(expectedData);
   }
 
   @Test

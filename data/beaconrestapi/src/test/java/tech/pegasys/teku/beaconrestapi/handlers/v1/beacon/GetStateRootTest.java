@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,13 +27,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-
-import java.util.Map;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 

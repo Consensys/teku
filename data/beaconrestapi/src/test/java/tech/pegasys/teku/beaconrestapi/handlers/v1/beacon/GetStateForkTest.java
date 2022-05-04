@@ -13,17 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-
-import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -31,6 +20,16 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
 public class GetStateForkTest extends AbstractMigratedBeaconHandlerTest {
   private final GetStateFork handler = new GetStateFork(chainDataProvider);
