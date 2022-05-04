@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.eth1;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
 
@@ -69,5 +70,17 @@ class Eth1AddressTest {
             () -> Eth1Address.fromHexString("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
+  }
+
+  @Test
+  void eth1Address_allLowerShouldPrintChecksum() throws Exception {
+    assertThat(Eth1Address.fromHexString("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed").toString())
+        .isEqualTo("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
+  }
+
+  @Test
+  void eth1Address_allUpperShouldPrintChecksum() throws Exception {
+    assertThat(Eth1Address.fromHexString("0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED").toString())
+        .isEqualTo("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
   }
 }
