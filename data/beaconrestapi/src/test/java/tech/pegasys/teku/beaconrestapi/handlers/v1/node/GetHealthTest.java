@@ -29,6 +29,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
@@ -39,7 +40,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_PARTIAL_CONTENT);
@@ -51,7 +52,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_PARTIAL_CONTENT);
@@ -64,7 +65,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_CONTINUE);
@@ -77,7 +78,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("a")));
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_PARTIAL_CONTENT);
@@ -90,7 +91,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("1", "2")));
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_PARTIAL_CONTENT);
@@ -102,7 +103,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_OK);
@@ -113,7 +114,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
     checkResponseWithoutBody(SC_SERVICE_UNAVAILABLE);
