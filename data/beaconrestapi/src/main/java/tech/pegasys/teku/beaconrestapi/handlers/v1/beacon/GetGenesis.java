@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
@@ -30,6 +30,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -115,7 +116,7 @@ public class GetGenesis extends MigratingEndpointAdapter {
       request.respondWithCode(SC_NOT_FOUND);
       return;
     }
-    request.respondOk(new ResponseData(maybeData.get(), chainDataProvider));
+    request.respondOk(new ResponseData(maybeData.get(), chainDataProvider.getGenesisForkVersion()));
   }
 
   static class ResponseData {
@@ -133,10 +134,10 @@ public class GetGenesis extends MigratingEndpointAdapter {
       this.genesisForkVersion = genesisForkVersion;
     }
 
-    ResponseData(final GenesisData genesisData, ChainDataProvider chainDataProvider) {
+    ResponseData(final GenesisData genesisData, Bytes4 genesisForkVersion) {
       this.genesisTime = genesisData.getGenesisTime();
       this.genesisValidatorsRoot = genesisData.getGenesisValidatorsRoot();
-      this.genesisForkVersion = chainDataProvider.getGenesisForkVersion();
+      this.genesisForkVersion = genesisForkVersion;
     }
 
     public UInt64 getGenesisTime() {
@@ -149,6 +150,25 @@ public class GetGenesis extends MigratingEndpointAdapter {
 
     public Bytes4 getGenesisForkVersion() {
       return genesisForkVersion;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ResponseData that = (ResponseData) o;
+      return Objects.equals(genesisTime, that.genesisTime)
+          && Objects.equals(genesisValidatorsRoot, that.genesisValidatorsRoot)
+          && Objects.equals(genesisForkVersion, that.genesisForkVersion);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(genesisTime, genesisValidatorsRoot, genesisForkVersion);
     }
   }
 }

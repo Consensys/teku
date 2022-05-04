@@ -20,32 +20,40 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class EventSubscriber {
+
   private static final Logger LOG = LogManager.getLogger();
+  static final int EXCESSIVE_QUEUING_TOLERANCE_MS = 1000;
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final List<EventType> eventTypes;
   private final SseClient sseClient;
   private final Queue<QueuedEvent> queuedEvents;
   private final Runnable closeCallback;
+  private final TimeProvider timeProvider;
   private final int maxPendingEvents;
   private final AtomicBoolean processingQueue;
-  final AsyncRunner asyncRunner;
+  private final AsyncRunner asyncRunner;
+  private final AtomicLong excessiveQueueingDisconnectionTime = new AtomicLong(Long.MAX_VALUE);
 
   public EventSubscriber(
       final List<String> eventTypes,
       final SseClient sseClient,
       final Runnable closeCallback,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final int maxPendingEvents) {
     this.eventTypes = EventType.getTopics(eventTypes);
     this.sseClient = sseClient;
     this.closeCallback = closeCallback;
+    this.timeProvider = timeProvider;
     this.maxPendingEvents = maxPendingEvents;
     this.queuedEvents = new ConcurrentLinkedQueue<>();
     this.processingQueue = new AtomicBoolean(false);
@@ -60,15 +68,31 @@ public class EventSubscriber {
     if (!eventTypes.contains(eventType)) {
       return;
     }
-    if (queuedEvents.size() < maxPendingEvents) {
-      queuedEvents.add(QueuedEvent.of(eventType, message.get()));
-      processEventQueue();
+    final boolean queueSizeBelowLimit = queuedEvents.size() < maxPendingEvents;
+    final long now = timeProvider.getTimeInMillis().longValue();
+    final long queuingDisconnectTime = excessiveQueueingDisconnectionTime.get();
+    if (queueSizeBelowLimit) {
+      excessiveQueueingDisconnectionTime.set(Long.MAX_VALUE);
+      addEventToQueue(eventType, message);
+    } else if (queuingDisconnectTime <= now) {
+      // Had excessive queuing for too long, disconnect.
+      if (stopped.compareAndSet(false, true)) {
+        LOG.debug("Closing event connection due to exceeding the pending message limit");
+        sseClient.ctx.req.getAsyncContext().complete();
+        closeCallback.run();
+      }
     } else {
-      LOG.debug("Closing event connection due to exceeding the pending message limit");
-      stopped.set(true);
-      sseClient.ctx.req.getAsyncContext().complete();
-      closeCallback.run();
+      if (now + EXCESSIVE_QUEUING_TOLERANCE_MS < queuingDisconnectTime) {
+        excessiveQueueingDisconnectionTime.set(now + EXCESSIVE_QUEUING_TOLERANCE_MS);
+      }
+      addEventToQueue(eventType, message);
     }
+  }
+
+  private void addEventToQueue(final EventType eventType, final EventSource<?> message)
+      throws JsonProcessingException {
+    queuedEvents.add(QueuedEvent.of(eventType, message.get()));
+    processEventQueue();
   }
 
   public SseClient getSseClient() {
@@ -111,7 +135,8 @@ public class EventSubscriber {
       asyncRunner
           .runAfterDelay(
               () -> {
-                if (!stopped.get()) {
+                // Don't send a keep alive if we already have messages to send
+                if (!stopped.get() && queuedEvents.isEmpty() && !processingQueue.get()) {
                   sseClient.sendComment("");
                 }
               },

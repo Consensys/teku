@@ -448,24 +448,22 @@ public class TerminalPowBlockMonitorTest {
 
     setUpTTDConfig();
 
-    final UInt256 tdDiff = TTD.divide(5);
+    final UInt256 tdDiff = TTD.divide(10);
 
     terminalPowBlockMonitor.start();
 
-    final UInt64 bellatrixSlot =
-        BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch());
-
     goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
-    pollTtd(TTD.subtract(tdDiff.multiply(5)));
-    pollTtd(TTD.subtract(tdDiff.multiply(4)));
-    pollTtd(TTD.subtract(tdDiff.multiply(3)));
-    pollTtd(TTD.subtract(tdDiff.multiply(2)));
-    pollTtd(TTD.subtract(tdDiff.multiply(1)));
+    pollTtd(TTD.subtract(tdDiff.multiply(10)));
+    pollTtd(TTD.subtract(tdDiff.multiply(9)));
+    pollTtd(TTD.subtract(tdDiff.multiply(8)));
+    pollTtd(TTD.subtract(tdDiff.multiply(7)));
 
-    verify(eventLogger)
-        .terminalPowBlockTtdEta(
-            TTD, Duration.ofSeconds(spec.getSecondsPerEth1Block(bellatrixSlot)));
+    final UInt256 expectedEventTD = TTD.subtract(tdDiff.multiply(6));
+    pollTtd(expectedEventTD);
+
+    verify(eventLogger).terminalPowBlockTtdEta(expectedEventTD, Duration.ofSeconds(14 * 6));
+
     verifyNoMoreInteractions(eventLogger);
   }
 

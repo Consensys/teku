@@ -29,3 +29,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fixed issue with loading the optimised BLST library on Windows.
 - Reduced log level for notifications that the eth1 chain head could not be retrieved because no endpoints were available.
 - Fixed issue where logging options were not recognised if specified after the `validator-client` subcommand.
+- Avoid disconnecting event stream connections subscribed to attestation events for briefly exceeding the maximum pending event queue size. A very large number of attestations are received all at once on MainNet making it almost impossible for a consumer to stay below the queue size limit at all times.

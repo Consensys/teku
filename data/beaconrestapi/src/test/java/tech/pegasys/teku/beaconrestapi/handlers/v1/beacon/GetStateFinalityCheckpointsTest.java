@@ -13,15 +13,17 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.when;
-
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+
+import java.util.Map;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.when;
 
 public class GetStateFinalityCheckpointsTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -38,7 +40,7 @@ public class GetStateFinalityCheckpointsTest
     final BeaconState beaconState = recentChainData.getBestState().orElseThrow().get();
 
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 

@@ -114,6 +114,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     writer.close();
   }
 
+  @SuppressWarnings("unused")
   private static class BlockInfo {
     public final UInt64 block;
     public final UInt64 timestamp;
@@ -137,6 +138,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     }
   }
 
+  @SuppressWarnings("unused")
   private static class MinGenesisTimeInfo {
     public final UInt64 number;
     public final UInt64 timestamp;
@@ -150,6 +152,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     }
   }
 
+  @SuppressWarnings("unused")
   private static class DepositInfo {
     public final UInt64 index;
     public final String publicKey;

@@ -48,7 +48,11 @@ Release notifications are available via:
 
 ### Install Prerequisites
 
-* Java 11
+* Java 11+
+
+Note: Official builds of Teku are performed with Java 11. 
+Building on a more recent version of Java is supported, but the resulting build will not work on earlier versions of Java.
+
 
 ### Build and Dist
 
@@ -77,12 +81,12 @@ After a successful build, distribution packages are available in `build/distribu
 
 ### Other Useful Gradle Targets
 
-| Target       | Builds                              |
-|--------------|--------------------------------------------
-| distTar      | Full distribution in build/distributions (as `.tar.gz`)
-| distZip      | Full distribution in build/distributions (as `.zip`)
-| installDist  | Expanded distribution in `build/install/teku`
-| distDocker   | The `consensys/teku` docker image
+| Target      | Builds                                                  |
+|-------------|---------------------------------------------------------|
+| distTar     | Full distribution in build/distributions (as `.tar.gz`) |
+| distZip     | Full distribution in build/distributions (as `.zip`)    |
+| installDist | Expanded distribution in `build/install/teku`           |
+| distDocker  | The `consensys/teku` docker image                       |
 
 ## Code Style
 

@@ -34,6 +34,7 @@ import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -48,6 +49,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   private final ConfigProvider configProvider;
   private final ChainDataProvider provider;
   private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
   private final int maxPendingEvents;
   // collection of subscribers
   private final Collection<EventSubscriber> eventSubscribers;
@@ -59,9 +61,11 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final ConfigProvider configProvider,
       final AsyncRunner asyncRunner,
       final EventChannels eventChannels,
+      final TimeProvider timeProvider,
       final int maxPendingEvents) {
     this.provider = chainDataProvider;
     this.asyncRunner = asyncRunner;
+    this.timeProvider = timeProvider;
     this.maxPendingEvents = maxPendingEvents;
     this.eventSubscribers = new ConcurrentLinkedQueue<>();
     this.configProvider = configProvider;
@@ -87,6 +91,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
               LOG.trace("disconnected " + sseClient.hashCode());
             },
             asyncRunner,
+            timeProvider,
             maxPendingEvents);
     eventSubscribers.add(subscriber);
   }

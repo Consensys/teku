@@ -11,16 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.ethereum.executionlayer.client.serialization;
 
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import tech.pegasys.teku.ethereum.executionlayer.client.schema.BLSPubKey;
 
-public class ParameterUtils {
-  public static Optional<Bytes32> getPotentialRoot(final String pathParam) {
-    if (pathParam.toLowerCase().startsWith("0x")) {
-      return Optional.of(Bytes32.fromHexString(pathParam));
-    }
-    return Optional.empty();
+public class BLSPubKeySerializer extends JsonSerializer<BLSPubKey> {
+  @Override
+  public void serialize(BLSPubKey value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase());
   }
 }

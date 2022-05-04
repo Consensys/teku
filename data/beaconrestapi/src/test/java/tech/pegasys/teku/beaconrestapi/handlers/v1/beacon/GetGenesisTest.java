@@ -13,33 +13,47 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.mockito.ArgumentMatchers.refEq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
 public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private StubRestApiRequest request;
+  final GetGenesis handler = new GetGenesis(chainDataProvider);
+  final UInt64 genesisTime = dataStructureUtil.randomUInt64();
+  final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
+  final Bytes4 fork = dataStructureUtil.randomBytes4();
+  final GetGenesis.ResponseData responseData =
+      new GetGenesis.ResponseData(new GenesisData(genesisTime, genesisValidatorsRoot), fork);
+
+  @BeforeEach
+  void setup() {
+    request = StubRestApiRequest.builder().build();
+  }
+
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    initialise(SpecMilestone.PHASE0);
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetGenesis handler = new GetGenesis(chainDataProvider);
-
     handler.handleRequest(request);
-    verify(request).respondWithCode(SC_NOT_FOUND);
+    assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
 
   @Test
   public void shouldReturnGenesisInformation() throws Exception {
     initialise(SpecMilestone.PHASE0);
     genesis();
-    final RestApiRequest request = mock(RestApiRequest.class);
     final GetGenesis handler = new GetGenesis(chainDataProvider);
 
     final GenesisData genesisData = chainDataProvider.getGenesisStateData();
@@ -51,6 +65,35 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataPr
             chainDataProvider.getGenesisForkVersion());
 
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(expectedData));
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody())
+        .isEqualTo(expectedData);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(new GetGenesis(chainDataProvider), SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle404() {
+    verifyMetadataEmptyResponse(new GetGenesis(chainDataProvider), SC_NOT_FOUND);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(new GetGenesis(chainDataProvider), SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws JsonProcessingException {
+
+    final String data =
+        getResponseStringFromMetadata(new GetGenesis(chainDataProvider), SC_OK, responseData);
+    assertThat(data)
+        .isEqualTo(
+            String.format(
+                "{\"data\":{\"genesis_time\":\"%s\",\"genesis_validators_root\":\"%s\",\"genesis_fork_version\":\"%s\"}}",
+                genesisTime, genesisValidatorsRoot, fork));
   }
 }

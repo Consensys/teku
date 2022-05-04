@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer.client.schema;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -35,6 +36,7 @@ public class ExecutionPayloadHeaderV1 extends ExecutionPayloadCommon {
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 transactionsRoot;
 
+  @JsonCreator
   public ExecutionPayloadHeaderV1(
       @JsonProperty("parentHash") Bytes32 parentHash,
       @JsonProperty("feeRecipient") Bytes20 feeRecipient,

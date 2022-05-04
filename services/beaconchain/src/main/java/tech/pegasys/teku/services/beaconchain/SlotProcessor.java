@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -106,9 +107,9 @@ public class SlotProcessor {
     if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
       return;
     }
-    if (isNextSlotDue(currentTimeMillis, genesisTimeMillis)
-        && !syncStateProvider.getCurrentSyncState().isInSync()) {
-      processSlotWhileSyncing();
+    final SyncState currentSyncState = syncStateProvider.getCurrentSyncState();
+    if (isNextSlotDue(currentTimeMillis, genesisTimeMillis) && !currentSyncState.isInSync()) {
+      processSlotWhileSyncing(currentSyncState);
       nodeSlot.inc();
       return;
     }
@@ -143,10 +144,14 @@ public class SlotProcessor {
     epochCachePrimer.primeCacheForEpoch(epoch);
   }
 
-  private void processSlotWhileSyncing() {
+  private void processSlotWhileSyncing(final SyncState currentSyncState) {
     UInt64 slot = nodeSlot.getValue();
     this.forkChoiceTrigger.onSlotStartedWhileSyncing(slot);
-    eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+    if (currentSyncState == SyncState.AWAITING_EL) {
+      eventLog.syncEventAwaitingEL(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+    } else {
+      eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+    }
     slotEventsChannelPublisher.onSlot(slot);
 
     final UInt64 nodeEpoch = spec.computeEpochAtSlot(slot);
