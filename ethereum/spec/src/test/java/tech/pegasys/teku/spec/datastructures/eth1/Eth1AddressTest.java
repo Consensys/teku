@@ -28,15 +28,30 @@ class Eth1AddressTest {
   }
 
   @Test
-  void eth1Address_checksumAllCaps() throws Exception {
+  void eth1Address_acceptAddressWithoutPrefix() throws Exception {
+    Eth1Address.fromHexString("1Db3439a222C519ab44bb1144fC28167b4Fa6EE6");
+  }
+
+  @Test
+  void eth1Address_checksumValidAllUpper() throws Exception {
     Eth1Address.fromHexString("0x52908400098527886E0F7030069857D2E4169EE7");
     Eth1Address.fromHexString("0x8617E340B3D01FA5F11F306F4090FD50E238070D");
   }
 
   @Test
-  void eth1Address_checksumAllLower() throws Exception {
+  void eth1Address_shouldIgnoreInvalidAllUpper() throws Exception {
+    Eth1Address.fromHexString("0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED");
+  }
+
+  @Test
+  void eth1Address_checksumValidAllLower() throws Exception {
     Eth1Address.fromHexString("0xde709f2102306220921060314715629080e2fb77");
     Eth1Address.fromHexString("0x27b1fdb04752bbc536007a920d24acb045561c26");
+  }
+
+  @Test
+  void eth1Address_shouldIgnoreInvalidAllLower() throws Exception {
+    Eth1Address.fromHexString("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed");
   }
 
   @Test
@@ -48,7 +63,7 @@ class Eth1AddressTest {
   }
 
   @Test
-  void eth1Address_checksumInvalid() throws Exception {
+  void eth1Address_shouldThrowIfChecksumFails() throws Exception {
     assertThatThrownBy(
             // The first "normal" address with the last character made uppercase.
             () -> Eth1Address.fromHexString("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD"))

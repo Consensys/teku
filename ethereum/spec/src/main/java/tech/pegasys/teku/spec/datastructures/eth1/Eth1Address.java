@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.eth1;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -28,62 +27,63 @@ public class Eth1Address extends Bytes20 {
           .formatter(Eth1Address::toHexString)
           .parser(Eth1Address::fromHexString)
           .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
-          .description("Hex encoded deposit contract address with 0x prefix")
+          .description("Hex encoded address")
           .format("byte")
           .build();
 
   public static final Eth1Address ZERO =
       new Eth1Address("0x0000000000000000000000000000000000000000");
 
-  private final String address;
+  private final String encodedAddress;
 
   private Eth1Address(String value) {
     super(Bytes.fromHexString(value));
-    this.address = value;
+    if (!value.startsWith("0x")) {
+      value = "0x" + value;
+    }
+    this.encodedAddress = toChecksumAddress(value);
+    if (isMixedCase(value)) {
+      checkArgument(
+          value.equals(encodedAddress),
+          "Eth1Address fails checksum:\n got: %s\n exp: %s",
+          value,
+          encodedAddress);
+    }
   }
 
-  private static void checkAddress(String value) {
-    checkArgument(value.startsWith("0x"), "Eth1Address (%s) should start with \"0x\".", value);
-    Bytes bytes = Bytes.fromHexString(value);
-    checkArgument(
-        bytes.size() == SIZE, "Eth1Address should be 20 bytes, but was %s bytes.", bytes.size());
+  private static boolean isMixedCase(String value) {
+    String valueWithoutPrefix = value.replace("0x", "");
+    return !valueWithoutPrefix.toLowerCase().equals(valueWithoutPrefix)
+        && !valueWithoutPrefix.toUpperCase().equals(valueWithoutPrefix);
   }
 
   public static Eth1Address fromHexString(String value) {
-    checkAddress(value);
-    Eth1Address address = new Eth1Address(value);
-    Eth1Address encodedAddress = fromHexStringWithChecksum(value);
-    checkArgument(
-        address.equals(encodedAddress),
-        "Eth1Address fails checksum:\n got: %s\n exp: %s",
-        address,
-        encodedAddress);
-    return address;
+    return new Eth1Address(value);
   }
 
   /**
-   * Produce an encoded address according to <a
+   * Produce an address with a mixed-case checksum as defined by <a
    * href="https://eips.ethereum.org/EIPS/eip-55">EIP-55</a>.
    *
    * @param value The string representation of an Ethereum address.
    * @return The encoded address with mixed-case checksum.
    */
-  public static Eth1Address fromHexStringWithChecksum(String value) {
-    checkAddress(value);
-    String lowerCaseAddrWithoutPrefix = value.substring(2).toLowerCase();
+  private static String toChecksumAddress(String value) {
+    String address = value.replace("0x", "").toLowerCase();
     String hashString =
-        Hash.keccak256(Bytes.wrap(lowerCaseAddrWithoutPrefix.getBytes(StandardCharsets.US_ASCII)))
-            .toString();
+        Hash.keccak256(Bytes.wrap(address.getBytes(StandardCharsets.US_ASCII)))
+            .toString()
+            .replace("0x", "");
     String ret = "0x";
-    for (int i = 2; i < value.length(); i++) {
+    for (int i = 0; i < address.length(); i++) {
       String letter = String.valueOf(hashString.charAt(i));
       if (Integer.parseInt(letter, 16) >= 8) {
-        ret += Character.toUpperCase(value.charAt(i));
+        ret += Character.toUpperCase(address.charAt(i));
       } else {
-        ret += Character.toLowerCase(value.charAt(i));
+        ret += address.charAt(i);
       }
     }
-    return new Eth1Address(ret);
+    return ret;
   }
 
   public static DeserializableTypeDefinition<Eth1Address> getJsonTypeDefinition() {
@@ -91,34 +91,17 @@ public class Eth1Address extends Bytes20 {
   }
 
   @Override
+  public String toString() {
+    return encodedAddress;
+  }
+
+  @Override
   public String toHexString() {
-    return address;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final Eth1Address a = (Eth1Address) o;
-    return address.equals(a.address);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(address);
+    return encodedAddress;
   }
 
   @Override
   public String toUnprefixedHexString() {
-    return toHexString().substring(2);
-  }
-
-  @Override
-  public String toString() {
-    return toHexString();
+    return encodedAddress.substring(2);
   }
 }

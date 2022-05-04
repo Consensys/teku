@@ -125,7 +125,7 @@ public class BeaconRestApiV1Test {
   @BeforeEach
   public void setup() {
     final Eth1Address depositContractAddress =
-        Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd");
+        Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
     BeaconRestApiConfig beaconRestApiConfig =
         BeaconRestApiConfig.builder()
             .restApiDocsEnabled(false)

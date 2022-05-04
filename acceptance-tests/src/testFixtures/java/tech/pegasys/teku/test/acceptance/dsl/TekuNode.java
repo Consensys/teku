@@ -628,8 +628,7 @@ public class TekuNode extends Node {
       configMap.put("data-path", DATA_PATH);
       configMap.put(
           "eth1-deposit-contract-address",
-          Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd")
-              .toHexString());
+          Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd").toHexString());
       configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
       configMap.put("rest-api-host-allowlist", "*");

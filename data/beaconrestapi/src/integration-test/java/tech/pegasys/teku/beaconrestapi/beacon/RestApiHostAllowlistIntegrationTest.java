@@ -28,7 +28,7 @@ public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestA
   @Test
   public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
     final Eth1Address depositContractAddress =
-        Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd");
+        Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
     final BeaconRestApiConfig config =
         BeaconRestApiConfig.builder()
             .restApiPort(0)
