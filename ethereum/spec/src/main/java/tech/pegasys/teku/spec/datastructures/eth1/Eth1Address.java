@@ -27,7 +27,7 @@ public class Eth1Address extends Bytes20 {
           .formatter(Eth1Address::toHexString)
           .parser(Eth1Address::fromHexString)
           .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
-          .description("Hex encoded address")
+          .description("Hex encoded deposit contract address with 0x prefix")
           .format("byte")
           .build();
 
