@@ -129,12 +129,7 @@ public abstract class AbstractSszMutableComposite<
       ChildChangeRecord<SszChildT, SszMutableChildT> newChangeRecord = createChangeRecordByRef(w);
       childrenChanges.put(index, newChangeRecord);
       if (w instanceof SszMutableComposite) {
-        ((SszMutableComposite<?>) w)
-            .setInvalidator(
-                viewWrite -> {
-                  newChangeRecord.invalidateRefValue();
-                  invalidate();
-                });
+        ((SszMutableComposite<?>) w).setInvalidator(viewWrite -> invalidate());
       }
       return newChangeRecord.getRefValue();
     }
@@ -248,15 +243,10 @@ public abstract class AbstractSszMutableComposite<
 
     private final SszChildT newValue;
     private final SszMutableChildT refValue;
-    private boolean refValueInvalidated;
 
     private ChildChangeRecord(SszChildT newValue, SszMutableChildT refValue) {
       this.newValue = newValue;
       this.refValue = refValue;
-    }
-
-    public void invalidateRefValue() {
-      refValueInvalidated = true;
     }
 
     public boolean isByRef() {
@@ -273,10 +263,6 @@ public abstract class AbstractSszMutableComposite<
 
     public SszMutableChildT getRefValue() {
       return refValue;
-    }
-
-    public boolean isRefValueInvalidated() {
-      return refValueInvalidated;
     }
   }
 }

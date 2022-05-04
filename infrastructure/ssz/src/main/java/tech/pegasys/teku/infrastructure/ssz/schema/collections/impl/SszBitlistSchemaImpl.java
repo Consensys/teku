@@ -77,7 +77,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
     int availableBytes = reader.getAvailableBytes();
     // preliminary rough check
     checkSsz(
-        (availableBytes - 1) * 8 <= getMaxLength(), "SSZ sequence length exceeds max type length");
+        (availableBytes - 1L) * 8 <= getMaxLength(), "SSZ sequence length exceeds max type length");
     Bytes bytes = reader.read(availableBytes);
     int length = SszBitlistImpl.sszGetLengthAndValidate(bytes);
     if (length > getMaxLength()) {
