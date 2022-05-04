@@ -15,12 +15,12 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.4.1'
+  id 'com.diffplug.spotless' version '6.5.2'
   id 'com.github.ben-manes.versions' version '0.42.0'
   id 'com.github.jk1.dependency-license-report' version '2.1'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'net.ltgt.errorprone' version '2.0.2' apply false
-  id 'de.undercouch.download' version '5.0.4'
+  id 'de.undercouch.download' version '5.0.5'
   id 'org.ajoberstar.grgit' version '5.0.0'
 }
 
@@ -191,6 +191,8 @@ allprojects {
       check('ImmutableEnumChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       // Storing a lambda to avoid code duplication is not a bad thing
       check('UnnecessaryLambda', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      // Generates a ton of false alarms for no real value
+      check('LongDoubleConversion', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // We don't apply strict javadoc requirements yet
       check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)

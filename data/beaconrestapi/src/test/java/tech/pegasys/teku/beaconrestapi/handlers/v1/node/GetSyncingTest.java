@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
@@ -26,7 +27,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {
     GetSyncing handler = new GetSyncing(syncDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 7, 10));
 
@@ -37,7 +38,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldGetSyncStatusInSync() throws Exception {
     GetSyncing handler = new GetSyncing(syncDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 

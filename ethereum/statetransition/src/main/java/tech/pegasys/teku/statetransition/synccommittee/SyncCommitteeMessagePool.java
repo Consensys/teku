@@ -181,10 +181,6 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
       }
     }
 
-    public boolean isEmpty() {
-      return signatures.isEmpty();
-    }
-
     public IntSet getParticipationIndices() {
       return participationIndices;
     }

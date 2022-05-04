@@ -15,10 +15,12 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +34,11 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -54,6 +61,10 @@ public abstract class AbstractMigratedBeaconHandlerTest {
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<SafeFuture<ByteArrayInputStream>> futureArgs =
+      ArgumentCaptor.forClass(SafeFuture.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<SafeFuture<AsyncApiResponse>> asyncFuture =
       ArgumentCaptor.forClass(SafeFuture.class);
 
   private final ArgumentCaptor<byte[]> args = ArgumentCaptor.forClass(byte[].class);
@@ -90,10 +101,39 @@ public abstract class AbstractMigratedBeaconHandlerTest {
     return futureArgs.getValue();
   }
 
+  protected SafeFuture<AsyncApiResponse> getResultAsyncResponse(final RestApiRequest request) {
+    verify(request).respondAsync(asyncFuture.capture());
+    return asyncFuture.getValue();
+  }
+
   protected String getResultStringFromSuccessfulFuture() {
     final SafeFuture<ByteArrayInputStream> resultFuture = getResultFuture();
     assertThat(resultFuture).isCompleted();
     final ByteArrayInputStream byteArrayInputStream = safeJoin(getResultFuture());
     return new String(byteArrayInputStream.readAllBytes(), UTF_8);
+  }
+
+  public void verifyMetadataErrorResponse(final MigratingEndpointAdapter handler, final int code)
+      throws JsonProcessingException {
+    final EndpointMetadata metadata = handler.getMetadata();
+    final byte[] result =
+        metadata.serialize(code, ContentTypes.JSON, new HttpErrorResponse(code, "BAD"));
+    AssertionsForClassTypes.assertThat(new String(result, StandardCharsets.UTF_8))
+        .isEqualTo("{\"code\":" + code + ",\"message\":\"BAD\"}");
+  }
+
+  public void verifyMetadataEmptyResponse(final MigratingEndpointAdapter handler, final int code) {
+    final EndpointMetadata metadata = handler.getMetadata();
+    assertThatThrownBy(() -> metadata.getResponseType(code, ContentTypes.JSON))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unexpected content type");
+  }
+
+  public String getResponseStringFromMetadata(
+      final MigratingEndpointAdapter handler, final int code, final Object data)
+      throws JsonProcessingException {
+    final EndpointMetadata metadata = handler.getMetadata();
+    final byte[] result = metadata.serialize(code, ContentTypes.JSON, data);
+    return new String(result, StandardCharsets.UTF_8);
   }
 }
