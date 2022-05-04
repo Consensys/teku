@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.eth1;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.commons.lang3.StringUtils.isMixedCase;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
@@ -49,12 +50,6 @@ public class Eth1Address extends Bytes20 {
           value,
           encodedAddress);
     }
-  }
-
-  private static boolean isMixedCase(String value) {
-    String valueWithoutPrefix = value.replace("0x", "");
-    return !valueWithoutPrefix.toLowerCase().equals(valueWithoutPrefix)
-        && !valueWithoutPrefix.toUpperCase().equals(valueWithoutPrefix);
   }
 
   public static Eth1Address fromHexString(String value) {
