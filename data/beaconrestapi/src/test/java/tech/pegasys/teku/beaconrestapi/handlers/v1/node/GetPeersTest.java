@@ -27,6 +27,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PeersData;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -60,7 +61,7 @@ public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
     when(networkDataProvider.getEth2Peers()).thenReturn(data);
 
     GetPeers handler = new GetPeers(networkDataProvider);
-    final RestApiRequest request = mock(RestApiRequest.class);
+    final RestApiRequest request = mock(RestApiRequestImpl.class);
     handler.handleRequest(request);
     verify(request).respondOk(refEq(peersData), eq(CacheLength.NO_CACHE));
   }

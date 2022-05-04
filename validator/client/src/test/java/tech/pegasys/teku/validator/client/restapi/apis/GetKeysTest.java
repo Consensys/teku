@@ -27,6 +27,7 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -38,7 +39,7 @@ class GetKeysTest {
     final List<Validator> activeValidatorList = getValidatorList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
-    final RestApiRequest request = mock(RestApiRequest.class);
+    final RestApiRequest request = mock(RestApiRequestImpl.class);
     endpoint.handleRequest(request);
 
     verify(request).respondOk(activeValidatorList);
@@ -49,7 +50,7 @@ class GetKeysTest {
     final List<Validator> activeValidatorList = Collections.emptyList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
-    final RestApiRequest request = mock(RestApiRequest.class);
+    final RestApiRequest request = mock(RestApiRequestImpl.class);
     endpoint.handleRequest(request);
 
     verify(request).respondOk(activeValidatorList);

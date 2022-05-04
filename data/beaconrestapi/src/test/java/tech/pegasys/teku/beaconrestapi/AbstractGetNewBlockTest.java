@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -62,7 +63,7 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
             ONE, signature, Optional.empty(), isBlindedBlocks()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)));
 
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    RestApiRequest request = new RestApiRequestImpl(context, handler.getMetadata());
     handler.handleRequest(request);
 
     final ByteArrayInputStream byteArrayInputStream = safeJoin(getResultFuture());
@@ -78,7 +79,7 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
             ONE, signature, Optional.empty(), isBlindedBlocks()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    RestApiRequestImpl request = new RestApiRequestImpl(context, handler.getMetadata());
     handler.handleRequest(request);
 
     SafeFuture<ByteArrayInputStream> future = getResultFuture();

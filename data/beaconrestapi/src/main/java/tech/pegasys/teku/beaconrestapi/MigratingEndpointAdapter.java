@@ -19,6 +19,7 @@ import io.javalin.http.Handler;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 
 public abstract class MigratingEndpointAdapter extends RestApiEndpoint implements Handler {
 
@@ -32,7 +33,7 @@ public abstract class MigratingEndpointAdapter extends RestApiEndpoint implement
   }
 
   protected void adapt(final Context ctx) throws Exception {
-    final RestApiRequest request = new RestApiRequest(ctx, getMetadata());
+    final RestApiRequest request = new RestApiRequestImpl(ctx, getMetadata());
     handleRequest(request);
   }
 }

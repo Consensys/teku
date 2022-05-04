@@ -27,6 +27,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity.IdentityData;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
@@ -45,7 +46,7 @@ public class GetIdentityTest extends AbstractMigratedBeaconHandlerTest {
     when(nodeid.toBase58()).thenReturn("aeiou");
     when(eth2P2PNetwork.getNodeAddress()).thenReturn("address");
 
-    final RestApiRequest request = mock(RestApiRequest.class);
+    final RestApiRequest request = mock(RestApiRequestImpl.class);
     handler.handleRequest(request);
 
     verify(request)

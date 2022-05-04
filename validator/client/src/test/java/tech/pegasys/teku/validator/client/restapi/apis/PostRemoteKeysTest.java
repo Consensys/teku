@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequestImpl;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
@@ -33,7 +34,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequ
 
 public class PostRemoteKeysTest {
   private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
-  private final RestApiRequest request = mock(RestApiRequest.class);
+  private final RestApiRequest request = mock(RestApiRequestImpl.class);
 
   @Test
   void emptyRequest_shouldGiveEmptySuccess() throws JsonProcessingException {
