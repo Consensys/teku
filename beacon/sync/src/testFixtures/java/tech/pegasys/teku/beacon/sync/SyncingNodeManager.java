@@ -44,8 +44,8 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -116,7 +116,7 @@ public class SyncingNodeManager {
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
-            new ExecutionEngineChannelStub(spec, false));
+            new ExecutionLayerChannelStub(spec, false));
 
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks =

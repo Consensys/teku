@@ -30,7 +30,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
-import tech.pegasys.teku.services.executionengine.ExecutionLayerConfiguration;
+import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;

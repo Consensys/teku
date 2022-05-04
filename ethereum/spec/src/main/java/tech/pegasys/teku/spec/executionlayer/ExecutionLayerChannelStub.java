@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine;
+package tech.pegasys.teku.spec.executionlayer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionEngineChannelStub implements ExecutionLayerChannel {
+public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
@@ -70,7 +70,7 @@ public class ExecutionEngineChannelStub implements ExecutionLayerChannel {
   private Optional<ExecutionPayload> lastMevBoostPayloadToBeUnblinded = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
-  public ExecutionEngineChannelStub(
+  public ExecutionLayerChannelStub(
       final Spec spec, final TimeProvider timeProvider, final boolean enableTransitionEmulation) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
@@ -78,7 +78,7 @@ public class ExecutionEngineChannelStub implements ExecutionLayerChannel {
     this.transitionEmulationEnabled = enableTransitionEmulation;
   }
 
-  public ExecutionEngineChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
+  public ExecutionLayerChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
     this(spec, new SystemTimeProvider(), enableTransitionEmulation);
   }
 

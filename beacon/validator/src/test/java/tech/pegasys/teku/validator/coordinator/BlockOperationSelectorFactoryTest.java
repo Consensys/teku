@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
@@ -122,7 +122,7 @@ class BlockOperationSelectorFactoryTest {
   private final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  private final ExecutionLayerChannel executionEngine = mock(ExecutionLayerChannel.class);
+  private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
 
   private final ExecutionPayload defaultExecutionPayload =
       SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
@@ -147,7 +147,7 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionEngine,
+          executionLayer,
           false);
 
   private final BlockOperationSelectorFactory factoryWithMevBoost =
@@ -162,7 +162,7 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionEngine,
+          executionLayer,
           true);
 
   @BeforeEach
@@ -309,7 +309,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionEngine.engineGetPayload(payloadId, slot))
+    when(executionLayer.engineGetPayload(payloadId, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factory
@@ -331,7 +331,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionEngine.getPayloadHeader(payloadId, slot))
+    when(executionLayer.getPayloadHeader(payloadId, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factoryWithMevBoost
@@ -352,7 +352,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionEngine.engineGetPayload(payloadId, slot))
+    when(executionLayer.engineGetPayload(payloadId, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factoryWithMevBoost
@@ -370,7 +370,7 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
-    when(executionEngine.proposeBlindedBlock(blindedSignedBlock))
+    when(executionLayer.proposeBlindedBlock(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factoryWithMevBoost.createUnblinderSelector().accept(blockUnblinder);
@@ -385,7 +385,7 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
-    when(executionEngine.proposeBlindedBlock(blindedSignedBlock))
+    when(executionLayer.proposeBlindedBlock(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     assertThatThrownBy(() -> factory.createUnblinderSelector().accept(blockUnblinder))

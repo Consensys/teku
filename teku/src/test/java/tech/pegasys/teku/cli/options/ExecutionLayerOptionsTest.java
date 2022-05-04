@@ -22,12 +22,12 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
+public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  public void shouldReadExecutionEngineOptionsFromConfigurationFile() {
+  public void shouldReadExecutionLayerOptionsFromConfigurationFile() {
     final TekuConfiguration config =
-        getTekuConfigurationFromFile("executionEngineOptions_config.yaml");
+        getTekuConfigurationFromFile("executionLayerOptions_config.yaml");
 
     // Spec doesn't include the merge so execution engine is disabled
     assertThat(config.executionLayer().isEnabled()).isFalse();

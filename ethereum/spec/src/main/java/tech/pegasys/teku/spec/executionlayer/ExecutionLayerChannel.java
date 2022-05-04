@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine;
+package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;

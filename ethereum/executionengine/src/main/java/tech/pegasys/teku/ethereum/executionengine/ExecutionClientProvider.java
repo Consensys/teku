@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionengine;
 
-import static tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER;
+import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER;
 
 import java.nio.file.Path;
 import java.time.Duration;

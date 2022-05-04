@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;

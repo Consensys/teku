@@ -47,11 +47,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
-import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
@@ -134,7 +134,7 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult>
+  public SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult>
       engineForkChoiceUpdated(
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadAttributes> payloadAttributes) {

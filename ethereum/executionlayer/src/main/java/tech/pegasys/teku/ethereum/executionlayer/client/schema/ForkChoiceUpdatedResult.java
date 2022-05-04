@@ -37,9 +37,9 @@ public class ForkChoiceUpdatedResult {
     this.payloadId = payloadId;
   }
 
-  public tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+  public tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult
       asInternalExecutionPayload() {
-    return new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
+    return new tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult(
         payloadStatus.asInternalExecutionPayload(), Optional.ofNullable(payloadId));
   }
 

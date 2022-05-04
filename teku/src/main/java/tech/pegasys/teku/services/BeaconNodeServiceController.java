@@ -20,7 +20,7 @@ import tech.pegasys.teku.networking.nat.NatService;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
-import tech.pegasys.teku.services.executionengine.ExecutionLayerService;
+import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
@@ -33,10 +33,10 @@ public class BeaconNodeServiceController extends ServiceController {
     Optional<ExecutionClientProvider> maybeExecutionClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
-      ExecutionLayerService executionEngineService =
+      ExecutionLayerService executionLayerService =
           new ExecutionLayerService(serviceConfig, tekuConfig.executionLayer());
-      services.add(executionEngineService);
-      maybeExecutionClientProvider = executionEngineService.getEngineWeb3jClientProvider();
+      services.add(executionLayerService);
+      maybeExecutionClientProvider = executionLayerService.getEngineWeb3jClientProvider();
     }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(

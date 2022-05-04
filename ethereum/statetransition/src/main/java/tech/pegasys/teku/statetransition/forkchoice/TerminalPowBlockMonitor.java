@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -46,7 +46,7 @@ public class TerminalPowBlockMonitor {
 
   private final EventLogger eventLogger;
   private final TimeProvider timeProvider;
-  private final ExecutionLayerChannel executionEngine;
+  private final ExecutionLayerChannel executionLayer;
   private final AsyncRunner asyncRunner;
   private Optional<Cancellable> timer = Optional.empty();
   private final Spec spec;
@@ -65,14 +65,14 @@ public class TerminalPowBlockMonitor {
   private final ArrayDeque<UInt256> lastTotalDifficulty = new ArrayDeque<>();
 
   public TerminalPowBlockMonitor(
-      final ExecutionLayerChannel executionEngine,
+      final ExecutionLayerChannel executionLayer,
       final Spec spec,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final AsyncRunner asyncRunner,
       final EventLogger eventLogger,
       final TimeProvider timeProvider) {
-    this.executionEngine = executionEngine;
+    this.executionLayer = executionLayer;
     this.asyncRunner = asyncRunner;
     this.spec = spec;
     this.recentChainData = recentChainData;
@@ -206,7 +206,7 @@ public class TerminalPowBlockMonitor {
             .isGreaterThanOrEqualTo(specConfigBellatrix.getTerminalBlockHashActivationEpoch());
 
     if (isActivationEpochReached) {
-      executionEngine
+      executionLayer
           .eth1GetPowBlock(blockHashTracking)
           .thenAccept(
               maybePowBlock ->
@@ -231,7 +231,7 @@ public class TerminalPowBlockMonitor {
   }
 
   private void checkTerminalBlockByTTD() {
-    executionEngine
+    executionLayer
         .eth1GetPowChainHead()
         .thenCompose(
             powBlock -> {
@@ -269,7 +269,7 @@ public class TerminalPowBlockMonitor {
   }
 
   private SafeFuture<Boolean> validateTerminalBlockParentByTTD(final PowBlock terminalBlock) {
-    return executionEngine
+    return executionLayer
         .eth1GetPowBlock(terminalBlock.getParentHash())
         .thenApply(
             powBlock -> {

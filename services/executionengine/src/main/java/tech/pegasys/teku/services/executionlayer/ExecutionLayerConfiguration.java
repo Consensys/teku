@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.executionengine;
+package tech.pegasys.teku.services.executionlayer;
 
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel.Version;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerConfiguration {
 

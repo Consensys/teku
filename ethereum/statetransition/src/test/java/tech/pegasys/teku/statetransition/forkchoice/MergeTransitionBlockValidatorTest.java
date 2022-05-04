@@ -32,9 +32,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,8 +45,8 @@ class MergeTransitionBlockValidatorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ExecutionEngineChannelStub executionEngine =
-      new ExecutionEngineChannelStub(spec, false);
+  private final ExecutionLayerChannelStub executionLayer =
+      new ExecutionLayerChannelStub(spec, false);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   @BeforeAll
@@ -99,7 +99,7 @@ class MergeTransitionBlockValidatorTest {
             blockToVerify.getBlock());
 
     // No need to request blocks and check TTD
-    assertThat(executionEngine.getRequestedPowBlocks()).isEmpty();
+    assertThat(executionLayer.getRequestedPowBlocks()).isEmpty();
     assertThat(result).isCompletedWithValue(new PayloadValidationResult(PayloadStatus.VALID));
   }
 
@@ -129,7 +129,7 @@ class MergeTransitionBlockValidatorTest {
                 .getLatestExecutionPayloadHeader(),
             blockToVerify.getBlock());
 
-    assertThat(executionEngine.getRequestedPowBlocks())
+    assertThat(executionLayer.getRequestedPowBlocks())
         .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result)
         .isCompletedWithValue(
@@ -162,7 +162,7 @@ class MergeTransitionBlockValidatorTest {
                 .getLatestExecutionPayloadHeader(),
             blockToVerify.getBlock());
 
-    assertThat(executionEngine.getRequestedPowBlocks())
+    assertThat(executionLayer.getRequestedPowBlocks())
         .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isCompleted();
     final PayloadValidationResult validationResult = result.join();
@@ -194,7 +194,7 @@ class MergeTransitionBlockValidatorTest {
         transitionVerifier.verifyTransitionBlock(
             chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
 
-    assertThat(executionEngine.getRequestedPowBlocks())
+    assertThat(executionLayer.getRequestedPowBlocks())
         .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isCompletedWithValue(new PayloadValidationResult(PayloadStatus.VALID));
   }
@@ -251,13 +251,13 @@ class MergeTransitionBlockValidatorTest {
       final UInt256 terminalBlockDifficulty,
       final UInt256 ttdBlockParentDifficulty) {
     final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
-    executionEngine.addPowBlock(
+    executionLayer.addPowBlock(
         new PowBlock(
             getExecutionPayload(transitionBlock).getParentHash(),
             terminalBlockParentHash,
             terminalBlockDifficulty,
             UInt64.ZERO));
-    executionEngine.addPowBlock(
+    executionLayer.addPowBlock(
         new PowBlock(
             terminalBlockParentHash,
             dataStructureUtil.randomBytes32(),
@@ -304,7 +304,6 @@ class MergeTransitionBlockValidatorTest {
   }
 
   private MergeTransitionBlockValidator createTransitionValidator() {
-    return new MergeTransitionBlockValidator(
-        spec, storageSystem.recentChainData(), executionEngine);
+    return new MergeTransitionBlockValidator(spec, storageSystem.recentChainData(), executionLayer);
   }
 }

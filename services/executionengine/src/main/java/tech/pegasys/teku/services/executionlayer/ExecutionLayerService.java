@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.executionengine;
+package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
@@ -28,8 +28,8 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 
 public class ExecutionLayerService extends Service {
 
@@ -80,12 +80,12 @@ public class ExecutionLayerService extends Service {
   protected SafeFuture<?> doStart() {
     final String endpoint = engineWeb3jClientProvider.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
-    final ExecutionLayerChannel executionEngineChannel;
+    final ExecutionLayerChannel executionLayerChannel;
     if (engineWeb3jClientProvider.isStub()) {
-      EVENT_LOG.executionEngineStubEnabled();
-      executionEngineChannel = new ExecutionEngineChannelStub(config.getSpec(), timeProvider, true);
+      EVENT_LOG.executionLayerStubEnabled();
+      executionLayerChannel = new ExecutionLayerChannelStub(config.getSpec(), timeProvider, true);
     } else {
-      executionEngineChannel =
+      executionLayerChannel =
           ExecutionLayerChannelImpl.create(
               engineWeb3jClientProvider.getWeb3JClient(),
               builderWeb3jClientProvider.map(ExecutionClientProvider::getWeb3JClient),
@@ -93,7 +93,7 @@ public class ExecutionLayerService extends Service {
               config.getSpec(),
               metricsSystem);
     }
-    eventChannels.subscribe(ExecutionLayerChannel.class, executionEngineChannel);
+    eventChannels.subscribe(ExecutionLayerChannel.class, executionLayerChannel);
     return SafeFuture.COMPLETE;
   }
 

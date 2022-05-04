@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.executionengine;
+package tech.pegasys.teku.services.executionlayer;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
-public class ExecutionEngineConfigurationTest {
+public class ExecutionLayerConfigurationTest {
   private final ExecutionLayerConfiguration.Builder configBuilder =
       ExecutionLayerConfiguration.builder();
   private final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();

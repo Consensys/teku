@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationS
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;

@@ -16,7 +16,7 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
 
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel.Version;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerOptions {
 

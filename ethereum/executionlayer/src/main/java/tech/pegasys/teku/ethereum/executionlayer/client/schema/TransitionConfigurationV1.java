@@ -30,7 +30,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsH
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
+import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class TransitionConfigurationV1 {
   @JsonSerialize(using = UInt256AsHexSerializer.class)

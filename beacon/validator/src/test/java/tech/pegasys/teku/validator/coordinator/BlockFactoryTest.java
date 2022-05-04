@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.executionengine.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -72,7 +72,7 @@ class BlockFactoryTest {
   final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  final ExecutionLayerChannel executionEngine = mock(ExecutionLayerChannel.class);
+  final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
@@ -310,7 +310,7 @@ class BlockFactoryTest {
                 eth1DataCache,
                 graffiti,
                 forkChoiceNotifier,
-                executionEngine,
+                executionLayer,
                 isMevBoostEnabled));
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
@@ -321,9 +321,9 @@ class BlockFactoryTest {
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
-    when(executionEngine.engineGetPayload(any(), any()))
+    when(executionLayer.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
-    when(executionEngine.getPayloadHeader(any(), any()))
+    when(executionLayer.getPayloadHeader(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
     beaconChainUtil.initializeStorage();
 
@@ -366,16 +366,16 @@ class BlockFactoryTest {
       final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
     final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
 
-    when(executionEngine.proposeBlindedBlock(beaconBlock))
+    when(executionLayer.proposeBlindedBlock(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
     final SignedBeaconBlock block =
         blockFactory.unblindSignedBeaconBlockIfBlinded(beaconBlock).join();
 
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
-      verifyNoInteractions(executionEngine);
+      verifyNoInteractions(executionLayer);
     } else {
-      verify(executionEngine).proposeBlindedBlock(beaconBlock);
+      verify(executionLayer).proposeBlindedBlock(beaconBlock);
     }
 
     assertThat(block).isNotNull();
@@ -419,7 +419,7 @@ class BlockFactoryTest {
             eth1DataCache,
             graffiti,
             forkChoiceNotifier,
-            executionEngine,
+            executionLayer,
             isMevBoostEnabled));
   }
 }
