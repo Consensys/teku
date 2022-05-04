@@ -228,8 +228,7 @@ public class Eth2NetworkConfiguration {
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
-        eth1DepositContractAddress(
-            spec.getGenesisSpec().getConfig().getDepositContractAddress().toString());
+        eth1DepositContractAddress(spec.getGenesisSpec().getConfig().getDepositContractAddress());
       }
       return new Eth2NetworkConfiguration(
           spec,
