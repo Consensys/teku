@@ -23,7 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Improved performance when processing epoch transitions.
 - Added `is_optimistic` field to `/eth/v1/node/syncing` response.
 - Using execution engine endpoint as Eth1 endpoint when latter is not provided.
-- Check `Eth1Address` mixed-case checksum ([EIP-55](https://eips.ethereum.org/EIPS/eip-55)) if address is mixed-case.
+- Check `Eth1Address` checksum ([EIP-55](https://eips.ethereum.org/EIPS/eip-55)) if address is mixed-case.
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
