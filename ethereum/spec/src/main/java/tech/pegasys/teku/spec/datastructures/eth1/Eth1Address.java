@@ -43,7 +43,7 @@ public class Eth1Address extends Bytes20 {
       value = "0x" + value;
     }
     this.encodedAddress = toChecksumAddress(value);
-    if (isMixedCase(value)) {
+    if (isMixedCase(value.substring("0x".length()))) {
       checkArgument(
           value.equals(encodedAddress),
           "Eth1Address fails checksum:\n got: %s\n exp: %s",
