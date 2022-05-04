@@ -73,9 +73,8 @@ public class BesuNode extends Node {
     container.start();
   }
 
-  public String getDepositContractAddress() {
-    return Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd")
-        .toHexString();
+  public Eth1Address getDepositContractAddress() {
+    return Eth1Address.fromHexStringWithChecksum("0xdddddddddddddddddddddddddddddddddddddddd");
   }
 
   public String getInternalJsonRpcUrl() {

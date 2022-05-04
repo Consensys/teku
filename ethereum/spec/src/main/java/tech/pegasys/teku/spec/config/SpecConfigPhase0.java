@@ -18,6 +18,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class SpecConfigPhase0 implements SpecConfig {
@@ -97,7 +98,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   // Deposit Contract
   private final int depositChainId;
   private final int depositNetworkId;
-  private final String depositContractAddress;
+  private final Eth1Address depositContractAddress;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -149,7 +150,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int proposerScoreBoost,
       final int depositChainId,
       final int depositNetworkId,
-      final String depositContractAddress) {
+      final Eth1Address depositContractAddress) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -474,7 +475,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public String getDepositContractAddress() {
+  public Eth1Address getDepositContractAddress() {
     return depositContractAddress;
   }
 
