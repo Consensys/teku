@@ -110,6 +110,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
     private int blsSetting;
 
     @JsonProperty(value = "reveal_deadlines_setting", required = false, defaultValue = "0")
+    @SuppressWarnings("unused")
     private int revealDeadlinesSetting;
 
     public int getBlocksCount() {
@@ -118,10 +119,6 @@ public class SanityBlocksTestExecutor implements TestExecutor {
 
     public BlsSetting getBlsSetting() {
       return BlsSetting.forCode(blsSetting);
-    }
-
-    public int getRevealDeadlinesSetting() {
-      return revealDeadlinesSetting;
     }
   }
 
