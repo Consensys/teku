@@ -36,14 +36,12 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
 public class GetStateRoot extends AbstractGetSimpleDataFromState {
-  private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/root";
-  public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/root";
 
   private static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
       SerializableTypeDefinition.object(Bytes32.class)
@@ -77,7 +75,7 @@ public class GetStateRoot extends AbstractGetSimpleDataFromState {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state root",
       tags = {TAG_BEACON},

@@ -186,10 +186,6 @@ public abstract class AbstractHandler implements Handler {
     SafeFuture<String> handleError(Context context, Throwable t);
   }
 
-  public static String routeWithBracedParameters(final String route) {
-    return route.replaceAll(":([a-z_A-Z]+)", "{$1}");
-  }
-
   public static String getContentType(
       final List<String> types, final Optional<String> maybeContentType) {
     return ContentTypes.getContentType(types, maybeContentType).orElse(JSON);

@@ -28,14 +28,14 @@ dependencyManagement {
 
     dependency 'com.launchdarkly:okhttp-eventsource:2.5.0'
 
-    dependency 'com.squareup.okhttp3:okhttp:4.9.2'
-    dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
+    dependency 'com.squareup.okhttp3:okhttp:4.9.3'
+    dependency 'com.squareup.okhttp3:mockwebserver:4.9.3'
 
     dependency 'commons-cli:commons-cli:1.4'
 
     dependency 'info.picocli:picocli:4.6.3'
 
-    dependencySet(group: 'io.javalin', version: '4.4.0') {
+    dependencySet(group: 'io.javalin', version: '4.5.0') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -57,13 +57,13 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.13.2'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.1.13') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.0') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
-    dependency 'org.webjars:swagger-ui:3.43.0'
+    dependency 'org.webjars:swagger-ui:4.10.3'
     dependency 'io.github.classgraph:classgraph:4.8.146'
     dependency 'com.github.oshi:oshi-core-java11:6.1.6'
 

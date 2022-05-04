@@ -50,8 +50,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetProposerDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  private static final String OAPI_ROUTE = "/eth/v1/validator/duties/proposer/:epoch";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/validator/duties/proposer/{epoch}";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
@@ -71,7 +70,7 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get proposer duties",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},

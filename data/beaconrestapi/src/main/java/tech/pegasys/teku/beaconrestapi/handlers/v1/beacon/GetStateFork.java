@@ -34,15 +34,13 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public class GetStateFork extends AbstractGetSimpleDataFromState {
-  private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/fork";
-  public static final String ROUTE = AbstractHandler.routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/fork";
 
   private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(StateAndMetaData.class)
@@ -74,7 +72,7 @@ public class GetStateFork extends AbstractGetSimpleDataFromState {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state fork",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},

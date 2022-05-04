@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -41,8 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateFinalityCheckpoints extends AbstractGetSimpleDataFromState {
-  private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/finality_checkpoints";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/finality_checkpoints";
 
   private static final SerializableTypeDefinition<BeaconState> DATA_TYPE =
       SerializableTypeDefinition.object(BeaconState.class)
@@ -85,7 +83,7 @@ public class GetStateFinalityCheckpoints extends AbstractGetSimpleDataFromState 
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state finality checkpoints",
       tags = {TAG_BEACON},

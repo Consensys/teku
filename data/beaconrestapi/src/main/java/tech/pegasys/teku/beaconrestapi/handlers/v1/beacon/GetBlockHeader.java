@@ -43,8 +43,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetBlockHeader extends AbstractHandler implements Handler {
-  private static final String OAPI_ROUTE = "/eth/v1/beacon/headers/:block_id";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/beacon/headers/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetBlockHeader(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -58,7 +57,7 @@ public class GetBlockHeader extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get block header",
       tags = {TAG_BEACON},

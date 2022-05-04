@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
@@ -45,8 +44,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetSszState implements Handler {
-  private static final String OAPI_ROUTE = "/teku/v1/beacon/states/:state_id";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/teku/v1/beacon/states/{state_id}";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -60,7 +58,7 @@ public class GetSszState implements Handler {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       deprecated = true,
       summary = "Get SSZ State",

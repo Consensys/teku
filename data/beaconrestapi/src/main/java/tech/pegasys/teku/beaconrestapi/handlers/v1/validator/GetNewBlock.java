@@ -53,8 +53,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends AbstractHandler implements Handler {
-  private static final String OAPI_ROUTE = "/eth/v1/validator/blocks/:slot";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/validator/blocks/{slot}";
   protected final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -68,7 +67,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       deprecated = true,
       method = HttpMethod.GET,
       summary = "Produce unsigned block",

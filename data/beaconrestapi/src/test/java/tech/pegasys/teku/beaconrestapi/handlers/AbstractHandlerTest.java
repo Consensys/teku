@@ -29,33 +29,6 @@ class AbstractHandlerTest {
   private static final List<String> JSON_ONLY = List.of(JSON);
 
   @Test
-  void shouldHandleParameterAtEnd() {
-    assertThat(AbstractHandler.routeWithBracedParameters("/foo/:bar")).isEqualTo("/foo/{bar}");
-  }
-
-  @Test
-  void shouldHandleParameterInMiddle() {
-    assertThat(AbstractHandler.routeWithBracedParameters("/:foo/bar")).isEqualTo("/{foo}/bar");
-  }
-
-  @Test
-  void shouldHandleUnderscore() {
-    assertThat(AbstractHandler.routeWithBracedParameters("/foo/:bar_BAR"))
-        .isEqualTo("/foo/{bar_BAR}");
-  }
-
-  @Test
-  void shouldHandleMixedCase() {
-    assertThat(AbstractHandler.routeWithBracedParameters("/foo/:bAr")).isEqualTo("/foo/{bAr}");
-  }
-
-  @Test
-  void shouldHandleMultipleReplacements() {
-    assertThat(AbstractHandler.routeWithBracedParameters("/:foo/:bar/:FOO/BAR"))
-        .isEqualTo("/{foo}/{bar}/{FOO}/BAR");
-  }
-
-  @Test
   void accept_shouldReturnJsonIfNotSpecified() {
     assertThat(AbstractHandler.getContentType(SSZ_OR_JSON_CONTENT_TYPES, Optional.empty()))
         .isEqualTo(JSON);
