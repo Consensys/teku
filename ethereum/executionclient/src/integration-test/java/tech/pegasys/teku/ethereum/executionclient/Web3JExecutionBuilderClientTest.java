@@ -93,7 +93,8 @@ public class Web3JExecutionBuilderClientTest {
     // double-check that what we are going to respond corresponds to the json data
     final String serializedExecutionPayloadResponse =
         objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(executionPayloadResponse);
-    assertThat(serializedExecutionPayloadResponse).isEqualToIgnoringNewLines(jsonGetPayloadResponse);
+    assertThat(serializedExecutionPayloadResponse)
+        .isEqualToIgnoringNewLines(jsonGetPayloadResponse);
 
     mockWebServer.enqueue(
         new MockResponse()
@@ -122,7 +123,8 @@ public class Web3JExecutionBuilderClientTest {
         objectMapper
             .writerWithDefaultPrettyPrinter()
             .writeValueAsString(signedBlindedBeaconBlockRequest);
-    assertThat(serializedSignedBlindedBeaconBlockRequest).isEqualToIgnoringNewLines(jsonGetPayloadRequest);
+    assertThat(serializedSignedBlindedBeaconBlockRequest)
+        .isEqualToIgnoringNewLines(jsonGetPayloadRequest);
     assertThat(serializedSignedBlindedBeaconBlockRequest)
         .isEqualTo(requestBodyJsonNode.get("params").get(0).toPrettyString());
 
@@ -149,7 +151,8 @@ public class Web3JExecutionBuilderClientTest {
     // double-check that what we are going to respond corresponds to the json data
     final String serializedSignedBuilderBidResponse =
         objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(signedBuilderBidV1);
-    assertThat(serializedSignedBuilderBidResponse).isEqualToIgnoringNewLines(jsonSignedBuilderBidResponse);
+    assertThat(serializedSignedBuilderBidResponse)
+        .isEqualToIgnoringNewLines(jsonSignedBuilderBidResponse);
 
     mockWebServer.enqueue(
         new MockResponse()
