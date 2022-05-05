@@ -15,7 +15,7 @@ package tech.pegasys.teku.services;
 
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.networking.nat.NatService;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
@@ -30,7 +30,7 @@ public class BeaconNodeServiceController extends ServiceController {
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
     services.add(new StorageService(serviceConfig, tekuConfig.storageConfiguration()));
-    Optional<ExecutionClientProvider> maybeExecutionClientProvider = Optional.empty();
+    Optional<ExecutionWeb3jClientProvider> maybeExecutionClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
       ExecutionLayerService executionLayerService =
@@ -52,7 +52,7 @@ public class BeaconNodeServiceController extends ServiceController {
   private Optional<PowchainService> powchainService(
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
-      final Optional<ExecutionClientProvider> maybeExecutionClientProvider) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionClientProvider) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionClientProvider.isEmpty())) {
       return Optional.empty();

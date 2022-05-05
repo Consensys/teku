@@ -3,7 +3,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':ethereum:executionlayer')
-  implementation project(':ethereum:executionengine')
+  implementation project(':ethereum:executionclient')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
