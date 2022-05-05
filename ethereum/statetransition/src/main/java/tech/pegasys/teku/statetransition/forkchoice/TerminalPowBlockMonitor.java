@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -38,9 +39,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
   // number of samples to average out totalDifficulty
-  private static final int TD_SAMPLES = 15;
+  private static final int TD_SAMPLES = 40;
   // minimum collected samples required for an accurate estimation
-  private static final int TD_MIN_SAMPLES = 5;
+  static final int TD_MIN_SAMPLES = 15;
   // how many times we produce the event, based on polling period (secondsPerEth1Block)
   private static final int ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS = 5;
 
@@ -62,7 +63,7 @@ public class TerminalPowBlockMonitor {
   private boolean isBellatrixActive = false;
   private boolean inSync = true;
 
-  private final ArrayDeque<UInt256> lastTotalDifficulty = new ArrayDeque<>();
+  private final ArrayDeque<PowBlock> lastPowBlocks = new ArrayDeque<>();
 
   public TerminalPowBlockMonitor(
       final ExecutionLayerChannel executionLayer,
@@ -120,7 +121,7 @@ public class TerminalPowBlockMonitor {
 
   public synchronized void onNodeSyncStateChanged(final boolean inSync) {
     if (!this.inSync && inSync) {
-      lastTotalDifficulty.clear();
+      lastPowBlocks.clear();
     }
     this.inSync = inSync;
   }
@@ -238,7 +239,7 @@ public class TerminalPowBlockMonitor {
               final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
-                checkTtdEta(totalDifficulty);
+                checkTtdEta(powBlock);
                 return SafeFuture.COMPLETE;
               }
               if (powBlock.getBlockTimestamp().isGreaterThan(timeProvider.getTimeInSeconds())) {
@@ -283,38 +284,52 @@ public class TerminalPowBlockMonitor {
             });
   }
 
-  private synchronized void checkTtdEta(final UInt256 currentTotalDifficulty) {
-    lastTotalDifficulty.addFirst(currentTotalDifficulty);
-    if (lastTotalDifficulty.size() > TD_SAMPLES) {
-      lastTotalDifficulty.removeLast();
+  private synchronized void checkTtdEta(final PowBlock currentHead) {
+    lastPowBlocks.addFirst(currentHead);
+    if (lastPowBlocks.size() > TD_SAMPLES) {
+      lastPowBlocks.removeLast();
     }
 
     if (!inSync
-        || lastTotalDifficulty.size() < TD_MIN_SAMPLES
+        || lastPowBlocks.size() < TD_MIN_SAMPLES
         || pollingCounter % ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS != 0) {
       return;
     }
 
-    final UInt256 averageTdPerPeriod =
-        lastTotalDifficulty
-            .getFirst()
-            .subtract(lastTotalDifficulty.getLast())
-            .divide(lastTotalDifficulty.size() - 1);
+    final PowBlock latestBlock = lastPowBlocks.getFirst();
+    final PowBlock oldestBlock = lastPowBlocks.getLast();
 
-    if (averageTdPerPeriod.isZero()) {
+    final UInt256 timeFrameInSeconds =
+        UInt256.valueOf(
+            latestBlock.getBlockTimestamp().minus(oldestBlock.getBlockTimestamp()).longValue());
+
+    final UInt256 averageTdPerSeconds =
+        lastPowBlocks
+            .getFirst()
+            .getTotalDifficulty()
+            .subtract(lastPowBlocks.getLast().getTotalDifficulty())
+            .divide(timeFrameInSeconds);
+
+    if (averageTdPerSeconds.isZero()) {
       return;
     }
 
-    final UInt256 periodsToTTD =
+    final long now = timeProvider.getTimeInSeconds().longValue();
+
+    final long timeDiff = now - latestBlock.getBlockTimestamp().longValue();
+
+    final UInt256 secondsToTTD =
         specConfigBellatrix
             .getTerminalTotalDifficulty()
-            .subtract(currentTotalDifficulty)
-            .divide(averageTdPerPeriod);
+            .subtract(latestBlock.getTotalDifficulty())
+            .divide(averageTdPerSeconds)
+            .subtract(timeDiff);
 
-    final Duration eta =
-        Duration.ofSeconds(periodsToTTD.multiply(pollingPeriod.getSeconds()).toLong());
+    final Instant instant = Instant.ofEpochSecond(now + secondsToTTD.toLong());
 
-    eventLogger.terminalPowBlockTtdEta(currentTotalDifficulty, eta);
+    final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
+
+    eventLogger.terminalPowBlockTtdEta(latestBlock.getTotalDifficulty(), eta, instant);
   }
 
   private void onTerminalPowBlockFound(Bytes32 blockHash) {
