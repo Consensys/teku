@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
@@ -125,6 +126,24 @@ public class GetPeerCount extends MigratingEndpointAdapter {
 
     UInt64 getConnected() {
       return connected;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ResponseData that = (ResponseData) o;
+      return Objects.equals(disconnected, that.disconnected)
+          && Objects.equals(connected, that.connected);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(disconnected, connected);
     }
   }
 }

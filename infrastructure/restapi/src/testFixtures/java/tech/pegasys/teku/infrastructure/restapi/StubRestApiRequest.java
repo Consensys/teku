@@ -38,7 +38,7 @@ public class StubRestApiRequest implements RestApiRequest {
   private CacheLength cacheLength = null;
   private final Map<String, String> pathParameters = new HashMap<>();
   private final Map<String, String> queryParameters = new HashMap<>();
-  private final Map<String, Optional<String>> optionalQueryParameters = new HashMap<>();
+  private final Map<String, String> optionalQueryParameters = new HashMap<>();
 
   public boolean responseCodeSet() {
     return responseCode != CODE_NOT_SET;
@@ -46,6 +46,10 @@ public class StubRestApiRequest implements RestApiRequest {
 
   public int getResponseCode() {
     return responseCode;
+  }
+
+  public CacheLength getCacheLength() {
+    return cacheLength;
   }
 
   public <T> void setRequestBody(T requestBody) {
@@ -110,7 +114,7 @@ public class StubRestApiRequest implements RestApiRequest {
     this.queryParameters.put(parameter, value);
   }
 
-  private void setOptionalQueryParameter(final String parameter, final Optional<String> value) {
+  private void setOptionalQueryParameter(final String parameter, final String value) {
     assertThat(this.optionalQueryParameters.containsKey(parameter)).isFalse();
     this.optionalQueryParameters.put(parameter, value);
   }
@@ -125,7 +129,8 @@ public class StubRestApiRequest implements RestApiRequest {
 
   @Override
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
-    final Optional<String> param = optionalQueryParameters.get(parameterMetadata.getName());
+    final Optional<String> param =
+        Optional.ofNullable(optionalQueryParameters.get(parameterMetadata.getName()));
     return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
   }
 
@@ -147,7 +152,7 @@ public class StubRestApiRequest implements RestApiRequest {
   public static class Builder {
     private final Map<String, String> pathParameters = new HashMap<>();
     private final Map<String, String> queryParameters = new HashMap<>();
-    private final Map<String, Optional<String>> optionalQueryParameters = new HashMap<>();
+    private final Map<String, String> optionalQueryParameters = new HashMap<>();
 
     Builder() {}
 
@@ -163,7 +168,7 @@ public class StubRestApiRequest implements RestApiRequest {
       return this;
     }
 
-    public Builder optionalQueryParameter(final String param, final Optional<String> value) {
+    public Builder optionalQueryParameter(final String param, final String value) {
       assertThat(optionalQueryParameters.containsKey(param)).isFalse();
       this.optionalQueryParameters.put(param, value);
       return this;
