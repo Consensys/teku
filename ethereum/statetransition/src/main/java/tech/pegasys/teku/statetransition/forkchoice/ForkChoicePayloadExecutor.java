@@ -21,37 +21,37 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ExecutionEngineChannel executionEngine;
+  private final ExecutionLayerChannel executionLayer;
   private final SignedBeaconBlock block;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private Optional<SafeFuture<PayloadValidationResult>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
       final SignedBeaconBlock block,
-      final ExecutionEngineChannel executionEngine,
+      final ExecutionLayerChannel executionLayer,
       final MergeTransitionBlockValidator transitionBlockValidator) {
     this.block = block;
     this.transitionBlockValidator = transitionBlockValidator;
-    this.executionEngine = executionEngine;
+    this.executionLayer = executionLayer;
   }
 
   public static ForkChoicePayloadExecutor create(
       final Spec spec,
       final RecentChainData recentChainData,
       final SignedBeaconBlock block,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionLayer) {
     return new ForkChoicePayloadExecutor(
         block,
-        executionEngine,
-        new MergeTransitionBlockValidator(spec, recentChainData, executionEngine));
+        executionLayer,
+        new MergeTransitionBlockValidator(spec, recentChainData, executionLayer));
   }
 
   public SafeFuture<PayloadValidationResult> getExecutionResult() {
@@ -72,8 +72,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
 
     result =
         Optional.of(
-            executionEngine
-                .newPayload(executionPayload)
+            executionLayer
+                .engineNewPayload(executionPayload)
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

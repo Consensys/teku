@@ -78,7 +78,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -200,7 +200,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
-  protected volatile ExecutionEngineChannel executionEngine;
+  protected volatile ExecutionLayerChannel executionLayer;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -348,7 +348,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   public void initAll() {
-    initExecutionEngine();
+    initExecutionLayer();
     initForkChoiceNotifier();
     initMergeMonitors();
     initForkChoice();
@@ -378,8 +378,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initOperationsReOrgManager();
   }
 
-  protected void initExecutionEngine() {
-    executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
+  protected void initExecutionLayer() {
+    executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 
   protected void initMergeMonitors() {
@@ -387,7 +387,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       terminalPowBlockMonitor =
           Optional.of(
               new TerminalPowBlockMonitor(
-                  executionEngine,
+                  executionLayer,
                   spec,
                   recentChainData,
                   forkChoiceNotifier,
@@ -397,7 +397,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
       mergeTransitionConfigCheck =
           Optional.of(
-              new MergeTransitionConfigCheck(EVENT_LOG, spec, executionEngine, beaconAsyncRunner));
+              new MergeTransitionConfigCheck(EVENT_LOG, spec, executionLayer, beaconAsyncRunner));
     }
   }
 
@@ -493,7 +493,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceExecutor,
             recentChainData,
             forkChoiceNotifier,
-            new MergeTransitionBlockValidator(spec, recentChainData, executionEngine),
+            new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             proposerBoostEnabled);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -560,7 +560,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eth1DataCache,
                 VersionProvider.getDefaultGraffiti(),
                 forkChoiceNotifier,
-                executionEngine,
+                executionLayer,
                 beaconConfig.validatorConfig().isProposerMevBoostEnabled()));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
@@ -814,6 +814,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig.beaconRestApiConfig(),
                   eventChannels,
                   eventAsyncRunner,
+                  timeProvider,
                   spec));
 
       if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
@@ -836,7 +837,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            executionEngine);
+            executionLayer);
   }
 
   public void initBlockManager() {
@@ -939,7 +940,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         ForkChoiceNotifierImpl.create(
             asyncRunnerFactory,
             spec,
-            executionEngine,
+            executionLayer,
             recentChainData,
             getProposerDefaultFeeRecipient());
   }

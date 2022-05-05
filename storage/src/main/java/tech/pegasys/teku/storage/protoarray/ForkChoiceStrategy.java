@@ -39,9 +39,9 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();

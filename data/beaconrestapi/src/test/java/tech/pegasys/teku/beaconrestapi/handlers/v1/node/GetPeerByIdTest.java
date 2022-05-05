@@ -17,23 +17,28 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 
 public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
-  final MockNodeId peerId = new MockNodeId(123456);
-  final Eth2Peer peer = mock(Eth2Peer.class);
+  private final MockNodeId peerId = new MockNodeId(123456);
+  private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final StubRestApiRequest request =
+      StubRestApiRequest.builder().pathParameter("peer_id", peerId.toBase58()).build();
+  private final GetPeerById handler = new GetPeerById(network);
 
   @BeforeEach
   void setUp() {
@@ -45,35 +50,39 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnNotFoundIfPeerNotFound() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetPeerById handler = new GetPeerById(network);
     when(network.getEth2PeerById(peerId.toBase58())).thenReturn(Optional.empty());
-    when(context.pathParamMap()).thenReturn(Map.of("peer_id", peerId.toBase58()));
 
     handler.handleRequest(request);
-    verify(request).respondError(eq(SC_NOT_FOUND), eq("Peer not found"));
+    assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Peer not found"));
   }
 
   @Test
   public void shouldReturnPeerIfFound() throws Exception {
-    final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
-    GetPeerById handler = new GetPeerById(networkDataProvider);
-    when(context.pathParamMap()).thenReturn(Map.of("peer_id", peerId.toBase58()));
-    when(networkDataProvider.getEth2PeerById(eq(peerId.toBase58()))).thenReturn(Optional.of(peer));
-
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
-
+    when(network.getEth2PeerById(eq(peerId.toBase58()))).thenReturn(Optional.of(peer));
     handler.handleRequest(request);
 
-    checkResponse(peerId.toBase58(), peer.getAddress().toExternalForm(), "connected", "inbound");
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(peer);
   }
 
-  private void checkResponse(String peerId, String address, String state, String direction) {
-    final String expectedResponse =
-        String.format(
-            "{\"data\":{\"peer_id\":\"%s\",\"last_seen_p2p_address\":\"%s\",\"state\":\"%s\",\"direction\":\"%s\"}}",
-            peerId, address, state, direction);
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
 
-    assertThat(getResultString()).isEqualTo(expectedResponse);
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws JsonProcessingException {
+    final String data = getResponseStringFromMetadata(handler, SC_OK, peer);
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"peer_id\":\"1111111111111111111111111111177em\","
+                + "\"last_seen_p2p_address\":\"1111111111111111111111111111177em\",\"state\":\"connected\",\"direction\":\"inbound\"}}");
   }
 }

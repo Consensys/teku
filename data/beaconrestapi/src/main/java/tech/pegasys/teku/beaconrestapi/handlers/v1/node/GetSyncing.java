@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -24,12 +23,14 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.MoreObjects;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
@@ -77,7 +78,6 @@ public class GetSyncing extends MigratingEndpointAdapter {
                     + "and if it is, what block it is up to.")
             .tags(TAG_NODE, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", SYNCING_RESPONSE_TYPE)
-            .response(SC_INTERNAL_SERVER_ERROR, "Server Error")
             .build());
     this.syncProvider = syncProvider;
   }
@@ -121,6 +121,17 @@ public class GetSyncing extends MigratingEndpointAdapter {
       this.slotsBehind = calculateSlotsBehind(status);
     }
 
+    SyncStatusData(
+        final boolean isSyncing,
+        final Boolean isOptimistic,
+        final int currentSlot,
+        final int slotsBehind) {
+      this.isSyncing = isSyncing;
+      this.isOptimistic = Optional.ofNullable(isOptimistic);
+      this.currentSlot = UInt64.valueOf(currentSlot);
+      this.slotsBehind = UInt64.valueOf(slotsBehind);
+    }
+
     public boolean isSyncing() {
       return isSyncing;
     }
@@ -143,6 +154,36 @@ public class GetSyncing extends MigratingEndpointAdapter {
         return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
       }
       return UInt64.ZERO;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final SyncStatusData that = (SyncStatusData) o;
+      return isSyncing == that.isSyncing
+          && Objects.equals(isOptimistic, that.isOptimistic)
+          && Objects.equals(currentSlot, that.currentSlot)
+          && Objects.equals(slotsBehind, that.slotsBehind);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(isSyncing, isOptimistic, currentSlot, slotsBehind);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("isSyncing", isSyncing)
+          .add("isOptimistic", isOptimistic)
+          .add("currentSlot", currentSlot)
+          .add("slotsBehind", slotsBehind)
+          .toString();
     }
   }
 }

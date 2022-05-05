@@ -46,8 +46,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -98,7 +98,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionEngineChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -107,9 +107,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new StubForkChoiceNotifier(),
             transitionBlockValidator,
             true);
-    final ExecutionEngineChannelStub executionEngine = new ExecutionEngineChannelStub(spec, false);
+    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
-    runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);
+    runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
   }
 
   /**
@@ -133,7 +133,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
-      final ExecutionEngineChannelStub executionEngine)
+      final ExecutionLayerChannelStub executionLayer)
       throws java.io.IOException {
     final List<Map<String, Object>> steps = loadSteps(testDefinition);
     for (Map<String, Object> step : steps) {
@@ -145,13 +145,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")));
 
       } else if (step.containsKey("block")) {
-        applyBlock(testDefinition, spec, forkChoice, step, executionEngine);
+        applyBlock(testDefinition, spec, forkChoice, step, executionLayer);
 
       } else if (step.containsKey("attestation")) {
         applyAttestation(testDefinition, forkChoice, step);
 
       } else if (step.containsKey("pow_block")) {
-        applyPowBlock(testDefinition, step, executionEngine);
+        applyPowBlock(testDefinition, step, executionLayer);
 
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
@@ -162,11 +162,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private void applyPowBlock(
       final TestDefinition testDefinition,
       final Map<String, Object> step,
-      final ExecutionEngineChannelStub executionEngine) {
+      final ExecutionLayerChannelStub executionLayer) {
     final String filename = (String) step.get("pow_block");
     final PowBlock block =
         TestDataUtils.loadSsz(testDefinition, filename + ".ssz_snappy", this::parsePowBlock);
-    executionEngine.addPowBlock(block);
+    executionLayer.addPowBlock(block);
   }
 
   private PowBlock parsePowBlock(final Bytes data) {
@@ -207,7 +207,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
-      final ExecutionEngineChannelStub executionEngine) {
+      final ExecutionLayerChannelStub executionLayer) {
     final String blockName = get(step, "block");
     final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final SignedBeaconBlock block =
@@ -219,7 +219,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getSlot(),
         block.getParentRoot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block, Optional.empty(), executionEngine);
+        forkChoice.onBlock(block, Optional.empty(), executionLayer);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = result.join();
     assertThat(importResult)

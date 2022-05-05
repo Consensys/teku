@@ -29,6 +29,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
@@ -198,6 +199,27 @@ public class GetIdentity extends MigratingEndpointAdapter {
 
     public MetadataMessage getMetadata() {
       return metadata;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final IdentityData that = (IdentityData) o;
+      return Objects.equals(peerId, that.peerId)
+          && Objects.equals(enr, that.enr)
+          && Objects.equals(listeningAddresses, that.listeningAddresses)
+          && Objects.equals(discoveryAddresses, that.discoveryAddresses)
+          && Objects.equals(metadata, that.metadata);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(peerId, enr, listeningAddresses, discoveryAddresses, metadata);
     }
   }
 }

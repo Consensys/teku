@@ -14,43 +14,40 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
-import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class GetStateRootTest extends AbstractMigratedBeaconHandlerTest {
+public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+
+  @BeforeEach
+  public void setup() {
+    initialise(SpecMilestone.PHASE0);
+    genesis();
+  }
 
   @Test
   public void shouldReturnRootInfo() throws Exception {
+    final BeaconState state = recentChainData.getBestState().orElseThrow().get();
     final GetStateRoot handler = new GetStateRoot(chainDataProvider);
-    final StateAndMetaData stateAndMetaData =
-        new StateAndMetaData(
-            dataStructureUtil.randomBeaconState(),
-            spec.getGenesisSpec().getMilestone(),
-            false,
-            false,
-            true);
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
+
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 
     String expected =
-        String.format(
-            "{\"data\":{\"root\":\"%s\"}}",
-            stateAndMetaData.getData().hashTreeRoot().toHexString());
+        String.format("{\"data\":{\"root\":\"%s\"}}", state.hashTreeRoot().toHexString());
     AssertionsForClassTypes.assertThat(getFutureResultString()).isEqualTo(expected);
     verify(context, never()).status(any());
   }

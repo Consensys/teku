@@ -29,6 +29,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
@@ -159,6 +160,23 @@ public class GetPeers extends MigratingEndpointAdapter {
 
     public Integer getCount() {
       return count;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final PeersData peersData = (PeersData) o;
+      return Objects.equals(peers, peersData.peers) && Objects.equals(count, peersData.count);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(peers, count);
     }
   }
 }

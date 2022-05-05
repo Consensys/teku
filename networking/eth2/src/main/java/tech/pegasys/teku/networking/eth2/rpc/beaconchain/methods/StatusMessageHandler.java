@@ -28,9 +28,11 @@ public class StatusMessageHandler
     extends PeerRequiredLocalMessageHandler<StatusMessage, StatusMessage> {
   private static final Logger LOG = LogManager.getLogger();
 
+  @SuppressWarnings("StaticAssignmentOfThrowable")
   static final RpcException NODE_NOT_READY =
       new RpcException(
           RpcResponseStatus.SERVER_ERROR_CODE, "Node is initializing, status unavailable.");
+
   private final StatusMessageFactory statusMessageFactory;
 
   public StatusMessageHandler(final StatusMessageFactory statusMessageFactory) {

@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class GetEvents implements Handler {
   private static final Logger LOG = LogManager.getLogger();
@@ -54,6 +55,7 @@ public class GetEvents implements Handler {
       final DataProvider dataProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final int maxPendingEvents) {
     this(
         dataProvider.getNodeDataProvider(),
@@ -62,6 +64,7 @@ public class GetEvents implements Handler {
         dataProvider.getConfigProvider(),
         eventChannels,
         asyncRunner,
+        timeProvider,
         maxPendingEvents);
   }
 
@@ -72,6 +75,7 @@ public class GetEvents implements Handler {
       final ConfigProvider configProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final int maxPendingEvents) {
     eventSubscriptionManager =
         new EventSubscriptionManager(
@@ -81,6 +85,7 @@ public class GetEvents implements Handler {
             configProvider,
             asyncRunner,
             eventChannels,
+            timeProvider,
             maxPendingEvents);
   }
 

@@ -15,42 +15,59 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 
 public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
+  private final GetSyncing handler = new GetSyncing(syncDataProvider);
+  private StubRestApiRequest request = new StubRestApiRequest();
 
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {
-    GetSyncing handler = new GetSyncing(syncDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 7, 10));
 
     handler.handleRequest(request);
-    checkResponse("7", "3", true);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new GetSyncing.SyncStatusData(true, false, 7, 3));
   }
 
   @Test
   public void shouldGetSyncStatusInSync() throws Exception {
-    GetSyncing handler = new GetSyncing(syncDataProvider);
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     handler.handleRequest(request);
-    checkResponse("10", "0", false);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new GetSyncing.SyncStatusData(false, false, 10, 0));
   }
 
-  private void checkResponse(String headSlot, String syncDistance, boolean isSyncing) {
-    final String expectedResponse =
-        String.format(
-            "{\"data\":{\"head_slot\":\"%s\",\"sync_distance\":\"%s\",\"is_syncing\":%s,\"is_optimistic\":false}}",
-            headSlot, syncDistance, isSyncing);
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
 
-    assertThat(getResultString()).isEqualTo(expectedResponse);
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, false, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"is_optimistic\":false}}");
   }
 }

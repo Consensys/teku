@@ -91,20 +91,20 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
           "--network",
           "mainnet",
           "--eth1-deposit-contract-address",
-          "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
+          "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73"
         });
 
     TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     Eth2NetworkConfiguration configuration = tekuConfiguration.eth2NetworkConfiguration();
     final Eth1Address configuredDepositContract = configuration.getEth1DepositContractAddress();
     assertThat(configuredDepositContract)
-        .isEqualTo(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"));
+        .isEqualTo(Eth1Address.fromHexString("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73"));
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(
                     b -> {
                       b.applyNetworkDefaults(Eth2Network.MAINNET);
-                      b.eth1DepositContractAddress("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
+                      b.eth1DepositContractAddress("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
                     })
                 .build())
         .usingRecursiveComparison()

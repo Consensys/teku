@@ -80,8 +80,6 @@ public interface ReadOnlyStore {
 
   Optional<Bytes32> getProposerBoostRoot();
 
-  UInt64 getLatestValidFinalizedSlot();
-
   ReadOnlyForkChoiceStrategy getForkChoiceStrategy();
 
   boolean containsBlock(Bytes32 blockRoot);

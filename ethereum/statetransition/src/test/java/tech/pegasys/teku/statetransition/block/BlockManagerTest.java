@@ -54,9 +54,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -98,7 +98,7 @@ public class BlockManagerTest {
 
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionEngineChannel.NOOP);
+      new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionLayerChannel.NOOP);
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,
@@ -107,8 +107,8 @@ public class BlockManagerTest {
           forkChoiceNotifier,
           transitionBlockValidator);
 
-  private final ExecutionEngineChannelStub executionEngine =
-      new ExecutionEngineChannelStub(spec, false);
+  private final ExecutionLayerChannelStub executionLayer =
+      new ExecutionLayerChannelStub(spec, false);
   private final BlockValidator blockValidator = mock(BlockValidator.class);
 
   private final BlockImporter blockImporter =
@@ -118,7 +118,7 @@ public class BlockManagerTest {
           localRecentChainData,
           forkChoice,
           WeakSubjectivityFactory.lenientValidator(),
-          executionEngine);
+          executionLayer);
   private final BlockManager blockManager =
       new BlockManager(
           localRecentChainData,
@@ -208,7 +208,7 @@ public class BlockManagerTest {
   @Test
   public void shouldNotifySubscribersOnKnownOptimisticBlock() {
     final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
@@ -498,11 +498,11 @@ public class BlockManagerTest {
     }
 
     // gossip the first block with execution payload failure
-    executionEngine.setPayloadStatus(PayloadStatus.failedExecution(new Error("error")));
+    executionLayer.setPayloadStatus(PayloadStatus.failedExecution(new Error("error")));
     assertImportBlockWithResult(blocks.get(0), FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
 
     // EL is now alive
-    executionEngine.setPayloadStatus(PayloadStatus.VALID);
+    executionLayer.setPayloadStatus(PayloadStatus.VALID);
 
     // Gossip all remaining blocks
     blocks.subList(1, blockCount).stream()

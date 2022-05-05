@@ -23,11 +23,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class SpecConfigBuilder {
   private final Map<String, Object> rawConfig = new HashMap<>();
@@ -100,7 +100,7 @@ public class SpecConfigBuilder {
   // Deposit Contract
   private Integer depositChainId;
   private Integer depositNetworkId;
-  private Bytes depositContractAddress;
+  private Eth1Address depositContractAddress;
 
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
@@ -546,7 +546,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder depositContractAddress(final Bytes depositContractAddress) {
+  public SpecConfigBuilder depositContractAddress(final Eth1Address depositContractAddress) {
     checkNotNull(depositContractAddress);
     this.depositContractAddress = depositContractAddress;
     return this;

@@ -30,7 +30,7 @@ dependencies {
   implementation project(':networking:nat')
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
-  implementation project(':services:executionengine')
+  implementation project(':services:executionlayer')
   implementation project(':services:powchain')
   implementation project(':infrastructure:serviceutils')
   implementation project(':services:timer')

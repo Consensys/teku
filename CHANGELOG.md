@@ -15,7 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- For Bellatrix fork and later, send `block_header` instead of `block` for external signer block signing request (`BLOCK_V2`)
+- For Bellatrix fork and later, send `block_header` instead of `block` for external signer block signing request (`BLOCK_V2`).
 
 ### Additions and Improvements
 - Improved performance when regenerating non-finalized states that had to be dropped from memory.
@@ -23,9 +23,11 @@ For information on changes in released versions of Teku, see the [releases page]
 - Improved performance when processing epoch transitions.
 - Added `is_optimistic` field to `/eth/v1/node/syncing` response.
 - Using execution engine endpoint as Eth1 endpoint when latter is not provided.
+- Check `Eth1Address` checksum ([EIP-55](https://eips.ethereum.org/EIPS/eip-55)) if address is mixed-case.
 
 ### Bug Fixes
 - Added stricter limits on attestation pool size. 
 - Fixed issue with loading the optimised BLST library on Windows.
 - Reduced log level for notifications that the eth1 chain head could not be retrieved because no endpoints were available.
 - Fixed issue where logging options were not recognised if specified after the `validator-client` subcommand.
+- Avoid disconnecting event stream connections subscribed to attestation events for briefly exceeding the maximum pending event queue size. A very large number of attestations are received all at once on MainNet making it almost impossible for a consumer to stay below the queue size limit at all times.

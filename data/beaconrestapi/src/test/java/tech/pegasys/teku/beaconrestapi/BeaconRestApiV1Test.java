@@ -24,7 +24,6 @@ import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
 import io.javalin.jetty.JettyServer;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -87,6 +86,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSu
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -125,7 +125,7 @@ public class BeaconRestApiV1Test {
   @BeforeEach
   public void setup() {
     final Eth1Address depositContractAddress =
-        new Eth1Address(Bytes.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd"));
+        Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
     BeaconRestApiConfig beaconRestApiConfig =
         BeaconRestApiConfig.builder()
             .restApiDocsEnabled(false)
@@ -156,6 +156,7 @@ public class BeaconRestApiV1Test {
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
+        StubTimeProvider.withTimeInMillis(1000),
         app,
         storageClient.getSpec());
   }
