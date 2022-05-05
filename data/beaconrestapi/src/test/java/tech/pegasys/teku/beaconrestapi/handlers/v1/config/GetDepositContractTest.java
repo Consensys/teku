@@ -58,6 +58,8 @@ class GetDepositContractTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             "{\"data\":{\"chain_id\":\""
                 + chainId
-                + "\",\"address\":\"0x235bc3400c2839fd856a524871200bd5e362db61\"}}");
+                + "\",\"address\":\""
+                + eth1Address.toHexString()
+                + "\"}}");
   }
 }

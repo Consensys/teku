@@ -36,7 +36,7 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     final StubRestApiRequest request = new StubRestApiRequest();
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(response);
+    assertThat(request.getResponseBody()).isEqualTo(response.getConfigMap());
   }
 
   @Test
