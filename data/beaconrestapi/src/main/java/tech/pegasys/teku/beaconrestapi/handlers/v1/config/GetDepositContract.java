@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -26,6 +25,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Objects;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ConfigProvider;
@@ -52,12 +52,11 @@ public class GetDepositContract extends MigratingEndpointAdapter {
               "address", Eth1Address.getJsonTypeDefinition(), DepositContractData::getAddress)
           .build();
 
-  private static final SerializableTypeDefinition<DepositContractData>
-      DEPOSIT_CONTRACT_RESPONSE_TYPE =
-          SerializableTypeDefinition.object(DepositContractData.class)
-              .name("GetDepositContractResponse")
-              .withField("data", DEPOSIT_CONTRACT_TYPE, Function.identity())
-              .build();
+  static final SerializableTypeDefinition<DepositContractData> DEPOSIT_CONTRACT_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(DepositContractData.class)
+          .name("GetDepositContractResponse")
+          .withField("data", DEPOSIT_CONTRACT_TYPE, Function.identity())
+          .build();
 
   public GetDepositContract(
       final Eth1Address depositContractAddress, final ConfigProvider configProvider) {
@@ -68,7 +67,6 @@ public class GetDepositContract extends MigratingEndpointAdapter {
             .description("Retrieve deposit contract address and genesis fork version.")
             .tags(TAG_CONFIG)
             .response(SC_OK, "Request successful", DEPOSIT_CONTRACT_RESPONSE_TYPE)
-            .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error.")
             .build());
     this.configProvider = configProvider;
     this.depositContractAddress = depositContractAddress;
@@ -98,7 +96,7 @@ public class GetDepositContract extends MigratingEndpointAdapter {
     request.respondOk(data);
   }
 
-  private static class DepositContractData {
+  static class DepositContractData {
     final UInt64 chainId;
     final Eth1Address address;
 
@@ -113,6 +111,23 @@ public class GetDepositContract extends MigratingEndpointAdapter {
 
     Eth1Address getAddress() {
       return address;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final DepositContractData that = (DepositContractData) o;
+      return Objects.equals(chainId, that.chainId) && Objects.equals(address, that.address);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(chainId, address);
     }
   }
 }
