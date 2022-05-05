@@ -65,7 +65,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(
             createConfigBuilder()
-                .executionEngine(b -> b.endpoint("someEndpoint"))
+                .executionLayer(b -> b.engineEndpoint("someEndpoint"))
                 .eth2NetworkConfig(b -> b.bellatrixForkEpoch(UInt64.valueOf(120000)))
                 .build())
         .usingRecursiveComparison()

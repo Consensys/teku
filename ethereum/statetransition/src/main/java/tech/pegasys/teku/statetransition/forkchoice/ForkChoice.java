@@ -46,9 +46,9 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -197,13 +197,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionLayer) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
-                onBlock(block, blockSlotState, blockImportPerformance, executionEngine));
+                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
   }
 
   /**
@@ -214,7 +214,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionLayer) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
@@ -225,7 +225,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blockSlotState.get().getSlot());
 
     final ForkChoicePayloadExecutor payloadExecutor =
-        ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionEngine);
+        ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionLayer);
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
     final BlockImportResult preconditionCheckResult =
         forkChoiceUtil.checkOnBlockConditions(

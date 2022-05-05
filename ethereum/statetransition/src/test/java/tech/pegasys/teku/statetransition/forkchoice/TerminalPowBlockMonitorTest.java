@@ -44,8 +44,8 @@ import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -59,7 +59,7 @@ public class TerminalPowBlockMonitorTest {
   private static final UInt64 TERMINAL_BLOCK_EPOCH = UInt64.valueOf(2);
   private static final UInt64 TIME_IN_PAST = UInt64.valueOf(123);
 
-  private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
@@ -90,7 +90,7 @@ public class TerminalPowBlockMonitorTest {
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
 
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
         .thenReturn(
             SafeFuture.completedFuture(
                 new TransitionConfiguration(
@@ -104,7 +104,7 @@ public class TerminalPowBlockMonitorTest {
         bellatrixBuilder ->
             bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
 
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
         .thenReturn(SafeFuture.completedFuture(localTransitionConfiguration));
   }
 
@@ -133,7 +133,7 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
-            executionEngine,
+            executionLayer,
             spec,
             recentChainData,
             forkChoiceNotifier,
@@ -174,10 +174,10 @@ public class TerminalPowBlockMonitorTest {
     // Terminal block has been reached
     final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
-    when(executionEngine.getPowBlock(headBlockParentHash))
+    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
@@ -210,7 +210,7 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(0)).getPowChainHead();
+    verify(executionLayer, times(0)).eth1GetPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
     // AT BELLATRIX FORK, TTD not reached - should not send
@@ -218,7 +218,7 @@ public class TerminalPowBlockMonitorTest {
 
     goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(
                 new PowBlock(
@@ -229,16 +229,16 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(1)).getPowChainHead();
+    verify(executionLayer, times(1)).eth1GetPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
     // AT BELLATRIX FORK, TTD reached - should notify
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
-    when(executionEngine.getPowBlock(headBlockParentHash))
+    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
@@ -251,24 +251,24 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger).terminalPowBlockDetected(headBlockHash);
-    verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
-    verify(executionEngine, times(2)).getPowChainHead();
+    verify(executionLayer, times(1)).eth1GetPowBlock(headBlockParentHash);
+    verify(executionLayer, times(2)).eth1GetPowChainHead();
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
 
     // Terminal Block - should not notify
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(3)).getPowChainHead();
-    verifyNoMoreInteractions(executionEngine);
+    verify(executionLayer, times(3)).eth1GetPowChainHead();
+    verifyNoMoreInteractions(executionLayer);
 
     // new different Terminal Block with wrong parent TTD - should not notify
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(
                 new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
-    when(executionEngine.getPowBlock(headBlockParentHash))
+    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
@@ -280,18 +280,18 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
-    verify(executionEngine, times(4)).getPowChainHead();
+    verify(executionLayer, times(1)).eth1GetPowBlock(headBlockParentHash);
+    verify(executionLayer, times(4)).eth1GetPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(headBlockHash);
 
     // new different Terminal Block with correct parent TTD - should notify
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(
                 new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
-    when(executionEngine.getPowBlock(headBlockParentHash))
+    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
@@ -304,8 +304,8 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger).terminalPowBlockDetected(headBlockHash);
-    verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
-    verify(executionEngine, times(5)).getPowChainHead();
+    verify(executionLayer, times(1)).eth1GetPowBlock(headBlockParentHash);
+    verify(executionLayer, times(5)).eth1GetPowChainHead();
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
 
     // MERGE Completed - should stop
@@ -316,7 +316,7 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verifyNoMoreInteractions(executionEngine);
+    verifyNoMoreInteractions(executionLayer);
     verifyNoMoreInteractions(eventLogger);
   }
 
@@ -334,10 +334,10 @@ public class TerminalPowBlockMonitorTest {
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     final UInt64 timeInFuture = timeProvider.getTimeInSeconds().plus(1);
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, timeInFuture)));
-    when(executionEngine.getPowBlock(headBlockParentHash))
+    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
                 Optional.of(
@@ -367,7 +367,7 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(0)).getPowBlock(any());
+    verify(executionLayer, times(0)).eth1GetPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
     // AT BELLATRIX FORK, Terminal Bloch Epoch not reached - should not notify
@@ -375,21 +375,21 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(0)).getPowBlock(any());
+    verify(executionLayer, times(0)).eth1GetPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
     // AT Terminal Bloch Epoch, Terminal Block Hash not found - should not notify
     goToSlot(TERMINAL_BLOCK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-    when(executionEngine.getPowBlock(TERMINAL_BLOCK_HASH))
+    when(executionLayer.eth1GetPowBlock(TERMINAL_BLOCK_HASH))
         .thenReturn(completedFuture(Optional.empty()));
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(1)).getPowBlock(TERMINAL_BLOCK_HASH);
+    verify(executionLayer, times(1)).eth1GetPowBlock(TERMINAL_BLOCK_HASH);
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
     // AT Terminal Bloch Epoch, Terminal Block Hash found - should notify
-    when(executionEngine.getPowBlock(TERMINAL_BLOCK_HASH))
+    when(executionLayer.eth1GetPowBlock(TERMINAL_BLOCK_HASH))
         .thenReturn(
             completedFuture(
                 Optional.of(
@@ -402,7 +402,7 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger).terminalPowBlockDetected(TERMINAL_BLOCK_HASH);
-    verify(executionEngine, times(2)).getPowBlock(TERMINAL_BLOCK_HASH);
+    verify(executionLayer, times(2)).eth1GetPowBlock(TERMINAL_BLOCK_HASH);
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(TERMINAL_BLOCK_HASH);
 
     // MERGE Completed - should stop
@@ -411,7 +411,7 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verifyNoMoreInteractions(executionEngine);
+    verifyNoMoreInteractions(executionLayer);
     verifyNoMoreInteractions(eventLogger);
   }
 
@@ -440,7 +440,7 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verifyNoMoreInteractions(executionEngine);
+    verifyNoMoreInteractions(executionLayer);
   }
 
   @Test
@@ -468,7 +468,7 @@ public class TerminalPowBlockMonitorTest {
   }
 
   private void pollTtd(final UInt256 ttd) {
-    when(executionEngine.getPowChainHead())
+    when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(
                 new PowBlock(

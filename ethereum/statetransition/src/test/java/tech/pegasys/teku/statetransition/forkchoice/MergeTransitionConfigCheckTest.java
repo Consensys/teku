@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MergeTransitionConfigCheckTest {
@@ -42,7 +42,7 @@ class MergeTransitionConfigCheckTest {
   private static final Bytes32 TERMINAL_BLOCK_HASH = Bytes32.random();
   private static final UInt64 TERMINAL_BLOCK_EPOCH = UInt64.valueOf(2);
 
-  private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+  private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final EventLogger eventLogger = Mockito.mock(EventLogger.class);
@@ -79,9 +79,9 @@ class MergeTransitionConfigCheckTest {
             UInt64.ZERO);
 
     final MergeTransitionConfigCheck mergeTransitionConfigCheck =
-        new MergeTransitionConfigCheck(eventLogger, spec, executionEngine, asyncRunner);
+        new MergeTransitionConfigCheck(eventLogger, spec, executionLayer, asyncRunner);
 
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
         .thenReturn(
             SafeFuture.completedFuture(
                 new TransitionConfiguration(
@@ -97,7 +97,7 @@ class MergeTransitionConfigCheckTest {
     final TransitionConfiguration wrongRemoteConfig =
         new TransitionConfiguration(
             wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
         .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
 
     asyncRunner.executeQueuedActions();
@@ -112,7 +112,7 @@ class MergeTransitionConfigCheckTest {
     final TransitionConfiguration wrongRemoteConfig =
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
         .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
 
     asyncRunner.executeQueuedActions();
@@ -129,7 +129,7 @@ class MergeTransitionConfigCheckTest {
             localTransitionConfiguration.getTerminalTotalDifficulty(),
             localTransitionConfiguration.getTerminalBlockHash(),
             UInt64.ZERO);
-    when(executionEngine.exchangeTransitionConfiguration(localTransitionConfiguration))
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
         .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
 
     asyncRunner.executeQueuedActions();

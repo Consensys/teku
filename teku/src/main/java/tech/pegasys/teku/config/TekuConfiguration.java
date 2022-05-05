@@ -30,7 +30,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
-import tech.pegasys.teku.services.executionengine.ExecutionEngineConfiguration;
+import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -51,7 +51,7 @@ public class TekuConfiguration {
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
   private final PowchainConfiguration powchainConfiguration;
-  private final ExecutionEngineConfiguration executionEngineConfiguration;
+  private final ExecutionLayerConfiguration executionLayerConfiguration;
   private final NatConfiguration natConfiguration;
   private final ValidatorRestApiConfig validatorRestApiConfig;
 
@@ -62,7 +62,7 @@ public class TekuConfiguration {
       final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
       final PowchainConfiguration powchainConfiguration,
-      final ExecutionEngineConfiguration executionEngineConfiguration,
+      final ExecutionLayerConfiguration executionLayerConfiguration,
       final InteropConfig interopConfig,
       final DataConfig dataConfig,
       final P2PConfig p2PConfig,
@@ -77,7 +77,7 @@ public class TekuConfiguration {
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.powchainConfiguration = powchainConfiguration;
-    this.executionEngineConfiguration = executionEngineConfiguration;
+    this.executionLayerConfiguration = executionLayerConfiguration;
     this.dataConfig = dataConfig;
     this.metricsConfig = metricsConfig;
     this.beaconChainConfig =
@@ -145,8 +145,8 @@ public class TekuConfiguration {
     return powchainConfiguration;
   }
 
-  public ExecutionEngineConfiguration executionEngine() {
-    return executionEngineConfiguration;
+  public ExecutionLayerConfiguration executionLayer() {
+    return executionLayerConfiguration;
   }
 
   public DataConfig dataConfig() {
@@ -175,8 +175,8 @@ public class TekuConfiguration {
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
     private final PowchainConfiguration.Builder powchainConfigBuilder =
         PowchainConfiguration.builder();
-    private final ExecutionEngineConfiguration.Builder executionEngineConfigBuilder =
-        ExecutionEngineConfiguration.builder();
+    private final ExecutionLayerConfiguration.Builder executionLayerConfigBuilder =
+        ExecutionLayerConfiguration.builder();
     private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
     private final P2PConfig.Builder p2pConfigBuilder = P2PConfig.builder();
@@ -206,7 +206,7 @@ public class TekuConfiguration {
       weakSubjectivityBuilder.specProvider(spec);
       p2pConfigBuilder.specProvider(spec);
       powchainConfigBuilder.specProvider(spec);
-      executionEngineConfigBuilder.specProvider(spec);
+      executionLayerConfigBuilder.specProvider(spec);
 
       Eth1Address depositContractAddress = eth2NetworkConfiguration.getEth1DepositContractAddress();
       Optional<UInt64> depositContractDeployBlock =
@@ -231,7 +231,7 @@ public class TekuConfiguration {
           weakSubjectivityBuilder.build(),
           validatorConfig,
           powchainConfigBuilder.build(),
-          executionEngineConfigBuilder.build(),
+          executionLayerConfigBuilder.build(),
           interopConfigBuilder.build(),
           dataConfig,
           p2PConfig,
@@ -275,8 +275,8 @@ public class TekuConfiguration {
       return this;
     }
 
-    public Builder executionEngine(final Consumer<ExecutionEngineConfiguration.Builder> consumer) {
-      consumer.accept(executionEngineConfigBuilder);
+    public Builder executionLayer(final Consumer<ExecutionLayerConfiguration.Builder> consumer) {
+      consumer.accept(executionLayerConfigBuilder);
       return this;
     }
 

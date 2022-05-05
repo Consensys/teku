@@ -15,8 +15,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 
 public interface ForkChoiceUpdatedResultSubscriber {
   void onForkChoiceUpdatedResult(

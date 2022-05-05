@@ -58,9 +58,9 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
-import tech.pegasys.teku.spec.executionengine.TransitionConfiguration;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
@@ -310,7 +310,7 @@ public class Web3JExecutionEngineClientTest {
   void shouldDeserializeForkChoiceUpdatedResultWithNulls() throws IOException {
     ForkChoiceUpdatedResult forkChoiceUpdatedResultExpected =
         createExternalForkChoiceUpdatedResult(ExecutionPayloadStatus.SYNCING, null, null);
-    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+    tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult
         internalForkChoiceUpdatedResultExpected =
             createInternalForkChoiceUpdatedResult(
                 ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty());
@@ -318,7 +318,7 @@ public class Web3JExecutionEngineClientTest {
     ForkChoiceUpdatedResult executeForkChoiceUpdatedResultDeserialized =
         objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
 
-    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult internalForkChoiceUpdatedResult =
+    tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult internalForkChoiceUpdatedResult =
         executeForkChoiceUpdatedResultDeserialized.asInternalExecutionPayload();
 
     assertThat(executeForkChoiceUpdatedResultDeserialized)
@@ -333,7 +333,7 @@ public class Web3JExecutionEngineClientTest {
     ForkChoiceUpdatedResult forkChoiceUpdatedResultExpected =
         createExternalForkChoiceUpdatedResult(
             ExecutionPayloadStatus.VALID, latestValidHash, payloadId);
-    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+    tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult
         internalForkChoiceUpdatedResultExpected =
             createInternalForkChoiceUpdatedResult(
                 ExecutionPayloadStatus.VALID, Optional.of(latestValidHash), Optional.of(payloadId));
@@ -346,7 +346,7 @@ public class Web3JExecutionEngineClientTest {
     ForkChoiceUpdatedResult executeForkChoiceUpdatedResultDeserialized =
         objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
 
-    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult internalForkChoiceUpdatedResult =
+    tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult internalForkChoiceUpdatedResult =
         executeForkChoiceUpdatedResultDeserialized.asInternalExecutionPayload();
 
     assertThat(executeForkChoiceUpdatedResultDeserialized)
@@ -501,12 +501,12 @@ public class Web3JExecutionEngineClientTest {
         new PayloadStatusV1(status, latestValidHash, null), payloadId);
   }
 
-  private tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+  private tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult
       createInternalForkChoiceUpdatedResult(
           ExecutionPayloadStatus status,
           Optional<Bytes32> latestValidHash,
           Optional<Bytes8> payloadId) {
-    return new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
+    return new tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult(
         PayloadStatus.create(status, latestValidHash, Optional.empty()), payloadId);
   }
 }
