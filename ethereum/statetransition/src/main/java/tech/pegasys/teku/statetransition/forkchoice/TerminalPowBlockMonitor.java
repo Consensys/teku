@@ -318,18 +318,18 @@ public class TerminalPowBlockMonitor {
 
     final long timeDiff = now - latestBlock.getBlockTimestamp().longValue();
 
-    final UInt256 secondsToTTD =
+    final long secondsToTTD =
         specConfigBellatrix
             .getTerminalTotalDifficulty()
             .subtract(latestBlock.getTotalDifficulty())
             .divide(averageTdPerSeconds)
-            .subtract(timeDiff);
+            .subtract(timeDiff)
+            .toLong();
 
-    final Instant instant = Instant.ofEpochSecond(now + secondsToTTD.toLong());
+    final Duration eta = Duration.ofSeconds(secondsToTTD);
+    final Instant etaInstant = Instant.ofEpochSecond(now + secondsToTTD);
 
-    final Duration eta = Duration.ofSeconds(secondsToTTD.toLong());
-
-    eventLogger.terminalPowBlockTtdEta(latestBlock.getTotalDifficulty(), eta, instant);
+    eventLogger.terminalPowBlockTtdEta(latestBlock.getTotalDifficulty(), eta, etaInstant);
   }
 
   private void onTerminalPowBlockFound(Bytes32 blockHash) {
