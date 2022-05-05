@@ -348,7 +348,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   public void initAll() {
-    initExecutionEngine();
+    initExecutionLayer();
     initForkChoiceNotifier();
     initMergeMonitors();
     initForkChoice();
@@ -378,7 +378,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initOperationsReOrgManager();
   }
 
-  protected void initExecutionEngine() {
+  protected void initExecutionLayer() {
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 

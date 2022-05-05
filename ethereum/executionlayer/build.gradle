@@ -14,3 +14,10 @@ dependencies {
   integrationTestImplementation testFixtures(project(':infrastructure:time'))
   integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
 }
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) { artifactId 'ethereum-executionlayer' }
+  }
+}
+
