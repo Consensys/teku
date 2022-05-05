@@ -18,9 +18,3 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
 }
-
-publishing {
-  publications {
-    mavenJava(MavenPublication) { artifactId 'ethereum-executionengine' }
-  }
-}
