@@ -17,33 +17,29 @@ import static javax.servlet.http.HttpServletResponse.SC_CONTINUE;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 
 public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
+  private final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+  private StubRestApiRequest request = new StubRestApiRequest();
 
   @Test
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
-
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
+    assertThat(request.getResponseCode()).isEqualTo(SC_PARTIAL_CONTENT);
   }
 
   @Test
@@ -51,50 +47,37 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
-
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
+    assertThat(request.getResponseCode()).isEqualTo(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnCustomSyncingStatusWhenSyncing() throws Exception {
-    when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("100")));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
+    request = StubRestApiRequest.builder().optionalQueryParameter(SYNCING_STATUS, "100").build();
 
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_CONTINUE);
+    assertThat(request.getResponseCode()).isEqualTo(SC_CONTINUE);
   }
 
   @Test
   public void shouldReturnDefaultSyncingStatusWhenSyncingWrongParam() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("a")));
-
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
-
+    request = StubRestApiRequest.builder().optionalQueryParameter(SYNCING_STATUS, "a").build();
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
+    assertThat(request.getResponseCode()).isEqualTo(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnDefaultSyncingStatusWhenSyncingMultipleParams() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("1", "2")));
-
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
+    request = StubRestApiRequest.builder().optionalQueryParameter(SYNCING_STATUS, "1,2").build();
 
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_PARTIAL_CONTENT);
+    assertThat(request.getResponseCode()).isEqualTo(SC_PARTIAL_CONTENT);
   }
 
   @Test
@@ -102,26 +85,30 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
-
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_OK);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
   }
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
-    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
-
     handler.handleRequest(request);
-    checkResponseWithoutBody(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
   }
 
-  private void checkResponseWithoutBody(final int statusCode) {
-    verify(context).status(eq(statusCode));
-    verify(context, never()).result(anyString());
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() {
+    verifyMetadataEmptyResponse(handler, SC_OK);
   }
 }
