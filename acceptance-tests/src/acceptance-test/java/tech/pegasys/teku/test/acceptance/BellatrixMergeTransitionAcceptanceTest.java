@@ -49,7 +49,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                     .withStartupTargetPeerCount(0)
                     .withValidatorKeystores(validatorKeystores)
                     .withValidatorProposerDefaultFeeRecipient(
-                        "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")
+                        "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                     .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
                     .withJwtSecretFile(Resources.getResource("teku/ee-jwt-secret.hex")));
     tekuNode.start();

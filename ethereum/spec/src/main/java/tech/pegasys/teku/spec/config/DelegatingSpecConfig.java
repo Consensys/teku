@@ -17,6 +17,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class DelegatingSpecConfig implements SpecConfig {
   protected final SpecConfig specConfig;
@@ -291,7 +292,7 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes getDepositContractAddress() {
+  public Eth1Address getDepositContractAddress() {
     return specConfig.getDepositContractAddress();
   }
 

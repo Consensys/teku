@@ -44,4 +44,10 @@ public class Hash {
     c.update(digest);
     return Bytes32.wrap(digest.digest());
   }
+
+  public static Bytes32 keccak256(final Bytes input) {
+    final MessageDigest digest = MessageDigestFactory.createKeccak256();
+    input.update(digest);
+    return Bytes32.wrap(digest.digest());
+  }
 }
