@@ -25,12 +25,14 @@ import com.google.common.io.Resources;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -40,13 +42,24 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldGetValidatorFromState() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
+
     final BeaconState beaconState = dataStructureUtil.randomBeaconState(UInt64.ONE);
     final StateAndMetaData stateAndMetaData =
         new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, false, true);
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     when(chainDataProvider.getCurrentEpoch(any())).thenReturn(spec.getCurrentEpoch(beaconState));
-    when(chainDataProvider.getValidatorSelector(any(), any())).thenReturn(IntStream.of(1));
+
+    final StateValidatorData data =
+        new StateValidatorData(
+            UInt64.valueOf(1),
+            beaconState.getBalances().get(1).get(),
+            ValidatorStatus.pending_initialized,
+            beaconState.getValidators().get(1));
+    ObjectAndMetaData<StateValidatorData> objectAndMetaData =
+        new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, false, true);
+    when(chainDataProvider.getStateValidator(any(), any()))
+        .thenReturn(Optional.of(objectAndMetaData));
 
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
@@ -63,11 +76,8 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldGetNotFoundForMissingState() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
-    final BeaconState beaconState = dataStructureUtil.randomBeaconState(UInt64.ONE);
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(chainDataProvider.getCurrentEpoch(any())).thenReturn(spec.getCurrentEpoch(beaconState));
-    when(chainDataProvider.getValidatorSelector(any(), any())).thenReturn(IntStream.of(1));
 
     RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);

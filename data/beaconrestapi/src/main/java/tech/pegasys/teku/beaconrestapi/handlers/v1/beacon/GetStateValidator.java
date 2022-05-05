@@ -31,7 +31,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -40,11 +39,11 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
@@ -54,11 +53,9 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateValidator extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE =
@@ -146,118 +143,14 @@ public class GetStateValidator extends MigratingEndpointAdapter {
                 return AsyncApiResponse.respondNotFound();
               }
 
-              final StateAndMetaData stateData = maybeStateAndMetadata.get();
-              final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-                  stateData.getData();
-              final UInt64 epoch = chainDataProvider.getCurrentEpoch(state);
               final String validatorIdParam = request.getPathParameter(PARAMETER_VALIDATOR_ID);
-              final Optional<StateValidatorData> maybeValidator =
-                  chainDataProvider
-                      .getValidatorSelector(state, List.of(validatorIdParam))
-                      .mapToObj(
-                          index ->
-                              StateValidatorData.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
-                      .flatMap(Optional::stream)
-                      .findFirst();
-
-              Optional<Object> response = maybeValidator.map(data -> stateData.map(__ -> data));
+              Optional<ObjectAndMetaData<StateValidatorData>> response =
+                  chainDataProvider.getStateValidator(
+                      maybeStateAndMetadata.get(), validatorIdParam);
 
               return response
                   .map(AsyncApiResponse::respondOk)
                   .orElseGet(AsyncApiResponse::respondNotFound);
             }));
-  }
-
-  protected static class StateValidatorData {
-    private final UInt64 index;
-    private final UInt64 balance;
-    private final ValidatorStatus status;
-    private final Validator validator;
-
-    public static Optional<StateValidatorData> fromState(
-        final BeaconState state,
-        final Integer index,
-        final UInt64 epoch,
-        final UInt64 farFutureEpoch) {
-      if (index >= state.getValidators().size()) {
-        return Optional.empty();
-      }
-
-      tech.pegasys.teku.spec.datastructures.state.Validator validatorInternal =
-          state.getValidators().get(index);
-
-      final StateValidatorData data =
-          new StateValidatorData(
-              UInt64.valueOf(index),
-              state.getBalances().getElement(index),
-              getValidatorStatus(epoch, validatorInternal, farFutureEpoch),
-              validatorInternal);
-      return Optional.of(data);
-    }
-
-    StateValidatorData(
-        final UInt64 index,
-        final UInt64 balance,
-        final ValidatorStatus status,
-        final Validator validator) {
-      this.index = index;
-      this.balance = balance;
-      this.status = status;
-      this.validator = validator;
-    }
-
-    public UInt64 getIndex() {
-      return index;
-    }
-
-    public UInt64 getBalance() {
-      return balance;
-    }
-
-    public ValidatorStatus getStatus() {
-      return status;
-    }
-
-    public Validator getValidator() {
-      return validator;
-    }
-
-    public static ValidatorStatus getValidatorStatus(
-        final UInt64 epoch,
-        final tech.pegasys.teku.spec.datastructures.state.Validator validator,
-        final UInt64 farFutureEpoch) {
-      // pending
-      if (validator.getActivationEpoch().isGreaterThan(epoch)) {
-        return validator.getActivationEligibilityEpoch().equals(farFutureEpoch)
-            ? ValidatorStatus.pending_initialized
-            : ValidatorStatus.pending_queued;
-      }
-      // active
-      if (validator.getActivationEpoch().isLessThanOrEqualTo(epoch)
-          && epoch.isLessThan(validator.getExitEpoch())) {
-        if (validator.getExitEpoch().equals(farFutureEpoch)) {
-          return ValidatorStatus.active_ongoing;
-        }
-        return validator.isSlashed()
-            ? ValidatorStatus.active_slashed
-            : ValidatorStatus.active_exiting;
-      }
-
-      // exited
-      if (validator.getExitEpoch().isLessThanOrEqualTo(epoch)
-          && epoch.isLessThan(validator.getWithdrawableEpoch())) {
-        return validator.isSlashed()
-            ? ValidatorStatus.exited_slashed
-            : ValidatorStatus.exited_unslashed;
-      }
-
-      // withdrawal
-      if (validator.getWithdrawableEpoch().isLessThanOrEqualTo(epoch)) {
-        return validator.getEffectiveBalance().isGreaterThan(UInt64.ZERO)
-            ? ValidatorStatus.withdrawal_possible
-            : ValidatorStatus.withdrawal_done;
-      }
-      throw new IllegalStateException("Unable to determine validator status");
-    }
   }
 }
