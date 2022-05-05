@@ -44,6 +44,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
@@ -92,6 +93,7 @@ public class SpecConfigReader {
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
           .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
           .put(boolean.class, fromString(Boolean::valueOf))
+          .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 
   final SpecConfigBuilder configBuilder = SpecConfig.builder();

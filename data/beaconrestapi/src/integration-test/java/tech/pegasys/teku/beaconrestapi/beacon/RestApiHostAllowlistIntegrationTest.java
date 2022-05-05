@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
@@ -29,7 +28,7 @@ public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestA
   @Test
   public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
     final Eth1Address depositContractAddress =
-        new Eth1Address(Bytes.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd"));
+        Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
     final BeaconRestApiConfig config =
         BeaconRestApiConfig.builder()
             .restApiPort(0)
