@@ -109,12 +109,12 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReportAddressIfFeeRecipientSpecified() {
     final String[] args = {
-      "--validators-proposer-default-fee-recipient", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
+      "--validators-proposer-default-fee-recipient", "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73"
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.validatorClient().getValidatorConfig().getProposerDefaultFeeRecipient())
         .isEqualTo(
-            Optional.of(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")));
+            Optional.of(Eth1Address.fromHexString("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")));
   }
 
   @Test

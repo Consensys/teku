@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.eth1;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.commons.lang3.StringUtils.isMixedCase;
+
+import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Eth1Address extends Bytes20 {
@@ -27,17 +32,71 @@ public class Eth1Address extends Bytes20 {
           .format("byte")
           .build();
 
-  public static final Eth1Address ZERO = new Eth1Address(Bytes.wrap(new byte[SIZE]));
+  public static final Eth1Address ZERO =
+      new Eth1Address("0x0000000000000000000000000000000000000000");
 
-  public Eth1Address(final Bytes bytes) {
-    super(bytes);
+  private final String encodedAddress;
+
+  private Eth1Address(String value) {
+    super(Bytes.fromHexString(value));
+    if (!value.startsWith("0x")) {
+      value = "0x" + value;
+    }
+    this.encodedAddress = toChecksumAddress(value);
+    if (isMixedCase(value.substring("0x".length()))) {
+      checkArgument(
+          value.equals(encodedAddress),
+          "Eth1Address fails checksum:\n got: %s\n exp: %s",
+          value,
+          encodedAddress);
+    }
   }
 
   public static Eth1Address fromHexString(String value) {
-    return new Eth1Address(Bytes.fromHexString(value));
+    return new Eth1Address(value);
+  }
+
+  /**
+   * Produce an address with a mixed-case checksum as defined by <a
+   * href="https://eips.ethereum.org/EIPS/eip-55">EIP-55</a>.
+   *
+   * @param value The string representation of an Ethereum address.
+   * @return The encoded address with mixed-case checksum.
+   */
+  private static String toChecksumAddress(String value) {
+    String address = value.replace("0x", "").toLowerCase();
+    String hashString =
+        Hash.keccak256(Bytes.wrap(address.getBytes(StandardCharsets.US_ASCII)))
+            .toString()
+            .replace("0x", "");
+    String ret = "0x";
+    for (int i = 0; i < address.length(); i++) {
+      String letter = String.valueOf(hashString.charAt(i));
+      if (Integer.parseInt(letter, 16) >= 8) {
+        ret += Character.toUpperCase(address.charAt(i));
+      } else {
+        ret += address.charAt(i);
+      }
+    }
+    return ret;
   }
 
   public static DeserializableTypeDefinition<Eth1Address> getJsonTypeDefinition() {
     return ETH1ADDRESS_TYPE;
+  }
+
+  @Override
+  public String toString() {
+    return encodedAddress;
+  }
+
+  @Override
+  public String toHexString() {
+    return encodedAddress;
+  }
+
+  @Override
+  public String toUnprefixedHexString() {
+    return encodedAddress.substring(2);
   }
 }
