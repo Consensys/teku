@@ -16,10 +16,14 @@ package tech.pegasys.teku.statetransition.validation;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_AGGREGATE_SET_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.VALID_ATTESTATION_DATA_SET_SIZE;
+import static tech.pegasys.teku.spec.constants.ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -32,7 +36,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -49,8 +55,8 @@ public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
-  private final Set<Bytes32> receivedValidAggregations =
-      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
+  private final Map<Bytes32, Set<SszBitlist>> seenAggregationBitsByDataRoot =
+      LimitedMap.create(VALID_ATTESTATION_DATA_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final Spec spec;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -65,7 +71,20 @@ public class AggregateAttestationValidator {
   }
 
   public void addSeenAggregate(final ValidateableAttestation attestation) {
-    receivedValidAggregations.add(attestation.hashTreeRoot());
+    addToSeenAggregatesByRoot(attestation);
+  }
+
+  private boolean addToSeenAggregatesByRoot(final ValidateableAttestation attestation) {
+    final Set<SszBitlist> seenBitlists =
+        seenAggregationBitsByDataRoot.computeIfAbsent(
+            attestation.getData().hashTreeRoot(),
+            // Aim to hold all aggregation bits but have a limit for safety.
+            // Normally we'd have far fewer as we avoid adding subsets.
+            key -> LimitedSet.create(TARGET_AGGREGATORS_PER_COMMITTEE));
+    if (isAlreadySeen(seenBitlists, attestation.getAttestation().getAggregationBits())) {
+      return false;
+    }
+    return seenBitlists.add(attestation.getAttestation().getAggregationBits());
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
@@ -81,8 +100,13 @@ public class AggregateAttestationValidator {
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
-    if (receivedValidAggregations.contains(attestation.hashTreeRoot())) {
-      return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
+
+    final Set<SszBitlist> seenAggregates =
+        seenAggregationBitsByDataRoot.getOrDefault(
+            attestation.getData().hashTreeRoot(), Collections.emptySet());
+    final SszBitlist aggregationBits = attestation.getAttestation().getAggregationBits();
+    if (isAlreadySeen(seenAggregates, aggregationBits)) {
+      return completedFuture(ignore("Ignoring duplicate aggregate based on aggregation bits"));
     }
 
     final AsyncBatchBLSSignatureVerifier signatureVerifier =
@@ -157,12 +181,17 @@ public class AggregateAttestationValidator {
                         if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
                           return ignore("Ignoring duplicate aggregate");
                         }
-                        if (!receivedValidAggregations.add(attestation.hashTreeRoot())) {
-                          return ignore("Ignoring duplicate aggregate based on hash tree root");
+                        if (!addToSeenAggregatesByRoot(attestation)) {
+                          return ignore("Ignoring duplicate aggregate based on aggregation bits");
                         }
                         return resultWithState.getResult();
                       });
             });
+  }
+
+  private boolean isAlreadySeen(
+      final Set<SszBitlist> seenAggregates, final SszBitlist aggregationBits) {
+    return seenAggregates.stream().anyMatch(seen -> seen.isSuperSetOf(aggregationBits));
   }
 
   private boolean validateSignature(
