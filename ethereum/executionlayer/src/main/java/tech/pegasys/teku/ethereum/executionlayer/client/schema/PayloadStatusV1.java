@@ -22,8 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 
 public class PayloadStatusV1 {
   private final ExecutionPayloadStatus status;

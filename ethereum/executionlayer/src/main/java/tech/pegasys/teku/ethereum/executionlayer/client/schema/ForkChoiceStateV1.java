@@ -23,7 +23,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesSerializer;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public class ForkChoiceStateV1 {
   @JsonSerialize(using = BytesSerializer.class)

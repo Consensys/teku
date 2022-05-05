@@ -67,11 +67,11 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannelStub;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -105,8 +105,8 @@ class ForkChoiceTest {
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
-  private final ExecutionEngineChannelStub executionEngine =
-      new ExecutionEngineChannelStub(spec, false);
+  private final ExecutionLayerChannelStub executionLayer =
+      new ExecutionLayerChannelStub(spec, false);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
   private ForkChoice forkChoice =
@@ -159,7 +159,7 @@ class ForkChoiceTest {
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -175,7 +175,7 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -410,7 +410,7 @@ class ForkChoiceTest {
   void onBlock_shouldSendForkChoiceUpdatedNotification() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertForkChoiceUpdateNotification(blockAndState, false);
@@ -420,7 +420,7 @@ class ForkChoiceTest {
   void onBlock_shouldNotOptimisticallyImportRecentMergeBlock() {
     final SignedBlockAndState epoch4Block = generateMergeBlock();
     // make EL returning SYNCING
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
 
     importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
   }
@@ -431,7 +431,7 @@ class ForkChoiceTest {
     UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning low level error
-    executionEngine.setPayloadStatus(
+    executionLayer.setPayloadStatus(
         PayloadStatus.failedExecution(new RuntimeException("net error")));
 
     // generate block which finalize epoch 2
@@ -448,7 +448,7 @@ class ForkChoiceTest {
     importBlock(epoch4Block);
 
     // make EL returning INVALID
-    executionEngine.setPayloadStatus(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
+    executionLayer.setPayloadStatus(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
 
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockWithError(chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
@@ -469,7 +469,7 @@ class ForkChoiceTest {
     slotToImport = prepFinalizeEpoch(4);
 
     // make EL returning SYNCING
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
 
     // generate block which finalize epoch 4
     final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
@@ -484,7 +484,7 @@ class ForkChoiceTest {
     ChainBuilder alternativeChain = chainBuilder.fork();
 
     // make EL returning SYNCING
-    executionEngine.setPayloadStatus(PayloadStatus.VALID);
+    executionLayer.setPayloadStatus(PayloadStatus.VALID);
 
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot));
 
@@ -495,7 +495,7 @@ class ForkChoiceTest {
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot.plus(1)));
 
     // make EL returning SYNCING
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
 
     // import a fork which won't be canonical
     importBlockOptimistically(alternativeChain.generateBlockAtSlot(forkSlot));
@@ -524,7 +524,7 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot);
 
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     importBlockOptimistically(blockAndState);
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -551,7 +551,7 @@ class ForkChoiceTest {
   @Test
   void processHead_shouldMarkHeadInvalidAndRunForkChoiceWhenTransitionBlockFoundToBeInvalid() {
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
 
     Bytes32 initialHeadRoot = recentChainData.getChainHead().orElseThrow().getRoot();
 
@@ -610,10 +610,10 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot);
 
-    executionEngine.setPayloadStatus(PayloadStatus.SYNCING);
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -624,7 +624,7 @@ class ForkChoiceTest {
     // INVALID will give us a lastValidHash corresponding to the previous block payload (imported
     // optimistically)
 
-    executionEngine.setPayloadStatus(PayloadStatus.ACCEPTED);
+    executionLayer.setPayloadStatus(PayloadStatus.ACCEPTED);
 
     PayloadStatus invalidWithLastValidBlockHash =
         PayloadStatus.create(
@@ -803,8 +803,8 @@ class ForkChoiceTest {
             dataStructureUtil.randomBytes32(),
             terminalTotalDifficulty.subtract(1),
             ZERO);
-    executionEngine.addPowBlock(terminalBlock);
-    executionEngine.addPowBlock(terminalParentBlock);
+    executionLayer.addPowBlock(terminalBlock);
+    executionLayer.addPowBlock(terminalParentBlock);
     final SignedBlockAndState epoch4Block =
         chainBuilder.generateBlockAtSlot(
             storageSystem.chainUpdater().getHeadSlot().plus(1),
@@ -881,13 +881,13 @@ class ForkChoiceTest {
 
   private void importBlock(final SignedBlockAndState block) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -900,7 +900,7 @@ class ForkChoiceTest {
 
   private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionEngine);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportFailure(result, failureReason);
   }
 

@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public interface ForkChoiceNotifier {
   void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);

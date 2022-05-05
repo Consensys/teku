@@ -23,10 +23,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
 
 public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
@@ -151,7 +151,7 @@ public class ForkChoiceUpdateData {
   }
 
   public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
-      final ExecutionEngineChannel executionEngine) {
+      final ExecutionLayerChannel executionLayer) {
     if (sent) {
       LOG.debug("send - already sent");
       return SafeFuture.completedFuture(Optional.empty());
@@ -166,7 +166,7 @@ public class ForkChoiceUpdateData {
 
     LOG.debug("send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadAttributes);
     final SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
-        executionEngine.forkChoiceUpdated(forkChoiceState, payloadAttributes);
+        executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadAttributes);
 
     forkChoiceUpdatedResult
         .thenApply(ForkChoiceUpdatedResult::getPayloadId)

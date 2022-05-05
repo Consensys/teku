@@ -237,9 +237,9 @@ public class EventLogger {
     warn(reorgEventLog, Color.YELLOW);
   }
 
-  public void executionEngineStubEnabled() {
+  public void executionLayerStubEnabled() {
     info(
-        "Execution Engine Stub has been enabled. Please make sure this is intentional.",
+        "Execution Layer Stub has been enabled. Please make sure this is intentional.",
         Color.YELLOW);
   }
 

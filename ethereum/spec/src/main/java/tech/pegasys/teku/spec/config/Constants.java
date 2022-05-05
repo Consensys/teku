@@ -49,6 +49,7 @@ public class Constants {
       Duration.ofSeconds(60); // syncing or wrong chainid
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int MAXIMUM_CONCURRENT_EE_REQUESTS = 5;
+  public static final int MAXIMUM_CONCURRENT_EB_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
