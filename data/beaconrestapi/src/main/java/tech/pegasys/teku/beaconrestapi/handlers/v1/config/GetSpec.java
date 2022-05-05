@@ -53,6 +53,10 @@ public class GetSpec extends MigratingEndpointAdapter {
           .build();
 
   public GetSpec(final DataProvider dataProvider) {
+    this(dataProvider.getConfigProvider());
+  }
+
+  GetSpec(final ConfigProvider configProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getSpec")
@@ -61,7 +65,7 @@ public class GetSpec extends MigratingEndpointAdapter {
             .tags(TAG_CONFIG, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Success", GET_SPEC_RESPONSE_TYPE)
             .build());
-    this.configProvider = dataProvider.getConfigProvider();
+    this.configProvider = configProvider;
   }
 
   @OpenApi(
