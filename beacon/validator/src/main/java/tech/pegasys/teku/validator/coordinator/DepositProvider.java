@@ -62,13 +62,15 @@ public class DepositProvider
   private final Spec spec;
   private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
   private final DepositUtil depositUtil;
+  private final boolean useMissingDepositEventLogging;
 
   public DepositProvider(
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
       final Spec spec,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final boolean useMissingDepositEventLogging) {
     this.eventLogger = eventLogger;
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
@@ -81,6 +83,7 @@ public class DepositProvider
             TekuMetricCategory.BEACON,
             "eth1_deposit_total",
             "Total number of received ETH1 deposits");
+    this.useMissingDepositEventLogging = useMissingDepositEventLogging;
   }
 
   @Override
@@ -136,6 +139,9 @@ public class DepositProvider
 
   @Override
   public void onSlot(final UInt64 slot) {
+    if (!useMissingDepositEventLogging) {
+      return;
+    }
     // We want to verify our Beacon Node view of the eth1 deposits.
     // So we want to check if it has the necessary deposit data to propose a block
     if (recentChainData.getBestState().isEmpty()) {

@@ -519,7 +519,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initDepositProvider() {
     LOG.debug("BeaconChainController.initDepositProvider()");
     depositProvider =
-        new DepositProvider(metricsSystem, recentChainData, eth1DataCache, spec, EVENT_LOG);
+        new DepositProvider(
+            metricsSystem,
+            recentChainData,
+            eth1DataCache,
+            spec,
+            EVENT_LOG,
+            beaconConfig.powchainConfig().useMissingDepositEventLogging());
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointChannel.class, depositProvider)

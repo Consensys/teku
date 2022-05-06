@@ -75,7 +75,7 @@ public class DepositProviderTest {
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
         new DepositProvider(
-            new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger);
+            new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
     depositMerkleTree =
         new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
