@@ -23,13 +23,16 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -43,9 +46,12 @@ import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointChannel {
+public class DepositProvider
+    implements SlotEventsChannel, Eth1EventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private final EventLogger eventLogger;
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
@@ -61,7 +67,9 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
-      final Spec spec) {
+      final Spec spec,
+      final EventLogger eventLogger) {
+    this.eventLogger = eventLogger;
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
     this.spec = spec;
@@ -114,8 +122,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
         .reportExceptions();
   }
 
-  private synchronized void pruneDeposits(final UInt64 fromIndex) {
-    depositNavigableMap.headMap(fromIndex, false).clear();
+  private synchronized void pruneDeposits(final UInt64 toIndex) {
+    depositNavigableMap.headMap(toIndex, false).clear();
   }
 
   @Override
@@ -126,24 +134,51 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
+  @Override
+  public void onSlot(final UInt64 slot) {
+    // We want to verify our Beacon Node view of the eth1 deposits.
+    // So we want to check if it has the necessary deposit data to propose a block
+    if (recentChainData.getBestState().isEmpty()) {
+      return;
+    }
+
+    recentChainData
+        .getBestState()
+        .get()
+        .thenAccept(
+            state -> {
+              final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
+              final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
+
+              final UInt64 maxPossibleResultingDepositIndex =
+                  depositNavigableMap.isEmpty()
+                      ? eth1DepositIndex
+                      : depositNavigableMap.lastKey().plus(ONE);
+              if (maxPossibleResultingDepositIndex.isLessThan(eth1DepositCount)) {
+                eventLogger.eth1DepositDataNotAvailable(
+                    maxPossibleResultingDepositIndex.plus(UInt64.ONE), eth1DepositCount);
+              }
+            });
+  }
+
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
-    UInt64 eth1DepositCount;
+    final UInt64 eth1DepositCount;
     if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
       eth1DepositCount = eth1Data.getDepositCount();
     } else {
       eth1DepositCount = state.getEth1Data().getDepositCount();
     }
 
-    UInt64 eth1DepositIndex = state.getEth1DepositIndex();
+    final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
 
     // We need to have all the deposits that can be included in the state available to ensure
     // the generated proofs are valid
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
-    long maxDeposits = spec.getMaxDeposits(state);
-    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(spec.getMaxDeposits(state));
+    final long maxDeposits = spec.getMaxDeposits(state);
+    final UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(spec.getMaxDeposits(state));
 
-    UInt64 toDepositIndex =
+    final UInt64 toDepositIndex =
         latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)
             ? eth1DepositCount
             : latestDepositIndexWithMaxBlock;
@@ -153,12 +188,12 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   private void checkRequiredDepositsAvailable(
       final UInt64 eth1DepositCount, final UInt64 eth1DepositIndex) {
-    // Note that eth1_deposit_index in the state is actually actually the number of deposits
+    // Note that eth1_deposit_index in the state is actually the number of deposits
     // included, so always one bigger than the index of the last included deposit,
     // hence lastKey().plus(ONE).
     final UInt64 maxPossibleResultingDepositIndex =
         depositNavigableMap.isEmpty() ? eth1DepositIndex : depositNavigableMap.lastKey().plus(ONE);
-    if (maxPossibleResultingDepositIndex.compareTo(eth1DepositCount) < 0) {
+    if (maxPossibleResultingDepositIndex.isLessThan(eth1DepositCount)) {
       throw MissingDepositsException.missingRange(
           maxPossibleResultingDepositIndex.plus(UInt64.ONE), eth1DepositCount);
     }
@@ -177,7 +212,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private SszList<Deposit> getDepositsWithProof(
       UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount, long maxDeposits) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
-    SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    final SszBytes32VectorSchema<?> depositProofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return depositNavigableMap
         .subMap(fromDepositIndex, true, toDepositIndex, false)
         .values()
@@ -190,11 +226,9 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
               }
               expectedDepositIndex.set(deposit.getIndex().plus(ONE));
               SszBytes32Vector proof =
-                  Deposit.SSZ_SCHEMA
-                      .getProofSchema()
-                      .of(
-                          depositMerkleTree.getProofWithViewBoundary(
-                              deposit.getIndex().intValue(), eth1DepositCount.intValue()));
+                  depositProofSchema.of(
+                      depositMerkleTree.getProofWithViewBoundary(
+                          deposit.getIndex().intValue(), eth1DepositCount.intValue()));
               return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
             })
         .collect(depositsSchema.collector());

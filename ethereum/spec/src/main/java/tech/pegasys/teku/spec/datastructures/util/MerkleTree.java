@@ -140,7 +140,7 @@ public abstract class MerkleTree {
         // Return the tree node as-is without modifications
         proof.add(tree.get(i).get(siblingIndex));
       }
-      itemIndex /= 2;
+      itemIndex >>>= 1;
     }
     proof.add(calcMixInValue(viewLimit));
     return proof;
