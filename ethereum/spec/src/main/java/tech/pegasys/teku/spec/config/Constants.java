@@ -32,6 +32,8 @@ public class Constants {
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
+  // Target 2 different attestation data (aggregators normally agree) for two slots
+  public static final int VALID_ATTESTATION_DATA_SET_SIZE = 2 * 64 * 2;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
   public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 10000;

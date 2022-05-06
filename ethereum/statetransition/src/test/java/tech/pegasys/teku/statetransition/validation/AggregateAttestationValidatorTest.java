@@ -38,6 +38,7 @@ import tech.pegasys.teku.core.AggregateGenerator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -118,7 +120,7 @@ class AggregateAttestationValidatorTest {
 
   private final AsyncBLSSignatureVerifier signatureVerifier =
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
-  private final AggregateAttestationValidator validator =
+  private AggregateAttestationValidator validator =
       new AggregateAttestationValidator(spec, attestationValidator, signatureVerifier);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
@@ -137,6 +139,12 @@ class AggregateAttestationValidatorTest {
   public void setUp() {
     genesis = chainUpdater.initializeGenesis(false);
     bestBlock = chainUpdater.addNewBestBlock();
+  }
+
+  private void disableSignatureVerification() {
+    validator =
+        new AggregateAttestationValidator(
+            spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NO_OP));
   }
 
   @Test
@@ -299,6 +307,83 @@ class AggregateAttestationValidatorTest {
     validator.addSeenAggregate(attestation1);
     assertThat(validator.validate(attestation2))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @Test
+  void shouldIgnoreAggregateWhenAlreadySeenAllAttestingValidators() {
+    disableSignatureVerification();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
+    final SignedAggregateAndProof validAggregate = generator.validAggregateAndProof(chainHead);
+    final AttestationData attestationData = validAggregate.getMessage().getAggregate().getData();
+    final ValidateableAttestation smallAttestation =
+        createValidAggregate(ONE, attestationData, true, false, false);
+    final ValidateableAttestation largeAttestation =
+        createValidAggregate(
+            validAggregate.getMessage().getIndex(), attestationData, true, true, true);
+
+    validator.addSeenAggregate(largeAttestation);
+    assertThat(validator.validate(smallAttestation))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @Test
+  void shouldAcceptAggregateWhenNotAllAttestingValidatorsSeen() {
+    disableSignatureVerification();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
+    final AggregateAndProof validAggregate =
+        generator.validAggregateAndProof(chainHead).getMessage();
+    final AttestationData attestationData = validAggregate.getAggregate().getData();
+    final ValidateableAttestation smallAttestation =
+        createValidAggregate(ONE, attestationData, true, false, false);
+    final ValidateableAttestation largeAttestation =
+        createValidAggregate(validAggregate.getIndex(), attestationData, true, true, true);
+
+    validator.addSeenAggregate(smallAttestation);
+    assertThat(validator.validate(largeAttestation))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+  }
+
+  @Test
+  void shouldAcceptAggregateWhenNoSupersetOfValidatorsSeen() {
+    disableSignatureVerification();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
+    final AggregateAndProof validAggreagte =
+        generator.validAggregateAndProof(chainHead).getMessage();
+    final AttestationData attestationData = validAggreagte.getAggregate().getData();
+    final ValidateableAttestation smallAttestation1 =
+        createValidAggregate(ONE, attestationData, true, false, true);
+    final ValidateableAttestation smallAttestation2 =
+        createValidAggregate(UInt64.valueOf(2), attestationData, false, true, true);
+    final ValidateableAttestation attestation =
+        createValidAggregate(validAggreagte.getIndex(), attestationData, true, true, false);
+
+    validator.addSeenAggregate(smallAttestation1);
+    validator.addSeenAggregate(smallAttestation2);
+
+    // Accept because neither of the small attestations includes both the validators this one does
+    assertThat(validator.validate(attestation))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+  }
+
+  private ValidateableAttestation createValidAggregate(
+      final UInt64 validatorIndex,
+      final AttestationData attestationData,
+      final Boolean... aggregationBits) {
+    final SszBitlist aggregateBits =
+        aggregateAndProofSchema
+            .getAttestationSchema()
+            .getAggregationBitsSchema()
+            .of(aggregationBits);
+    final Attestation attestation =
+        aggregateAndProofSchema
+            .getAttestationSchema()
+            .create(aggregateBits, attestationData, BLSSignature.empty());
+    final SignedAggregateAndProof signedAggregate =
+        signedAggregateAndProofSchema.create(
+            aggregateAndProofSchema.create(validatorIndex, attestation, BLSSignature.empty()),
+            BLSSignature.empty());
+    whenAttestationIsValid(signedAggregate);
+    return ValidateableAttestation.aggregateFromValidator(spec, signedAggregate);
   }
 
   @Test
