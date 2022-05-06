@@ -163,7 +163,9 @@ public class DepositProvider
                 eventLogger.eth1DepositDataNotAvailable(
                     maxPossibleResultingDepositIndex.plus(UInt64.ONE), eth1DepositCount);
               }
-            });
+            })
+        .reportExceptions();
+    ;
   }
 
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
