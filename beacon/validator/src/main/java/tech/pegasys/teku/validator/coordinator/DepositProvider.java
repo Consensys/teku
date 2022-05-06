@@ -139,14 +139,12 @@ public class DepositProvider
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (!useMissingDepositEventLogging) {
+    if (!useMissingDepositEventLogging || recentChainData.getBestState().isEmpty()) {
       return;
     }
+
     // We want to verify our Beacon Node view of the eth1 deposits.
     // So we want to check if it has the necessary deposit data to propose a block
-    if (recentChainData.getBestState().isEmpty()) {
-      return;
-    }
 
     recentChainData
         .getBestState()
