@@ -71,8 +71,8 @@ public class PowchainService extends Service {
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionClientProvider) {
-    checkArgument(powConfig.isEnabled() || maybeExecutionClientProvider.isPresent());
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+    checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
@@ -82,14 +82,14 @@ public class PowchainService extends Service {
     if (!powConfig.isEnabled()) {
       LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
       this.web3js =
-          Collections.singletonList(maybeExecutionClientProvider.orElseThrow().getWeb3j());
+          Collections.singletonList(maybeExecutionWeb3jClientProvider.orElseThrow().getWeb3j());
       eth1ProviderSelector =
           new Eth1ProviderSelector(
               Collections.singletonList(
                   new Web3jEth1Provider(
                       powConfig.getSpec().getGenesisSpecConfig(),
                       serviceConfig.getMetricsSystem(),
-                      maybeExecutionClientProvider.get().getEndpoint(),
+                      maybeExecutionWeb3jClientProvider.get().getEndpoint(),
                       web3js.get(0),
                       asyncRunner,
                       serviceConfig.getTimeProvider())));
