@@ -19,11 +19,11 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitSet;
 
 public class SeenAggregatesCache {
 
-  private final Map<Bytes32, Set<SszBitlist>> seenAggregationBitsByDataRoot;
+  private final Map<Bytes32, Set<SszBitSet>> seenAggregationBitsByDataRoot;
   private final int aggregateSetSize;
 
   public SeenAggregatesCache(final int rootCacheSize, final int aggregateSetSize) {
@@ -31,8 +31,8 @@ public class SeenAggregatesCache {
     this.aggregateSetSize = aggregateSetSize;
   }
 
-  public boolean add(final Bytes32 root, final SszBitlist aggregationBits) {
-    final Set<SszBitlist> seenBitlists =
+  public boolean add(final Bytes32 root, final SszBitSet aggregationBits) {
+    final Set<SszBitSet> seenBitlists =
         seenAggregationBitsByDataRoot.computeIfAbsent(
             root,
             // Aim to hold all aggregation bits but have a limit for safety.
@@ -44,14 +44,14 @@ public class SeenAggregatesCache {
     return seenBitlists.add(aggregationBits);
   }
 
-  public boolean isAlreadySeen(final Bytes32 root, final SszBitlist aggregationBits) {
-    final Set<SszBitlist> seenAggregates =
+  public boolean isAlreadySeen(final Bytes32 root, final SszBitSet aggregationBits) {
+    final Set<SszBitSet> seenAggregates =
         seenAggregationBitsByDataRoot.getOrDefault(root, Collections.emptySet());
     return isAlreadySeen(seenAggregates, aggregationBits);
   }
 
   private boolean isAlreadySeen(
-      final Set<SszBitlist> seenAggregates, final SszBitlist aggregationBits) {
+      final Set<SszBitSet> seenAggregates, final SszBitSet aggregationBits) {
     return seenAggregates.stream().anyMatch(seen -> seen.isSuperSetOf(aggregationBits));
   }
 }

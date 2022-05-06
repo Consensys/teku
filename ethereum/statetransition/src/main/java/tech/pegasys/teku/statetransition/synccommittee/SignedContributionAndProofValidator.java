@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.synccommittee;
 
 import static tech.pegasys.teku.spec.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.constants.ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -53,6 +55,9 @@ public class SignedContributionAndProofValidator {
   private final Spec spec;
   private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
+  private final SeenAggregatesCache seenAggregatesCache =
+      new SeenAggregatesCache(
+          VALID_CONTRIBUTION_AND_PROOF_SET_SIZE, TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
@@ -66,7 +71,7 @@ public class SignedContributionAndProofValidator {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
-    slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
+    this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
@@ -79,6 +84,10 @@ public class SignedContributionAndProofValidator {
     // flushed after each slot).
     final UniquenessKey uniquenessKey = getUniquenessKey(contributionAndProof, contribution);
     if (seenIndices.contains(uniquenessKey)) {
+      return SafeFuture.completedFuture(IGNORE);
+    }
+    if (seenAggregatesCache.isAlreadySeen(
+        contribution.getBeaconBlockRoot(), contribution.getAggregationBits())) {
       return SafeFuture.completedFuture(IGNORE);
     }
 
@@ -256,6 +265,10 @@ public class SignedContributionAndProofValidator {
                 return IGNORE;
               }
 
+              if (!seenAggregatesCache.add(
+                  contribution.getBeaconBlockRoot(), contribution.getAggregationBits())) {
+                return IGNORE;
+              }
               return ACCEPT;
             });
   }

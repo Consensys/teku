@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 
 /** Specialized implementation of {@code SszList<SszBit>} */
-public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
+public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit>, SszBitSet {
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
@@ -53,6 +53,11 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
   /** Returns individual bit value */
   boolean getBit(int i);
 
+  @Override
+  default boolean isSet(final int i) {
+    return i < size() && getBit(i);
+  }
+
   /** Returns the number of bits set to {@code true} in this {@code SszBitlist}. */
   int getBitCount();
 
@@ -72,9 +77,8 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
   IntList getAllSetBits();
 
   /** Streams indices of all bits set in this {@link SszBitlist} */
-  default IntStream streamAllSetBits() {
-    return getAllSetBits().intStream();
-  }
+  @Override
+  IntStream streamAllSetBits();
 
   @Override
   default Boolean getElement(int index) {

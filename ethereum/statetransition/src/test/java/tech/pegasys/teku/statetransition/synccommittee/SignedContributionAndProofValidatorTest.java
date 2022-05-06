@@ -167,6 +167,23 @@ class SignedContributionAndProofValidatorTest {
   }
 
   @Test
+  void shouldIgnoreWhenSubsetOfAlreadySeen() {
+    final SignedContributionAndProof bigMessage =
+        chainBuilder.createValidSignedContributionAndProofBuilder().build();
+    final UInt64 firstAggregator = bigMessage.getMessage().getAggregatorIndex();
+    final SignedContributionAndProof smallMessage =
+        chainBuilder
+            .createValidSignedContributionAndProofBuilder()
+            // Probably not a valid aggregator but we should ignore without validating
+            .aggregatorIndex(firstAggregator.plus(1))
+            .removeAllParticipants()
+            .addParticipant(firstAggregator, chainBuilder.getSigner(firstAggregator.intValue()))
+            .build();
+    assertThat(validator.validate(bigMessage)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(smallMessage)).isCompletedWithValue(IGNORE);
+  }
+
+  @Test
   void shouldRejectWhenAggregatorIndexIsUnknown() {
     final SignedContributionAndProof message =
         chainBuilder
