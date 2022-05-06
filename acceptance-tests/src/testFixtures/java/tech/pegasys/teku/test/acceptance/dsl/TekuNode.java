@@ -343,13 +343,11 @@ public class TekuNode extends Node {
               actualSyncBitCount == syncCommitteeSize
                   ? 1.0
                   : actualSyncBitCount / (double) syncCommitteeSize;
-          if (percentageOfBitsSet < 1.0) {
-            LOG.debug(
-                String.format(
-                    "Sync committee bits are only %s%% full, expecting %s%%: %s",
-                    percentageOfBitsSet * 100, 100, syncCommitteeBits));
-          }
-          assertThat(percentageOfBitsSet >= 1.0).isTrue();
+          assertThat(percentageOfBitsSet >= 1.0)
+              .overridingErrorMessage(
+                  "Sync committee bits are only %s%% full, expecting %s%%: %s",
+                  percentageOfBitsSet * 100, 100, syncCommitteeBits)
+              .isTrue();
         },
         5,
         MINUTES);
