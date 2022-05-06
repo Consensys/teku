@@ -150,6 +150,10 @@ public class TekuNode extends Node {
     maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
   }
 
+  public void waitForContributionAndProofEvent() {
+    waitForContributionAndProofEvent(proof -> true);
+  }
+
   public void waitForContributionAndProofEvent(
       final Predicate<SignedContributionAndProof> condition) {
     waitFor(
@@ -740,7 +744,7 @@ public class TekuNode extends Node {
 
     public Config withPeers(final TekuNode... nodes) {
       final String peers =
-          Arrays.stream(nodes).map(TekuNode::getMultiAddr).collect(Collectors.joining(", "));
+          Arrays.stream(nodes).map(TekuNode::getMultiAddr).collect(Collectors.joining(","));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
       return this;
