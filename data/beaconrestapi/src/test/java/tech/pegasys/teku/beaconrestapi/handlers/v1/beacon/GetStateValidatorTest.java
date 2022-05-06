@@ -13,75 +13,103 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
-import java.io.ByteArrayInputStream;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetStateValidator handler = new GetStateValidator(chainDataProvider);
+public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetStateValidator handler;
+  private final StubRestApiRequest request =
+      StubRestApiRequest.builder()
+          .pathParameter("state_id", "head")
+          .pathParameter("validator_id", "1")
+          .build();
+  private ObjectAndMetaData<StateValidatorData> responseData;
 
-  @Test
-  public void shouldGetValidatorFromState() throws Exception {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
+  @BeforeEach
+  void setup() throws ExecutionException, InterruptedException {
+    initialise(SpecMilestone.ALTAIR);
+    genesis();
+    handler = new GetStateValidator(chainDataProvider);
 
-    final BeaconState beaconState = dataStructureUtil.randomBeaconState(UInt64.ONE);
-    final StateAndMetaData stateAndMetaData =
-        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, false, true);
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
-    when(chainDataProvider.getCurrentEpoch(any())).thenReturn(spec.getCurrentEpoch(beaconState));
+    final Optional<StateAndMetaData> stateAndMetaData =
+        chainDataProvider.getBeaconStateAndMetadata("head").get();
+    final BeaconState beaconState = stateAndMetaData.orElseThrow().getData();
 
     final StateValidatorData data =
         new StateValidatorData(
             UInt64.valueOf(1),
             beaconState.getBalances().get(1).get(),
-            ValidatorStatus.pending_initialized,
+            ValidatorStatus.active_ongoing,
             beaconState.getValidators().get(1));
-    ObjectAndMetaData<StateValidatorData> objectAndMetaData =
-        new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, false, true);
-    when(chainDataProvider.getStateValidator(any(), any()))
-        .thenReturn(Optional.of(objectAndMetaData));
 
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    responseData =
+        new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, false, true);
+  }
+
+  @Test
+  public void shouldGetValidatorFromState() throws Exception {
     handler.handleRequest(request);
 
-    SafeFuture<ByteArrayInputStream> future = getResultFuture();
-    assertThat(future).isCompleted();
-    String expected =
-        Resources.toString(
-            Resources.getResource(GetStateValidatorTest.class, "validatorState.json"), UTF_8);
-    String actual = new String(future.get().readAllBytes(), UTF_8);
-    assertThat(actual).isEqualTo(expected);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(responseData);
   }
 
   @Test
   public void shouldGetNotFoundForMissingState() throws Exception {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", dataStructureUtil.randomBytes32().toHexString())
+            .pathParameter("validator_id", "1")
+            .build();
 
-    RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Not found"));
+  }
 
-    verify(context).status(SC_NOT_FOUND);
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final String data = getResponseStringFromMetadata(handler, HttpStatusCodes.SC_OK, responseData);
+    String expected =
+        Resources.toString(
+            Resources.getResource(GetStateValidatorTest.class, "validatorState.json"),
+            StandardCharsets.UTF_8);
+
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }

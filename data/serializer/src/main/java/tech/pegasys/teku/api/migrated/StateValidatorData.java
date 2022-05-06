@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -109,5 +110,39 @@ public class StateValidatorData {
           : ValidatorStatus.withdrawal_done;
     }
     throw new IllegalStateException("Unable to determine validator status");
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    StateValidatorData data = (StateValidatorData) o;
+    return Objects.equals(index, data.index)
+        && Objects.equals(balance, data.balance)
+        && status == data.status
+        && Objects.equals(validator, data.validator);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(index, balance, status, validator);
+  }
+
+  @Override
+  public String toString() {
+    return "StateValidatorData{"
+        + "index="
+        + index
+        + ", balance="
+        + balance
+        + ", status="
+        + status
+        + ", validator="
+        + validator
+        + '}';
   }
 }
