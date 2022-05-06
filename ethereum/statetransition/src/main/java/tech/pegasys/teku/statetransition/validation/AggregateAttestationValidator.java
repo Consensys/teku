@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.validation;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_AGGREGATE_SET_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.VALID_ATTESTATION_DATA_SET_SIZE;
+import static tech.pegasys.teku.spec.constants.ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
@@ -33,6 +35,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -44,13 +47,14 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
 
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
-  private final Set<Bytes32> receivedValidAggregations =
-      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
+  private final SeenAggregatesCache seenAggregationBits =
+      new SeenAggregatesCache(VALID_ATTESTATION_DATA_SET_SIZE, TARGET_AGGREGATORS_PER_COMMITTEE);
   private final AttestationValidator attestationValidator;
   private final Spec spec;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -65,7 +69,8 @@ public class AggregateAttestationValidator {
   }
 
   public void addSeenAggregate(final ValidateableAttestation attestation) {
-    receivedValidAggregations.add(attestation.hashTreeRoot());
+    seenAggregationBits.add(
+        attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits());
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
@@ -81,8 +86,10 @@ public class AggregateAttestationValidator {
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
-    if (receivedValidAggregations.contains(attestation.hashTreeRoot())) {
-      return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
+
+    final SszBitlist aggregationBits = attestation.getAttestation().getAggregationBits();
+    if (seenAggregationBits.isAlreadySeen(attestation.getData().hashTreeRoot(), aggregationBits)) {
+      return completedFuture(ignore("Ignoring duplicate aggregate based on aggregation bits"));
     }
 
     final AsyncBatchBLSSignatureVerifier signatureVerifier =
@@ -157,8 +164,10 @@ public class AggregateAttestationValidator {
                         if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
                           return ignore("Ignoring duplicate aggregate");
                         }
-                        if (!receivedValidAggregations.add(attestation.hashTreeRoot())) {
-                          return ignore("Ignoring duplicate aggregate based on hash tree root");
+                        if (!seenAggregationBits.add(
+                            attestation.getData().hashTreeRoot(),
+                            attestation.getAttestation().getAggregationBits())) {
+                          return ignore("Ignoring duplicate aggregate based on aggregation bits");
                         }
                         return resultWithState.getResult();
                       });
