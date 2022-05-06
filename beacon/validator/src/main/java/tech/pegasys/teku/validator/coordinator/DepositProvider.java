@@ -148,11 +148,10 @@ public class DepositProvider
         .thenAccept(
             state -> {
               final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
-              final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
 
               final UInt64 maxPossibleResultingDepositIndex =
                   depositNavigableMap.isEmpty()
-                      ? eth1DepositIndex
+                      ? UInt64.ZERO
                       : depositNavigableMap.lastKey().plus(ONE);
               if (maxPossibleResultingDepositIndex.isLessThan(eth1DepositCount)) {
                 eventLogger.eth1DepositDataNotAvailable(
