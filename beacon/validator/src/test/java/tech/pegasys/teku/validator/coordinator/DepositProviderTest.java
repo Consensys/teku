@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -76,6 +77,7 @@ public class DepositProviderTest {
     depositProvider =
         new DepositProvider(
             new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
+    depositProvider.onSyncingStatusChanged(true);
     depositMerkleTree =
         new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
@@ -238,6 +240,21 @@ public class DepositProviderTest {
     depositProvider.onSlot(UInt64.ONE);
 
     verify(eventLogger).eth1DepositDataNotAvailable(UInt64.valueOf(9), UInt64.valueOf(10));
+  }
+
+  @Test
+  void shouldNotLogAnEventOnSlotWhenAllDepositsRequiredForStateAvailable() {
+    setup(1);
+    // To generate a valid proof we need the deposits up to state deposit count
+    // So we want to check if on each slot our node has necessary deposit data
+    mockDepositsFromEth1Block(0, 10);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+
+    depositProvider.onSlot(UInt64.ONE);
+
+    verifyNoInteractions(eventLogger);
   }
 
   @Test

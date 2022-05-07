@@ -63,6 +63,7 @@ public class DepositProvider
   private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
   private final DepositUtil depositUtil;
   private final boolean useMissingDepositEventLogging;
+  private boolean inSync = false;
 
   public DepositProvider(
       MetricsSystem metricsSystem,
@@ -139,7 +140,7 @@ public class DepositProvider
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (!useMissingDepositEventLogging || recentChainData.getBestState().isEmpty()) {
+    if (!inSync || !useMissingDepositEventLogging || recentChainData.getBestState().isEmpty()) {
       return;
     }
 
@@ -153,16 +154,20 @@ public class DepositProvider
             state -> {
               final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
 
-              final UInt64 maxPossibleResultingDepositIndex =
+              final UInt64 lastAvailableDepositIndex =
                   depositNavigableMap.isEmpty()
-                      ? UInt64.ZERO
+                      ? state.getEth1DepositIndex()
                       : depositNavigableMap.lastKey().plus(ONE);
-              if (maxPossibleResultingDepositIndex.isLessThan(eth1DepositCount)) {
+              if (lastAvailableDepositIndex.isLessThan(eth1DepositCount)) {
                 eventLogger.eth1DepositDataNotAvailable(
-                    maxPossibleResultingDepositIndex.plus(UInt64.ONE), eth1DepositCount);
+                    lastAvailableDepositIndex.plus(UInt64.ONE), eth1DepositCount);
               }
             })
         .reportExceptions();
+  }
+
+  public void onSyncingStatusChanged(boolean inSync) {
+    this.inSync = inSync;
   }
 
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
