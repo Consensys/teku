@@ -163,7 +163,6 @@ public class DepositProvider
               }
             })
         .reportExceptions();
-    ;
   }
 
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
