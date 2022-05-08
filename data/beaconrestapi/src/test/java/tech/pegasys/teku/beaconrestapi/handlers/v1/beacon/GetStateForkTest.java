@@ -14,50 +14,56 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import javax.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class GetStateForkTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetStateFork handler = new GetStateFork(chainDataProvider);
+public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetStateFork handler;
+  private StateAndMetaData responseData;
   private final StubRestApiRequest request =
       StubRestApiRequest.builder().pathParameter("state_id", "head").build();
-  private final StateAndMetaData stateAndMetaData =
-      new StateAndMetaData(
-          dataStructureUtil.randomBeaconState(),
-          spec.getGenesisSpec().getMilestone(),
-          false,
-          false,
-          true);
+
+  @BeforeEach
+  void setup() throws ExecutionException, InterruptedException {
+    initialise(SpecMilestone.PHASE0);
+    genesis();
+    handler = new GetStateFork(chainDataProvider);
+
+    final BeaconState beaconState = recentChainData.getBestState().orElseThrow().get();
+    responseData =
+        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, false, true);
+  }
 
   @Test
   public void shouldReturnForkInfo() throws Exception {
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isInstanceOf(StateAndMetaData.class);
-    assertThat(request.getResponseBody()).isEqualTo(stateAndMetaData);
+    assertThat(request.getResponseBody()).isEqualTo(responseData);
   }
 
   @Test
   public void shouldReturnNotFound() throws Exception {
-    when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", dataStructureUtil.randomBytes32().toHexString())
+            .build();
+
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
@@ -82,9 +88,9 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, stateAndMetaData);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     assertThat(data)
         .isEqualTo(
-            "{\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
+            "{\"data\":{\"previous_version\":\"0x00000001\",\"current_version\":\"0x00000001\",\"epoch\":\"0\"}}");
   }
 }
