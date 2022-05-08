@@ -157,7 +157,7 @@ public class DepositProvider
               final UInt64 lastAvailableDepositIndex =
                   depositNavigableMap.isEmpty()
                       ? state.getEth1DepositIndex()
-                      : depositNavigableMap.lastKey().plus(ONE);
+                      : state.getEth1DepositIndex().max(depositNavigableMap.lastKey().plus(ONE));
               if (lastAvailableDepositIndex.isLessThan(eth1DepositCount)) {
                 eventLogger.eth1DepositDataNotAvailable(
                     lastAvailableDepositIndex.plus(UInt64.ONE), eth1DepositCount);
