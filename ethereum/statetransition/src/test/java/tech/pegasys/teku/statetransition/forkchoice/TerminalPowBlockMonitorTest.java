@@ -22,8 +22,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor.TD_MIN_SAMPLES;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
@@ -448,21 +450,27 @@ public class TerminalPowBlockMonitorTest {
 
     setUpTTDConfig();
 
-    final UInt256 tdDiff = TTD.divide(10);
+    final UInt256 tdDiff = TTD.divide(TD_MIN_SAMPLES * 2);
 
     terminalPowBlockMonitor.start();
 
     goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
-    pollTtd(TTD.subtract(tdDiff.multiply(10)));
-    pollTtd(TTD.subtract(tdDiff.multiply(9)));
-    pollTtd(TTD.subtract(tdDiff.multiply(8)));
-    pollTtd(TTD.subtract(tdDiff.multiply(7)));
+    UInt256 lastTD = UInt256.ZERO;
+    UInt64 lastTime = UInt64.ZERO;
 
-    final UInt256 expectedEventTD = TTD.subtract(tdDiff.multiply(6));
-    pollTtd(expectedEventTD);
+    for (int cnt = TD_MIN_SAMPLES; cnt > 0; cnt--) {
+      lastTD = lastTD.plus(tdDiff);
+      lastTime = timeProvider.getTimeInSeconds();
+      pollTtd(lastTD);
+      timeProvider.advanceTimeBySeconds(spec.getGenesisSpecConfig().getSecondsPerEth1Block());
+    }
 
-    verify(eventLogger).terminalPowBlockTtdEta(expectedEventTD, Duration.ofSeconds(14 * 6));
+    final long eta = (long) spec.getGenesisSpecConfig().getSecondsPerEth1Block() * TD_MIN_SAMPLES;
+    final Duration expectedETA = Duration.ofSeconds(eta);
+    final Instant expectedInstant = Instant.ofEpochSecond(eta + lastTime.longValue());
+
+    verify(eventLogger).terminalPowBlockTtdEta(lastTD, expectedETA, expectedInstant);
 
     verifyNoMoreInteractions(eventLogger);
   }
@@ -475,7 +483,7 @@ public class TerminalPowBlockMonitorTest {
                     dataStructureUtil.randomBytes32(),
                     dataStructureUtil.randomBytes32(),
                     ttd,
-                    TIME_IN_PAST)));
+                    timeProvider.getTimeInSeconds())));
     asyncRunner.executeQueuedActions();
   }
 }

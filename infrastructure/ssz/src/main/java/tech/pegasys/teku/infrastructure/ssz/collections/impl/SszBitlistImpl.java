@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -95,11 +96,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   private BitlistImpl toBitlistImpl(SszBitlist bl) {
-    if (bl instanceof SszBitlistImpl) {
-      return ((SszBitlistImpl) bl).value;
-    } else {
-      return toBitlistImpl(bl);
-    }
+    return ((SszBitlistImpl) bl).value;
   }
 
   @Override
@@ -130,6 +127,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   @Override
   public IntList getAllSetBits() {
     return value.getAllSetBits();
+  }
+
+  @Override
+  public IntStream streamAllSetBits() {
+    return value.streamAllSetBits();
   }
 
   @Override

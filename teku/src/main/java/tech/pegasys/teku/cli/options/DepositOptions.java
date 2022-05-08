@@ -47,11 +47,22 @@ public class DepositOptions {
   private boolean useTimeBasedHeadTracking =
       PowchainConfiguration.DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
 
+  @Option(
+      names = {"--Xeth1-missing-deposits-event-logging-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable logging an event on each slot whenever deposits are missing",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean useMissingDepositEventLogging =
+      PowchainConfiguration.DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
         b ->
             b.eth1Endpoints(eth1Endpoints)
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
-                .useTimeBasedHeadTracking(useTimeBasedHeadTracking));
+                .useTimeBasedHeadTracking(useTimeBasedHeadTracking)
+                .useMissingDepositEventLogging(useMissingDepositEventLogging));
   }
 }
