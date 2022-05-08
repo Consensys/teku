@@ -15,6 +15,8 @@ package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
 import java.util.Optional;
+
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -42,7 +44,7 @@ public class StateValidatorData {
         new StateValidatorData(
             UInt64.valueOf(index),
             state.getBalances().getElement(index),
-            getValidatorStatus(epoch, validatorInternal, farFutureEpoch),
+            ValidatorResponse.getValidatorStatus(epoch, validatorInternal, farFutureEpoch),
             validatorInternal);
     return Optional.of(data);
   }
@@ -72,44 +74,6 @@ public class StateValidatorData {
 
   public Validator getValidator() {
     return validator;
-  }
-
-  public static ValidatorStatus getValidatorStatus(
-      final UInt64 epoch,
-      final tech.pegasys.teku.spec.datastructures.state.Validator validator,
-      final UInt64 farFutureEpoch) {
-    // pending
-    if (validator.getActivationEpoch().isGreaterThan(epoch)) {
-      return validator.getActivationEligibilityEpoch().equals(farFutureEpoch)
-          ? ValidatorStatus.pending_initialized
-          : ValidatorStatus.pending_queued;
-    }
-    // active
-    if (validator.getActivationEpoch().isLessThanOrEqualTo(epoch)
-        && epoch.isLessThan(validator.getExitEpoch())) {
-      if (validator.getExitEpoch().equals(farFutureEpoch)) {
-        return ValidatorStatus.active_ongoing;
-      }
-      return validator.isSlashed()
-          ? ValidatorStatus.active_slashed
-          : ValidatorStatus.active_exiting;
-    }
-
-    // exited
-    if (validator.getExitEpoch().isLessThanOrEqualTo(epoch)
-        && epoch.isLessThan(validator.getWithdrawableEpoch())) {
-      return validator.isSlashed()
-          ? ValidatorStatus.exited_slashed
-          : ValidatorStatus.exited_unslashed;
-    }
-
-    // withdrawal
-    if (validator.getWithdrawableEpoch().isLessThanOrEqualTo(epoch)) {
-      return validator.getEffectiveBalance().isGreaterThan(UInt64.ZERO)
-          ? ValidatorStatus.withdrawal_possible
-          : ValidatorStatus.withdrawal_done;
-    }
-    throw new IllegalStateException("Unable to determine validator status");
   }
 
   @Override
