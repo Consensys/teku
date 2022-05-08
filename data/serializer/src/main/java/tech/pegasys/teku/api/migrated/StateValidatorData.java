@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
 import java.util.Optional;
-
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
