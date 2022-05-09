@@ -100,11 +100,11 @@ public class GetAttestations extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
-    Optional<UInt64> committeeIndex = request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
+    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+    final Optional<UInt64> committeeIndex =
+        request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
 
-    List<Attestation> attestations = nodeDataProvider.getAttestations(slot, committeeIndex);
-    request.respondOk(attestations);
+    request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
   }
 
   private static SerializableTypeDefinition<List<Attestation>> getResponseType(
