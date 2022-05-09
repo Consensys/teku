@@ -26,7 +26,6 @@ public final class BlstSemiAggregate implements BatchSemiAggregate {
   }
 
   private Pairing ctx;
-  private boolean released = false;
 
   private BlstSemiAggregate() {
     ctx = null;
@@ -38,9 +37,6 @@ public final class BlstSemiAggregate implements BatchSemiAggregate {
   }
 
   Pairing getCtx() {
-    if (released) {
-      throw new IllegalStateException("Attempting to use disposed BatchSemiAggregate");
-    }
     if (!isValid()) {
       throw new IllegalStateException("No ctx for invalid BlstSemiAggregate");
     }
@@ -49,13 +45,6 @@ public final class BlstSemiAggregate implements BatchSemiAggregate {
 
   boolean isValid() {
     return ctx != null;
-  }
-
-  void release() {
-    if (released) {
-      throw new IllegalStateException("Attempting to use disposed BatchSemiAggregate");
-    }
-    released = true;
   }
 
   void mergeWith(BlstSemiAggregate other) {
