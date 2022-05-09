@@ -56,8 +56,7 @@ public class SignedContributionAndProofValidator {
   private final Set<SourceUniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SeenAggregatesCache<TargetUniquenessKey> seenAggregatesCache =
-      new SeenAggregatesCache<>(
-          VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
+      new SeenAggregatesCache<>(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
