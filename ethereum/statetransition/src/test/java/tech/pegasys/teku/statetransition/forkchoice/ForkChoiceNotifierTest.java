@@ -532,7 +532,7 @@ class ForkChoiceNotifierTest {
     // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, terminalBlockHash, Bytes32.ZERO, false);
+            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, Bytes32.ZERO, Bytes32.ZERO, false);
 
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 

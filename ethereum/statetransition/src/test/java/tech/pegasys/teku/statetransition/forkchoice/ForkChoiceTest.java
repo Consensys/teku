@@ -696,6 +696,10 @@ class ForkChoiceTest {
         recentChainData.getForkChoiceStrategy().orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
+    final Bytes32 justifiedExecutionHash =
+        forkChoiceStrategy
+            .executionBlockHash(recentChainData.getJustifiedCheckpoint().orElseThrow().getRoot())
+            .orElseThrow();
     final Bytes32 finalizedExecutionHash =
         forkChoiceStrategy
             .executionBlockHash(recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot())
@@ -706,7 +710,7 @@ class ForkChoiceTest {
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
                 headExecutionHash,
-                headExecutionHash,
+                justifiedExecutionHash,
                 finalizedExecutionHash,
                 optimisticHead));
   }

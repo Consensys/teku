@@ -14,9 +14,9 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Supplier;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -59,7 +59,7 @@ public class ForkChoiceUpdateData {
               forkChoiceState.getHeadBlockRoot(),
               forkChoiceState.getHeadBlockSlot(),
               terminalBlockHash.get(),
-              terminalBlockHash.get(),
+              Bytes32.ZERO,
               Bytes32.ZERO,
               false);
     } else {
