@@ -46,7 +46,7 @@ public class BuilderStatus {
   }
 
   public boolean hasFailed() {
-    return status == null;
+    return errorMessage != null;
   }
 
   @Override
