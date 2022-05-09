@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ProposerConfig {
   @JsonProperty(value = "proposer_config")
@@ -79,15 +79,15 @@ public class ProposerConfig {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class Config {
     @JsonProperty(value = "fee_recipient")
-    private Bytes20 feeRecipient;
+    private Eth1Address feeRecipient;
 
     @JsonCreator
-    public Config(@JsonProperty(value = "fee_recipient") final Bytes20 feeRecipient) {
+    public Config(@JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient) {
       checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
     }
 
-    public Bytes20 getFeeRecipient() {
+    public Eth1Address getFeeRecipient() {
       return feeRecipient;
     }
 

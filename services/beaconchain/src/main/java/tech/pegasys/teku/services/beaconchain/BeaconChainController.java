@@ -44,7 +44,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
@@ -72,6 +71,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -953,12 +953,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             getProposerDefaultFeeRecipient());
   }
 
-  private Optional<? extends Bytes20> getProposerDefaultFeeRecipient() {
+  private Optional<Eth1Address> getProposerDefaultFeeRecipient() {
     if (!spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      return Optional.of(Bytes20.ZERO);
+      return Optional.of(Eth1Address.ZERO);
     }
 
-    Optional<? extends Bytes20> defaultFeeRecipient =
+    Optional<Eth1Address> defaultFeeRecipient =
         beaconConfig.validatorConfig().getProposerDefaultFeeRecipient();
     if (defaultFeeRecipient.isEmpty() && beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
       STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled();
