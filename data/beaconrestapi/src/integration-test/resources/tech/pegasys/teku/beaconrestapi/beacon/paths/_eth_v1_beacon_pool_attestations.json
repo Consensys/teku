@@ -4,6 +4,21 @@
     "summary" : "Get attestations",
     "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
     "operationId" : "getEthV1BeaconPoolAttestations",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "description" : "`UInt64` Slot to query in the canonical chain.",
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "committee_index",
+      "in" : "query",
+      "description" : "`uint64` Committee index to query.",
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
     "responses" : {
       "200" : {
         "description" : "OK",
