@@ -67,10 +67,7 @@ public class ExecutionPayloadContext {
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-            payloadId,
-            forkChoiceState,
-            payloadAttributes);
+    return Objects.hash(payloadId, forkChoiceState, payloadAttributes);
   }
 
   @Override
