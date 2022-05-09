@@ -915,6 +915,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     syncService.subscribeToSyncStateChangesAndUpdate(
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
 
+    // depositProvider subscription
+    syncService.subscribeToSyncStateChangesAndUpdate(
+        syncState -> depositProvider.onSyncingStatusChanged(syncState.isInSync()));
+
     // forkChoice subscription
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(syncService.getOptimisticSyncSubscriber());
 
