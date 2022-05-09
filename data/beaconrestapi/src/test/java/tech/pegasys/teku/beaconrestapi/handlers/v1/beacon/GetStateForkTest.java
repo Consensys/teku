@@ -88,9 +88,17 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(
+            dataStructureUtil.randomBeaconState(),
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            false,
+            true);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, stateAndMetaData);
+
     assertThat(data)
         .isEqualTo(
-            "{\"data\":{\"previous_version\":\"0x00000001\",\"current_version\":\"0x00000001\",\"epoch\":\"0\"}}");
+            "{\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
   }
 }
