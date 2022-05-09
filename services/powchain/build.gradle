@@ -1,7 +1,7 @@
 dependencies {
   implementation project(':beacon:pow')
   implementation project(':infrastructure:events')
-  implementation project(':ethereum:executionengine')
+  implementation project(':ethereum:executionclient')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')

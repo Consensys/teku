@@ -1,18 +1,10 @@
 dependencies {
   implementation project(':ethereum:spec')
-  implementation project(':ethereum:executionengine')
+  implementation project(':ethereum:executionclient')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:time')
-  implementation 'com.google.code.gson:gson'
-
-  testImplementation testFixtures(project(':ethereum:spec'))
-  integrationTestImplementation testFixtures(project(':infrastructure:json'))
-  integrationTestImplementation testFixtures(project(':infrastructure:time'))
-  integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
 }
 
 publishing {
