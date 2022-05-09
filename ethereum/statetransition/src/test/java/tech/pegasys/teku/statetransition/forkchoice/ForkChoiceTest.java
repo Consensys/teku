@@ -88,9 +88,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
 
-  private final Spec spec =
-      TestSpecFactory.createMinimalBellatrix(
-          specConfigBuilder -> specConfigBuilder.equivocatingIndicesEnabled(true));
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
@@ -118,7 +116,8 @@ class ForkChoiceTest {
           recentChainData,
           forkChoiceNotifier,
           transitionBlockValidator,
-          false);
+          false,
+          true);
 
   @BeforeEach
   public void setup() {
@@ -205,7 +204,8 @@ class ForkChoiceTest {
             recentChainData,
             forkChoiceNotifier,
             transitionBlockValidator,
-            true);
+            true,
+            false);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

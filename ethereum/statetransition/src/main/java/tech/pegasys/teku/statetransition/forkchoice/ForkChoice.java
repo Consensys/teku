@@ -83,14 +83,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean proposerBoostEnabled) {
+      final boolean proposerBoostEnabled,
+      final boolean equivocatingIndicesEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
-    this.equivocatingIndicesEnabled = spec.isEquivocatingIndicesEnabled();
+    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -112,6 +113,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         recentChainData,
         forkChoiceNotifier,
         transitionBlockValidator,
+        false,
         false);
   }
 
