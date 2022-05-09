@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -164,6 +165,21 @@ public class SignedContributionAndProofTestBuilder {
     // Have to add signature once for each time the validator appears in the subcommittee
     syncSignatures.addAll(Collections.nCopies(participationIndices.size(), syncSignature));
     subcommitteeParticipationIndices.addAll(participationIndices);
+    return this;
+  }
+
+  public SignedContributionAndProofTestBuilder addAllParticipants(
+      final Function<UInt64, Signer> getSigner) {
+    final Map<UInt64, SyncSubcommitteeAssignments> syncSubcommittees =
+        syncCommitteeUtil.getSyncSubcommittees(
+            state, syncCommitteeUtil.getEpochForDutiesAtSlot(slot));
+    removeAllParticipants();
+    syncSubcommittees.forEach(
+        (validatorIndex, assignments) -> {
+          if (assignments.getAssignedSubcommittees().contains(subcommitteeIndex)) {
+            addParticipant(validatorIndex, getSigner.apply(validatorIndex));
+          }
+        });
     return this;
   }
 

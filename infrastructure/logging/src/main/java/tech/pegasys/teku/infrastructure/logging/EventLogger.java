@@ -17,8 +17,10 @@ import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -116,6 +118,13 @@ public class EventLogger {
         Color.YELLOW);
   }
 
+  public void eth1DepositDataNotAvailable(final UInt64 fromIndex, final UInt64 toIndex) {
+    final String eth1DepositDataNotAvailableEventLog =
+        String.format(
+            "Some ETH1 deposits are not available. Missing deposits %s to %s", fromIndex, toIndex);
+    warn(eth1DepositDataNotAvailableEventLog, Color.YELLOW);
+  }
+
   public void syncCompletedWhileHeadIsOptimistic() {
     info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
   }
@@ -194,16 +203,18 @@ public class EventLogger {
         Color.GREEN);
   }
 
-  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta) {
+  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta, final Instant instant) {
 
     final String etaString =
         eta.toMinutes() <= 1
             ? "imminent"
             : String.format(
-                "%s days, %s hours and  %s minutes",
+                "%s days, %s hours and %s minutes (%s)",
                 eta.toDays(),
                 eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
-                eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()));
+                eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
+                LocalDateTime.ofInstant(instant, TimeZone.getDefault().toZoneId())
+                    .format(DateTimeFormatter.ofPattern("d MMM uuuu - HH:mm:ss")));
 
     log.info(String.format("TTD ETA: %s - Current Total Difficulty: %s", etaString, ttd));
   }

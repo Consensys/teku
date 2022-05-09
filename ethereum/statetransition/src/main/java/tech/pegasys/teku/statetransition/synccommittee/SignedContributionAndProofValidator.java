@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.synccommittee;
 
 import static tech.pegasys.teku.spec.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.constants.ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -51,8 +54,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class SignedContributionAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
-  private final Set<UniquenessKey> seenIndices =
+  private final Set<SourceUniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
+  private final SeenAggregatesCache<TargetUniquenessKey> seenAggregatesCache =
+      new SeenAggregatesCache<>(
+          VALID_CONTRIBUTION_AND_PROOF_SET_SIZE, TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
@@ -66,7 +72,7 @@ public class SignedContributionAndProofValidator {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
-    slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
+    this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
@@ -77,8 +83,17 @@ public class SignedContributionAndProofValidator {
     // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.
     // (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE` for this topic that can be
     // flushed after each slot).
-    final UniquenessKey uniquenessKey = getUniquenessKey(contributionAndProof, contribution);
-    if (seenIndices.contains(uniquenessKey)) {
+    final SourceUniquenessKey sourceUniquenessKey =
+        getUniquenessKey(contributionAndProof, contribution);
+    if (seenIndices.contains(sourceUniquenessKey)) {
+      return SafeFuture.completedFuture(IGNORE);
+    }
+    final TargetUniquenessKey targetUniquenessKey =
+        new TargetUniquenessKey(
+            contribution.getSlot(),
+            contribution.getBeaconBlockRoot(),
+            contribution.getSubcommitteeIndex());
+    if (seenAggregatesCache.isAlreadySeen(targetUniquenessKey, contribution.getAggregationBits())) {
       return SafeFuture.completedFuture(IGNORE);
     }
 
@@ -124,7 +139,8 @@ public class SignedContributionAndProofValidator {
                   contributionAndProof,
                   contribution,
                   syncCommitteeUtil,
-                  uniquenessKey,
+                  sourceUniquenessKey,
+                  targetUniquenessKey,
                   maybeState.get());
             });
   }
@@ -147,7 +163,8 @@ public class SignedContributionAndProofValidator {
       final ContributionAndProof contributionAndProof,
       final SyncCommitteeContribution contribution,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final UniquenessKey uniquenessKey,
+      final SourceUniquenessKey sourceUniquenessKey,
+      final TargetUniquenessKey targetUniquenessKey,
       final BeaconStateAltair state) {
     final BeaconStateAccessors beaconStateAccessors =
         spec.atSlot(contribution.getSlot()).beaconStateAccessors();
@@ -251,11 +268,15 @@ public class SignedContributionAndProofValidator {
                     contribution.getSignature());
               }
 
-              if (!seenIndices.add(uniquenessKey)) {
+              if (!seenIndices.add(sourceUniquenessKey)) {
                 // Got added by another thread while we were validating it
                 return IGNORE;
               }
 
+              if (!seenAggregatesCache.add(
+                  targetUniquenessKey, contribution.getAggregationBits())) {
+                return IGNORE;
+              }
               return ACCEPT;
             });
   }
@@ -284,20 +305,20 @@ public class SignedContributionAndProofValidator {
         .contains(contribution.getSubcommitteeIndex().intValue());
   }
 
-  private UniquenessKey getUniquenessKey(
+  private SourceUniquenessKey getUniquenessKey(
       final ContributionAndProof contributionAndProof, SyncCommitteeContribution contribution) {
-    return new UniquenessKey(
+    return new SourceUniquenessKey(
         contributionAndProof.getAggregatorIndex(),
         contribution.getSlot(),
         contribution.getSubcommitteeIndex());
   }
 
-  private static class UniquenessKey {
+  private static class SourceUniquenessKey {
     private final UInt64 aggregatorIndex;
     private final UInt64 slot;
     private final UInt64 subcommitteeIndex;
 
-    private UniquenessKey(
+    private SourceUniquenessKey(
         final UInt64 aggregatorIndex, final UInt64 slot, final UInt64 subcommitteeIndex) {
       this.aggregatorIndex = aggregatorIndex;
       this.slot = slot;
@@ -312,7 +333,7 @@ public class SignedContributionAndProofValidator {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final UniquenessKey that = (UniquenessKey) o;
+      final SourceUniquenessKey that = (SourceUniquenessKey) o;
       return Objects.equals(aggregatorIndex, that.aggregatorIndex)
           && Objects.equals(slot, that.slot)
           && Objects.equals(subcommitteeIndex, that.subcommitteeIndex);
@@ -321,6 +342,38 @@ public class SignedContributionAndProofValidator {
     @Override
     public int hashCode() {
       return Objects.hash(aggregatorIndex, slot, subcommitteeIndex);
+    }
+  }
+
+  private static class TargetUniquenessKey {
+    private final UInt64 slot;
+    private final Bytes32 blockRoot;
+    private final UInt64 subcommiteeIndex;
+
+    private TargetUniquenessKey(
+        final UInt64 slot, final Bytes32 blockRoot, final UInt64 subcommiteeIndex) {
+      this.slot = slot;
+      this.blockRoot = blockRoot;
+      this.subcommiteeIndex = subcommiteeIndex;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final TargetUniquenessKey that = (TargetUniquenessKey) o;
+      return Objects.equals(slot, that.slot)
+          && Objects.equals(blockRoot, that.blockRoot)
+          && Objects.equals(subcommiteeIndex, that.subcommiteeIndex);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(slot, blockRoot, subcommiteeIndex);
     }
   }
 }

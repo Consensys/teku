@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -57,6 +58,7 @@ public class DepositProviderTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BeaconState state = mock(BeaconState.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final EventLogger eventLogger = mock(EventLogger.class);
   private List<tech.pegasys.teku.ethereum.pow.api.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
   private Eth1Data randomEth1Data;
@@ -72,7 +74,8 @@ public class DepositProviderTest {
     depositUtil = new DepositUtil(spec);
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
-        new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, spec);
+        new DepositProvider(
+            new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
     depositMerkleTree =
         new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
@@ -220,6 +223,21 @@ public class DepositProviderTest {
     assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
         .isInstanceOf(MissingDepositsException.class)
         .hasMessageContaining("9 to 10");
+  }
+
+  @Test
+  void shouldLogAnEventOnSlotWhenAllDepositsRequiredForStateNotAvailable() {
+    setup(1);
+    // To generate a valid proof we need the deposits up to state deposit count
+    // So we want to check if on each slot our node has necessary deposit data
+    mockDepositsFromEth1Block(0, 8);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+
+    depositProvider.onSlot(UInt64.ONE);
+
+    verify(eventLogger).eth1DepositDataNotAvailable(UInt64.valueOf(9), UInt64.valueOf(10));
   }
 
   @Test

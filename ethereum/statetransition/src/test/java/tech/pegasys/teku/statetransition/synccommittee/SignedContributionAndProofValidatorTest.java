@@ -18,6 +18,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,11 +48,13 @@ class SignedContributionAndProofValidatorTest {
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
+  private final SyncCommitteeStateUtils syncCommitteeStateUtils =
+      new SyncCommitteeStateUtils(spec, storageSystem.recentChainData());
   private final SignedContributionAndProofValidator validator =
       new SignedContributionAndProofValidator(
           spec,
           storageSystem.recentChainData(),
-          new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()),
+          syncCommitteeStateUtils,
           timeProvider,
           SignatureVerificationService.createSimple());
 
@@ -164,6 +167,57 @@ class SignedContributionAndProofValidatorTest {
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
     assertThat(validator.validate(message)).isCompletedWithValue(IGNORE);
+  }
+
+  @Test
+  void shouldIgnoreWhenSubsetOfAlreadySeen() {
+    final SignedContributionAndProof bigMessage =
+        chainBuilder.createValidSignedContributionAndProofBuilder().build();
+    final UInt64 firstAggregator = bigMessage.getMessage().getAggregatorIndex();
+    final SignedContributionAndProof smallMessage =
+        chainBuilder
+            .createValidSignedContributionAndProofBuilder()
+            // Probably not a valid aggregator but we should ignore without validating
+            .aggregatorIndex(firstAggregator.plus(1))
+            .removeAllParticipants()
+            .addParticipant(firstAggregator, chainBuilder.getSigner(firstAggregator.intValue()))
+            .build();
+    assertThat(validator.validate(bigMessage)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(smallMessage)).isCompletedWithValue(IGNORE);
+  }
+
+  @Test
+  void shouldNotIgnoreWhenSubsetOfAlreadySeenForSameBlockRootInDifferentSlot() {
+    final SignedContributionAndProof message =
+        chainBuilder.createValidSignedContributionAndProofBuilder().build();
+    final UInt64 nextSlot = storageSystem.chainUpdater().getHeadSlot().plus(1);
+    final SignedContributionAndProof nextSlotMessage =
+        chainBuilder.createValidSignedContributionAndProofBuilder(nextSlot).build();
+
+    assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+    timeProvider.advanceTimeBySeconds(spec.getSecondsPerSlot(nextSlot));
+    assertThat(validator.validate(nextSlotMessage)).isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
+  void shouldNotIgnoreWhenSubsetOfAlreadySeenForSameBlockRootAndSlotInDifferentSubcommittee() {
+    final SignedBlockAndState head = chainBuilder.getLatestBlockAndState();
+    final SignedContributionAndProof message1 =
+        chainBuilder
+            .createValidSignedContributionAndProofBuilder(
+                head.getSlot(), head.getRoot(), Optional.of(1))
+            .addAllParticipants(validatorIndex -> chainBuilder.getSigner(validatorIndex.intValue()))
+            .build();
+    final SignedContributionAndProof message2 =
+        chainBuilder
+            .createValidSignedContributionAndProofBuilder(
+                head.getSlot(), head.getRoot(), Optional.of(2))
+            .addAllParticipants(validatorIndex -> chainBuilder.getSigner(validatorIndex.intValue()))
+            .build();
+
+    assertThat(validator.validate(message1)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(message2)).isCompletedWithValue(ACCEPT);
   }
 
   @Test

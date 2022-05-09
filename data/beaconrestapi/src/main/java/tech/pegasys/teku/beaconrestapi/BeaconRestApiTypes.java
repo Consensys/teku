@@ -15,6 +15,8 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
 
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
@@ -22,4 +24,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
       new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
+
+  public static final ParameterMetadata<String> PARAMETER_VALIDATOR_ID =
+      new ParameterMetadata<>(
+          PARAM_VALIDATOR_ID, CoreTypes.string(PARAM_VALIDATOR_DESCRIPTION, "head"));
 }
