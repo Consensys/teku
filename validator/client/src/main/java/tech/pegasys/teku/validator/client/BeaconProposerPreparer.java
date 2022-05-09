@@ -24,10 +24,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -41,14 +41,14 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final ProposerConfigProvider proposerConfigProvider;
   private final Spec spec;
-  private final Optional<? extends Bytes20> defaultFeeRecipient;
+  private final Optional<Eth1Address> defaultFeeRecipient;
   private boolean firstCallDone = false;
 
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
       ProposerConfigProvider proposerConfigProvider,
-      Optional<? extends Bytes20> defaultFeeRecipient,
+      Optional<Eth1Address> defaultFeeRecipient,
       Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
@@ -101,7 +101,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .collect(Collectors.toList());
   }
 
-  private Bytes20 getFeeRecipient(
+  private Eth1Address getFeeRecipient(
       Optional<ProposerConfig> maybeProposerConfig, BLSPublicKey blsPublicKey) {
     return maybeProposerConfig
         .flatMap(proposerConfig -> proposerConfig.getConfigForPubKey(blsPublicKey))
@@ -109,7 +109,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .orElseGet(() -> getDefaultFeeRecipient(maybeProposerConfig));
   }
 
-  private Bytes20 getDefaultFeeRecipient(Optional<ProposerConfig> maybeProposerConfig) {
+  private Eth1Address getDefaultFeeRecipient(Optional<ProposerConfig> maybeProposerConfig) {
     return maybeProposerConfig
         .flatMap(ProposerConfig::getDefaultConfig)
         .map(Config::getFeeRecipient)
