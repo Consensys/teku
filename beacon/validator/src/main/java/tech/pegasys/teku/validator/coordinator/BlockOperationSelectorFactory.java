@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -59,7 +59,7 @@ public class BlockOperationSelectorFactory {
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final ExecutionEngineChannel executionEngineChannel;
+  private final ExecutionLayerChannel executionLayerChannel;
   private final boolean isMevBoostEnabled;
 
   public BlockOperationSelectorFactory(
@@ -73,7 +73,7 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionEngineChannel executionEngineChannel,
+      final ExecutionLayerChannel executionLayerChannel,
       final boolean isMevBoostEnabled) {
     this.spec = spec;
     this.attestationPool = attestationPool;
@@ -85,7 +85,7 @@ public class BlockOperationSelectorFactory {
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
-    this.executionEngineChannel = executionEngineChannel;
+    this.executionLayerChannel = executionLayerChannel;
     this.isMevBoostEnabled = isMevBoostEnabled;
   }
 
@@ -156,7 +156,7 @@ public class BlockOperationSelectorFactory {
                           .getExecutionPayloadHeaderSchema()
                           .getHeaderOfDefaultPayload(),
                   (payloadId) ->
-                      executionEngineChannel
+                      executionLayerChannel
                           .getPayloadHeader(payloadId, blockSlotState.getSlot())
                           .join()));
           return;
@@ -185,7 +185,9 @@ public class BlockOperationSelectorFactory {
                       .getExecutionPayloadSchema()
                       .getDefault(),
               (payloadId) ->
-                  executionEngineChannel.getPayload(payloadId, blockSlotState.getSlot()).join()));
+                  executionLayerChannel
+                      .engineGetPayload(payloadId, blockSlotState.getSlot())
+                      .join()));
     };
   }
 
@@ -235,7 +237,7 @@ public class BlockOperationSelectorFactory {
       } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
-                executionEngineChannel.proposeBlindedBlock(
+                executionLayerChannel.proposeBlindedBlock(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };

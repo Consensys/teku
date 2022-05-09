@@ -150,6 +150,10 @@ public class TekuNode extends Node {
     maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
   }
 
+  public void waitForContributionAndProofEvent() {
+    waitForContributionAndProofEvent(proof -> true);
+  }
+
   public void waitForContributionAndProofEvent(
       final Predicate<SignedContributionAndProof> condition) {
     waitFor(
@@ -343,13 +347,11 @@ public class TekuNode extends Node {
               actualSyncBitCount == syncCommitteeSize
                   ? 1.0
                   : actualSyncBitCount / (double) syncCommitteeSize;
-          if (percentageOfBitsSet < 1.0) {
-            LOG.debug(
-                String.format(
-                    "Sync committee bits are only %s%% full, expecting %s%%: %s",
-                    percentageOfBitsSet * 100, 100, syncCommitteeBits));
-          }
-          assertThat(percentageOfBitsSet >= 1.0).isTrue();
+          assertThat(percentageOfBitsSet >= 1.0)
+              .overridingErrorMessage(
+                  "Sync committee bits are only %s%% full, expecting %s%%: %s",
+                  percentageOfBitsSet * 100, 100, syncCommitteeBits)
+              .isTrue();
         },
         5,
         MINUTES);
@@ -633,7 +635,8 @@ public class TekuNode extends Node {
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
       configMap.put("Xinterop-enabled", false);
-      configMap.put("eth1-deposit-contract-address", eth1Node.getDepositContractAddress());
+      configMap.put(
+          "eth1-deposit-contract-address", eth1Node.getDepositContractAddress().toString());
       configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
       return this;
     }
@@ -741,7 +744,7 @@ public class TekuNode extends Node {
 
     public Config withPeers(final TekuNode... nodes) {
       final String peers =
-          Arrays.stream(nodes).map(TekuNode::getMultiAddr).collect(Collectors.joining(", "));
+          Arrays.stream(nodes).map(TekuNode::getMultiAddr).collect(Collectors.joining(","));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
       return this;

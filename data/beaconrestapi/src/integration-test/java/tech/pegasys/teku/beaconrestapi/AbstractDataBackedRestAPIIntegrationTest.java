@@ -42,6 +42,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -54,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -162,7 +163,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 recentChainData,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionEngineChannel.NOOP));
+                    spec, recentChainData, ExecutionLayerChannel.NOOP));
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {
@@ -186,7 +187,13 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .build();
 
     beaconRestApi =
-        new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER, spec);
+        new BeaconRestApi(
+            dataProvider,
+            config,
+            eventChannels,
+            SyncAsyncRunner.SYNC_RUNNER,
+            StubTimeProvider.withTimeInMillis(1000),
+            spec);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }

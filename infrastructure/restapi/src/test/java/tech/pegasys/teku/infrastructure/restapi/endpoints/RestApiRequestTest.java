@@ -58,7 +58,7 @@ public class RestApiRequestTest {
   void shouldDeserializeStringFromParameters() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("str", "byeWorld"));
     when(context.queryParamMap()).thenReturn(Map.of("str", List.of("helloWorld")));
-    final RestApiRequest request = new RestApiRequest(context, METADATA);
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(STR_PARAM)).isEqualTo("byeWorld");
     assertThat(request.getQueryParameter(STR_PARAM)).isEqualTo("helloWorld");
   }
@@ -67,7 +67,7 @@ public class RestApiRequestTest {
   void shouldDeserializeIntegerFromParameters() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("int", "1234"));
     when(context.queryParamMap()).thenReturn(Map.of("int", List.of("4321")));
-    final RestApiRequest request = new RestApiRequest(context, METADATA);
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(INT_PARAM)).isEqualTo(1234);
     assertThat(request.getQueryParameter(INT_PARAM)).isEqualTo(4321);
   }
@@ -76,7 +76,7 @@ public class RestApiRequestTest {
   void shouldDeserializeBooleanFromParameters() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("bool", "true"));
     when(context.queryParamMap()).thenReturn(Map.of("bool", List.of("false")));
-    final RestApiRequest request = new RestApiRequest(context, METADATA);
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(BOOL_PARAM)).isEqualTo(true);
     assertThat(request.getQueryParameter(BOOL_PARAM)).isEqualTo(false);
   }
@@ -87,7 +87,7 @@ public class RestApiRequestTest {
     final byte b2 = 1;
     when(context.pathParamMap()).thenReturn(Map.of("byte", "0x7f"));
     when(context.queryParamMap()).thenReturn(Map.of("byte", List.of("0x01")));
-    final RestApiRequest request = new RestApiRequest(context, METADATA);
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(BYTE_PARAM)).isEqualTo(b1);
     assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(b2);
   }

@@ -43,7 +43,12 @@ public class SchemaDefinitionCache {
       return specVersion.getSchemaDefinitions();
     }
     return SpecVersion.create(milestone, spec.getGenesisSpecConfig())
-        .orElseThrow()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Unable to create spec for milestone "
+                        + milestone.name()
+                        + ". Ensure network config includes all required options."))
         .getSchemaDefinitions();
   }
 }

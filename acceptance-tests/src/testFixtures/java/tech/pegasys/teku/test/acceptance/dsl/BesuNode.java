@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -72,8 +73,8 @@ public class BesuNode extends Node {
     container.start();
   }
 
-  public String getDepositContractAddress() {
-    return "0xdddddddddddddddddddddddddddddddddddddddd";
+  public Eth1Address getDepositContractAddress() {
+    return Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
   }
 
   public String getInternalJsonRpcUrl() {

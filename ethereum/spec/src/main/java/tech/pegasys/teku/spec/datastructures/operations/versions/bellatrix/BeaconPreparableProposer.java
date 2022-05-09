@@ -15,14 +15,14 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconPreparableProposer {
   private final UInt64 validatorIndex;
-  private final Bytes20 feeRecipient;
+  private final Eth1Address feeRecipient;
 
-  public BeaconPreparableProposer(UInt64 validatorIndex, Bytes20 feeRecipient) {
+  public BeaconPreparableProposer(UInt64 validatorIndex, Eth1Address feeRecipient) {
     this.validatorIndex = validatorIndex;
     this.feeRecipient = feeRecipient;
   }
@@ -31,7 +31,7 @@ public class BeaconPreparableProposer {
     return validatorIndex;
   }
 
-  public Bytes20 getFeeRecipient() {
+  public Eth1Address getFeeRecipient() {
     return feeRecipient;
   }
 
@@ -59,5 +59,30 @@ public class BeaconPreparableProposer {
         .add("validatorIndex", validatorIndex)
         .add("feeRecipient", feeRecipient)
         .toString();
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private UInt64 validatorIndex;
+    private Eth1Address feeRecipient;
+
+    public Builder() {}
+
+    public Builder feeRecipient(final Eth1Address feeRecipient) {
+      this.feeRecipient = feeRecipient;
+      return this;
+    }
+
+    public Builder validatorIndex(final UInt64 validatorIndex) {
+      this.validatorIndex = validatorIndex;
+      return this;
+    }
+
+    public BeaconPreparableProposer build() {
+      return new BeaconPreparableProposer(validatorIndex, feeRecipient);
+    }
   }
 }

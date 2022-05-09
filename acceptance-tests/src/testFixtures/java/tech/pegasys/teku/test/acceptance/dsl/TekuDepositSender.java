@@ -53,7 +53,7 @@ public class TekuDepositSender extends Node {
   public ValidatorKeystores sendValidatorDeposits(
       final BesuNode eth1Node, final int numberOfValidators, UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
-    final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
+    final Eth1Address eth1Address = eth1Node.getDepositContractAddress();
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
     try (final DepositGenerator depositGenerator =
         new DepositGenerator(
@@ -72,7 +72,7 @@ public class TekuDepositSender extends Node {
   public void sendValidatorDeposits(
       final BesuNode eth1Node, final List<ValidatorKeys> validatorKeys, UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
-    final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
+    final Eth1Address eth1Address = eth1Node.getDepositContractAddress();
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
     final DepositSenderService depositSenderService =
         new DepositSenderService(

@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
@@ -35,6 +36,15 @@ public class CoreTypes {
           .parser(Bytes32::fromHexString)
           .example("0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2")
           .description("Bytes32 hexadecimal")
+          .format("byte")
+          .build();
+
+  public static final StringValueTypeDefinition<Bytes20> BYTES20_TYPE =
+      DeserializableTypeDefinition.string(Bytes20.class)
+          .formatter(Bytes20::toHexString)
+          .parser(Bytes20::fromHexString)
+          .example("0xcf8e0d4e9587369b2301d0790347320302cc0943")
+          .description("Bytes20 hexadecimal")
           .format("byte")
           .build();
 

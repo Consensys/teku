@@ -379,7 +379,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     return expectedConfigurationBuilder()
         .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
-        .executionEngine(b -> b.endpoint(null))
+        .executionLayer(b -> b.engineEndpoint(null))
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
@@ -416,7 +416,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
         .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
-        .executionEngine(b -> b.endpoint("http://localhost:8550"))
+        .executionLayer(b -> b.engineEndpoint("http://localhost:8550"))
         .powchain(
             b ->
                 b.eth1Endpoints(List.of("http://localhost:8545"))

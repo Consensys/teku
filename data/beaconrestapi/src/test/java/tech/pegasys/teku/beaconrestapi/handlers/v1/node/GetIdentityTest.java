@@ -13,31 +13,36 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.refEq;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity.IdentityData;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class GetIdentityTest extends AbstractMigratedBeaconHandlerTest {
+  private final StubRestApiRequest request = new StubRestApiRequest();
+  private final GetIdentity handler = new GetIdentity(network);
+  private final MetadataMessage defaultMetadata =
+      spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
+  private final IdentityData identityData =
+      new IdentityData(
+          "aeiou", Optional.empty(), List.of("address"), Collections.emptyList(), defaultMetadata);
 
   @Test
   public void shouldReturnExpectedObjectType() throws Exception {
-    final MetadataMessage defaultMetadata =
-        spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
-
-    GetIdentity handler = new GetIdentity(network);
     NodeId nodeid = mock(NodeId.class);
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(defaultMetadata);
@@ -45,18 +50,29 @@ public class GetIdentityTest extends AbstractMigratedBeaconHandlerTest {
     when(nodeid.toBase58()).thenReturn("aeiou");
     when(eth2P2PNetwork.getNodeAddress()).thenReturn("address");
 
-    final RestApiRequest request = mock(RestApiRequest.class);
     handler.handleRequest(request);
 
-    verify(request)
-        .respondOk(
-            refEq(
-                new IdentityData(
-                    "aeiou",
-                    Optional.empty(),
-                    List.of("address"),
-                    Collections.emptyList(),
-                    defaultMetadata)),
-            eq(CacheLength.NO_CACHE));
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(identityData);
+    assertThat(request.getCacheLength()).isEqualTo(CacheLength.NO_CACHE);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws JsonProcessingException {
+    final String data = getResponseStringFromMetadata(handler, SC_OK, identityData);
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"peer_id\":\"aeiou\",\"p2p_addresses\":[\"address\"],"
+                + "\"discovery_addresses\":[],\"metadata\":{\"seq_number\":\"0\",\"attnets\":\"0x0000000000000000\"}}}");
   }
 }

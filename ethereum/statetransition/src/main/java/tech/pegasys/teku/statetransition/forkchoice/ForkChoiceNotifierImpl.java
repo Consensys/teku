@@ -22,16 +22,16 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -39,7 +39,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final ExecutionEngineChannel executionEngineChannel;
+  private final ExecutionLayerChannel executionLayerChannel;
   private final RecentChainData recentChainData;
   private final PayloadAttributesCalculator payloadAttributesCalculator;
   private final Spec spec;
@@ -54,12 +54,12 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   ForkChoiceNotifierImpl(
       final EventThread eventThread,
       final Spec spec,
-      final ExecutionEngineChannel executionEngineChannel,
+      final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
       final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.eventThread = eventThread;
     this.spec = spec;
-    this.executionEngineChannel = executionEngineChannel;
+    this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.payloadAttributesCalculator = payloadAttributesCalculator;
   }
@@ -67,16 +67,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   public static ForkChoiceNotifier create(
       final AsyncRunnerFactory asyncRunnerFactory,
       final Spec spec,
-      final ExecutionEngineChannel executionEngineChannel,
+      final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final Optional<? extends Bytes20> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
     eventThread.start();
     return new ForkChoiceNotifierImpl(
         eventThread,
         spec,
-        executionEngineChannel,
+        executionLayerChannel,
         recentChainData,
         new PayloadAttributesCalculator(
             spec, eventThread, recentChainData, proposerDefaultFeeRecipient));
@@ -242,7 +242,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
   private void sendForkChoiceUpdated() {
     final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
-        forkChoiceUpdateData.send(executionEngineChannel);
+        forkChoiceUpdateData.send(executionLayerChannel);
 
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,

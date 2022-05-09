@@ -118,7 +118,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -181,7 +181,7 @@ public final class DataStructureUtil {
   }
 
   public Eth1Address randomEth1Address() {
-    return new Eth1Address(randomBytes32().slice(0, 20));
+    return Eth1Address.fromHexString(randomBytes32().slice(0, 20).toHexString());
   }
 
   public Bytes4 randomBytes4() {

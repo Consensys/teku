@@ -39,6 +39,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
@@ -63,7 +64,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     handler.handleRequest(request);
 
@@ -77,7 +78,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
     when(chainDataProvider.getBeaconStateAndMetadata(eq("invalid")))
         .thenThrow(new BadRequestException("invalid state"));
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "invalid"));
-    final RestApiRequest request = new RestApiRequest(context, handler.getMetadata());
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)

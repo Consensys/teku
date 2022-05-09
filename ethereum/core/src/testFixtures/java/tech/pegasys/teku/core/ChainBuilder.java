@@ -452,6 +452,13 @@ public class ChainBuilder {
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
+    return createValidSignedContributionAndProofBuilder(slot, beaconBlockRoot, Optional.empty());
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final Optional<Integer> requiredSubcommittee) {
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final UInt64 epoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
@@ -464,6 +471,9 @@ public class ChainBuilder {
       final Signer signer = getSigner(validatorIndex.intValue());
       final SyncSubcommitteeAssignments assignments = entry.getValue();
       for (int subcommitteeIndex : assignments.getAssignedSubcommittees()) {
+        if (requiredSubcommittee.isPresent() && requiredSubcommittee.get() != subcommitteeIndex) {
+          continue;
+        }
         final SyncAggregatorSelectionData syncAggregatorSelectionData =
             syncCommitteeUtil.createSyncAggregatorSelectionData(
                 slot, UInt64.valueOf(subcommitteeIndex));

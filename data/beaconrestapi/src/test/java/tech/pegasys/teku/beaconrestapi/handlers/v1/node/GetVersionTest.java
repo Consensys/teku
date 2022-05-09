@@ -13,23 +13,41 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static org.mockito.ArgumentMatchers.refEq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class GetVersionTest extends AbstractMigratedBeaconHandlerTest {
+  private final StubRestApiRequest request = new StubRestApiRequest();
+  private final GetVersion handler = new GetVersion();
 
   @Test
   public void shouldReturnVersionString() throws Exception {
-    final RestApiRequest request = mock(RestApiRequest.class);
-    final GetVersion handler = new GetVersion();
-
     handler.handleRequest(request);
-    verify(request).respondOk(refEq(VersionProvider.VERSION));
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(VersionProvider.VERSION);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws JsonProcessingException {
+    final String data = getResponseStringFromMetadata(handler, SC_OK, VersionProvider.VERSION);
+    assertThat(data).isEqualTo("{\"data\":{\"version\":\"" + VersionProvider.VERSION + "\"}}");
   }
 }

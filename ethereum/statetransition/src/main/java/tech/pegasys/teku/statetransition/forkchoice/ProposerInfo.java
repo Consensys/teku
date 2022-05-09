@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 class ProposerInfo {
 
   UInt64 expirySlot;
-  Bytes20 feeRecipient;
+  Eth1Address feeRecipient;
 
-  public ProposerInfo(UInt64 expirySlot, Bytes20 feeRecipient) {
+  public ProposerInfo(UInt64 expirySlot, Eth1Address feeRecipient) {
     this.expirySlot = expirySlot;
     this.feeRecipient = feeRecipient;
   }

@@ -32,6 +32,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   private TekuNode primaryNode;
   private TekuNode secondaryNode;
   private TekuValidatorNode validatorClient;
+  private TekuNode watcherNode;
 
   @BeforeEach
   public void setup() {
@@ -43,7 +44,6 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 configureNode(config, genesisTime)
-                    .withLogging("debug")
                     .withInteropValidators(0, 0)
                     .withPeers(primaryNode));
     validatorClient =
@@ -53,27 +53,30 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
                     .withNetwork(network)
                     .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
                     .withBeaconNode(secondaryNode));
+
+    // Use a third node to watch for published aggregates.
+    watcherNode =
+        createTekuNode(
+            config ->
+                configureNode(config, genesisTime)
+                    .withPeers(primaryNode, secondaryNode)
+                    .withInteropValidators(0, 0));
   }
 
   @Test
   public void shouldContainSyncCommitteeAggregates() throws Exception {
     primaryNode.start();
-    primaryNode.startEventListener(List.of(EventType.contribution_and_proof));
-
     secondaryNode.start();
-    secondaryNode.startEventListener(List.of(EventType.contribution_and_proof));
     validatorClient.start();
+    watcherNode.start();
+    watcherNode.startEventListener(List.of(EventType.contribution_and_proof));
 
     primaryNode.waitForEpoch(1);
 
-    // primary node has validators 1-7, expect gossip from aggregators 8-15 coming through
-    primaryNode.waitForContributionAndProofEvent(
-        proof -> proof.message.aggregatorIndex.isGreaterThanOrEqualTo(8));
+    // Wait until we get a contribution over gossip. The watcher node doesn't run any validators.
+    watcherNode.waitForContributionAndProofEvent();
 
-    // secondary node has remote validators 8-15, expect gossip from aggregators 1-7
-    secondaryNode.waitForContributionAndProofEvent(
-        proof -> proof.message.aggregatorIndex.isLessThan(8));
-
+    // And make sure that the contributions get combined properly into a full aggregate in the block
     secondaryNode.waitForFullSyncCommitteeAggregate();
     validatorClient.stop();
     secondaryNode.stop();

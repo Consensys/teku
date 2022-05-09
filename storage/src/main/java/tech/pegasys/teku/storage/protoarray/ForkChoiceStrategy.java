@@ -39,9 +39,9 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -178,6 +178,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               justifiedCheckpoint.getEpoch(),
               finalizedCheckpoint.getEpoch());
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
+      final Bytes32 justifiedExecutionHash =
+          protoArray
+              .getProtoNode(justifiedCheckpoint.getRoot())
+              .map(ProtoNode::getExecutionBlockHash)
+              .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
           protoArray
               .getProtoNode(finalizedCheckpoint.getRoot())
@@ -187,7 +192,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headNode.getBlockRoot(),
           headNode.getBlockSlot(),
           headExecutionBlockHash,
-          headExecutionBlockHash,
+          justifiedExecutionHash,
           finalizedExecutionHash,
           headNode.isOptimistic());
     } finally {

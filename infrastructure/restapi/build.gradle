@@ -22,6 +22,9 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:json'))
 
   testFixturesImplementation testFixtures(project(':infrastructure:json'))
+  testFixturesImplementation project(':infrastructure:http')
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
+  testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
   testFixturesImplementation 'commons-io:commons-io'
   testFixturesImplementation 'com.google.guava:guava'

@@ -14,9 +14,11 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
@@ -37,6 +39,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
 public class EventSubscriberTest {
   private static final int MAX_PENDING_EVENTS = 10;
@@ -46,6 +49,7 @@ public class EventSubscriberTest {
   private final Runnable onCloseCallback = mock(Runnable.class);
   private final ServletResponse servletResponse = mock(ServletResponse.class);
   private final TestServletOutputStream outputStream = new TestServletOutputStream();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1000);
 
   private final Context context = new Context(req, res, Collections.emptyMap());
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -64,35 +68,57 @@ public class EventSubscriberTest {
 
   @Test
   void shouldGetSseClient() {
-    EventSubscriber eventSubscriber =
-        new EventSubscriber(
-            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
+    EventSubscriber eventSubscriber = createSubscriber("head");
     assertThat(eventSubscriber.getSseClient()).isEqualTo(sseClient);
   }
 
   @Test
-  void shouldDisconnectAfterTooManyRequestsAreLogged() throws Exception {
-    EventSubscriber eventSubscriber =
-        new EventSubscriber(
-            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
+  void shouldDisconnectWhenQueueSizeTooBigForTooLong() throws Exception {
+    EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
       eventSubscriber.onEvent(EventType.head, event("test"));
     }
+    verifyNoInteractions(onCloseCallback);
+    timeProvider.advanceTimeByMillis(EventSubscriber.EXCESSIVE_QUEUING_TOLERANCE_MS);
+    eventSubscriber.onEvent(EventType.head, event("foo"));
     verify(onCloseCallback).run();
   }
 
   @Test
+  void shouldNotDisconnectWhenMaxQueueSizeBriefly() throws Exception {
+    EventSubscriber eventSubscriber = createSubscriber("head");
+
+    // Max size exceeded
+    for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
+      verify(onCloseCallback, never()).run();
+      eventSubscriber.onEvent(EventType.head, event("test"));
+    }
+    verifyNoInteractions(onCloseCallback);
+
+    // But we drain the queue just before the time tolerance is reached
+    timeProvider.advanceTimeByMillis(EventSubscriber.EXCESSIVE_QUEUING_TOLERANCE_MS - 1);
+    asyncRunner.executeQueuedActions();
+    verifyNoInteractions(onCloseCallback);
+
+    // And so we shouldn't get disconnected
+    timeProvider.advanceTimeByMillis(1);
+    eventSubscriber.onEvent(EventType.head, event("head"));
+    verifyNoInteractions(onCloseCallback);
+  }
+
+  @Test
   void shouldStopSendingEventsWhenQueueOverflows() throws Exception {
-    EventSubscriber eventSubscriber =
-        new EventSubscriber(
-            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
+    EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
       eventSubscriber.onEvent(EventType.head, event("test"));
     }
+    timeProvider.advanceTimeByMillis(EventSubscriber.EXCESSIVE_QUEUING_TOLERANCE_MS);
+    eventSubscriber.onEvent(EventType.head, event("test"));
+
     verify(onCloseCallback).run();
     verify(asyncContext).complete();
     asyncRunner.executeQueuedActions();
@@ -100,14 +126,29 @@ public class EventSubscriberTest {
   }
 
   @Test
+  void shouldOnlyDisconnectOnce() throws Exception {
+    EventSubscriber eventSubscriber = createSubscriber("head");
+
+    for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
+      verify(onCloseCallback, never()).run();
+      eventSubscriber.onEvent(EventType.head, event("test"));
+    }
+    timeProvider.advanceTimeByMillis(EventSubscriber.EXCESSIVE_QUEUING_TOLERANCE_MS);
+
+    // Multiple events are delivered before the close callback can actually run and unsubscribe
+    // but we should only disconnect once
+    eventSubscriber.onEvent(EventType.head, event("test"));
+    eventSubscriber.onEvent(EventType.head, event("test"));
+    eventSubscriber.onEvent(EventType.head, event("test"));
+
+    verify(onCloseCallback, atMostOnce()).run();
+    verify(asyncContext, atMostOnce()).complete();
+  }
+
+  @Test
   void shouldSubscribeToMultipleEventsSuccessfully() throws IOException {
     EventSubscriber eventSubscriber =
-        new EventSubscriber(
-            allEventTypes.stream().map(EventType::name).collect(Collectors.toList()),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS);
+        createSubscriber(allEventTypes.stream().map(EventType::name).toArray(String[]::new));
     for (EventType eventType : allEventTypes) {
       eventSubscriber.onEvent(eventType, event("test"));
     }
@@ -119,9 +160,7 @@ public class EventSubscriberTest {
 
   @Test
   void shouldNotDisconnectIfQueueProcessingCatchesUp() throws IOException {
-    EventSubscriber eventSubscriber =
-        new EventSubscriber(
-            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
+    EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
       eventSubscriber.onEvent(EventType.head, event("test"));
@@ -139,9 +178,7 @@ public class EventSubscriberTest {
   @ParameterizedTest
   @EnumSource(EventType.class)
   void shouldNotSendEventsIfNotSubscribed(final EventType eventType) throws Exception {
-    EventSubscriber subscriber =
-        new EventSubscriber(
-            List.of(eventType.name()), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
+    EventSubscriber subscriber = createSubscriber(eventType.name());
     for (EventType val : allEventTypes) {
       if (val.compareTo(eventType) != 0) {
         subscriber.onEvent(val, event("test"));
@@ -157,9 +194,7 @@ public class EventSubscriberTest {
   @ParameterizedTest
   @EnumSource(EventType.class)
   void shouldSendEventsIfSubscribed(final EventType eventType) throws IOException {
-    EventSubscriber subscriber =
-        new EventSubscriber(
-            List.of(eventType.name()), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
+    EventSubscriber subscriber = createSubscriber(eventType.name());
 
     subscriber.onEvent(eventType, event("test"));
 
@@ -172,13 +207,7 @@ public class EventSubscriberTest {
   @Test
   @SuppressWarnings("unused")
   void shouldSendKeepAlive() {
-    final EventSubscriber subscriber =
-        new EventSubscriber(
-            List.of(EventType.voluntary_exit.name()),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS);
+    final EventSubscriber subscriber = createSubscriber(EventType.voluntary_exit.name());
 
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
@@ -191,5 +220,15 @@ public class EventSubscriberTest {
 
   private EventSource<String> event(final String message) {
     return new EventSource<>(new TestEvent(message));
+  }
+
+  private EventSubscriber createSubscriber(final String... eventTypes) {
+    return new EventSubscriber(
+        List.of(eventTypes),
+        sseClient,
+        onCloseCallback,
+        asyncRunner,
+        timeProvider,
+        MAX_PENDING_EVENTS);
   }
 }

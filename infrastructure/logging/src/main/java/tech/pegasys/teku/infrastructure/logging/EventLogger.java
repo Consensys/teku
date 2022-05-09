@@ -17,8 +17,10 @@ import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,6 +89,15 @@ public class EventLogger {
     info(syncEventLog, Color.WHITE);
   }
 
+  public void syncEventAwaitingEL(
+      final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
+    final String syncEventLog =
+        String.format(
+            "Syncing     *** Target slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
+            nodeSlot, headSlot, numPeers);
+    info(syncEventLog, Color.WHITE);
+  }
+
   public void syncCompleted() {
     info("Syncing completed", Color.GREEN);
   }
@@ -105,6 +116,13 @@ public class EventLogger {
     warn(
         "Unable to execute the current chain head block payload because the Execution Client is syncing. Activating optimistic sync of the beacon chain node",
         Color.YELLOW);
+  }
+
+  public void eth1DepositDataNotAvailable(final UInt64 fromIndex, final UInt64 toIndex) {
+    final String eth1DepositDataNotAvailableEventLog =
+        String.format(
+            "Some ETH1 deposits are not available. Missing deposits %s to %s", fromIndex, toIndex);
+    warn(eth1DepositDataNotAvailableEventLog, Color.YELLOW);
   }
 
   public void syncCompletedWhileHeadIsOptimistic() {
@@ -185,17 +203,20 @@ public class EventLogger {
         Color.GREEN);
   }
 
-  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta) {
+  public void terminalPowBlockTtdEta(final UInt256 ttd, final Duration eta, final Instant instant) {
 
     final String etaString =
-        String.format(
-            "%s days and %sh %sm %ss",
-            eta.toDays(),
-            eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
-            eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
-            eta.getSeconds() - TimeUnit.MINUTES.toSeconds(eta.toMinutes()));
+        eta.toMinutes() <= 1
+            ? "imminent"
+            : String.format(
+                "%s days, %s hours and %s minutes (%s)",
+                eta.toDays(),
+                eta.toHours() - TimeUnit.DAYS.toHours(eta.toDays()),
+                eta.toMinutes() - TimeUnit.HOURS.toMinutes(eta.toHours()),
+                LocalDateTime.ofInstant(instant, TimeZone.getDefault().toZoneId())
+                    .format(DateTimeFormatter.ofPattern("d MMM uuuu - HH:mm:ss")));
 
-    log.info(String.format("TTD (%s) ETA: %s", ttd, etaString));
+    log.info(String.format("TTD ETA: %s - Current Total Difficulty: %s", etaString, ttd));
   }
 
   public void transitionConfigurationTtdTbhMismatch(
@@ -227,9 +248,9 @@ public class EventLogger {
     warn(reorgEventLog, Color.YELLOW);
   }
 
-  public void executionEngineStubEnabled() {
+  public void executionLayerStubEnabled() {
     info(
-        "Execution Engine Stub has been enabled. Please make sure this is intentional.",
+        "Execution Layer Stub has been enabled. Please make sure this is intentional.",
         Color.YELLOW);
   }
 
