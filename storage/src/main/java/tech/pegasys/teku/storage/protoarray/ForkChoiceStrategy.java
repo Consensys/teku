@@ -178,6 +178,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               justifiedCheckpoint.getEpoch(),
               finalizedCheckpoint.getEpoch());
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
+      final Bytes32 justifiedExecutionHash =
+          protoArray
+              .getProtoNode(justifiedCheckpoint.getRoot())
+              .map(ProtoNode::getExecutionBlockHash)
+              .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
           protoArray
               .getProtoNode(finalizedCheckpoint.getRoot())
@@ -187,7 +192,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headNode.getBlockRoot(),
           headNode.getBlockSlot(),
           headExecutionBlockHash,
-          headExecutionBlockHash,
+          justifiedExecutionHash,
           finalizedExecutionHash,
           headNode.isOptimistic());
     } finally {
