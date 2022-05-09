@@ -17,7 +17,6 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_AGGREGATE_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.VALID_ATTESTATION_DATA_SET_SIZE;
-import static tech.pegasys.teku.spec.constants.ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
@@ -53,8 +52,8 @@ public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
-  private final SeenAggregatesCache seenAggregationBits =
-      new SeenAggregatesCache(VALID_ATTESTATION_DATA_SET_SIZE, TARGET_AGGREGATORS_PER_COMMITTEE);
+  private final SeenAggregatesCache<Bytes32> seenAggregationBits =
+      new SeenAggregatesCache<>(VALID_ATTESTATION_DATA_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final Spec spec;
   private final AsyncBLSSignatureVerifier signatureVerifier;

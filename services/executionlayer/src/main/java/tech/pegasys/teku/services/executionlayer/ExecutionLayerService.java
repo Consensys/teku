@@ -21,7 +21,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerChannelImpl;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -38,8 +38,8 @@ public class ExecutionLayerService extends Service {
   private final EventChannels eventChannels;
   private final ExecutionLayerConfiguration config;
   private final MetricsSystem metricsSystem;
-  private final ExecutionClientProvider engineWeb3jClientProvider;
-  private final Optional<ExecutionClientProvider> builderWeb3jClientProvider;
+  private final ExecutionWeb3jClientProvider engineWeb3jClientProvider;
+  private final Optional<ExecutionWeb3jClientProvider> builderWeb3jClientProvider;
   private final TimeProvider timeProvider;
 
   public ExecutionLayerService(
@@ -48,7 +48,7 @@ public class ExecutionLayerService extends Service {
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.config = config;
     this.engineWeb3jClientProvider =
-        ExecutionClientProvider.create(
+        ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
             serviceConfig.getTimeProvider(),
             EXECUTION_TIMEOUT,
@@ -60,7 +60,7 @@ public class ExecutionLayerService extends Service {
             .getBuilderEndpoint()
             .map(
                 builderEndpoint ->
-                    ExecutionClientProvider.create(
+                    ExecutionWeb3jClientProvider.create(
                         builderEndpoint,
                         serviceConfig.getTimeProvider(),
                         EXECUTION_TIMEOUT,
@@ -68,7 +68,7 @@ public class ExecutionLayerService extends Service {
                         serviceConfig.getDataDirLayout().getBeaconDataDirectory()));
 
     final boolean builderIsStub =
-        builderWeb3jClientProvider.map(ExecutionClientProvider::isStub).orElse(false);
+        builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::isStub).orElse(false);
 
     checkState(
         engineWeb3jClientProvider.isStub() == builderIsStub,
@@ -88,7 +88,7 @@ public class ExecutionLayerService extends Service {
       executionLayerChannel =
           ExecutionLayerChannelImpl.create(
               engineWeb3jClientProvider.getWeb3JClient(),
-              builderWeb3jClientProvider.map(ExecutionClientProvider::getWeb3JClient),
+              builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::getWeb3JClient),
               config.getEngineVersion(),
               config.getSpec(),
               metricsSystem);
@@ -102,7 +102,7 @@ public class ExecutionLayerService extends Service {
     return SafeFuture.COMPLETE;
   }
 
-  public Optional<ExecutionClientProvider> getEngineWeb3jClientProvider() {
+  public Optional<ExecutionWeb3jClientProvider> getEngineWeb3jClientProvider() {
     return engineWeb3jClientProvider.isStub()
         ? Optional.empty()
         : Optional.of(engineWeb3jClientProvider);
