@@ -31,6 +31,7 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
@@ -85,6 +86,10 @@ public class GetAttestations extends MigratingEndpointAdapter {
       tags = {TAG_BEACON},
       description =
           "Retrieves attestations known by the node but not necessarily incorporated into any block.",
+      queryParams = {
+        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION),
+        @OpenApiParam(name = COMMITTEE_INDEX, description = COMMITTEE_INDEX_QUERY_DESCRIPTION)
+      },
       responses = {
         @OpenApiResponse(
             status = RES_OK,
