@@ -120,20 +120,21 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
-    LOG.trace("calling getPowBlock(blockHash={})", blockHash);
+    LOG.trace("calling eth1GetPowBlock(blockHash={})", blockHash);
 
     return executionEngineClient
         .getPowBlock(blockHash)
-        .thenPeek(powBlock -> LOG.trace("getPowBlock(blockHash={}) -> {}", blockHash, powBlock));
+        .thenPeek(
+            powBlock -> LOG.trace("eth1GetPowBlock(blockHash={}) -> {}", blockHash, powBlock));
   }
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
-    LOG.trace("calling getPowChainHead()");
+    LOG.trace("calling eth1GetPowChainHead()");
 
     return executionEngineClient
         .getPowChainHead()
-        .thenPeek(powBlock -> LOG.trace("getPowChainHead() -> {}", powBlock));
+        .thenPeek(powBlock -> LOG.trace("eth1GetPowChainHead() -> {}", powBlock));
   }
 
   @Override
@@ -143,7 +144,7 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
           final Optional<PayloadAttributes> payloadAttributes) {
 
     LOG.trace(
-        "calling forkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
+        "calling engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
         payloadAttributes);
 
@@ -156,7 +157,7 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenPeek(
             forkChoiceUpdatedResult ->
                 LOG.trace(
-                    "forkChoiceUpdated(forkChoiceState={}, payloadAttributes={}) -> {}",
+                    "engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={}) -> {}",
                     forkChoiceState,
                     payloadAttributes,
                     forkChoiceUpdatedResult));
@@ -166,7 +167,9 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.trace(
-        "calling getPayload(executionPayloadContext={}, slot={})", executionPayloadContext, slot);
+        "calling engineGetPayload(payloadId={}, slot={})",
+        executionPayloadContext.getPayloadId(),
+        slot);
 
     return executionEngineClient
         .getPayload(executionPayloadContext.getPayloadId())
@@ -180,15 +183,15 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenPeek(
             executionPayload ->
                 LOG.trace(
-                    "getPayload(executionPayloadContext={}, slot={}) -> {}",
-                    executionPayloadContext,
+                    "engineGetPayload(payloadId={}, slot={}) -> {}",
+                    executionPayloadContext.getPayloadId(),
                     slot,
                     executionPayload));
   }
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling newPayload(executionPayload={})", executionPayload);
+    LOG.trace("calling engineNewPayload(executionPayload={})", executionPayload);
 
     return executionEngineClient
         .newPayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
@@ -196,7 +199,8 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(
             payloadStatus ->
-                LOG.trace("newPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
+                LOG.trace(
+                    "engineNewPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
         .exceptionally(PayloadStatus::failedExecution);
   }
 
@@ -204,7 +208,7 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration) {
     LOG.trace(
-        "calling exchangeTransitionConfiguration(transitionConfiguration={})",
+        "calling engineExchangeTransitionConfiguration(transitionConfiguration={})",
         transitionConfiguration);
 
     return executionEngineClient
@@ -215,7 +219,7 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenPeek(
             remoteTransitionConfiguration ->
                 LOG.trace(
-                    "exchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
+                    "engineExchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
                     transitionConfiguration,
                     remoteTransitionConfiguration));
   }
@@ -226,7 +230,10 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
     checkState(executionBuilderClient.isPresent());
 
     LOG.trace(
-        "calling builder builderGetHeader(payloadId={}, slot={})", executionPayloadContext, slot);
+        "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
+        slot,
+        Bytes48.ZERO,
+        executionPayloadContext.getParentHash());
 
     return executionBuilderClient
         .get()
@@ -238,9 +245,10 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
         .thenPeek(
             executionPayloadHeader ->
                 LOG.trace(
-                    "builderGetHeader(payloadId={}, slot={}) -> {}",
-                    executionPayloadContext,
+                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
                     slot,
+                    Bytes48.ZERO,
+                    executionPayloadContext.getParentHash(),
                     executionPayloadHeader));
   }
 
