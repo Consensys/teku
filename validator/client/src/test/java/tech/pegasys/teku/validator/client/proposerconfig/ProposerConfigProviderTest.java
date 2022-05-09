@@ -25,7 +25,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
@@ -36,13 +36,13 @@ public class ProposerConfigProviderTest {
   private final ProposerConfigLoader proposerConfigLoader = mock(ProposerConfigLoader.class);
 
   private final ProposerConfig proposerConfigA =
-      new ProposerConfig(ImmutableMap.of(), new ProposerConfig.Config(Bytes20.ZERO));
+      new ProposerConfig(ImmutableMap.of(), new ProposerConfig.Config(Eth1Address.ZERO));
 
   private final ProposerConfig proposerConfigB =
       new ProposerConfig(
           ImmutableMap.of(),
           new ProposerConfig.Config(
-              Bytes20.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
+              Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
 
   private final ProposerConfigProvider proposerConfigProvider =
       ProposerConfigProvider.create(asyncRunner, true, proposerConfigLoader, Optional.of(SOURCE));

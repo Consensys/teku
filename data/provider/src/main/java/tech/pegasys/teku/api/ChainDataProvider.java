@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
@@ -94,6 +95,11 @@ public class ChainDataProvider {
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
     this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
+  }
+
+  public UInt64 getCurrentEpoch(
+      tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    return spec.getCurrentEpoch(state);
   }
 
   public boolean isBellatrixEnabled() {
@@ -387,29 +393,18 @@ public class ChainDataProvider {
         .collect(toList());
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<ValidatorResponse>>> getStateValidator(
-      final String stateIdParam, final String validatorIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(maybeStateData -> getValidatorFromState(maybeStateData, validatorIdParam));
-  }
-
-  private Optional<ObjectAndMetaData<ValidatorResponse>> getValidatorFromState(
-      final Optional<StateAndMetaData> maybeState, final String validatorIdParam) {
-    if (maybeState.isEmpty()) {
-      return Optional.empty();
-    }
-    final StateAndMetaData stateData = maybeState.get();
+  public Optional<ObjectAndMetaData<StateValidatorData>> getStateValidator(
+      final StateAndMetaData stateData, final String validatorIdParam) {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
         stateData.getData();
-    final UInt64 epoch = spec.getCurrentEpoch(state);
-    final Optional<ValidatorResponse> maybeValidator =
+    final UInt64 epoch = getCurrentEpoch(state);
+    final Optional<StateValidatorData> maybeValidator =
         getValidatorSelector(state, List.of(validatorIdParam))
-            .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
+            .mapToObj(index -> StateValidatorData.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
             .flatMap(Optional::stream)
             .findFirst();
-    return maybeValidator.map(validatorResponse -> stateData.map(__ -> validatorResponse));
+
+    return maybeValidator.map(data -> stateData.map(__ -> data));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> getStateCommittees(
