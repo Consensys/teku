@@ -28,7 +28,7 @@ class SeenAggregatesCacheTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SszBitlistSchema<SszBitlist> bitlistSchema = SszBitlistSchema.create(10);
-  private final SeenAggregatesCache<Bytes32> cache = new SeenAggregatesCache<>(3, 4);
+  private final SeenAggregatesCache<Bytes32> cache = new SeenAggregatesCache<>(3);
 
   @Test
   void isAlreadySeen_shouldBeTrueWhenValueIsEqual() {
