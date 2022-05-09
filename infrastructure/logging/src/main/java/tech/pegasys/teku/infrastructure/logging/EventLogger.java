@@ -137,6 +137,20 @@ public class EventLogger {
     info("Execution Client is back online", Color.GREEN);
   }
 
+  public void executionBuilderIsOffline(String errorMessage) {
+    String executionBuilderOfflineEventLog =
+        String.format(
+            "The execution builder is offline: %s. If needed, block production will fallback to the execution engine.",
+            errorMessage);
+    warn(executionBuilderOfflineEventLog, Color.YELLOW);
+  }
+
+  public void executionBuilderIsBackOnline() {
+    String executionBuilderOnlineEventLog =
+        "The execution builder is back online. If needed, it will be used for block production.";
+    info(executionBuilderOnlineEventLog, Color.GREEN);
+  }
+
   public void syncStart() {
     info("Syncing started", Color.YELLOW);
   }

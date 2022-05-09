@@ -5,6 +5,9 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':ethereum:spec'))
 }
 
 publishing {

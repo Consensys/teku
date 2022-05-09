@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderStatus;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -101,13 +102,13 @@ public class ExecutionLayerChannelImpl implements ExecutionLayerChannel {
                     metricsSystem)));
   }
 
-  private ExecutionLayerChannelImpl(
+  ExecutionLayerChannelImpl(
       final ExecutionEngineClient executionEngineClient,
       final Optional<ExecutionBuilderClient> executionBuilderClient,
       final Spec spec) {
-    this.spec = spec;
     this.executionEngineClient = executionEngineClient;
     this.executionBuilderClient = executionBuilderClient;
+    this.spec = spec;
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
