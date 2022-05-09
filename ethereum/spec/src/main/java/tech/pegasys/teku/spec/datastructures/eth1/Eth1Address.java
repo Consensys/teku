@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Eth1Address extends Bytes20 {
-  private static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
+  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
       DeserializableTypeDefinition.string(Eth1Address.class)
           .formatter(Eth1Address::toHexString)
           .parser(Eth1Address::fromHexString)
