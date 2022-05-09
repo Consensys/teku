@@ -16,15 +16,15 @@ package tech.pegasys.teku.spec.executionlayer;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class PayloadAttributes {
   private final UInt64 timestamp;
   private final Bytes32 prevRandao;
-  private final Bytes20 feeRecipient;
+  private final Eth1Address feeRecipient;
 
-  public PayloadAttributes(UInt64 timestamp, Bytes32 prevRandao, Bytes20 feeRecipient) {
+  public PayloadAttributes(UInt64 timestamp, Bytes32 prevRandao, Eth1Address feeRecipient) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
@@ -38,7 +38,7 @@ public class PayloadAttributes {
     return prevRandao;
   }
 
-  public Bytes20 getFeeRecipient() {
+  public Eth1Address getFeeRecipient() {
     return feeRecipient;
   }
 
