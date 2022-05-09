@@ -561,7 +561,7 @@ public final class DataStructureUtil {
   }
 
   public VoteTracker randomVoteTracker() {
-    return VoteTracker.create(randomBytes32(), randomBytes32(), randomUInt64());
+    return new VoteTracker(randomBytes32(), randomBytes32(), randomUInt64());
   }
 
   public PendingAttestation randomPendingAttestation() {

@@ -167,16 +167,16 @@ class ProtoArrayTest {
     addValidBlock(2, block2a, block1a);
     addValidBlock(2, block2b, block1b);
 
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     assertHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(block1b, block2a, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // And our head should switch
@@ -190,16 +190,16 @@ class ProtoArrayTest {
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(2, block2b, block1b);
 
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     assertHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(block1b, block2a, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // And our head should switch
@@ -213,9 +213,9 @@ class ProtoArrayTest {
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(2, block2b, block1b);
 
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     assertHead(block2b);
@@ -223,8 +223,8 @@ class ProtoArrayTest {
     protoArray.markNodeInvalid(block2a, Optional.empty());
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(block1b, block2a, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // Votes for 2a don't count because it's invalid so we stick with chain b.
@@ -238,16 +238,16 @@ class ProtoArrayTest {
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(2, block2b, block1b);
 
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), VoteTracker.create(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     assertHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, VoteTracker.create(block1b, block2a, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, VoteTracker.create(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // We switch to chain a because it has the greater weight now

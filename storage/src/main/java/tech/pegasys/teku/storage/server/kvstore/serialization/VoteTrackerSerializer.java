@@ -13,16 +13,21 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker.Version;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTrackerV1;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTrackerV2;
 
 class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
+  private final boolean equivocatingIndicesEnabled;
+
+  public VoteTrackerSerializer(final Spec spec) {
+    this.equivocatingIndicesEnabled = spec.isEquivocatingIndicesEnabled();
+  }
+
   @Override
   public VoteTracker deserialize(final byte[] data) {
     return SSZ.decode(
@@ -31,16 +36,17 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           final Bytes32 currentRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 nextRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final UInt64 nextEpoch = UInt64.fromLongBits(reader.readUInt64());
-          final boolean currentEquivocating;
           final boolean nextEquivocating;
-          if (reader.isComplete()) {
-            currentEquivocating = false;
+          final boolean currentEquivocating;
+          if (reader.isComplete() || !equivocatingIndicesEnabled) {
             nextEquivocating = false;
+            currentEquivocating = false;
           } else {
-            currentEquivocating = reader.readBoolean();
             nextEquivocating = reader.readBoolean();
+            currentEquivocating = reader.readBoolean();
           }
-          return new VoteTracker(currentRoot, nextRoot, nextEpoch, currentEquivocating, nextEquivocating);
+          return new VoteTracker(
+              currentRoot, nextRoot, nextEpoch, nextEquivocating, currentEquivocating);
         });
   }
 
@@ -52,12 +58,28 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
               writer.writeFixedBytes(value.getCurrentRoot());
               writer.writeFixedBytes(value.getNextRoot());
               writer.writeUInt64(value.getNextEpoch().longValue());
-              // Version with equivocation
-              if (value.getVersion() == Version.V2) {
+              if (equivocatingIndicesEnabled) {
                 writer.writeBoolean(value.isNextEquivocating());
                 writer.writeBoolean(value.isCurrentEquivocating());
               }
             });
     return bytes.toArrayUnsafe();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    VoteTrackerSerializer that = (VoteTrackerSerializer) o;
+    return equivocatingIndicesEnabled == that.equivocatingIndicesEnabled;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(equivocatingIndicesEnabled);
   }
 }

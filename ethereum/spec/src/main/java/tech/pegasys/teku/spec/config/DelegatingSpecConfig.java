@@ -299,4 +299,9 @@ public class DelegatingSpecConfig implements SpecConfig {
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }
+
+  @Override
+  public boolean isEquivocatingIndicesEnabled() {
+    return specConfig.isEquivocatingIndicesEnabled();
+  }
 }

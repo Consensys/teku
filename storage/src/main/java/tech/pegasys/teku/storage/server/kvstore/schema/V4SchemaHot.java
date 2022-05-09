@@ -20,7 +20,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTES_SERIALIZER;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -39,8 +38,7 @@ public class V4SchemaHot implements SchemaHot {
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   private final KvStoreColumn<Checkpoint, BeaconState> checkpointStates;
-  private static final KvStoreColumn<UInt64, VoteTracker> VOTES =
-      KvStoreColumn.create(3, UINT64_SERIALIZER, VOTES_SERIALIZER);
+  private final KvStoreColumn<UInt64, VoteTracker> votes;
   private static final KvStoreColumn<UInt64, DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENTS =
       KvStoreColumn.create(4, UINT64_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
   private static final KvStoreColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
@@ -78,6 +76,9 @@ public class V4SchemaHot implements SchemaHot {
     checkpointStates = KvStoreColumn.create(2, CHECKPOINT_SERIALIZER, stateSerializer);
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
     latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
+    final KvStoreSerializer<VoteTracker> voteTrackerSerializer =
+        KvStoreSerializer.createVoteTrackerSerializer(spec);
+    votes = KvStoreColumn.create(3, UINT64_SERIALIZER, voteTrackerSerializer);
   }
 
   @Override
@@ -97,7 +98,7 @@ public class V4SchemaHot implements SchemaHot {
 
   @Override
   public KvStoreColumn<UInt64, VoteTracker> getColumnVotes() {
-    return VOTES;
+    return votes;
   }
 
   @Override

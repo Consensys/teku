@@ -134,6 +134,8 @@ public interface SpecConfig {
 
   int getProposerScoreBoost();
 
+  boolean isEquivocatingIndicesEnabled();
+
   int getDepositChainId();
 
   int getDepositNetworkId();

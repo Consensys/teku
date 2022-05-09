@@ -96,6 +96,8 @@ public class SpecConfigBuilder {
   private Integer safeSlotsToUpdateJustified;
   // Added after Phase0 was live, so default to 0 which disables proposer score boosting.
   private int proposerScoreBoost = 0;
+  // Added after Phase0 was live, so defaults to false
+  private boolean equivocatingIndicesEnabled = false;
 
   // Deposit Contract
   private Integer depositChainId;
@@ -159,6 +161,7 @@ public class SpecConfigBuilder {
             secondsPerEth1Block,
             safeSlotsToUpdateJustified,
             proposerScoreBoost,
+            equivocatingIndicesEnabled,
             depositChainId,
             depositNetworkId,
             depositContractAddress);
@@ -531,6 +534,11 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder proposerScoreBoost(final Integer proposerScoreBoost) {
     checkNotNull(proposerScoreBoost);
     this.proposerScoreBoost = proposerScoreBoost;
+    return this;
+  }
+
+  public SpecConfigBuilder equivocatingIndicesEnabled(boolean equivocatingIndicesEnabled) {
+    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     return this;
   }
 

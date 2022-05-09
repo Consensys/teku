@@ -84,15 +84,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean proposerBoostEnabled,
-      final boolean equivocatingIndicesEnabled) {
+      final boolean proposerBoostEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
-    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
+    this.equivocatingIndicesEnabled = spec.isEquivocatingIndicesEnabled();
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -114,7 +113,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         recentChainData,
         forkChoiceNotifier,
         transitionBlockValidator,
-        false,
         false);
   }
 
@@ -357,11 +355,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     // We only need to apply attestations from the current or previous epoch. If the block is from
     // before that, none of the attestations will be applicable so just skip the whole step.
-    // Same applies to AttesterSlashings.
     if (spec.computeEpochAtSlot(block.getSlot())
         .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
-      applyAttesterSlashingsFromBlock(block);
-      applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
+      final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
+      // We also need to handle recent AttesterSlashings to update equivocating validator indices
+      // We don't need any epochs older than previous as it doesn't affect ForkChoice
+      applyAttesterSlashingsFromBlock(block, voteUpdater);
+      applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache, voteUpdater);
+      voteUpdater.commit();
     }
 
     final BlockImportResult result;
@@ -502,13 +503,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private void applyVotesFromBlock(
       final ForkChoiceStrategy forkChoiceStrategy,
       final UInt64 currentEpoch,
-      final CapturingIndexedAttestationCache indexedAttestationProvider) {
-    final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
+      final CapturingIndexedAttestationCache indexedAttestationProvider,
+      final VoteUpdater voteUpdater) {
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
             attestation -> validateBlockAttestation(forkChoiceStrategy, currentEpoch, attestation))
         .forEach(attestation -> forkChoiceStrategy.onAttestation(voteUpdater, attestation));
-    voteUpdater.commit();
   }
 
   private boolean validateBlockAttestation(
@@ -568,14 +568,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .reportExceptions();
   }
 
-  private void applyAttesterSlashingsFromBlock(final SignedBeaconBlock signedBeaconBlock) {
+  private void applyAttesterSlashingsFromBlock(
+      final SignedBeaconBlock signedBeaconBlock, final VoteUpdater voteUpdater) {
+    if (!equivocatingIndicesEnabled) {
+      return;
+    }
     signedBeaconBlock
         .getMessage()
         .getBody()
         .getAttesterSlashings()
-        .forEach(
-            attesterSlashing ->
-                onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
+        .forEach(attesterSlashing -> storeEquivocatingIndices(attesterSlashing, voteUpdater));
   }
 
   public void onAttesterSlashing(
@@ -588,17 +590,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     onForkChoiceThread(
             () -> {
               final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              slashing
-                  .getIntersectingValidatorIndices()
-                  .forEach(
-                      validatorIndex -> {
-                        final VoteTracker voteTracker = transaction.getVote(validatorIndex);
-                        transaction.putVote(
-                            validatorIndex, VoteTracker.markNextEquivocating(voteTracker));
-                      });
+              storeEquivocatingIndices(slashing, transaction);
               transaction.commit();
             })
         .reportExceptions();
+  }
+
+  private void storeEquivocatingIndices(
+      final AttesterSlashing attesterSlashing, final VoteUpdater transaction) {
+    attesterSlashing
+        .getIntersectingValidatorIndices()
+        .forEach(
+            validatorIndex -> {
+              final VoteTracker voteTracker = transaction.getVote(validatorIndex);
+              transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+            });
   }
 
   public void onTick(final UInt64 currentTimeMillis) {

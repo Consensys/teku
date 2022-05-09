@@ -272,6 +272,10 @@ public class Spec {
         .sszDeserialize(serializedState);
   }
 
+  public boolean isEquivocatingIndicesEnabled() {
+    return getGenesisSpecConfig().isEquivocatingIndicesEnabled();
+  }
+
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atState(state).beaconStateAccessors().getCurrentEpoch(state);

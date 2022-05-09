@@ -19,8 +19,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker.Version;
 
 public class VoteTrackerSerializerTest {
 
@@ -30,38 +31,49 @@ public class VoteTrackerSerializerTest {
       Bytes32.fromHexString("0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef");
   private static final UInt64 EXPECTED_NEXT_EPOCH = UInt64.valueOf(4669978815449698508L);
 
-  private static final VoteTracker VOTES_V1 =
-      VoteTracker.create(EXPECTED_CURRENT_ROOT, EXPECTED_NEXT_ROOT, EXPECTED_NEXT_EPOCH);
-  private static final Bytes VOTES_V1_SERIALIZED =
+  private static VoteTracker votesNoEquivocation =
+      new VoteTracker(EXPECTED_CURRENT_ROOT, EXPECTED_NEXT_ROOT, EXPECTED_NEXT_EPOCH);
+  private static Bytes votesNoEquivocationSerialized =
       Bytes.fromHexString(
           "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41befcc907a73fd18cf40");
-  private static final VoteTrackerSerializer SERIALIZER = new VoteTrackerSerializer();
+  private final Spec specNoEquivocation = TestSpecFactory.createMinimalPhase0();
+  private final VoteTrackerSerializer serializerNoEquivocation =
+      new VoteTrackerSerializer(specNoEquivocation);
+  private final Spec specWithEquivocation =
+      TestSpecFactory.createDefault(
+          specConfigBuilder -> specConfigBuilder.equivocatingIndicesEnabled(true));
+  private final VoteTrackerSerializer serializerWithEquivocation =
+      new VoteTrackerSerializer(specWithEquivocation);
 
   @Test
-  public void serializesV1ConsistentlyToGenericSerializer() {
-    assertThat(Bytes.wrap(SERIALIZER.serialize(VOTES_V1))).isEqualTo(VOTES_V1_SERIALIZED);
+  public void serializesConsistentlyToGenericSerializer() {
+    assertThat(Bytes.wrap(serializerNoEquivocation.serialize(votesNoEquivocation)))
+        .isEqualTo(votesNoEquivocationSerialized);
   }
 
   @Test
-  public void deserializesV1ConsistentlyToGenericSerializer() {
-    VoteTracker votes = SERIALIZER.deserialize(VOTES_V1_SERIALIZED.toArrayUnsafe());
-    assertThat(votes).isEqualTo(VOTES_V1);
-    assertThat(votes.getVersion()).isEqualTo(Version.V1);
+  public void deserializesConsistentlyToGenericSerializer() {
+    VoteTracker votes =
+        serializerNoEquivocation.deserialize(votesNoEquivocationSerialized.toArrayUnsafe());
+    assertThat(votes).isEqualTo(votesNoEquivocation);
   }
 
   @Test
-  public void serializesDeserializesV2Consistently() {
-    VoteTracker votesV2 = VoteTracker.markNextEquivocating(VOTES_V1);
-    VoteTracker votesV2deserialized = SERIALIZER.deserialize(SERIALIZER.serialize(votesV2));
-    assertThat(votesV2deserialized).isEqualTo(votesV2);
-    assertThat(votesV2deserialized.getVersion()).isEqualTo(Version.V2);
+  public void deserializeNoEquivocationDropsEquivocation() {
+    VoteTracker votesEquivocating = votesNoEquivocation.createNextEquivocating();
+    VoteTracker votesNotEquivocatingDeserialized =
+        serializerNoEquivocation.deserialize(
+            serializerWithEquivocation.serialize(votesEquivocating));
+    assertThat(votesNotEquivocatingDeserialized).isEqualTo(votesNoEquivocation);
   }
 
   @Test
-  public void serializesDeserializesV2EquivocatedConsistently() {
-    VoteTracker votesV2 = VoteTracker.markCurrentEquivocating(VOTES_V1);
-    VoteTracker votesV2deserialized = SERIALIZER.deserialize(SERIALIZER.serialize(votesV2));
-    assertThat(votesV2deserialized).isEqualTo(votesV2);
-    assertThat(votesV2deserialized.getVersion()).isEqualTo(Version.V2);
+  public void serializesDeserializesEquivocatedConsistently() {
+    VoteTracker votesEquivocating = votesNoEquivocation.createNextEquivocating();
+    VoteTracker votesEquivocatingDeserialized =
+        serializerWithEquivocation.deserialize(
+            serializerWithEquivocation.serialize(votesEquivocating));
+    assertThat(votesEquivocatingDeserialized).isEqualTo(votesEquivocating);
+    assertThat(votesEquivocatingDeserialized).isNotEqualTo(votesNoEquivocation);
   }
 }

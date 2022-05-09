@@ -211,12 +211,12 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
-    if (vote.isCurrentEquivocating() || vote.isNextEquivocating()) {
+    if (vote.isEquivocating()) {
       return;
     }
 
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
-      VoteTracker newVote = VoteTracker.create(vote.getCurrentRoot(), blockRoot, targetEpoch);
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
       voteUpdater.putVote(validatorIndex, newVote);
     }
   }

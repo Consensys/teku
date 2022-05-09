@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,53 +13,100 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface VoteTracker {
+public class VoteTracker {
 
-  VoteTracker DEFAULT = new VoteTrackerV1(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
+  public static final VoteTracker DEFAULT =
+      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
 
-  static VoteTracker create(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    return new VoteTrackerV1(currentRoot, nextRoot, nextEpoch);
+  private final Bytes32 currentRoot;
+  private final Bytes32 nextRoot;
+  private final UInt64 nextEpoch;
+  private final boolean nextEquivocating;
+  private final boolean currentEquivocating;
+
+  public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
+    this(currentRoot, nextRoot, nextEpoch, false, false);
   }
 
-  static VoteTracker markNextEquivocating(final VoteTracker voteTracker) {
-    return new VoteTrackerV2(
-        voteTracker.getCurrentRoot(),
-        voteTracker.getNextRoot(),
-        voteTracker.getNextEpoch(),
-        true,
-        false);
+  public VoteTracker(
+      Bytes32 currentRoot,
+      Bytes32 nextRoot,
+      UInt64 nextEpoch,
+      boolean nextEquivocating,
+      boolean currentEquivocating) {
+    this.currentRoot = currentRoot;
+    this.nextRoot = nextRoot;
+    this.nextEpoch = nextEpoch;
+    this.nextEquivocating = nextEquivocating;
+    this.currentEquivocating = currentEquivocating;
   }
 
-  static VoteTracker markCurrentEquivocating(final VoteTracker voteTracker) {
-    return new VoteTrackerV2(
-        voteTracker.getCurrentRoot(),
-        voteTracker.getNextRoot(),
-        voteTracker.getNextEpoch(),
-        false,
-        true);
+  public Bytes32 getCurrentRoot() {
+    return currentRoot;
   }
 
-  Bytes32 getCurrentRoot();
-
-  Bytes32 getNextRoot();
-
-  UInt64 getNextEpoch();
-
-  default boolean isNextEquivocating() {
-    return false;
+  public Bytes32 getNextRoot() {
+    return nextRoot;
   }
 
-  default boolean isCurrentEquivocating() {
-    return false;
+  public UInt64 getNextEpoch() {
+    return nextEpoch;
   }
 
-  Version getVersion();
+  public boolean isNextEquivocating() {
+    return nextEquivocating;
+  }
 
-  enum Version {
-    V1,
-    V2
+  public boolean isCurrentEquivocating() {
+    return currentEquivocating;
+  }
+
+  public boolean isEquivocating() {
+    return nextEquivocating || currentEquivocating;
+  }
+
+  public VoteTracker createNextEquivocating() {
+    return new VoteTracker(currentRoot, nextRoot, nextEpoch, true, false);
+  }
+
+  public VoteTracker createCurrentEquivocating() {
+    return new VoteTracker(currentRoot, nextRoot, nextEpoch, false, true);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    VoteTracker that = (VoteTracker) o;
+    return nextEquivocating == that.nextEquivocating
+        && currentEquivocating == that.currentEquivocating
+        && Objects.equals(currentRoot, that.currentRoot)
+        && Objects.equals(nextRoot, that.nextRoot)
+        && Objects.equals(nextEpoch, that.nextEpoch);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(currentRoot, nextRoot, nextEpoch, nextEquivocating, currentEquivocating);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("currentRoot", currentRoot)
+        .add("nextRoot", nextRoot)
+        .add("nextEpoch", nextEpoch)
+        .add("nextEquivocating", nextEquivocating)
+        .add("currentEquivocating", currentEquivocating)
+        .toString();
   }
 }

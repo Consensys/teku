@@ -33,7 +33,6 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<Bytes> BYTES_SERIALIZER = new BytesSerializer<>(Bytes::wrap);
   KvStoreSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
   KvStoreSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
-  KvStoreSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();
   KvStoreSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
       new DepositsFromBlockEventSerializer();
   KvStoreSerializer<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER =
@@ -52,6 +51,10 @@ public interface KvStoreSerializer<T> {
 
   static KvStoreSerializer<SignedBeaconBlock> createSignedBlockSerializer(final Spec spec) {
     return new SignedBeaconBlockSerializer(spec);
+  }
+
+  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(final Spec spec) {
+    return new VoteTrackerSerializer(spec);
   }
 
   T deserialize(final byte[] data);

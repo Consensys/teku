@@ -234,6 +234,7 @@ public class Eth2NetworkConfiguration {
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
+                  builder.equivocatingIndicesEnabled(equivocatingIndicesEnabled);
                 });
       }
       // if the deposit contract was not set, default from constants
