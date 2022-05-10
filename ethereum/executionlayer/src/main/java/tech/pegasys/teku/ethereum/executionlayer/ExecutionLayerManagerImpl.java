@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -252,7 +251,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return executionBuilderClient
         .get()
         .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash())
-        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(
             builderBidV1SignedMessage ->
                 getExecutionHeaderFromBuilderBid(builderBidV1SignedMessage, slot))
@@ -296,7 +295,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             new SignedMessage<>(
                 new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
                 signedBlindedBeaconBlock.getSignature()))
-        .thenApply(ExecutionLayerChannelImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
                 () ->
