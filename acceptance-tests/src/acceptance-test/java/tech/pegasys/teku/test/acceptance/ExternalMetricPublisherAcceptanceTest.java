@@ -19,7 +19,8 @@ import tech.pegasys.teku.test.acceptance.dsl.ExternalMetricNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
-  private static final int VALIDATOR_COUNT = 8;
+  private static final int ACTIVE_VALIDATOR_COUNT = 8;
+  private static final int TOTAL_VALIDATOR_COUNT = 64;
 
   @Test
   void shouldPublishDataFromPrometheus() throws Throwable {
@@ -31,11 +32,12 @@ public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withExternalMetricsClient(externalMetricNode, 1)
-                    .withInteropValidators(0, VALIDATOR_COUNT));
+                    .withInteropNumberOfValidators(TOTAL_VALIDATOR_COUNT)
+                    .withInteropValidators(0, ACTIVE_VALIDATOR_COUNT));
     tekuNode.start();
 
     externalMetricNode.waitForBeaconNodeMetricPublication();
-    externalMetricNode.waitForValidatorMetricPublication(VALIDATOR_COUNT);
+    externalMetricNode.waitForValidatorMetricPublication(ACTIVE_VALIDATOR_COUNT);
     externalMetricNode.waitForSystemMetricPublication();
 
     tekuNode.stop();
