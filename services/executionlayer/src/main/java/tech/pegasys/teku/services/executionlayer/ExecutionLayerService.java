@@ -14,41 +14,34 @@
 package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
-import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerChannelImpl;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 
-public class ExecutionLayerService extends Service implements SlotEventsChannel {
+public class ExecutionLayerService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
-  private final EventLogger eventLogger;
   private final ExecutionWeb3jClientProvider engineWeb3jClientProvider;
-  private final Optional<ExecutionWeb3jClientProvider> builderWeb3jClientProvider;
-  private final ExecutionLayerChannel executionLayerChannel;
-
-  private final AtomicBoolean builderHealthCheckFailed = new AtomicBoolean(false);
+  private final ExecutionLayerManager executionLayerManager;
 
   public static ExecutionLayerService create(
-      final ServiceConfig serviceConfig,
-      final EventLogger eventLogger,
-      final ExecutionLayerConfiguration config) {
+      final ServiceConfig serviceConfig, final ExecutionLayerConfiguration config) {
     final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
@@ -79,15 +72,15 @@ public class ExecutionLayerService extends Service implements SlotEventsChannel 
     final String endpoint = engineWeb3jClientProvider.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
 
-    final ExecutionLayerChannel executionLayerChannel;
+    final ExecutionLayerManager executionLayerManager;
     if (engineWeb3jClientProvider.isStub()) {
-      eventLogger.executionLayerStubEnabled();
-      executionLayerChannel =
-          new ExecutionLayerChannelStub(config.getSpec(), serviceConfig.getTimeProvider(), true);
+      EVENT_LOG.executionLayerStubEnabled();
+      executionLayerManager =
+          new ExecutionLayerManagerStub(config.getSpec(), serviceConfig.getTimeProvider(), true);
     } else {
       final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
-      executionLayerChannel =
-          ExecutionLayerChannelImpl.create(
+      executionLayerManager =
+          ExecutionLayerManagerImpl.create(
               engineWeb3jClientProvider.getWeb3JClient(),
               builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::getWeb3JClient),
               config.getEngineVersion(),
@@ -96,31 +89,23 @@ public class ExecutionLayerService extends Service implements SlotEventsChannel 
     }
 
     return new ExecutionLayerService(
-        serviceConfig.getEventChannels(),
-        eventLogger,
-        engineWeb3jClientProvider,
-        builderWeb3jClientProvider,
-        executionLayerChannel);
+        serviceConfig.getEventChannels(), engineWeb3jClientProvider, executionLayerManager);
   }
 
   ExecutionLayerService(
       final EventChannels eventChannels,
-      final EventLogger eventLogger,
       final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
-      final Optional<ExecutionWeb3jClientProvider> builderWeb3jClientProvider,
-      final ExecutionLayerChannel executionLayerChannel) {
+      final ExecutionLayerManager executionLayerManager) {
     this.eventChannels = eventChannels;
-    this.eventLogger = eventLogger;
     this.engineWeb3jClientProvider = engineWeb3jClientProvider;
-    this.builderWeb3jClientProvider = builderWeb3jClientProvider;
-    this.executionLayerChannel = executionLayerChannel;
+    this.executionLayerManager = executionLayerManager;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
     eventChannels
-        .subscribe(SlotEventsChannel.class, this)
-        .subscribe(ExecutionLayerChannel.class, executionLayerChannel);
+        .subscribe(SlotEventsChannel.class, executionLayerManager)
+        .subscribe(ExecutionLayerChannel.class, executionLayerManager);
     return SafeFuture.COMPLETE;
   }
 
@@ -133,30 +118,5 @@ public class ExecutionLayerService extends Service implements SlotEventsChannel 
     return engineWeb3jClientProvider.isStub()
         ? Optional.empty()
         : Optional.of(engineWeb3jClientProvider);
-  }
-
-  @Override
-  public void onSlot(UInt64 slot) {
-    performBuilderHealthCheck();
-  }
-
-  private void performBuilderHealthCheck() {
-    if (builderWeb3jClientProvider.isEmpty()) {
-      return;
-    }
-    executionLayerChannel
-        .builderStatus()
-        .thenAccept(
-            status -> {
-              if (status.hasFailed()) {
-                builderHealthCheckFailed.set(true);
-                eventLogger.executionBuilderIsOffline(status.getErrorMessage());
-              } else {
-                if (builderHealthCheckFailed.compareAndSet(true, false)) {
-                  eventLogger.executionBuilderIsBackOnline();
-                }
-              }
-            })
-        .reportExceptions();
   }
 }

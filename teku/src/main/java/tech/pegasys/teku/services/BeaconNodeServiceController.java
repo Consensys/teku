@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.services;
 
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
@@ -36,7 +34,7 @@ public class BeaconNodeServiceController extends ServiceController {
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
       ExecutionLayerService executionLayerService =
-          ExecutionLayerService.create(serviceConfig, EVENT_LOG, tekuConfig.executionLayer());
+          ExecutionLayerService.create(serviceConfig, tekuConfig.executionLayer());
       services.add(executionLayerService);
       maybeExecutionWeb3jClientProvider = executionLayerService.getEngineWeb3jClientProvider();
     }

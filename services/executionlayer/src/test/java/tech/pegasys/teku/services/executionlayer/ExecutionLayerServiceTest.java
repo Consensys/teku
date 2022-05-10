@@ -13,40 +13,28 @@
 
 package tech.pegasys.teku.services.executionlayer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderStatus;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerServiceTest {
 
   private final EventChannels eventChannels = mock(EventChannels.class);
-  private final EventLogger eventLogger = mock(EventLogger.class);
   private final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
       mock(ExecutionWeb3jClientProvider.class);
-  private final ExecutionWeb3jClientProvider builderWeb3jClientProvider =
-      mock(ExecutionWeb3jClientProvider.class);
-  private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
+  private final ExecutionLayerManager executionLayerManager = mock(ExecutionLayerManager.class);
 
   private final ExecutionLayerService underTest =
-      new ExecutionLayerService(
-          eventChannels,
-          eventLogger,
-          engineWeb3jClientProvider,
-          Optional.of(builderWeb3jClientProvider),
-          executionLayerChannel);
+      new ExecutionLayerService(eventChannels, engineWeb3jClientProvider, executionLayerManager);
 
   @Test
   public void addsSubscribersToTheEventChannelOnServiceStart() {
@@ -54,42 +42,21 @@ public class ExecutionLayerServiceTest {
 
     underTest.start().reportExceptions();
 
-    verify(eventChannels).subscribe(SlotEventsChannel.class, underTest);
-    verify(eventChannels).subscribe(ExecutionLayerChannel.class, executionLayerChannel);
+    verify(eventChannels).subscribe(SlotEventsChannel.class, executionLayerManager);
+    verify(eventChannels).subscribe(ExecutionLayerChannel.class, executionLayerManager);
 
     underTest.stop().reportExceptions();
   }
 
   @Test
-  public void performsBuilderHealthCheckOnSlot() {
-    // Given builder status is ok
-    when(executionLayerChannel.builderStatus())
-        .thenReturn(SafeFuture.completedFuture(BuilderStatus.withOkStatus()));
+  public void engineClientProviderIsEmptyIfStub() {
+    when(engineWeb3jClientProvider.isStub()).thenReturn(true);
+    assertThat(underTest.getEngineWeb3jClientProvider()).isEmpty();
+  }
 
-    // When
-    underTest.onSlot(UInt64.ONE);
-
-    // Then
-    verifyNoInteractions(eventLogger);
-
-    // Given builder status is not ok
-    when(executionLayerChannel.builderStatus())
-        .thenReturn(SafeFuture.completedFuture(BuilderStatus.withFailedStatus("oops")));
-
-    // When
-    underTest.onSlot(UInt64.valueOf(2L));
-
-    // Then
-    verify(eventLogger).executionBuilderIsOffline("oops");
-
-    // Given builder status is back ok
-    when(executionLayerChannel.builderStatus())
-        .thenReturn(SafeFuture.completedFuture(BuilderStatus.withOkStatus()));
-
-    // When
-    underTest.onSlot(UInt64.valueOf(3L));
-
-    // Then
-    verify(eventLogger).executionBuilderIsBackOnline();
+  @Test
+  public void engineClientProviderIsPresentIfNotStub() {
+    when(engineWeb3jClientProvider.isStub()).thenReturn(false);
+    assertThat(underTest.getEngineWeb3jClientProvider()).hasValue(engineWeb3jClientProvider);
   }
 }

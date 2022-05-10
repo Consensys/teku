@@ -140,14 +140,14 @@ public class EventLogger {
   public void executionBuilderIsOffline(String errorMessage) {
     String executionBuilderOfflineEventLog =
         String.format(
-            "The execution builder is offline: %s. If needed, block production will fallback to the execution engine.",
+            "The execution builder is offline: %s. Block production will fallback to the execution engine.",
             errorMessage);
     warn(executionBuilderOfflineEventLog, Color.YELLOW);
   }
 
   public void executionBuilderIsBackOnline() {
     String executionBuilderOnlineEventLog =
-        "The execution builder is back online. If needed, it will be used for block production.";
+        "The execution builder is back online. It will be used for block production.";
     info(executionBuilderOnlineEventLog, Color.GREEN);
   }
 

@@ -45,7 +45,11 @@ public class BuilderStatus {
     return errorMessage;
   }
 
-  public boolean hasFailed() {
+  public boolean isOk() {
+    return status == Status.OK && !isFailed();
+  }
+
+  public boolean isFailed() {
     return errorMessage != null;
   }
 
