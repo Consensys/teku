@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -159,7 +160,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(final Bytes8 payloadId, final UInt64 slot) {
+  public SafeFuture<ExecutionPayload> engineGetPayload(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     if (!bellatrixActivationDetected) {
       LOG.info(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
@@ -178,7 +180,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     }
 
     final Optional<HeadAndAttributes> maybeHeadAndAttrs =
-        payloadIdToHeadAndAttrsCache.getCached(payloadId);
+        payloadIdToHeadAndAttrsCache.getCached(executionPayloadContext.getPayloadId());
     if (maybeHeadAndAttrs.isEmpty()) {
       return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
     }
@@ -217,7 +219,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     LOG.info(
         "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-        payloadId,
+        executionPayloadContext.getPayloadId(),
         slot,
         executionPayload.getBlockHash());
 
@@ -257,19 +259,19 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(
-      final Bytes8 payloadId, final UInt64 slot) {
+  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
-        payloadId,
+        executionPayloadContext,
         slot);
 
-    return engineGetPayload(payloadId, slot)
+    return engineGetPayload(executionPayloadContext, slot)
         .thenApply(
             executionPayload -> {
               LOG.info(
                   "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-                  payloadId,
+                  executionPayloadContext,
                   slot,
                   executionPayload.getBlockHash());
               lastMevBoostPayloadToBeUnblinded = Optional.of(executionPayload);
@@ -283,7 +285,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+  public SafeFuture<ExecutionPayload> builderGetPayload(
       SignedBeaconBlock signedBlindedBeaconBlock) {
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions().toVersionBellatrix();

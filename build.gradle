@@ -82,7 +82,7 @@ dependencyRules {
       allowed = [":infrastructure:unsigned"]
     }
 
-    ['core', 'dataproviders', 'events', 'executionengine', 'executionlayer', 'networks', 'pow', 'signingrecord', 'spec'].forEach( {
+    ['core', 'dataproviders', 'events', 'executionclient', 'executionlayer', 'networks', 'pow', 'signingrecord', 'spec'].forEach( {
       register(":ethereum:${it}") {
         allowed = [
             ":infrastructure:",

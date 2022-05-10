@@ -78,7 +78,6 @@ public class GetAttestations extends MigratingEndpointAdapter {
             .queryParam(SLOT_PARAMETER)
             .queryParam(COMMITTEE_INDEX_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
-            .withNotFoundResponse()
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }

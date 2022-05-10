@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionclient;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -28,7 +27,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
@@ -82,16 +80,5 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final TransitionConfigurationV1 transitionConfiguration) {
     return taskQueue.queueTask(
         () -> delegate.exchangeTransitionConfiguration(transitionConfiguration));
-  }
-
-  @Override
-  public SafeFuture<Response<ExecutionPayloadHeaderV1>> getPayloadHeader(final Bytes8 payloadId) {
-    return taskQueue.queueTask(() -> delegate.getPayloadHeader(payloadId));
-  }
-
-  @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> proposeBlindedBlock(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return taskQueue.queueTask(() -> delegate.proposeBlindedBlock(signedBlindedBeaconBlock));
   }
 }
