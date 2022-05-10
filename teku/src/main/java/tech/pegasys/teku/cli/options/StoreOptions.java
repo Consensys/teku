@@ -28,8 +28,36 @@ public class StoreOptions {
   private int hotStatePersistenceFrequencyInEpochs =
       StoreConfig.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
 
+  @Option(
+      hidden = true,
+      names = {"--Xstore-block-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Number of blocks to cache in memory",
+      arity = "1")
+  private int blockCacheSize = StoreConfig.DEFAULT_BLOCK_CACHE_SIZE;
+
+  @Option(
+      hidden = true,
+      names = {"--Xstore-state-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Number of state to cache in memory",
+      arity = "1")
+  private int stateCacheSize = StoreConfig.DEFAULT_STATE_CACHE_SIZE;
+
+  @Option(
+      hidden = true,
+      names = {"--Xstore-checkpoint-state-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Number of checkpoint states to cache in memory",
+      arity = "1")
+  private int checkpointStateCacheSize = StoreConfig.DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
-        b -> b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs));
+        b ->
+            b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs)
+                .blockCacheSize(blockCacheSize)
+                .stateCacheSize(stateCacheSize)
+                .checkpointStateCacheSize(checkpointStateCacheSize));
   }
 }
