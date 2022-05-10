@@ -150,39 +150,30 @@ public class BlstBLS12381 implements BLS12381 {
     BlstSemiAggregate aggregate2 = prepareBatchVerify(index + 1, publicKeys2, message2, signature2);
 
     aggregate1.mergeWith(aggregate2);
-    aggregate2.release();
     return aggregate1;
   }
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
-    try {
-      if (preparedList.isEmpty()) {
-        return true;
-      }
-
-      List<BlstSemiAggregate> blstList =
-          preparedList.stream().map(b -> (BlstSemiAggregate) b).collect(Collectors.toList());
-
-      if (blstList.stream().anyMatch(b -> !b.isValid())) {
-        return false;
-      }
-
-      Pairing ctx0 = blstList.get(0).getCtx();
-      boolean mergeRes = true;
-      for (int i = 1; i < blstList.size(); i++) {
-        BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());
-        mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
-      }
-
-      return mergeRes && ctx0.finalverify();
-
-    } finally {
-      preparedList.stream()
-          .filter(a -> a instanceof BlstSemiAggregate)
-          .map(b -> (BlstSemiAggregate) b)
-          .forEach(BlstSemiAggregate::release);
+    if (preparedList.isEmpty()) {
+      return true;
     }
+
+    List<BlstSemiAggregate> blstList =
+        preparedList.stream().map(b -> (BlstSemiAggregate) b).collect(Collectors.toList());
+
+    if (blstList.stream().anyMatch(b -> !b.isValid())) {
+      return false;
+    }
+
+    Pairing ctx0 = blstList.get(0).getCtx();
+    boolean mergeRes = true;
+    for (int i = 1; i < blstList.size(); i++) {
+      BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());
+      mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
+    }
+
+    return mergeRes && ctx0.finalverify();
   }
 
   static BigInteger nextBatchRandomMultiplier() {

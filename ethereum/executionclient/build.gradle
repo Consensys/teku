@@ -1,0 +1,25 @@
+dependencies {
+  implementation project(':infrastructure:time')
+  implementation project(':infrastructure:exceptions')
+  implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:unsigned')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:events')
+  implementation project(':ethereum:spec')
+
+  api 'org.web3j:core'
+  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.jsonwebtoken:jjwt-api'
+
+  runtimeOnly 'io.jsonwebtoken:jjwt-impl'
+  runtimeOnly 'io.jsonwebtoken:jjwt-jackson'
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:time'))
+  testImplementation testFixtures(project(':ethereum:spec'))
+
+  integrationTestImplementation testFixtures(project(':infrastructure:json'))
+  integrationTestImplementation testFixtures(project(':infrastructure:time'))
+  integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
+}

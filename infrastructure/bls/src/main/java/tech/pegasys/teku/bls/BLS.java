@@ -404,14 +404,10 @@ public class BLS {
       LOG.warn("Skipping bls verification.");
       return true;
     }
-    List<BatchSemiAggregate> validAggregates =
-        preparedSignatures.stream()
-            .filter(it -> !(it instanceof InvalidBatchSemiAggregate))
-            .collect(Collectors.toList());
-    // completeBatchVerify() call is needed in any case since associated resources could be released
-    boolean verifyResult = getBlsImpl().completeBatchVerify(validAggregates);
-    boolean noInvalidAggregates = validAggregates.size() == preparedSignatures.size();
-    return verifyResult && noInvalidAggregates;
+    if (preparedSignatures.stream().anyMatch(it -> it instanceof InvalidBatchSemiAggregate)) {
+      return false;
+    }
+    return getBlsImpl().completeBatchVerify(preparedSignatures);
   }
 
   /*

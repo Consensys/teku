@@ -16,27 +16,22 @@ package tech.pegasys.teku.statetransition.util;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitSet;
 
 public class SeenAggregatesCache<KeyT> {
 
   private final Map<KeyT, Set<SszBitSet>> seenAggregationBitsByDataRoot;
-  private final int aggregateSetSize;
 
-  public SeenAggregatesCache(final int rootCacheSize, final int aggregateSetSize) {
+  public SeenAggregatesCache(final int rootCacheSize) {
     this.seenAggregationBitsByDataRoot = LimitedMap.create(rootCacheSize);
-    this.aggregateSetSize = aggregateSetSize;
   }
 
   public boolean add(final KeyT root, final SszBitSet aggregationBits) {
     final Set<SszBitSet> seenBitlists =
         seenAggregationBitsByDataRoot.computeIfAbsent(
-            root,
-            // Aim to hold all aggregation bits but have a limit for safety.
-            // Normally we'd have far fewer as we avoid adding subsets.
-            key -> LimitedSet.create(aggregateSetSize));
+            root, key -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
     if (isAlreadySeen(seenBitlists, aggregationBits)) {
       return false;
     }

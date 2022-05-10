@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.synccommittee;
 
 import static tech.pegasys.teku.spec.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
-import static tech.pegasys.teku.spec.constants.ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
@@ -57,8 +56,7 @@ public class SignedContributionAndProofValidator {
   private final Set<SourceUniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SeenAggregatesCache<TargetUniquenessKey> seenAggregatesCache =
-      new SeenAggregatesCache<>(
-          VALID_CONTRIBUTION_AND_PROOF_SET_SIZE, TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
+      new SeenAggregatesCache<>(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
