@@ -54,6 +54,7 @@ class ExecutionLayerManagerImplTest {
     noBuilderEnabled.onSlot(UInt64.ONE);
 
     assertThat(noBuilderEnabled.isBuilderAvailable()).isFalse();
+    verifyNoInteractions(executionBuilderClient);
   }
 
   @Test
@@ -88,6 +89,9 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderAvailabilityIsUpdatedOnSlotEventAndLoggedAdequately() {
+    // Initially builder should be available
+    assertThat(underTest.isBuilderAvailable()).isTrue();
+
     // Given builder status is ok
     updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)));
 

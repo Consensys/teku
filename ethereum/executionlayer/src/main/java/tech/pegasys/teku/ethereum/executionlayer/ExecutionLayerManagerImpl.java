@@ -21,7 +21,7 @@ import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQU
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +50,6 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderStatus;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -68,11 +67,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final ExecutionEngineClient executionEngineClient;
   private final Optional<ExecutionBuilderClient> executionBuilderClient;
 
+  private final AtomicBoolean latestBuilderAvailability;
+
   private final Spec spec;
 
   private final EventLogger eventLogger;
-
-  private final AtomicReference<BuilderStatus> latestBuilderStatus = new AtomicReference<>();
 
   public static ExecutionLayerManagerImpl create(
       final Web3JClient engineWeb3JClient,
@@ -116,13 +115,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final EventLogger eventLogger) {
     this.executionEngineClient = executionEngineClient;
     this.executionBuilderClient = executionBuilderClient;
+    this.latestBuilderAvailability = new AtomicBoolean(executionBuilderClient.isPresent());
     this.spec = spec;
     this.eventLogger = eventLogger;
   }
 
   @Override
   public void onSlot(UInt64 slot) {
-    updateBuilderStatus();
+    updateBuilderAvailability();
   }
 
   @Override
@@ -232,9 +232,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   boolean isBuilderAvailable() {
-    return Optional.ofNullable(latestBuilderStatus.get())
-        .map(BuilderStatus::isOk)
-        .orElse(executionBuilderClient.isPresent());
+    return latestBuilderAvailability.get();
   }
 
   @Override
@@ -319,40 +317,27 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return checkNotNull(response.getPayload(), "No payload content found");
   }
 
-  private SafeFuture<BuilderStatus> retrieveBuilderStatus() {
-    if (executionBuilderClient.isEmpty()) {
-      return SafeFuture.completedFuture(null);
-    }
-    return executionBuilderClient
-        .get()
-        .status()
-        .thenApply(
-            statusResponse -> {
-              if (statusResponse.getErrorMessage() == null) {
-                return BuilderStatus.withOkStatus();
-              } else {
-                return BuilderStatus.withFailedStatus(statusResponse.getErrorMessage());
-              }
-            })
-        .exceptionally(BuilderStatus::withFailedStatus);
-  }
-
-  private void updateBuilderStatus() {
+  private void updateBuilderAvailability() {
     if (executionBuilderClient.isEmpty()) {
       return;
     }
-    retrieveBuilderStatus()
-        .thenAccept(
-            status -> {
-              BuilderStatus previousStatus = latestBuilderStatus.getAndSet(status);
-              if (status.isFailed()) {
-                eventLogger.executionBuilderIsOffline(status.getErrorMessage());
+    executionBuilderClient
+        .get()
+        .status()
+        .finish(
+            statusResponse -> {
+              if (statusResponse.getErrorMessage() != null) {
+                latestBuilderAvailability.set(false);
+                eventLogger.executionBuilderIsOffline(statusResponse.getErrorMessage());
               } else {
-                if (previousStatus != null && previousStatus.isFailed()) {
+                if (latestBuilderAvailability.compareAndSet(false, true)) {
                   eventLogger.executionBuilderIsBackOnline();
                 }
               }
-            })
-        .reportExceptions();
+            },
+            throwable -> {
+              latestBuilderAvailability.set(false);
+              eventLogger.executionBuilderIsOffline(throwable.getMessage());
+            });
   }
 }
