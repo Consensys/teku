@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -45,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -304,12 +304,13 @@ class BlockOperationSelectorFactoryTest {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
-    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.createPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionLayer.engineGetPayload(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    when(executionLayer.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factory
@@ -325,13 +326,14 @@ class BlockOperationSelectorFactoryTest {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
-    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.createPayloadExecutionContext(false);
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionLayer.getPayloadHeader(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    when(executionLayer.builderGetHeader(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factoryWithMevBoost
@@ -347,12 +349,13 @@ class BlockOperationSelectorFactoryTest {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
-    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.createPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
-    when(executionLayer.engineGetPayload(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    when(executionLayer.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factoryWithMevBoost
@@ -370,7 +373,7 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
-    when(executionLayer.proposeBlindedBlock(blindedSignedBlock))
+    when(executionLayer.builderGetPayload(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factoryWithMevBoost.createUnblinderSelector().accept(blockUnblinder);
@@ -385,7 +388,7 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
-    when(executionLayer.proposeBlindedBlock(blindedSignedBlock))
+    when(executionLayer.builderGetPayload(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     assertThatThrownBy(() -> factory.createUnblinderSelector().accept(blockUnblinder))

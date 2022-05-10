@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -1085,6 +1086,11 @@ public final class DataStructureUtil {
 
   public EnrForkId randomEnrForkId() {
     return new EnrForkId(randomBytes4(), randomBytes4(), randomUInt64());
+  }
+
+  public ExecutionPayloadContext createPayloadExecutionContext(final boolean optimisticHead) {
+    return new ExecutionPayloadContext(
+        randomBytes8(), randomForkChoiceState(optimisticHead), Optional.empty());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

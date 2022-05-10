@@ -27,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -320,10 +319,12 @@ class BlockFactoryTest {
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(dataStructureUtil.createPayloadExecutionContext(false))));
     when(executionLayer.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
-    when(executionLayer.getPayloadHeader(any(), any()))
+    when(executionLayer.builderGetHeader(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
     beaconChainUtil.initializeStorage();
 
@@ -366,7 +367,7 @@ class BlockFactoryTest {
       final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
     final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
 
-    when(executionLayer.proposeBlindedBlock(beaconBlock))
+    when(executionLayer.builderGetPayload(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
     final SignedBeaconBlock block =
@@ -375,7 +376,7 @@ class BlockFactoryTest {
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionLayer);
     } else {
-      verify(executionLayer).proposeBlindedBlock(beaconBlock);
+      verify(executionLayer).builderGetPayload(beaconBlock);
     }
 
     assertThat(block).isNotNull();
