@@ -236,24 +236,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return Optional.ofNullable(latestBuilderStatus.get()).map(BuilderStatus::isOk).orElse(true);
   }
 
-  private SafeFuture<BuilderStatus> retrieveBuilderStatus() {
-    if (executionBuilderClient.isEmpty()) {
-      return SafeFuture.completedFuture(null);
-    }
-    return executionBuilderClient
-        .get()
-        .status()
-        .thenApply(
-            statusResponse -> {
-              if (statusResponse.getErrorMessage() == null) {
-                return BuilderStatus.withOkStatus();
-              } else {
-                return BuilderStatus.withFailedStatus(statusResponse.getErrorMessage());
-              }
-            })
-        .exceptionally(BuilderStatus::withFailedStatus);
-  }
-
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
@@ -334,6 +316,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "Invalid remote response: %s",
         response.getErrorMessage());
     return checkNotNull(response.getPayload(), "No payload content found");
+  }
+
+  private SafeFuture<BuilderStatus> retrieveBuilderStatus() {
+    if (executionBuilderClient.isEmpty()) {
+      return SafeFuture.completedFuture(null);
+    }
+    return executionBuilderClient
+        .get()
+        .status()
+        .thenApply(
+            statusResponse -> {
+              if (statusResponse.getErrorMessage() == null) {
+                return BuilderStatus.withOkStatus();
+              } else {
+                return BuilderStatus.withFailedStatus(statusResponse.getErrorMessage());
+              }
+            })
+        .exceptionally(BuilderStatus::withFailedStatus);
   }
 
   private void updateBuilderStatus() {
