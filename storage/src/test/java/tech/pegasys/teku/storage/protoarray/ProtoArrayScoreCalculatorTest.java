@@ -488,7 +488,9 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Validator #0 is marked as equivocated
     VoteTracker vote = store.getVote(ZERO);
-    store.putVote(ZERO, vote.createCurrentEquivocating());
+    store.putVote(
+        ZERO,
+        new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch(), true, true));
 
     List<Long> deltas =
         computeDeltas(
@@ -506,11 +508,12 @@ public class ProtoArrayScoreCalculatorTest {
     // Block should have only one counted vote
     assertThat(deltas.get(0)).isEqualTo(balance.longValue());
 
-    // Votes should be updated for non-equivocating validators only
-    VoteTracker vote0 = store.getVote(ZERO);
-    assertThat(vote0.getCurrentRoot()).isEqualTo(Bytes32.ZERO);
+    // Votes should be updated
     VoteTracker vote1 = store.getVote(UInt64.ONE);
     assertThat(vote1.getCurrentRoot()).isEqualTo(vote1.getNextRoot());
+    // Equivocating validator should be marked
+    VoteTracker vote0 = store.getVote(ZERO);
+    assertThat(vote0.isCurrentEquivocating()).isTrue();
   }
 
   @Test

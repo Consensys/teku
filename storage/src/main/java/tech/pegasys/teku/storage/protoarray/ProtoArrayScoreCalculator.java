@@ -108,12 +108,13 @@ class ProtoArrayScoreCalculator {
     if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
       subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
       addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
-      final VoteTracker newVote;
-      if (vote.isNextEquivocating()) {
-        newVote = vote.createCurrentEquivocating();
-      } else {
-        newVote = new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
-      }
+      final VoteTracker newVote =
+          new VoteTracker(
+              vote.getNextRoot(),
+              vote.getNextRoot(),
+              vote.getNextEpoch(),
+              vote.isNextEquivocating(),
+              vote.isNextEquivocating());
       store.putVote(validatorIndex, newVote);
     }
   }

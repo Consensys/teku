@@ -74,10 +74,6 @@ public class VoteTracker {
     return new VoteTracker(currentRoot, nextRoot, nextEpoch, true, false);
   }
 
-  public VoteTracker createCurrentEquivocating() {
-    return new VoteTracker(currentRoot, nextRoot, nextEpoch, false, true);
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
