@@ -55,6 +55,7 @@ class ExecutionLayerManagerImplTest {
 
     assertThat(noBuilderEnabled.isBuilderAvailable()).isFalse();
     verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(eventLogger);
   }
 
   @Test
@@ -65,6 +66,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(underTest.isBuilderAvailable()).isTrue();
+    verifyNoInteractions(eventLogger);
   }
 
   @Test
@@ -75,6 +77,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(underTest.isBuilderAvailable()).isFalse();
+    verify(eventLogger).executionBuilderIsOffline("oops");
   }
 
   @Test
@@ -85,6 +88,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(underTest.isBuilderAvailable()).isFalse();
+    verify(eventLogger).executionBuilderIsOffline("oops");
   }
 
   @Test
@@ -96,22 +100,22 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)));
 
     // Then
-    verifyNoInteractions(eventLogger);
     assertThat(underTest.isBuilderAvailable()).isTrue();
+    verifyNoInteractions(eventLogger);
 
     // Given builder status is not ok
     updateBuilderStatus(SafeFuture.completedFuture(new Response<>("oops")));
 
     // Then
-    verify(eventLogger).executionBuilderIsOffline("oops");
     assertThat(underTest.isBuilderAvailable()).isFalse();
+    verify(eventLogger).executionBuilderIsOffline("oops");
 
     // Given builder status is back to being ok
     updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)));
 
     // Then
-    verify(eventLogger).executionBuilderIsBackOnline();
     assertThat(underTest.isBuilderAvailable()).isTrue();
+    verify(eventLogger).executionBuilderIsBackOnline();
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(boolean builderEnabled) {
