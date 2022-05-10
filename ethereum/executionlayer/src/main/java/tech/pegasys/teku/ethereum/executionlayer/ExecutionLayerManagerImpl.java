@@ -327,17 +327,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .finish(
             statusResponse -> {
               if (statusResponse.getErrorMessage() != null) {
-                latestBuilderAvailability.set(false);
-                eventLogger.executionBuilderIsOffline(statusResponse.getErrorMessage());
+                markBuilderAsNotAvailable(statusResponse.getErrorMessage());
               } else {
                 if (latestBuilderAvailability.compareAndSet(false, true)) {
                   eventLogger.executionBuilderIsBackOnline();
                 }
               }
             },
-            throwable -> {
-              latestBuilderAvailability.set(false);
-              eventLogger.executionBuilderIsOffline(throwable.getMessage());
-            });
+            throwable -> markBuilderAsNotAvailable(throwable.getMessage()));
+  }
+
+  private void markBuilderAsNotAvailable(String errorMessage) {
+    latestBuilderAvailability.set(false);
+    eventLogger.executionBuilderIsOffline(errorMessage);
   }
 }
