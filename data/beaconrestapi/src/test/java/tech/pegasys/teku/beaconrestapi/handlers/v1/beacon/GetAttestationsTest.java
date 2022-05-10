@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,13 +30,10 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 
 class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   private StubRestApiRequest request;
@@ -54,7 +50,8 @@ class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnAttestationInformation() throws JsonProcessingException {
-    List<Attestation> attestations = List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+    List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
     when(nodeDataProvider.getAttestations(any(), any())).thenReturn(attestations);
 
     handler.handleRequest(request);

@@ -69,17 +69,17 @@ public class GetAttestations extends MigratingEndpointAdapter {
 
   public GetAttestations(final NodeDataProvider nodeDataProvider, final Spec spec) {
     super(
-            EndpointMetadata.get(ROUTE)
-                    .operationId("getAttestations")
-                    .summary("Get attestations")
-                    .description(
-                            "Retrieves attestations known by the node but not necessarily incorporated into any block.")
-                    .tags(TAG_BEACON)
-                    .queryParam(SLOT_PARAMETER)
-                    .queryParam(COMMITTEE_INDEX_PARAMETER)
-                    .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
-                    .withNotFoundResponse()
-                    .build());
+        EndpointMetadata.get(ROUTE)
+            .operationId("getAttestations")
+            .summary("Get attestations")
+            .description(
+                "Retrieves attestations known by the node but not necessarily incorporated into any block.")
+            .tags(TAG_BEACON)
+            .queryParam(SLOT_PARAMETER)
+            .queryParam(COMMITTEE_INDEX_PARAMETER)
+            .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
+            .withNotFoundResponse()
+            .build());
     this.nodeDataProvider = nodeDataProvider;
   }
 
