@@ -15,7 +15,6 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
@@ -178,14 +177,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    return engineGetPayload(executionPayloadContext, slot, false);
+  }
+
+  public SafeFuture<ExecutionPayload> engineGetPayload(
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt64 slot,
+      final boolean isFallbackCall) {
     LOG.trace(
         "calling engineGetPayload(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
         slot);
 
-    if (executionBuilderClient.isPresent()
+    clearLastExecutionEnginePayloadData();
+
+    if (!isFallbackCall
+        && isBuilderAvailable()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
+      LOG.warn("builder endpoint is available but a non-blinded block has been requested");
     }
 
     return executionEngineClient
@@ -241,21 +250,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     remoteTransitionConfiguration));
   }
 
-  boolean isBuilderAvailable() {
-    return latestBuilderAvailability.get();
-  }
-
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
-        engineGetPayload(executionPayloadContext, slot);
+        engineGetPayload(executionPayloadContext, slot, true);
 
-    lastExecutionEngineGetPayloadSlot = Optional.of(slot);
-    lastExecutionEngineGetPayloadExecutionPayload = Optional.of(localExecutionPayload);
-
-    if (executionBuilderClient.isEmpty()) {
+    if (!isBuilderAvailable()) {
       // fallback to local execution engine
       return getExecutionHeaderFromLocalExecutionEngine(localExecutionPayload, slot);
     }
@@ -267,7 +269,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         executionPayloadContext.getParentHash());
 
     return executionBuilderClient
-        .get()
+        .orElseThrow()
         .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(
@@ -290,8 +292,47 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             });
   }
 
+  @Override
+  public SafeFuture<ExecutionPayload> builderGetPayload(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+
+    checkArgument(
+        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
+        "SignedBeaconBlock must be blind");
+
+    if (!isBuilderAvailable()) {
+      // fallback to local execution engine
+      return getExecutionFromLastLocalExecutionEngineCall(signedBlindedBeaconBlock);
+    }
+
+    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+
+    return executionBuilderClient
+        .orElseThrow()
+        .getPayload(
+            new SignedMessage<>(
+                new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
+                signedBlindedBeaconBlock.getSignature()))
+        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenCombine(
+            SafeFuture.of(
+                () ->
+                    SchemaDefinitionsBellatrix.required(
+                            spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions())
+                        .getExecutionPayloadSchema()),
+            ExecutionPayloadV1::asInternalExecutionPayload)
+        .thenPeek(
+            executionPayload ->
+                LOG.trace(
+                    "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
+                    signedBlindedBeaconBlock,
+                    executionPayload));
+  }
+
   private SafeFuture<ExecutionPayloadHeader> getExecutionHeaderFromLocalExecutionEngine(
       final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
+    lastExecutionEngineGetPayloadSlot = Optional.of(slot);
+    lastExecutionEngineGetPayloadExecutionPayload = Optional.of(localExecutionPayload);
     return localExecutionPayload.thenApply(
         executionPayload ->
             spec.atSlot(slot)
@@ -315,59 +356,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema);
   }
 
-  @Override
-  public SafeFuture<ExecutionPayload> builderGetPayload(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-
-    checkArgument(
-        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
-        "SignedBeaconBlock must be blind");
-
-    if (executionBuilderClient.isEmpty()) {
-      // fallback to local execution engine
-      return getExecutionFromLastLocalExecutionEngineCall(signedBlindedBeaconBlock);
-    }
-
-    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
-
-    return executionBuilderClient
-        .get()
-        .getPayload(
-            new SignedMessage<>(
-                new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
-                signedBlindedBeaconBlock.getSignature()))
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsBellatrix.required(
-                            spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions())
-                        .getExecutionPayloadSchema()),
-            ExecutionPayloadV1::asInternalExecutionPayload)
-        .thenPeek(
-            executionPayload -> {
-              // release cached local execution engine payload
-              if (lastExecutionEngineGetPayloadSlot
-                  .map(slot -> slot.equals(signedBlindedBeaconBlock.getSlot()))
-                  .orElse(false)) {
-                lastExecutionEngineGetPayloadSlot = Optional.empty();
-                lastExecutionEngineGetPayloadExecutionPayload = Optional.empty();
-              }
-
-              LOG.trace(
-                  "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
-                  signedBlindedBeaconBlock,
-                  executionPayload);
-            })
-        .exceptionallyCompose(
-            error -> {
-              LOG.error(
-                  "builderGetPayload returned an error. Falling back to local execution engine",
-                  error);
-              return getExecutionFromLastLocalExecutionEngineCall(signedBlindedBeaconBlock);
-            });
-  }
-
   private SafeFuture<ExecutionPayload> getExecutionFromLastLocalExecutionEngineCall(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     try {
@@ -375,7 +363,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
           || lastExecutionEngineGetPayloadExecutionPayload.isEmpty()) {
         return SafeFuture.failedFuture(
             new IllegalStateException(
-                "unable to fallback to local execution engine: missing cached calls"));
+                "unable to fallback to local execution engine: blinded beacon block likely generated via builder endpoint"));
       }
 
       if (!lastExecutionEngineGetPayloadSlot.get().equals(signedBlindedBeaconBlock.getSlot())) {
@@ -389,9 +377,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
       return lastExecutionEngineGetPayloadExecutionPayload.get();
     } finally {
-      lastExecutionEngineGetPayloadSlot = Optional.empty();
-      lastExecutionEngineGetPayloadExecutionPayload = Optional.empty();
+      clearLastExecutionEnginePayloadData();
     }
+  }
+
+  boolean isBuilderAvailable() {
+    return latestBuilderAvailability.get();
+  }
+
+  private void clearLastExecutionEnginePayloadData() {
+    lastExecutionEngineGetPayloadSlot = Optional.empty();
+    lastExecutionEngineGetPayloadExecutionPayload = Optional.empty();
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {

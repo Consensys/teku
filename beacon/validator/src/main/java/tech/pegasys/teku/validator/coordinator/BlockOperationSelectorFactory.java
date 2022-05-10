@@ -89,7 +89,7 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
-      SszList<Attestation> attestations =
+      final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState,
               new AttestationForkChecker(spec, blockSlotState),
