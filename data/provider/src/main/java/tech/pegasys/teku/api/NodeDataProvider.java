@@ -90,9 +90,7 @@ public class NodeDataProvider {
 
   public List<tech.pegasys.teku.spec.datastructures.operations.Attestation> getAttestations(
       Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
-    return attestationPool
-        .getAttestations(maybeSlot, maybeCommitteeIndex)
-        .collect(Collectors.toList());
+    return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
   public List<AttesterSlashing> getAttesterSlashings() {
