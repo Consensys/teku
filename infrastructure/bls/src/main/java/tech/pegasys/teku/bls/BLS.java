@@ -295,11 +295,11 @@ public class BLS {
             pairsStream
                 .mapToObj(
                     idx -> {
-                      if (idx == count - 1) {
+                      final int next = idx + 1;
+                      if (next == count) {
                         return prepareBatchVerify(
                             idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx));
                       } else {
-                        final int next = idx + 1;
                         return prepareBatchVerify2(
                             idx,
                             publicKeys.get(idx),
