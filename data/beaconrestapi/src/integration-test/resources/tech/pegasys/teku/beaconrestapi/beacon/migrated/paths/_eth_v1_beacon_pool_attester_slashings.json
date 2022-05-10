@@ -10,16 +10,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "type" : "object",
-              "required" : [ "data" ],
-              "properties" : {
-                "data" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/AttesterSlashing"
-                  }
-                }
-              }
+              "$ref" : "#/components/schemas/GetPoolAttesterSlashingsResponse"
             }
           }
         }

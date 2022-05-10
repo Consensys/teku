@@ -98,6 +98,7 @@ public class GetAttesterSlashings extends MigratingEndpointAdapter {
         new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
 
     return SerializableTypeDefinition.<List<AttesterSlashing>>object()
+        .name("GetPoolAttesterSlashingsResponse")
         .withField(
             "data", listOf(attesterSlashingSchema.getJsonTypeDefinition()), Function.identity())
         .build();
