@@ -15,13 +15,10 @@ package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -229,7 +226,7 @@ public class BLS {
   public static boolean batchVerify(
       List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
     try {
-      Preconditions.checkArgument(
+      checkArgument(
           publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
           "Different collection sizes");
 
@@ -280,7 +277,7 @@ public class BLS {
       return true;
     }
     try {
-      Preconditions.checkArgument(
+      checkArgument(
           publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
           "Different collection sizes");
       int count = publicKeys.size();
@@ -288,41 +285,41 @@ public class BLS {
         return false;
       }
       if (doublePairing) {
-        Stream<List<Integer>> pairsStream =
-            Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
-                .stream();
 
+        IntStream pairsStream =
+            IntStream.iterate(0, current -> current < count, current -> current + 2);
         if (parallel) {
           pairsStream = pairsStream.parallel();
         }
         return completeBatchVerify(
             pairsStream
-                .map(
-                    idx ->
-                        idx.size() == 1
-                            ? prepareBatchVerify(
-                                idx.get(0),
-                                publicKeys.get(idx.get(0)),
-                                messages.get(idx.get(0)),
-                                signatures.get(idx.get(0)))
-                            : prepareBatchVerify2(
-                                idx.get(0),
-                                publicKeys.get(idx.get(0)),
-                                messages.get(idx.get(0)),
-                                signatures.get(idx.get(0)),
-                                publicKeys.get(idx.get(1)),
-                                messages.get(idx.get(1)),
-                                signatures.get(idx.get(1))))
+                .mapToObj(
+                    idx -> {
+                      if (idx == count - 1) {
+                        return prepareBatchVerify(
+                            idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx));
+                      } else {
+                        final int next = idx + 1;
+                        return prepareBatchVerify2(
+                            idx,
+                            publicKeys.get(idx),
+                            messages.get(idx),
+                            signatures.get(idx),
+                            publicKeys.get(next),
+                            messages.get(next),
+                            signatures.get(next));
+                      }
+                    })
                 .collect(Collectors.toList()));
       } else {
-        Stream<Integer> indexStream = IntStream.range(0, count).boxed();
+        IntStream indexStream = IntStream.range(0, count);
 
         if (parallel) {
           indexStream = indexStream.parallel();
         }
         return completeBatchVerify(
             indexStream
-                .map(
+                .mapToObj(
                     idx ->
                         prepareBatchVerify(
                             idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx)))
@@ -369,7 +366,7 @@ public class BLS {
    * <p>The returned instances can be mixed up with the instances returned by {@link
    * #prepareBatchVerify(int, List, Bytes, BLSSignature)}
    */
-  public static BatchSemiAggregate prepareBatchVerify2(
+  private static BatchSemiAggregate prepareBatchVerify2(
       int index,
       List<BLSPublicKey> publicKeys1,
       Bytes message1,
@@ -403,9 +400,6 @@ public class BLS {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
-    }
-    if (preparedSignatures.stream().anyMatch(it -> it instanceof InvalidBatchSemiAggregate)) {
-      return false;
     }
     return getBlsImpl().completeBatchVerify(preparedSignatures);
   }
