@@ -53,6 +53,18 @@ public class BuilderBidV1 {
     this.pubkey = pubkey;
   }
 
+  public ExecutionPayloadHeaderV1 getHeader() {
+    return header;
+  }
+
+  public UInt256 getValue() {
+    return value;
+  }
+
+  public BLSPubKey getPubkey() {
+    return pubkey;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

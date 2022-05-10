@@ -34,7 +34,7 @@ public class BeaconNodeServiceController extends ServiceController {
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
       ExecutionLayerService executionLayerService =
-          new ExecutionLayerService(serviceConfig, tekuConfig.executionLayer());
+          ExecutionLayerService.create(serviceConfig, tekuConfig.executionLayer());
       services.add(executionLayerService);
       maybeExecutionWeb3jClientProvider = executionLayerService.getEngineWeb3jClientProvider();
     }
