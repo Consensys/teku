@@ -47,13 +47,13 @@ class ExecutionLayerManagerImplTest {
   private final ExecutionLayerManagerImpl underTest = createExecutionLayerChannelImpl(true);
 
   @Test
-  public void builderShouldBeConsideredAvailableWhenBuilderNotEnabled() {
+  public void builderShouldNotBeAvailableWhenBuilderNotEnabled() {
     ExecutionLayerManagerImpl noBuilderEnabled = createExecutionLayerChannelImpl(false);
 
     // trigger update of builder status (should not do anything since builder is not enabled)
     noBuilderEnabled.onSlot(UInt64.ONE);
 
-    assertThat(noBuilderEnabled.isBuilderAvailable()).isTrue();
+    assertThat(noBuilderEnabled.isBuilderAvailable()).isFalse();
   }
 
   @Test

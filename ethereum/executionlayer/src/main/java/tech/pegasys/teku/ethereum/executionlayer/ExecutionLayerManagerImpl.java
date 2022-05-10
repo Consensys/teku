@@ -233,7 +233,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   boolean isBuilderAvailable() {
-    return Optional.ofNullable(latestBuilderStatus.get()).map(BuilderStatus::isOk).orElse(true);
+    return Optional.ofNullable(latestBuilderStatus.get())
+        .map(BuilderStatus::isOk)
+        .orElse(executionBuilderClient.isPresent());
   }
 
   @Override
