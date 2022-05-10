@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.attestation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -24,7 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -198,7 +199,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(attestationsSchema.collector());
   }
 
-  public synchronized Stream<Attestation> getAttestations(
+  public synchronized List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
@@ -217,7 +218,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .filter(filterForCommitteeIndex)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .map(ValidateableAttestation::getAttestation);
+        .map(ValidateableAttestation::getAttestation)
+        .collect(Collectors.toList());
   }
 
   private boolean isValid(
