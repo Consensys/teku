@@ -64,19 +64,23 @@ public class GetAttestations extends MigratingEndpointAdapter {
           CoreTypes.UINT64_TYPE.withDescription(COMMITTEE_INDEX_QUERY_DESCRIPTION));
 
   public GetAttestations(final DataProvider dataProvider, Spec spec) {
+    this(dataProvider.getNodeDataProvider(), spec);
+  }
+
+  public GetAttestations(final NodeDataProvider nodeDataProvider, final Spec spec) {
     super(
-        EndpointMetadata.get(ROUTE)
-            .operationId("getAttestations")
-            .summary("Get attestations")
-            .description(
-                "Retrieves attestations known by the node but not necessarily incorporated into any block.")
-            .tags(TAG_BEACON)
-            .queryParam(SLOT_PARAMETER)
-            .queryParam(COMMITTEE_INDEX_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
-            .withNotFoundResponse()
-            .build());
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+            EndpointMetadata.get(ROUTE)
+                    .operationId("getAttestations")
+                    .summary("Get attestations")
+                    .description(
+                            "Retrieves attestations known by the node but not necessarily incorporated into any block.")
+                    .tags(TAG_BEACON)
+                    .queryParam(SLOT_PARAMETER)
+                    .queryParam(COMMITTEE_INDEX_PARAMETER)
+                    .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
+                    .withNotFoundResponse()
+                    .build());
+    this.nodeDataProvider = nodeDataProvider;
   }
 
   @OpenApi(
