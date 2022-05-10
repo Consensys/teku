@@ -16,11 +16,11 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
@@ -48,7 +48,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<ExecutionPayload> engineGetPayload(
-            final Bytes8 payloadId, final UInt64 slot) {
+            final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -64,13 +64,13 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayloadHeader> getPayloadHeader(
-            final Bytes8 payloadId, final UInt64 slot) {
+        public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+            final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
           return SafeFuture.completedFuture(null);
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> proposeBlindedBlock(
+        public SafeFuture<ExecutionPayload> builderGetPayload(
             SignedBeaconBlock signedBlindedBeaconBlock) {
           return SafeFuture.completedFuture(null);
         }
@@ -85,7 +85,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes);
 
-  SafeFuture<ExecutionPayload> engineGetPayload(final Bytes8 payloadId, final UInt64 slot);
+  SafeFuture<ExecutionPayload> engineGetPayload(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);
 
   SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload);
 
@@ -93,10 +94,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       final TransitionConfiguration transitionConfiguration);
 
   // builder namespace
-  SafeFuture<ExecutionPayloadHeader> getPayloadHeader(final Bytes8 payloadId, final UInt64 slot);
+  SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);
 
-  SafeFuture<ExecutionPayload> proposeBlindedBlock(
-      final SignedBeaconBlock signedBlindedBeaconBlock);
+  SafeFuture<ExecutionPayload> builderGetPayload(final SignedBeaconBlock signedBlindedBeaconBlock);
 
   enum Version {
     KILNV2;
