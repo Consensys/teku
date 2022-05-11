@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_U
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
@@ -26,10 +27,12 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
@@ -38,6 +41,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 public class ValidatorRestApi {
   public static RestApi create(
       final ValidatorRestApiConfig config,
+      final Optional<BeaconProposerPreparer> beaconProposerPreparer,
       final KeyManager keyManager,
       final DataDirLayout dataDirLayout) {
     final Path slashingProtectionPath =
@@ -75,6 +79,7 @@ public class ValidatorRestApi {
         .endpoint(new GetRemoteKeys(keyManager))
         .endpoint(new PostRemoteKeys(keyManager))
         .endpoint(new DeleteRemoteKeys(keyManager))
+        .endpoint(new GetFeeRecipient(beaconProposerPreparer))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

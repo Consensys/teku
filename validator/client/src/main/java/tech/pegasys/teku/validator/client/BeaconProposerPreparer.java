@@ -15,9 +15,10 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,15 +39,34 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
-  private final ValidatorIndexProvider validatorIndexProvider;
+  private Optional<ValidatorIndexProvider> validatorIndexProvider;
   private final ProposerConfigProvider proposerConfigProvider;
   private final Spec spec;
   private final Optional<Eth1Address> defaultFeeRecipient;
   private boolean firstCallDone = false;
 
-  public BeaconProposerPreparer(
+  private final Map<Integer, BeaconPreparableProposer> runtimeProposerMap =
+      new ConcurrentHashMap<>();
+  private final Map<Integer, BeaconPreparableProposer> configuredProposerMap =
+      new ConcurrentHashMap<>();
+
+  BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
+      ProposerConfigProvider proposerConfigProvider,
+      Optional<Eth1Address> defaultFeeRecipient,
+      Spec spec) {
+    this(
+        validatorApiChannel,
+        Optional.of(validatorIndexProvider),
+        proposerConfigProvider,
+        defaultFeeRecipient,
+        spec);
+  }
+
+  public BeaconProposerPreparer(
+      ValidatorApiChannel validatorApiChannel,
+      Optional<ValidatorIndexProvider> validatorIndexProvider,
       ProposerConfigProvider proposerConfigProvider,
       Optional<Eth1Address> defaultFeeRecipient,
       Spec spec) {
@@ -57,20 +77,64 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     this.spec = spec;
   }
 
+  public void initialize(final Optional<ValidatorIndexProvider> provider) {
+    this.validatorIndexProvider = provider;
+  }
+
   @Override
   public void onSlot(UInt64 slot) {
+    if (validatorIndexProvider.isEmpty()) {
+      return;
+    }
     if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
       firstCallDone = true;
-
       sendPreparableProposerList();
     }
   }
 
+  public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
+    if (validatorIndexProvider.isEmpty()) {
+      return Optional.empty();
+    }
+    final Optional<Integer> validatorIndex =
+        validatorIndexProvider.orElseThrow().getValidatorIndex(publicKey);
+    return validatorIndex.flatMap(this::getFeeRecipientByValidatorIndex);
+  }
+
+  private Optional<Eth1Address> getFeeRecipientByValidatorIndex(final int validatorIndex) {
+    if (runtimeProposerMap.containsKey(validatorIndex)) {
+      return Optional.of(runtimeProposerMap.get(validatorIndex).getFeeRecipient());
+    }
+    if (configuredProposerMap.containsKey(validatorIndex)) {
+      return Optional.of(configuredProposerMap.get(validatorIndex).getFeeRecipient());
+    }
+    return Optional.empty();
+  }
+
+  static Map<Integer, BeaconPreparableProposer> getProposers(
+      Map<Integer, BeaconPreparableProposer> configuredProposerMap,
+      Map<Integer, BeaconPreparableProposer> runtimeProposerMap) {
+    if (configuredProposerMap.isEmpty()) {
+      return runtimeProposerMap;
+    }
+    return configuredProposerMap.entrySet().stream()
+        .map(
+            entry ->
+                Map.entry(
+                    entry.getKey(),
+                    runtimeProposerMap.getOrDefault(entry.getKey(), entry.getValue())))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
   private void sendPreparableProposerList() {
+    if (validatorIndexProvider.isEmpty()) {
+      return;
+    }
     SafeFuture<Optional<ProposerConfig>> proposerConfigFuture =
         proposerConfigProvider.getProposerConfig();
 
     validatorIndexProvider
+        .orElseThrow()
         .getValidatorIndicesByPublicKey()
         .thenCompose(
             publicKeyToIndex ->
@@ -88,17 +152,25 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 
-  private List<BeaconPreparableProposer> buildBeaconPreparableProposerList(
+  private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
       Optional<ProposerConfig> maybeProposerConfig,
       Map<BLSPublicKey, Optional<Integer>> blsPublicKeyToIndexMap) {
-    return blsPublicKeyToIndexMap.entrySet().stream()
+    final Map<Integer, BeaconPreparableProposer> newConfiguration = new ConcurrentHashMap<>();
+    blsPublicKeyToIndexMap.entrySet().stream()
         .filter(blsPublicKeyOptionalEntry -> blsPublicKeyOptionalEntry.getValue().isPresent())
-        .map(
+        .forEach(
             blsPublicKeyIntegerEntry ->
-                new BeaconPreparableProposer(
-                    UInt64.valueOf(blsPublicKeyIntegerEntry.getValue().get()),
-                    getFeeRecipient(maybeProposerConfig, blsPublicKeyIntegerEntry.getKey())))
-        .collect(Collectors.toList());
+                newConfiguration.put(
+                    blsPublicKeyIntegerEntry.getValue().get(),
+                    new BeaconPreparableProposer(
+                        UInt64.valueOf(blsPublicKeyIntegerEntry.getValue().get()),
+                        getFeeRecipient(maybeProposerConfig, blsPublicKeyIntegerEntry.getKey()))));
+    configuredProposerMap.keySet().stream()
+        .filter(key -> !newConfiguration.containsKey(key))
+        .forEach(configuredProposerMap::remove);
+
+    configuredProposerMap.putAll(newConfiguration);
+    return getProposers(configuredProposerMap, runtimeProposerMap).values();
   }
 
   private Eth1Address getFeeRecipient(
