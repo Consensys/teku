@@ -39,7 +39,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -99,10 +98,7 @@ public class LibP2PGossipNetworkBuilder {
 
           final SeenCache<Optional<ValidationResult>> seenCache =
               new TTLSeenCache<>(
-                  new FastIdSeenCache<>(
-                      msg ->
-                          Bytes.wrap(
-                              Hash.sha256(msg.getProtobufMessage().getData().toByteArray()))),
+                  new FastIdSeenCache<>(msg -> Bytes.wrap(msg.messageSha256())),
                   gossipParams.getSeenTTL(),
                   getCurTimeMillis());
 
