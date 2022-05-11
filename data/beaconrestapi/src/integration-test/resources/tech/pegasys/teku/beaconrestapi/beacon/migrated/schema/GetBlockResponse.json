@@ -1,12 +1,8 @@
 {
   "title" : "GetBlockResponse",
   "type" : "object",
-  "required" : [ "version", "data" ],
+  "required" : [ "data" ],
   "properties" : {
-    "version" : {
-      "type" : "string",
-      "enum" : [ "PHASE0", "ALTAIR", "BELLATRIX" ]
-    },
     "data" : {
       "title" : "SignedBeaconBlock",
       "type" : "object",

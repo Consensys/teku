@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SPEC_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -97,7 +96,9 @@ public class GetBlock extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {}
+  public void handle(@NotNull final Context ctx) throws Exception {
+    adapt(ctx);
+  }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
@@ -108,7 +109,7 @@ public class GetBlock extends MigratingEndpointAdapter {
         future.thenApply(
             maybeObjectAndMetaData -> {
               if (maybeObjectAndMetaData.isEmpty()) {
-                AsyncApiResponse.respondNotFound();
+                return AsyncApiResponse.respondNotFound();
               }
 
               ObjectAndMetaData<SignedBeaconBlock> response = maybeObjectAndMetaData.get();
@@ -120,7 +121,7 @@ public class GetBlock extends MigratingEndpointAdapter {
                     String.format(
                         "Slot %s is not a phase0 slot, please fetch via /eth/v2/beacon/blocks",
                         response.getData().getMessage().getSlot());
-                AsyncApiResponse.respondWithError(SC_BAD_REQUEST, message);
+                return AsyncApiResponse.respondWithError(SC_BAD_REQUEST, message);
               }
 
               return AsyncApiResponse.respondOk(response.getData());
@@ -139,10 +140,6 @@ public class GetBlock extends MigratingEndpointAdapter {
 
     return SerializableTypeDefinition.object(SignedBeaconBlock.class)
         .name("GetBlockResponse")
-        .withField(
-            "version",
-            SPEC_VERSION_TYPE,
-            block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
         .withField("data", schemaDefinition, Function.identity())
         .build();
   }
