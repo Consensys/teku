@@ -18,15 +18,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BLSPubKey;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -38,6 +41,7 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -132,44 +136,15 @@ class ExecutionLayerManagerImplTest {
   }
 
   @Test
-  public void builderGetHeader_shouldReturnBuilderHeader() {
+  public void builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaBuilder() {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.createPayloadExecutionContext(false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    final ExecutionPayloadHeader response = prepareGetHeaderResponse(executionPayloadContext);
-    prepareGetPayloadResponse(executionPayloadContext);
-
-    // we expect result from the builder
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
-        .isCompletedWithValue(response);
-
-    // we expect both builder and local engine have been called
-    verify(executionBuilderClient)
-        .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash());
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
-  }
-
-  @Test
-  public void builderGetHeader_shouldReturnEngineHeaderOnBuilderFailure() {
-    setBuilderOnline();
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
-
-    prepareGetHeaderFailure(executionPayloadContext);
-    final ExecutionPayload payload = prepareGetPayloadResponse(executionPayloadContext);
-
-    final ExecutionPayloadHeader header =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(payload);
+    final ExecutionPayloadHeader header = prepareBuilderGetHeaderResponse(executionPayloadContext);
+    prepareEngineGetPayloadResponse(executionPayloadContext);
 
     // we expect result from the builder
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
@@ -179,18 +154,75 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient)
         .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+    final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlockRequest =
+        new SignedMessage<>(
+            new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
+            signedBlindedBeaconBlock.getSignature());
+
+    final ExecutionPayload payload =
+        prepareBuilderGetPayloadResponse(signedBlindedBeaconBlockRequest);
+
+    // we expect result from the builder
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect both builder and local engine have been called
+    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlockRequest);
+    verifyNoMoreInteractions(executionEngineClient);
   }
 
   @Test
-  public void builderGetHeader_shouldNotCallBuilderIfNotActive() {
+  public void builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineOnBuilderFailure() {
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.createPayloadExecutionContext(false);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+
+    prepareBuilderGetHeaderFailure(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+
+    final ExecutionPayloadHeader header =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(payload);
+
+    // we expect local engine header as result
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+        .isCompletedWithValue(header);
+
+    // we expect both builder and local engine have been called
+    verify(executionBuilderClient)
+        .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash());
+    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    // we expect result from the cached payload
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect no additional calls
+    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(executionEngineClient);
+  }
+
+  @Test
+  public void builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfBuilderNotActive() {
     setBuilderOffline();
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.createPayloadExecutionContext(false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    prepareGetHeaderFailure(executionPayloadContext);
-    final ExecutionPayload payload = prepareGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -200,16 +232,70 @@ class ExecutionLayerManagerImplTest {
             .getExecutionPayloadHeaderSchema()
             .createFromExecutionPayload(payload);
 
-    // we expect result from the builder
+    // we expect local engine header as result
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
     verifyNoInteractions(executionBuilderClient);
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    // we expect result from the cached payload
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect no additional calls
+    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(executionEngineClient);
   }
 
-  private ExecutionPayloadHeader prepareGetHeaderResponse(
+  @Test
+  void onSlot_shouldCleanUpFallbackCache() {
+    setBuilderOffline();
+
+    IntStream.rangeClosed(1, 4)
+        .forEach(
+            value -> {
+              final UInt64 slot = UInt64.valueOf(value);
+              final ExecutionPayloadContext executionPayloadContext =
+                  dataStructureUtil.createPayloadExecutionContext(slot, false);
+              prepareEngineGetPayloadResponse(executionPayloadContext);
+              assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+                  .isCompleted();
+            });
+
+    reset(executionEngineClient);
+
+    // this trigger onSlot at slot 5, which cleans cache up to slot 3
+    setBuilderOffline(UInt64.valueOf(5));
+
+    // we expect a call to builder even if it is offline
+    // since we have nothing better to do
+
+    final UInt64 slot = UInt64.ONE;
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+    final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlockRequest =
+        new SignedMessage<>(
+            new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
+            signedBlindedBeaconBlock.getSignature());
+
+    final ExecutionPayload payload =
+        prepareBuilderGetPayloadResponse(signedBlindedBeaconBlockRequest);
+
+    // we expect result from the builder
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect both builder and local engine have been called
+    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlockRequest);
+    verifyNoMoreInteractions(executionEngineClient);
+  }
+
+  private ExecutionPayloadHeader prepareBuilderGetHeaderResponse(
       final ExecutionPayloadContext executionPayloadContext) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
@@ -231,7 +317,21 @@ class ExecutionLayerManagerImplTest {
     return header;
   }
 
-  private void prepareGetHeaderFailure(final ExecutionPayloadContext executionPayloadContext) {
+  private ExecutionPayload prepareBuilderGetPayloadResponse(
+      final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock) {
+
+    final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+
+    when(executionBuilderClient.getPayload(signedBlindedBeaconBlock))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new Response<>(ExecutionPayloadV1.fromInternalExecutionPayload(payload))));
+
+    return payload;
+  }
+
+  private void prepareBuilderGetHeaderFailure(
+      final ExecutionPayloadContext executionPayloadContext) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     when(executionBuilderClient.getHeader(
@@ -239,7 +339,7 @@ class ExecutionLayerManagerImplTest {
         .thenReturn(SafeFuture.failedFuture(new Throwable("error")));
   }
 
-  private ExecutionPayload prepareGetPayloadResponse(
+  private ExecutionPayload prepareEngineGetPayloadResponse(
       final ExecutionPayloadContext executionPayloadContext) {
 
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
@@ -262,19 +362,32 @@ class ExecutionLayerManagerImplTest {
 
   private void updateBuilderStatus(
       SafeFuture<Response<GenericBuilderStatus>> builderClientResponse) {
+    updateBuilderStatus(builderClientResponse, UInt64.ONE);
+  }
+
+  private void updateBuilderStatus(
+      SafeFuture<Response<GenericBuilderStatus>> builderClientResponse, UInt64 slot) {
     when(executionBuilderClient.status()).thenReturn(builderClientResponse);
     // trigger update of the builder status
-    executionLayerManager.onSlot(UInt64.ONE);
+    executionLayerManager.onSlot(slot);
   }
 
   private void setBuilderOffline() {
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>("oops")));
+    setBuilderOffline(UInt64.ONE);
+  }
+
+  private void setBuilderOffline(UInt64 slot) {
+    updateBuilderStatus(SafeFuture.completedFuture(new Response<>("oops")), slot);
     reset(executionBuilderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
   }
 
   private void setBuilderOnline() {
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)));
+    setBuilderOnline(UInt64.ONE);
+  }
+
+  private void setBuilderOnline(UInt64 slot) {
+    updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)), slot);
     reset(executionBuilderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
   }

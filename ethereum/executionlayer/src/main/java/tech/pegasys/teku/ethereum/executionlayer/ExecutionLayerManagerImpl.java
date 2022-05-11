@@ -19,7 +19,9 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,15 +65,24 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private static final Logger LOG = LogManager.getLogger();
+  private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
 
   private final ExecutionEngineClient executionEngineClient;
   private final Optional<ExecutionBuilderClient> executionBuilderClient;
 
   private final AtomicBoolean latestBuilderAvailability;
 
-  private Optional<UInt64> lastExecutionEngineGetPayloadSlot = Optional.empty();
-  private Optional<SafeFuture<ExecutionPayload>> lastExecutionEngineGetPayloadExecutionPayload =
-      Optional.empty();
+  /**
+   * slotToLocalElFallbackData usage:
+   *
+   * <p>if we serve builderGetHeader using local execution engine, we store slot->executionPayload
+   * to be able to serve builderGetPayload later
+   *
+   * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() to signal that
+   * we must call the builder to serve builderGetPayload later
+   */
+  private final NavigableMap<UInt64, Optional<SafeFuture<ExecutionPayload>>>
+      slotToLocalElFallbackData = new ConcurrentSkipListMap<>();
 
   private final Spec spec;
 
@@ -127,6 +138,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public void onSlot(UInt64 slot) {
     updateBuilderAvailability();
+    slotToLocalElFallbackData
+        .headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false)
+        .clear();
   }
 
   @Override
@@ -188,8 +202,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "calling engineGetPayload(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
         slot);
-
-    clearLastExecutionEnginePayloadData();
 
     if (!isFallbackCall
         && isBuilderAvailable()
@@ -259,7 +271,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     if (!isBuilderAvailable()) {
       // fallback to local execution engine
-      return getExecutionHeaderFromLocalExecutionEngine(localExecutionPayload, slot);
+      return doFallbackToLocal(localExecutionPayload, slot);
     }
 
     LOG.trace(
@@ -273,22 +285,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(
-            builderBidV1SignedMessage ->
-                getExecutionHeaderFromBuilderBid(builderBidV1SignedMessage, slot))
+            builderBidV1SignedMessage -> getHeaderFromBuilderBid(builderBidV1SignedMessage, slot))
         .thenPeek(
-            executionPayloadHeader ->
-                LOG.trace(
-                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                    slot,
-                    Bytes48.ZERO,
-                    executionPayloadContext.getParentHash(),
-                    executionPayloadHeader))
+            executionPayloadHeader -> {
+              // store that we haven't fallen back for this slot
+              slotToLocalElFallbackData.put(slot, Optional.empty());
+              LOG.trace(
+                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                  slot,
+                  Bytes48.ZERO,
+                  executionPayloadContext.getParentHash(),
+                  executionPayloadHeader);
+            })
         .exceptionallyCompose(
             error -> {
               LOG.error(
                   "builderGetHeader returned an error. Falling back to local execution engine",
                   error);
-              return getExecutionHeaderFromLocalExecutionEngine(localExecutionPayload, slot);
+              return doFallbackToLocal(localExecutionPayload, slot);
             });
   }
 
@@ -300,11 +314,61 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
         "SignedBeaconBlock must be blind");
 
-    if (!isBuilderAvailable()) {
-      // fallback to local execution engine
-      return getExecutionFromLastLocalExecutionEngineCall(signedBlindedBeaconBlock);
+    final UInt64 slot = signedBlindedBeaconBlock.getSlot();
+
+    final Optional<Optional<SafeFuture<ExecutionPayload>>> maybeFallbackPayload =
+        Optional.ofNullable(slotToLocalElFallbackData.get(slot));
+
+    if (maybeFallbackPayload.isEmpty()) {
+      LOG.warn(
+          "Blinded block seems not been built via either builder or local engine. Trying to unblind it via builder endpoint anyway.");
+      return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
+    if (maybeFallbackPayload.get().isEmpty()) {
+      return getPayloadFromBuilder(signedBlindedBeaconBlock);
+    }
+
+    slotToLocalElFallbackData.remove(slot);
+
+    // fallback to local execution engine
+    return maybeFallbackPayload.get().get();
+  }
+
+  private SafeFuture<ExecutionPayloadHeader> doFallbackToLocal(
+      final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
+
+    return localExecutionPayload
+        .thenApply(
+            executionPayload ->
+                spec.atSlot(slot)
+                    .getSchemaDefinitions()
+                    .toVersionBellatrix()
+                    .orElseThrow()
+                    .getExecutionPayloadHeaderSchema()
+                    .createFromExecutionPayload(executionPayload))
+        .thenPeek(
+            __ -> {
+              // store the fallback payload for this slot,
+              slotToLocalElFallbackData.put(slot, Optional.of(localExecutionPayload));
+            });
+  }
+
+  private ExecutionPayloadHeader getHeaderFromBuilderBid(
+      SignedMessage<BuilderBidV1> signedBuilderBid, UInt64 slot) {
+    ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
+        SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema();
+    // validate signature
+
+    return signedBuilderBid
+        .getMessage()
+        .getHeader()
+        .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema);
+  }
+
+  private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return executionBuilderClient
@@ -329,65 +393,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     executionPayload));
   }
 
-  private SafeFuture<ExecutionPayloadHeader> getExecutionHeaderFromLocalExecutionEngine(
-      final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
-    lastExecutionEngineGetPayloadSlot = Optional.of(slot);
-    lastExecutionEngineGetPayloadExecutionPayload = Optional.of(localExecutionPayload);
-    return localExecutionPayload.thenApply(
-        executionPayload ->
-            spec.atSlot(slot)
-                .getSchemaDefinitions()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getExecutionPayloadHeaderSchema()
-                .createFromExecutionPayload(executionPayload));
-  }
-
-  private ExecutionPayloadHeader getExecutionHeaderFromBuilderBid(
-      SignedMessage<BuilderBidV1> signedBuilderBid, UInt64 slot) {
-    ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
-        SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getExecutionPayloadHeaderSchema();
-    // validate signature
-
-    return signedBuilderBid
-        .getMessage()
-        .getHeader()
-        .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema);
-  }
-
-  private SafeFuture<ExecutionPayload> getExecutionFromLastLocalExecutionEngineCall(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    try {
-      if (lastExecutionEngineGetPayloadSlot.isEmpty()
-          || lastExecutionEngineGetPayloadExecutionPayload.isEmpty()) {
-        return SafeFuture.failedFuture(
-            new IllegalStateException(
-                "unable to fallback to local execution engine: blinded beacon block likely generated via builder endpoint"));
-      }
-
-      if (!lastExecutionEngineGetPayloadSlot.get().equals(signedBlindedBeaconBlock.getSlot())) {
-        return SafeFuture.failedFuture(
-            new IllegalStateException(
-                "unable to fallback to local execution engine: cached call is for slot "
-                    + lastExecutionEngineGetPayloadSlot.get()
-                    + " while blinded beacon block is for slot "
-                    + signedBlindedBeaconBlock.getSlot()));
-      }
-
-      return lastExecutionEngineGetPayloadExecutionPayload.get();
-    } finally {
-      clearLastExecutionEnginePayloadData();
-    }
-  }
-
   boolean isBuilderAvailable() {
     return latestBuilderAvailability.get();
-  }
-
-  private void clearLastExecutionEnginePayloadData() {
-    lastExecutionEngineGetPayloadSlot = Optional.empty();
-    lastExecutionEngineGetPayloadExecutionPayload = Optional.empty();
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
