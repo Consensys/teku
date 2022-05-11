@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
@@ -49,7 +48,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetBlock extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/blocks/:block_id";
@@ -131,12 +129,10 @@ public class GetBlock extends MigratingEndpointAdapter {
   private static SerializableTypeDefinition<SignedBeaconBlock> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     SerializableTypeDefinition<SignedBeaconBlock> schemaDefinition =
-        getSchemaDefinitionForAllMilestones(
-            schemaDefinitionCache,
-            "SignedBeaconBlock",
-            SchemaDefinitions::getSignedBeaconBlockSchema,
-            (block, milestone) ->
-                schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone));
+        schemaDefinitionCache
+            .getSchemaDefinition(SpecMilestone.PHASE0)
+            .getSignedBeaconBlockSchema()
+            .getJsonTypeDefinition();
 
     return SerializableTypeDefinition.object(SignedBeaconBlock.class)
         .name("GetBlockResponse")
