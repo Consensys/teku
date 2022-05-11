@@ -415,7 +415,7 @@ public class BeaconRestApi {
             dataProvider, jsonProvider));
 
     app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
-    app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));
     app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));

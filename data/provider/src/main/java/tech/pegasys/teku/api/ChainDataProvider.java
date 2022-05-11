@@ -49,7 +49,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Root;
@@ -174,14 +173,14 @@ public class ChainDataProvider {
     return fromBlock(slotParameter, block -> new Root(block.getRoot()));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
-      final String slotParameter) {
+  public SafeFuture<
+          Optional<
+              ObjectAndMetaData<
+                  List<tech.pegasys.teku.spec.datastructures.operations.Attestation>>>>
+      getBlockAttestations(final String slotParameter) {
     return fromBlock(
         slotParameter,
-        block ->
-            block.getMessage().getBody().getAttestations().stream()
-                .map(Attestation::new)
-                .collect(toList()));
+        block -> block.getMessage().getBody().getAttestations().stream().collect(toList()));
   }
 
   public boolean isStoreAvailable() {
