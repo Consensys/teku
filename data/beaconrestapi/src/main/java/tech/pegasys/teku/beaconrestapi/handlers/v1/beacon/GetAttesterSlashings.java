@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 
@@ -57,10 +56,7 @@ public class GetAttesterSlashings extends MigratingEndpointAdapter {
             .description(
                 "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
-            .response(
-                SC_OK,
-                "Request successful",
-                getResponseType(spec.getGenesisSpecConfig())) // TODO check correct
+            .response(SC_OK, "Request successful", getResponseType(spec))
             .build());
     this.nodeDataProvider = provider;
   }
@@ -90,10 +86,9 @@ public class GetAttesterSlashings extends MigratingEndpointAdapter {
     request.respondOk(attesterSlashings);
   }
 
-  private static SerializableTypeDefinition<List<AttesterSlashing>> getResponseType(
-      SpecConfig specConfig) {
+  private static SerializableTypeDefinition<List<AttesterSlashing>> getResponseType(Spec spec) {
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
-        new IndexedAttestation.IndexedAttestationSchema(specConfig);
+        new IndexedAttestation.IndexedAttestationSchema(spec.getGenesisSpecConfig());
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
         new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
 
