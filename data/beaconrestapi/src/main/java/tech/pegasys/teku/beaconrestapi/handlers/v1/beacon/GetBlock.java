@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SPEC_VERSION_TYPE;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -25,37 +29,56 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class GetBlock extends AbstractHandler implements Handler {
+public class GetBlock extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/blocks/:block_id";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  public GetBlock(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  public GetBlock(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetBlock(
+      final ChainDataProvider chainDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getBlock")
+            .summary("Get block")
+            .description(
+                "Retrieves block details for given block id.\n\n"
+                    + "__NOTE__: only phase 0 blocks are returned, use `/eth/v2/beacon/blocks/{block_id}` for multiple milestone support.")
+            .tags(TAG_BEACON)
+            .pathParam(PARAMETER_BLOCK_ID)
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            // .response(SC_BAD_REQUEST, "Bad request", HTTP_ERROR_RESPONSE_TYPE) // TODO do I need
+            // one for bad request?
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -76,27 +99,53 @@ public class GetBlock extends AbstractHandler implements Handler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
+  public void handle(@NotNull final Context ctx) throws Exception {}
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> future =
-        chainDataProvider.getBlock(pathParams.get(PARAM_BLOCK_ID));
-    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+        chainDataProvider.getSignedBeaconBlock(request.getPathParameter(PARAMETER_BLOCK_ID));
+
+    request.respondAsync(
+        future.thenApply(
+            maybeObjectAndMetaData -> {
+              if (maybeObjectAndMetaData.isEmpty()) {
+                AsyncApiResponse.respondNotFound();
+              }
+
+              ObjectAndMetaData<SignedBeaconBlock> response = maybeObjectAndMetaData.get();
+
+              if (!chainDataProvider
+                  .getMilestoneAtSlot(response.getData().getMessage().getSlot())
+                  .equals(SpecMilestone.PHASE0)) {
+                final String message =
+                    String.format(
+                        "Slot %s is not a phase0 slot, please fetch via /eth/v2/beacon/blocks",
+                        response.getData().getMessage().getSlot());
+                AsyncApiResponse.respondWithError(SC_BAD_REQUEST, message);
+              }
+
+              return AsyncApiResponse.respondOk(response.getData());
+            }));
   }
 
-  private Optional<String> handleResult(
-      final Context ctx, final ObjectAndMetaData<SignedBeaconBlock> response)
-      throws JsonProcessingException {
-    if (!chainDataProvider
-        .getMilestoneAtSlot(response.getData().getMessage().slot)
-        .equals(SpecMilestone.PHASE0)) {
-      ctx.status(SC_BAD_REQUEST);
-      return Optional.of(
-          BadRequest.badRequest(
-              jsonProvider,
-              String.format(
-                  "Slot %s is not a phase0 slot, please fetch via /eth/v2/beacon/blocks",
-                  response.getData().getMessage().slot)));
-    }
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponse(response.getData())));
+  private static SerializableTypeDefinition<SignedBeaconBlock> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    SerializableTypeDefinition<SignedBeaconBlock> schemaDefinition =
+        getSchemaDefinitionForAllMilestones(
+            schemaDefinitionCache,
+            "SignedBeaconBlock",
+            SchemaDefinitions::getSignedBeaconBlockSchema,
+            (block, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone));
+
+    return SerializableTypeDefinition.object(SignedBeaconBlock.class)
+        .name("GetBlockResponse")
+        .withField(
+            "version",
+            SPEC_VERSION_TYPE,
+            block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
+        .withField("data", schemaDefinition, Function.identity())
+        .build();
   }
 }

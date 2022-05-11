@@ -53,7 +53,6 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Root;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -64,6 +63,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
@@ -149,9 +149,14 @@ public class ChainDataProvider {
                             block -> new BlockHeader(block, blockAndMetaData.isCanonical()))));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
-      final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.api.schema.SignedBeaconBlock>>>
+      getBlock(final String slotParameter) {
     return fromBlock(slotParameter, schemaObjectProvider::getSignedBeaconBlock);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getSignedBeaconBlock(
+      final String slotParameter) {
+    return fromBlock(slotParameter, block -> block);
   }
 
   public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
