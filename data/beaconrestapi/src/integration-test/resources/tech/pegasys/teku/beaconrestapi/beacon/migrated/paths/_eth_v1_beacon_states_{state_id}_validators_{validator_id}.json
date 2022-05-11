@@ -20,7 +20,7 @@
       "schema" : {
         "type" : "string",
         "description" : "Either hex encoded public key (with 0x prefix) or validator index",
-        "example" : "head"
+        "example" : "1"
       }
     } ],
     "responses" : {
