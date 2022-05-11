@@ -93,10 +93,9 @@ public class NodeDataProvider {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
-  public List<AttesterSlashing> getAttesterSlashings() {
-    return attesterSlashingPool.getAll().stream()
-        .map(AttesterSlashing::new)
-        .collect(Collectors.toList());
+  public List<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
+      getAttesterSlashings() {
+    return new ArrayList<>(attesterSlashingPool.getAll());
   }
 
   public List<ProposerSlashing> getProposerSlashings() {
