@@ -75,8 +75,6 @@ public class GetBlock extends MigratingEndpointAdapter {
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
-            // .response(SC_BAD_REQUEST, "Bad request", HTTP_ERROR_RESPONSE_TYPE) // TODO do I need
-            // one for bad request?
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
