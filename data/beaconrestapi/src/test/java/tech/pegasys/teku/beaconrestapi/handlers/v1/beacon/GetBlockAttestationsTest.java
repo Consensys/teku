@@ -13,28 +13,25 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private StubRestApiRequest request;
@@ -50,9 +47,10 @@ class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerWithChainDat
   }
 
   @Test
-  public void shouldReturnBlockAttestationsInformation() throws JsonProcessingException, ExecutionException, InterruptedException {
+  public void shouldReturnBlockAttestationsInformation()
+      throws JsonProcessingException, ExecutionException, InterruptedException {
     final Optional<ObjectAndMetaData<List<Attestation>>> stateAndMetaData =
-            chainDataProvider.getBlockAttestations("head").get();
+        chainDataProvider.getBlockAttestations("head").get();
 
     handler.handleRequest(request);
 
@@ -74,15 +72,16 @@ class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerWithChainDat
   @Test
   void metadata_shouldHandle200() throws IOException {
     final List<Attestation> attestations =
-            List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
     final ObjectAndMetaData<List<Attestation>> responseData =
-            new ObjectAndMetaData<>(attestations, spec.getGenesisSpec().getMilestone(), false, false, true);
+        new ObjectAndMetaData<>(
+            attestations, spec.getGenesisSpec().getMilestone(), false, false, true);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
-            Resources.toString(
-                    Resources.getResource(GetBlockAttestationsTest.class, "getBlockAttestations.json"),
-                    UTF_8);
+        Resources.toString(
+            Resources.getResource(GetBlockAttestationsTest.class, "getBlockAttestations.json"),
+            UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }
