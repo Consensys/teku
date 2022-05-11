@@ -408,7 +408,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
 
-    app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
