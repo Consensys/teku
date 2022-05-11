@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -478,10 +479,12 @@ class ForkChoiceNotifierTest {
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot)).isNotCompleted();
 
     // But becomes available once we receive the response
+    final ExecutionPayloadContext executionPayloadContext =
+        new ExecutionPayloadContext(payloadId, forkChoiceState, Optional.of(payloadAttributes));
     responseFuture.complete(
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot))
-        .isCompletedWithOptionalContaining(payloadId);
+        .isCompletedWithOptionalContaining(executionPayloadContext);
   }
 
   @Test
@@ -707,16 +710,20 @@ class ForkChoiceNotifierTest {
         .thenReturn(responseFuture);
 
     // Initially has no payload ID.
-    SafeFuture<Optional<Bytes8>> futurePayloadId = notifier.getPayloadId(blockRoot, blockSlot);
-    assertThatSafeFuture(futurePayloadId).isNotCompleted();
+    SafeFuture<Optional<ExecutionPayloadContext>> futureExecutionPayloadContext =
+        notifier.getPayloadId(blockRoot, blockSlot);
+    assertThatSafeFuture(futureExecutionPayloadContext).isNotCompleted();
 
     responseFuture.complete(
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
 
     if (mustFail) {
-      assertThatSafeFuture(futurePayloadId).isCompletedExceptionally();
+      assertThatSafeFuture(futureExecutionPayloadContext).isCompletedExceptionally();
     } else {
-      assertThatSafeFuture(futurePayloadId).isCompletedWithOptionalContaining(payloadId);
+      final ExecutionPayloadContext executionPayloadContext =
+          new ExecutionPayloadContext(payloadId, forkChoiceState, Optional.of(payloadAttributes));
+      assertThatSafeFuture(futureExecutionPayloadContext)
+          .isCompletedWithOptionalContaining(executionPayloadContext);
     }
   }
 

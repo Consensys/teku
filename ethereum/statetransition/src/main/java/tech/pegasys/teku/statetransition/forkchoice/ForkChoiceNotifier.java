@@ -17,8 +17,8 @@ import java.util.Collection;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
@@ -31,7 +31,8 @@ public interface ForkChoiceNotifier {
 
   void onSyncingStatusChanged(boolean inSync);
 
-  SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 parentBeaconBlockRoot, UInt64 blockSlot);
+  SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
+      Bytes32 parentBeaconBlockRoot, UInt64 blockSlot);
 
   void onTerminalBlockReached(Bytes32 executionBlockHash);
 

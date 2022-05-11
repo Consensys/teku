@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -25,24 +28,36 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetAttesterSlashingsResponse;
-import tech.pegasys.teku.api.schema.AttesterSlashing;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 
-public class GetAttesterSlashings extends AbstractHandler {
+public class GetAttesterSlashings extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/attester_slashings";
   private final NodeDataProvider nodeDataProvider;
 
-  public GetAttesterSlashings(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+  public GetAttesterSlashings(final DataProvider dataProvider, Spec spec) {
+    this(dataProvider.getNodeDataProvider(), spec);
   }
 
-  GetAttesterSlashings(final NodeDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  GetAttesterSlashings(final NodeDataProvider provider, Spec spec) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getAttesterSlashings")
+            .summary("Get Attester Slashings")
+            .description(
+                "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
+            .tags(TAG_BEACON)
+            .response(SC_OK, "Request successful", getResponseType(spec))
+            .build());
     this.nodeDataProvider = provider;
   }
 
@@ -62,7 +77,25 @@ public class GetAttesterSlashings extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     List<AttesterSlashing> attesterSlashings = nodeDataProvider.getAttesterSlashings();
-    ctx.json(jsonProvider.objectToJSON(new GetAttesterSlashingsResponse(attesterSlashings)));
+    request.respondOk(attesterSlashings);
+  }
+
+  private static SerializableTypeDefinition<List<AttesterSlashing>> getResponseType(Spec spec) {
+    final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
+        new IndexedAttestation.IndexedAttestationSchema(spec.getGenesisSpecConfig());
+    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
+        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
+
+    return SerializableTypeDefinition.<List<AttesterSlashing>>object()
+        .name("GetPoolAttesterSlashingsResponse")
+        .withField(
+            "data", listOf(attesterSlashingSchema.getJsonTypeDefinition()), Function.identity())
+        .build();
   }
 }

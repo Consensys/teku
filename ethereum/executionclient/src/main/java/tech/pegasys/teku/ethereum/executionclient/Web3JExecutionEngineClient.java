@@ -25,7 +25,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfiguration
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
@@ -127,33 +125,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
   }
 
-  @Override
-  public SafeFuture<Response<ExecutionPayloadHeaderV1>> getPayloadHeader(Bytes8 payloadId) {
-    Request<?, ExecutionPayloadHeaderV1Web3jResponse> web3jRequest =
-        new Request<>(
-            "builder_getPayloadHeaderV1",
-            Collections.singletonList(payloadId.toHexString()),
-            web3JClient.getWeb3jService(),
-            ExecutionPayloadHeaderV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
-  }
-
-  @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> proposeBlindedBlock(
-      SignedBeaconBlock signedBlindedBeaconBlock) {
-    Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
-        new Request<>(
-            "builder_proposeBlindedBlockV1",
-            Collections.singletonList(signedBlindedBeaconBlock),
-            web3JClient.getWeb3jService(),
-            ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
-  }
-
-  protected Web3JClient getWeb3JClient() {
-    return web3JClient;
-  }
-
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
@@ -165,9 +136,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class TransitionConfigurationV1Web3jResponse
       extends org.web3j.protocol.core.Response<TransitionConfigurationV1> {}
-
-  static class ExecutionPayloadHeaderV1Web3jResponse
-      extends org.web3j.protocol.core.Response<ExecutionPayloadHeaderV1> {}
 
   /**
    * Returns a list that supports null items.

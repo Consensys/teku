@@ -1,35 +1,16 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getAttestations",
-    "summary" : "Get attestations",
-    "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
-    "parameters" : [ {
-      "name" : "slot",
-      "in" : "query",
-      "schema" : {
-        "type" : "string",
-        "description" : "`UInt64` Slot to query in the canonical chain.",
-        "example" : "1",
-        "format" : "uint64"
-      }
-    }, {
-      "name" : "committee_index",
-      "in" : "query",
-      "schema" : {
-        "type" : "string",
-        "description" : "`uint64` Committee index to query.",
-        "example" : "1",
-        "format" : "uint64"
-      }
-    } ],
+    "operationId" : "getAttesterSlashings",
+    "summary" : "Get Attester Slashings",
+    "description" : "Retrieves attester slashings known by the node but not necessarily incorporated into any block.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetPoolAttestationsResponse"
+              "$ref" : "#/components/schemas/GetPoolAttesterSlashingsResponse"
             }
           }
         }
