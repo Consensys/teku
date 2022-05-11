@@ -29,7 +29,7 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<String> PARAMETER_VALIDATOR_ID =
       new ParameterMetadata<>(
-          PARAM_VALIDATOR_ID, CoreTypes.string(PARAM_VALIDATOR_DESCRIPTION, "head"));
+          PARAM_VALIDATOR_ID, CoreTypes.string(PARAM_VALIDATOR_DESCRIPTION, "1"));
 
   public static final ParameterMetadata<String> PARAMETER_BLOCK_ID =
       new ParameterMetadata<>(PARAM_BLOCK_ID, CoreTypes.string(PARAM_BLOCK_ID_DESCRIPTION, "head"));

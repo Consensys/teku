@@ -1,26 +1,17 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "getStateValidator",
-    "summary" : "Get validator from state",
-    "description" : "Retrieves data about the given peer.",
+    "tags" : [ "Beacon" ],
+    "operationId" : "getBlock",
+    "summary" : "Get block",
+    "description" : "Retrieves block details for given block id.\n\n__NOTE__: only phase 0 blocks are returned, use `/eth/v2/beacon/blocks/{block_id}` for multiple milestone support.",
     "parameters" : [ {
-      "name" : "state_id",
+      "name" : "block_id",
       "required" : true,
       "in" : "path",
       "schema" : {
         "type" : "string",
-        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
         "example" : "head"
-      }
-    }, {
-      "name" : "validator_id",
-      "required" : true,
-      "in" : "path",
-      "schema" : {
-        "type" : "string",
-        "description" : "Either hex encoded public key (with 0x prefix) or validator index",
-        "example" : "1"
       }
     } ],
     "responses" : {
@@ -29,7 +20,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetStateValidatorResponse"
+              "$ref" : "#/components/schemas/GetBlockResponse"
             }
           }
         }
