@@ -30,6 +30,7 @@ tmp/
 build/
 out/
 web3j/
+!**/executionclient/web3j/
 ganache-cli/
 pow/src/main/resources/keys.json
 !validator_test_data.json

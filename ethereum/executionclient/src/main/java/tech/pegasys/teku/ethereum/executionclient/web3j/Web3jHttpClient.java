@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient;
+package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import java.net.URI;
 import java.time.Duration;
@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.http.HttpService;
-import tech.pegasys.teku.ethereum.executionclient.auth.JwtAuthHttpInterceptor;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -35,23 +35,14 @@ class Web3jHttpClient extends Web3JClient {
       final Duration timeout,
       final Optional<JwtConfig> jwtConfig) {
     super(timeProvider);
-    final OkHttpClient okHttpClient = createOkHttpClient(jwtConfig, timeout, timeProvider);
+    final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(LOG::trace);
+    final OkHttpClient okHttpClient =
+        OkHttpClientCreator.create(
+            jwtConfig,
+            timeout,
+            LOG.isTraceEnabled() ? Optional.of(loggingInterceptor) : Optional.empty(),
+            timeProvider);
     Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
     initWeb3jService(httpService);
-  }
-
-  private OkHttpClient createOkHttpClient(
-      final Optional<JwtConfig> jwtConfig,
-      final Duration timeout,
-      final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder().readTimeout(timeout);
-    if (LOG.isTraceEnabled()) {
-      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
-      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-      builder.addInterceptor(logging);
-    }
-    jwtConfig.ifPresent(
-        config -> builder.addInterceptor(new JwtAuthHttpInterceptor(config, timeProvider)));
-    return builder.build();
   }
 }
