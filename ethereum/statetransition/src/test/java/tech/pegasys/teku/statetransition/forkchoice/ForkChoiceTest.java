@@ -817,7 +817,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onAttestation_shouldBeInvalidWhenInvalidCheckpointThrown() {
+  void onAttestation_shouldBeInvalidWhenTargetRefersToBlockAfterTargetEpochStart() {
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(5);
     importBlock(targetBlock);
 
