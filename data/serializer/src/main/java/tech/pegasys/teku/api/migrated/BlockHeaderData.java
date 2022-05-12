@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.migrated;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -76,5 +77,32 @@ public class BlockHeaderData {
 
   public static SerializableTypeDefinition<BlockHeaderData> getJsonTypeDefinition() {
     return HEADER_DATA_TYPE;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    BlockHeaderData that = (BlockHeaderData) o;
+    return canonical == that.canonical
+        && Objects.equals(root, that.root)
+        && Objects.equals(header, that.header);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(root, canonical, header);
+  }
+
+  @Override
+  public String toString() {
+    return "BlockHeaderData{"
+        + "root="
+        + root
+        + ", canonical="
+        + canonical
+        + ", header="
+        + header
+        + '}';
   }
 }
