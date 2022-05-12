@@ -343,7 +343,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return localExecutionPayload
         // store the fallback payload for this slot
         .thenPeek(
-            executionPayload -> slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload)))
+            executionPayload ->
+                slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload)))
         .thenApply(
             executionPayload ->
                 spec.atSlot(slot)
