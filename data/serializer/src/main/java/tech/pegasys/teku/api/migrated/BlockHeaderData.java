@@ -81,8 +81,12 @@ public class BlockHeaderData {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     BlockHeaderData that = (BlockHeaderData) o;
     return canonical == that.canonical
         && Objects.equals(root, that.root)

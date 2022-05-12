@@ -44,8 +44,12 @@ public class BlockHeadersResponse {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     BlockHeadersResponse that = (BlockHeadersResponse) o;
     return Objects.equals(executionOptimistic, that.executionOptimistic)
         && Objects.equals(data, that.data);
