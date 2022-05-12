@@ -135,17 +135,8 @@ public class ChainDataProvider {
     return spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
-      final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getBlock()
-        .thenApply(
-            maybeBlockAndMetadata ->
-                maybeBlockAndMetadata.map(
-                    blockAndMetaData ->
-                        blockAndMetaData.map(
-                            block -> new BlockHeader(block, blockAndMetaData.isCanonical()))));
+  public SafeFuture<Optional<BlockAndMetaData>> getBlockAndMetaData(final String slotParameter) {
+    return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getBlock();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.api.schema.SignedBeaconBlock>>>
