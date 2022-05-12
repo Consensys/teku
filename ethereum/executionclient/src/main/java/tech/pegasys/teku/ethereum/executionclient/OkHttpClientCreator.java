@@ -13,45 +13,34 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.web3j.protocol.Web3jService;
-import org.web3j.protocol.http.HttpService;
+import okhttp3.logging.HttpLoggingInterceptor.Logger;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtAuthHttpInterceptor;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-class Web3jHttpClient extends Web3JClient {
-  private static final Logger LOG = LogManager.getLogger();
+public class OkHttpClientCreator {
 
-  Web3jHttpClient(
-      final URI endpoint,
-      final TimeProvider timeProvider,
-      final Duration timeout,
-      final Optional<JwtConfig> jwtConfig) {
-    super(timeProvider);
-    final OkHttpClient okHttpClient = createOkHttpClient(jwtConfig, timeout, timeProvider);
-    Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
-    initWeb3jService(httpService);
-  }
-
-  private OkHttpClient createOkHttpClient(
+  public static OkHttpClient create(
       final Optional<JwtConfig> jwtConfig,
       final Duration timeout,
+      final Optional<HttpLoggingInterceptor> loggingInterceptor,
       final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder().readTimeout(timeout);
-    if (LOG.isTraceEnabled()) {
-      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
-      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-      builder.addInterceptor(logging);
-    }
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder().readTimeout(timeout).writeTimeout(timeout);
+    loggingInterceptor.ifPresent(builder::addInterceptor);
     jwtConfig.ifPresent(
         config -> builder.addInterceptor(new JwtAuthHttpInterceptor(config, timeProvider)));
     return builder.build();
+  }
+
+  public static HttpLoggingInterceptor createLoggingInterceptor(
+      Logger logger, HttpLoggingInterceptor.Level level) {
+    final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(logger);
+    loggingInterceptor.setLevel(level);
+    return loggingInterceptor;
   }
 }

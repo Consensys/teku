@@ -15,14 +15,14 @@ package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
@@ -46,7 +46,7 @@ public class ExecutionLayerService extends Service {
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
             serviceConfig.getTimeProvider(),
-            EXECUTION_TIMEOUT,
+            EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
             config.getEngineJwtSecretFile(),
             serviceConfig.getDataDirLayout().getBeaconDataDirectory());
 
@@ -58,7 +58,7 @@ public class ExecutionLayerService extends Service {
                     ExecutionWeb3jClientProvider.create(
                         builderEndpoint,
                         serviceConfig.getTimeProvider(),
-                        EXECUTION_TIMEOUT,
+                        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
                         Optional.empty(),
                         serviceConfig.getDataDirLayout().getBeaconDataDirectory()));
 
@@ -66,7 +66,7 @@ public class ExecutionLayerService extends Service {
         builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::isStub).orElse(false);
 
     checkState(
-        engineWeb3jClientProvider.isStub() == builderIsStub,
+        engineWeb3jClientProvider.isStub() == builderIsStub || builderWeb3jClientProvider.isEmpty(),
         "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
 
     final String endpoint = engineWeb3jClientProvider.getEndpoint();

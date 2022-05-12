@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient;
+package tech.pegasys.teku.ethereum.executionclient.web3j;
 
-import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +25,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -87,7 +88,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -98,7 +99,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(executionPayload),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -110,7 +111,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             list(forkChoiceState, payloadAttributes.orElse(null)),
             web3JClient.getWeb3jService(),
             ForkChoiceUpdatedResultWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
   }
 
   @Override
@@ -122,7 +123,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(transitionConfiguration),
             web3JClient.getWeb3jService(),
             TransitionConfigurationV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
   }
 
   static class ExecutionPayloadV1Web3jResponse
