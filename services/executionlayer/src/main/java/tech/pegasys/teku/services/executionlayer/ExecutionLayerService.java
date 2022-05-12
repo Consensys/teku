@@ -66,7 +66,7 @@ public class ExecutionLayerService extends Service {
         builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::isStub).orElse(false);
 
     checkState(
-        engineWeb3jClientProvider.isStub() == builderIsStub,
+        engineWeb3jClientProvider.isStub() == builderIsStub || builderWeb3jClientProvider.isEmpty(),
         "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
 
     final String endpoint = engineWeb3jClientProvider.getEndpoint();
