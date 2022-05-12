@@ -402,7 +402,7 @@ public class BeaconRestApi {
     app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
     app.get(GetStateSyncCommittees.ROUTE, new GetStateSyncCommittees(dataProvider, jsonProvider));
 
-    app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockHeaders(dataProvider));
     addMigratedEndpoint(new GetBlockHeader(dataProvider));
 
     addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));

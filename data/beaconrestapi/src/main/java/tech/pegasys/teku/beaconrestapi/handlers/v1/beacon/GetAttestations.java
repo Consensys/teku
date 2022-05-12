@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
@@ -41,10 +43,8 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetAttestationsResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -54,14 +54,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 public class GetAttestations extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
   private final NodeDataProvider nodeDataProvider;
-
-  private static final ParameterMetadata<UInt64> SLOT_PARAMETER =
-      new ParameterMetadata<>(SLOT, CoreTypes.UINT64_TYPE.withDescription(SLOT_QUERY_DESCRIPTION));
-
-  private static final ParameterMetadata<UInt64> COMMITTEE_INDEX_PARAMETER =
-      new ParameterMetadata<>(
-          COMMITTEE_INDEX,
-          CoreTypes.UINT64_TYPE.withDescription(COMMITTEE_INDEX_QUERY_DESCRIPTION));
 
   public GetAttestations(final DataProvider dataProvider, Spec spec) {
     this(dataProvider.getNodeDataProvider(), spec);

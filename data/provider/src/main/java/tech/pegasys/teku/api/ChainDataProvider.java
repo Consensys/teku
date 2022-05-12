@@ -38,12 +38,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -334,7 +333,7 @@ public class ChainDataProvider {
         .map(Merkleizable::hashTreeRoot);
   }
 
-  public SafeFuture<GetBlockHeadersResponse> getBlockHeaders(
+  public SafeFuture<BlockHeadersResponse> getBlockHeaders(
       final Optional<Bytes32> parentRoot, final Optional<UInt64> slot) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
@@ -342,7 +341,7 @@ public class ChainDataProvider {
     final boolean bellatrixEnabled = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     if (parentRoot.isPresent()) {
       return SafeFuture.completedFuture(
-          new GetBlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
+          new BlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
     }
 
     return defaultBlockSelectorFactory
@@ -355,15 +354,8 @@ public class ChainDataProvider {
                       ? blockAndMetadataList.stream()
                           .anyMatch(BlockAndMetaData::isExecutionOptimistic)
                       : null;
-              final List<BlockHeader> headers =
-                  blockAndMetadataList.stream()
-                      .map(
-                          blockAndMetaData ->
-                              new BlockHeader(
-                                  blockAndMetaData.getData(), blockAndMetaData.isCanonical()))
-                      .collect(toList());
-              return new GetBlockHeadersResponse(
-                  bellatrixEnabled ? executionOptimistic : null, headers);
+              return new BlockHeadersResponse(
+                  bellatrixEnabled ? executionOptimistic : null, blockAndMetadataList);
             });
   }
 
