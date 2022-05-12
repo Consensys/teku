@@ -96,6 +96,7 @@ class AttestationManagerIntegrationTest {
           forkChoice,
           pendingAttestations,
           futureAttestations,
+          new DeferredAttestations(),
           attestationPool,
           attestationValidator,
           new AggregateAttestationValidator(
