@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import okhttp3.logging.HttpLoggingInterceptor.Logger;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtAuthHttpInterceptor;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -34,5 +35,12 @@ public class OkHttpClientCreator {
     jwtConfig.ifPresent(
         config -> builder.addInterceptor(new JwtAuthHttpInterceptor(config, timeProvider)));
     return builder.build();
+  }
+
+  public static HttpLoggingInterceptor createLoggingInterceptor(
+      Logger logger, HttpLoggingInterceptor.Level level) {
+    final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(logger);
+    loggingInterceptor.setLevel(level);
+    return loggingInterceptor;
   }
 }

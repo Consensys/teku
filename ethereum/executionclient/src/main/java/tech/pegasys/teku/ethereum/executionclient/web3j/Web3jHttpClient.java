@@ -35,13 +35,17 @@ class Web3jHttpClient extends Web3JClient {
       final Duration timeout,
       final Optional<JwtConfig> jwtConfig) {
     super(timeProvider);
-    final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(LOG::trace);
+    final Optional<HttpLoggingInterceptor> loggingInterceptor;
+    if (LOG.isTraceEnabled()) {
+      loggingInterceptor =
+          Optional.of(
+              OkHttpClientCreator.createLoggingInterceptor(
+                  LOG::trace, HttpLoggingInterceptor.Level.BODY));
+    } else {
+      loggingInterceptor = Optional.empty();
+    }
     final OkHttpClient okHttpClient =
-        OkHttpClientCreator.create(
-            jwtConfig,
-            timeout,
-            LOG.isTraceEnabled() ? Optional.of(loggingInterceptor) : Optional.empty(),
-            timeProvider);
+        OkHttpClientCreator.create(jwtConfig, timeout, loggingInterceptor, timeProvider);
     Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
     initWeb3jService(httpService);
   }
