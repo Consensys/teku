@@ -98,10 +98,9 @@ public class NodeDataProvider {
     return new ArrayList<>(attesterSlashingPool.getAll());
   }
 
-  public List<ProposerSlashing> getProposerSlashings() {
-    return proposerSlashingPool.getAll().stream()
-        .map(ProposerSlashing::new)
-        .collect(Collectors.toList());
+  public List<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
+      getProposerSlashings() {
+    return proposerSlashingPool.getAll().stream().collect(Collectors.toList());
   }
 
   public List<SignedVoluntaryExit> getVoluntaryExits() {
