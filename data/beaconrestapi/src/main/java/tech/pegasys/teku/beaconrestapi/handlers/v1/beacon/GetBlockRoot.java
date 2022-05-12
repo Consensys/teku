@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -21,38 +23,64 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
-import tech.pegasys.teku.api.schema.Root;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetBlockRoot extends AbstractHandler implements Handler {
+public class GetBlockRoot extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/blocks/:block_id/root";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockRoot(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  private static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
+      SerializableTypeDefinition.object(Bytes32.class)
+          .withField("root", BYTES32_TYPE, Function.identity())
+          .build();
+
+  private static final SerializableTypeDefinition<ObjectAndMetaData<Bytes32>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()
+          .name("GetBlockRootResponse")
+          .withField("data", ROOT_TYPE, ObjectAndMetaData::getData)
+          // TODO remove below? Eth docs have this, but causes fail of GetBlockRootIntegrationtest
+          // .withField("execution_optimistic", BOOLEAN_TYPE,
+          // ObjectAndMetaData::isExecutionOptimistic)
+          .build();
+
+  public GetBlockRoot(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  public GetBlockRoot(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetBlockRoot(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getBlockRoot")
+            .summary("Get block root")
+            .description("Retrieves hashTreeRoot of BeaconBlock/BeaconBlockHeader")
+            .tags(TAG_BEACON)
+            .pathParam(PARAMETER_BLOCK_ID)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -73,16 +101,22 @@ public class GetBlockRoot extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<ObjectAndMetaData<Root>>> future =
-        chainDataProvider.getBlockRoot(pathParams.get(PARAM_BLOCK_ID));
-    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+    adapt(ctx);
   }
 
-  private Optional<String> handleResult(Context ctx, final ObjectAndMetaData<Root> response)
-      throws JsonProcessingException {
-    return Optional.of(
-        jsonProvider.objectToJSON(
-            new GetBlockRootResponse(response.getData(), response.isExecutionOptimisticForApi())));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> future =
+        chainDataProvider.getBlockRoot(request.getPathParameter(PARAMETER_BLOCK_ID));
+
+    request.respondAsync(
+        future.thenApply(
+            maybeRootAndMetaData -> {
+              if (maybeRootAndMetaData.isEmpty()) {
+                return AsyncApiResponse.respondNotFound();
+              }
+
+              return AsyncApiResponse.respondOk(maybeRootAndMetaData.get());
+            }));
   }
 }

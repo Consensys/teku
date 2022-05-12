@@ -50,7 +50,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -164,8 +163,8 @@ public class ChainDataProvider {
                                 spec.atSlot(blockData.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
-    return fromBlock(slotParameter, block -> new Root(block.getRoot()));
+  public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String slotParameter) {
+    return fromBlock(slotParameter, SignedBeaconBlock::getRoot);
   }
 
   public SafeFuture<
