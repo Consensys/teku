@@ -73,7 +73,8 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
     if (validators.hasNoValidators()) {
       return SafeFuture.COMPLETE;
     }
-
+    // All validators are set to `unknown` until explicitly updated otherwise
+    localValidatorCounts.set(validators.getValidatorCount(), "unknown");
     return validatorApiChannel
         .getValidatorStatuses(validators.getPublicKeys())
         .thenCompose(
@@ -197,5 +198,10 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               final long validatorCount = validatorCountByStatus.getOrDefault(status, 0L);
               localValidatorCounts.set(validatorCount, status.name());
             });
+    // Validator statuses are read from chainProvider, so `oldValidatorStatuses` contains only the
+    // subset of validators already seen on chain (with status pending*, active_*, exited_* and
+    // withdrawal_*). Unknown validators are calculated by subtraction.
+    localValidatorCounts.set(
+        validators.getValidatorCount() - oldValidatorStatuses.size(), "unknown");
   }
 }

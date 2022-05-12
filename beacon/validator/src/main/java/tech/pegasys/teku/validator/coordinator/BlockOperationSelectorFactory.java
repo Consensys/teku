@@ -19,20 +19,17 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -47,8 +44,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -60,7 +55,6 @@ public class BlockOperationSelectorFactory {
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerChannel executionLayerChannel;
-  private final boolean isMevBoostEnabled;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -73,8 +67,7 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionLayerChannel executionLayerChannel,
-      final boolean isMevBoostEnabled) {
+      final ExecutionLayerChannel executionLayerChannel) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -86,7 +79,6 @@ public class BlockOperationSelectorFactory {
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerChannel = executionLayerChannel;
-    this.isMevBoostEnabled = isMevBoostEnabled;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
@@ -97,7 +89,7 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
-      SszList<Attestation> attestations =
+      final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState,
               new AttestationForkChecker(spec, blockSlotState),
@@ -140,41 +132,26 @@ public class BlockOperationSelectorFactory {
                   contributionPool.createSyncAggregateForBlock(
                       blockSlotState.getSlot(), parentRoot));
 
-      // execution Payload handling
+      // execution payload handling
       if (bodyBuilder.isBlinded()) {
-        if (isMevBoostEnabled) {
-
-          // mev-boost is enabled and a blinded block has been requested
-          // we can call builder api to get a payload header
-          bodyBuilder.executionPayloadHeader(
-              payloadProvider(
-                  parentRoot,
-                  blockSlotState,
-                  () ->
-                      SchemaDefinitionsBellatrix.required(
-                              spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                          .getExecutionPayloadHeaderSchema()
-                          .getHeaderOfDefaultPayload(),
-                  (payloadId) ->
-                      executionLayerChannel
-                          .getPayloadHeader(payloadId, blockSlotState.getSlot())
-                          .join()));
-          return;
-        }
-
-        // blinded block has been requested but mev-boost is not enabled
-        throw new UnsupportedOperationException(
-            "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
+        // an execution payload header is required
+        bodyBuilder.executionPayloadHeader(
+            payloadProvider(
+                parentRoot,
+                blockSlotState,
+                () ->
+                    SchemaDefinitionsBellatrix.required(
+                            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                        .getExecutionPayloadHeaderSchema()
+                        .getHeaderOfDefaultPayload(),
+                (executionPayloadContext) ->
+                    executionLayerChannel
+                        .builderGetHeader(executionPayloadContext, blockSlotState.getSlot())
+                        .join()));
+        return;
       }
 
-      // non-blinded block requested
-      if (isMevBoostEnabled
-          && spec.atSlot(blockSlotState.getSlot())
-              .getMilestone()
-              .isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-        LOG.warn("Mev-boost is enabled but a non-blinded block has been requested");
-      }
-
+      // non-blinded body requested: a full execution payload is required
       bodyBuilder.executionPayload(
           payloadProvider(
               parentRoot,
@@ -184,9 +161,9 @@ public class BlockOperationSelectorFactory {
                           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                       .getExecutionPayloadSchema()
                       .getDefault(),
-              (payloadId) ->
+              (executionPayloadContext) ->
                   executionLayerChannel
-                      .engineGetPayload(payloadId, blockSlotState.getSlot())
+                      .engineGetPayload(executionPayloadContext, blockSlotState.getSlot())
                       .join()));
     };
   }
@@ -195,7 +172,7 @@ public class BlockOperationSelectorFactory {
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       Supplier<T> defaultSupplier,
-      Function<Bytes8, T> supplier) {
+      Function<ExecutionPayloadContext, T> supplier) {
     return () ->
         forkChoiceNotifier
             .getPayloadId(parentRoot, blockSlotState.getSlot())
@@ -213,12 +190,6 @@ public class BlockOperationSelectorFactory {
 
   public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {
     return bodyUnblinder -> {
-      if (!isMevBoostEnabled) {
-        // blinded block has been requested but mev-boost is not enabled
-        throw new UnsupportedOperationException(
-            "Blinded flow for non-mev_boost execution engine is not yet supported. See issue #5103");
-      }
-
       final BeaconBlock block = bodyUnblinder.getSignedBlindedBeaconBlock().getMessage();
 
       if (block
@@ -237,7 +208,7 @@ public class BlockOperationSelectorFactory {
       } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
-                executionLayerChannel.proposeBlindedBlock(
+                executionLayerChannel.builderGetPayload(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };

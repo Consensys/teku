@@ -14,48 +14,73 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARENT_ROOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.migrated.BlockHeaderData;
+import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetBlockHeaders extends AbstractHandler implements Handler {
+public class GetBlockHeaders extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/headers";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockHeaders(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  private static final SerializableTypeDefinition<BlockHeadersResponse> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(BlockHeadersResponse.class)
+          .name("GetBlockHeadersResponse")
+          .withOptionalField(
+              "execution_optimistic", BOOLEAN_TYPE, BlockHeadersResponse::isExecutionOptimistic)
+          .withField(
+              "data",
+              listOf(BlockHeaderData.getJsonTypeDefinition()),
+              BlockHeadersResponse::getData)
+          .build();
+
+  public GetBlockHeaders(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  public GetBlockHeaders(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetBlockHeaders(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getBlockHeaders")
+            .summary("Get block headers")
+            .description(
+                "Retrieves block headers matching given query. By default it will fetch current head slot blocks.")
+            .tags(TAG_BEACON)
+            .queryParam(SLOT_PARAMETER)
+            .queryParam(PARENT_ROOT_PARAMETER)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -79,29 +104,29 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, List<String>> queryParameters = ctx.queryParamMap();
-
-    final Optional<Bytes32> parentRoot =
-        getParameterValueAsBytes32IfPresent(queryParameters, PARENT_ROOT);
-    final Optional<UInt64> slot = getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
-    try {
-      ctx.future(
-          chainDataProvider
-              .getBlockHeaders(parentRoot, slot)
-              .thenApplyChecked(jsonProvider::objectToJSON)
-              .exceptionallyCompose(error -> handleError(ctx, error)));
-    } catch (final IllegalArgumentException e) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-    }
+    adapt(ctx);
   }
 
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, error.getMessage()));
-    }
-    return SafeFuture.failedFuture(error);
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final Optional<Bytes32> parentRoot = request.getOptionalQueryParameter(PARENT_ROOT_PARAMETER);
+    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+
+    final SafeFuture<BlockHeadersResponse> future =
+        chainDataProvider.getBlockHeaders(parentRoot, slot);
+
+    request.respondAsync(
+        future
+            .thenApplyChecked(AsyncApiResponse::respondOk)
+            .exceptionallyCompose(
+                error -> {
+                  final Throwable rootCause = Throwables.getRootCause(error);
+                  if (rootCause instanceof IllegalArgumentException) {
+                    return SafeFuture.of(
+                        () ->
+                            AsyncApiResponse.respondWithError(SC_BAD_REQUEST, error.getMessage()));
+                  }
+                  return SafeFuture.failedFuture(error);
+                }));
   }
 }

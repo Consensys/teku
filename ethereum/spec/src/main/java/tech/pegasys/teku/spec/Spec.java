@@ -473,12 +473,12 @@ public class Spec {
   public AttestationProcessingResult validateAttestation(
       final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
-      final Optional<BeaconState> maybeTargetState) {
+      final Optional<BeaconState> maybeState) {
     final UInt64 slot = validateableAttestation.getAttestation().getData().getSlot();
     final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
     return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(fork, store, validateableAttestation, maybeTargetState);
+        .validate(fork, store, validateableAttestation, maybeState);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(

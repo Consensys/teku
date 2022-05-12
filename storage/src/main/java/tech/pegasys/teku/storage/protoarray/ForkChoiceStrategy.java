@@ -152,6 +152,18 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  public void applyDeferredAttestations(final VoteUpdater voteUpdater, final DeferredVotes votes) {
+    final UInt64 targetEpoch = spec.computeEpochAtSlot(votes.getSlot());
+    votesLock.writeLock().lock();
+    try {
+      votes.forEachDeferredVote(
+          (blockRoot, validatorIndex) ->
+              processAttestation(voteUpdater, validatorIndex, blockRoot, targetEpoch));
+    } finally {
+      votesLock.writeLock().unlock();
+    }
+  }
+
   @Override
   public List<ProtoNodeData> getChainHeads() {
     protoArrayLock.readLock().lock();

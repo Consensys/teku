@@ -38,22 +38,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Root;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -64,6 +61,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
@@ -136,22 +134,18 @@ public class ChainDataProvider {
     return spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<BlockHeader>>> getBlockHeader(
-      final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getBlock()
-        .thenApply(
-            maybeBlockAndMetadata ->
-                maybeBlockAndMetadata.map(
-                    blockAndMetaData ->
-                        blockAndMetaData.map(
-                            block -> new BlockHeader(block, blockAndMetaData.isCanonical()))));
+  public SafeFuture<Optional<BlockAndMetaData>> getBlockAndMetaData(final String slotParameter) {
+    return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getBlock();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
-      final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.api.schema.SignedBeaconBlock>>>
+      getBlock(final String slotParameter) {
     return fromBlock(slotParameter, schemaObjectProvider::getSignedBeaconBlock);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getSignedBeaconBlock(
+      final String slotParameter) {
+    return fromBlock(slotParameter, block -> block);
   }
 
   public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
@@ -174,14 +168,14 @@ public class ChainDataProvider {
     return fromBlock(slotParameter, block -> new Root(block.getRoot()));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
-      final String slotParameter) {
+  public SafeFuture<
+          Optional<
+              ObjectAndMetaData<
+                  List<tech.pegasys.teku.spec.datastructures.operations.Attestation>>>>
+      getBlockAttestations(final String slotParameter) {
     return fromBlock(
         slotParameter,
-        block ->
-            block.getMessage().getBody().getAttestations().stream()
-                .map(Attestation::new)
-                .collect(toList()));
+        block -> block.getMessage().getBody().getAttestations().stream().collect(toList()));
   }
 
   public boolean isStoreAvailable() {
@@ -339,7 +333,7 @@ public class ChainDataProvider {
         .map(Merkleizable::hashTreeRoot);
   }
 
-  public SafeFuture<GetBlockHeadersResponse> getBlockHeaders(
+  public SafeFuture<BlockHeadersResponse> getBlockHeaders(
       final Optional<Bytes32> parentRoot, final Optional<UInt64> slot) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
@@ -347,7 +341,7 @@ public class ChainDataProvider {
     final boolean bellatrixEnabled = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     if (parentRoot.isPresent()) {
       return SafeFuture.completedFuture(
-          new GetBlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
+          new BlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
     }
 
     return defaultBlockSelectorFactory
@@ -360,15 +354,8 @@ public class ChainDataProvider {
                       ? blockAndMetadataList.stream()
                           .anyMatch(BlockAndMetaData::isExecutionOptimistic)
                       : null;
-              final List<BlockHeader> headers =
-                  blockAndMetadataList.stream()
-                      .map(
-                          blockAndMetaData ->
-                              new BlockHeader(
-                                  blockAndMetaData.getData(), blockAndMetaData.isCanonical()))
-                      .collect(toList());
-              return new GetBlockHeadersResponse(
-                  bellatrixEnabled ? executionOptimistic : null, headers);
+              return new BlockHeadersResponse(
+                  bellatrixEnabled ? executionOptimistic : null, blockAndMetadataList);
             });
   }
 

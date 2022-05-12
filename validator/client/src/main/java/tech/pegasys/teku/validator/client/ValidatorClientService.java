@@ -70,7 +70,8 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
-  private Optional<ProposerConfigProvider> proposerConfigProvider;
+  private final Optional<ProposerConfigProvider> proposerConfigProvider;
+  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
 
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
@@ -82,6 +83,8 @@ public class ValidatorClientService extends Service {
       final BeaconNodeApi beaconNodeApi,
       final Optional<RestApi> validatorRestApi,
       final ForkProvider forkProvider,
+      final Optional<ProposerConfigProvider> proposerConfigProvider,
+      final Optional<BeaconProposerPreparer> beaconProposerPreparer,
       final Spec spec,
       final MetricsSystem metricsSystem) {
     this.eventChannels = eventChannels;
@@ -89,6 +92,8 @@ public class ValidatorClientService extends Service {
     this.beaconNodeApi = beaconNodeApi;
     this.validatorRestApi = validatorRestApi;
     this.forkProvider = forkProvider;
+    this.proposerConfigProvider = proposerConfigProvider;
+    this.beaconProposerPreparer = beaconProposerPreparer;
     this.spec = spec;
     this.metricsSystem = metricsSystem;
   }
@@ -125,11 +130,32 @@ public class ValidatorClientService extends Service {
 
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
+    Optional<ProposerConfigProvider> proposerConfigProvider = Optional.empty();
+    Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
+    if (config.getSpec().isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      proposerConfigProvider =
+          Optional.of(
+              ProposerConfigProvider.create(
+                  asyncRunner,
+                  config.getValidatorConfig().getRefreshProposerConfigFromSource(),
+                  new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
+                  config.getValidatorConfig().getProposerConfigSource()));
+
+      beaconProposerPreparer =
+          Optional.of(
+              new BeaconProposerPreparer(
+                  validatorApiChannel,
+                  Optional.empty(),
+                  proposerConfigProvider.get(),
+                  config.getValidatorConfig().getProposerDefaultFeeRecipient(),
+                  config.getSpec()));
+    }
     if (validatorApiConfig.isRestApiEnabled()) {
       validatorRestApi =
           Optional.of(
               ValidatorRestApi.create(
                   validatorApiConfig,
+                  beaconProposerPreparer,
                   new ActiveKeyManager(
                       validatorLoader,
                       services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
@@ -144,6 +170,8 @@ public class ValidatorClientService extends Service {
             beaconNodeApi,
             validatorRestApi,
             forkProvider,
+            proposerConfigProvider,
+            beaconProposerPreparer,
             config.getSpec(),
             services.getMetricsSystem());
 
@@ -244,23 +272,11 @@ public class ValidatorClientService extends Service {
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      proposerConfigProvider =
-          Optional.of(
-              ProposerConfigProvider.create(
-                  asyncRunner,
-                  config.getValidatorConfig().getRefreshProposerConfigFromSource(),
-                  new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
-                  config.getValidatorConfig().getProposerConfigSource()));
-
-      validatorTimingChannels.add(
-          new BeaconProposerPreparer(
-              validatorApiChannel,
-              validatorIndexProvider,
-              proposerConfigProvider.get(),
-              config.getValidatorConfig().getProposerDefaultFeeRecipient(),
-              spec));
-    } else {
-      proposerConfigProvider = Optional.empty();
+      beaconProposerPreparer.ifPresent(
+          preparer -> {
+            preparer.initialize(Optional.of(validatorIndexProvider));
+            validatorTimingChannels.add(preparer);
+          });
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =

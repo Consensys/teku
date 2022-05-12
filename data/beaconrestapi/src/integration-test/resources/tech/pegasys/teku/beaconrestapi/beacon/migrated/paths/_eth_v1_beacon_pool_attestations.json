@@ -34,16 +34,6 @@
           }
         }
       },
-      "404" : {
-        "description" : "Not found",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
-      },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
         "content" : {

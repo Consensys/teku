@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.services.executionlayer;
 
+import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER;
+
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -82,7 +85,7 @@ public class ExecutionLayerConfiguration {
     private Builder() {}
 
     public ExecutionLayerConfiguration build() {
-
+      validateStubEndpoints();
       return new ExecutionLayerConfiguration(
           spec, engineEndpoint, engineVersion, engineJwtSecretFile, builderEndpoint);
     }
@@ -110,6 +113,17 @@ public class ExecutionLayerConfiguration {
     public Builder builderEndpoint(final String builderEndpoint) {
       this.builderEndpoint = Optional.ofNullable(builderEndpoint);
       return this;
+    }
+
+    private void validateStubEndpoints() {
+      final boolean engineIsStub =
+          engineEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_IDENTIFIER)).orElse(false);
+      final boolean builderIsStub =
+          builderEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_IDENTIFIER)).orElse(false);
+
+      checkState(
+          engineIsStub == builderIsStub || builderEndpoint.isEmpty(),
+          "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
     }
   }
 }

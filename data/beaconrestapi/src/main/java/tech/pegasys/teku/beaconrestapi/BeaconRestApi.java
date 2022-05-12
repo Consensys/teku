@@ -402,25 +402,25 @@ public class BeaconRestApi {
     app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
     app.get(GetStateSyncCommittees.ROUTE, new GetStateSyncCommittees(dataProvider, jsonProvider));
 
-    app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
-    app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockHeaders(dataProvider));
+    addMigratedEndpoint(new GetBlockHeader(dataProvider));
 
     addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
 
-    app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
             dataProvider, jsonProvider));
 
     app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
-    app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));
     app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
 
-    app.get(GetAttesterSlashings.ROUTE, new GetAttesterSlashings(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
     app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));
     app.get(GetProposerSlashings.ROUTE, new GetProposerSlashings(dataProvider, jsonProvider));
     app.post(PostProposerSlashing.ROUTE, new PostProposerSlashing(dataProvider, jsonProvider));

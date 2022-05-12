@@ -46,7 +46,7 @@ import tech.pegasys.teku.beacon.pow.ThrottlingEth1Provider;
 import tech.pegasys.teku.beacon.pow.TimeBasedEth1HeadTracker;
 import tech.pegasys.teku.beacon.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.beacon.pow.Web3jEth1Provider;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;

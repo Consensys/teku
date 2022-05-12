@@ -571,8 +571,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eth1DataCache,
                 VersionProvider.getDefaultGraffiti(),
                 forkChoiceNotifier,
-                executionLayer,
-                beaconConfig.validatorConfig().isProposerMevBoostEnabled()));
+                executionLayer));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)

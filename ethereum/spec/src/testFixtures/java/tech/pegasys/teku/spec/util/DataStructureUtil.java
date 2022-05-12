@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -922,12 +923,16 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndicesInput) {
+    return randomIndexedAttestation(randomAttestationData(), attestingIndicesInput);
+  }
+
+  public IndexedAttestation randomIndexedAttestation(
+      final AttestationData data, final UInt64... attestingIndicesInput) {
     final IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
-    return indexedAttestationSchema.create(
-        attestingIndices, randomAttestationData(), randomSignature());
+    return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
   }
 
   public DepositData randomDepositData() {
@@ -1085,6 +1090,17 @@ public final class DataStructureUtil {
 
   public EnrForkId randomEnrForkId() {
     return new EnrForkId(randomBytes4(), randomBytes4(), randomUInt64());
+  }
+
+  public ExecutionPayloadContext createPayloadExecutionContext(final boolean optimisticHead) {
+    return new ExecutionPayloadContext(
+        randomBytes8(), randomForkChoiceState(optimisticHead), Optional.empty());
+  }
+
+  public ExecutionPayloadContext createPayloadExecutionContext(
+      final UInt64 slot, final boolean optimisticHead) {
+    return new ExecutionPayloadContext(
+        randomBytes8(), randomForkChoiceState(slot, optimisticHead), Optional.empty());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

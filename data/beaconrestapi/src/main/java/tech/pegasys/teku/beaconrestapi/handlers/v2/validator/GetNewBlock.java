@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SPEC_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -48,7 +49,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -81,9 +81,6 @@ public class GetNewBlock extends MigratingEndpointAdapter {
   private static final ParameterMetadata<Bytes32> PARAM_GRAFFITI =
       new ParameterMetadata<>(
           GRAFFITI, CoreTypes.BYTES32_TYPE.withDescription("`Bytes32 Hex` Graffiti."));
-
-  private static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION =
-      DeserializableTypeDefinition.enumOf(SpecMilestone.class);
 
   protected final ValidatorDataProvider provider;
 
@@ -159,7 +156,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
                     "data", getBlockSchemaDefinition(schemaDefinitionCache), Function.identity())
                 .withField(
                     "version",
-                    SPEC_VERSION,
+                    SPEC_VERSION_TYPE,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build(),
             sszResponseType(

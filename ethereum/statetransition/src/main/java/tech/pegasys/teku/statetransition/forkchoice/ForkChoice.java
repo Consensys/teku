@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SL
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -56,8 +57,10 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -76,6 +79,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private Optional<Boolean> optimisticSyncing = Optional.empty();
+  private AttestationStateSelector attestationStateSelector;
 
   public ForkChoice(
       final Spec spec,
@@ -92,6 +96,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
+    attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -509,13 +514,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidateableAttestation attestation) {
-    return recentChainData
-        .retrieveCheckpointState(attestation.getData().getTarget())
+    return attestationStateSelector
+        .getStateToValidate(attestation.getData())
         .thenCompose(
-            maybeTargetState -> {
+            maybeState -> {
               final UpdatableStore store = recentChainData.getStore();
               final AttestationProcessingResult validationResult =
-                  spec.validateAttestation(store, attestation, maybeTargetState);
+                  spec.validateAttestation(store, attestation, maybeState);
 
               if (!validationResult.isSuccessful()) {
                 return SafeFuture.completedFuture(validationResult);
@@ -549,6 +554,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   .map(this::getIndexedAttestation)
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
+              transaction.commit();
+            })
+        .reportExceptions();
+  }
+
+  public void applyDeferredAttestations(final Collection<DeferredVotes> deferredVoteUpdates) {
+    onForkChoiceThread(
+            () -> {
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              deferredVoteUpdates.forEach(
+                  update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
               transaction.commit();
             })
         .reportExceptions();

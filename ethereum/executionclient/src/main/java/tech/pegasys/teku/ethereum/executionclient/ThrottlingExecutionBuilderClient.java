@@ -19,7 +19,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.GenericBuilderStatus;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
 import tech.pegasys.teku.ethereum.executionclient.schema.ValidatorRegistrationV1;
@@ -46,12 +45,12 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
   }
 
   @Override
-  public SafeFuture<Response<GenericBuilderStatus>> status() {
+  public SafeFuture<Response<Void>> status() {
     return taskQueue.queueTask(delegate::status);
   }
 
   @Override
-  public SafeFuture<Response<GenericBuilderStatus>> registerValidator(
+  public SafeFuture<Response<Void>> registerValidator(
       final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
     return taskQueue.queueTask(() -> delegate.registerValidator(signedValidatorRegistrationV1));
   }
