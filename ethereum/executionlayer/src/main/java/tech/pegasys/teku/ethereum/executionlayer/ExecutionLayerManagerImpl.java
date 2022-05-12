@@ -81,8 +81,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
    * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() to signal that
    * we must call the builder to serve builderGetPayload later
    */
-  private final NavigableMap<UInt64, Optional<SafeFuture<ExecutionPayload>>>
-      slotToLocalElFallbackData = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, Optional<ExecutionPayload>> slotToLocalElFallbackPayload =
+      new ConcurrentSkipListMap<>();
 
   private final Spec spec;
 
@@ -138,7 +138,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public void onSlot(UInt64 slot) {
     updateBuilderAvailability();
-    slotToLocalElFallbackData
+    slotToLocalElFallbackPayload
         .headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false)
         .clear();
   }
@@ -289,7 +289,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenPeek(
             executionPayloadHeader -> {
               // store that we haven't fallen back for this slot
-              slotToLocalElFallbackData.put(slot, Optional.empty());
+              slotToLocalElFallbackPayload.put(slot, Optional.empty());
               LOG.trace(
                   "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
                   slot,
@@ -316,29 +316,34 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
-    final Optional<Optional<SafeFuture<ExecutionPayload>>> maybeFallbackPayload =
-        Optional.ofNullable(slotToLocalElFallbackData.get(slot));
+    final Optional<Optional<ExecutionPayload>> maybeProcessedSlot =
+        Optional.ofNullable(slotToLocalElFallbackPayload.get(slot));
 
-    if (maybeFallbackPayload.isEmpty()) {
+    if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems not been built via either builder or local engine. Trying to unblind it via builder endpoint anyway.");
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    if (maybeFallbackPayload.get().isEmpty()) {
+    final Optional<ExecutionPayload> maybeLocalElFallbackPayload = maybeProcessedSlot.get();
+
+    if (maybeLocalElFallbackPayload.isEmpty()) {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    slotToLocalElFallbackData.remove(slot);
+    slotToLocalElFallbackPayload.remove(slot);
 
     // fallback to local execution engine
-    return maybeFallbackPayload.get().get();
+    return SafeFuture.completedFuture(maybeLocalElFallbackPayload.get());
   }
 
   private SafeFuture<ExecutionPayloadHeader> doFallbackToLocal(
       final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
 
     return localExecutionPayload
+        // store the fallback payload for this slot
+        .thenPeek(
+            executionPayload -> slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload)))
         .thenApply(
             executionPayload ->
                 spec.atSlot(slot)
@@ -346,12 +351,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     .toVersionBellatrix()
                     .orElseThrow()
                     .getExecutionPayloadHeaderSchema()
-                    .createFromExecutionPayload(executionPayload))
-        .thenPeek(
-            __ -> {
-              // store the fallback payload for this slot,
-              slotToLocalElFallbackData.put(slot, Optional.of(localExecutionPayload));
-            });
+                    .createFromExecutionPayload(executionPayload));
   }
 
   private ExecutionPayloadHeader getHeaderFromBuilderBid(
