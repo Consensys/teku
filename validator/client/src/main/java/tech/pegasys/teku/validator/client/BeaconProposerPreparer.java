@@ -151,7 +151,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
             entry -> {
               final Optional<Eth1Address> maybeFeeRecipient = getFeeRecipient(entry.getKey());
               return maybeFeeRecipient.map(
-                  (eth1Address) -> new BeaconPreparableProposer(UInt64.valueOf(entry.getValue()), eth1Address));
+                  (eth1Address) ->
+                      new BeaconPreparableProposer(UInt64.valueOf(entry.getValue()), eth1Address));
             })
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
