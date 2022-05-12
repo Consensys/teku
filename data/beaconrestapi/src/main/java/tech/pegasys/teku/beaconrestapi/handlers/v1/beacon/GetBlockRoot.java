@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -61,9 +62,7 @@ public class GetBlockRoot extends MigratingEndpointAdapter {
       SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()
           .name("GetBlockRootResponse")
           .withField("data", ROOT_TYPE, ObjectAndMetaData::getData)
-          // TODO remove below? Eth docs have this, but causes fail of GetBlockRootIntegrationtest
-          // .withField("execution_optimistic", BOOLEAN_TYPE,
-          // ObjectAndMetaData::isExecutionOptimistic)
+          .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
           .build();
 
   public GetBlockRoot(final DataProvider dataProvider) {
