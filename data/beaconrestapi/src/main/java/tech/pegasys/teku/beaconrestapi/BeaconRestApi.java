@@ -402,8 +402,8 @@ public class BeaconRestApi {
     app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
     app.get(GetStateSyncCommittees.ROUTE, new GetStateSyncCommittees(dataProvider, jsonProvider));
 
-    app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
-    app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockHeaders(dataProvider));
+    addMigratedEndpoint(new GetBlockHeader(dataProvider));
 
     addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
@@ -415,7 +415,7 @@ public class BeaconRestApi {
             dataProvider, jsonProvider));
 
     app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
-    app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));
     app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
