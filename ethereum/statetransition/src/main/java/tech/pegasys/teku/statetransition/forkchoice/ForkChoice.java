@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -74,6 +75,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private Optional<Boolean> optimisticSyncing = Optional.empty();
+  private AttestationStateSelector attestationStateSelector;
 
   public ForkChoice(
       final Spec spec,
@@ -88,6 +90,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
+    attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -500,13 +503,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidateableAttestation attestation) {
-    return recentChainData
-        .retrieveCheckpointState(attestation.getData().getTarget())
+    return attestationStateSelector
+        .getStateToValidate(attestation.getData())
         .thenCompose(
-            maybeTargetState -> {
+            maybeState -> {
               final UpdatableStore store = recentChainData.getStore();
               final AttestationProcessingResult validationResult =
-                  spec.validateAttestation(store, attestation, maybeTargetState);
+                  spec.validateAttestation(store, attestation, maybeState);
 
               if (!validationResult.isSuccessful()) {
                 return SafeFuture.completedFuture(validationResult);
