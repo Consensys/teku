@@ -114,7 +114,7 @@ public class GetBlockHeader extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<BlockAndMetaData>> future =
-        chainDataProvider.getBlockHeader(request.getPathParameter(PARAMETER_BLOCK_ID));
+        chainDataProvider.getBlockAndMetaData(request.getPathParameter(PARAMETER_BLOCK_ID));
 
     request.respondAsync(
         future.thenApply(

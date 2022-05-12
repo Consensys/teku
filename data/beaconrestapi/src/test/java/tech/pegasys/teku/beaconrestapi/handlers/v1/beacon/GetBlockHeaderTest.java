@@ -60,7 +60,7 @@ class GetBlockHeaderTest extends AbstractMigratedBeaconHandlerWithChainDataProvi
   public void shouldReturnBlockHeaderInformation()
       throws JsonProcessingException, ExecutionException, InterruptedException {
     final Optional<BlockAndMetaData> blockAndMetaData =
-        chainDataProvider.getBlockHeader("head").get();
+        chainDataProvider.getBlockAndMetaData("head").get();
 
     handler.handleRequest(request);
 

@@ -174,13 +174,13 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getBlockHeaderByBlockId_shouldGetHeadBlock()
+  public void getBlockAndMetaDataByBlockId_shouldGetHeadBlock()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
-    BlockAndMetaData result = provider.getBlockHeader("head").get().orElseThrow();
+    BlockAndMetaData result = provider.getBlockAndMetaData("head").get().orElseThrow();
 
     assertThat(result.getData()).isEqualTo(block);
     assertThat(result.isCanonical()).isTrue();
