@@ -274,15 +274,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       return doFallbackToLocal(localExecutionPayload, slot);
     }
 
+    // TODO: get public key from the context
+    final Bytes48 pubKey = Bytes48.ZERO;
+
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
         slot,
-        Bytes48.ZERO,
+        pubKey,
         executionPayloadContext.getParentHash());
 
     return executionBuilderClient
         .orElseThrow()
-        .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash())
+        .getHeader(slot, pubKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(
             builderBidV1SignedMessage -> getHeaderFromBuilderBid(builderBidV1SignedMessage, slot))
@@ -333,7 +336,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     slotToLocalElFallbackPayload.remove(slot);
 
-    // fallback to local execution engine
+    // fallback to local execution engine payload
+    // note: we don't do any particular consistency check here.
+    // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
+
     return SafeFuture.completedFuture(maybeLocalElFallbackPayload.get());
   }
 
@@ -341,9 +347,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
 
     return localExecutionPayload
-        // store the fallback payload for this slot
         .thenPeek(
             executionPayload ->
+                // store the fallback payload for this slot
                 slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload)))
         .thenApply(
             executionPayload ->
@@ -360,7 +366,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
         SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
             .getExecutionPayloadHeaderSchema();
-    // validate signature
+    // TODO: validate signature
 
     return signedBuilderBid
         .getMessage()
