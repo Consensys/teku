@@ -24,7 +24,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -34,10 +33,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -45,9 +44,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
@@ -56,20 +52,10 @@ public class GetBlockHeader extends MigratingEndpointAdapter {
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  private static final SerializableTypeDefinition<BlockHeaderData> HEADER_DATA_TYPE =
-      SerializableTypeDefinition.object(BlockHeaderData.class)
-          .withField("root", BYTES32_TYPE, BlockHeaderData::getRoot)
-          .withField("canonical", BOOLEAN_TYPE, BlockHeaderData::isCanonical)
-          .withField(
-              "header",
-              SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
-              BlockHeaderData::getHeader)
-          .build();
-
   private static final SerializableTypeDefinition<BlockAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(BlockAndMetaData.class)
           .name("GetBlockHeaderResponse")
-          .withField("data", HEADER_DATA_TYPE, GetBlockHeader::getHeaderData)
+          .withField("data", BlockHeaderData.getJsonTypeDefinition(), BlockHeaderData::new)
           .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
           .build();
 
@@ -126,46 +112,5 @@ public class GetBlockHeader extends MigratingEndpointAdapter {
               final BlockAndMetaData blockAndMetaData = maybeBlockAndMetaData.get();
               return AsyncApiResponse.respondOk(blockAndMetaData);
             }));
-  }
-
-  private static BlockHeaderData getHeaderData(final BlockAndMetaData blockAndMetaData) {
-    final SignedBeaconBlock signedBeaconBlock = blockAndMetaData.getData();
-    final BeaconBlockHeader beaconBlockHeader =
-        new BeaconBlockHeader(
-            signedBeaconBlock.getSlot(),
-            signedBeaconBlock.getMessage().getProposerIndex(),
-            signedBeaconBlock.getParentRoot(),
-            signedBeaconBlock.getStateRoot(),
-            signedBeaconBlock.getBodyRoot());
-    final SignedBeaconBlockHeader signedBeaconBlockHeader =
-        new SignedBeaconBlockHeader(beaconBlockHeader, signedBeaconBlock.getSignature());
-
-    return new BlockHeaderData(
-        signedBeaconBlock.getRoot(), blockAndMetaData.isCanonical(), signedBeaconBlockHeader);
-  }
-
-  private static class BlockHeaderData {
-    private final Bytes32 root;
-    private final boolean canonical;
-    private final SignedBeaconBlockHeader header;
-
-    BlockHeaderData(
-        final Bytes32 root, final boolean canonical, final SignedBeaconBlockHeader header) {
-      this.root = root;
-      this.canonical = canonical;
-      this.header = header;
-    }
-
-    public Bytes32 getRoot() {
-      return root;
-    }
-
-    public boolean isCanonical() {
-      return canonical;
-    }
-
-    public SignedBeaconBlockHeader getHeader() {
-      return header;
-    }
   }
 }

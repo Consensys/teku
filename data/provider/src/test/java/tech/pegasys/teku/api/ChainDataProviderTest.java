@@ -33,9 +33,9 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
+import tech.pegasys.teku.api.migrated.BlockHeaderData;
+import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -192,9 +192,9 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
-    GetBlockHeadersResponse results =
+    BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.empty()));
-    assertThat(results.data.get(0).root).isEqualTo(block.getRoot());
+    assertThat(results.getData().get(0).getRoot()).isEqualTo(block.getRoot());
   }
 
   @Test
@@ -202,9 +202,9 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final UInt64 slot = combinedChainDataClient.getCurrentSlot();
-    GetBlockHeadersResponse results =
+    BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.of(slot)));
-    assertThat(results.data.get(0).header.message.slot).isEqualTo(slot);
+    assertThat(results.getData().get(0).getHeader().getMessage().getSlot()).isEqualTo(slot);
   }
 
   @Test
@@ -215,10 +215,10 @@ public class ChainDataProviderTest {
     final UInt64 headSlot = recentChainData.getHeadSlot();
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
 
-    final SafeFuture<GetBlockHeadersResponse> future =
+    final SafeFuture<BlockHeadersResponse> future =
         provider.getBlockHeaders(Optional.empty(), Optional.empty());
-    final BlockHeader header = safeJoin(future).data.get(0);
-    assertThat(header.header.message.slot).isEqualTo(headSlot);
+    final BlockHeaderData header = safeJoin(future).getData().get(0);
+    assertThat(header.getHeader().getMessage().getSlot()).isEqualTo(headSlot);
   }
 
   @Test
