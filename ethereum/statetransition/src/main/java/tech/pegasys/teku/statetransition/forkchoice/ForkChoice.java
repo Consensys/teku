@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SL
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -538,6 +540,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   .map(this::getIndexedAttestation)
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
+              transaction.commit();
+            })
+        .reportExceptions();
+  }
+
+  public void applyDeferredAttestations(final Collection<DeferredVotes> deferredVoteUpdates) {
+    onForkChoiceThread(
+            () -> {
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              deferredVoteUpdates.forEach(
+                  update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
               transaction.commit();
             })
         .reportExceptions();
