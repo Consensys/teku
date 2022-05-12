@@ -33,7 +33,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.GenericBuilderStatus;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -77,8 +76,8 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderShouldBeAvailableWhenBuilderIsOperatingNormally() {
-    SafeFuture<Response<GenericBuilderStatus>> builderClientResponse =
-        SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK));
+    SafeFuture<Response<Void>> builderClientResponse =
+        SafeFuture.completedFuture(Response.withNullPayload());
 
     updateBuilderStatus(builderClientResponse);
 
@@ -88,7 +87,7 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderShouldNotBeAvailableWhenBuilderIsNotOperatingNormally() {
-    SafeFuture<Response<GenericBuilderStatus>> builderClientResponse =
+    SafeFuture<Response<Void>> builderClientResponse =
         SafeFuture.completedFuture(new Response<>("oops"));
 
     updateBuilderStatus(builderClientResponse);
@@ -99,7 +98,7 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderShouldNotBeAvailableWhenBuilderStatusCallFails() {
-    SafeFuture<Response<GenericBuilderStatus>> builderClientResponse =
+    SafeFuture<Response<Void>> builderClientResponse =
         SafeFuture.failedFuture(new Throwable("oops"));
 
     updateBuilderStatus(builderClientResponse);
@@ -114,7 +113,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
 
     // Given builder status is ok
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)));
+    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
@@ -128,7 +127,7 @@ class ExecutionLayerManagerImplTest {
     verify(eventLogger).executionBuilderIsOffline("oops");
 
     // Given builder status is back to being ok
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)));
+    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
@@ -360,13 +359,11 @@ class ExecutionLayerManagerImplTest {
         eventLogger);
   }
 
-  private void updateBuilderStatus(
-      SafeFuture<Response<GenericBuilderStatus>> builderClientResponse) {
+  private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse) {
     updateBuilderStatus(builderClientResponse, UInt64.ONE);
   }
 
-  private void updateBuilderStatus(
-      SafeFuture<Response<GenericBuilderStatus>> builderClientResponse, UInt64 slot) {
+  private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse, UInt64 slot) {
     when(executionBuilderClient.status()).thenReturn(builderClientResponse);
     // trigger update of the builder status
     executionLayerManager.onSlot(slot);
@@ -387,7 +384,7 @@ class ExecutionLayerManagerImplTest {
   }
 
   private void setBuilderOnline(UInt64 slot) {
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>(GenericBuilderStatus.OK)), slot);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), slot);
     reset(executionBuilderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
   }

@@ -11,11 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient;
+package tech.pegasys.teku.ethereum.executionclient.rest;
+
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -23,47 +26,38 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
 import tech.pegasys.teku.ethereum.executionclient.schema.ValidatorRegistrationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient {
-  private final ExecutionBuilderClient delegate;
-  private final ThrottlingTaskQueue taskQueue;
+public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
-  public ThrottlingExecutionBuilderClient(
-      final ExecutionBuilderClient delegate,
-      final int maximumConcurrentRequests,
-      final MetricsSystem metricsSystem) {
-    this.delegate = delegate;
-    taskQueue =
-        new ThrottlingTaskQueue(
-            maximumConcurrentRequests,
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "eb_request_queue_size");
+  private final RestClient restClient;
+
+  public RestExecutionBuilderClient(final RestClient restClient) {
+    this.restClient = restClient;
   }
 
   @Override
   public SafeFuture<Response<Void>> status() {
-    return taskQueue.queueTask(delegate::status);
+    return restClient
+        .getAsync(BuilderApiMethod.GET_STATUS.getPath())
+        .orTimeout(EL_BUILDER_STATUS_TIMEOUT);
   }
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
       final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
-    return taskQueue.queueTask(() -> delegate.registerValidator(signedValidatorRegistrationV1));
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
       final UInt64 slot, final Bytes48 pubKey, final Bytes32 parentHash) {
-    return taskQueue.queueTask(() -> delegate.getHeader(slot, pubKey, parentHash));
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public SafeFuture<Response<ExecutionPayloadV1>> getPayload(
       final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock) {
-    return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBeaconBlock));
+    throw new UnsupportedOperationException();
   }
 }

@@ -43,18 +43,20 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
   }
 
   @Override
-  public SafeFuture<Response<GenericBuilderStatus>> status() {
+  public SafeFuture<Response<Void>> status() {
     Request<?, GenericBuilderStatusWeb3jResponse> web3jRequest =
         new Request<>(
             "builder_status",
             List.of(),
             web3JClient.getWeb3jService(),
             GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_BUILDER_STATUS_TIMEOUT);
+    return web3JClient
+        .doRequest(web3jRequest, EL_BUILDER_STATUS_TIMEOUT)
+        .thenApply(statusResponse -> new Response<>(statusResponse.getErrorMessage()));
   }
 
   @Override
-  public SafeFuture<Response<GenericBuilderStatus>> registerValidator(
+  public SafeFuture<Response<Void>> registerValidator(
       final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
     Request<?, GenericBuilderStatusWeb3jResponse> web3jRequest =
         new Request<>(
@@ -62,7 +64,9 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             Collections.singletonList(signedValidatorRegistrationV1),
             web3JClient.getWeb3jService(),
             GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+    return web3JClient
+        .doRequest(web3jRequest, EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT)
+        .thenApply(statusResponse -> new Response<>(statusResponse.getErrorMessage()));
   }
 
   @Override

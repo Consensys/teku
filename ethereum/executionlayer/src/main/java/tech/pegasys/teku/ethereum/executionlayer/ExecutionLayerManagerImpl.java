@@ -405,10 +405,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
-    checkArgument(
-        response.getErrorMessage() == null,
-        "Invalid remote response: %s",
-        response.getErrorMessage());
+    checkArgument(response.isSuccess(), "Invalid remote response: %s", response.getErrorMessage());
     return checkNotNull(response.getPayload(), "No payload content found");
   }
 
@@ -421,7 +418,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .status()
         .finish(
             statusResponse -> {
-              if (statusResponse.getErrorMessage() != null) {
+              if (statusResponse.isFailure()) {
                 markBuilderAsNotAvailable(statusResponse.getErrorMessage());
               } else {
                 if (latestBuilderAvailability.compareAndSet(false, true)) {
