@@ -94,7 +94,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   // Fork Choice
   private final int safeSlotsToUpdateJustified;
   private final int proposerScoreBoost;
-  private final boolean equivocatingIndicesEnabled;
 
   // Deposit Contract
   private final int depositChainId;
@@ -149,7 +148,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int secondsPerEth1Block,
       final int safeSlotsToUpdateJustified,
       final int proposerScoreBoost,
-      final boolean equivocatingIndicesEnabled,
       final int depositChainId,
       final int depositNetworkId,
       final Eth1Address depositContractAddress) {
@@ -200,7 +198,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.secondsPerEth1Block = secondsPerEth1Block;
     this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     this.proposerScoreBoost = proposerScoreBoost;
-    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
@@ -468,11 +465,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public boolean isEquivocatingIndicesEnabled() {
-    return equivocatingIndicesEnabled;
-  }
-
-  @Override
   public int getDepositChainId() {
     return depositChainId;
   }
@@ -528,7 +520,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && secondsPerEth1Block == that.secondsPerEth1Block
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && proposerScoreBoost == that.proposerScoreBoost
-        && equivocatingIndicesEnabled == that.equivocatingIndicesEnabled
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
@@ -599,7 +590,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         secondsPerEth1Block,
         safeSlotsToUpdateJustified,
         proposerScoreBoost,
-        equivocatingIndicesEnabled,
         depositChainId,
         depositNetworkId,
         depositContractAddress);

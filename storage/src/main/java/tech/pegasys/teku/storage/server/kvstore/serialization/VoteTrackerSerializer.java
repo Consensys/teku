@@ -18,14 +18,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
-  private final boolean equivocatingIndicesEnabled;
+  private final boolean storeVotesEquivocation;
 
-  public VoteTrackerSerializer(final Spec spec) {
-    this.equivocatingIndicesEnabled = spec.isEquivocatingIndicesEnabled();
+  public VoteTrackerSerializer(final boolean storeVotesEquivocation) {
+    this.storeVotesEquivocation = storeVotesEquivocation;
   }
 
   @Override
@@ -38,7 +37,7 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           final UInt64 nextEpoch = UInt64.fromLongBits(reader.readUInt64());
           final boolean nextEquivocating;
           final boolean currentEquivocating;
-          if (reader.isComplete() || !equivocatingIndicesEnabled) {
+          if (reader.isComplete() || !storeVotesEquivocation) {
             nextEquivocating = false;
             currentEquivocating = false;
           } else {
@@ -58,7 +57,7 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
               writer.writeFixedBytes(value.getCurrentRoot());
               writer.writeFixedBytes(value.getNextRoot());
               writer.writeUInt64(value.getNextEpoch().longValue());
-              if (equivocatingIndicesEnabled) {
+              if (storeVotesEquivocation) {
                 writer.writeBoolean(value.isNextEquivocating());
                 writer.writeBoolean(value.isCurrentEquivocating());
               }
@@ -75,11 +74,11 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
       return false;
     }
     VoteTrackerSerializer that = (VoteTrackerSerializer) o;
-    return equivocatingIndicesEnabled == that.equivocatingIndicesEnabled;
+    return storeVotesEquivocation == that.storeVotesEquivocation;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(equivocatingIndicesEnabled);
+    return Objects.hash(storeVotesEquivocation);
   }
 }

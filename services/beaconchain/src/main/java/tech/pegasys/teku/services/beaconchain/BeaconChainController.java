@@ -488,7 +488,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     final boolean proposerBoostEnabled = beaconConfig.eth2NetworkConfig().isProposerBoostEnabled();
-    final boolean equivocatingIndicesEnabled = spec.isEquivocatingIndicesEnabled();
+    final boolean equivocatingIndicesEnabled =
+        beaconConfig.eth2NetworkConfig().isEquivocatingIndicesEnabled();
     forkChoice =
         new ForkChoice(
             spec,

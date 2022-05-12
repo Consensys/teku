@@ -19,8 +19,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 public class VoteTrackerSerializerTest {
@@ -36,14 +34,8 @@ public class VoteTrackerSerializerTest {
   private static Bytes votesNoEquivocationSerialized =
       Bytes.fromHexString(
           "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41befcc907a73fd18cf40");
-  private final Spec specNoEquivocation = TestSpecFactory.createMinimalPhase0();
-  private final VoteTrackerSerializer serializerNoEquivocation =
-      new VoteTrackerSerializer(specNoEquivocation);
-  private final Spec specWithEquivocation =
-      TestSpecFactory.createDefault(
-          specConfigBuilder -> specConfigBuilder.equivocatingIndicesEnabled(true));
-  private final VoteTrackerSerializer serializerWithEquivocation =
-      new VoteTrackerSerializer(specWithEquivocation);
+  private final VoteTrackerSerializer serializerNoEquivocation = new VoteTrackerSerializer(false);
+  private final VoteTrackerSerializer serializerWithEquivocation = new VoteTrackerSerializer(true);
 
   @Test
   public void serializesConsistentlyToGenericSerializer() {

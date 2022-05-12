@@ -53,8 +53,9 @@ public interface KvStoreSerializer<T> {
     return new SignedBeaconBlockSerializer(spec);
   }
 
-  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(final Spec spec) {
-    return new VoteTrackerSerializer(spec);
+  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(
+      final boolean storeVotesEquivocation) {
+    return new VoteTrackerSerializer(storeVotesEquivocation);
   }
 
   T deserialize(final byte[] data);

@@ -66,7 +66,7 @@ public class V4SchemaHot implements SchemaHot {
   private static final KvStoreVariable<Checkpoint> ANCHOR_CHECKPOINT =
       KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
 
-  public V4SchemaHot(final Spec spec) {
+  public V4SchemaHot(final Spec spec, final boolean storeVotesEquivocation) {
     final KvStoreSerializer<SignedBeaconBlock> signedBlockSerializer =
         KvStoreSerializer.createSignedBlockSerializer(spec);
     hotBlocksByRoot = KvStoreColumn.create(1, BYTES32_SERIALIZER, signedBlockSerializer);
@@ -77,7 +77,7 @@ public class V4SchemaHot implements SchemaHot {
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
     latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
     final KvStoreSerializer<VoteTracker> voteTrackerSerializer =
-        KvStoreSerializer.createVoteTrackerSerializer(spec);
+        KvStoreSerializer.createVoteTrackerSerializer(storeVotesEquivocation);
     votes = KvStoreColumn.create(3, UINT64_SERIALIZER, voteTrackerSerializer);
   }
 

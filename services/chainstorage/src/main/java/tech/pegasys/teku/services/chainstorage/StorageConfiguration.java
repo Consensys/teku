@@ -23,6 +23,7 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 public class StorageConfiguration {
 
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
+  public static final boolean DEFAULT_STORE_VOTES_EQUIVOCATION = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
 
   private final Eth1Address eth1DepositContract;
@@ -33,6 +34,7 @@ public class StorageConfiguration {
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
+  private final boolean storeVotesEquivocation;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -41,6 +43,7 @@ public class StorageConfiguration {
       final DatabaseVersion dataStorageCreateDbVersion,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -48,6 +51,7 @@ public class StorageConfiguration {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
+    this.storeVotesEquivocation = storeVotesEquivocation;
     this.spec = spec;
   }
 
@@ -79,6 +83,10 @@ public class StorageConfiguration {
     return maxKnownNodeCacheSize;
   }
 
+  public boolean isStoreVotesEquivocation() {
+    return storeVotesEquivocation;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -89,6 +97,7 @@ public class StorageConfiguration {
     private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
     private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
+    private boolean storeVotesEquivocation = DEFAULT_STORE_VOTES_EQUIVOCATION;
     private Spec spec;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
@@ -126,6 +135,11 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder storeVotesEquivocation(boolean storeVotesEquivocation) {
+      this.storeVotesEquivocation = storeVotesEquivocation;
+      return this;
+    }
+
     public Builder specProvider(Spec spec) {
       this.spec = spec;
       return this;
@@ -153,6 +167,7 @@ public class StorageConfiguration {
           dataStorageCreateDbVersion,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
+          storeVotesEquivocation,
           spec);
     }
   }

@@ -30,7 +30,7 @@ public class VoteTrackerSerialize {
   private static Spec spec = TestSpecFactory.createDefault();
   private static VoteTracker votes = new DataStructureUtil(spec).randomVoteTracker();
   private static KvStoreSerializer<VoteTracker> serializer =
-      KvStoreSerializer.createVoteTrackerSerializer(spec);
+      KvStoreSerializer.createVoteTrackerSerializer(false);
   private static Bytes votesSerialized = Bytes.wrap(serializer.serialize(votes));
 
   @Benchmark
