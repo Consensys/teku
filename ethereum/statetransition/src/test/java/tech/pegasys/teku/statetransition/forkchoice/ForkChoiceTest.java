@@ -838,9 +838,7 @@ class ForkChoiceTest {
     assertThat(result)
         .isCompletedWithValue(
             AttestationProcessingResult.invalid(
-                String.format(
-                    "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
-                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot(spec))));
+                "LMD vote must be consistent with FFG vote target"));
   }
 
   private UInt64 applyAttestationFromValidator(

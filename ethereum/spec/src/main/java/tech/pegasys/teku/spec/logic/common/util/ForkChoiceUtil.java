@@ -221,16 +221,16 @@ public class ForkChoiceUtil {
       final Fork fork,
       final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
-      final Optional<BeaconState> maybeTargetState) {
+      final Optional<BeaconState> maybeState) {
     Attestation attestation = validateableAttestation.getAttestation();
     return validateOnAttestation(store, attestation.getData())
         .ifSuccessful(
             () -> {
-              if (maybeTargetState.isEmpty()) {
+              if (maybeState.isEmpty()) {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
                 return attestationUtil.isValidIndexedAttestation(
-                    fork, maybeTargetState.get(), validateableAttestation);
+                    fork, maybeState.get(), validateableAttestation);
               }
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));
