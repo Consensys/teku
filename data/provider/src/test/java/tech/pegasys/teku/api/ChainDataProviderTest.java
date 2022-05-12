@@ -39,12 +39,9 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Root;
-import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -59,6 +56,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -182,21 +180,10 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
-    ObjectAndMetaData<BlockHeader> result = provider.getBlockHeader("head").get().orElseThrow();
-    final BeaconBlockHeader beaconBlockHeader =
-        new BeaconBlockHeader(
-            block.getSlot(),
-            block.getMessage().getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            block.getBodyRoot());
-    final BlockHeader expected =
-        new BlockHeader(
-            block.getRoot(),
-            true,
-            new SignedBeaconBlockHeader(beaconBlockHeader, new BLSSignature(block.getSignature())));
+    BlockAndMetaData result = provider.getBlockHeader("head").get().orElseThrow();
 
-    assertThat(result).isEqualTo(addMetaData(expected, block.getSlot()));
+    assertThat(result.getData()).isEqualTo(block);
+    assertThat(result.isCanonical()).isTrue();
   }
 
   @Test
