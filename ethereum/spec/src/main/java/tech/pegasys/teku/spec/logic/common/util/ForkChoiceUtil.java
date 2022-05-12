@@ -303,10 +303,10 @@ public class ForkChoiceUtil {
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
     final UInt64 currentSlot = getCurrentSlot(store);
-    if (currentSlot.compareTo(attestation.getData().getSlot()) < 0) {
+    if (currentSlot.isLessThan(attestation.getData().getSlot())) {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
-    if (currentSlot.compareTo(attestation.getData().getSlot()) == 0) {
+    if (currentSlot.equals(attestation.getData().getSlot())) {
       return AttestationProcessingResult.DEFER_FOR_FORK_CHOICE;
     }
 

@@ -923,12 +923,16 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndicesInput) {
+    return randomIndexedAttestation(randomAttestationData(), attestingIndicesInput);
+  }
+
+  public IndexedAttestation randomIndexedAttestation(
+      final AttestationData data, final UInt64... attestingIndicesInput) {
     final IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
-    return indexedAttestationSchema.create(
-        attestingIndices, randomAttestationData(), randomSignature());
+    return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
   }
 
   public DepositData randomDepositData() {
