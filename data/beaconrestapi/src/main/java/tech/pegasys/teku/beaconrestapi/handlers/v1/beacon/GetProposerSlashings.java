@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
@@ -41,11 +42,13 @@ public class GetProposerSlashings extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/proposer_slashings";
   private final NodeDataProvider nodeDataProvider;
 
-  private static final SerializableTypeDefinition<ProposerSlashing> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(ProposerSlashing.class)
+  private static final SerializableTypeDefinition<List<ProposerSlashing>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<ProposerSlashing>>object()
           .name("GetPoolProposerSlashingsResponse")
           .withField(
-              "data", ProposerSlashing.SSZ_SCHEMA.getJsonTypeDefinition(), Function.identity())
+              "data",
+              listOf(ProposerSlashing.SSZ_SCHEMA.getJsonTypeDefinition()),
+              Function.identity())
           .build();
 
   public GetProposerSlashings(final DataProvider dataProvider) {

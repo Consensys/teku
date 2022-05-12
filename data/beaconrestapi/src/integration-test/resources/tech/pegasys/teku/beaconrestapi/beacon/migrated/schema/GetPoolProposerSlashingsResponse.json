@@ -4,7 +4,10 @@
   "required" : [ "data" ],
   "properties" : {
     "data" : {
-      "$ref" : "#/components/schemas/ProposerSlashing"
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ProposerSlashing"
+      }
     }
   }
 }
