@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionWeb3jClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;

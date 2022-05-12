@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient;
+package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.protocol.core.Request;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
