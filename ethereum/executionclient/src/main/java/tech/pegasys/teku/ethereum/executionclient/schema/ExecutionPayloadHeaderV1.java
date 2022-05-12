@@ -120,12 +120,40 @@ public class ExecutionPayloadHeaderV1 extends ExecutionPayloadCommon {
       return false;
     }
     final ExecutionPayloadHeaderV1 that = (ExecutionPayloadHeaderV1) o;
-    return Objects.equals(transactionsRoot, that.transactionsRoot);
+    return Objects.equals(parentHash, that.parentHash)
+        && Objects.equals(feeRecipient, that.feeRecipient)
+        && Objects.equals(stateRoot, that.stateRoot)
+        && Objects.equals(receiptsRoot, that.receiptsRoot)
+        && Objects.equals(logsBloom, that.logsBloom)
+        && Objects.equals(prevRandao, that.prevRandao)
+        && Objects.equals(blockNumber, that.blockNumber)
+        && Objects.equals(gasLimit, that.gasLimit)
+        && Objects.equals(gasUsed, that.gasUsed)
+        && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(extraData, that.extraData)
+        && Objects.equals(baseFeePerGas, that.baseFeePerGas)
+        && Objects.equals(blockHash, that.blockHash)
+        && Objects.equals(transactionsRoot, that.transactionsRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), transactionsRoot);
+    return Objects.hash(
+        super.hashCode(),
+        parentHash,
+        feeRecipient,
+        stateRoot,
+        receiptsRoot,
+        logsBloom,
+        prevRandao,
+        blockNumber,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        extraData,
+        baseFeePerGas,
+        blockHash,
+        transactionsRoot);
   }
 
   @Override

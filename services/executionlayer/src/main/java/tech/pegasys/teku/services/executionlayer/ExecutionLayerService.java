@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.spec.config.Constants.EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -46,7 +46,7 @@ public class ExecutionLayerService extends Service {
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
             serviceConfig.getTimeProvider(),
-            EXECUTION_TIMEOUT,
+            EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
             config.getEngineJwtSecretFile(),
             serviceConfig.getDataDirLayout().getBeaconDataDirectory());
 
@@ -58,7 +58,7 @@ public class ExecutionLayerService extends Service {
                     ExecutionWeb3jClientProvider.create(
                         builderEndpoint,
                         serviceConfig.getTimeProvider(),
-                        EXECUTION_TIMEOUT,
+                        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
                         Optional.empty(),
                         serviceConfig.getDataDirLayout().getBeaconDataDirectory()));
 

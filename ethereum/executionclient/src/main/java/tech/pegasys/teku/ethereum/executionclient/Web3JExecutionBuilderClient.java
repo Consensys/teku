@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
-import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +49,7 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             List.of(),
             web3JClient.getWeb3jService(),
             GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_BUILDER_STATUS_TIMEOUT);
   }
 
   @Override
@@ -58,7 +61,7 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             Collections.singletonList(signedValidatorRegistrationV1),
             web3JClient.getWeb3jService(),
             GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 
   @Override
@@ -70,7 +73,7 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             List.of(slot.toString(), pubKey.toHexString(), parentHash.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadHeaderV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_HEADER_TIMEOUT);
   }
 
   @Override
@@ -82,7 +85,7 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             Collections.singletonList(signedBlindedBeaconBlock),
             web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 
   protected Web3JClient getWeb3JClient() {
