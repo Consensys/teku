@@ -57,6 +57,15 @@ class DeferredAttestationsTest {
   }
 
   @Test
+  void shouldHandleSameAttestationMultipleTimes() {
+    final UInt64 slot = UInt64.valueOf(32);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    deferredAttestations.addAttestation(createAttestation(slot, root, 10, 20));
+    deferredAttestations.addAttestation(createAttestation(slot, root, 10, 20));
+    assertDeferredVotes(slot, vote(root, 10), vote(root, 20));
+  }
+
+  @Test
   void shouldReturnPrunedVotesFromBeforeSlot() {
     final UInt64 earlySlot = UInt64.valueOf(20);
     final UInt64 previousSlot = UInt64.valueOf(25);
