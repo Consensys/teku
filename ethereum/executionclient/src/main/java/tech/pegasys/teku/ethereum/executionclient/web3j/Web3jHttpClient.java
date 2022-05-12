@@ -1,0 +1,52 @@
+/*
+ * Copyright 2022 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.ethereum.executionclient.web3j;
+
+import java.net.URI;
+import java.time.Duration;
+import java.util.Optional;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.web3j.protocol.Web3jService;
+import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
+import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+
+class Web3jHttpClient extends Web3JClient {
+  private static final Logger LOG = LogManager.getLogger();
+
+  Web3jHttpClient(
+      final URI endpoint,
+      final TimeProvider timeProvider,
+      final Duration timeout,
+      final Optional<JwtConfig> jwtConfig) {
+    super(timeProvider);
+    final Optional<HttpLoggingInterceptor> loggingInterceptor;
+    if (LOG.isTraceEnabled()) {
+      loggingInterceptor =
+          Optional.of(
+              OkHttpClientCreator.createLoggingInterceptor(
+                  LOG::trace, HttpLoggingInterceptor.Level.BODY));
+    } else {
+      loggingInterceptor = Optional.empty();
+    }
+    final OkHttpClient okHttpClient =
+        OkHttpClientCreator.create(jwtConfig, timeout, loggingInterceptor, timeProvider);
+    Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
+    initWeb3jService(httpService);
+  }
+}

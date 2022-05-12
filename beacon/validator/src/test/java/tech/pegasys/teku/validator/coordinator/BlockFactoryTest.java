@@ -81,23 +81,22 @@ class BlockFactoryTest {
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
-    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, false);
+    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false, false);
+    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false, false);
+    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false);
   }
 
   @Test
   void shouldIncludeSyncAggregateWhenAltairIsActive() throws Exception {
-    final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, false);
+    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false);
     final SyncAggregate result = getSyncAggregate(block);
     assertThatSyncAggregate(result).isNotNull();
     verify(syncCommitteeContributionPool)
@@ -107,29 +106,17 @@ class BlockFactoryTest {
   @Test
   void shouldIncludeExecutionPayloadWhenBellatrixIsActive() throws Exception {
     final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), false, false);
+        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), false);
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
   }
 
   @Test
-  void
-      shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndMevBoostIsEnabledAndBlindedBlockRequested()
-          throws Exception {
-    final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), true, true);
+  void shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndBlindedBlockRequested()
+      throws Exception {
+    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), true);
     final ExecutionPayloadHeader result = getExecutionPayloadHeader(block);
     assertThat(result).isEqualTo(executionPayloadHeader);
-  }
-
-  @Test
-  void
-      shouldIncludeExecutionPayloadWhenBellatrixIsActiveAndMevBoostIsEnabledAndBlindedBlockIsNotRequested()
-          throws Exception {
-    final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), true, false);
-    final ExecutionPayload result = getExecutionPayload(block);
-    assertThat(result).isEqualTo(executionPayload);
   }
 
   @Test
@@ -140,7 +127,7 @@ class BlockFactoryTest {
     final SignedBeaconBlock signedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock(1);
     executionPayload = dataStructureUtil.randomExecutionPayload();
 
-    assertThatThrownBy(() -> assertBlockUnblinded(signedBlock, spec, true))
+    assertThatThrownBy(() -> assertBlockUnblinded(signedBlock, spec))
         .hasCauseInstanceOf(IllegalStateException.class);
   }
 
@@ -153,7 +140,7 @@ class BlockFactoryTest {
         dataStructureUtil.randomSignedBeaconBlock(1);
 
     final SignedBeaconBlock unblindedSignedBlock =
-        assertBlockUnblinded(originalUnblindedSignedBlock, spec, true);
+        assertBlockUnblinded(originalUnblindedSignedBlock, spec);
 
     assertThat(unblindedSignedBlock).isEqualTo(originalUnblindedSignedBlock);
   }
@@ -167,7 +154,7 @@ class BlockFactoryTest {
         dataStructureUtil.randomSignedBeaconBlock(1);
 
     final SignedBeaconBlock unblindedSignedBlock =
-        assertBlockUnblinded(originalAltairSignedBlock, spec, true);
+        assertBlockUnblinded(originalAltairSignedBlock, spec);
 
     assertThat(unblindedSignedBlock).isEqualTo(originalAltairSignedBlock);
   }
@@ -180,34 +167,23 @@ class BlockFactoryTest {
     final SignedBeaconBlock originalUnblindedSignedBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
 
-    assertThatThrownBy(() -> assertBlockBlinded(originalUnblindedSignedBlock, spec, true))
+    assertThatThrownBy(() -> assertBlockBlinded(originalUnblindedSignedBlock, spec))
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
-  void blindSignedBeaconBlock_shouldBlindBlockWhenBellatrixIsActiveAndMevBoostIsEnabled() {
+  void blindSignedBeaconBlock_shouldBlindBlockWhenBellatrixIsActive() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock originalUnblindedSignedBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
 
-    assertBlockBlinded(originalUnblindedSignedBlock, spec, true);
+    assertBlockBlinded(originalUnblindedSignedBlock, spec);
   }
 
   @Test
-  void blindSignedBeaconBlock_shouldBlindBlockWhenBellatrixIsActiveAndMevBoostIsDisabled() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    final SignedBeaconBlock originalUnblindedSignedBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-
-    assertBlockBlinded(originalUnblindedSignedBlock, spec, false);
-  }
-
-  @Test
-  void unblindSignedBeaconBlock_shouldUnblindingBlockWhenBellatrixIsActiveAndMevBoostIsEnabled() {
+  void unblindSignedBeaconBlock_shouldUnblindingBlockWhenBellatrixIsActive() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -216,7 +192,7 @@ class BlockFactoryTest {
 
     // now we have a blinded block
     final SignedBeaconBlock originalBlindedSignedBlock =
-        assertBlockBlinded(originalUnblindedSignedBlock, spec, true);
+        assertBlockBlinded(originalUnblindedSignedBlock, spec);
 
     // let the unblinder return a consistent execution payload
     executionPayload =
@@ -226,31 +202,7 @@ class BlockFactoryTest {
             .getOptionalExecutionPayload()
             .orElseThrow();
 
-    assertBlockUnblinded(originalBlindedSignedBlock, spec, true);
-  }
-
-  @Test
-  void unblindSignedBeaconBlock_shouldUnblindingBlockWhenBellatrixIsActiveAndMevBoostIsDisabled() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    final SignedBeaconBlock originalUnblindedSignedBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-
-    // now we have a blinded block
-    final SignedBeaconBlock originalBlindedSignedBlock =
-        assertBlockBlinded(originalUnblindedSignedBlock, spec, false);
-
-    // let the unblinder return a consistent execution payload
-    executionPayload =
-        originalUnblindedSignedBlock
-            .getMessage()
-            .getBody()
-            .getOptionalExecutionPayload()
-            .orElseThrow();
-
-    assertThatThrownBy(() -> assertBlockUnblinded(originalBlindedSignedBlock, spec, false))
-        .isInstanceOf(UnsupportedOperationException.class);
+    assertBlockUnblinded(originalBlindedSignedBlock, spec);
   }
 
   private SyncAggregate getSyncAggregate(final BeaconBlock block) {
@@ -266,8 +218,7 @@ class BlockFactoryTest {
   }
 
   private BeaconBlock assertBlockCreated(
-      final int blockSlot, final Spec spec, final boolean isMevBoostEnabled, final boolean blinded)
-      throws StateTransitionException {
+      final int blockSlot, final Spec spec, final boolean blinded) throws StateTransitionException {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
@@ -309,8 +260,7 @@ class BlockFactoryTest {
                 eth1DataCache,
                 graffiti,
                 forkChoiceNotifier,
-                executionLayer,
-                isMevBoostEnabled));
+                executionLayer));
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any(), any())).thenReturn(attestations);
@@ -364,8 +314,8 @@ class BlockFactoryTest {
   }
 
   private SignedBeaconBlock assertBlockUnblinded(
-      final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
-    final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
+      final SignedBeaconBlock beaconBlock, final Spec spec) {
+    final BlockFactory blockFactory = createBlockFactory(spec);
 
     when(executionLayer.builderGetPayload(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
@@ -389,9 +339,9 @@ class BlockFactoryTest {
   }
 
   private SignedBeaconBlock assertBlockBlinded(
-      final SignedBeaconBlock beaconBlock, final Spec spec, final boolean isMevBoostEnabled) {
+      final SignedBeaconBlock beaconBlock, final Spec spec) {
 
-    final BlockFactory blockFactory = createBlockFactory(spec, isMevBoostEnabled);
+    final BlockFactory blockFactory = createBlockFactory(spec);
 
     final SignedBeaconBlock block = blockFactory.blindSignedBeaconBlockIfUnblinded(beaconBlock);
 
@@ -404,7 +354,7 @@ class BlockFactoryTest {
     return block;
   }
 
-  private BlockFactory createBlockFactory(final Spec spec, final boolean isMevBoostEnabled) {
+  private BlockFactory createBlockFactory(final Spec spec) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     return new BlockFactory(
@@ -420,7 +370,6 @@ class BlockFactoryTest {
             eth1DataCache,
             graffiti,
             forkChoiceNotifier,
-            executionLayer,
-            isMevBoostEnabled));
+            executionLayer));
   }
 }

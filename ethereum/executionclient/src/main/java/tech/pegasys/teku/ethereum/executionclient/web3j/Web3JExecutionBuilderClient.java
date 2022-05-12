@@ -11,9 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient;
+package tech.pegasys.teku.ethereum.executionclient.web3j;
 
-import static tech.pegasys.teku.spec.config.Constants.NON_EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +24,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.protocol.core.Request;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -39,18 +43,20 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
   }
 
   @Override
-  public SafeFuture<Response<GenericBuilderStatus>> status() {
+  public SafeFuture<Response<Void>> status() {
     Request<?, GenericBuilderStatusWeb3jResponse> web3jRequest =
         new Request<>(
             "builder_status",
             List.of(),
             web3JClient.getWeb3jService(),
             GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient
+        .doRequest(web3jRequest, EL_BUILDER_STATUS_TIMEOUT)
+        .thenApply(statusResponse -> new Response<>(statusResponse.getErrorMessage()));
   }
 
   @Override
-  public SafeFuture<Response<GenericBuilderStatus>> registerValidator(
+  public SafeFuture<Response<Void>> registerValidator(
       final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
     Request<?, GenericBuilderStatusWeb3jResponse> web3jRequest =
         new Request<>(
@@ -58,7 +64,9 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             Collections.singletonList(signedValidatorRegistrationV1),
             web3JClient.getWeb3jService(),
             GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient
+        .doRequest(web3jRequest, EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT)
+        .thenApply(statusResponse -> new Response<>(statusResponse.getErrorMessage()));
   }
 
   @Override
@@ -70,7 +78,7 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             List.of(slot.toString(), pubKey.toHexString(), parentHash.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadHeaderV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_HEADER_TIMEOUT);
   }
 
   @Override
@@ -82,7 +90,7 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
             Collections.singletonList(signedBlindedBeaconBlock),
             web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, NON_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 
   protected Web3JClient getWeb3JClient() {

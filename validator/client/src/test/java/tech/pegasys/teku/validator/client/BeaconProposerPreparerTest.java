@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
@@ -53,8 +52,6 @@ public class BeaconProposerPreparerTest {
   private Eth1Address defaultFeeRecipientConfig;
   private Eth1Address validator1FeeRecipientConfig;
 
-  private DataStructureUtil dataStructureUtil;
-
   private long slotsPerEpoch;
 
   @BeforeEach
@@ -69,20 +66,10 @@ public class BeaconProposerPreparerTest {
             specContext.getDataStructureUtil().randomPublicKey(),
             mock(Signer.class),
             Optional::empty);
-    Validator validatorWithoutIndex =
-        new Validator(
-            specContext.getDataStructureUtil().randomPublicKey(),
-            mock(Signer.class),
-            Optional::empty);
 
-    Map<BLSPublicKey, Optional<Integer>> validatorIndicesByPublicKey =
+    Map<BLSPublicKey, Integer> validatorIndicesByPublicKey =
         Map.of(
-            validator1.getPublicKey(),
-            Optional.of(validator1Index),
-            validator2.getPublicKey(),
-            Optional.of(validator2Index),
-            validatorWithoutIndex.getPublicKey(),
-            Optional.empty());
+            validator1.getPublicKey(), validator1Index, validator2.getPublicKey(), validator2Index);
 
     defaultFeeRecipient = specContext.getDataStructureUtil().randomEth1Address();
     defaultFeeRecipientConfig = specContext.getDataStructureUtil().randomEth1Address();
@@ -105,10 +92,9 @@ public class BeaconProposerPreparerTest {
 
     slotsPerEpoch = specContext.getSpec().getSlotsPerEpoch(UInt64.ZERO);
 
-    dataStructureUtil = new DataStructureUtil(specContext.getSpec());
-
     when(validatorIndexProvider.getValidatorIndicesByPublicKey())
         .thenReturn(SafeFuture.completedFuture(validatorIndicesByPublicKey));
+    when(validatorIndexProvider.containsPublicKey(any())).thenReturn(true);
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
   }
@@ -178,42 +164,6 @@ public class BeaconProposerPreparerTest {
 
     beaconProposerPreparer.onSlot(UInt64.ZERO);
     verify(validatorApiChannel, times(1)).prepareBeaconProposer(any());
-  }
-
-  @TestTemplate
-  void shouldMergeListsWithRuntime() {
-    final Eth1Address key1a = dataStructureUtil.randomEth1Address();
-    final Eth1Address key1b = dataStructureUtil.randomEth1Address();
-    final Eth1Address key2a = dataStructureUtil.randomEth1Address();
-    assertThat(
-            BeaconProposerPreparer.getProposers(
-                Map.of(1, proposer(1, key1a), 2, proposer(2, key2a)),
-                Map.of(1, proposer(1, key1b))))
-        .isEqualTo(Map.of(1, proposer(1, key1b), 2, proposer(2, key2a)));
-  }
-
-  @TestTemplate
-  void shouldMergeListsWithoutRuntime() {
-    final Eth1Address key1a = dataStructureUtil.randomEth1Address();
-    final Eth1Address key2a = dataStructureUtil.randomEth1Address();
-    assertThat(
-            BeaconProposerPreparer.getProposers(
-                Map.of(1, proposer(1, key1a), 2, proposer(2, key2a)), Map.of()))
-        .isEqualTo(Map.of(1, proposer(1, key1a), 2, proposer(2, key2a)));
-  }
-
-  @TestTemplate
-  void shouldGetRuntimeListIfConfigEmpty() {
-    final Eth1Address key1a = dataStructureUtil.randomEth1Address();
-    final Eth1Address key2a = dataStructureUtil.randomEth1Address();
-    assertThat(
-            BeaconProposerPreparer.getProposers(
-                Map.of(), Map.of(1, proposer(1, key1a), 2, proposer(2, key2a))))
-        .isEqualTo(Map.of(1, proposer(1, key1a), 2, proposer(2, key2a)));
-  }
-
-  private BeaconPreparableProposer proposer(final int i, final Eth1Address eth1Address) {
-    return new BeaconPreparableProposer(UInt64.valueOf(i), eth1Address);
   }
 
   private ArgumentCaptor<Collection<BeaconPreparableProposer>> doCall() {

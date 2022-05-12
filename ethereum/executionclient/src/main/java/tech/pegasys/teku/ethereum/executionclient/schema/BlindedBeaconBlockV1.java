@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
@@ -109,5 +110,16 @@ public class BlindedBeaconBlockV1 {
   @Override
   public int hashCode() {
     return Objects.hash(slot, proposerIndex, parentRoot, stateRoot, body);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("proposerIndex", proposerIndex)
+        .add("parentRoot", parentRoot)
+        .add("stateRoot", stateRoot)
+        .add("body", body)
+        .toString();
   }
 }

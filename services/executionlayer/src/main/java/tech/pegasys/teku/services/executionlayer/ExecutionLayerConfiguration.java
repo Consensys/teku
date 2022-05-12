@@ -116,13 +116,13 @@ public class ExecutionLayerConfiguration {
     }
 
     private void validateStubEndpoints() {
-      final boolean builderIsStub =
-          engineEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_IDENTIFIER)).orElse(false);
       final boolean engineIsStub =
+          engineEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_IDENTIFIER)).orElse(false);
+      final boolean builderIsStub =
           builderEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_IDENTIFIER)).orElse(false);
 
       checkState(
-          engineIsStub == builderIsStub,
+          engineIsStub == builderIsStub || builderEndpoint.isEmpty(),
           "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
     }
   }

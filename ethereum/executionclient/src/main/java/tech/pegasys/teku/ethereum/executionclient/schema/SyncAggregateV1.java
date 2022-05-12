@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BLSSignatureDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BLSSignatureSerializer;
@@ -46,5 +47,23 @@ public class SyncAggregateV1 {
     this.syncCommitteeSignature =
         new BLSSignature(aggregate.getSyncCommitteeSignature().getSignature());
     this.syncCommitteeBits = aggregate.getSyncCommitteeBits().sszSerialize();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SyncAggregateV1)) {
+      return false;
+    }
+    SyncAggregateV1 that = (SyncAggregateV1) o;
+    return Objects.equals(syncCommitteeBits, that.syncCommitteeBits)
+        && Objects.equals(syncCommitteeSignature, that.syncCommitteeSignature);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(syncCommitteeBits, syncCommitteeSignature);
   }
 }
