@@ -43,6 +43,7 @@ public class FileBackedStorageSystemBuilder {
   private Path archiveDir;
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
+  private boolean storeVotesEquivocation = false;
 
   private FileBackedStorageSystemBuilder() {}
 
@@ -154,6 +155,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeVotesEquivocation,
         spec);
   }
 
@@ -163,7 +165,7 @@ public class FileBackedStorageSystemBuilder {
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
-        new V4SchemaHot(spec),
+        new V4SchemaHot(spec, storeVotesEquivocation),
         new V6SnapshotSchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,
@@ -179,6 +181,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeVotesEquivocation,
         spec);
   }
 
@@ -190,6 +193,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeNonCanonicalBlocks,
         10_000,
+        storeVotesEquivocation,
         spec);
   }
 
@@ -201,6 +205,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeVotesEquivocation,
         spec);
   }
 
@@ -212,6 +217,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeVotesEquivocation,
         spec);
   }
 }

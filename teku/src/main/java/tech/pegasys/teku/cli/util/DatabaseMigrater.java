@@ -185,6 +185,7 @@ public class DatabaseMigrater {
             config.getEth1DepositContractAddress(),
             true,
             0,
+            false,
             spec);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {

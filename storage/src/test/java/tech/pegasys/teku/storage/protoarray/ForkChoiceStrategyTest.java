@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -383,6 +384,50 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                 .orElseThrow()
                 .executionBlockHash(block1.getRoot()))
         .isEqualTo(block1.getExecutionBlockHash());
+  }
+
+  @Test
+  void applyPendingVotes_shouldMarkEquivocation() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
+
+    final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
+    final VoteUpdater transaction1 = storageSystem.recentChainData().startVoteUpdate();
+    final UInt64 block1Epoch = spec.computeEpochAtSlot(block1.getSlot());
+    strategy.processAttestation(transaction1, ZERO, block1.getRoot(), block1Epoch);
+    transaction1.commit();
+
+    // Mark our Validator as going to be equivocated like when AttesterSlashing received
+    final VoteUpdater transaction2 = storageSystem.recentChainData().startVoteUpdate();
+    VoteTracker voteTracker = transaction2.getVote(ZERO);
+    transaction2.putVote(ZERO, voteTracker.createNextEquivocating());
+    transaction2.commit();
+
+    final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
+    final VoteUpdater transaction3 = storageSystem.recentChainData().startVoteUpdate();
+    final UInt64 block2Epoch = spec.computeEpochAtSlot(block2.getSlot());
+    strategy.processAttestation(transaction3, ZERO, block2.getRoot(), block2Epoch);
+
+    final BeaconState block2State = block2.getState();
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(block2State.getSlot())
+            .getEffectiveBalances(block2State);
+    final Bytes32 bestHead =
+        strategy.applyPendingVotes(
+            transaction3,
+            Optional.empty(),
+            storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
+            storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
+            effectiveBalances,
+            ZERO);
+    transaction3.commit();
+    assertThat(bestHead).isEqualTo(block2.getRoot());
+
+    assertThat(transaction3.getVote(ZERO).isCurrentEquivocating()).isTrue();
+    // Not updated after equivocation
+    assertThat(transaction3.getVote(ZERO).getNextRoot()).isEqualTo(block1.getRoot());
   }
 
   private StorageSystem initStorageSystem() {

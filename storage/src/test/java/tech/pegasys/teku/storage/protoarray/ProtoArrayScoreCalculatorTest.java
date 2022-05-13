@@ -333,10 +333,10 @@ public class ProtoArrayScoreCalculatorTest {
     indices.put(getHash(1), 0);
     indices.put(getHash(2), 1);
 
-    // There is only one validator in the old balances.
+    // There are two validator in the old balances.
     oldBalances.addAll(List.of(balance, balance));
 
-    // There are two validators in the new balances.
+    // There is only one validator in the new balances.
     newBalances.add(balance);
 
     // Both validators move votes from block 1 to block 2.
@@ -464,6 +464,121 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Block 2 should have new boost amount added
     assertThat(deltas.get(1)).isEqualTo(newProposerBoostAmount.longValue());
+  }
+
+  @Test
+  void computeDeltas_validatorEquivocates() {
+    final UInt64 balance = UInt64.valueOf(42);
+
+    // There is one block.
+    indices.put(getHash(1), 0);
+
+    // There are two validator in the old balances.
+    oldBalances.addAll(List.of(balance, balance));
+
+    // Same two in new balances.
+    newBalances.addAll(List.of(balance, balance));
+
+    // Both validators votes for block.
+    for (int i = 0; i < 2; i++) {
+      VoteTracker vote = store.getVote(UInt64.valueOf(i));
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(1), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
+    }
+
+    // Validator #0 is marked as equivocated
+    VoteTracker vote = store.getVote(ZERO);
+    store.putVote(
+        ZERO,
+        new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch(), true, true));
+
+    List<Long> deltas =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount);
+    assertThat(deltas).hasSize(1);
+
+    // Block should have only one counted vote
+    assertThat(deltas.get(0)).isEqualTo(balance.longValue());
+
+    // Votes should be updated
+    VoteTracker vote1 = store.getVote(UInt64.ONE);
+    assertThat(vote1.getCurrentRoot()).isEqualTo(vote1.getNextRoot());
+    // Equivocating validator should be marked
+    VoteTracker vote0 = store.getVote(ZERO);
+    assertThat(vote0.isCurrentEquivocating()).isTrue();
+  }
+
+  @Test
+  void computeDeltas_validatorEquivocatesChain() {
+    final UInt64 balance = UInt64.valueOf(42);
+
+    // There are 3 blocks
+    indices.put(getHash(1), 0);
+    indices.put(getHash(2), 1);
+    indices.put(getHash(3), 2);
+
+    // There are two validator in the old balances.
+    oldBalances.addAll(List.of(balance, balance));
+
+    // Same two in new balances.
+    newBalances.addAll(List.of(balance, balance));
+
+    // Both validators moves vote to the last block.
+    for (int i = 0; i < 2; i++) {
+      VoteTracker vote = store.getVote(UInt64.valueOf(i));
+      VoteTracker newVote = new VoteTracker(getHash(2), getHash(3), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
+    }
+
+    // Validator #0 is set to be marked as equivocated
+    VoteTracker vote = store.getVote(ZERO);
+    store.putVote(ZERO, vote.createNextEquivocating());
+
+    List<Long> deltas =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount);
+    assertThat(deltas).hasSize(3);
+
+    assertThat(deltas.get(0)).isEqualTo(0);
+    // 2nd block should lose both votes
+    assertThat(deltas.get(1)).isEqualTo(-balance.longValue() * 2);
+    // Only non-equivocated should be added to 3rd
+    assertThat(deltas.get(2)).isEqualTo(balance.longValue());
+
+    // Verify that equivocation affects deltas only once
+    List<Long> deltas2 =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount);
+    assertThat(deltas2).hasSize(3);
+
+    // No subsequent penalty for equivocation 2nd run
+    for (int i = 0; i < 3; i++) {
+      assertThat(deltas2.get(i)).isEqualTo(0);
+    }
   }
 
   private void votesShouldBeUpdated(VoteUpdater store) {

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -452,6 +453,39 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- head
+    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+        .isEqualTo(getHash(10));
+
+    // Equivocate one of the votes on 10
+    VoteTracker voteFor3 = store.getVote(unsigned(3));
+    store.putVote(unsigned(3), voteFor3.createNextEquivocating());
+
+    // Ensure the head is now 9 again (2 votes > 1)
+    //
+    //          5   6
+    //          |
+    //          7
+    //          |
+    //          8
+    //         / \
+    // head-> 9  10
+    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+        .isEqualTo(getHash(9));
+
+    // Add 1 validator
+    balances = new ArrayList<>(List.of(ONE, ONE, ONE, ONE, ONE));
+    // Add 1 vote to 10 (total: 2 good, 1 equivocated)
+    forkChoice.processAttestation(store, unsigned(4), getHash(10), unsigned(5));
+
+    // Ensure the head is 10 back
+    //
+    //          5   6
+    //          |
+    //          7
+    //          |
+    //          8
+    //         / \
+    //        9  10 <-head
     assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 

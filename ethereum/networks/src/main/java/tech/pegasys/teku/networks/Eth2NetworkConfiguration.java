@@ -43,6 +43,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
+  public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = false;
 
   private final Spec spec;
   private final String constants;
@@ -56,6 +57,7 @@ public class Eth2NetworkConfiguration {
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean proposerBoostEnabled;
+  private final boolean equivocatingIndicesEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
@@ -71,6 +73,7 @@ public class Eth2NetworkConfiguration {
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean proposerBoostEnabled,
+      final boolean equivocatingIndicesEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
@@ -91,6 +94,7 @@ public class Eth2NetworkConfiguration {
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.proposerBoostEnabled = proposerBoostEnabled;
+    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -153,6 +157,10 @@ public class Eth2NetworkConfiguration {
     return proposerBoostEnabled;
   }
 
+  public boolean isEquivocatingIndicesEnabled() {
+    return equivocatingIndicesEnabled;
+  }
+
   public Optional<UInt64> getAltairForkEpoch() {
     return altairForkEpoch;
   }
@@ -188,6 +196,7 @@ public class Eth2NetworkConfiguration {
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean proposerBoostEnabled = DEFAULT_PROPOSER_BOOST_ENABLED;
+    private boolean equivocatingIndicesEnabled = DEFAULT_EQUIVOCATING_INDICES_ENABLED;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
@@ -241,6 +250,7 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
           proposerBoostEnabled,
+          equivocatingIndicesEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           terminalBlockHashOverride,
@@ -313,6 +323,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder proposerBoostEnabled(final boolean proposerBoostEnabled) {
       this.proposerBoostEnabled = proposerBoostEnabled;
+      return this;
+    }
+
+    public Builder equivocatingIndicesEnabled(final boolean equivocatingIndicesEnabled) {
+      this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
       return this;
     }
 

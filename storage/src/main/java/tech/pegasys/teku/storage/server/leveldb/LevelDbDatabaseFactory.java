@@ -42,6 +42,7 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     final V4SchemaFinalized schemaFinalized = new V4SchemaFinalized(spec);
     final Collection<KvStoreColumn<?, ?>> v4FinalizedColumns = schemaFinalized.getAllColumns();
@@ -52,7 +53,13 @@ public class LevelDbDatabaseFactory {
         LevelDbInstanceFactory.create(
             metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, v4FinalizedColumns);
     return KvStoreDatabase.createV4(
-        hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb,
+        finalizedDb,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeVotesEquivocation,
+        spec);
   }
 
   public static Database createLevelDbV2(
@@ -61,9 +68,10 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     final KvStoreAccessor db;
-    final V4SchemaHot schemaHot = new V4SchemaHot(spec);
+    final V4SchemaHot schemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
     final V6SnapshotSchemaFinalized schemaFinalized = new V6SnapshotSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
@@ -86,9 +94,10 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
 
-    final V4SchemaHot schemaHot = new V4SchemaHot(spec);
+    final V4SchemaHot schemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
     final V6TreeSchemaFinalized schemaFinalized = new V6TreeSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
