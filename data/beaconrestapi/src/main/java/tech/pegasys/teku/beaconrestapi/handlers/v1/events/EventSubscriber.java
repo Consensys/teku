@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
+import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.util.List;
 import java.util.Queue;
@@ -113,7 +114,9 @@ public class EventSubscriber {
                   sseClient.hashCode());
               QueuedEvent event = queuedEvents.poll();
               while (event != null && !stopped.get()) {
-                sseClient.sendEvent(event.getEventType().name(), event.getMessageData());
+                sseClient.sendEvent(
+                    event.getEventType().name(),
+                    new ByteArrayInputStream(event.getMessageData().toArrayUnsafe()));
                 event = queuedEvents.poll();
               }
             })
