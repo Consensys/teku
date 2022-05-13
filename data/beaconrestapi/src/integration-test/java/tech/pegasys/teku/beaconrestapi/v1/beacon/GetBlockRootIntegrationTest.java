@@ -43,7 +43,7 @@ public class GetBlockRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
     final Root data = body.data;
     final Bytes32 blockRoot = created.get(0).getRoot();
     assertThat(data).isEqualTo(new Root(blockRoot));
-    assertThat(body.execution_optimistic).isNull(); // Bellatrix not enabled
+    assertThat(body.execution_optimistic).isFalse(); // Bellatrix not enabled
   }
 
   @Test

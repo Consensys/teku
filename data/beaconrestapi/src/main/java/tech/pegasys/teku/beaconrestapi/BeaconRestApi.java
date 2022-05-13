@@ -414,7 +414,7 @@ public class BeaconRestApi {
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
             dataProvider, jsonProvider));
 
-    app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockRoot(dataProvider));
     addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));
