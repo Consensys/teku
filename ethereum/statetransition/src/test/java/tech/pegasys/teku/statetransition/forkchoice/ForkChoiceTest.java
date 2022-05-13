@@ -116,7 +116,8 @@ class ForkChoiceTest {
           recentChainData,
           forkChoiceNotifier,
           transitionBlockValidator,
-          false);
+          false,
+          true);
 
   @BeforeEach
   public void setup() {
@@ -198,12 +199,13 @@ class ForkChoiceTest {
       long advanceTimeSlotMillis, boolean shouldReorg) {
     forkChoice =
         new ForkChoice(
-            spec,
+            TestSpecFactory.createMinimalBellatrix(),
             new InlineEventThread(),
             recentChainData,
             forkChoiceNotifier,
             transitionBlockValidator,
-            true);
+            true,
+            false);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -309,6 +311,79 @@ class ForkChoiceTest {
     // When attestations are applied we should switch away from the fork to our better chain
     processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
+  }
+
+  @Test
+  void onBlock_shouldUpdateVotesBasedOnAttesterSlashingEquivocationsInBlocks() {
+    final ChainBuilder forkChain = chainBuilder.fork();
+    final SignedBlockAndState forkBlock1 =
+        forkChain.generateBlockAtSlot(
+            ONE,
+            BlockOptions.create()
+                .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
+    final SignedBlockAndState betterBlock1 = chainBuilder.generateBlockAtSlot(1);
+
+    importBlock(forkBlock1);
+    // Should automatically follow the fork as its the first child block
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock1.getRoot());
+
+    // Add an attestation for the fork so that it initially has higher weight
+    // Otherwise ties are split based on the hash which is too hard to control in the test
+    final BlockOptions forkBlockOptions = BlockOptions.create();
+    List<Attestation> forkAttestations =
+        forkChain
+            .streamValidAttestationsWithTargetBlock(forkBlock1)
+            .limit(2)
+            .collect(Collectors.toList());
+    forkAttestations.forEach(forkBlockOptions::addAttestation);
+    final SignedBlockAndState forkBlock2 =
+        forkChain.generateBlockAtSlot(forkBlock1.getSlot().plus(1), forkBlockOptions);
+    importBlock(forkBlock2);
+
+    // The fork is still the only option so gets selected
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Now import what will become the canonical chain
+    importBlock(betterBlock1);
+    // Process head to ensure we clear any additional proposer weighting for this first block.
+    // Should still pick forkBlock as it's the best option even though we have a competing chain
+    processHead(ONE);
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Import a block with one attestation on what will be better chain
+    final BlockOptions options = BlockOptions.create();
+    chainBuilder
+        .streamValidAttestationsWithTargetBlock(betterBlock1)
+        .limit(1)
+        .forEach(options::addAttestation);
+    final SignedBlockAndState blockWithAttestations =
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), options);
+    importBlock(blockWithAttestations);
+
+    // Haven't run fork choice so won't have re-orged yet - fork still has more applied votes
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Verify that fork is still better
+    processHead(blockWithAttestations.getSlot());
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Add 2 AttesterSlashing on betterBlock chain, so it will become finally better
+    final BlockOptions options2 = BlockOptions.create();
+    forkAttestations.forEach(
+        attestation ->
+            options2.addAttesterSlashing(
+                chainBuilder.createAttesterSlashingForAttestation(attestation, forkBlock1)));
+    final SignedBlockAndState blockWithAttesterSlashings =
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(3), options2);
+    importBlock(blockWithAttesterSlashings);
+
+    // Haven't run fork choice so won't have re-orged yet - fork still has more applied votes
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // When attester slashings are applied we should switch away from the fork to our better chain
+    processHead(blockWithAttesterSlashings.getSlot());
+
+    assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttesterSlashings.getRoot());
   }
 
   @Test

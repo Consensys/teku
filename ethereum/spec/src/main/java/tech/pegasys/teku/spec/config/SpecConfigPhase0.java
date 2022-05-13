@@ -499,6 +499,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && secondsPerSlot == that.secondsPerSlot
         && minAttestationInclusionDelay == that.minAttestationInclusionDelay
         && slotsPerEpoch == that.slotsPerEpoch
+        && squareRootSlotsPerEpoch == that.squareRootSlotsPerEpoch
         && minSeedLookahead == that.minSeedLookahead
         && maxSeedLookahead == that.maxSeedLookahead
         && epochsPerEth1VotingPeriod == that.epochsPerEth1VotingPeriod
@@ -516,6 +517,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxAttestations == that.maxAttestations
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
+        && secondsPerEth1Block == that.secondsPerEth1Block
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
@@ -535,7 +537,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && secondsPerEth1Block == that.secondsPerEth1Block
         && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
 
@@ -564,6 +565,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         secondsPerSlot,
         minAttestationInclusionDelay,
         slotsPerEpoch,
+        squareRootSlotsPerEpoch,
         minSeedLookahead,
         maxSeedLookahead,
         minEpochsToInactivityPenalty,

@@ -106,11 +106,12 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     return createWithStateSnapshots(
         hotDb,
         finalizedDb,
-        new V4SchemaHot(spec),
+        new V4SchemaHot(spec, storeVotesEquivocation),
         new V4SchemaFinalized(spec),
         stateStorageMode,
         stateStorageFrequency,

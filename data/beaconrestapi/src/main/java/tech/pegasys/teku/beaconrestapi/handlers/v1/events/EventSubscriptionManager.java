@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
@@ -203,15 +205,17 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
 
   public static class EventSource<T> {
     private final Event<T> event;
-    private String value;
+    private Bytes value;
 
     public EventSource(final Event<T> event) {
       this.event = event;
     }
 
-    public String get() throws JsonProcessingException {
+    public Bytes get() throws JsonProcessingException {
       if (value == null) {
-        value = JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition());
+        value =
+            Bytes.wrap(
+                JsonUtil.serialize(event.getData(), event.getJsonTypeDefinition()).getBytes(UTF_8));
       }
       return value;
     }
