@@ -83,7 +83,7 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockHeaderTest.class, "getBlockRoot.json"), UTF_8);
+            Resources.getResource(GetBlockRootTest.class, "getBlockRoot.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }
