@@ -13,70 +13,107 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 
-public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final GetStateCommittees handler =
-      new GetStateCommittees(chainDataProvider, jsonProvider);
-  private final EpochCommitteeResponse epochCommitteeResponse =
-      new EpochCommitteeResponse(
-          ONE, ONE, List.of(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetStateCommittees handler;
+
+  @BeforeEach
+  void setup() {
+    initialise(SpecMilestone.PHASE0);
+    genesis();
+
+    handler = new GetStateCommittees(chainDataProvider);
+  }
 
   @Test
   public void shouldGetCommitteesFromState() throws Exception {
-    final UInt64 slot = dataStructureUtil.randomUInt64();
-    final UInt64 epoch = spec.computeEpochAtSlot(dataStructureUtil.randomUInt64());
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(context.queryParamMap())
-        .thenReturn(
-            Map.of(
-                "index", List.of("1"),
-                "slot", List.of(slot.toString()),
-                "epoch", List.of(epoch.toString())));
-    when(chainDataProvider.getStateCommittees(
-            "head", Optional.of(epoch), Optional.of(UInt64.ONE), Optional.of(slot)))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(withMetaData(List.of(epochCommitteeResponse)))));
-    handler.handle(context);
-    GetStateCommitteesResponse response = getResponseFromFuture(GetStateCommitteesResponse.class);
-    assertThat(response.data).isEqualTo(List.of(epochCommitteeResponse));
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", "head")
+            .queryParameter("epoch", "0")
+            .queryParameter("index", "1")
+            .queryParameter("slot", "0")
+            .build();
+
+    final Optional<ObjectAndMetaData<List<CommitteeAssignment>>> expectedData =
+        chainDataProvider
+            .getStateCommittees(
+                "head",
+                Optional.of(UInt64.valueOf(0)),
+                Optional.of(UInt64.valueOf(1)),
+                Optional.of(UInt64.valueOf(0)))
+            .get();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedData); // TODO not correct expected data
   }
 
-  @ParameterizedTest
-  @MethodSource("getParameters")
-  public void shouldFailIfEpochInvalid(
-      final String queryParameter, final String queryParameterValue) {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(context.queryParamMap()).thenReturn(Map.of(queryParameter, List.of(queryParameterValue)));
-    assertThrows(BadRequestException.class, () -> handler.handle(context));
+  @Test
+  public void shouldFailIfEpochInvalid() throws JsonProcessingException {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", "head")
+            .queryParameter("index", "a")
+            .queryParameter("slot", "b")
+            .queryParameter("epoch", "c")
+            .build();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST); // TODO returns SC_OK 200
+    // TODO check contents of bad request
   }
 
-  static Stream<Arguments> getParameters() {
-    Stream.Builder<Arguments> builder = Stream.builder();
-    builder
-        .add(Arguments.of("epoch", "a"))
-        .add(Arguments.of("slot", "b"))
-        .add(Arguments.of("index", "c"));
-    return builder.build();
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final CommitteeAssignment committeeAssignment =
+        new CommitteeAssignment(IntList.of(1, 2), ONE, ONE);
+    final ObjectAndMetaData<List<CommitteeAssignment>> responseData =
+        withMetaData(List.of(committeeAssignment));
+
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(GetBlockAttestationsTest.class, "getStateCommittees.json"),
+            UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }

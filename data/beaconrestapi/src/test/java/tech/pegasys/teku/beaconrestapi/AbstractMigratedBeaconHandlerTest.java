@@ -38,7 +38,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
@@ -106,5 +108,14 @@ public abstract class AbstractMigratedBeaconHandlerTest {
     assertThat(resultFuture).isCompleted();
     final ByteArrayInputStream byteArrayInputStream = safeJoin(getResultFuture());
     return new String(byteArrayInputStream.readAllBytes(), UTF_8);
+  }
+
+  protected <T> ObjectAndMetaData<T> withMetaData(final T value) {
+    return new ObjectAndMetaData<>(
+        value,
+        spec.getGenesisSpec().getMilestone(),
+        false,
+        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
+        true);
   }
 }
