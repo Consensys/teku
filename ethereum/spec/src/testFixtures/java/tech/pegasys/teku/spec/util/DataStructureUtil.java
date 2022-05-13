@@ -1097,6 +1097,12 @@ public final class DataStructureUtil {
         randomBytes8(), randomForkChoiceState(optimisticHead), Optional.empty());
   }
 
+  public ExecutionPayloadContext createPayloadExecutionContext(
+      final UInt64 slot, final boolean optimisticHead) {
+    return new ExecutionPayloadContext(
+        randomBytes8(), randomForkChoiceState(slot, optimisticHead), Optional.empty());
+  }
+
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {
     return randomForkChoiceState(randomUInt64(), optimisticHead);
   }

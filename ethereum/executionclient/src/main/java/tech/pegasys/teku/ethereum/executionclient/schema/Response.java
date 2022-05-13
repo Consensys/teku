@@ -34,12 +34,24 @@ public class Response<T> {
     this.errorMessage = null;
   }
 
+  public static <T> Response<T> withNullPayload() {
+    return new Response<>(null, null);
+  }
+
   public T getPayload() {
     return payload;
   }
 
   public String getErrorMessage() {
     return errorMessage;
+  }
+
+  public boolean isSuccess() {
+    return errorMessage == null;
+  }
+
+  public boolean isFailure() {
+    return errorMessage != null;
   }
 
   @Override

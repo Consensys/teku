@@ -17,7 +17,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BLSSignatureDeserializer;
@@ -176,5 +178,57 @@ public class BlindedBeaconBlockBodyV1 {
                             executionPayloadHeader.baseFeePerGas,
                             executionPayloadHeader.blockHash,
                             executionPayloadHeader.transactionsRoot)));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BlindedBeaconBlockBodyV1)) {
+      return false;
+    }
+    BlindedBeaconBlockBodyV1 that = (BlindedBeaconBlockBodyV1) o;
+    return Objects.equals(randaoReveal, that.randaoReveal)
+        && Objects.equals(eth1Data, that.eth1Data)
+        && Objects.equals(graffiti, that.graffiti)
+        && Objects.equals(proposerSlashings, that.proposerSlashings)
+        && Objects.equals(attesterSlashings, that.attesterSlashings)
+        && Objects.equals(attestations, that.attestations)
+        && Objects.equals(deposits, that.deposits)
+        && Objects.equals(voluntaryExits, that.voluntaryExits)
+        && Objects.equals(syncAggregate, that.syncAggregate)
+        && Objects.equals(executionPayloadHeader, that.executionPayloadHeader);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        randaoReveal,
+        eth1Data,
+        graffiti,
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        executionPayloadHeader);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("randaoReveal", randaoReveal)
+        .add("eth1Data", eth1Data)
+        .add("graffiti", graffiti)
+        .add("proposerSlashings", proposerSlashings)
+        .add("attesterSlashings", attesterSlashings)
+        .add("attestations", attestations)
+        .add("deposits", deposits)
+        .add("voluntaryExits", voluntaryExits)
+        .add("syncAggregate", syncAggregate)
+        .add("executionPayloadHeader", executionPayloadHeader)
+        .toString();
   }
 }

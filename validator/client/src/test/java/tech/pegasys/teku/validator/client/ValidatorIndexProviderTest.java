@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
@@ -50,13 +51,6 @@ class ValidatorIndexProviderTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
   @Test
-  void shouldReturnEmptyWhenValidatorIsUnknown() {
-    final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel, asyncRunner);
-    assertThat(provider.getValidatorIndex(key1)).isEmpty();
-  }
-
-  @Test
   void shouldLoadValidatorKeys() {
     final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
     final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
@@ -67,10 +61,7 @@ class ValidatorIndexProviderTest {
     when(validatorApiChannel.getValidatorIndices(validators.getPublicKeys()))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key2, 20, key3, 300)));
     provider.lookupValidators();
-
-    assertThat(provider.getValidatorIndex(key1)).contains(1);
-    assertThat(provider.getValidatorIndex(key2)).contains(20);
-    assertThat(provider.getValidatorIndex(key3)).contains(300);
+    assertThat(provider.getValidatorIndices()).isCompletedWithValue(IntArrayList.of(1, 20, 300));
   }
 
   @Test
@@ -83,13 +74,12 @@ class ValidatorIndexProviderTest {
         .thenReturn(SafeFuture.failedFuture(new IOException("Server not available")))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1)));
     provider.lookupValidators();
-
-    assertThat(provider.getValidatorIndex(key1)).isEmpty();
+    final SafeFuture<IntCollection> future = provider.getValidatorIndices();
+    assertThat(future).isNotCompleted();
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-
-    assertThat(provider.getValidatorIndex(key1)).contains(1);
+    assertThat(provider.getValidatorIndices()).isCompletedWithValue(IntArrayList.of(1));
   }
 
   @Test
@@ -104,17 +94,12 @@ class ValidatorIndexProviderTest {
         .thenReturn(SafeFuture.completedFuture(Map.of(key2, 20)));
     provider.lookupValidators();
 
-    assertThat(provider.getValidatorIndex(key1)).isEmpty();
-    assertThat(provider.getValidatorIndex(key2)).contains(20);
-    assertThat(provider.getValidatorIndex(key3)).isEmpty();
+    assertThat(provider.getValidatorIndices()).isCompletedWithValue(IntArrayList.of(20));
 
     when(validatorApiChannel.getValidatorIndices(Set.of(key1, key3)))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key3, 300)));
     provider.lookupValidators();
-
-    assertThat(provider.getValidatorIndex(key1)).contains(1);
-    assertThat(provider.getValidatorIndex(key2)).contains(20);
-    assertThat(provider.getValidatorIndex(key3)).contains(300);
+    assertThat(provider.getValidatorIndices()).isCompletedWithValue(IntArrayList.of(1, 20, 300));
   }
 
   @Test
