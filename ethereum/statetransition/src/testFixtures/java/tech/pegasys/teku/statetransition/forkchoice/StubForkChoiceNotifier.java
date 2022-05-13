@@ -74,7 +74,7 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   public void onTerminalBlockReached(Bytes32 executionBlockHash) {}
 
   @Override
-  public PayloadAttributesCalculator getPayloadAttributesCalculator() {
+  public ProposersDataManager getProposersDataManager() {
     return null;
   }
 }

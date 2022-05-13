@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
@@ -58,7 +59,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -166,17 +167,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult>
       engineForkChoiceUpdated(
           final ForkChoiceState forkChoiceState,
-          final Optional<PayloadAttributes> payloadAttributes) {
+          final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
 
     LOG.trace(
         "calling engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
-        payloadAttributes);
+        payloadBuildingAttributes);
 
     return executionEngineClient
         .forkChoiceUpdated(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
-            PayloadAttributesV1.fromInternalForkChoiceState(payloadAttributes))
+            PayloadAttributesV1.fromInternalPayloadBuildingAttributes(payloadBuildingAttributes))
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
         .thenPeek(
@@ -184,7 +185,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 LOG.trace(
                     "engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={}) -> {}",
                     forkChoiceState,
-                    payloadAttributes,
+                    payloadBuildingAttributes,
                     forkChoiceUpdatedResult));
   }
 
@@ -274,18 +275,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       return doFallbackToLocal(localExecutionPayload, slot);
     }
 
-    // TODO: get public key from the context
-    final Bytes48 pubKey = Bytes48.ZERO;
+    final BLSPublicKey proposerPublicKey =
+        executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey();
 
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
         slot,
-        pubKey,
+        proposerPublicKey,
         executionPayloadContext.getParentHash());
 
     return executionBuilderClient
         .orElseThrow()
-        .getHeader(slot, pubKey, executionPayloadContext.getParentHash())
+        .getHeader(slot, proposerPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(
             builderBidV1SignedMessage -> getHeaderFromBuilderBid(builderBidV1SignedMessage, slot))

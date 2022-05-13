@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class Eth1AddressTest {
@@ -61,6 +62,14 @@ class Eth1AddressTest {
     Eth1Address.fromHexString("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359");
     Eth1Address.fromHexString("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB");
     Eth1Address.fromHexString("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb");
+  }
+
+  @Test
+  void eth1Address_shouldChecksumFromBytes() throws Exception {
+    assertThat(
+            Eth1Address.fromBytes(Bytes.fromHexString("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"))
+                .toHexString())
+        .isEqualTo("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
   }
 
   @Test

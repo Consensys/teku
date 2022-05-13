@@ -135,7 +135,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes) {
+      final ForkChoiceState forkChoiceState,
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     if (!bellatrixActivationDetected) {
       LOG.info(
           "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");
@@ -147,7 +148,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     return SafeFuture.completedFuture(
         new ForkChoiceUpdatedResult(
             PayloadStatus.VALID,
-            payloadAttributes.map(
+            payloadBuildingAttributes.map(
                 payloadAttributes1 -> {
                   Bytes8 payloadId =
                       Bytes8.leftPad(Bytes.ofUnsignedInt(payloadIdCounter.incrementAndGet()));
@@ -186,7 +187,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     }
 
     final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
-    final PayloadAttributes payloadAttributes = headAndAttrs.attributes;
+    final PayloadBuildingAttributes payloadAttributes = headAndAttrs.attributes;
 
     final ExecutionPayload executionPayload =
         schemaDefinitionsBellatrix
@@ -339,9 +340,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   private static class HeadAndAttributes {
     private final Bytes32 head;
-    private final PayloadAttributes attributes;
+    private final PayloadBuildingAttributes attributes;
 
-    private HeadAndAttributes(Bytes32 head, PayloadAttributes attributes) {
+    private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
       this.head = head;
       this.attributes = attributes;
     }

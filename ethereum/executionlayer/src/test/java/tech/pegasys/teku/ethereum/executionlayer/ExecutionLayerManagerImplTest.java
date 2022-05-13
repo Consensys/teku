@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BLSPubKey;
@@ -139,7 +140,7 @@ class ExecutionLayerManagerImplTest {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final ExecutionPayloadHeader header = prepareBuilderGetHeaderResponse(executionPayloadContext);
@@ -151,7 +152,10 @@ class ExecutionLayerManagerImplTest {
 
     // we expect both builder and local engine have been called
     verify(executionBuilderClient)
-        .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash());
+        .getHeader(
+            slot,
+            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -178,7 +182,7 @@ class ExecutionLayerManagerImplTest {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     prepareBuilderGetHeaderFailure(executionPayloadContext);
@@ -198,7 +202,10 @@ class ExecutionLayerManagerImplTest {
 
     // we expect both builder and local engine have been called
     verify(executionBuilderClient)
-        .getHeader(slot, Bytes48.ZERO, executionPayloadContext.getParentHash());
+        .getHeader(
+            slot,
+            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -218,7 +225,7 @@ class ExecutionLayerManagerImplTest {
     setBuilderOffline();
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
@@ -260,7 +267,7 @@ class ExecutionLayerManagerImplTest {
             value -> {
               final UInt64 slot = UInt64.valueOf(value);
               final ExecutionPayloadContext executionPayloadContext =
-                  dataStructureUtil.createPayloadExecutionContext(slot, false);
+                  dataStructureUtil.randomPayloadExecutionContext(slot, false);
               prepareEngineGetPayloadResponse(executionPayloadContext);
               assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
                   .isCompleted();
@@ -310,7 +317,9 @@ class ExecutionLayerManagerImplTest {
                 dataStructureUtil.randomSignature()));
 
     when(executionBuilderClient.getHeader(
-            slot, Bytes48.ZERO, executionPayloadContext.getParentHash()))
+            slot,
+            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getParentHash()))
         .thenReturn(SafeFuture.completedFuture(response));
 
     return header;
@@ -334,7 +343,9 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     when(executionBuilderClient.getHeader(
-            slot, Bytes48.ZERO, executionPayloadContext.getParentHash()))
+            slot,
+            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getParentHash()))
         .thenReturn(SafeFuture.failedFuture(new Throwable("error")));
   }
 

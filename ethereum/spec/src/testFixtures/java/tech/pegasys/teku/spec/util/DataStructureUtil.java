@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.B
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -1092,15 +1093,22 @@ public final class DataStructureUtil {
     return new EnrForkId(randomBytes4(), randomBytes4(), randomUInt64());
   }
 
-  public ExecutionPayloadContext createPayloadExecutionContext(final boolean optimisticHead) {
+  public ExecutionPayloadContext randomPayloadExecutionContext(final boolean optimisticHead) {
     return new ExecutionPayloadContext(
-        randomBytes8(), randomForkChoiceState(optimisticHead), Optional.empty());
+        randomBytes8(), randomForkChoiceState(optimisticHead), randomPayloadBuildingAttributes());
   }
 
-  public ExecutionPayloadContext createPayloadExecutionContext(
+  public ExecutionPayloadContext randomPayloadExecutionContext(
       final UInt64 slot, final boolean optimisticHead) {
     return new ExecutionPayloadContext(
-        randomBytes8(), randomForkChoiceState(slot, optimisticHead), Optional.empty());
+        randomBytes8(),
+        randomForkChoiceState(slot, optimisticHead),
+        randomPayloadBuildingAttributes());
+  }
+
+  public PayloadBuildingAttributes randomPayloadBuildingAttributes() {
+    return new PayloadBuildingAttributes(
+        randomUInt64(), randomBytes32(), randomEth1Address(), randomPublicKey());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

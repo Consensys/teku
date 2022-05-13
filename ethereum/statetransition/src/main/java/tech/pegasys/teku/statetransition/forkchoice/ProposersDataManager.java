@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,20 +32,21 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class PayloadAttributesCalculator {
+public class ProposersDataManager {
   private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
 
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
-  private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new ConcurrentHashMap<>();
+  private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
+      new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
-  public PayloadAttributesCalculator(
+  public ProposersDataManager(
       final Spec spec,
       final EventThread eventThread,
       final RecentChainData recentChainData,
@@ -55,25 +57,26 @@ public class PayloadAttributesCalculator {
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
   }
 
-  public void updateProposers(
-      final Collection<BeaconPreparableProposer> proposers, final UInt64 currentSlot) {
+  public void updatePreparedProposers(
+      final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     // Remove expired validators
-    proposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
+    preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
 
     // Update validators
     final UInt64 expirySlot =
         currentSlot.plus(spec.getSlotsPerEpoch(currentSlot) * MAX_PROPOSER_SEEN_EPOCHS);
-    for (BeaconPreparableProposer proposer : proposers) {
-      proposerInfoByValidatorIndex.put(
-          proposer.getValidatorIndex(), new ProposerInfo(expirySlot, proposer.getFeeRecipient()));
+    for (BeaconPreparableProposer proposer : preparedProposers) {
+      preparedProposerInfoByValidatorIndex.put(
+          proposer.getValidatorIndex(),
+          new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient()));
     }
   }
 
-  public SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
+  public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
       final UInt64 blockSlot,
       final boolean inSync,
       final ForkChoiceUpdateData forkChoiceUpdateData,
-      final boolean mandatoryPayloadAttributes) {
+      final boolean mandatory) {
     eventThread.checkOnEventThread();
     if (!inSync) {
       // We don't produce blocks while syncing so don't bother preparing the payload
@@ -92,37 +95,41 @@ public class PayloadAttributesCalculator {
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState ->
-                calculatePayloadAttributes(
-                    blockSlot, epoch, maybeState, mandatoryPayloadAttributes),
+                calculatePayloadBuildingAttributes(blockSlot, epoch, maybeState, mandatory),
             eventThread);
   }
 
-  private Optional<PayloadAttributes> calculatePayloadAttributes(
+  private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
       final UInt64 blockSlot,
       final UInt64 epoch,
       final Optional<BeaconState> maybeState,
-      final boolean mandatoryPayloadAttributes) {
+      final boolean mandatory) {
     eventThread.checkOnEventThread();
     if (maybeState.isEmpty()) {
       return Optional.empty();
     }
     final BeaconState state = maybeState.get();
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
-    final ProposerInfo proposerInfo = proposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null && !mandatoryPayloadAttributes) {
+    final PreparedProposerInfo proposerInfo =
+        preparedProposerInfoByValidatorIndex.get(proposerIndex);
+    if (proposerInfo == null && !mandatory) {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
+    final BLSPublicKey proposerPublicKey =
+        spec.getValidatorPubKey(state, proposerIndex).orElseThrow();
     return Optional.of(
-        new PayloadAttributes(timestamp, random, getFeeRecipient(proposerInfo, blockSlot)));
+        new PayloadBuildingAttributes(
+            timestamp, random, getFeeRecipient(proposerInfo, blockSlot), proposerPublicKey));
   }
 
   // this function MUST return a fee recipient.
-  private Eth1Address getFeeRecipient(final ProposerInfo proposerInfo, final UInt64 blockSlot) {
-    if (proposerInfo != null) {
-      return proposerInfo.feeRecipient;
+  private Eth1Address getFeeRecipient(
+      final PreparedProposerInfo preparedProposerInfo, final UInt64 blockSlot) {
+    if (preparedProposerInfo != null) {
+      return preparedProposerInfo.feeRecipient;
     }
     if (proposerDefaultFeeRecipient.isPresent()) {
       VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
@@ -147,7 +154,7 @@ public class PayloadAttributesCalculator {
   }
 
   public List<Map<String, Object>> getData() {
-    return proposerInfoByValidatorIndex.entrySet().stream()
+    return preparedProposerInfoByValidatorIndex.entrySet().stream()
         .map(
             proposerInfoEntry ->
                 ImmutableMap.<String, Object>builder()

@@ -16,18 +16,25 @@ package tech.pegasys.teku.spec.executionlayer;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
-public class PayloadAttributes {
+public class PayloadBuildingAttributes {
   private final UInt64 timestamp;
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
+  private final BLSPublicKey proposerPublicKey;
 
-  public PayloadAttributes(UInt64 timestamp, Bytes32 prevRandao, Eth1Address feeRecipient) {
+  public PayloadBuildingAttributes(
+      UInt64 timestamp,
+      Bytes32 prevRandao,
+      Eth1Address feeRecipient,
+      BLSPublicKey proposerPublicKey) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
+    this.proposerPublicKey = proposerPublicKey;
   }
 
   public UInt64 getTimestamp() {
@@ -42,6 +49,10 @@ public class PayloadAttributes {
     return feeRecipient;
   }
 
+  public BLSPublicKey getProposerPublicKey() {
+    return proposerPublicKey;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -50,7 +61,7 @@ public class PayloadAttributes {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final PayloadAttributes that = (PayloadAttributes) o;
+    final PayloadBuildingAttributes that = (PayloadBuildingAttributes) o;
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient);

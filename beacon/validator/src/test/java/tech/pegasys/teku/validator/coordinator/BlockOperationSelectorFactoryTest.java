@@ -288,7 +288,7 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -310,7 +310,7 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 
@@ -333,7 +333,7 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.createPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
