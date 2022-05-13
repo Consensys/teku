@@ -41,10 +41,14 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     final KvStoreAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, new V4SchemaHot(spec).getAllColumns());
+            metricsSystem,
+            STORAGE_HOT_DB,
+            hotConfiguration,
+            new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns());
     final KvStoreAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,
@@ -52,7 +56,13 @@ public class RocksDbDatabaseFactory {
             finalizedConfiguration,
             new V4SchemaFinalized(spec).getAllColumns());
     return KvStoreDatabase.createV4(
-        hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb,
+        finalizedDb,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeVotesEquivocation,
+        spec);
   }
 
   public static Database createV6(

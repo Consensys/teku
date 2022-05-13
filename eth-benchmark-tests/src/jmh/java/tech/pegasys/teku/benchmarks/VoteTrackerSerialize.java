@@ -19,6 +19,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -26,9 +27,10 @@ import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 public class VoteTrackerSerialize {
 
-  private static VoteTracker votes =
-      new DataStructureUtil(TestSpecFactory.createDefault()).randomVoteTracker();
-  private static KvStoreSerializer<VoteTracker> serializer = KvStoreSerializer.VOTES_SERIALIZER;
+  private static Spec spec = TestSpecFactory.createDefault();
+  private static VoteTracker votes = new DataStructureUtil(spec).randomVoteTracker();
+  private static KvStoreSerializer<VoteTracker> serializer =
+      KvStoreSerializer.createVoteTrackerSerializer(false);
   private static Bytes votesSerialized = Bytes.wrap(serializer.serialize(votes));
 
   @Benchmark
