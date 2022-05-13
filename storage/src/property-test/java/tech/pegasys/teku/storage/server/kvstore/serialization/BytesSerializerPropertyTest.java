@@ -23,10 +23,10 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class BytesSerializerPropertyTest {
   @Property
-  public void roundTrip(@ForAll @Size(max = 10000) final byte[] value) {
-    Bytes bytes = Bytes.wrap(value);
-    final byte[] serialized = BYTES_SERIALIZER.serialize(bytes);
+  public void roundTrip(@ForAll @Size(max = 10000) final byte[] bytes) {
+    Bytes value = Bytes.wrap(bytes);
+    final byte[] serialized = BYTES_SERIALIZER.serialize(value);
     final Bytes deserialized = BYTES_SERIALIZER.deserialize(serialized);
-    assertThat(deserialized).isEqualTo(bytes);
+    assertThat(deserialized).isEqualTo(value);
   }
 }

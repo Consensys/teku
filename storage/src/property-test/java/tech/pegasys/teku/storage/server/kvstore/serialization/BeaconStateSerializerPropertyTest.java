@@ -37,8 +37,8 @@ public class BeaconStateSerializerPropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final KvStoreSerializer<BeaconState> serializer = createStateSerializer(spec);
     final BeaconState value = dataStructureUtil.randomBeaconState(validatorCount);
-    final byte[] bytes = serializer.serialize(value);
-    final BeaconState deserialized = serializer.deserialize(bytes);
+    final byte[] serialized = serializer.serialize(value);
+    final BeaconState deserialized = serializer.deserialize(serialized);
     assertThat(deserialized).isEqualTo(value);
   }
 }

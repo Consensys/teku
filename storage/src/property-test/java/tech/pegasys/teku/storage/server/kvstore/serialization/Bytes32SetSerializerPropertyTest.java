@@ -26,12 +26,11 @@ import net.jqwik.api.arbitraries.SetArbitrary;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Bytes32SetSerializerPropertyTest {
-
   @Property
-  public void roundTrip(@ForAll("setOfByte32") final Set<Bytes32> input) {
-    final byte[] data = BLOCK_ROOTS_SERIALIZER.serialize(input);
-    final Set<Bytes32> result = BLOCK_ROOTS_SERIALIZER.deserialize(data);
-    assertThat(result).isEqualTo(input);
+  public void roundTrip(@ForAll("setOfByte32") final Set<Bytes32> value) {
+    final byte[] serialized = BLOCK_ROOTS_SERIALIZER.serialize(value);
+    final Set<Bytes32> deserialized = BLOCK_ROOTS_SERIALIZER.deserialize(serialized);
+    assertThat(deserialized).isEqualTo(value);
   }
 
   @Provide

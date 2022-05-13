@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class SlotAndBlockRootSerializerPropertyTest {
   @Property
-  public void roundTrip(@ForAll final long slot, @ForAll @Size(32) byte[] blockRoot) {
+  public void roundTrip(@ForAll final long slot, @ForAll @Size(32) final byte[] blockRoot) {
     final SlotAndBlockRoot value =
         new SlotAndBlockRoot(UInt64.fromLongBits(slot), Bytes32.wrap(blockRoot));
     final byte[] serialized = SLOT_AND_BLOCK_ROOT_SERIALIZER.serialize(value);

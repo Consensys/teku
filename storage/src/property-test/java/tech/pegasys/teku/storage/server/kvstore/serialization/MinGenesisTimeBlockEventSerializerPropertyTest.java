@@ -28,7 +28,7 @@ public class MinGenesisTimeBlockEventSerializerPropertyTest {
   void roundTrip(
       @ForAll final long timestamp,
       @ForAll final long blockNumber,
-      @ForAll @Size(32) byte[] blockHash) {
+      @ForAll @Size(32) final byte[] blockHash) {
     final MinGenesisTimeBlockEvent value =
         new MinGenesisTimeBlockEvent(
             UInt64.fromLongBits(timestamp),
