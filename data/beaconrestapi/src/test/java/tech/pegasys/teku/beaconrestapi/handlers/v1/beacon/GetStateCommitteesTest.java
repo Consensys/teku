@@ -110,7 +110,7 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockAttestationsTest.class, "getStateCommittees.json"),
+            Resources.getResource(GetStateCommitteesTest.class, "getStateCommittees.json"),
             UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
