@@ -64,12 +64,13 @@ public class PayloadBuildingAttributes {
     final PayloadBuildingAttributes that = (PayloadBuildingAttributes) o;
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)
-        && Objects.equals(feeRecipient, that.feeRecipient);
+        && Objects.equals(feeRecipient, that.feeRecipient)
+        && Objects.equals(proposerPublicKey, that.proposerPublicKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timestamp, prevRandao, feeRecipient);
+    return Objects.hash(timestamp, prevRandao, feeRecipient, proposerPublicKey);
   }
 
   @Override
@@ -78,6 +79,7 @@ public class PayloadBuildingAttributes {
         .add("timestamp", timestamp)
         .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)
+        .add("proposerPublicKey", proposerPublicKey)
         .toString();
   }
 }

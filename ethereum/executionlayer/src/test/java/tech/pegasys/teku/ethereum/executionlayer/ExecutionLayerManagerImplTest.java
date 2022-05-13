@@ -23,10 +23,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BLSPubKey;
@@ -154,7 +152,7 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient)
         .getHeader(
             slot,
-            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
             executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
 
@@ -204,7 +202,7 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient)
         .getHeader(
             slot,
-            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
             executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
 
@@ -313,12 +311,15 @@ class ExecutionLayerManagerImplTest {
                 new BuilderBidV1(
                     ExecutionPayloadHeaderV1.fromInternalExecutionPayloadHeader(header),
                     dataStructureUtil.randomUInt256(),
-                    new BLSPubKey(dataStructureUtil.randomPublicKey())),
+                    new BLSPubKey(
+                        executionPayloadContext
+                            .getPayloadBuildingAttributes()
+                            .getProposerPublicKey())),
                 dataStructureUtil.randomSignature()));
 
     when(executionBuilderClient.getHeader(
             slot,
-            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
             executionPayloadContext.getParentHash()))
         .thenReturn(SafeFuture.completedFuture(response));
 
@@ -344,7 +345,7 @@ class ExecutionLayerManagerImplTest {
 
     when(executionBuilderClient.getHeader(
             slot,
-            BLSPublicKey.fromBytesCompressed(Bytes48.ZERO),
+            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
             executionPayloadContext.getParentHash()))
         .thenReturn(SafeFuture.failedFuture(new Throwable("error")));
   }
