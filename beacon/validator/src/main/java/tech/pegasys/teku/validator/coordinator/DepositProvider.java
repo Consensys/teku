@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.merkletree.DepositTree;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -41,8 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
-import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
-import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -55,7 +54,7 @@ public class DepositProvider
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
-  private final MerkleTree depositMerkleTree;
+  private final DepositTree depositMerkleTree;
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
@@ -77,8 +76,7 @@ public class DepositProvider
     this.eth1DataCache = eth1DataCache;
     this.spec = spec;
     depositUtil = new DepositUtil(spec);
-    depositMerkleTree =
-        new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
+    depositMerkleTree = new DepositTree();
     depositCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -98,30 +96,40 @@ public class DepositProvider
               }
 
               depositNavigableMap.put(deposit.getIndex(), deposit);
-              depositMerkleTree.add(deposit.getData().hashTreeRoot());
+              depositMerkleTree.pushLeaf(deposit.getData().hashTreeRoot());
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
         event.getBlockTimestamp(),
         new Eth1Data(
             depositMerkleTree.getRoot(),
-            UInt64.valueOf(depositMerkleTree.getNumberOfLeaves()),
+            UInt64.valueOf(depositMerkleTree.getDepositCount()),
             event.getBlockHash()));
   }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    // TODO: Should just use recentChainData.getStore().getLatestFinalized()
     recentChainData
         .retrieveBlockState(checkpoint.getRoot())
         .thenAccept(
-            finalizedState -> {
-              if (finalizedState.isEmpty()) {
+            maybeFinalizedState -> {
+              if (maybeFinalizedState.isEmpty()) {
                 LOG.error("Finalized checkpoint state not found.");
                 return;
               }
-              final UInt64 depositIndex = finalizedState.get().getEth1DepositIndex();
+              final BeaconState finalizedState = maybeFinalizedState.get();
+              final UInt64 depositIndex = finalizedState.getEth1DepositIndex();
               pruneDeposits(depositIndex);
+              synchronized (this) {
+                if (depositIndex.isGreaterThanOrEqualTo(
+                        finalizedState.getEth1Data().getDepositCount())
+                    && depositMerkleTree.getDepositCount()
+                        >= finalizedState.getEth1Data().getDepositCount().longValue()) {
+                  depositMerkleTree.finalize(finalizedState.getEth1Data());
+                }
+              }
             })
         .reportExceptions();
   }
@@ -216,13 +224,14 @@ public class DepositProvider
    * @param fromDepositIndex inclusive
    * @param toDepositIndex exclusive
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
-   * @return
    */
   private SszList<Deposit> getDepositsWithProof(
       UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount, long maxDeposits) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
     final SszBytes32VectorSchema<?> depositProofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
+    final DepositTree merkleTree =
+        depositMerkleTree.getTreeAtDepositIndex(eth1DepositCount.intValue());
     return depositNavigableMap
         .subMap(fromDepositIndex, true, toDepositIndex, false)
         .values()
@@ -235,9 +244,7 @@ public class DepositProvider
               }
               expectedDepositIndex.set(deposit.getIndex().plus(ONE));
               SszBytes32Vector proof =
-                  depositProofSchema.of(
-                      depositMerkleTree.getProofWithViewBoundary(
-                          deposit.getIndex().intValue(), eth1DepositCount.intValue()));
+                  depositProofSchema.of(merkleTree.getProof(deposit.getIndex().intValue()));
               return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
             })
         .collect(depositsSchema.collector());

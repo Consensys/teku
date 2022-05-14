@@ -298,6 +298,7 @@ public class DepositProviderTest {
                             genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
                             ((DepositWithIndex) deposit).getIndex().intValue(),
                             depositMerkleTree.getRoot()))
+                .withFailMessage("Expected proof to be valid but was not")
                 .isTrue());
   }
 
