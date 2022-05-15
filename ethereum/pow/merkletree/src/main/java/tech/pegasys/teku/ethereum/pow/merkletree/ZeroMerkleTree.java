@@ -73,6 +73,6 @@ class ZeroMerkleTree extends MerkleTree {
       final long endIndex,
       final int depth,
       final Consumer<Bytes32> consumer) {
-    throw new UnsupportedOperationException("Cannot iterate zero leafs");
+    // Zero leaves have no deposits to iterate.
   }
 }

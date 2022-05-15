@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.NavigableMap;
@@ -218,6 +219,14 @@ public class DepositProvider
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
     final SszBytes32VectorSchema<?> depositProofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
+    // No deposits to include so don't bother rewinding the merkle tree.
+    if (fromDepositIndex.equals(toDepositIndex)) {
+      return depositsSchema.createFromElements(emptyList());
+    }
+    if (depositMerkleTree.getDepositCount() < eth1DepositCount.intValue()) {
+      throw MissingDepositsException.missingRange(
+          UInt64.valueOf(depositMerkleTree.getDepositCount()), eth1DepositCount);
+    }
     final DepositTree merkleTree =
         depositMerkleTree.getTreeAtDepositIndex(eth1DepositCount.intValue());
     return depositNavigableMap
