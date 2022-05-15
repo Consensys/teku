@@ -19,13 +19,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @SuppressWarnings("JavaCase")
 public class GetStateSyncCommitteesResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   public final StateSyncCommittees data;
 
   @JsonCreator
   public GetStateSyncCommitteesResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final StateSyncCommittees data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

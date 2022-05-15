@@ -20,14 +20,14 @@ import java.util.List;
 @SuppressWarnings("JavaCase")
 public class GetBlockHeadersResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final List<BlockHeader> data;
 
   @JsonCreator
   public GetBlockHeadersResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final List<BlockHeader> data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

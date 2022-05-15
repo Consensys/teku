@@ -21,14 +21,14 @@ import tech.pegasys.teku.api.schema.Attestation;
 @SuppressWarnings("JavaCase")
 public class GetBlockAttestationsResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final List<Attestation> data;
 
   @JsonCreator
   public GetBlockAttestationsResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final List<Attestation> data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

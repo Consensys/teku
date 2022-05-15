@@ -29,7 +29,7 @@ public class GetStateResponseV2 {
   public final Version version;
 
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME,
@@ -45,7 +45,7 @@ public class GetStateResponseV2 {
   @JsonCreator
   public GetStateResponseV2(
       @JsonProperty("version") final Version version,
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final State data) {
     this.version = version;
     this.execution_optimistic = executionOptimistic;

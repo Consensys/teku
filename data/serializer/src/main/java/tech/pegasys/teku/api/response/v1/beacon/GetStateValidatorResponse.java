@@ -19,14 +19,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @SuppressWarnings("JavaCase")
 public class GetStateValidatorResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final ValidatorResponse data;
 
   @JsonCreator
   public GetStateValidatorResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final ValidatorResponse data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

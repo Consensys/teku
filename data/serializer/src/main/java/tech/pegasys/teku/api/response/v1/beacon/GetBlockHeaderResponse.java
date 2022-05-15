@@ -19,14 +19,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @SuppressWarnings("JavaCase")
 public class GetBlockHeaderResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final BlockHeader data;
 
   @JsonCreator
   public GetBlockHeaderResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final BlockHeader data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

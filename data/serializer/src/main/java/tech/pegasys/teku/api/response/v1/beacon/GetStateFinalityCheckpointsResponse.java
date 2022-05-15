@@ -20,14 +20,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class GetStateFinalityCheckpointsResponse {
 
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final FinalityCheckpointsResponse data;
 
   @JsonCreator
   public GetStateFinalityCheckpointsResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final FinalityCheckpointsResponse data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

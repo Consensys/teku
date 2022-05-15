@@ -20,14 +20,14 @@ import tech.pegasys.teku.api.schema.Fork;
 @SuppressWarnings("JavaCase")
 public class GetStateForkResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final Fork data;
 
   @JsonCreator
   public GetStateForkResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final Fork data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;

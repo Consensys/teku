@@ -109,7 +109,6 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
 
-    final Boolean executionOptimisticForApi = executionOptimistic;
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -121,7 +120,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   context.getOldBestStateRoot(),
                   stateRoot,
                   configProvider.computeEpochAtSlot(slot),
-                  executionOptimisticForApi);
+                  executionOptimistic);
           notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
@@ -131,7 +130,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             bestBlockRoot,
             stateRoot,
             epochTransition,
-            executionOptimisticForApi,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);

@@ -21,7 +21,7 @@ import tech.pegasys.teku.api.schema.Root;
 public class GetBlockRootResponse {
 
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final Root data;
@@ -29,7 +29,7 @@ public class GetBlockRootResponse {
   @JsonCreator
   public GetBlockRootResponse(
       @JsonProperty("data") final Root data,
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic) {
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic) {
     this.data = data;
     this.execution_optimistic = executionOptimistic;
   }

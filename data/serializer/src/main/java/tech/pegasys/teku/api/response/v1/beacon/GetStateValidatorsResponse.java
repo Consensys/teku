@@ -20,14 +20,14 @@ import java.util.List;
 @SuppressWarnings("JavaCase")
 public class GetStateValidatorsResponse {
   @JsonProperty("execution_optimistic")
-  public final Boolean execution_optimistic;
+  public final boolean execution_optimistic;
 
   @JsonProperty("data")
   public final List<ValidatorResponse> data;
 
   @JsonCreator
   public GetStateValidatorsResponse(
-      @JsonProperty("execution_optimistic") final Boolean executionOptimistic,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
       @JsonProperty("data") final List<ValidatorResponse> data) {
     this.execution_optimistic = executionOptimistic;
     this.data = data;
