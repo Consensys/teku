@@ -110,28 +110,16 @@ public class DepositProvider
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    // TODO: Should just use recentChainData.getStore().getLatestFinalized()
-    recentChainData
-        .retrieveBlockState(checkpoint.getRoot())
-        .thenAccept(
-            maybeFinalizedState -> {
-              if (maybeFinalizedState.isEmpty()) {
-                LOG.error("Finalized checkpoint state not found.");
-                return;
-              }
-              final BeaconState finalizedState = maybeFinalizedState.get();
-              final UInt64 depositIndex = finalizedState.getEth1DepositIndex();
-              pruneDeposits(depositIndex);
-              synchronized (this) {
-                if (depositIndex.isGreaterThanOrEqualTo(
-                        finalizedState.getEth1Data().getDepositCount())
-                    && depositMerkleTree.getDepositCount()
-                        >= finalizedState.getEth1Data().getDepositCount().longValue()) {
-                  depositMerkleTree.finalize(finalizedState.getEth1Data());
-                }
-              }
-            })
-        .reportExceptions();
+    final BeaconState finalizedState = recentChainData.getStore().getLatestFinalized().getState();
+    final UInt64 depositIndex = finalizedState.getEth1DepositIndex();
+    pruneDeposits(depositIndex);
+    synchronized (this) {
+      if (depositIndex.isGreaterThanOrEqualTo(finalizedState.getEth1Data().getDepositCount())
+          && depositMerkleTree.getDepositCount()
+              >= finalizedState.getEth1Data().getDepositCount().longValue()) {
+        depositMerkleTree.finalize(finalizedState.getEth1Data());
+      }
+    }
   }
 
   private synchronized void pruneDeposits(final UInt64 toIndex) {
