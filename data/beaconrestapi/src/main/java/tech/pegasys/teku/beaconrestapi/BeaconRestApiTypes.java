@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
@@ -53,6 +54,11 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<UInt64> INDEX_PARAMETER =
       new ParameterMetadata<>(
           INDEX, CoreTypes.UINT64_TYPE.withDescription(COMMITTEE_INDEX_QUERY_DESCRIPTION));
+
+  public static final ParameterMetadata<UInt64> COMMITTEE_INDEX_PARAMETER =
+      new ParameterMetadata<>(
+          COMMITTEE_INDEX,
+          CoreTypes.UINT64_TYPE.withDescription(COMMITTEE_INDEX_QUERY_DESCRIPTION));
 
   public static final ParameterMetadata<Bytes32> PARENT_ROOT_PARAMETER =
       new ParameterMetadata<>(
