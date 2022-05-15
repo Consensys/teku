@@ -50,7 +50,7 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     StateAndMetaData expectedBody =
-        new StateAndMetaData(state, spec.getGenesisSpec().getMilestone(), false, false, true);
+        new StateAndMetaData(state, spec.getGenesisSpec().getMilestone(), false, true);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
 
@@ -70,7 +70,6 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
         new StateAndMetaData(
             dataStructureUtil.randomBeaconState(),
             spec.getGenesisSpec().getMilestone(),
-            false,
             false,
             true);
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);

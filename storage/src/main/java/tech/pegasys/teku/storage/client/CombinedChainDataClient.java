@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -588,7 +587,6 @@ public class CombinedChainDataClient {
         signedBeaconBlock,
         spec.atSlot(signedBeaconBlock.getSlot()).getMilestone(),
         chainHead.isOptimistic() || isOptimisticBlock(signedBeaconBlock.getRoot()),
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
         canonical);
   }
 

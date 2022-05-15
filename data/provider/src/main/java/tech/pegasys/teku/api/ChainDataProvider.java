@@ -337,10 +337,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    final boolean bellatrixEnabled = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     if (parentRoot.isPresent()) {
-      return SafeFuture.completedFuture(
-          new BlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
+      return SafeFuture.completedFuture(new BlockHeadersResponse(false, emptyList()));
     }
 
     return defaultBlockSelectorFactory
@@ -348,13 +346,9 @@ public class ChainDataProvider {
         .getBlocks()
         .thenApply(
             blockAndMetadataList -> {
-              final Boolean executionOptimistic =
-                  bellatrixEnabled
-                      ? blockAndMetadataList.stream()
-                          .anyMatch(BlockAndMetaData::isExecutionOptimistic)
-                      : null;
-              return new BlockHeadersResponse(
-                  bellatrixEnabled ? executionOptimistic : null, blockAndMetadataList);
+              final boolean executionOptimistic =
+                  blockAndMetadataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
+              return new BlockHeadersResponse(executionOptimistic, blockAndMetadataList);
             });
   }
 

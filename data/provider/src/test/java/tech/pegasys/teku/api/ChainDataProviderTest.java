@@ -331,7 +331,6 @@ public class ChainDataProviderTest {
                 new StateSyncCommittees(committeeIndices, List.of(committeeIndices)),
                 SpecMilestone.ALTAIR,
                 false,
-                false,
                 true));
   }
 
@@ -465,11 +464,6 @@ public class ChainDataProviderTest {
   }
 
   private <T> ObjectAndMetaData<T> addMetaData(final T expected, final UInt64 slot) {
-    return new ObjectAndMetaData<>(
-        expected,
-        spec.atSlot(slot).getMilestone(),
-        false,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
-        true);
+    return new ObjectAndMetaData<>(expected, spec.atSlot(slot).getMilestone(), false, true);
   }
 }
