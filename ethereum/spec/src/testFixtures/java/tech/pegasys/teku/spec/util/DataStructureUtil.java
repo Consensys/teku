@@ -84,6 +84,10 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1Schema;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1Schema;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -1095,7 +1099,17 @@ public final class DataStructureUtil {
 
   public ExecutionPayloadContext randomPayloadExecutionContext(final boolean optimisticHead) {
     return new ExecutionPayloadContext(
-        randomBytes8(), randomForkChoiceState(optimisticHead), randomPayloadBuildingAttributes());
+        randomBytes8(),
+        randomForkChoiceState(optimisticHead),
+        randomPayloadBuildingAttributes(false));
+  }
+
+  public ExecutionPayloadContext randomPayloadExecutionContext(
+      final boolean optimisticHead, final boolean withValidatorRegistration) {
+    return new ExecutionPayloadContext(
+        randomBytes8(),
+        randomForkChoiceState(optimisticHead),
+        randomPayloadBuildingAttributes(withValidatorRegistration));
   }
 
   public ExecutionPayloadContext randomPayloadExecutionContext(
@@ -1103,12 +1117,36 @@ public final class DataStructureUtil {
     return new ExecutionPayloadContext(
         randomBytes8(),
         randomForkChoiceState(slot, optimisticHead),
-        randomPayloadBuildingAttributes());
+        randomPayloadBuildingAttributes(false));
   }
 
-  public PayloadBuildingAttributes randomPayloadBuildingAttributes() {
+  public PayloadBuildingAttributes randomPayloadBuildingAttributes(
+      final boolean withValidatorRegistration) {
     return new PayloadBuildingAttributes(
-        randomUInt64(), randomBytes32(), randomEth1Address(), randomPublicKey());
+        randomUInt64(),
+        randomBytes32(),
+        randomEth1Address(),
+        withValidatorRegistration ? Optional.of(randomValidatorRegistration()) : Optional.empty());
+  }
+
+  public SignedValidatorRegistrationV1 randomValidatorRegistration() {
+    SignedValidatorRegistrationV1Schema signedSchema =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getSignedValidatorRegistrationSchema();
+    ValidatorRegistrationV1Schema schema =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getValidatorRegistrationSchema();
+
+    ValidatorRegistrationV1 validatorRegistration =
+        schema.create(randomBytes20(), randomUInt64(), randomUInt64(), randomPublicKey());
+
+    return signedSchema.create(validatorRegistration, randomSignature());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

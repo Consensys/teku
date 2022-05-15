@@ -28,6 +28,8 @@ import tech.pegasys.teku.spec.datastructures.execution.BuilderBidV1Schema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1Schema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1Schema;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1Schema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
@@ -44,6 +46,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema;
   private final BuilderBidV1Schema builderBidV1Schema;
   private final SignedBuilderBidV1Schema signedBuilderBidV1Schema;
+  private final ValidatorRegistrationV1Schema validatorRegistrationSchema;
+  private final SignedValidatorRegistrationV1Schema signedValidatorRegistrationSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
@@ -64,6 +68,9 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);
     this.builderBidV1Schema = new BuilderBidV1Schema(executionPayloadHeaderSchema);
     this.signedBuilderBidV1Schema = new SignedBuilderBidV1Schema(builderBidV1Schema);
+    this.validatorRegistrationSchema = new ValidatorRegistrationV1Schema();
+    this.signedValidatorRegistrationSchema =
+        new SignedValidatorRegistrationV1Schema(validatorRegistrationSchema);
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -125,6 +132,14 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
 
   public SignedBuilderBidV1Schema getSignedBuilderBidV1Schema() {
     return signedBuilderBidV1Schema;
+  }
+
+  public ValidatorRegistrationV1Schema getValidatorRegistrationSchema() {
+    return validatorRegistrationSchema;
+  }
+
+  public SignedValidatorRegistrationV1Schema getSignedValidatorRegistrationSchema() {
+    return signedValidatorRegistrationSchema;
   }
 
   @Override

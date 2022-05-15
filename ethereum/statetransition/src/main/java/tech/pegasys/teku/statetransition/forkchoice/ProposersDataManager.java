@@ -17,19 +17,23 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -37,6 +41,7 @@ import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposersDataManager {
+  private static final Logger LOG = LogManager.getLogger();
   private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
 
   private final Spec spec;
@@ -44,6 +49,8 @@ public class ProposersDataManager {
   private final RecentChainData recentChainData;
   private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
       new ConcurrentHashMap<>();
+  private final Map<UInt64, SignedValidatorRegistrationV1>
+      validatorRegistrationInfoByValidatorIndex = new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
   public ProposersDataManager(
@@ -60,7 +67,15 @@ public class ProposersDataManager {
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     // Remove expired validators
-    preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
+    final Iterator<Entry<UInt64, PreparedProposerInfo>> iterator =
+        preparedProposerInfoByValidatorIndex.entrySet().iterator();
+    while (iterator.hasNext()) {
+      final Entry<UInt64, PreparedProposerInfo> entry = iterator.next();
+      if (entry.getValue().hasExpired(currentSlot)) {
+        validatorRegistrationInfoByValidatorIndex.remove(entry.getKey());
+        iterator.remove();
+      }
+    }
 
     // Update validators
     final UInt64 expirySlot =
@@ -70,6 +85,28 @@ public class ProposersDataManager {
           proposer.getValidatorIndex(),
           new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient()));
     }
+  }
+
+  public SafeFuture<Void> updateValidatorRegistrations(
+      final Collection<SignedValidatorRegistrationV1> validatorRegistrations) {
+    return recentChainData
+        .getBestState()
+        .orElseThrow()
+        // TODO: call execution layer builder register validator
+        .thenAccept(
+            headState ->
+                validatorRegistrations.forEach(
+                    validatorRegistration ->
+                        spec.getValidatorIndex(
+                                headState, validatorRegistration.getMessage().getPublicKey())
+                            .ifPresentOrElse(
+                                index ->
+                                    validatorRegistrationInfoByValidatorIndex.put(
+                                        UInt64.valueOf(index), validatorRegistration),
+                                () ->
+                                    LOG.warn(
+                                        "validator public key not found: {}",
+                                        validatorRegistration.getMessage().getPublicKey()))));
   }
 
   public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
@@ -118,11 +155,11 @@ public class ProposersDataManager {
     }
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
-    final BLSPublicKey proposerPublicKey =
-        spec.getValidatorPubKey(state, proposerIndex).orElseThrow();
+    final Optional<SignedValidatorRegistrationV1> validatorRegistration =
+        Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex));
     return Optional.of(
         new PayloadBuildingAttributes(
-            timestamp, random, getFeeRecipient(proposerInfo, blockSlot), proposerPublicKey));
+            timestamp, random, getFeeRecipient(proposerInfo, blockSlot), validatorRegistration));
   }
 
   // this function MUST return a fee recipient.

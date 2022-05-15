@@ -270,23 +270,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final SafeFuture<ExecutionPayload> localExecutionPayload =
         engineGetPayload(executionPayloadContext, slot, true);
 
-    if (!isBuilderAvailable()) {
+    final Optional<BLSPublicKey> registeredValidatorPublicKey =
+        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistrationPublicKey();
+
+    if (!isBuilderAvailable() || registeredValidatorPublicKey.isEmpty()) {
       // fallback to local execution engine
       return doFallbackToLocal(localExecutionPayload, slot);
     }
 
-    final BLSPublicKey proposerPublicKey =
-        executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey();
-
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
         slot,
-        proposerPublicKey,
+        registeredValidatorPublicKey.get(),
         executionPayloadContext.getParentHash());
 
     return executionBuilderClient
         .orElseThrow()
-        .getHeader(slot, proposerPublicKey, executionPayloadContext.getParentHash())
+        .getHeader(
+            slot, registeredValidatorPublicKey.get(), executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenApply(
             builderBidV1SignedMessage -> getHeaderFromBuilderBid(builderBidV1SignedMessage, slot))

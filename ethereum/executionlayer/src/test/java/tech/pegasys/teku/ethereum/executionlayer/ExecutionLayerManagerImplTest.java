@@ -138,7 +138,7 @@ class ExecutionLayerManagerImplTest {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final ExecutionPayloadHeader header = prepareBuilderGetHeaderResponse(executionPayloadContext);
@@ -152,7 +152,10 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient)
         .getHeader(
             slot,
-            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
+            executionPayloadContext
+                .getPayloadBuildingAttributes()
+                .getValidatorRegistrationPublicKey()
+                .orElseThrow(),
             executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
 
@@ -180,7 +183,7 @@ class ExecutionLayerManagerImplTest {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     prepareBuilderGetHeaderFailure(executionPayloadContext);
@@ -202,7 +205,10 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient)
         .getHeader(
             slot,
-            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
+            executionPayloadContext
+                .getPayloadBuildingAttributes()
+                .getValidatorRegistrationPublicKey()
+                .orElseThrow(),
             executionPayloadContext.getParentHash());
     verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
 
@@ -223,7 +229,46 @@ class ExecutionLayerManagerImplTest {
     setBuilderOffline();
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+
+    final ExecutionPayloadHeader header =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(payload);
+
+    // we expect local engine header as result
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+        .isCompletedWithValue(header);
+
+    // we expect only local engine have been called
+    verifyNoInteractions(executionBuilderClient);
+    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    // we expect result from the cached payload
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect no additional calls
+    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(executionEngineClient);
+  }
+
+  @Test
+  public void
+      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfValidatorIsNotRegistered() {
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
@@ -314,12 +359,16 @@ class ExecutionLayerManagerImplTest {
                     new BLSPubKey(
                         executionPayloadContext
                             .getPayloadBuildingAttributes()
-                            .getProposerPublicKey())),
+                            .getValidatorRegistrationPublicKey()
+                            .orElseThrow())),
                 dataStructureUtil.randomSignature()));
 
     when(executionBuilderClient.getHeader(
             slot,
-            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
+            executionPayloadContext
+                .getPayloadBuildingAttributes()
+                .getValidatorRegistrationPublicKey()
+                .orElseThrow(),
             executionPayloadContext.getParentHash()))
         .thenReturn(SafeFuture.completedFuture(response));
 
@@ -345,7 +394,10 @@ class ExecutionLayerManagerImplTest {
 
     when(executionBuilderClient.getHeader(
             slot,
-            executionPayloadContext.getPayloadBuildingAttributes().getProposerPublicKey(),
+            executionPayloadContext
+                .getPayloadBuildingAttributes()
+                .getValidatorRegistrationPublicKey()
+                .orElseThrow(),
             executionPayloadContext.getParentHash()))
         .thenReturn(SafeFuture.failedFuture(new Throwable("error")));
   }

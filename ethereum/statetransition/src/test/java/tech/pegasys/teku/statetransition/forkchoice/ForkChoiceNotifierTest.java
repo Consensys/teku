@@ -34,7 +34,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -822,11 +821,7 @@ class ForkChoiceNotifierTest {
         overrideFeeRecipient.orElse(dataStructureUtil.randomEth1Address());
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
-    final BLSPublicKey proposerPublicKey =
-        spec.getValidatorPubKey(
-                headState, UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot)))
-            .orElseThrow();
-    return new PayloadBuildingAttributes(timestamp, random, feeRecipient, proposerPublicKey);
+    return new PayloadBuildingAttributes(timestamp, random, feeRecipient, Optional.empty());
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {
