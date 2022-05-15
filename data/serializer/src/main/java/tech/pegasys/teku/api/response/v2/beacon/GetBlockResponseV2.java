@@ -14,12 +14,9 @@
 package tech.pegasys.teku.api.response.v2.beacon;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -32,8 +29,6 @@ public class GetBlockResponseV2 {
   private final Version version;
 
   @JsonProperty("execution_optimistic")
-  @JsonInclude(Include.NON_NULL)
-  @Schema(hidden = true)
   public final Boolean execution_optimistic;
 
   @JsonTypeInfo(

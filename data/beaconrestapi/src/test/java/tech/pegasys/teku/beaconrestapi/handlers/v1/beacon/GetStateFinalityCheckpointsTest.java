@@ -49,7 +49,7 @@ public class GetStateFinalityCheckpointsTest
 
     final BeaconState beaconState = recentChainData.getBestState().orElseThrow().get();
     responseData =
-        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, false, true);
+        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, true);
 
     handler = new GetStateFinalityCheckpoints(chainDataProvider);
   }

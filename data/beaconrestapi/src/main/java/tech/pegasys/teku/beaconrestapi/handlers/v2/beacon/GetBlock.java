@@ -108,8 +108,7 @@ public class GetBlock extends AbstractHandler implements Handler {
     ctx.header(HEADER_CONSENSUS_VERSION, version.name());
     return Optional.of(
         jsonProvider.objectToJSON(
-            new GetBlockResponseV2(
-                version, response.isExecutionOptimisticForApi(), response.getData())));
+            new GetBlockResponseV2(version, response.isExecutionOptimistic(), response.getData())));
   }
 
   private String resultFilename(final SszResponse response) {

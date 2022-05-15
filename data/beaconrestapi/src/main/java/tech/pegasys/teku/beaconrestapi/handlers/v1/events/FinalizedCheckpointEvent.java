@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,32 +30,31 @@ public class FinalizedCheckpointEvent
           .withField("block", BYTES32_TYPE, FinalizedCheckpointData::getBlock)
           .withField("state", BYTES32_TYPE, FinalizedCheckpointData::getState)
           .withField("epoch", UINT64_TYPE, FinalizedCheckpointData::getEpoch)
-          // TODO #5264
-          // .withOptionalField("execution_optimistic", BOOLEAN_TYPE,
-          // FinalizedCheckpointData::getExecutionOptimistic)
+          .withField(
+              "execution_optimistic", BOOLEAN_TYPE, FinalizedCheckpointData::isExecutionOptimistic)
           .build();
 
   FinalizedCheckpointEvent(
       final Bytes32 block,
       final Bytes32 state,
       final UInt64 epoch,
-      final Boolean executionOptimistic) {
+      final boolean executionOptimistic) {
     super(
         FINALIZED_CHECKPOINT_EVENT_TYPE,
-        new FinalizedCheckpointData(block, state, epoch, Optional.ofNullable(executionOptimistic)));
+        new FinalizedCheckpointData(block, state, epoch, executionOptimistic));
   }
 
   public static class FinalizedCheckpointData {
     public final Bytes32 block;
     public final Bytes32 state;
     public final UInt64 epoch;
-    public final Optional<Boolean> executionOptimistic;
+    public final boolean executionOptimistic;
 
     FinalizedCheckpointData(
         final Bytes32 block,
         final Bytes32 state,
         final UInt64 epoch,
-        final Optional<Boolean> executionOptimistic) {
+        final boolean executionOptimistic) {
       this.block = block;
       this.state = state;
       this.epoch = epoch;
@@ -74,8 +73,7 @@ public class FinalizedCheckpointEvent
       return epoch;
     }
 
-    @SuppressWarnings("UnusedMethod")
-    private Optional<Boolean> getExecutionOptimistic() {
+    private boolean isExecutionOptimistic() {
       return executionOptimistic;
     }
   }

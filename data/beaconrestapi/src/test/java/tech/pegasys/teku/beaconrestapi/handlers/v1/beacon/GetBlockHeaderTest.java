@@ -45,8 +45,7 @@ class GetBlockHeaderTest extends AbstractMigratedBeaconHandlerWithChainDataProvi
   private final SignedBeaconBlock signedBeaconBlock =
       SignedBeaconBlock.create(spec, message, signature);
   private final BlockAndMetaData responseData =
-      new BlockAndMetaData(
-          signedBeaconBlock, spec.getGenesisSpec().getMilestone(), false, false, true);
+      new BlockAndMetaData(signedBeaconBlock, spec.getGenesisSpec().getMilestone(), false, true);
 
   @BeforeEach
   void setup() {

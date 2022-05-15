@@ -57,7 +57,7 @@ public class GetBlockHeaders extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<BlockHeadersResponse> RESPONSE_TYPE =
       SerializableTypeDefinition.object(BlockHeadersResponse.class)
           .name("GetBlockHeadersResponse")
-          .withOptionalField(
+          .withField(
               "execution_optimistic", BOOLEAN_TYPE, BlockHeadersResponse::isExecutionOptimistic)
           .withField(
               "data",

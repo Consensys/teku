@@ -14,18 +14,13 @@
 package tech.pegasys.teku.api.response.v1.beacon;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.api.schema.Attestation;
 
 @SuppressWarnings("JavaCase")
 public class GetBlockAttestationsResponse {
   @JsonProperty("execution_optimistic")
-  @JsonInclude(Include.NON_NULL)
-  @Schema(hidden = true)
   public final Boolean execution_optimistic;
 
   @JsonProperty("data")

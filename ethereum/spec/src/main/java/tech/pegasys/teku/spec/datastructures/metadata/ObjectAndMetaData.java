@@ -23,25 +23,21 @@ public class ObjectAndMetaData<T> {
   protected final T data;
   private final SpecMilestone milestone;
   private final boolean executionOptimistic;
-  private final boolean bellatrixEnabled;
   private final boolean canonical;
 
   public ObjectAndMetaData(
       final T data,
       final SpecMilestone milestone,
       final boolean executionOptimistic,
-      final boolean bellatrixEnabled,
       final boolean canonical) {
     this.data = data;
     this.milestone = milestone;
     this.executionOptimistic = executionOptimistic;
-    this.bellatrixEnabled = bellatrixEnabled;
     this.canonical = canonical;
   }
 
   public <X> ObjectAndMetaData<X> map(final Function<T, X> mapper) {
-    return new ObjectAndMetaData<>(
-        mapper.apply(data), milestone, executionOptimistic, bellatrixEnabled, canonical);
+    return new ObjectAndMetaData<>(mapper.apply(data), milestone, executionOptimistic, canonical);
   }
 
   public T getData() {
@@ -60,15 +56,6 @@ public class ObjectAndMetaData<T> {
     return canonical;
   }
 
-  /**
-   * Returns the execution optimistic status suitable for use in the rest api.
-   *
-   * @return {@code null} if bellatrix is not enabled, otherwise the exeuction optimistic status
-   */
-  public Boolean isExecutionOptimisticForApi() {
-    return bellatrixEnabled ? executionOptimistic : null;
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -79,7 +66,6 @@ public class ObjectAndMetaData<T> {
     }
     final ObjectAndMetaData<?> that = (ObjectAndMetaData<?>) o;
     return executionOptimistic == that.executionOptimistic
-        && bellatrixEnabled == that.bellatrixEnabled
         && canonical == that.canonical
         && Objects.equals(data, that.data)
         && milestone == that.milestone;
@@ -87,7 +73,7 @@ public class ObjectAndMetaData<T> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, milestone, executionOptimistic, bellatrixEnabled, canonical);
+    return Objects.hash(data, milestone, executionOptimistic, canonical);
   }
 
   @Override
@@ -96,7 +82,6 @@ public class ObjectAndMetaData<T> {
         .add("data", data)
         .add("milestone", milestone)
         .add("executionOptimistic", executionOptimistic)
-        .add("bellatrixEnabled", bellatrixEnabled)
         .add("canonical", canonical)
         .toString();
   }

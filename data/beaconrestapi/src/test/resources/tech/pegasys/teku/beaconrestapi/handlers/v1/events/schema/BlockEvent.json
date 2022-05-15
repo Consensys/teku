@@ -1,7 +1,7 @@
 {
   "title" : "BlockEvent",
   "type" : "object",
-  "required" : [ "slot", "block" ],
+  "required" : [ "slot", "block", "execution_optimistic" ],
   "properties" : {
     "slot" : {
       "type" : "string",
@@ -14,6 +14,9 @@
       "description" : "Bytes32 hexadecimal",
       "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
       "format" : "byte"
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
     }
   }
 }
