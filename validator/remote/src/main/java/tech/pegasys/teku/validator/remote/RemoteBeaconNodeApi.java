@@ -55,7 +55,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
       final Spec spec,
-      final boolean generateEarlyAttestations) {
+      final boolean generateEarlyAttestations,
+      final boolean preferSszBlockEncoding) {
 
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(READ_TIMEOUT);
@@ -73,7 +74,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
 
     final OkHttpValidatorTypeDefClient typeDefClient =
-        new OkHttpValidatorTypeDefClient(okHttpClient, apiEndpoint, spec);
+        new OkHttpValidatorTypeDefClient(okHttpClient, apiEndpoint, spec, preferSszBlockEncoding);
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             serviceConfig.getMetricsSystem(),

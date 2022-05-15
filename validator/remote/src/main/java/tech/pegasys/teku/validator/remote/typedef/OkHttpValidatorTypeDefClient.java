@@ -29,13 +29,17 @@ public class OkHttpValidatorTypeDefClient implements ValidatorRestApiClient {
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
   private final Spec spec;
-  private final boolean preferOctetStream = false;
+  private final boolean preferOctetStream;
 
   public OkHttpValidatorTypeDefClient(
-      final OkHttpClient okHttpClient, final HttpUrl baseEndpoint, final Spec spec) {
+      final OkHttpClient okHttpClient,
+      final HttpUrl baseEndpoint,
+      final Spec spec,
+      final boolean preferSszBlockEncoding) {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
     this.spec = spec;
+    this.preferOctetStream = preferSszBlockEncoding;
   }
 
   @Override
