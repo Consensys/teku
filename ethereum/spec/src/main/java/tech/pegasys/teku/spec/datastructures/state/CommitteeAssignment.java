@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeAssignment {
@@ -50,5 +51,24 @@ public class CommitteeAssignment {
         + ", slot="
         + slot
         + '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CommitteeAssignment that = (CommitteeAssignment) o;
+    return Objects.equals(committee, that.committee)
+        && Objects.equals(committeeIndex, that.committeeIndex)
+        && Objects.equals(slot, that.slot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(committee, committeeIndex, slot);
   }
 }

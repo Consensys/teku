@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -31,6 +32,8 @@ import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,7 +46,7 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.PHASE0);
+    initialise(SpecMilestone.ALTAIR);
     genesis();
 
     handler = new GetStateCommittees(chainDataProvider);
@@ -54,9 +57,9 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .pathParameter("state_id", "head")
-            .queryParameter("epoch", "0")
-            .queryParameter("index", "1")
-            .queryParameter("slot", "0")
+            .optionalQueryParameter("epoch", "0")
+            .optionalQueryParameter("index", "0")
+            .optionalQueryParameter("slot", "1")
             .build();
 
     final Optional<ObjectAndMetaData<List<CommitteeAssignment>>> expectedData =
@@ -64,30 +67,29 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
             .getStateCommittees(
                 "head",
                 Optional.of(UInt64.valueOf(0)),
-                Optional.of(UInt64.valueOf(1)),
-                Optional.of(UInt64.valueOf(0)))
+                Optional.of(UInt64.valueOf(0)),
+                Optional.of(UInt64.valueOf(1)))
             .get();
+    assertThat(expectedData.orElseThrow().getData()).isNotEmpty();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(expectedData); // TODO not correct expected data
+    assertThat(request.getResponseBody()).isEqualTo(expectedData.get());
   }
 
-  @Test
-  public void shouldFailIfEpochInvalid() throws JsonProcessingException {
+  @ParameterizedTest
+  @ValueSource(strings = {"index", "slot", "epoch"})
+  public void shouldFailIfEpochInvalid(String queryParam) {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .pathParameter("state_id", "head")
-            .queryParameter("index", "a")
-            .queryParameter("slot", "b")
-            .queryParameter("epoch", "c")
+            .optionalQueryParameter(queryParam, "a")
             .build();
 
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST); // TODO returns SC_OK 200
-    // TODO check contents of bad request
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("For input string: \"a\"");
   }
 
   @Test
