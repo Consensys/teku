@@ -272,8 +272,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    return sendRequest(
-        () -> typeDefClient.sendSignedBlock(block));
+    return sendRequest(() -> typeDefClient.sendSignedBlock(block));
   }
 
   @Override

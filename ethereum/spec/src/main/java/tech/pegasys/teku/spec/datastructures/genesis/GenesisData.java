@@ -68,12 +68,14 @@ public class GenesisData {
   public static class Builder {
     private UInt64 genesisTime;
     private Bytes32 genesisValidatorsRoot;
+
     private Builder() {}
 
     public Builder genesisTime(final UInt64 genesisTime) {
       this.genesisTime = genesisTime;
       return this;
     }
+
     public Builder genesisValidatorsRoot(final Bytes32 genesisValidatorsRoot) {
       this.genesisValidatorsRoot = genesisValidatorsRoot;
       return this;
@@ -82,7 +84,5 @@ public class GenesisData {
     public GenesisData build() {
       return new GenesisData(genesisTime, genesisValidatorsRoot);
     }
-
   }
-
 }

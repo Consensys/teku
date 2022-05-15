@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,8 +23,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-
-import java.util.Optional;
 
 public class OkHttpValidatorTypeDefClient implements ValidatorRestApiClient {
 
@@ -51,16 +50,17 @@ public class OkHttpValidatorTypeDefClient implements ValidatorRestApiClient {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
-      final CreateBlockRequest createBlockRequest = new CreateBlockRequest(baseEndpoint, okHttpClient, spec.atSlot(slot), preferOctetStream, blinded);
-      return createBlockRequest.createUnsignedBlock(slot, randaoReveal,graffiti);
-
+    final CreateBlockRequest createBlockRequest =
+        new CreateBlockRequest(
+            baseEndpoint, okHttpClient, spec.atSlot(slot), preferOctetStream, blinded);
+    return createBlockRequest.createUnsignedBlock(slot, randaoReveal, graffiti);
   }
 
   @Override
   public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    final SendSignedBlockRequest sendSignedBlockRequest = new SendSignedBlockRequest(baseEndpoint, okHttpClient, preferOctetStream);
+    final SendSignedBlockRequest sendSignedBlockRequest =
+        new SendSignedBlockRequest(baseEndpoint, okHttpClient, preferOctetStream);
 
     return sendSignedBlockRequest.sendSignedBlock(beaconBlock);
   }
-
 }

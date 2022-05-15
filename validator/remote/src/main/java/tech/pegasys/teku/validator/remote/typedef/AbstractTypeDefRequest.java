@@ -1,6 +1,25 @@
+/*
+ * Copyright 2022 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.validator.remote.typedef;
 
+import static java.util.Collections.emptyMap;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Map;
+import java.util.Optional;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -11,18 +30,8 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.Collections.emptyMap;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 
 public abstract class AbstractTypeDefRequest {
   private static final MediaType APPLICATION_JSON =
@@ -37,6 +46,7 @@ public abstract class AbstractTypeDefRequest {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
   }
+
   protected HttpUrl.Builder urlBuilder(
       final ValidatorApiMethod apiMethod, final Map<String, String> urlParams) {
     return baseEndpoint.resolve(apiMethod.getPath(urlParams)).newBuilder();
@@ -53,7 +63,8 @@ public abstract class AbstractTypeDefRequest {
     return builder;
   }
 
-  protected <T> Optional<T> get(final ValidatorApiMethod apiMethod,final ResponseHandler<T> responseHandler) {
+  protected <T> Optional<T> get(
+      final ValidatorApiMethod apiMethod, final ResponseHandler<T> responseHandler) {
     return get(apiMethod, emptyMap(), emptyMap(), responseHandler);
   }
 
@@ -100,11 +111,11 @@ public abstract class AbstractTypeDefRequest {
     final String requestBody;
     final Request request;
     try {
-      requestBody = JsonUtil.serialize(requestBodyObj,objectTypeDefinition);
+      requestBody = JsonUtil.serialize(requestBodyObj, objectTypeDefinition);
       request =
           requestBuilder()
               .url(httpUrlBuilder.build())
-              .post(RequestBody.create(requestBody, APPLICATION_JSON ))
+              .post(RequestBody.create(requestBody, APPLICATION_JSON))
               .build();
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
@@ -119,14 +130,13 @@ public abstract class AbstractTypeDefRequest {
       final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     final Request request =
-          requestBuilder()
-              .url(httpUrlBuilder.build())
-              .post(RequestBody.create(objectBytes,OCTET_STREAM))
-              .build();
+        requestBuilder()
+            .url(httpUrlBuilder.build())
+            .post(RequestBody.create(objectBytes, OCTET_STREAM))
+            .build();
 
     return executeCall(request, responseHandler);
   }
-
 
   private <T> Optional<T> executeCall(
       final Request request, final ResponseHandler<T> responseHandler) {

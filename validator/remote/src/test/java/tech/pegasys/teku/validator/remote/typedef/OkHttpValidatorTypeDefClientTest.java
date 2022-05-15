@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -22,8 +23,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-
-import java.util.Optional;
 
 class OkHttpValidatorTypeDefClientTest {
   private final OkHttpClient okHttpClient = new OkHttpClient();
