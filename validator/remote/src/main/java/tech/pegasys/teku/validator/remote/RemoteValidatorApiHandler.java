@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -83,7 +82,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   private final Spec spec;
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
-  private final SchemaObjectProvider schemaObjectProvider;
   private final OkHttpValidatorTypeDefClient typeDefClient;
 
   public RemoteValidatorApiHandler(
@@ -94,7 +92,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
-    this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.typeDefClient = typeDefClient;
   }
 
