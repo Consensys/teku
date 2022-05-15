@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
-import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -79,8 +78,7 @@ public class DepositProviderTest {
         new DepositProvider(
             new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
     depositProvider.onSyncingStatusChanged(true);
-    depositMerkleTree =
-        new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
+    depositMerkleTree = new MerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
     createDepositEvents(40);
     randomEth1Data = dataStructureUtil.randomEth1Data();
