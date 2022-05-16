@@ -245,7 +245,8 @@ public class ProposersDataManager {
                             .put(
                                 "expiry_slot",
                                 registeredValidatorInfoEntry.getValue().getExpirySlot())
-                            .build()))
+                            .build())
+                .collect(Collectors.toList()))
         .build();
   }
 
