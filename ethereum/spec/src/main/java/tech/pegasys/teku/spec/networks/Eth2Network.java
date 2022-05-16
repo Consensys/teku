@@ -18,19 +18,24 @@ import java.util.Optional;
 
 public enum Eth2Network {
   // Live networks
-  MAINNET,
-  PRATER,
-  KINTSUGI,
-  KILN,
-  GNOSIS,
+  MAINNET("mainnet"),
+  PRATER("prater"),
+  ROPSTEN("ropsten"),
+  KILN("kiln"),
+  GNOSIS("gnosis"),
   // Test networks
-  MINIMAL,
-  SWIFT,
-  LESS_SWIFT;
+  MINIMAL("minimal"),
+  SWIFT("swift"),
+  LESS_SWIFT("less-swift");
+
+  private final String configName;
+
+  Eth2Network(final String configName) {
+    this.configName = configName;
+  }
 
   public String configName() {
-    // TODO(#3356) - Store config with filename matching enum so we don't have to convert
-    return name().toLowerCase(Locale.US).replace("_", "-");
+    return configName;
   }
 
   public static Eth2Network fromString(final String networkName) {
