@@ -44,10 +44,10 @@ public class ValidatorClientOptions {
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
-        config -> {
-          config.beaconNodeApiEndpoint(parseApiEndpoint());
-          config.validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled);
-        });
+        config ->
+            config
+                .beaconNodeApiEndpoint(parseApiEndpoint())
+                .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled));
   }
 
   public URI parseApiEndpoint() {
