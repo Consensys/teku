@@ -78,12 +78,20 @@ public class GetStateFinalityCheckpointsTest
   @Test
   void metadata_shouldHandle200() throws IOException {
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
-
-    final String expected =
+    final String resource =
         Resources.toString(
             Resources.getResource(
                 GetStateFinalityCheckpointsTest.class, "stateFinalityCheckpoints.json"),
             UTF_8);
+
+    final BeaconState beaconState = responseData.getData();
+    final String expected =
+        String.format(
+            resource,
+            beaconState.getPreviousJustifiedCheckpoint().getRoot(),
+            beaconState.getCurrentJustifiedCheckpoint().getRoot(),
+            beaconState.getFinalizedCheckpoint().getRoot());
+
     assertThat(data).isEqualTo(expected);
   }
 }
