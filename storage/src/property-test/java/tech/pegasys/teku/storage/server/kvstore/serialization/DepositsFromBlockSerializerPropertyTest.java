@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
 
 import java.util.stream.LongStream;
@@ -34,7 +33,7 @@ public class DepositsFromBlockSerializerPropertyTest {
   static final long MAX_DEPOSITS = 1000L;
 
   @Property(tries = 100)
-  public void roundTrip(
+  public boolean roundTrip(
       @ForAll final int seed,
       @ForAll final SpecMilestone milestone,
       @ForAll final Eth2Network network,
@@ -55,6 +54,6 @@ public class DepositsFromBlockSerializerPropertyTest {
     final byte[] serialized = DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER.serialize(value);
     final DepositsFromBlockEvent deserialized =
         DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER.deserialize(serialized);
-    assertThat(deserialized).isEqualToComparingFieldByField(value);
+    return deserialized.equals(value);
   }
 }

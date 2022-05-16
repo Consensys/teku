@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.createStateSerializer;
 
 import net.jqwik.api.ForAll;
@@ -28,7 +27,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateSerializerPropertyTest {
   @Property(tries = 10)
-  public void roundTrip(
+  public boolean roundTrip(
       @ForAll final int seed,
       @ForAll final SpecMilestone milestone,
       @ForAll final Eth2Network network,
@@ -39,6 +38,6 @@ public class BeaconStateSerializerPropertyTest {
     final BeaconState value = dataStructureUtil.randomBeaconState(validatorCount);
     final byte[] serialized = serializer.serialize(value);
     final BeaconState deserialized = serializer.deserialize(serialized);
-    assertThat(deserialized).isEqualTo(value);
+    return deserialized.equals(value);
   }
 }
