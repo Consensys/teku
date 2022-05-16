@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import java.util.List;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -28,21 +31,22 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
     extends AbstractMigratedBeaconHandlerTest {
+  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
+
   protected ChainBuilder chainBuilder;
   protected ChainUpdater chainUpdater;
 
   protected ActiveValidatorChannel activeValidatorChannel;
-  protected StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
+  protected StorageSystem storageSystem;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected RecentChainData recentChainData = storageSystem.recentChainData();
+  protected RecentChainData recentChainData;
 
   public void initialise(final SpecMilestone specMilestone) {
     setupStorage(StateStorageMode.ARCHIVE, specMilestone, false);
   }
 
   public void genesis() {
-    storageSystem.chainUpdater().initializeGenesis();
+    chainUpdater.initializeGenesis();
   }
 
   private void setupStorage(
@@ -60,8 +64,8 @@ public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
     recentChainData = storageSystem.recentChainData();
     combinedChainDataClient = storageSystem.combinedChainDataClient();
 
-    chainBuilder = storageSystem.chainBuilder();
-    chainUpdater = storageSystem.chainUpdater();
+    chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     chainDataProvider = new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
   }
 }
