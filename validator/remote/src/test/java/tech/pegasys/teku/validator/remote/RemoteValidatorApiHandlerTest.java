@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -379,14 +378,9 @@ class RemoteValidatorApiHandlerTest {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
-    final tech.pegasys.teku.api.schema.BLSSignature schemaBlsSignature =
-        new tech.pegasys.teku.api.schema.BLSSignature(blsSignature);
-    final tech.pegasys.teku.api.schema.BeaconBlock schemaBeaconBlock =
-        new tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0(beaconBlock);
-
-    when(apiClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), refEq(schemaBlsSignature), eq(graffiti), eq(false)))
-        .thenReturn(Optional.of(schemaBeaconBlock));
+    when(typeDefClient.createUnsignedBlock(
+            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(false)))
+        .thenReturn(Optional.of(beaconBlock));
 
     SafeFuture<Optional<BeaconBlock>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);

@@ -32,6 +32,10 @@ public class SchemaDefinitionCache {
     return schemas.computeIfAbsent(milestone, this::createSchemaDefinition);
   }
 
+  public SchemaDefinitions atSlot(final UInt64 slot) {
+    return getSchemaDefinition(milestoneAtSlot(slot));
+  }
+
   public final SpecMilestone milestoneAtSlot(final UInt64 slot) {
     return spec.atSlot(slot).getMilestone();
   }
