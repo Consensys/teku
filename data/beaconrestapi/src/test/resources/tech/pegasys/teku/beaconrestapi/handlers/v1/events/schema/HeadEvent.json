@@ -1,40 +1,51 @@
 {
-  "title" : "HeadEvent",
-  "type" : "object",
-  "required" : [ "slot", "block", "state", "epoch_transition", "previous_duty_dependent_root", "current_duty_dependent_root" ],
-  "properties" : {
-    "slot" : {
-      "type" : "string",
-      "description" : "unsigned 64 bit integer",
-      "example" : "1",
-      "format" : "uint64"
+  "title": "HeadEvent",
+  "type": "object",
+  "required": [
+    "slot",
+    "block",
+    "state",
+    "epoch_transition",
+    "previous_duty_dependent_root",
+    "current_duty_dependent_root",
+    "execution_optimistic"
+  ],
+  "properties": {
+    "slot": {
+      "type": "string",
+      "description": "unsigned 64 bit integer",
+      "example": "1",
+      "format": "uint64"
     },
-    "block" : {
-      "type" : "string",
-      "description" : "Bytes32 hexadecimal",
-      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-      "format" : "byte"
+    "block": {
+      "type": "string",
+      "description": "Bytes32 hexadecimal",
+      "example": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format": "byte"
     },
-    "state" : {
-      "type" : "string",
-      "description" : "Bytes32 hexadecimal",
-      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-      "format" : "byte"
+    "state": {
+      "type": "string",
+      "description": "Bytes32 hexadecimal",
+      "example": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format": "byte"
     },
-    "epoch_transition" : {
-      "type" : "boolean"
+    "epoch_transition": {
+      "type": "boolean"
     },
-    "previous_duty_dependent_root" : {
-      "type" : "string",
-      "description" : "Bytes32 hexadecimal",
-      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-      "format" : "byte"
+    "previous_duty_dependent_root": {
+      "type": "string",
+      "description": "Bytes32 hexadecimal",
+      "example": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format": "byte"
     },
-    "current_duty_dependent_root" : {
-      "type" : "string",
-      "description" : "Bytes32 hexadecimal",
-      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-      "format" : "byte"
+    "current_duty_dependent_root": {
+      "type": "string",
+      "description": "Bytes32 hexadecimal",
+      "example": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format": "byte"
+    },
+    "execution_optimistic": {
+      "type": "boolean"
     }
   }
 }

@@ -127,6 +127,6 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
     return Optional.of(
         jsonProvider.objectToJSON(
             new GetStateSyncCommitteesResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+                response.isExecutionOptimistic(), response.getData())));
   }
 }

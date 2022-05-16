@@ -65,7 +65,7 @@ class GetProposerSlashingsTest extends AbstractMigratedBeaconHandlerTest {
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockAttestationsTest.class, "getProposerSlashings.json"),
+            Resources.getResource(GetProposerSlashingsTest.class, "getProposerSlashings.json"),
             UTF_8);
     assertThat(data).isEqualTo(expected);
   }

@@ -24,7 +24,6 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.storage.client.ChainHead;
@@ -175,10 +174,6 @@ public class BlockSelectorFactory {
   private BlockAndMetaData lookupBlockData(
       final SignedBeaconBlock block, final boolean isOptimistic, final boolean isCanonical) {
     return new BlockAndMetaData(
-        block,
-        spec.atSlot(block.getSlot()).getMilestone(),
-        isOptimistic,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
-        isCanonical);
+        block, spec.atSlot(block.getSlot()).getMilestone(), isOptimistic, isCanonical);
   }
 }
