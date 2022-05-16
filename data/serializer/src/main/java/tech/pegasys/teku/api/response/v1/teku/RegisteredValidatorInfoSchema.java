@@ -37,6 +37,7 @@ public class RegisteredValidatorInfoSchema {
       pattern = PATTERN_PUBKEY,
       example = EXAMPLE_PUBKEY,
       description = DESCRIPTION_BYTES48)
+  @JsonProperty("pubkey")
   BLSPubKey pubkey;
 
   @Schema(
