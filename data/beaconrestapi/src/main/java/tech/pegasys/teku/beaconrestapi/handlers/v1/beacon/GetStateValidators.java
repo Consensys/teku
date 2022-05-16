@@ -128,7 +128,6 @@ public class GetStateValidators extends AbstractHandler {
       throws JsonProcessingException {
     return Optional.of(
         jsonProvider.objectToJSON(
-            new GetStateValidatorsResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+            new GetStateValidatorsResponse(response.isExecutionOptimistic(), response.getData())));
   }
 }

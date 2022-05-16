@@ -145,7 +145,6 @@ public class StateSelectorFactoryTest {
   }
 
   private StateAndMetaData withMetaData(final BeaconState state) {
-    return new StateAndMetaData(
-        state, milestone, false, spec.isMilestoneSupported(SpecMilestone.BELLATRIX), true);
+    return new StateAndMetaData(state, milestone, false, true);
   }
 }
