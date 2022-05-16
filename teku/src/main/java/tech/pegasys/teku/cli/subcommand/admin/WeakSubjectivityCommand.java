@@ -114,6 +114,7 @@ public class WeakSubjectivityCommand implements Runnable {
             dataStorageOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             dataStorageOptions.isStoreNonCanonicalBlocks(),
+            eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
             spec);
     return databaseFactory.createDatabase();
   }

@@ -29,9 +29,16 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     return KvStoreDatabase.createV4(
-        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb,
+        coldDb,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeVotesEquivocation,
+        spec);
   }
 
   public static Database createV6(
@@ -39,11 +46,12 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     return KvStoreDatabase.createWithStateSnapshots(
         db,
         db,
-        new V4SchemaHot(spec),
+        new V4SchemaHot(spec, storeVotesEquivocation),
         new V6SnapshotSchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,
@@ -56,11 +64,12 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     return KvStoreDatabase.createWithStateTree(
         new StubMetricsSystem(),
         db,
-        new V4SchemaHot(spec),
+        new V4SchemaHot(spec, storeVotesEquivocation),
         new V6TreeSchemaFinalized(spec),
         storageMode,
         storeNonCanonicalBlocks,

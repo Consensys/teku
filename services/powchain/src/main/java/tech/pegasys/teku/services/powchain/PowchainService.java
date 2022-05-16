@@ -46,7 +46,7 @@ import tech.pegasys.teku.beacon.pow.ThrottlingEth1Provider;
 import tech.pegasys.teku.beacon.pow.TimeBasedEth1HeadTracker;
 import tech.pegasys.teku.beacon.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.beacon.pow.Web3jEth1Provider;
-import tech.pegasys.teku.ethereum.executionengine.ExecutionClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
@@ -71,8 +71,8 @@ public class PowchainService extends Service {
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<ExecutionClientProvider> maybeExecutionClientProvider) {
-    checkArgument(powConfig.isEnabled() || maybeExecutionClientProvider.isPresent());
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+    checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
@@ -82,14 +82,14 @@ public class PowchainService extends Service {
     if (!powConfig.isEnabled()) {
       LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
       this.web3js =
-          Collections.singletonList(maybeExecutionClientProvider.orElseThrow().getWeb3j());
+          Collections.singletonList(maybeExecutionWeb3jClientProvider.orElseThrow().getWeb3j());
       eth1ProviderSelector =
           new Eth1ProviderSelector(
               Collections.singletonList(
                   new Web3jEth1Provider(
                       powConfig.getSpec().getGenesisSpecConfig(),
                       serviceConfig.getMetricsSystem(),
-                      maybeExecutionClientProvider.get().getEndpoint(),
+                      maybeExecutionWeb3jClientProvider.get().getEndpoint(),
                       web3js.get(0),
                       asyncRunner,
                       serviceConfig.getTimeProvider())));

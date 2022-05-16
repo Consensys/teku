@@ -14,15 +14,15 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Supplier;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -37,7 +37,8 @@ public class ForkChoiceUpdateData {
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadAttributes> payloadAttributes;
   private final Optional<Bytes32> terminalBlockHash;
-  private final SafeFuture<Optional<Bytes8>> payloadId = new SafeFuture<>();
+  private final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext =
+      new SafeFuture<>();
   private boolean sent = false;
 
   private long payloadAttributesSequenceProducer = 0;
@@ -59,7 +60,7 @@ public class ForkChoiceUpdateData {
               forkChoiceState.getHeadBlockRoot(),
               forkChoiceState.getHeadBlockSlot(),
               terminalBlockHash.get(),
-              terminalBlockHash.get(),
+              Bytes32.ZERO,
               Bytes32.ZERO,
               false);
     } else {
@@ -146,8 +147,8 @@ public class ForkChoiceUpdateData {
     }
   }
 
-  public SafeFuture<Optional<Bytes8>> getPayloadId() {
-    return payloadId;
+  public SafeFuture<Optional<ExecutionPayloadContext>> getExecutionPayloadContext() {
+    return executionPayloadContext;
   }
 
   public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
@@ -160,7 +161,7 @@ public class ForkChoiceUpdateData {
 
     if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
-      payloadId.complete(Optional.empty());
+      executionPayloadContext.complete(Optional.empty());
       return SafeFuture.completedFuture(Optional.empty());
     }
 
@@ -177,7 +178,12 @@ public class ForkChoiceUpdateData {
                     payloadId,
                     forkChoiceState,
                     payloadAttributes))
-        .propagateTo(payloadId);
+        .thenApply(
+            maybePayloadId ->
+                maybePayloadId.map(
+                    payloadId ->
+                        new ExecutionPayloadContext(payloadId, forkChoiceState, payloadAttributes)))
+        .propagateTo(executionPayloadContext);
 
     return forkChoiceUpdatedResult.thenApply(Optional::of);
   }
@@ -200,7 +206,7 @@ public class ForkChoiceUpdateData {
         .add("forkChoiceState", forkChoiceState)
         .add("payloadAttributes", payloadAttributes)
         .add("terminalBlockHash", terminalBlockHash)
-        .add("payloadId", payloadId)
+        .add("payloadId", executionPayloadContext)
         .toString();
   }
 }

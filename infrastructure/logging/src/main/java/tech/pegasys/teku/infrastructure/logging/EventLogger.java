@@ -118,6 +118,13 @@ public class EventLogger {
         Color.YELLOW);
   }
 
+  public void eth1DepositDataNotAvailable(final UInt64 fromIndex, final UInt64 toIndex) {
+    final String eth1DepositDataNotAvailableEventLog =
+        String.format(
+            "Some ETH1 deposits are not available. Missing deposits %s to %s", fromIndex, toIndex);
+    warn(eth1DepositDataNotAvailableEventLog, Color.YELLOW);
+  }
+
   public void syncCompletedWhileHeadIsOptimistic() {
     info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
   }
@@ -128,6 +135,20 @@ public class EventLogger {
 
   public void executionClientIsOnline() {
     info("Execution Client is back online", Color.GREEN);
+  }
+
+  public void executionBuilderIsOffline(String errorMessage) {
+    String executionBuilderOfflineEventLog =
+        String.format(
+            "The execution builder is offline: %s. Block production will fallback to the execution engine.",
+            errorMessage);
+    warn(executionBuilderOfflineEventLog, Color.YELLOW);
+  }
+
+  public void executionBuilderIsBackOnline() {
+    String executionBuilderOnlineEventLog =
+        "The execution builder is back online. It will be used for block production.";
+    info(executionBuilderOnlineEventLog, Color.GREEN);
   }
 
   public void syncStart() {

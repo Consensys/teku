@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,9 +34,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
               "previous_duty_dependent_root", BYTES32_TYPE, HeadData::getPreviousDutyDependentRoot)
           .withField(
               "current_duty_dependent_root", BYTES32_TYPE, HeadData::getCurrentDutyDependentRoot)
-          // TODO #5264
-          // .withOptionalField("execution_optimistic", BOOLEAN_TYPE,
-          // HeadData::getExecutionOptimistic)
+          .withField("execution_optimistic", BOOLEAN_TYPE, HeadData::isExecutionOptimistic)
           .build();
 
   HeadEvent(
@@ -45,7 +42,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
       final Bytes32 block,
       final Bytes32 state,
       final boolean epochTransition,
-      final Boolean executionOptimistic,
+      final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot) {
     super(
@@ -55,7 +52,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
             block,
             state,
             epochTransition,
-            Optional.ofNullable(executionOptimistic),
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot));
   }
@@ -65,7 +62,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
     private final Bytes32 block;
     private final Bytes32 state;
     private final boolean epochTransition;
-    private final Optional<Boolean> executionOptimistic;
+    private final boolean executionOptimistic;
     private final Bytes32 previousDutyDependentRoot;
     private final Bytes32 currentDutyDependentRoot;
 
@@ -74,7 +71,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
         final Bytes32 block,
         final Bytes32 state,
         final boolean epochTransition,
-        final Optional<Boolean> executionOptimistic,
+        final boolean executionOptimistic,
         final Bytes32 previousDutyDependentRoot,
         final Bytes32 currentDutyDependentRoot) {
       this.slot = slot;
@@ -102,8 +99,7 @@ public class HeadEvent extends Event<HeadEvent.HeadData> {
       return epochTransition;
     }
 
-    @SuppressWarnings("UnusedMethod")
-    public Optional<Boolean> getExecutionOptimistic() {
+    public boolean isExecutionOptimistic() {
       return executionOptimistic;
     }
 

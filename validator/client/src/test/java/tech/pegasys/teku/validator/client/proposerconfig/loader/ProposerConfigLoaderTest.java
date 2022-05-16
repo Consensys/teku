@@ -20,7 +20,7 @@ import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 
@@ -82,12 +82,12 @@ public class ProposerConfigLoaderTest {
             "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a");
     assertThat(theConfig).isPresent();
     assertThat(theConfig.get().getFeeRecipient())
-        .isEqualTo(Bytes20.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3"));
+        .isEqualTo(Eth1Address.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3"));
 
     Optional<Config> defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig).isPresent();
     assertThat(defaultConfig.get().getFeeRecipient())
-        .isEqualTo(Bytes20.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
+        .isEqualTo(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
   }
 
   private void validateContent2(ProposerConfig config) {
@@ -99,6 +99,6 @@ public class ProposerConfigLoaderTest {
     Optional<Config> defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig).isPresent();
     assertThat(defaultConfig.get().getFeeRecipient())
-        .isEqualTo(Bytes20.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
+        .isEqualTo(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
   }
 }

@@ -110,7 +110,6 @@ public class GetStateCommittees extends AbstractHandler implements Handler {
       throws JsonProcessingException {
     return Optional.of(
         jsonProvider.objectToJSON(
-            new GetStateCommitteesResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+            new GetStateCommitteesResponse(response.isExecutionOptimistic(), response.getData())));
   }
 }

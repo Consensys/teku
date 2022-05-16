@@ -37,13 +37,14 @@ import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -70,8 +71,8 @@ class ForkChoiceNotifierTest {
   private RecentChainData recentChainData;
   private ReadOnlyForkChoiceStrategy forkChoiceStrategy;
   private PayloadAttributesCalculator payloadAttributesCalculator;
-  private Optional<Bytes20> defaultFeeRecipient =
-      Optional.of(Bytes20.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
+  private final Optional<Eth1Address> defaultFeeRecipient =
+      Optional.of(Eth1Address.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
   private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
 
@@ -184,7 +185,7 @@ class ForkChoiceNotifierTest {
     notifier.onUpdatePreparableProposers(
         List.of(
             new BeaconPreparableProposer(
-                UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomBytes20())));
+                UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomEth1Address())));
 
     notifyForkChoiceUpdated(forkChoiceState);
     verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
@@ -478,10 +479,12 @@ class ForkChoiceNotifierTest {
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot)).isNotCompleted();
 
     // But becomes available once we receive the response
+    final ExecutionPayloadContext executionPayloadContext =
+        new ExecutionPayloadContext(payloadId, forkChoiceState, Optional.of(payloadAttributes));
     responseFuture.complete(
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot))
-        .isCompletedWithOptionalContaining(payloadId);
+        .isCompletedWithOptionalContaining(executionPayloadContext);
   }
 
   @Test
@@ -532,7 +535,7 @@ class ForkChoiceNotifierTest {
     // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, terminalBlockHash, Bytes32.ZERO, false);
+            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, Bytes32.ZERO, Bytes32.ZERO, false);
 
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
@@ -707,16 +710,20 @@ class ForkChoiceNotifierTest {
         .thenReturn(responseFuture);
 
     // Initially has no payload ID.
-    SafeFuture<Optional<Bytes8>> futurePayloadId = notifier.getPayloadId(blockRoot, blockSlot);
-    assertThatSafeFuture(futurePayloadId).isNotCompleted();
+    SafeFuture<Optional<ExecutionPayloadContext>> futureExecutionPayloadContext =
+        notifier.getPayloadId(blockRoot, blockSlot);
+    assertThatSafeFuture(futureExecutionPayloadContext).isNotCompleted();
 
     responseFuture.complete(
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
 
     if (mustFail) {
-      assertThatSafeFuture(futurePayloadId).isCompletedExceptionally();
+      assertThatSafeFuture(futureExecutionPayloadContext).isCompletedExceptionally();
     } else {
-      assertThatSafeFuture(futurePayloadId).isCompletedWithOptionalContaining(payloadId);
+      final ExecutionPayloadContext executionPayloadContext =
+          new ExecutionPayloadContext(payloadId, forkChoiceState, Optional.of(payloadAttributes));
+      assertThatSafeFuture(futureExecutionPayloadContext)
+          .isCompletedWithOptionalContaining(executionPayloadContext);
     }
   }
 
@@ -733,7 +740,7 @@ class ForkChoiceNotifierTest {
   private PayloadAttributes withProposerForSlotButDoNotPrepare(
       final BeaconState headState,
       final UInt64 blockSlot,
-      final Optional<Bytes20> overrideFeeRecipient) {
+      final Optional<Eth1Address> overrideFeeRecipient) {
     return withProposerForSlot(headState, blockSlot, false, overrideFeeRecipient);
   }
 
@@ -746,7 +753,7 @@ class ForkChoiceNotifierTest {
       final BeaconState headState,
       final UInt64 blockSlot,
       final boolean doPrepare,
-      final Optional<Bytes20> overrideFeeRecipient) {
+      final Optional<Eth1Address> overrideFeeRecipient) {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
     final PayloadAttributes payloadAttributes =
         getExpectedPayloadAttributes(headState, blockSlot, overrideFeeRecipient);
@@ -784,8 +791,9 @@ class ForkChoiceNotifierTest {
   private PayloadAttributes getExpectedPayloadAttributes(
       final BeaconState headState,
       final UInt64 blockSlot,
-      final Optional<Bytes20> overrideFeeRecipient) {
-    final Bytes20 feeRecipient = overrideFeeRecipient.orElse(dataStructureUtil.randomBytes20());
+      final Optional<Eth1Address> overrideFeeRecipient) {
+    final Eth1Address feeRecipient =
+        overrideFeeRecipient.orElse(dataStructureUtil.randomEth1Address());
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
     return new PayloadAttributes(timestamp, random, feeRecipient);

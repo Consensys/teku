@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 
 /** Specialized implementation of {@code SszVector<SszBit>} */
-public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
+public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBitSet {
 
   @Override
   default SszMutablePrimitiveVector<Boolean, SszBit> createWritableCopy() {
@@ -44,6 +44,11 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
   /** Returns the number of bits set to {@code true} in this {@code SszBitlist}. */
   int getBitCount();
 
+  @Override
+  default boolean isSet(final int i) {
+    return i < size() && getBit(i);
+  }
+
   /** Returns new vector with bits shifted to the right by {@code n} positions */
   SszBitvector rightShift(int n);
 
@@ -51,9 +56,8 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
   IntList getAllSetBits();
 
   /** Streams indices of all bits set in this {@link SszBitvector} */
-  default IntStream streamAllSetBits() {
-    return getAllSetBits().intStream();
-  }
+  @Override
+  IntStream streamAllSetBits();
 
   @Override
   default Boolean getElement(int index) {

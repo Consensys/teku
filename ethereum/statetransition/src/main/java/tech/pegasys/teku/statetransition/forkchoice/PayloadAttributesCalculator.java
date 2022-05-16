@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
@@ -42,13 +42,13 @@ public class PayloadAttributesCalculator {
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
   private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new ConcurrentHashMap<>();
-  private final Optional<? extends Bytes20> proposerDefaultFeeRecipient;
+  private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
   public PayloadAttributesCalculator(
       final Spec spec,
       final EventThread eventThread,
       final RecentChainData recentChainData,
-      final Optional<? extends Bytes20> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
     this.spec = spec;
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
@@ -120,7 +120,7 @@ public class PayloadAttributesCalculator {
   }
 
   // this function MUST return a fee recipient.
-  private Bytes20 getFeeRecipient(final ProposerInfo proposerInfo, final UInt64 blockSlot) {
+  private Eth1Address getFeeRecipient(final ProposerInfo proposerInfo, final UInt64 blockSlot) {
     if (proposerInfo != null) {
       return proposerInfo.feeRecipient;
     }

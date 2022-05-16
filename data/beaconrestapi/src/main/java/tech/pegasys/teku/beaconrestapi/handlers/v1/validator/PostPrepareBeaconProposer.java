@@ -19,9 +19,9 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES20_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -60,7 +60,7 @@ public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
                   BeaconPreparableProposer.Builder::validatorIndex)
               .withField(
                   "fee_recipient",
-                  BYTES20_TYPE,
+                  ETH1ADDRESS_TYPE,
                   BeaconPreparableProposer::getFeeRecipient,
                   BeaconPreparableProposer.Builder::feeRecipient)
               .build();

@@ -128,6 +128,16 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Boolean proposerBoostEnabled = Eth2NetworkConfiguration.DEFAULT_PROPOSER_BOOST_ENABLED;
 
+  @Option(
+      names = {"--Xfork-choice-equivocating-indices-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether to enable the fork choice equivocating indices feature.",
+      arity = "0..1",
+      fallbackValue = "false",
+      hidden = true)
+  private Boolean equivocatingIndicesEnabled =
+      Eth2NetworkConfiguration.DEFAULT_EQUIVOCATING_INDICES_ENABLED;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
   }
@@ -158,6 +168,9 @@ public class Eth2NetworkOptions {
     }
     if (proposerBoostEnabled != null) {
       builder.proposerBoostEnabled(proposerBoostEnabled);
+    }
+    if (equivocatingIndicesEnabled != null) {
+      builder.equivocatingIndicesEnabled(equivocatingIndicesEnabled);
     }
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);

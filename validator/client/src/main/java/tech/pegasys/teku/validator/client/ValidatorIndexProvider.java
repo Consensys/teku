@@ -21,7 +21,6 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -98,8 +97,8 @@ public class ValidatorIndexProvider {
     }
   }
 
-  public Optional<Integer> getValidatorIndex(final BLSPublicKey publicKey) {
-    return Optional.ofNullable(validatorIndicesByPublicKey.get(publicKey));
+  public boolean containsPublicKey(BLSPublicKey publicKey) {
+    return validatorIndicesByPublicKey.containsKey(publicKey);
   }
 
   public SafeFuture<IntCollection> getValidatorIndices() {
@@ -108,16 +107,18 @@ public class ValidatorIndexProvider {
         __ ->
             IntArrayList.toList(
                 ownedValidators.getActiveValidators().stream()
-                    .flatMap(validator -> getValidatorIndex(validator.getPublicKey()).stream())
-                    .mapToInt(Integer::intValue)));
+                    .map(Validator::getPublicKey)
+                    .filter(validatorIndicesByPublicKey::containsKey)
+                    .mapToInt(validatorIndicesByPublicKey::get)));
   }
 
-  public SafeFuture<Map<BLSPublicKey, Optional<Integer>>> getValidatorIndicesByPublicKey() {
+  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndicesByPublicKey() {
     // Wait for at least one successful load of validator indices before attempting to read
     return firstSuccessfulRequest.thenApply(
         __ ->
             ownedValidators.getActiveValidators().stream()
                 .map(Validator::getPublicKey)
-                .collect(Collectors.toMap(Function.identity(), this::getValidatorIndex)));
+                .filter(validatorIndicesByPublicKey::containsKey)
+                .collect(Collectors.toMap(Function.identity(), validatorIndicesByPublicKey::get)));
   }
 }

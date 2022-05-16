@@ -105,6 +105,6 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
     return Optional.of(
         jsonProvider.objectToJSON(
             new GetStateValidatorBalancesResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+                response.isExecutionOptimistic(), response.getData())));
   }
 }

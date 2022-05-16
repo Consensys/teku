@@ -35,13 +35,19 @@ public class Constants {
   // Target 2 different attestation data (aggregators normally agree) for two slots
   public static final int VALID_ATTESTATION_DATA_SET_SIZE = 2 * 64 * 2;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
-  public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
-  public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 10000;
+  // Only need to maintain a cache for the current slot, so just needs to be as large as the
+  // sync committee size.
+  public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 512;
+  public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 512;
 
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
-  public static final Duration EXECUTION_TIMEOUT = Duration.ofMinutes(2);
-  public static final Duration NON_EXECUTION_TIMEOUT = Duration.ofSeconds(12);
+  public static final Duration EL_ENGINE_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(8);
+  public static final Duration EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(1);
+  public static final Duration EL_BUILDER_STATUS_TIMEOUT = Duration.ofSeconds(1);
+  public static final Duration EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT = Duration.ofSeconds(8);
+  public static final Duration EL_BUILDER_GET_HEADER_TIMEOUT = Duration.ofSeconds(1);
+  public static final Duration EL_BUILDER_GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(8);
   public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
   public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
       Duration.ofSeconds(60); // usable

@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes48;
 import supranational.blst.P1;
@@ -56,18 +55,15 @@ class BlstPublicKey implements PublicKey {
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
-    Optional<BlstPublicKey> maybeInvalidPubkey =
-        publicKeys.stream().filter(pk -> !pk.isValid()).findAny();
-    if (maybeInvalidPubkey.isPresent()) {
-      // Points not in the group and the point at infinity are not valid public keys. Aggregating
-      // with other points should result in a non-valid pubkey, the point at infinity.
-      return INFINITE_PUBLIC_KEY;
-    }
-
-    // At this point, we know that the public keys are in the G1 group, so we use `blst.P1.add()`
-    // rather than `blst.P1.aggregate()` as the latter always performs the (slow) group check.
     P1 sum = new P1();
     for (BlstPublicKey publicKey : publicKeys) {
+      if (!publicKey.isValid()) {
+        // Points not in the group and the point at infinity are not valid public keys. Aggregating
+        // with other points should result in a non-valid pubkey, the point at infinity.
+        return INFINITE_PUBLIC_KEY;
+      }
+      // At this point, we know that the public keys are in the G1 group, so we use `blst.P1.add()`
+      // rather than `blst.P1.aggregate()` as the latter always performs the (slow) group check.
       sum.add(publicKey.ecPoint);
     }
 

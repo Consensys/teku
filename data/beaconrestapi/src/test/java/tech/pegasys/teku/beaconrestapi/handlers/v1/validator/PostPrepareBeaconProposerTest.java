@@ -27,9 +27,9 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 class PostPrepareBeaconProposerTest {
 
@@ -51,11 +51,11 @@ class PostPrepareBeaconProposerTest {
   @Test
   public void shouldReturnSuccessWhenPostingValidData() throws Exception {
     final BeaconPreparableProposer proposer1 =
-        new BeaconPreparableProposer(UInt64.valueOf(1), Bytes20.ZERO);
+        new BeaconPreparableProposer(UInt64.valueOf(1), Eth1Address.ZERO);
     final BeaconPreparableProposer proposer2 =
         new BeaconPreparableProposer(
             UInt64.valueOf(10),
-            Bytes20.fromHexString("0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836"));
+            Eth1Address.fromHexString("0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836"));
 
     final String requestJson = jsonProvider.objectToJSON(List.of(proposer1, proposer2));
     when(context.bodyAsInputStream()).thenReturn(IOUtils.toInputStream(requestJson, UTF_8));

@@ -3,6 +3,9 @@
   "properties" : {
     "data" : {
       "$ref" : "#/components/schemas/Root"
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
     }
   }
 }

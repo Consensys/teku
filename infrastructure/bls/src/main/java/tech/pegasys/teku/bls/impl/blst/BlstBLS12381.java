@@ -150,38 +150,36 @@ public class BlstBLS12381 implements BLS12381 {
     BlstSemiAggregate aggregate2 = prepareBatchVerify(index + 1, publicKeys2, message2, signature2);
 
     aggregate1.mergeWith(aggregate2);
-    aggregate2.release();
     return aggregate1;
   }
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
+    if (preparedList.isEmpty()) {
+      return true;
+    }
+
     try {
-      if (preparedList.isEmpty()) {
-        return true;
-      }
-
-      List<BlstSemiAggregate> blstList =
-          preparedList.stream().map(b -> (BlstSemiAggregate) b).collect(Collectors.toList());
-
-      if (blstList.stream().anyMatch(b -> !b.isValid())) {
+      final BlstSemiAggregate first = (BlstSemiAggregate) preparedList.get(0);
+      if (!first.isValid()) {
         return false;
       }
-
-      Pairing ctx0 = blstList.get(0).getCtx();
-      boolean mergeRes = true;
-      for (int i = 1; i < blstList.size(); i++) {
-        BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());
-        mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
+      Pairing ctx0 = first.getCtx();
+      for (int i = 1; i < preparedList.size(); i++) {
+        final BlstSemiAggregate semiAggregate = (BlstSemiAggregate) preparedList.get(i);
+        if (!semiAggregate.isValid()) {
+          return false;
+        }
+        BLST_ERROR ret = ctx0.merge(semiAggregate.getCtx());
+        if (ret != BLST_ERROR.BLST_SUCCESS) {
+          return false;
+        }
       }
 
-      return mergeRes && ctx0.finalverify();
-
-    } finally {
-      preparedList.stream()
-          .filter(a -> a instanceof BlstSemiAggregate)
-          .map(b -> (BlstSemiAggregate) b)
-          .forEach(BlstSemiAggregate::release);
+      return ctx0.finalverify();
+    } catch (final ClassCastException e) {
+      // One of the semi aggregates was invalid and not a BlstSemiAggregate
+      return false;
     }
   }
 

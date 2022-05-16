@@ -13,39 +13,65 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetAttestationsResponse;
-import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
-public class GetAttestations extends AbstractHandler {
+public class GetAttestations extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
   private final NodeDataProvider nodeDataProvider;
 
-  public GetAttestations(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+  public GetAttestations(final DataProvider dataProvider, Spec spec) {
+    this(dataProvider.getNodeDataProvider(), spec);
+  }
+
+  public GetAttestations(final NodeDataProvider nodeDataProvider, final Spec spec) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getAttestations")
+            .summary("Get attestations")
+            .description(
+                "Retrieves attestations known by the node but not necessarily incorporated into any block.")
+            .tags(TAG_BEACON)
+            .queryParam(SLOT_PARAMETER)
+            .queryParam(COMMITTEE_INDEX_PARAMETER)
+            .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
+            .build());
+    this.nodeDataProvider = nodeDataProvider;
   }
 
   @OpenApi(
@@ -55,6 +81,10 @@ public class GetAttestations extends AbstractHandler {
       tags = {TAG_BEACON},
       description =
           "Retrieves attestations known by the node but not necessarily incorporated into any block.",
+      queryParams = {
+        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION),
+        @OpenApiParam(name = COMMITTEE_INDEX, description = COMMITTEE_INDEX_QUERY_DESCRIPTION)
+      },
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -63,16 +93,28 @@ public class GetAttestations extends AbstractHandler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
-  public void handle(final Context ctx) throws Exception {
-    Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-    Optional<UInt64> maybeSlot =
-        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParamMap, SLOT);
-    Optional<UInt64> maybeCommitteeIndex =
-        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(
-            ctx.queryParamMap(), COMMITTEE_INDEX);
+  public void handle(@NotNull final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    List<Attestation> attestations =
-        nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex);
-    ctx.json(jsonProvider.objectToJSON(new GetAttestationsResponse(attestations)));
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+    final Optional<UInt64> committeeIndex =
+        request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
+
+    request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
+  }
+
+  private static SerializableTypeDefinition<List<Attestation>> getResponseType(
+      SpecConfig specConfig) {
+    return SerializableTypeDefinition.<List<Attestation>>object()
+        .name("GetPoolAttestationsResponse")
+        .withField(
+            "data",
+            listOf(new Attestation.AttestationSchema(specConfig).getJsonTypeDefinition()),
+            Function.identity())
+        .build();
   }
 }

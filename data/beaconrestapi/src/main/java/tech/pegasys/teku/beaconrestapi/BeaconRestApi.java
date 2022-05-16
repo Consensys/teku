@@ -396,33 +396,33 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetStateFork(dataProvider));
     addMigratedEndpoint(new GetStateFinalityCheckpoints(dataProvider));
     app.get(GetStateValidators.ROUTE, new GetStateValidators(dataProvider, jsonProvider));
-    app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetStateValidator(dataProvider));
     app.get(
         GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
     app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
     app.get(GetStateSyncCommittees.ROUTE, new GetStateSyncCommittees(dataProvider, jsonProvider));
 
-    app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
-    app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockHeaders(dataProvider));
+    addMigratedEndpoint(new GetBlockHeader(dataProvider));
 
     addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
 
-    app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
             dataProvider, jsonProvider));
 
-    app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
-    app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetBlockRoot(dataProvider));
+    addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
-    app.get(GetAttestations.ROUTE, new GetAttestations(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAttestations(dataProvider, spec));
     app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
 
-    app.get(GetAttesterSlashings.ROUTE, new GetAttesterSlashings(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
     app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));
-    app.get(GetProposerSlashings.ROUTE, new GetProposerSlashings(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetProposerSlashings(dataProvider));
     app.post(PostProposerSlashing.ROUTE, new PostProposerSlashing(dataProvider, jsonProvider));
     app.get(GetVoluntaryExits.ROUTE, new GetVoluntaryExits(dataProvider, jsonProvider));
     app.post(PostVoluntaryExit.ROUTE, new PostVoluntaryExit(dataProvider, jsonProvider));

@@ -120,11 +120,11 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
     assertThat(this.pathParameters.containsKey(parameterMetadata.getName())).isTrue();
-    final Object param = pathParameters.get(parameterMetadata.getName());
-    return (T) param;
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(pathParameters.get(parameterMetadata.getName()));
   }
 
   @Override

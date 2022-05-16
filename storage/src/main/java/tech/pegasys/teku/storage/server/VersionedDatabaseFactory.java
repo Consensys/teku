@@ -56,6 +56,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final boolean storeVotesEquivocation;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
@@ -63,6 +64,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final Eth1Address depositContractAddress,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     this(
         metricsSystem,
@@ -73,6 +75,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         depositContractAddress,
         storeNonCanonicalBlocks,
         0,
+        storeVotesEquivocation,
         spec);
   }
 
@@ -85,6 +88,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final Eth1Address eth1Address,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
+      final boolean storeVotesEquivocation,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
@@ -96,6 +100,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageFrequency = stateStorageFrequency;
     this.eth1Address = eth1Address;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
+    this.storeVotesEquivocation = storeVotesEquivocation;
     this.spec = spec;
 
     this.createDatabaseVersion = createDatabaseVersion;
@@ -186,6 +191,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
@@ -210,6 +216,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -224,7 +231,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          new V4SchemaHot(spec),
+          new V4SchemaHot(spec, storeVotesEquivocation),
           new V6SnapshotSchemaFinalized(spec),
           stateStorageMode,
           stateStorageFrequency,
@@ -253,6 +260,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -269,6 +277,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -285,6 +294,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
+          storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,10 +24,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -38,17 +37,34 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
-  private final ValidatorIndexProvider validatorIndexProvider;
+  private Optional<ValidatorIndexProvider> validatorIndexProvider;
   private final ProposerConfigProvider proposerConfigProvider;
   private final Spec spec;
-  private final Optional<? extends Bytes20> defaultFeeRecipient;
+  private final Optional<Eth1Address> defaultFeeRecipient;
   private boolean firstCallDone = false;
 
-  public BeaconProposerPreparer(
+  private Optional<ProposerConfig> maybeProposerConfig = Optional.empty();
+  private final Optional<ProposerConfig> maybeRuntimeProposerConfig = Optional.empty();
+
+  BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
       ProposerConfigProvider proposerConfigProvider,
-      Optional<? extends Bytes20> defaultFeeRecipient,
+      Optional<Eth1Address> defaultFeeRecipient,
+      Spec spec) {
+    this(
+        validatorApiChannel,
+        Optional.of(validatorIndexProvider),
+        proposerConfigProvider,
+        defaultFeeRecipient,
+        spec);
+  }
+
+  public BeaconProposerPreparer(
+      ValidatorApiChannel validatorApiChannel,
+      Optional<ValidatorIndexProvider> validatorIndexProvider,
+      ProposerConfigProvider proposerConfigProvider,
+      Optional<Eth1Address> defaultFeeRecipient,
       Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
@@ -57,20 +73,58 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     this.spec = spec;
   }
 
+  public void initialize(final Optional<ValidatorIndexProvider> provider) {
+    this.validatorIndexProvider = provider;
+  }
+
   @Override
   public void onSlot(UInt64 slot) {
+    if (validatorIndexProvider.isEmpty()) {
+      return;
+    }
     if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
       firstCallDone = true;
-
       sendPreparableProposerList();
     }
   }
 
+  public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
+    if (validatorIndexProvider.isEmpty()
+        || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
+      return Optional.empty();
+    }
+
+    Optional<Eth1Address> maybeEth1Address =
+        maybeRuntimeProposerConfig.flatMap(
+            config -> getFeeRecipientFromProposerConfig(config, publicKey));
+    if (maybeEth1Address.isPresent()) {
+      return maybeEth1Address;
+    }
+    maybeEth1Address =
+        maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
+    if (maybeEth1Address.isPresent()) {
+      return maybeEth1Address;
+    }
+
+    return maybeProposerConfig
+        .map(proposerConfig -> proposerConfig.getDefaultConfig().map(Config::getFeeRecipient))
+        .orElse(defaultFeeRecipient);
+  }
+
+  private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
+      final ProposerConfig config, final BLSPublicKey publicKey) {
+    return config.getConfigForPubKey(publicKey).map(Config::getFeeRecipient);
+  }
+
   private void sendPreparableProposerList() {
+    if (validatorIndexProvider.isEmpty()) {
+      return;
+    }
     SafeFuture<Optional<ProposerConfig>> proposerConfigFuture =
         proposerConfigProvider.getProposerConfig();
 
     validatorIndexProvider
+        .orElseThrow()
         .getValidatorIndicesByPublicKey()
         .thenCompose(
             publicKeyToIndex ->
@@ -88,36 +142,20 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 
-  private List<BeaconPreparableProposer> buildBeaconPreparableProposerList(
+  private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
       Optional<ProposerConfig> maybeProposerConfig,
-      Map<BLSPublicKey, Optional<Integer>> blsPublicKeyToIndexMap) {
+      Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
+    this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
-        .filter(blsPublicKeyOptionalEntry -> blsPublicKeyOptionalEntry.getValue().isPresent())
         .map(
-            blsPublicKeyIntegerEntry ->
-                new BeaconPreparableProposer(
-                    UInt64.valueOf(blsPublicKeyIntegerEntry.getValue().get()),
-                    getFeeRecipient(maybeProposerConfig, blsPublicKeyIntegerEntry.getKey())))
+            entry -> {
+              final Optional<Eth1Address> maybeFeeRecipient = getFeeRecipient(entry.getKey());
+              return maybeFeeRecipient.map(
+                  (eth1Address) ->
+                      new BeaconPreparableProposer(UInt64.valueOf(entry.getValue()), eth1Address));
+            })
+        .flatMap(Optional::stream)
         .collect(Collectors.toList());
-  }
-
-  private Bytes20 getFeeRecipient(
-      Optional<ProposerConfig> maybeProposerConfig, BLSPublicKey blsPublicKey) {
-    return maybeProposerConfig
-        .flatMap(proposerConfig -> proposerConfig.getConfigForPubKey(blsPublicKey))
-        .map(Config::getFeeRecipient)
-        .orElseGet(() -> getDefaultFeeRecipient(maybeProposerConfig));
-  }
-
-  private Bytes20 getDefaultFeeRecipient(Optional<ProposerConfig> maybeProposerConfig) {
-    return maybeProposerConfig
-        .flatMap(ProposerConfig::getDefaultConfig)
-        .map(Config::getFeeRecipient)
-        .or(() -> defaultFeeRecipient)
-        .orElseThrow(
-            () ->
-                new InvalidConfigurationException(
-                    "Invalid configuration. --validators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active"));
   }
 
   @Override

@@ -22,8 +22,7 @@ public class StateAndMetaData extends ObjectAndMetaData<BeaconState> {
       final BeaconState data,
       final SpecMilestone milestone,
       final boolean executionOptimistic,
-      final boolean bellatrixEnabled,
       final boolean canonical) {
-    super(data, milestone, executionOptimistic, bellatrixEnabled, canonical);
+    super(data, milestone, executionOptimistic, canonical);
   }
 }

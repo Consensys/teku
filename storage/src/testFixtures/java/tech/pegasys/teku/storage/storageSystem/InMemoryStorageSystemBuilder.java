@@ -42,6 +42,7 @@ public class InMemoryStorageSystemBuilder {
   private int numberOfValidators = 3;
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
+  private boolean storeVotesEquivocation = false;
 
   private Spec spec = TestSpecFactory.createMinimalPhase0();
 
@@ -174,14 +175,19 @@ public class InMemoryStorageSystemBuilder {
       hotDb =
           MockKvStoreInstance.createEmpty(
               concat(
-                  new V4SchemaHot(spec).getAllColumns(),
+                  new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns(),
                   new V6TreeSchemaFinalized(spec).getAllColumns()),
               concat(
-                  new V4SchemaHot(spec).getAllVariables(),
+                  new V4SchemaHot(spec, storeVotesEquivocation).getAllVariables(),
                   new V6TreeSchemaFinalized(spec).getAllVariables()));
     }
     return InMemoryKvStoreDatabaseFactory.createTree(
-        hotDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeVotesEquivocation,
+        spec);
   }
 
   private Database createV6Database() {
@@ -189,14 +195,19 @@ public class InMemoryStorageSystemBuilder {
       hotDb =
           MockKvStoreInstance.createEmpty(
               concat(
-                  new V4SchemaHot(spec).getAllColumns(),
+                  new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns(),
                   new V6SnapshotSchemaFinalized(spec).getAllColumns()),
               concat(
-                  new V4SchemaHot(spec).getAllVariables(),
+                  new V4SchemaHot(spec, storeVotesEquivocation).getAllVariables(),
                   new V6SnapshotSchemaFinalized(spec).getAllVariables()));
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
-        hotDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeVotesEquivocation,
+        spec);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
@@ -206,7 +217,7 @@ public class InMemoryStorageSystemBuilder {
 
   private Database createV4Database() {
     if (hotDb == null) {
-      final V4SchemaHot v4SchemaHot = new V4SchemaHot(spec);
+      final V4SchemaHot v4SchemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
       hotDb =
           MockKvStoreInstance.createEmpty(
               v4SchemaHot.getAllColumns(), v4SchemaHot.getAllVariables());
@@ -218,7 +229,13 @@ public class InMemoryStorageSystemBuilder {
               v4SchemaFinalized.getAllColumns(), v4SchemaFinalized.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV4(
-        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb,
+        coldDb,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeVotesEquivocation,
+        spec);
   }
 
   private void reopenDatabases() {

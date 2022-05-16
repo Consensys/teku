@@ -121,7 +121,6 @@ public class GetState extends AbstractHandler implements Handler {
     ctx.header(HEADER_CONSENSUS_VERSION, version.name());
     return Optional.of(
         jsonProvider.objectToJSON(
-            new GetStateResponseV2(
-                version, response.isExecutionOptimisticForApi(), response.getData())));
+            new GetStateResponseV2(version, response.isExecutionOptimistic(), response.getData())));
   }
 }

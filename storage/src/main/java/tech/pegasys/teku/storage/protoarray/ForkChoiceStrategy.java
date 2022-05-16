@@ -152,6 +152,18 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  public void applyDeferredAttestations(final VoteUpdater voteUpdater, final DeferredVotes votes) {
+    final UInt64 targetEpoch = spec.computeEpochAtSlot(votes.getSlot());
+    votesLock.writeLock().lock();
+    try {
+      votes.forEachDeferredVote(
+          (blockRoot, validatorIndex) ->
+              processAttestation(voteUpdater, validatorIndex, blockRoot, targetEpoch));
+    } finally {
+      votesLock.writeLock().unlock();
+    }
+  }
+
   @Override
   public List<ProtoNodeData> getChainHeads() {
     protoArrayLock.readLock().lock();
@@ -178,6 +190,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               justifiedCheckpoint.getEpoch(),
               finalizedCheckpoint.getEpoch());
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
+      final Bytes32 justifiedExecutionHash =
+          protoArray
+              .getProtoNode(justifiedCheckpoint.getRoot())
+              .map(ProtoNode::getExecutionBlockHash)
+              .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
           protoArray
               .getProtoNode(finalizedCheckpoint.getRoot())
@@ -187,7 +204,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headNode.getBlockRoot(),
           headNode.getBlockSlot(),
           headExecutionBlockHash,
-          headExecutionBlockHash,
+          justifiedExecutionHash,
           finalizedExecutionHash,
           headNode.isOptimistic());
     } finally {
@@ -210,6 +227,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   void processAttestation(
       VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
+    // Not updating anything for equivocated validators
+    if (vote.isEquivocating()) {
+      return;
+    }
 
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
       VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);

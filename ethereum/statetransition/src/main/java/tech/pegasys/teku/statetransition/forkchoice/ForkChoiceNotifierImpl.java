@@ -22,12 +22,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -69,7 +69,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final Optional<? extends Bytes20> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
     eventThread.start();
@@ -116,7 +116,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public SafeFuture<Optional<Bytes8>> getPayloadId(
+  public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
       final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
     return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, blockSlot));
   }
@@ -148,7 +148,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
    *     parentBeaconBlockRoot 2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
    */
-  private SafeFuture<Optional<Bytes8>> internalGetPayloadId(
+  private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
       final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
 
@@ -167,7 +167,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
     final UInt64 timestamp = spec.getSlotStartTime(blockSlot, recentChainData.getGenesisTime());
     if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
-      return forkChoiceUpdateData.getPayloadId();
+      return forkChoiceUpdateData.getExecutionPayloadContext();
     } else if (parentExecutionHash.isZero() && !forkChoiceUpdateData.hasTerminalBlockHash()) {
       // Pre-merge so ok to use default payload
       return SafeFuture.completedFuture(Optional.empty());
@@ -188,7 +188,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                     localForkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
                 sendForkChoiceUpdated();
                 return forkChoiceUpdateData
-                    .getPayloadId()
+                    .getExecutionPayloadContext()
                     .thenApply(
                         payloadId -> {
                           if (payloadId.isEmpty()) {

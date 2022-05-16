@@ -20,8 +20,8 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 @SuppressWarnings("JavaCase")
 public class BeaconPreparableProposer {
@@ -35,12 +35,12 @@ public class BeaconPreparableProposer {
       format = "byte",
       pattern = PATTERN_BYTES20,
       description = DESCRIPTION_BYTES20)
-  public final Bytes20 fee_recipient;
+  public final Eth1Address fee_recipient;
 
   @JsonCreator
   public BeaconPreparableProposer(
       @JsonProperty("validator_index") UInt64 validator_index,
-      @JsonProperty("fee_recipient") Bytes20 fee_recipient) {
+      @JsonProperty("fee_recipient") Eth1Address fee_recipient) {
     this.validator_index = validator_index;
     this.fee_recipient = fee_recipient;
   }

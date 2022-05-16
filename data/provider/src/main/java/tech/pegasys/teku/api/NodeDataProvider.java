@@ -25,7 +25,6 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -89,24 +88,19 @@ public class NodeDataProvider {
     this.payloadAttributesCalculator = payloadAttributesCalculator;
   }
 
-  public List<Attestation> getAttestations(
+  public List<tech.pegasys.teku.spec.datastructures.operations.Attestation> getAttestations(
       Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
-    return attestationPool
-        .getAttestations(maybeSlot, maybeCommitteeIndex)
-        .map(Attestation::new)
-        .collect(Collectors.toList());
+    return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
-  public List<AttesterSlashing> getAttesterSlashings() {
-    return attesterSlashingPool.getAll().stream()
-        .map(AttesterSlashing::new)
-        .collect(Collectors.toList());
+  public List<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
+      getAttesterSlashings() {
+    return new ArrayList<>(attesterSlashingPool.getAll());
   }
 
-  public List<ProposerSlashing> getProposerSlashings() {
-    return proposerSlashingPool.getAll().stream()
-        .map(ProposerSlashing::new)
-        .collect(Collectors.toList());
+  public List<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
+      getProposerSlashings() {
+    return proposerSlashingPool.getAll().stream().collect(Collectors.toList());
   }
 
   public List<SignedVoluntaryExit> getVoluntaryExits() {
