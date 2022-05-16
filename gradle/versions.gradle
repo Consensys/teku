@@ -178,5 +178,7 @@ dependencyManagement {
       entry 'jjwt-impl'
       entry 'jjwt-jackson'
     }
+
+    dependency 'net.jqwik:jqwik:1.6.5'
   }
 }
