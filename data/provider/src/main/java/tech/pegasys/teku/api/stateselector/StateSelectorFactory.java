@@ -21,7 +21,6 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -169,10 +168,6 @@ public class StateSelectorFactory {
   private StateAndMetaData addMetaData(
       final BeaconState state, final boolean executionOptimistic, final boolean canonical) {
     return new StateAndMetaData(
-        state,
-        spec.atSlot(state.getSlot()).getMilestone(),
-        executionOptimistic,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
-        canonical);
+        state, spec.atSlot(state.getSlot()).getMilestone(), executionOptimistic, canonical);
   }
 }

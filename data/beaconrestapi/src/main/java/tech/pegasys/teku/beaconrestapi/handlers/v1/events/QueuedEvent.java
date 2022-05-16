@@ -14,18 +14,19 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.response.v1.EventType;
 
 public class QueuedEvent {
   private final EventType eventType;
-  private final String messageData;
+  private final Bytes messageData;
 
-  private QueuedEvent(final EventType eventType, final String messageData) {
+  private QueuedEvent(final EventType eventType, final Bytes messageData) {
     this.eventType = eventType;
     this.messageData = messageData;
   }
 
-  public static QueuedEvent of(final EventType eventType, final String messageData) {
+  public static QueuedEvent of(final EventType eventType, final Bytes messageData) {
     return new QueuedEvent(eventType, messageData);
   }
 
@@ -50,7 +51,7 @@ public class QueuedEvent {
     return eventType;
   }
 
-  public String getMessageData() {
+  public Bytes getMessageData() {
     return messageData;
   }
 }

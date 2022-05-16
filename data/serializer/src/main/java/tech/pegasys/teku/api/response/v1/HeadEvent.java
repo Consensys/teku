@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -47,8 +46,6 @@ public class HeadEvent {
   public final Bytes32 currentDutyDependentRoot;
 
   @JsonProperty("execution_optimistic")
-  @JsonInclude(Include.NON_NULL)
-  @Schema(hidden = true)
   public final Boolean executionOptimistic;
 
   @JsonCreator

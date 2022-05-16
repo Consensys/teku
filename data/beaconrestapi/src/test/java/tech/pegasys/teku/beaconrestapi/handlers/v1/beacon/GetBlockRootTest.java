@@ -26,46 +26,38 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-class GetBlockHeaderTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetBlockRoot handler;
   private StubRestApiRequest request;
-  private GetBlockHeader handler;
-
-  private final BeaconBlock message = dataStructureUtil.randomBeaconBlock(1);
-  private final BLSSignature signature = dataStructureUtil.randomSignature();
-  private final SignedBeaconBlock signedBeaconBlock =
-      SignedBeaconBlock.create(spec, message, signature);
-  private final BlockAndMetaData responseData =
-      new BlockAndMetaData(signedBeaconBlock, spec.getGenesisSpec().getMilestone(), false, true);
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
+
+    handler = new GetBlockRoot(chainDataProvider);
     request = StubRestApiRequest.builder().pathParameter("block_id", "head").build();
-    handler = new GetBlockHeader(chainDataProvider);
   }
 
   @Test
   public void shouldReturnBlockHeaderInformation()
       throws JsonProcessingException, ExecutionException, InterruptedException {
-    final Optional<BlockAndMetaData> blockAndMetaData =
-        chainDataProvider.getBlockAndMetaData("head").get();
+    final Optional<ObjectAndMetaData<Bytes32>> rootData =
+        chainDataProvider.getBlockRoot("head").get();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(blockAndMetaData.isPresent()).isTrue();
-    assertThat(request.getResponseBody()).isEqualTo(blockAndMetaData.get());
+    assertThat(rootData.isPresent()).isTrue();
+    assertThat(request.getResponseBody()).isEqualTo(rootData.get());
   }
 
   @Test
@@ -80,10 +72,14 @@ class GetBlockHeaderTest extends AbstractMigratedBeaconHandlerWithChainDataProvi
 
   @Test
   void metadata_shouldHandle200() throws IOException {
+    final ObjectAndMetaData<Bytes32> responseData =
+        new ObjectAndMetaData<>(
+            dataStructureUtil.randomBytes32(), spec.getGenesisSpec().getMilestone(), false, true);
+
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockHeaderTest.class, "getBlockHeader.json"), UTF_8);
+            Resources.getResource(GetBlockRootTest.class, "getBlockRoot.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }

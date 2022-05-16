@@ -49,7 +49,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -163,8 +162,8 @@ public class ChainDataProvider {
                                 spec.atSlot(blockData.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<Root>>> getBlockRoot(final String slotParameter) {
-    return fromBlock(slotParameter, block -> new Root(block.getRoot()));
+  public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String slotParameter) {
+    return fromBlock(slotParameter, SignedBeaconBlock::getRoot);
   }
 
   public SafeFuture<
@@ -337,10 +336,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    final boolean bellatrixEnabled = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     if (parentRoot.isPresent()) {
-      return SafeFuture.completedFuture(
-          new BlockHeadersResponse(bellatrixEnabled ? Boolean.FALSE : null, emptyList()));
+      return SafeFuture.completedFuture(new BlockHeadersResponse(false, emptyList()));
     }
 
     return defaultBlockSelectorFactory
@@ -348,13 +345,9 @@ public class ChainDataProvider {
         .getBlocks()
         .thenApply(
             blockAndMetadataList -> {
-              final Boolean executionOptimistic =
-                  bellatrixEnabled
-                      ? blockAndMetadataList.stream()
-                          .anyMatch(BlockAndMetaData::isExecutionOptimistic)
-                      : null;
-              return new BlockHeadersResponse(
-                  bellatrixEnabled ? executionOptimistic : null, blockAndMetadataList);
+              final boolean executionOptimistic =
+                  blockAndMetadataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
+              return new BlockHeadersResponse(executionOptimistic, blockAndMetadataList);
             });
   }
 

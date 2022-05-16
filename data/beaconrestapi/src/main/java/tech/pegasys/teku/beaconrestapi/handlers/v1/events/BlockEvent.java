@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,23 +28,19 @@ public class BlockEvent extends Event<BlockEvent.BlockData> {
           .name("BlockEvent")
           .withField("slot", UINT64_TYPE, BlockData::getSlot)
           .withField("block", BYTES32_TYPE, BlockData::getBlock)
-          // TODO #5264
-          // .withOptionalField("execution_optimistic", BOOLEAN_TYPE,
-          // BlockData::getExecutionOptimistic)
+          .withField("execution_optimistic", BOOLEAN_TYPE, BlockData::isExecutionOptimistic)
           .build();
 
-  BlockEvent(final SignedBeaconBlock block, final Boolean executionOptimistic) {
-    super(
-        BLOCK_EVENT_TYPE,
-        new BlockData(block.getSlot(), block.getRoot(), Optional.ofNullable(executionOptimistic)));
+  BlockEvent(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    super(BLOCK_EVENT_TYPE, new BlockData(block.getSlot(), block.getRoot(), executionOptimistic));
   }
 
   public static class BlockData {
     private final UInt64 slot;
     private final Bytes32 block;
-    private final Optional<Boolean> executionOptimistic;
+    private final boolean executionOptimistic;
 
-    BlockData(final UInt64 slot, final Bytes32 block, final Optional<Boolean> executionOptimistic) {
+    BlockData(final UInt64 slot, final Bytes32 block, final boolean executionOptimistic) {
       this.slot = slot;
       this.block = block;
       this.executionOptimistic = executionOptimistic;
@@ -58,8 +54,7 @@ public class BlockEvent extends Event<BlockEvent.BlockData> {
       return block;
     }
 
-    @SuppressWarnings("UnusedMethod")
-    private Optional<Boolean> getExecutionOptimistic() {
+    private boolean isExecutionOptimistic() {
       return executionOptimistic;
     }
   }

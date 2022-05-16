@@ -40,7 +40,6 @@ import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -332,7 +331,6 @@ public class ChainDataProviderTest {
                 new StateSyncCommittees(committeeIndices, List.of(committeeIndices)),
                 SpecMilestone.ALTAIR,
                 false,
-                false,
                 true));
   }
 
@@ -390,9 +388,9 @@ public class ChainDataProviderTest {
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final Optional<ObjectAndMetaData<Root>> response = provider.getBlockRoot("head").get();
+    final Optional<ObjectAndMetaData<Bytes32>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get().getData()).isEqualTo(new Root(bestBlock.getRoot()));
+    assertThat(response.get().getData()).isEqualTo(bestBlock.getRoot());
   }
 
   @Test
@@ -466,11 +464,6 @@ public class ChainDataProviderTest {
   }
 
   private <T> ObjectAndMetaData<T> addMetaData(final T expected, final UInt64 slot) {
-    return new ObjectAndMetaData<>(
-        expected,
-        spec.atSlot(slot).getMilestone(),
-        false,
-        spec.isMilestoneSupported(SpecMilestone.BELLATRIX),
-        true);
+    return new ObjectAndMetaData<>(expected, spec.atSlot(slot).getMilestone(), false, true);
   }
 }

@@ -26,11 +26,24 @@ public class VoteTracker {
   private final Bytes32 currentRoot;
   private final Bytes32 nextRoot;
   private final UInt64 nextEpoch;
+  private final boolean nextEquivocating;
+  private final boolean currentEquivocating;
 
   public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
+    this(currentRoot, nextRoot, nextEpoch, false, false);
+  }
+
+  public VoteTracker(
+      Bytes32 currentRoot,
+      Bytes32 nextRoot,
+      UInt64 nextEpoch,
+      boolean nextEquivocating,
+      boolean currentEquivocating) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
+    this.nextEquivocating = nextEquivocating;
+    this.currentEquivocating = currentEquivocating;
   }
 
   public Bytes32 getCurrentRoot() {
@@ -45,23 +58,41 @@ public class VoteTracker {
     return nextEpoch;
   }
 
+  public boolean isNextEquivocating() {
+    return nextEquivocating;
+  }
+
+  public boolean isCurrentEquivocating() {
+    return currentEquivocating;
+  }
+
+  public boolean isEquivocating() {
+    return nextEquivocating || currentEquivocating;
+  }
+
+  public VoteTracker createNextEquivocating() {
+    return new VoteTracker(currentRoot, nextRoot, nextEpoch, true, false);
+  }
+
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final VoteTracker that = (VoteTracker) o;
-    return Objects.equals(currentRoot, that.currentRoot)
+    VoteTracker that = (VoteTracker) o;
+    return nextEquivocating == that.nextEquivocating
+        && currentEquivocating == that.currentEquivocating
+        && Objects.equals(currentRoot, that.currentRoot)
         && Objects.equals(nextRoot, that.nextRoot)
         && Objects.equals(nextEpoch, that.nextEpoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(currentRoot, nextRoot, nextEpoch);
+    return Objects.hash(currentRoot, nextRoot, nextEpoch, nextEquivocating, currentEquivocating);
   }
 
   @Override
@@ -70,6 +101,8 @@ public class VoteTracker {
         .add("currentRoot", currentRoot)
         .add("nextRoot", nextRoot)
         .add("nextEpoch", nextEpoch)
+        .add("nextEquivocating", nextEquivocating)
+        .add("currentEquivocating", currentEquivocating)
         .toString();
   }
 }
