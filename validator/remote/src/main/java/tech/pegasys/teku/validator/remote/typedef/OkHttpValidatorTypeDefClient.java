@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 
-public class OkHttpValidatorTypeDefClient implements ValidatorRestApiClient {
+public class OkHttpValidatorTypeDefClient {
 
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
@@ -31,7 +31,6 @@ public class OkHttpValidatorTypeDefClient implements ValidatorRestApiClient {
     this.baseEndpoint = baseEndpoint;
   }
 
-  @Override
   public Optional<GenesisData> getGenesis() {
     final GetGenesisRequest request = new GetGenesisRequest(okHttpClient, baseEndpoint);
     return request.getGenesisData();

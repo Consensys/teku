@@ -7,7 +7,6 @@ dependencies {
   implementation project(':infrastructure:http')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:restapi')
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
