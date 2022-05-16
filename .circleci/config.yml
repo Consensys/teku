@@ -294,7 +294,7 @@ jobs:
               echo "Failed to determine correct distribution of tests across nodes"
               exit 1
             fi
-            ./gradlew --no-daemon --parallel propertyTest $GRADLE_ARGS
+            ./gradlew --no-daemon --parallel --info propertyTest $GRADLE_ARGS
       - notify
       - capture_test_results
 
