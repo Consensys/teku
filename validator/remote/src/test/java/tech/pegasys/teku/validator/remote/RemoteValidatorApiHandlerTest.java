@@ -43,8 +43,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -61,6 +59,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -77,6 +76,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 class RemoteValidatorApiHandlerTest {
 
@@ -87,24 +87,21 @@ class RemoteValidatorApiHandlerTest {
 
   private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
 
+  private final OkHttpValidatorTypeDefClient typeDefClient =
+      mock(OkHttpValidatorTypeDefClient.class);
+
   private RemoteValidatorApiHandler apiHandler;
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(spec, apiClient, asyncRunner);
+    apiHandler = new RemoteValidatorApiHandler(spec, apiClient, typeDefClient, asyncRunner);
   }
 
   @Test
   public void getGenesisTime_WhenPresent_ReturnsValue() {
     final UInt64 genesisTime = dataStructureUtil.randomUInt64();
-    when(apiClient.getGenesis())
-        .thenReturn(
-            Optional.of(
-                new GetGenesisResponse(
-                    new GenesisData(
-                        genesisTime,
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes4()))));
+    when(typeDefClient.getGenesis())
+        .thenReturn(Optional.of(new GenesisData(genesisTime, dataStructureUtil.randomBytes32())));
 
     SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> future =
         apiHandler.getGenesisData();
@@ -521,7 +518,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   void shouldRetryAfterDelayWhenRequestRateLimited() {
-    when(apiClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
+    when(typeDefClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
 
     final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> result =
         apiHandler.getGenesisData();
@@ -529,7 +526,7 @@ class RemoteValidatorApiHandlerTest {
     for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
       asyncRunner.executeQueuedActions();
       assertThat(result).isNotDone();
-      verify(apiClient, times(i + 1)).getGenesis();
+      verify(typeDefClient, times(i + 1)).getGenesis();
     }
 
     asyncRunner.executeQueuedActions();
