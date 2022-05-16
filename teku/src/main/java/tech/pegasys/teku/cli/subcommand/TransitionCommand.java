@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -102,6 +103,8 @@ public class TransitionCommand implements Runnable {
       @Mixin InAndOutParams params,
       @Option(
               names = {"--delta", "-d"},
+              showDefaultValue = Visibility.ALWAYS,
+              fallbackValue = "true",
               description = "to interpret the slot number as a delta from the pre-state")
           boolean delta,
       @Parameters(paramLabel = "<number>", description = "Number of slots to process")
