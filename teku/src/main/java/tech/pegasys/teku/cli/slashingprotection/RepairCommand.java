@@ -56,6 +56,7 @@ public class RepairCommand implements Runnable {
       names = {"--check-only-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       description = "Read and report potential problems, but don't update anything.",
       arity = "0..1")
   private boolean checkOnlyEnabled = false;
@@ -64,6 +65,7 @@ public class RepairCommand implements Runnable {
       names = {"--update-all-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       description = "All validator slashing protection records should be updated.",
       arity = "0..1")
   private boolean updateAllEnabled = false;
