@@ -75,6 +75,7 @@ public class ValidatorOptions {
       names = {"--validators-keystore-locking-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       description = "Enable locking validator keystore files",
       arity = "1")
   private boolean validatorKeystoreLockingEnabled =

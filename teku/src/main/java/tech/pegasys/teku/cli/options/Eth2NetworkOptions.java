@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
 import tech.pegasys.teku.cli.converter.UInt256Converter;
@@ -124,7 +125,8 @@ public class Eth2NetworkOptions {
       paramLabel = "<BOOLEAN>",
       description = "Whether to enable the fork choice proposer boost feature.",
       arity = "0..1",
-      fallbackValue = "false",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private Boolean proposerBoostEnabled = Eth2NetworkConfiguration.DEFAULT_PROPOSER_BOOST_ENABLED;
 
@@ -133,10 +135,22 @@ public class Eth2NetworkOptions {
       paramLabel = "<BOOLEAN>",
       description = "Whether to enable the fork choice equivocating indices feature.",
       arity = "0..1",
-      fallbackValue = "false",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private Boolean equivocatingIndicesEnabled =
       Eth2NetworkConfiguration.DEFAULT_EQUIVOCATING_INDICES_ENABLED;
+
+  @Option(
+      names = {"--Xfork-choice-before-proposing-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether to enable run fork choice before creating block proposals.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private Boolean forkChoiceBeforeProposingEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
@@ -166,12 +180,6 @@ public class Eth2NetworkOptions {
     if (StringUtils.isNotBlank(initialState)) {
       builder.customInitialState(initialState);
     }
-    if (proposerBoostEnabled != null) {
-      builder.proposerBoostEnabled(proposerBoostEnabled);
-    }
-    if (equivocatingIndicesEnabled != null) {
-      builder.equivocatingIndicesEnabled(equivocatingIndicesEnabled);
-    }
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);
     }
@@ -187,7 +195,11 @@ public class Eth2NetworkOptions {
     if (terminalBlockHashEpochOverride != null) {
       builder.terminalBlockHashEpochOverride(terminalBlockHashEpochOverride);
     }
-    builder.safeSlotsToImportOptimistically(safeSlotsToImportOptimistically);
+    builder
+        .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
+        .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
+        .forkChoiceBeforeProposingEnabled(forkChoiceBeforeProposingEnabled)
+        .proposerBoostEnabled(proposerBoostEnabled);
   }
 
   public String getNetwork() {

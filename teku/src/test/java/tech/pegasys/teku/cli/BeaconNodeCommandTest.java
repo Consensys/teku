@@ -41,11 +41,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Model.OptionSpec;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
@@ -133,33 +136,47 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void helpShouldShowDefaultsForBooleanOptions() {
-    final Pattern optPattern = Pattern.compile("(?i)--\\S+=<boolean>");
-    final Pattern optDefValPattern = Pattern.compile("(?i)Default: (?:true|false)");
-    checkAllBoolOptionsHaveVisibleDefaults(
-        new CommandLine(beaconNodeCommand), optPattern, optDefValPattern, "");
+  void booleanOptionsShouldSetFallbackValueToTrue() {
+    final List<String> invalidOptions =
+        allBooleanOptions()
+            .filter(option -> !"true".equals(option.fallbackValue()))
+            .map(OptionSpec::longestName)
+            .collect(Collectors.toList());
+
+    assertThat(invalidOptions).describedAs("Values with incorrect fallback value").isEmpty();
   }
 
-  private void checkAllBoolOptionsHaveVisibleDefaults(
-      CommandLine cmd, Pattern optPattern, Pattern optDefValPattern, String parentCmds) {
-    String usageMsg = cmd.getUsageMessage();
-    var numBoolOptions = optPattern.matcher(usageMsg).results().count();
-    var numBoolDefaults = optDefValPattern.matcher(usageMsg).results().count();
+  @Test
+  void booleanOptionsShouldSetShowDefaultValueToAlways() {
+    final List<String> invalidOptions =
+        allBooleanOptions()
+            .filter(option -> option.showDefaultValue() != Visibility.ALWAYS)
+            .map(OptionSpec::longestName)
+            .collect(Collectors.toList());
 
-    assertThat(numBoolOptions)
-        .withFailMessage(
-            "one or more boolean options for command '%s%s' does not display a default value",
-            parentCmds, cmd.getCommandName())
-        .isLessThanOrEqualTo(numBoolDefaults);
+    assertThat(invalidOptions).describedAs("Values with incorrect show default value").isEmpty();
+  }
 
-    // check all nested subcommands
-    for (CommandLine subCmd : cmd.getSubcommands().values()) {
-      checkAllBoolOptionsHaveVisibleDefaults(
-          subCmd,
-          optPattern,
-          optDefValPattern,
-          String.format("%s%s ", parentCmds, cmd.getCommandName()));
+  private Stream<OptionSpec> allBooleanOptions() {
+    return allOptions()
+        .filter(option -> option.type().equals(Boolean.TYPE) || option.type().equals(Boolean.class))
+        .filter(option -> !option.usageHelp() && !option.versionHelp());
+  }
+
+  private Stream<OptionSpec> allOptions() {
+    final CommandLine commandLine = new CommandLine(beaconNodeCommand);
+    Stream<OptionSpec> stream = commandLine.getCommandSpec().options().stream();
+    stream = addSubCommandOptions(commandLine, stream);
+    return stream;
+  }
+
+  private Stream<OptionSpec> addSubCommandOptions(
+      final CommandLine commandLine, Stream<OptionSpec> stream) {
+    for (CommandLine subCommand : commandLine.getSubcommands().values()) {
+      stream = Stream.concat(stream, subCommand.getCommandSpec().options().stream());
+      stream = addSubCommandOptions(subCommand, stream);
     }
+    return stream;
   }
 
   @Test
