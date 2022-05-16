@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -55,6 +56,7 @@ public class InteropOptions {
       names = {"--Xinterop-enabled"},
       paramLabel = "<BOOLEAN>",
       fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables developer options for testing",
       arity = "0..1")
   private boolean interopEnabled = false;

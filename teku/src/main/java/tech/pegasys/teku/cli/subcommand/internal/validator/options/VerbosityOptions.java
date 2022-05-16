@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 
 import com.google.common.annotations.VisibleForTesting;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 
 public class VerbosityOptions {
@@ -23,6 +24,8 @@ public class VerbosityOptions {
       paramLabel = "<true|false>",
       description = "Controls verbose status output. (default: ${DEFAULT-VALUE})",
       arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       defaultValue = "true")
   private boolean verboseOutputEnabled = true;
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import java.util.ArrayList;
 import java.util.List;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
@@ -42,6 +43,7 @@ public class DepositOptions {
       paramLabel = "<BOOLEAN>",
       description = "Enable experimental time based Eth1 head tracking",
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean useTimeBasedHeadTracking =
@@ -52,6 +54,7 @@ public class DepositOptions {
       paramLabel = "<BOOLEAN>",
       description = "Enable logging an event on each slot whenever deposits are missing",
       hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean useMissingDepositEventLogging =
