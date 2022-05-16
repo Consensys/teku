@@ -1,0 +1,40 @@
+{
+  "title" : "GetEpochCommitteesResponse",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "required" : [ "index", "slot", "validators" ],
+        "properties" : {
+          "index" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          },
+          "slot" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          },
+          "validators" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "description" : "unsigned 64 bit integer",
+              "example" : "1",
+              "format" : "uint64"
+            }
+          }
+        }
+      }
+    }
+  }
+}

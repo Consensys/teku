@@ -40,6 +40,7 @@ def buildAliases = [
     'compileJmhJava',
     'compileIntegrationTestJava',
     'compileReferenceTestJava',
+    'compilePropertyTestJava',
     'spotlessApply',
     'build',
     'checkLicense',
@@ -575,7 +576,7 @@ task manifestDocker {
 subprojects {
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
-   maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
+    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
     useJUnitPlatform()
     reports {
       junitXml.required = true
@@ -609,6 +610,14 @@ subprojects {
       }
       resources.srcDir file('src/acceptance-test/resources')
     }
+    propertyTest {
+      java {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+        srcDir file('src/property-test/java')
+      }
+      resources.srcDir file('src/property-test/resources')
+    }
     referenceTest {
       java {
         srcDir file('src/referenceTest/generated_tests')
@@ -632,6 +641,8 @@ subprojects {
       testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
       testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
       testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
+      testSourceDirs += project.sourceSets.propertyTest.java.srcDirs
+      testSourceDirs += project.sourceSets.propertyTest.resources.srcDirs
       testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
       testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
     }
@@ -722,10 +733,12 @@ subprojects {
   configurations {
     integrationTestImplementation.extendsFrom testImplementation
     acceptanceTestImplementation.extendsFrom testImplementation
+    propertyTestImplementation.extendsFrom testImplementation
     referenceTestImplementation.extendsFrom testImplementation
 
     integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
+    propertyTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
   }
 
@@ -769,6 +782,8 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
 
     testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'
+
+    propertyTestImplementation 'net.jqwik:jqwik'
   }
 
   if (!baseInfrastructureProjects.contains(project.path)) {
@@ -791,6 +806,14 @@ subprojects {
     systemProperty "teku.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
+  }
+
+  task propertyTest(type: Test, dependsOn:["compilePropertyTestJava"]){
+    group = "verification"
+    description = "Runs the Teku property tests"
+
+    testClassesDirs = sourceSets.propertyTest.output.classesDirs
+    classpath = sourceSets.propertyTest.runtimeClasspath
   }
 
   task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){

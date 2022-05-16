@@ -42,7 +42,6 @@ import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
-import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -387,7 +386,7 @@ public class ChainDataProvider {
     return maybeValidator.map(data -> stateData.map(__ -> data));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> getStateCommittees(
+  public SafeFuture<Optional<ObjectAndMetaData<List<CommitteeAssignment>>>> getStateCommittees(
       final String stateIdParameter,
       final Optional<UInt64> epoch,
       final Optional<UInt64> committeeIndex,
@@ -400,7 +399,7 @@ public class ChainDataProvider {
     return recentChainData.getCurrentEpoch();
   }
 
-  List<EpochCommitteeResponse> getCommitteesFromState(
+  List<CommitteeAssignment> getCommitteesFromState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final Optional<UInt64> epoch,
       final Optional<UInt64> committeeIndex,
@@ -428,7 +427,6 @@ public class ChainDataProvider {
     return combinedChainDataClient.getCommitteesFromState(state, epoch.orElse(stateEpoch)).stream()
         .filter(slotFilter)
         .filter(committeeFilter)
-        .map(EpochCommitteeResponse::new)
         .collect(toList());
   }
 

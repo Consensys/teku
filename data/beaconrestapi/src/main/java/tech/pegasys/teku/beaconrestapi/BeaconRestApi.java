@@ -400,7 +400,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetStateValidator(dataProvider));
     app.get(
         GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
-    app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetStateCommittees(dataProvider));
     addMigratedEndpoint(new GetStateSyncCommittees(dataProvider));
 
     addMigratedEndpoint(new GetBlockHeaders(dataProvider));

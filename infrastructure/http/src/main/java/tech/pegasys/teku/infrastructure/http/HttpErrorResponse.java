@@ -31,6 +31,10 @@ public class HttpErrorResponse {
     this.message = message;
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public String getMessage() {
     return message;
   }
@@ -54,5 +58,26 @@ public class HttpErrorResponse {
   @Override
   public int hashCode() {
     return Objects.hash(code, message);
+  }
+
+  public static class Builder {
+    private int code;
+    private String message;
+
+    Builder() {}
+
+    public Builder code(final int code) {
+      this.code = code;
+      return this;
+    }
+
+    public Builder message(final String message) {
+      this.message = message;
+      return this;
+    }
+
+    public HttpErrorResponse build() {
+      return new HttpErrorResponse(code, message);
+    }
   }
 }

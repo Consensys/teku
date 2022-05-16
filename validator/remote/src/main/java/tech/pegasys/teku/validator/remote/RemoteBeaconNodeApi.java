@@ -33,6 +33,7 @@ import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
@@ -71,10 +72,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
 
+    final OkHttpValidatorTypeDefClient typeDefClient =
+        new OkHttpValidatorTypeDefClient(okHttpClient, apiEndpoint, spec);
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             serviceConfig.getMetricsSystem(),
-            new RemoteValidatorApiHandler(spec, apiClient, asyncRunner));
+            new RemoteValidatorApiHandler(spec, apiClient, typeDefClient, asyncRunner));
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
