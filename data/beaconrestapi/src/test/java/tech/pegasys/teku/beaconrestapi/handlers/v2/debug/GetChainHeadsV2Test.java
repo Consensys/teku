@@ -55,9 +55,11 @@ class GetChainHeadsV2Test extends AbstractMigratedBeaconHandlerWithChainDataProv
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
     final String data = getResponseStringFromMetadata(handler, SC_OK, protoNodeDataList);
-    AssertionsForClassTypes.assertThat(data)
-        .isEqualTo(
-            "{\"data\":[{\"slot\":\"0\",\"root\":\"0xad2005566b57353fca12fc9bf697cab59c450b72fcf06bead50a85e7450fb0f6\",\"execution_optimistic\":false}]}");
+    final String expected =
+        String.format(
+            "{\"data\":[{\"slot\":\"0\",\"root\":\"%s\",\"execution_optimistic\":false}]}",
+            protoNodeDataList.get(0).getRoot());
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 
   @Test
