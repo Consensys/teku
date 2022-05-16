@@ -42,7 +42,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             signedBeaconBlock,
             signedBeaconBlock.getSchema().getJsonTypeDefinition(),
             new ResponseHandler<>())
-        .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
+        .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 }
