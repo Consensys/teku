@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -162,20 +163,66 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldFailLoadingInvalidTransitionOverrides() {
     assertThrows(
         AssertionError.class,
-        () -> {
-          getTekuConfigurationFromArguments("--Xnetwork-total-terminal-difficulty-override", "asd");
-        });
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xnetwork-total-terminal-difficulty-override", "asd"));
 
     assertThrows(
         AssertionError.class,
-        () -> {
-          getTekuConfigurationFromArguments("--Xnetwork-terminal-block-hash-override", "756");
-        });
+        () -> getTekuConfigurationFromArguments("--Xnetwork-terminal-block-hash-override", "756"));
 
     assertThrows(
         AssertionError.class,
-        () -> {
-          getTekuConfigurationFromArguments("--Xnetwork-terminal-block-hash-epoch-override", "asd");
-        });
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xnetwork-terminal-block-hash-epoch-override", "asd"));
+  }
+
+  @Test
+  void shouldEnableEquivocatingIndices() {
+    final Eth2NetworkConfiguration networkConfig =
+        getTekuConfigurationFromArguments("--Xfork-choice-equivocating-indices-enabled")
+            .eth2NetworkConfiguration();
+    assertThat(networkConfig.isEquivocatingIndicesEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisableEquivocatingIndices() {
+    final Eth2NetworkConfiguration networkConfig =
+        getTekuConfigurationFromArguments("--Xfork-choice-equivocating-indices-enabled=false")
+            .eth2NetworkConfiguration();
+    assertThat(networkConfig.isEquivocatingIndicesEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldEnableProposerBoost() {
+    final Eth2NetworkConfiguration networkConfig =
+        getTekuConfigurationFromArguments("--Xfork-choice-proposer-boost-enabled")
+            .eth2NetworkConfiguration();
+    assertThat(networkConfig.isProposerBoostEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisableProposerBoost() {
+    final Eth2NetworkConfiguration networkConfig =
+        getTekuConfigurationFromArguments("--Xfork-choice-proposer-boost-enabled=false")
+            .eth2NetworkConfiguration();
+    assertThat(networkConfig.isProposerBoostEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldEnableForkChoiceBeforeProposing() {
+    final Eth2NetworkConfiguration networkConfig =
+        getTekuConfigurationFromArguments("--Xfork-choice-before-proposing-enabled")
+            .eth2NetworkConfiguration();
+    assertThat(networkConfig.isForkChoiceBeforeProposingEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisableForkChoiceBeforeProposing() {
+    final Eth2NetworkConfiguration networkConfig =
+        getTekuConfigurationFromArguments("--Xfork-choice-before-proposing-enabled=false")
+            .eth2NetworkConfiguration();
+    assertThat(networkConfig.isForkChoiceBeforeProposingEnabled()).isFalse();
   }
 }
