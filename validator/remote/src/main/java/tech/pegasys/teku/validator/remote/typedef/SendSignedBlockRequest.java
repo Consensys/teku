@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
-import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_NONE_TYPE_DEFINITION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 
@@ -47,7 +46,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
               apiMethod,
               Collections.emptyMap(),
               signedBeaconBlock.sszSerialize().toArray(),
-              new ResponseHandler<>(SSZ_NONE_TYPE_DEFINITION))
+              new ResponseHandler<>())
           .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
           .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
     }
@@ -57,7 +56,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             Collections.emptyMap(),
             signedBeaconBlock,
             signedBeaconBlock.getSchema().getJsonTypeDefinition(),
-            new ResponseHandler<>(SSZ_NONE_TYPE_DEFINITION))
+            new ResponseHandler<>())
         .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }

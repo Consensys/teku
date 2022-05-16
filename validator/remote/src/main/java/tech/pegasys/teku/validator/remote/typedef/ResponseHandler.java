@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.io.IOException;
@@ -31,12 +32,21 @@ public class ResponseHandler<TObject> {
   private static final Logger LOG = LogManager.getLogger();
   private final Int2ObjectMap<ResponseHandler.Handler<TObject>> handlers =
       new Int2ObjectOpenHashMap<>();
-  private final DeserializableTypeDefinition<TObject> typeDefinition;
+  private final Optional<DeserializableTypeDefinition<TObject>> maybeTypeDefinition;
 
-  public ResponseHandler(final DeserializableTypeDefinition<TObject> typeDefinition) {
-    this.typeDefinition = typeDefinition;
+  public ResponseHandler(
+      final Optional<DeserializableTypeDefinition<TObject>> maybeTypeDefinition) {
+    this.maybeTypeDefinition = maybeTypeDefinition;
     withHandler(SC_OK, this::defaultOkHandler);
     withHandler(SC_ACCEPTED, this::noValueHandler);
+  }
+
+  public ResponseHandler(final DeserializableTypeDefinition<TObject> typeDefinition) {
+    this(Optional.of(typeDefinition));
+  }
+
+  public ResponseHandler() {
+    this(Optional.empty());
   }
 
   public ResponseHandler<TObject> withHandler(
@@ -47,8 +57,15 @@ public class ResponseHandler<TObject> {
 
   private Optional<TObject> defaultOkHandler(final Request request, final Response response)
       throws IOException {
-
-    return Optional.ofNullable(JsonUtil.parse(response.body().string(), typeDefinition));
+    if (maybeTypeDefinition.isPresent()) {
+      try {
+        return Optional.ofNullable(
+            JsonUtil.parse(response.body().string(), maybeTypeDefinition.get()));
+      } catch (JsonProcessingException e) {
+        LOG.debug("Failed to decode response body", e);
+      }
+    }
+    return Optional.empty();
   }
 
   public Optional<TObject> handleResponse(final Request request, final Response response)
