@@ -259,14 +259,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
     return sendRequest(
-        () -> {
-          final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
-              new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
-
-          return apiClient
-              .createUnsignedBlock(slot, schemaBLSSignature, graffiti, blinded)
-              .map(block -> block.asInternalBeaconBlock(spec));
-        });
+        () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
   }
 
   @Override
