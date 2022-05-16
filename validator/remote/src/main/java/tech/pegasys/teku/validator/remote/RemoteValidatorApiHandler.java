@@ -72,6 +72,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
@@ -83,25 +84,23 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
   private final SchemaObjectProvider schemaObjectProvider;
+  private final OkHttpValidatorTypeDefClient typeDefClient;
 
   public RemoteValidatorApiHandler(
-      final Spec spec, final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
+      final Spec spec,
+      final ValidatorRestApiClient apiClient,
+      final OkHttpValidatorTypeDefClient typeDefClient,
+      final AsyncRunner asyncRunner) {
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
+    this.typeDefClient = typeDefClient;
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
   }
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
-    return sendRequest(
-        () ->
-            apiClient
-                .getGenesis()
-                .map(
-                    response ->
-                        new GenesisData(
-                            response.data.genesisTime, response.data.genesisValidatorsRoot)));
+    return sendRequest(typeDefClient::getGenesis);
   }
 
   @Override
@@ -260,14 +259,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
     return sendRequest(
-        () -> {
-          final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
-              new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
-
-          return apiClient
-              .createUnsignedBlock(slot, schemaBLSSignature, graffiti, blinded)
-              .map(block -> block.asInternalBeaconBlock(spec));
-        });
+        () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
   }
 
   @Override

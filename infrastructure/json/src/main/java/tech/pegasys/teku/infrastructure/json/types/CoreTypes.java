@@ -77,11 +77,18 @@ public class CoreTypes {
 
   public static final StringValueTypeDefinition<Integer> INTEGER_TYPE = new IntegerTypeDefinition();
 
-  public static final SerializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(HttpErrorResponse.class)
+  public static final DeserializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
+      DeserializableTypeDefinition.object(HttpErrorResponse.class, HttpErrorResponse.Builder.class)
           .name("HttpErrorResponse")
-          .withField("code", INTEGER_TYPE, HttpErrorResponse::getCode)
-          .withField("message", STRING_TYPE, HttpErrorResponse::getMessage)
+          .initializer(HttpErrorResponse::builder)
+          .finisher(HttpErrorResponse.Builder::build)
+          .withField(
+              "code", INTEGER_TYPE, HttpErrorResponse::getCode, HttpErrorResponse.Builder::code)
+          .withField(
+              "message",
+              STRING_TYPE,
+              HttpErrorResponse::getMessage,
+              HttpErrorResponse.Builder::message)
           .build();
 
   public static DeserializableTypeDefinition<String> string(final String description) {
