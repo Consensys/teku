@@ -17,10 +17,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -42,15 +39,16 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposersDataManager {
   private static final Logger LOG = LogManager.getLogger();
-  private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
+  private static final long PROPOSER_PREPARATION_EXPIRATION_EPOCHS = 2;
+  private static final long VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS = 2;
 
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
   private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
       new ConcurrentHashMap<>();
-  private final Map<UInt64, SignedValidatorRegistrationV1>
-      validatorRegistrationInfoByValidatorIndex = new ConcurrentHashMap<>();
+  private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
+      new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
   public ProposersDataManager(
@@ -67,19 +65,12 @@ public class ProposersDataManager {
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     // Remove expired validators
-    final Iterator<Entry<UInt64, PreparedProposerInfo>> iterator =
-        preparedProposerInfoByValidatorIndex.entrySet().iterator();
-    while (iterator.hasNext()) {
-      final Entry<UInt64, PreparedProposerInfo> entry = iterator.next();
-      if (entry.getValue().hasExpired(currentSlot)) {
-        validatorRegistrationInfoByValidatorIndex.remove(entry.getKey());
-        iterator.remove();
-      }
-    }
+    preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
 
     // Update validators
     final UInt64 expirySlot =
-        currentSlot.plus(spec.getSlotsPerEpoch(currentSlot) * MAX_PROPOSER_SEEN_EPOCHS);
+        currentSlot.plus(
+            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
     for (BeaconPreparableProposer proposer : preparedProposers) {
       preparedProposerInfoByValidatorIndex.put(
           proposer.getValidatorIndex(),
@@ -88,7 +79,18 @@ public class ProposersDataManager {
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
-      final Collection<SignedValidatorRegistrationV1> validatorRegistrations) {
+      final Collection<SignedValidatorRegistrationV1> validatorRegistrations,
+      final UInt64 currentSlot) {
+    // Remove expired validators
+    validatorRegistrationInfoByValidatorIndex
+        .values()
+        .removeIf(info -> info.hasExpired(currentSlot));
+
+    // Update validators
+    final UInt64 expirySlot =
+        currentSlot.plus(
+            spec.getSlotsPerEpoch(currentSlot) * VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS);
+
     return recentChainData
         .getBestState()
         .orElseThrow()
@@ -102,7 +104,9 @@ public class ProposersDataManager {
                             .ifPresentOrElse(
                                 index ->
                                     validatorRegistrationInfoByValidatorIndex.put(
-                                        UInt64.valueOf(index), validatorRegistration),
+                                        UInt64.valueOf(index),
+                                        new RegisteredValidatorInfo(
+                                            expirySlot, validatorRegistration)),
                                 () ->
                                     LOG.warn(
                                         "validator public key not found: {}",
@@ -156,7 +160,8 @@ public class ProposersDataManager {
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
     final Optional<SignedValidatorRegistrationV1> validatorRegistration =
-        Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex));
+        Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
+            .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
     return Optional.of(
         new PayloadBuildingAttributes(
             timestamp, random, getFeeRecipient(proposerInfo, blockSlot), validatorRegistration));
@@ -166,7 +171,7 @@ public class ProposersDataManager {
   private Eth1Address getFeeRecipient(
       final PreparedProposerInfo preparedProposerInfo, final UInt64 blockSlot) {
     if (preparedProposerInfo != null) {
-      return preparedProposerInfo.feeRecipient;
+      return preparedProposerInfo.getFeeRecipient();
     }
     if (proposerDefaultFeeRecipient.isPresent()) {
       VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
@@ -190,18 +195,58 @@ public class ProposersDataManager {
     }
   }
 
-  public List<Map<String, Object>> getData() {
-    return preparedProposerInfoByValidatorIndex.entrySet().stream()
-        .map(
-            proposerInfoEntry ->
-                ImmutableMap.<String, Object>builder()
-                    // changing the following attributes require a change to
-                    // tech.pegasys.teku.api.response.v1.teku.ProposerInfoSchema
-                    .put("proposer_index", proposerInfoEntry.getKey())
-                    .put("fee_recipient", proposerInfoEntry.getValue().feeRecipient)
-                    .put("expiry_slot", proposerInfoEntry.getValue().expirySlot)
-                    .build())
-        .collect(Collectors.toList());
+  public Map<String, Object> getData() {
+    return ImmutableMap.<String, Object>builder()
+        // changing the following attributes require a change to
+        // tech.pegasys.teku.api.response.v1.teku.ProposerDataSchema
+        .put(
+            "prepared_proposers",
+            preparedProposerInfoByValidatorIndex.entrySet().stream()
+                .map(
+                    proposerInfoEntry ->
+                        ImmutableMap.<String, Object>builder()
+                            // changing the following attributes require a change to
+                            // tech.pegasys.teku.api.response.v1.teku.PreparedProposerInfoSchema
+                            .put("proposer_index", proposerInfoEntry.getKey())
+                            .put("fee_recipient", proposerInfoEntry.getValue().getFeeRecipient())
+                            .put("expiry_slot", proposerInfoEntry.getValue().getExpirySlot())
+                            .build())
+                .collect(Collectors.toList()))
+        .put(
+            "registered_validators",
+            validatorRegistrationInfoByValidatorIndex.entrySet().stream()
+                .map(
+                    registeredValidatorInfoEntry ->
+                        ImmutableMap.<String, Object>builder()
+                            // changing the following attributes require a change to
+                            // tech.pegasys.teku.api.response.v1.teku.RegisteredValidatorInfoSchema
+                            .put("proposer_index", registeredValidatorInfoEntry.getKey())
+                            .put(
+                                "fee_recipient",
+                                registeredValidatorInfoEntry
+                                    .getValue()
+                                    .getSignedValidatorRegistration()
+                                    .getMessage()
+                                    .getFeeRecipient())
+                            .put(
+                                "gas_target",
+                                registeredValidatorInfoEntry
+                                    .getValue()
+                                    .getSignedValidatorRegistration()
+                                    .getMessage()
+                                    .getGasTarget())
+                            .put(
+                                "timestamp",
+                                registeredValidatorInfoEntry
+                                    .getValue()
+                                    .getSignedValidatorRegistration()
+                                    .getMessage()
+                                    .getTimestamp())
+                            .put(
+                                "expiry_slot",
+                                registeredValidatorInfoEntry.getValue().getExpirySlot())
+                            .build()))
+        .build();
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {

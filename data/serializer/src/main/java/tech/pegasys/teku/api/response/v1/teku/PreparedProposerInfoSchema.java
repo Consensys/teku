@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
-public class ProposerInfoSchema {
+public class PreparedProposerInfoSchema {
 
   @Schema(type = "string", format = "uint64")
   @JsonProperty("proposer_index")

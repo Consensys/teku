@@ -184,8 +184,8 @@ public class NodeDataProvider {
             });
   }
 
-  public List<Map<String, Object>> getPreparedBeaconProposers() {
-    return proposersDataManager.map(ProposersDataManager::getData).orElse(List.of());
+  public Map<String, Object> getProposersData() {
+    return proposersDataManager.map(ProposersDataManager::getData).orElse(Map.of());
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {

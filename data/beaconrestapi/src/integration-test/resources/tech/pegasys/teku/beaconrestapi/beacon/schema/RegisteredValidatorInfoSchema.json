@@ -1,0 +1,27 @@
+{
+  "type" : "object",
+  "properties" : {
+    "proposer_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "fee_recipient" : {
+      "pattern" : "^0x[a-fA-F0-9]{40}$",
+      "type" : "string",
+      "description" : "Bytes20 hexadecimal",
+      "format" : "byte"
+    },
+    "gas_target" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "expiry_slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    }
+  }
+}

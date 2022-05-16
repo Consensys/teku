@@ -14,17 +14,18 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 
-class PreparedProposerInfo extends ExpiringInfo {
-  private final Eth1Address feeRecipient;
+class RegisteredValidatorInfo extends ExpiringInfo {
+  private final SignedValidatorRegistrationV1 signedValidatorRegistration;
 
-  public PreparedProposerInfo(UInt64 expirySlot, Eth1Address feeRecipient) {
+  public RegisteredValidatorInfo(
+      final UInt64 expirySlot, final SignedValidatorRegistrationV1 signedValidatorRegistration) {
     super(expirySlot);
-    this.feeRecipient = feeRecipient;
+    this.signedValidatorRegistration = signedValidatorRegistration;
   }
 
-  public Eth1Address getFeeRecipient() {
-    return feeRecipient;
+  public SignedValidatorRegistrationV1 getSignedValidatorRegistration() {
+    return signedValidatorRegistration;
   }
 }
