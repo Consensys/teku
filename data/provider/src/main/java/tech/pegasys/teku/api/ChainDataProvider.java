@@ -39,11 +39,11 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -474,12 +474,12 @@ public class ChainDataProvider {
     return true;
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> getStateSyncCommittees(
+  public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> getStateSyncCommittees(
       final String stateIdParam, final Optional<UInt64> epoch) {
     return fromState(stateIdParam, state -> getSyncCommitteesFromState(state, epoch));
   }
 
-  private StateSyncCommittees getSyncCommitteesFromState(
+  private StateSyncCommitteesData getSyncCommitteesFromState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final Optional<UInt64> epochQueryParam) {
     final UInt64 epoch = epochQueryParam.orElse(spec.computeEpochAtSlot(state.getSlot()));
@@ -492,7 +492,7 @@ public class ChainDataProvider {
     //   indicating the state is pre-altair, and in this case, an empty committees list can be
     // returned
     if (maybeCommittee.isEmpty()) {
-      return new StateSyncCommittees(List.of(), List.of());
+      return new StateSyncCommitteesData(List.of(), List.of());
     }
 
     final SyncCommittee committee = maybeCommittee.get();
@@ -502,7 +502,7 @@ public class ChainDataProvider {
             .map(UInt64::valueOf)
             .collect(toList());
 
-    return new StateSyncCommittees(
+    return new StateSyncCommitteesData(
         committeeIndices,
         Lists.partition(
             committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));

@@ -1,0 +1,37 @@
+{
+  "title" : "GetEpochSyncCommitteesResponse",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "object",
+      "required" : [ "validators", "validator_aggregates" ],
+      "properties" : {
+        "validators" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          }
+        },
+        "validator_aggregates" : {
+          "type" : "array",
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "description" : "unsigned 64 bit integer",
+              "example" : "1",
+              "format" : "uint64"
+            }
+          }
+        }
+      }
+    }
+  }
+}
