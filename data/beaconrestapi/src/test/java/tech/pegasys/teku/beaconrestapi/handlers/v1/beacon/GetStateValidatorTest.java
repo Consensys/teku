@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -106,10 +107,13 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChai
   @Test
   void metadata_shouldHandle200() throws IOException {
     final String data = getResponseStringFromMetadata(handler, HttpStatusCodes.SC_OK, responseData);
-    String expected =
+    final Validator validator = responseData.getData().getValidator();
+    String resource =
         Resources.toString(
             Resources.getResource(GetStateValidatorTest.class, "validatorState.json"),
             StandardCharsets.UTF_8);
+    String expected =
+        String.format(resource, validator.getPublicKey(), validator.getWithdrawalCredentials());
 
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
