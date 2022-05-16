@@ -31,12 +31,17 @@ public class OkHttpValidatorTypeDefClient {
   private final HttpUrl baseEndpoint;
 
   private final Spec spec;
+  private final boolean preferSszBlockEncoding;
 
   public OkHttpValidatorTypeDefClient(
-      final OkHttpClient okHttpClient, final HttpUrl baseEndpoint, final Spec spec) {
+      final OkHttpClient okHttpClient,
+      final HttpUrl baseEndpoint,
+      final Spec spec,
+      final boolean preferSszBlockEncoding) {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
     this.spec = spec;
+    this.preferSszBlockEncoding = preferSszBlockEncoding;
   }
 
   public Optional<GenesisData> getGenesis() {
@@ -50,7 +55,8 @@ public class OkHttpValidatorTypeDefClient {
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
     final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(baseEndpoint, okHttpClient, spec, slot, blinded);
+        new CreateBlockRequest(
+            baseEndpoint, okHttpClient, spec, slot, blinded, preferSszBlockEncoding);
     return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
   }
 }
