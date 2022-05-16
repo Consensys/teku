@@ -19,7 +19,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SE
 import java.util.Collections;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
