@@ -14,10 +14,14 @@
 package tech.pegasys.teku.api.response.v1.teku;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES20;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_PUBKEY;
 import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_PUBKEY;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -27,6 +31,13 @@ public class RegisteredValidatorInfoSchema {
   @Schema(type = "string", format = "uint64")
   @JsonProperty("proposer_index")
   UInt64 proposer_index;
+
+  @Schema(
+      type = "string",
+      pattern = PATTERN_PUBKEY,
+      example = EXAMPLE_PUBKEY,
+      description = DESCRIPTION_BYTES48)
+  BLSPubKey pubkey;
 
   @Schema(
       type = "string",

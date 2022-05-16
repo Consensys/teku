@@ -222,6 +222,13 @@ public class ProposersDataManager {
                             // tech.pegasys.teku.api.response.v1.teku.RegisteredValidatorInfoSchema
                             .put("proposer_index", registeredValidatorInfoEntry.getKey())
                             .put(
+                                "pubkey",
+                                registeredValidatorInfoEntry
+                                    .getValue()
+                                    .getSignedValidatorRegistration()
+                                    .getMessage()
+                                    .getPublicKey())
+                            .put(
                                 "fee_recipient",
                                 registeredValidatorInfoEntry
                                     .getValue()
