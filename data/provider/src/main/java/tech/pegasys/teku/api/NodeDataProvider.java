@@ -103,10 +103,9 @@ public class NodeDataProvider {
     return proposerSlashingPool.getAll().stream().collect(Collectors.toList());
   }
 
-  public List<SignedVoluntaryExit> getVoluntaryExits() {
-    return voluntaryExitPool.getAll().stream()
-        .map(SignedVoluntaryExit::new)
-        .collect(Collectors.toList());
+  public List<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
+      getVoluntaryExits() {
+    return new ArrayList<>(voluntaryExitPool.getAll());
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
