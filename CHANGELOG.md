@@ -22,6 +22,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - Optimised BLS batch validation.
 - Optimised message ID calculation in jvm-libp2p.
 - Reduced memory requirements when sending events on the REST API to many clients.
-- Gossip scoring is enabled by default. It can be disabled with --Xp2p-gossip-scoring-enabled=false
 
 ### Bug Fixes

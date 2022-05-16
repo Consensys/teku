@@ -31,7 +31,7 @@ public class P2PConfig {
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
-  public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
+  public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
   public static final boolean DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES = true;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS = 2;
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
