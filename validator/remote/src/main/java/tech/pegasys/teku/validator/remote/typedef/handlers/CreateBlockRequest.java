@@ -33,9 +33,9 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
@@ -49,7 +49,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
   public CreateBlockRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final SchemaDefinitionCache schemaDefinitionCache,
+      final Spec spec,
       final UInt64 slot,
       final boolean blinded) {
     super(baseEndpoint, okHttpClient);
@@ -57,11 +57,14 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
     this.slot = slot;
     this.unsignedBlockDefinition =
         blinded
-            ? schemaDefinitionCache
-                .atSlot(slot)
+            ? spec.atSlot(slot)
+                .getSchemaDefinitions()
                 .getBlindedBeaconBlockSchema()
                 .getJsonTypeDefinition()
-            : schemaDefinitionCache.atSlot(slot).getBeaconBlockSchema().getJsonTypeDefinition();
+            : spec.atSlot(slot)
+                .getSchemaDefinitions()
+                .getBeaconBlockSchema()
+                .getJsonTypeDefinition();
     this.getBlockResponseDefinition =
         DeserializableTypeDefinition.object(GetBlockResponse.class)
             .initializer(GetBlockResponse::new)

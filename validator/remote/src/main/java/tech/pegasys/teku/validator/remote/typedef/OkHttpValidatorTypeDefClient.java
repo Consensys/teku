@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 
@@ -31,13 +30,13 @@ public class OkHttpValidatorTypeDefClient {
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
 
-  private final SchemaDefinitionCache schemaDefinitionCache;
+  private final Spec spec;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient, final HttpUrl baseEndpoint, final Spec spec) {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
-    this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    this.spec = spec;
   }
 
   public Optional<GenesisData> getGenesis() {
@@ -51,7 +50,7 @@ public class OkHttpValidatorTypeDefClient {
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
     final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(baseEndpoint, okHttpClient, schemaDefinitionCache, slot, blinded);
+        new CreateBlockRequest(baseEndpoint, okHttpClient, spec, slot, blinded);
     return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
   }
 }
