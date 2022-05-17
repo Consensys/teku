@@ -71,10 +71,11 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
       final UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
 
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
-    final SchemaDefinitionsBellatrix schemaDefinitions = getSchemaDefinitionsBellatrix(milestone);
+    final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
+        getSchemaDefinitionsBellatrix(milestone);
 
-    DeserializableTypeDefinition<SignedValidatorRegistrationV1> requestType =
-        schemaDefinitions.getSignedValidatorRegistrationSchema().getJsonTypeDefinition();
+    final DeserializableTypeDefinition<SignedValidatorRegistrationV1> requestType =
+        schemaDefinitionsBellatrix.getSignedValidatorRegistrationSchema().getJsonTypeDefinition();
     return restClient
         .postAsync(
             BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
@@ -99,10 +100,10 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             cachedBuilderApiSignedBuilderBidV1ResponseType.computeIfAbsent(
                 milestone,
                 __ -> {
-                  final SchemaDefinitionsBellatrix schemaDefinitions =
+                  final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
                       getSchemaDefinitionsBellatrix(milestone);
                   final SignedBuilderBidV1Schema signedBuilderBidV1Schema =
-                      schemaDefinitions.getSignedBuilderBidV1Schema();
+                      schemaDefinitionsBellatrix.getSignedBuilderBidV1Schema();
                   return BuilderApiResponse.createTypeDefinition(
                       signedBuilderBidV1Schema.getJsonTypeDefinition());
                 });
@@ -122,10 +123,11 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
     final UInt64 blockSlot = signedBlindedBeaconBlock.getSlot();
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(blockSlot);
 
-    final SchemaDefinitionsBellatrix schemaDefinitions = getSchemaDefinitionsBellatrix(milestone);
+    final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
+        getSchemaDefinitionsBellatrix(milestone);
 
     final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
-        schemaDefinitions.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
+        schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
 
     final DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>
         responseTypeDefinition =
@@ -133,7 +135,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
                 milestone,
                 __ -> {
                   final ExecutionPayloadSchema executionPayloadSchema =
-                      schemaDefinitions.getExecutionPayloadSchema();
+                      schemaDefinitionsBellatrix.getExecutionPayloadSchema();
                   return BuilderApiResponse.createTypeDefinition(
                       executionPayloadSchema.getJsonTypeDefinition());
                 });
