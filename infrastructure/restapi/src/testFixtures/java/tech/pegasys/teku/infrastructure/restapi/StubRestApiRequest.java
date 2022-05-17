@@ -40,6 +40,8 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> queryParameters = new HashMap<>();
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
 
+  private Optional<String> contentTypes = Optional.of("application/json");
+
   public boolean responseCodeSet() {
     return responseCode != CODE_NOT_SET;
   }
@@ -96,6 +98,15 @@ public class StubRestApiRequest implements RestApiRequest {
     assertThat(this.responseObject).isNull();
     responseObject = new HttpErrorResponse(statusCode, message);
     this.responseCode = statusCode;
+  }
+
+  @Override
+  public Optional<String> getContentTypes() {
+    return contentTypes;
+  }
+
+  public void setContentTypes(final Optional<String> contentTypes) {
+    this.contentTypes = contentTypes;
   }
 
   @Override

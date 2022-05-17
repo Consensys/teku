@@ -29,6 +29,8 @@ public interface RestApiRequest {
 
   void respondError(int statusCode, String message) throws JsonProcessingException;
 
+  Optional<String> getContentTypes();
+
   void respondWithCode(int statusCode);
 
   <T> T getPathParameter(ParameterMetadata<T> parameterMetadata);

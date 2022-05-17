@@ -86,6 +86,12 @@ public class JavalinRestApiRequest implements RestApiRequest {
     respond(statusCode, new HttpErrorResponse(statusCode, message));
   }
 
+  @Override
+  public Optional<String> getContentTypes() {
+    final String contentType = context.contentType();
+    return Optional.ofNullable(contentType);
+  }
+
   private byte[] respond(final int statusCode, final Optional<Object> response)
       throws JsonProcessingException {
     context.status(statusCode);
