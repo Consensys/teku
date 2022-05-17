@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,19 +27,19 @@ import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import org.skyscreamer.jsonassert.JSONAssert;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -54,6 +55,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
     milestone = SpecMilestone.BELLATRIX,
     network = {Eth2Network.MAINNET})
 class RestExecutionBuilderClientTest {
+
+  private static final JsonProvider JSON_PROVIDER = new JsonProvider();
 
   private static final Duration WAIT_FOR_CALL_COMPLETION = Duration.ofSeconds(10);
 
@@ -300,18 +303,22 @@ class RestExecutionBuilderClientTest {
     verifyRequest("POST", apiPath, Optional.of(requestBody));
   }
 
-  private <T> void verifyRequest(String method, String apiPath, Optional<String> requestBody) {
+  private <T> void verifyRequest(
+      String method, String apiPath, Optional<String> expectedRequestBody) {
     try {
       RecordedRequest request = mockWebServer.takeRequest();
       assertThat(request.getMethod()).isEqualTo(method);
       assertThat(request.getPath()).isEqualTo(apiPath);
-      if (requestBody.isEmpty()) {
-        assertThat(request.getBody().size()).isZero();
+      Buffer actualRequestBody = request.getBody();
+      if (expectedRequestBody.isEmpty()) {
+        assertThat(actualRequestBody.size()).isZero();
       } else {
-        assertThat(request.getBody().size()).isNotZero();
-        JSONAssert.assertEquals(requestBody.get(), request.getBody().readUtf8(), true);
+        assertThat(actualRequestBody.size()).isNotZero();
+        ObjectMapper jsonMapper = JSON_PROVIDER.getObjectMapper();
+        assertThat(jsonMapper.readTree(expectedRequestBody.get()))
+            .isEqualTo(jsonMapper.readTree(actualRequestBody.readUtf8()));
       }
-    } catch (InterruptedException | JSONException ex) {
+    } catch (InterruptedException | JsonProcessingException ex) {
       Assertions.fail(ex);
     }
   }
