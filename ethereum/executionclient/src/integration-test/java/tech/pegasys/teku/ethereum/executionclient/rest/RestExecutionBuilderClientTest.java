@@ -205,7 +205,7 @@ class RestExecutionBuilderClientTest {
             response -> {
               assertThat(response.isSuccess()).isTrue();
               SignedBuilderBidV1 responsePayload = response.getPayload();
-              verifyExecutionPayloadHeaderResponse(responsePayload);
+              verifySignedBuilderBidV1(responsePayload);
             });
 
     verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
@@ -321,7 +321,7 @@ class RestExecutionBuilderClientTest {
     }
   }
 
-  private void verifyExecutionPayloadHeaderResponse(SignedBuilderBidV1 response) {
+  private void verifySignedBuilderBidV1(SignedBuilderBidV1 response) {
     assertThat(response).isNotNull();
     BLSSignature signature = response.getSignature();
     assertThat(signature.toString())
