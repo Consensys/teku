@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 
 public class StateValidatorsUtil {
 
