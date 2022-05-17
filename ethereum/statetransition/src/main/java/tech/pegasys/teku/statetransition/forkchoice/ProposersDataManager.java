@@ -88,8 +88,7 @@ public class ProposersDataManager {
           new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient()));
     }
 
-    subscribers.deliver(
-        ProposersDataManagerSubscriber::onPreparedProposersUpdated, Optional.empty());
+    subscribers.deliver(ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
@@ -125,9 +124,7 @@ public class ProposersDataManager {
                                   LOG.warn(
                                       "validator public key not found: {}",
                                       validatorRegistration.getMessage().getPublicKey())));
-              subscribers.deliver(
-                  ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated,
-                  Optional.empty());
+              subscribers.deliver(ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
             });
   }
 
@@ -280,8 +277,8 @@ public class ProposersDataManager {
   }
 
   public static interface ProposersDataManagerSubscriber {
-    void onPreparedProposersUpdated(Optional<Void> emptyEvent);
+    void onPreparedProposersUpdated();
 
-    void onValidatorRegistrationsUpdated(Optional<Void> emptyEvent);
+    void onValidatorRegistrationsUpdated();
   }
 }

@@ -101,12 +101,12 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   @Override
-  public void onPreparedProposersUpdated(Optional<Void> emptyEvent) {
+  public void onPreparedProposersUpdated() {
     eventThread.execute(this::internalUpdatePreparableProposers);
   }
 
   @Override
-  public void onValidatorRegistrationsUpdated(Optional<Void> emptyEvent) {}
+  public void onValidatorRegistrationsUpdated() {}
 
   private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
