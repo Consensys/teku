@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -161,7 +162,7 @@ public class Web3JExecutionBuilderClientTest {
             .addHeader("Content-Type", "application/json"));
 
     final UInt64 slotRequest = dataStructureUtil.randomUInt64();
-    final Bytes48 pubKeyRequest = dataStructureUtil.randomPublicKeyBytes();
+    final BLSPublicKey pubKeyRequest = dataStructureUtil.randomPublicKey();
     final Bytes32 parentHashRequest = dataStructureUtil.randomBytes32();
 
     SafeFuture<Response<SignedMessage<BuilderBidV1>>> futureResponseExecutionHeader =
@@ -179,7 +180,8 @@ public class Web3JExecutionBuilderClientTest {
     verifyJsonRpcMethodCall(requestBodyJsonNode, "builder_getHeaderV1");
 
     assertThat(slotRequest).isEqualTo(UInt64.valueOf(slot));
-    assertThat(pubKeyRequest).isEqualTo(Bytes48.fromHexString(pubKey));
+    assertThat(pubKeyRequest)
+        .isEqualTo(BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(pubKey)));
     assertThat(parentHashRequest).isEqualTo(Bytes32.fromHexString(parentHash));
 
     assertThat(futureResponseExecutionHeader.join())

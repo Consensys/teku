@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,24 +35,24 @@ public class ForkChoiceUpdateData {
           Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
 
   private final ForkChoiceState forkChoiceState;
-  private final Optional<PayloadAttributes> payloadAttributes;
+  private final Optional<PayloadBuildingAttributes> payloadBuildingAttributes;
   private final Optional<Bytes32> terminalBlockHash;
   private final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext =
       new SafeFuture<>();
   private boolean sent = false;
 
-  private long payloadAttributesSequenceProducer = 0;
-  private long payloadAttributesSequenceConsumer = -1;
+  private long payloadBuildingAttributesSequenceProducer = 0;
+  private long payloadBuildingAttributesSequenceConsumer = -1;
 
   public ForkChoiceUpdateData() {
     this.forkChoiceState = DEFAULT_FORK_CHOICE_STATE;
-    this.payloadAttributes = Optional.empty();
+    this.payloadBuildingAttributes = Optional.empty();
     this.terminalBlockHash = Optional.empty();
   }
 
   public ForkChoiceUpdateData(
       final ForkChoiceState forkChoiceState,
-      final Optional<PayloadAttributes> payloadAttributes,
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes,
       final Optional<Bytes32> terminalBlockHash) {
     if (terminalBlockHash.isPresent() && forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       this.forkChoiceState =
@@ -66,7 +66,7 @@ public class ForkChoiceUpdateData {
     } else {
       this.forkChoiceState = forkChoiceState;
     }
-    this.payloadAttributes = payloadAttributes;
+    this.payloadBuildingAttributes = payloadBuildingAttributes;
     this.terminalBlockHash = terminalBlockHash;
   }
 
@@ -77,12 +77,12 @@ public class ForkChoiceUpdateData {
     return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
   }
 
-  public ForkChoiceUpdateData withPayloadAttributes(
-      final Optional<PayloadAttributes> payloadAttributes) {
-    if (this.payloadAttributes.equals(payloadAttributes)) {
+  public ForkChoiceUpdateData withPayloadBuildingAttributes(
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+    if (this.payloadBuildingAttributes.equals(payloadBuildingAttributes)) {
       return this;
     }
-    return new ForkChoiceUpdateData(forkChoiceState, payloadAttributes, terminalBlockHash);
+    return new ForkChoiceUpdateData(forkChoiceState, payloadBuildingAttributes, terminalBlockHash);
   }
 
   public ForkChoiceUpdateData withTerminalBlockHash(final Bytes32 terminalBlockHash) {
@@ -91,40 +91,41 @@ public class ForkChoiceUpdateData {
       return this;
     }
     return new ForkChoiceUpdateData(
-        forkChoiceState, payloadAttributes, Optional.of(terminalBlockHash));
+        forkChoiceState, payloadBuildingAttributes, Optional.of(terminalBlockHash));
   }
 
-  public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadAttributesAsync(
-      final Supplier<SafeFuture<Optional<PayloadAttributes>>> payloadAttributesCalculator,
+  public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadBuildingAttributesAsync(
+      final Supplier<SafeFuture<Optional<PayloadBuildingAttributes>>> payloadAttributesCalculator,
       final Executor executor) {
     // we want to preserve ordering in payload calculation,
     // so we first generate a sequence for each calculation request
-    final long sequenceNumber = payloadAttributesSequenceProducer++;
+    final long sequenceNumber = payloadBuildingAttributesSequenceProducer++;
 
     return payloadAttributesCalculator
         .get()
         .thenApplyAsync(
-            newPayloadAttributes -> {
+            newPayloadBuildingAttributes -> {
               // to preserve ordering we make sure we haven't already calculated a payload that has
               // been requested later than the current one
-              if (sequenceNumber <= payloadAttributesSequenceConsumer) {
-                LOG.warn("Ignoring calculated payload attributes since it violates ordering");
+              if (sequenceNumber <= payloadBuildingAttributesSequenceConsumer) {
+                LOG.warn(
+                    "Ignoring calculated payload building attributes since it violates ordering");
                 return Optional.empty();
               }
-              payloadAttributesSequenceConsumer = sequenceNumber;
-              return Optional.of(this.withPayloadAttributes(newPayloadAttributes));
+              payloadBuildingAttributesSequenceConsumer = sequenceNumber;
+              return Optional.of(this.withPayloadBuildingAttributes(newPayloadBuildingAttributes));
             },
             executor);
   }
 
   public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {
-    if (payloadAttributes.isEmpty()) {
+    if (payloadBuildingAttributes.isEmpty()) {
       LOG.debug("isPayloadIdSuitable - payloadAttributes.isEmpty returning false");
       // not producing a block
       return false;
     }
 
-    final PayloadAttributes attributes = this.payloadAttributes.get();
+    final PayloadBuildingAttributes attributes = this.payloadBuildingAttributes.get();
     if (!attributes.getTimestamp().equals(timestamp)) {
       LOG.debug("isPayloadIdSuitable - wrong timestamp");
       // wrong timestamp
@@ -165,9 +166,10 @@ public class ForkChoiceUpdateData {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    LOG.debug("send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadAttributes);
+    LOG.debug(
+        "send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadBuildingAttributes);
     final SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
-        executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadAttributes);
+        executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
 
     forkChoiceUpdatedResult
         .thenApply(ForkChoiceUpdatedResult::getPayloadId)
@@ -177,12 +179,18 @@ public class ForkChoiceUpdateData {
                     "send - forkChoiceUpdated returned payload id {} for {}, {}",
                     payloadId,
                     forkChoiceState,
-                    payloadAttributes))
+                    payloadBuildingAttributes))
         .thenApply(
             maybePayloadId ->
                 maybePayloadId.map(
                     payloadId ->
-                        new ExecutionPayloadContext(payloadId, forkChoiceState, payloadAttributes)))
+                        new ExecutionPayloadContext(
+                            payloadId,
+                            forkChoiceState,
+
+                            // it is safe to use orElseThrow() since it should be impossible to
+                            // receive a payloadId without having previously sent payloadAttributes
+                            payloadBuildingAttributes.orElseThrow())))
         .propagateTo(executionPayloadContext);
 
     return forkChoiceUpdatedResult.thenApply(Optional::of);
@@ -204,9 +212,9 @@ public class ForkChoiceUpdateData {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("forkChoiceState", forkChoiceState)
-        .add("payloadAttributes", payloadAttributes)
+        .add("payloadBuildingAttributes", payloadBuildingAttributes)
         .add("terminalBlockHash", terminalBlockHash)
-        .add("payloadId", executionPayloadContext)
+        .add("executionPayloadContext", executionPayloadContext)
         .toString();
   }
 }

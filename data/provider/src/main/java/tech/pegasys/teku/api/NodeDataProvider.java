@@ -38,7 +38,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.forkchoice.PayloadAttributesCalculator;
+import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -58,7 +58,7 @@ public class NodeDataProvider {
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
   private final boolean isLivenessTrackingEnabled;
-  private final Optional<PayloadAttributesCalculator> payloadAttributesCalculator;
+  private final Optional<ProposersDataManager> proposersDataManager;
 
   public NodeDataProvider(
       final Spec spec,
@@ -74,7 +74,7 @@ public class NodeDataProvider {
       final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
-      final Optional<PayloadAttributesCalculator> payloadAttributesCalculator) {
+      final Optional<ProposersDataManager> proposersDataManager) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -85,7 +85,7 @@ public class NodeDataProvider {
     this.attestationManager = attestationManager;
     this.activeValidatorChannel = activeValidatorChannel;
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
-    this.payloadAttributesCalculator = payloadAttributesCalculator;
+    this.proposersDataManager = proposersDataManager;
   }
 
   public List<tech.pegasys.teku.spec.datastructures.operations.Attestation> getAttestations(
@@ -184,13 +184,13 @@ public class NodeDataProvider {
             });
   }
 
-  public List<Map<String, Object>> getPreparedBeaconProposers() {
-    return payloadAttributesCalculator.map(PayloadAttributesCalculator::getData).orElse(List.of());
+  public Map<String, Object> getProposersData() {
+    return proposersDataManager.map(ProposersDataManager::getData).orElse(Map.of());
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {
-    return payloadAttributesCalculator
-        .map(PayloadAttributesCalculator::isProposerDefaultFeeRecipientDefined)
+    return proposersDataManager
+        .map(ProposersDataManager::isProposerDefaultFeeRecipientDefined)
         .orElse(false);
   }
 }

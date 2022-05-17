@@ -26,7 +26,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.forkchoice.PayloadAttributesCalculator;
+import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -99,7 +99,7 @@ public class DataProvider {
     private OperationPool<ProposerSlashing> proposerSlashingPool;
     private OperationPool<SignedVoluntaryExit> voluntaryExitPool;
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
-    private Optional<PayloadAttributesCalculator> payloadAttributesCalculator = Optional.empty();
+    private Optional<ProposersDataManager> proposersDataManager = Optional.empty();
 
     private boolean isLivenessTrackingEnabled = true;
 
@@ -176,9 +176,8 @@ public class DataProvider {
       return this;
     }
 
-    public Builder payloadAttributesCalculator(
-        final Optional<PayloadAttributesCalculator> payloadAttributesCalculator) {
-      this.payloadAttributesCalculator = payloadAttributesCalculator;
+    public Builder proposersDataManager(final Optional<ProposersDataManager> proposersDataManager) {
+      this.proposersDataManager = proposersDataManager;
       return this;
     }
 
@@ -202,7 +201,7 @@ public class DataProvider {
               attestationManager,
               isLivenessTrackingEnabled,
               activeValidatorChannel,
-              payloadAttributesCalculator);
+              proposersDataManager);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
       final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);

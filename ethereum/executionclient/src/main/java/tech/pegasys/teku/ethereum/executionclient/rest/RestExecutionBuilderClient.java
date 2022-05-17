@@ -16,7 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
@@ -51,7 +51,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
-      final UInt64 slot, final Bytes48 pubKey, final Bytes32 parentHash) {
+      final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     throw new UnsupportedOperationException();
   }
 

@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.protocol.core.Request;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
@@ -71,11 +71,11 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
-      final UInt64 slot, final Bytes48 pubKey, final Bytes32 parentHash) {
+      final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     Request<?, ExecutionPayloadHeaderV1Web3jResponse> web3jRequest =
         new Request<>(
             "builder_getHeaderV1",
-            List.of(slot.toString(), pubKey.toHexString(), parentHash.toHexString()),
+            List.of(slot.toString(), pubKey.toString(), parentHash.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadHeaderV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_HEADER_TIMEOUT);

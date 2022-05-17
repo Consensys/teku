@@ -41,7 +41,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private final EventThread eventThread;
   private final ExecutionLayerChannel executionLayerChannel;
   private final RecentChainData recentChainData;
-  private final PayloadAttributesCalculator payloadAttributesCalculator;
+  private final ProposersDataManager proposersDataManager;
   private final Spec spec;
 
   private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
@@ -56,12 +56,12 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final PayloadAttributesCalculator payloadAttributesCalculator) {
+      final ProposersDataManager proposersDataManager) {
     this.eventThread = eventThread;
     this.spec = spec;
     this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
-    this.payloadAttributesCalculator = payloadAttributesCalculator;
+    this.proposersDataManager = proposersDataManager;
   }
 
   public static ForkChoiceNotifier create(
@@ -78,8 +78,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         spec,
         executionLayerChannel,
         recentChainData,
-        new PayloadAttributesCalculator(
-            spec, eventThread, recentChainData, proposerDefaultFeeRecipient));
+        new ProposersDataManager(spec, eventThread, recentChainData, proposerDefaultFeeRecipient));
   }
 
   @Override
@@ -127,8 +126,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public PayloadAttributesCalculator getPayloadAttributesCalculator() {
-    return payloadAttributesCalculator;
+  public ProposersDataManager getProposersDataManager() {
+    return proposersDataManager;
   }
 
   private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
@@ -144,8 +143,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the bellatrix fork and before Terminal Block arrival)
-   *     <p>Optional.of(payloadId) when one of the following: 1. builds on top of execution head of
-   *     parentBeaconBlockRoot 2. builds on top of the terminal block
+   *     <p>Optional.of(executionPayloadContext) when one of the following:
+   *     <p>1. builds on top of execution head of parentBeaconBlockRoot
+   *     <p>2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
@@ -177,24 +177,25 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       // to make sure that we deal with the same data when calculatePayloadAttributes asynchronously
       // returns, we save locally the current class reference.
       ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
-      return payloadAttributesCalculator
-          .calculatePayloadAttributes(blockSlot, inSync, localForkChoiceUpdateData, true)
+      return proposersDataManager
+          .calculatePayloadBuildingAttributes(blockSlot, inSync, localForkChoiceUpdateData, true)
           .thenCompose(
               newPayloadAttributes -> {
 
                 // we make the updated local data global, reverting any potential data not yet sent
                 // to EL
                 forkChoiceUpdateData =
-                    localForkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
+                    localForkChoiceUpdateData.withPayloadBuildingAttributes(newPayloadAttributes);
                 sendForkChoiceUpdated();
                 return forkChoiceUpdateData
                     .getExecutionPayloadContext()
                     .thenApply(
-                        payloadId -> {
-                          if (payloadId.isEmpty()) {
-                            throw new IllegalStateException("Unable to obtain a payloadId");
+                        executionPayloadContext -> {
+                          if (executionPayloadContext.isEmpty()) {
+                            throw new IllegalStateException(
+                                "Unable to obtain an executionPayloadContext");
                           }
-                          return payloadId;
+                          return executionPayloadContext;
                         });
               });
     }
@@ -209,7 +210,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
 
-    payloadAttributesCalculator.updateProposers(proposers, currentSlot);
+    proposersDataManager.updatePreparedProposers(proposers, currentSlot);
 
     // Update payload attributes in case we now need to propose the next block
     updatePayloadAttributes(currentSlot.plus(1));
@@ -254,9 +255,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
     forkChoiceUpdateData
-        .withPayloadAttributesAsync(
+        .withPayloadBuildingAttributesAsync(
             () ->
-                payloadAttributesCalculator.calculatePayloadAttributes(
+                proposersDataManager.calculatePayloadBuildingAttributes(
                     blockSlot, inSync, forkChoiceUpdateData, false),
             eventThread)
         .thenAccept(
