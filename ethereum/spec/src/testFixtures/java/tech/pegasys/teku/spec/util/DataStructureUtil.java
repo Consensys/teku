@@ -1130,6 +1130,10 @@ public final class DataStructureUtil {
   }
 
   public SignedValidatorRegistrationV1 randomValidatorRegistration() {
+    return randomValidatorRegistration(randomPublicKey());
+  }
+
+  public SignedValidatorRegistrationV1 randomValidatorRegistration(final BLSPublicKey publicKey) {
     SignedValidatorRegistrationV1Schema signedSchema =
         spec.getGenesisSpec()
             .getSchemaDefinitions()
@@ -1144,7 +1148,7 @@ public final class DataStructureUtil {
             .getValidatorRegistrationSchema();
 
     ValidatorRegistrationV1 validatorRegistration =
-        schema.create(randomBytes20(), randomUInt64(), randomUInt64(), randomPublicKey());
+        schema.create(randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
 
     return signedSchema.create(validatorRegistration, randomSignature());
   }

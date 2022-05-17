@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -51,6 +52,8 @@ public class ProposersDataManager {
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
+  private final Subscribers<ProposersDataManagerSubscriber> subscribers = Subscribers.create(true);
+
   public ProposersDataManager(
       final Spec spec,
       final EventThread eventThread,
@@ -60,6 +63,14 @@ public class ProposersDataManager {
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
+  }
+
+  public long subscribeToProposersDataChanges(ProposersDataManagerSubscriber subscriber) {
+    return subscribers.subscribe(subscriber);
+  }
+
+  public boolean unsubscribeToProposersDataChanges(long subscriberId) {
+    return subscribers.unsubscribe(subscriberId);
   }
 
   public void updatePreparedProposers(
@@ -76,6 +87,9 @@ public class ProposersDataManager {
           proposer.getValidatorIndex(),
           new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient()));
     }
+
+    subscribers.deliver(
+        ProposersDataManagerSubscriber::onPreparedProposersUpdated, Optional.empty());
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
@@ -96,21 +110,25 @@ public class ProposersDataManager {
         .orElseThrow()
         // TODO: call execution layer builder register validator
         .thenAccept(
-            headState ->
-                validatorRegistrations.forEach(
-                    validatorRegistration ->
-                        spec.getValidatorIndex(
-                                headState, validatorRegistration.getMessage().getPublicKey())
-                            .ifPresentOrElse(
-                                index ->
-                                    validatorRegistrationInfoByValidatorIndex.put(
-                                        UInt64.valueOf(index),
-                                        new RegisteredValidatorInfo(
-                                            expirySlot, validatorRegistration)),
-                                () ->
-                                    LOG.warn(
-                                        "validator public key not found: {}",
-                                        validatorRegistration.getMessage().getPublicKey()))));
+            headState -> {
+              validatorRegistrations.forEach(
+                  validatorRegistration ->
+                      spec.getValidatorIndex(
+                              headState, validatorRegistration.getMessage().getPublicKey())
+                          .ifPresentOrElse(
+                              index ->
+                                  validatorRegistrationInfoByValidatorIndex.put(
+                                      UInt64.valueOf(index),
+                                      new RegisteredValidatorInfo(
+                                          expirySlot, validatorRegistration)),
+                              () ->
+                                  LOG.warn(
+                                      "validator public key not found: {}",
+                                      validatorRegistration.getMessage().getPublicKey())));
+              subscribers.deliver(
+                  ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated,
+                  Optional.empty());
+            });
   }
 
   public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
@@ -259,5 +277,11 @@ public class ProposersDataManager {
 
   public boolean isProposerDefaultFeeRecipientDefined() {
     return proposerDefaultFeeRecipient.isPresent();
+  }
+
+  public static interface ProposersDataManagerSubscriber {
+    void onPreparedProposersUpdated(Optional<Void> emptyEvent);
+
+    void onValidatorRegistrationsUpdated(Optional<Void> emptyEvent);
   }
 }

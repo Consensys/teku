@@ -13,29 +13,25 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import java.util.Collection;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
+public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersDataManagerSubscriber {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
@@ -51,7 +47,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
   private boolean inSync = false; // Assume we are not in sync at startup.
 
-  ForkChoiceNotifierImpl(
+  public ForkChoiceNotifierImpl(
       final EventThread eventThread,
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
@@ -62,23 +58,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
-  }
-
-  public static ForkChoiceNotifier create(
-      final AsyncRunnerFactory asyncRunnerFactory,
-      final Spec spec,
-      final ExecutionLayerChannel executionLayerChannel,
-      final RecentChainData recentChainData,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
-    final AsyncRunnerEventThread eventThread =
-        new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
-    eventThread.start();
-    return new ForkChoiceNotifierImpl(
-        eventThread,
-        spec,
-        executionLayerChannel,
-        recentChainData,
-        new ProposersDataManager(spec, eventThread, recentChainData, proposerDefaultFeeRecipient));
+    proposersDataManager.subscribeToProposersDataChanges(this);
   }
 
   @Override
@@ -89,11 +69,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   @Override
   public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
     return subscribers.unsubscribe(subscriberId);
-  }
-
-  @Override
-  public void onUpdatePreparableProposers(final Collection<BeaconPreparableProposer> proposers) {
-    eventThread.execute(() -> internalUpdatePreparableProposers(proposers));
   }
 
   @Override
@@ -126,9 +101,12 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public ProposersDataManager getProposersDataManager() {
-    return proposersDataManager;
+  public void onPreparedProposersUpdated(Optional<Void> emptyEvent) {
+    eventThread.execute(this::internalUpdatePreparableProposers);
   }
+
+  @Override
+  public void onValidatorRegistrationsUpdated(Optional<Void> emptyEvent) {}
 
   private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
@@ -201,16 +179,13 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     }
   }
 
-  private void internalUpdatePreparableProposers(
-      final Collection<BeaconPreparableProposer> proposers) {
+  private void internalUpdatePreparableProposers() {
     eventThread.checkOnEventThread();
 
-    LOG.debug("internalUpdatePreparableProposers proposers {}", proposers);
+    LOG.debug("internalUpdatePreparableProposers");
 
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
-
-    proposersDataManager.updatePreparedProposers(proposers, currentSlot);
 
     // Update payload attributes in case we now need to propose the next block
     updatePayloadAttributes(currentSlot.plus(1));
