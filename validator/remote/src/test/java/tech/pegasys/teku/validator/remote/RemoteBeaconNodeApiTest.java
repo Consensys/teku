@@ -34,7 +34,7 @@ class RemoteBeaconNodeApiTest {
     assertThatThrownBy(
             () ->
                 RemoteBeaconNodeApi.create(
-                    serviceConfig, asyncRunner, new URI("notvalid"), spec, false))
+                    serviceConfig, asyncRunner, new URI("notvalid"), spec, false, false))
         .hasMessageContaining("Failed to convert remote api endpoint");
   }
 }

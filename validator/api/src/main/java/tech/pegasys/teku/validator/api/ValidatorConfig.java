@@ -35,6 +35,7 @@ public class ValidatorConfig {
   private static final int DEFAULT_REST_API_PORT = 5051;
   public static final String DEFAULT_BEACON_NODE_API_ENDPOINT =
       "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
+  public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
@@ -65,6 +66,7 @@ public class ValidatorConfig {
   private final boolean refreshProposerConfigFromSource;
   private final boolean blindedBeaconBlocksEnabled;
   private final boolean proposerMevBoostEnabled;
+  private final boolean validatorClientUseSszBlocksEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -86,7 +88,8 @@ public class ValidatorConfig {
       final Optional<String> proposerConfigSource,
       final boolean refreshProposerConfigFromSource,
       final boolean proposerMevBoostEnabled,
-      final boolean blindedBeaconBlocksEnabled) {
+      final boolean blindedBeaconBlocksEnabled,
+      final boolean validatorClientUseSszBlocksEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -110,6 +113,7 @@ public class ValidatorConfig {
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.proposerMevBoostEnabled = proposerMevBoostEnabled;
+    this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
   }
 
   public static Builder builder() {
@@ -187,6 +191,10 @@ public class ValidatorConfig {
     return blindedBeaconBlocksEnabled;
   }
 
+  public boolean isValidatorClientUseSszBlocksEnabled() {
+    return validatorClientUseSszBlocksEnabled;
+  }
+
   public boolean isProposerMevBoostEnabled() {
     return proposerMevBoostEnabled;
   }
@@ -226,6 +234,7 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
     private boolean proposerMevBoostEnabled = DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
+    private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
     private Builder() {}
 
@@ -361,6 +370,12 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorClientUseSszBlocksEnabled(
+        final boolean validatorClientUseSszBlocksEnabled) {
+      this.validatorClientSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -387,7 +402,8 @@ public class ValidatorConfig {
           proposerConfigSource,
           refreshProposerConfigFromSource,
           proposerMevBoostEnabled,
-          blindedBlocksEnabled);
+          blindedBlocksEnabled,
+          validatorClientSszBlocksEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
