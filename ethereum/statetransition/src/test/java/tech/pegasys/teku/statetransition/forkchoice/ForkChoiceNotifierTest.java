@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -832,8 +833,9 @@ class ForkChoiceNotifierTest {
     }
     validatorRegistration.ifPresent(
         signedValidatorRegistrationV1 ->
-            proposersDataManager.updateValidatorRegistrations(
-                List.of(signedValidatorRegistrationV1), recentChainData.getHeadSlot()));
+            SafeFutureAssert.safeJoin(
+                proposersDataManager.updateValidatorRegistrations(
+                    List.of(signedValidatorRegistrationV1), recentChainData.getHeadSlot())));
     return payloadBuildingAttributes;
   }
 
