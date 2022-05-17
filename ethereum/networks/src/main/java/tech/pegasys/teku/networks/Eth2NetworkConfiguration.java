@@ -493,7 +493,7 @@ public class Eth2NetworkConfiguration {
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(12269949)
           .defaultInitialState(
-              "https://github.com/eth-clients/merge-testnets/raw/420d0b2e96bc428cdad21e98bd787ef5893b37fd/ropsten-beacon-chain/genesis.ssz")
+              "https://github.com/eth-clients/merge-testnets/raw/5cbccd4449b5cbfcd677d1ee13515671e0f03928/ropsten-beacon-chain/genesis.ssz")
           .discoveryBootnodes(
               // Teku bootnode
               "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA",
