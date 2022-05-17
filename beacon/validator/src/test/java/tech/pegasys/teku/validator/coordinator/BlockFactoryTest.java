@@ -271,7 +271,7 @@ class BlockFactoryTest {
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(dataStructureUtil.createPayloadExecutionContext(false))));
+                Optional.of(dataStructureUtil.randomPayloadExecutionContext(false))));
     when(executionLayer.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
     when(executionLayer.builderGetHeader(any(), any()))

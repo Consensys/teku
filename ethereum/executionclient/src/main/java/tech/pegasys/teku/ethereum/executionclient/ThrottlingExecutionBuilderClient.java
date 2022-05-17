@@ -14,8 +14,8 @@
 package tech.pegasys.teku.ethereum.executionclient;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -57,7 +57,7 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
 
   @Override
   public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
-      final UInt64 slot, final Bytes48 pubKey, final Bytes32 parentHash) {
+      final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     return taskQueue.queueTask(() -> delegate.getHeader(slot, pubKey, parentHash));
   }
 

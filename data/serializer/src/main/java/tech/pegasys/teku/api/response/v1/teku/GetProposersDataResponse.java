@@ -15,23 +15,20 @@ package tech.pegasys.teku.api.response.v1.teku;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("JavaCase")
-public class GetPreparedBeaconProposersResponse {
-  @ArraySchema(schema = @Schema(implementation = ProposerInfoSchema.class))
-  private final List<Map<String, Object>> data;
+public class GetProposersDataResponse {
+  @Schema(implementation = ProposerDataSchema.class)
+  private final Map<String, Object> data;
 
   @JsonCreator
-  public GetPreparedBeaconProposersResponse(
-      @JsonProperty("data") final List<Map<String, Object>> proposers_info) {
-    this.data = proposers_info;
+  public GetProposersDataResponse(@JsonProperty("data") final Map<String, Object> proposers_data) {
+    this.data = proposers_data;
   }
 
-  public List<Map<String, Object>> getData() {
+  public Map<String, Object> getData() {
     return data;
   }
 }

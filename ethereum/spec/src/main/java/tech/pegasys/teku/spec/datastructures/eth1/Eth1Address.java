@@ -43,6 +43,17 @@ public class Eth1Address extends Bytes20 {
       value = "0x" + value;
     }
     this.encodedAddress = toChecksumAddress(value);
+    validate(value);
+  }
+
+  private Eth1Address(Bytes bytes) {
+    super(bytes);
+    String value = bytes.toHexString();
+    this.encodedAddress = toChecksumAddress(value);
+    validate(value);
+  }
+
+  private void validate(String value) {
     if (isMixedCase(value.substring("0x".length()))) {
       checkArgument(
           value.equals(encodedAddress),
@@ -50,6 +61,10 @@ public class Eth1Address extends Bytes20 {
           value,
           encodedAddress);
     }
+  }
+
+  public static Eth1Address fromBytes(Bytes value) {
+    return new Eth1Address(value);
   }
 
   public static Eth1Address fromHexString(String value) {

@@ -36,7 +36,7 @@ public interface ForkChoiceNotifier {
 
   void onTerminalBlockReached(Bytes32 executionBlockHash);
 
-  PayloadAttributesCalculator getPayloadAttributesCalculator();
+  ProposersDataManager getProposersDataManager();
 
   long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
 
