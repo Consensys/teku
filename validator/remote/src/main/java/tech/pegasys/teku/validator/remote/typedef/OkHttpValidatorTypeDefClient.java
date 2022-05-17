@@ -21,9 +21,12 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
 public class OkHttpValidatorTypeDefClient {
 
@@ -47,6 +50,13 @@ public class OkHttpValidatorTypeDefClient {
   public Optional<GenesisData> getGenesis() {
     final GetGenesisRequest request = new GetGenesisRequest(okHttpClient, baseEndpoint);
     return request.getGenesisData();
+  }
+
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
+    final SendSignedBlockRequest sendSignedBlockRequest =
+        new SendSignedBlockRequest(baseEndpoint, okHttpClient);
+
+    return sendSignedBlockRequest.sendSignedBlock(beaconBlock);
   }
 
   public Optional<BeaconBlock> createUnsignedBlock(
