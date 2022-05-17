@@ -88,10 +88,8 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", bytes32.toHexString()));
 
     if (preferSszBlockEncoding) {
-      // application/octet-stream is preferred, but will accept application/json - also should use
-      // utf-8.
-      headers.put(
-          "Accept", "application/octet-stream;q=0.9, application/json;q=0.4; charset=utf-8");
+      // application/octet-stream is preferred, but will accept application/json
+      headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
 
     return get(
