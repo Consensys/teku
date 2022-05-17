@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
@@ -21,17 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
+import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
   private final GetStateValidatorBalances handler =
-      new GetStateValidatorBalances(chainDataProvider, jsonProvider);
-  private final ValidatorBalanceResponse validatorBalanceResponse =
-      new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
+      new GetStateValidatorBalances(chainDataProvider);
+  private final StateValidatorBalanceData validatorBalanceResponse =
+      new StateValidatorBalanceData(ONE, UInt64.valueOf("32000000000"));
 
   @Test
   public void shouldGetValidatorBalancesFromState() throws Exception {
@@ -42,8 +41,7 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
             SafeFuture.completedFuture(
                 Optional.of(withMetaData(List.of(validatorBalanceResponse)))));
     handler.handle(context);
-    GetStateValidatorBalancesResponse response =
-        getResponseFromFuture(GetStateValidatorBalancesResponse.class);
-    assertThat(response.data).containsExactly(validatorBalanceResponse);
+    StateValidatorBalanceData response = getResponseFromFuture(StateValidatorBalanceData.class);
+    assertThat(response).isEqualTo(withMetaData(List.of(validatorBalanceResponse)));
   }
 }

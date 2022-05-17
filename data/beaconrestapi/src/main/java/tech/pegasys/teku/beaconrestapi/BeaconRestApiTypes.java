@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
@@ -63,4 +64,8 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<Bytes32> PARENT_ROOT_PARAMETER =
       new ParameterMetadata<>(
           PARENT_ROOT, CoreTypes.BYTES32_TYPE.withDescription("Not currently supported."));
+
+  public static final ParameterMetadata<String> ID_PARAMETER = // TODO handle array[string] type
+      new ParameterMetadata<>(
+          PARAM_ID, CoreTypes.STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
 }
