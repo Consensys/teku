@@ -34,7 +34,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -57,7 +56,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
@@ -222,26 +220,6 @@ public class SchemaSerializationTests {
     assertThat(
             executionPayloadV1Orig.asInternalExecutionPayload(internalExecutionPayload.getSchema()))
         .isEqualTo(internalExecutionPayload);
-  }
-
-  @TestTemplate
-  void shouldSerializeDeserializeExecutionPayloadHeaderV1() throws IOException {
-    ExecutionPayloadHeader internalExecutionPayloadHeader =
-        dataStructureUtil.randomExecutionPayloadHeader();
-    ExecutionPayloadHeaderV1 executionPayloadHeaderV1Orig =
-        ExecutionPayloadHeaderV1.fromInternalExecutionPayloadHeader(internalExecutionPayloadHeader);
-
-    String executionPayloadHeaderV1OrigSerialized =
-        objectMapper.writeValueAsString(executionPayloadHeaderV1Orig);
-    ExecutionPayloadHeaderV1 executionPayloadHeaderV1New =
-        objectMapper.readValue(
-            executionPayloadHeaderV1OrigSerialized, ExecutionPayloadHeaderV1.class);
-
-    assertThat(executionPayloadHeaderV1Orig).isEqualTo(executionPayloadHeaderV1New);
-    assertThat(
-            executionPayloadHeaderV1Orig.asInternalExecutionPayloadHeader(
-                internalExecutionPayloadHeader.getSchema()))
-        .isEqualTo(internalExecutionPayloadHeader);
   }
 
   @TestTemplate

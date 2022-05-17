@@ -16,17 +16,15 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
-class ProposerInfo {
+class PreparedProposerInfo extends ExpiringInfo {
+  private final Eth1Address feeRecipient;
 
-  UInt64 expirySlot;
-  Eth1Address feeRecipient;
-
-  public ProposerInfo(UInt64 expirySlot, Eth1Address feeRecipient) {
-    this.expirySlot = expirySlot;
+  public PreparedProposerInfo(UInt64 expirySlot, Eth1Address feeRecipient) {
+    super(expirySlot);
     this.feeRecipient = feeRecipient;
   }
 
-  public boolean hasExpired(final UInt64 currentSlot) {
-    return currentSlot.isGreaterThanOrEqualTo(expirySlot);
+  public Eth1Address getFeeRecipient() {
+    return feeRecipient;
   }
 }

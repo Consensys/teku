@@ -17,7 +17,6 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.Map;
-import tech.pegasys.teku.ethereum.executionclient.rest.RestExecutionBuilderClient;
 
 public enum BuilderApiMethod {
   REGISTER_VALIDATOR("eth/v1/builder/validators"),
@@ -35,8 +34,6 @@ public enum BuilderApiMethod {
     return path;
   }
 
-  /** Will be used when {@link RestExecutionBuilderClient} is implemented * */
-  @SuppressWarnings("UnusedMethod")
   public String resolvePath(final Map<String, String> urlParams) {
     String result = path;
     for (final Map.Entry<String, String> param : urlParams.entrySet()) {

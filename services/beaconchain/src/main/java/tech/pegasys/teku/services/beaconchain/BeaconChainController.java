@@ -97,6 +97,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
+import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -204,6 +205,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
+  protected volatile ProposersDataManager proposersDataManager;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -597,7 +599,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             performanceTracker,
             spec,
             forkChoiceTrigger,
-            forkChoiceNotifier,
+            proposersDataManager,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
@@ -812,8 +814,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .proposerSlashingPool(proposerSlashingPool)
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
-            .payloadAttributesCalculator(
-                Optional.of(forkChoiceNotifier.getPayloadAttributesCalculator()))
+            .proposersDataManager(proposersDataManager)
             .build();
 
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
@@ -951,13 +952,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
+    final AsyncRunnerEventThread eventThread =
+        new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    eventThread.start();
+    proposersDataManager =
+        new ProposersDataManager(
+            spec, eventThread, recentChainData, getProposerDefaultFeeRecipient());
     forkChoiceNotifier =
-        ForkChoiceNotifierImpl.create(
-            asyncRunnerFactory,
-            spec,
-            executionLayer,
-            recentChainData,
-            getProposerDefaultFeeRecipient());
+        new ForkChoiceNotifierImpl(
+            eventThread, spec, executionLayer, recentChainData, proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

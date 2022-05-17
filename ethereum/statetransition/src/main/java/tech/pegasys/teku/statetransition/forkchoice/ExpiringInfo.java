@@ -11,8 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient.schema;
+package tech.pegasys.teku.statetransition.forkchoice;
 
-public enum GenericBuilderStatus {
-  OK
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+public abstract class ExpiringInfo {
+  private final UInt64 expirySlot;
+
+  ExpiringInfo(UInt64 expirySlot) {
+    this.expirySlot = expirySlot;
+  }
+
+  public boolean hasExpired(final UInt64 currentSlot) {
+    return currentSlot.isGreaterThanOrEqualTo(expirySlot);
+  }
+
+  public UInt64 getExpirySlot() {
+    return expirySlot;
+  }
 }

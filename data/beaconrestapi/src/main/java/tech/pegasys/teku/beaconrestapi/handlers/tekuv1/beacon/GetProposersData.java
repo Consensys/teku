@@ -29,22 +29,21 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.response.v1.teku.GetPreparedBeaconProposersResponse;
+import tech.pegasys.teku.api.response.v1.teku.GetProposersDataResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetPreparedBeaconProposers implements Handler {
+public class GetProposersData implements Handler {
 
-  public static final String ROUTE = "/teku/v1/beacon/prepared_beacon_proposers";
+  public static final String ROUTE = "/teku/v1/beacon/proposers_data";
 
   private final JsonProvider jsonProvider;
   private final NodeDataProvider nodeDataProvider;
 
-  public GetPreparedBeaconProposers(final DataProvider provider, final JsonProvider jsonProvider) {
+  public GetProposersData(final DataProvider provider, final JsonProvider jsonProvider) {
     this(provider.getNodeDataProvider(), jsonProvider);
   }
 
-  GetPreparedBeaconProposers(
-      final NodeDataProvider nodeDataProvider, final JsonProvider jsonProvider) {
+  GetProposersData(final NodeDataProvider nodeDataProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.nodeDataProvider = nodeDataProvider;
   }
@@ -52,14 +51,14 @@ public class GetPreparedBeaconProposers implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get current prepared beacon proposers",
+      summary = "Get current prepared beacon proposers and registered validators",
       tags = {TAG_EXPERIMENTAL},
       description =
-          "Get the current proposers information held by beacon node as result of prepare_beacon_proposer validator API calls. This API is considered unstable and the returned data format may change in the future.",
+          "Get the current proposers information held by beacon node as result of prepare_beacon_proposer and register_validator validator API calls. This API is considered unstable and the returned data format may change in the future.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetPreparedBeaconProposersResponse.class)),
+            content = @OpenApiContent(from = GetProposersDataResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
@@ -67,8 +66,8 @@ public class GetPreparedBeaconProposers implements Handler {
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
-    final GetPreparedBeaconProposersResponse response =
-        new GetPreparedBeaconProposersResponse(nodeDataProvider.getPreparedBeaconProposers());
+    final GetProposersDataResponse response =
+        new GetProposersDataResponse(nodeDataProvider.getProposersData());
     ctx.result(jsonProvider.objectToJSON(response));
   }
 }

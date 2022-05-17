@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class SignedBuilderBidV1 extends Container2<SignedBuilderBidV1, BuilderBidV1, SszSignature> {
@@ -33,8 +32,8 @@ public class SignedBuilderBidV1 extends Container2<SignedBuilderBidV1, BuilderBi
   }
 
   @Override
-  public SignedBeaconBlockSchema getSchema() {
-    return (SignedBeaconBlockSchema) super.getSchema();
+  public SignedBuilderBidV1Schema getSchema() {
+    return (SignedBuilderBidV1Schema) super.getSchema();
   }
 
   public BuilderBidV1 getMessage() {

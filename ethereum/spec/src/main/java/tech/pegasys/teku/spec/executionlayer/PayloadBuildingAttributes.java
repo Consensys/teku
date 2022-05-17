@@ -15,19 +15,28 @@ package tech.pegasys.teku.spec.executionlayer;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 
-public class PayloadAttributes {
+public class PayloadBuildingAttributes {
   private final UInt64 timestamp;
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
+  private final Optional<SignedValidatorRegistrationV1> validatorRegistration;
 
-  public PayloadAttributes(UInt64 timestamp, Bytes32 prevRandao, Eth1Address feeRecipient) {
+  public PayloadBuildingAttributes(
+      final UInt64 timestamp,
+      final Bytes32 prevRandao,
+      final Eth1Address feeRecipient,
+      final Optional<SignedValidatorRegistrationV1> validatorRegistration) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
+    this.validatorRegistration = validatorRegistration;
   }
 
   public UInt64 getTimestamp() {
@@ -42,6 +51,15 @@ public class PayloadAttributes {
     return feeRecipient;
   }
 
+  public Optional<SignedValidatorRegistrationV1> getValidatorRegistration() {
+    return validatorRegistration;
+  }
+
+  public Optional<BLSPublicKey> getValidatorRegistrationPublicKey() {
+    return validatorRegistration.map(
+        signedValidatorRegistration -> signedValidatorRegistration.getMessage().getPublicKey());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -50,15 +68,16 @@ public class PayloadAttributes {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final PayloadAttributes that = (PayloadAttributes) o;
+    final PayloadBuildingAttributes that = (PayloadBuildingAttributes) o;
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)
-        && Objects.equals(feeRecipient, that.feeRecipient);
+        && Objects.equals(feeRecipient, that.feeRecipient)
+        && Objects.equals(validatorRegistration, that.validatorRegistration);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timestamp, prevRandao, feeRecipient);
+    return Objects.hash(timestamp, prevRandao, feeRecipient, validatorRegistration);
   }
 
   @Override
@@ -67,6 +86,7 @@ public class PayloadAttributes {
         .add("timestamp", timestamp)
         .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)
+        .add("validatorRegistration", validatorRegistration)
         .toString();
   }
 }
