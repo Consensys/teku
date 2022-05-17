@@ -152,7 +152,7 @@
         }
       ],
       "sync_aggregate": {
-        "sync_committee_bits": "0x01000000",
+        "sync_committee_bits": "0x145d5c188ceac5989ccd022005035da255b149a1f4bfe2a1d4ff074188777c7db6f13f4a2fb490a312df10b5bb11e2ba2ddd66c2b3ada8b4dbd4c456a9f17ac7",
         "sync_committee_signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
       },
       "execution_payload_header": {
