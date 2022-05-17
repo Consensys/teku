@@ -32,17 +32,17 @@ public class ValidatorRegistrationV1
   protected ValidatorRegistrationV1(
       ValidatorRegistrationV1Schema schema,
       SszByteVector feeRecipient,
-      SszUInt64 gasTarget,
+      SszUInt64 gasLimit,
       SszUInt64 timestamp,
       SszPublicKey publicKey) {
-    super(schema, feeRecipient, gasTarget, timestamp, publicKey);
+    super(schema, feeRecipient, gasLimit, timestamp, publicKey);
   }
 
   public Eth1Address getFeeRecipient() {
     return Eth1Address.fromBytes(getField0().getBytes());
   }
 
-  public UInt64 getGasTarget() {
+  public UInt64 getGasLimit() {
     return getField1().get();
   }
 

@@ -16,16 +16,15 @@ package tech.pegasys.teku.ethereum.executionclient;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
-import tech.pegasys.teku.ethereum.executionclient.schema.ValidatorRegistrationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 
 public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient {
   private final ExecutionBuilderClient delegate;
@@ -51,19 +50,20 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
-    return taskQueue.queueTask(() -> delegate.registerValidator(signedValidatorRegistrationV1));
+      UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
+    return taskQueue.queueTask(
+        () -> delegate.registerValidator(slot, signedValidatorRegistrationV1));
   }
 
   @Override
-  public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
+  public SafeFuture<Response<SignedBuilderBidV1>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     return taskQueue.queueTask(() -> delegate.getHeader(slot, pubKey, parentHash));
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayload(
-      final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock) {
+  public SafeFuture<Response<ExecutionPayload>> getPayload(
+      SignedBeaconBlock signedBlindedBeaconBlock) {
     return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBeaconBlock));
   }
 }

@@ -256,7 +256,7 @@ public class ProposersDataManager {
                                     .getValue()
                                     .getSignedValidatorRegistration()
                                     .getMessage()
-                                    .getGasTarget())
+                                    .getGasLimit())
                             .put(
                                 "timestamp",
                                 registeredValidatorInfoEntry

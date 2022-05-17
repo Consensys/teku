@@ -13,29 +13,19 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.core.Request;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.GenericBuilderStatus;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
-import tech.pegasys.teku.ethereum.executionclient.schema.ValidatorRegistrationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 
 public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
+  @SuppressWarnings("unused") // will be removed in upcoming PRs
   private final Web3JClient web3JClient;
 
   public Web3JExecutionBuilderClient(final Web3JClient web3JClient) {
@@ -44,79 +34,24 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<Void>> status() {
-    Request<?, GenericBuilderStatusWeb3jResponse> web3jRequest =
-        new Request<>(
-            "builder_status",
-            List.of(),
-            web3JClient.getWeb3jService(),
-            GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient
-        .doRequest(web3jRequest, EL_BUILDER_STATUS_TIMEOUT)
-        .thenApply(statusResponse -> new Response<>(statusResponse.getErrorMessage()));
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Deprecated"));
   }
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
-    Request<?, GenericBuilderStatusWeb3jResponse> web3jRequest =
-        new Request<>(
-            "builder_registerValidatorV1",
-            Collections.singletonList(signedValidatorRegistrationV1),
-            web3JClient.getWeb3jService(),
-            GenericBuilderStatusWeb3jResponse.class);
-    return web3JClient
-        .doRequest(web3jRequest, EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT)
-        .thenApply(statusResponse -> new Response<>(statusResponse.getErrorMessage()));
+      UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Deprecated"));
   }
 
   @Override
-  public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
+  public SafeFuture<Response<SignedBuilderBidV1>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
-    Request<?, ExecutionPayloadHeaderV1Web3jResponse> web3jRequest =
-        new Request<>(
-            "builder_getHeaderV1",
-            List.of(slot.toString(), pubKey.toString(), parentHash.toHexString()),
-            web3JClient.getWeb3jService(),
-            ExecutionPayloadHeaderV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_HEADER_TIMEOUT);
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Deprecated"));
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayload(
-      SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock) {
-    Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
-        new Request<>(
-            "builder_getPayloadV1",
-            Collections.singletonList(signedBlindedBeaconBlock),
-            web3JClient.getWeb3jService(),
-            ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_BUILDER_GET_PAYLOAD_TIMEOUT);
-  }
-
-  protected Web3JClient getWeb3JClient() {
-    return web3JClient;
-  }
-
-  static class ExecutionPayloadV1Web3jResponse
-      extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
-
-  static class ExecutionPayloadHeaderV1Web3jResponse
-      extends org.web3j.protocol.core.Response<SignedMessage<BuilderBidV1>> {}
-
-  static class GenericBuilderStatusWeb3jResponse
-      extends org.web3j.protocol.core.Response<GenericBuilderStatus> {}
-
-  /**
-   * Returns a list that supports null items.
-   *
-   * @param items the items to put in a list
-   * @return the list
-   */
-  protected List<Object> list(final Object... items) {
-    final List<Object> list = new ArrayList<>();
-    for (Object item : items) {
-      list.add(item);
-    }
-    return list;
+  public SafeFuture<Response<ExecutionPayload>> getPayload(
+      SignedBeaconBlock signedBlindedBeaconBlock) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Deprecated"));
   }
 }

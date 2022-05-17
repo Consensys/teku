@@ -33,15 +33,12 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionBuilderClient;
@@ -53,11 +50,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidV1;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -289,8 +287,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getHeader(
             slot, registeredValidatorPublicKey.get(), executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
-        .thenApply(
-            builderBidV1SignedMessage -> getHeaderFromBuilderBid(builderBidV1SignedMessage, slot))
+        .thenApply(SignedBuilderBidV1::getMessage)
+        .thenApply(BuilderBidV1::getExecutionPayloadHeader)
         .thenPeek(
             executionPayloadHeader -> {
               // store that we haven't fallen back for this slot
@@ -363,37 +361,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     .createFromExecutionPayload(executionPayload));
   }
 
-  private ExecutionPayloadHeader getHeaderFromBuilderBid(
-      SignedMessage<BuilderBidV1> signedBuilderBid, UInt64 slot) {
-    ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
-        SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getExecutionPayloadHeaderSchema();
-    // TODO: validate signature
-
-    return signedBuilderBid
-        .getMessage()
-        .getHeader()
-        .asInternalExecutionPayloadHeader(executionPayloadHeaderSchema);
-  }
-
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return executionBuilderClient
         .orElseThrow()
-        .getPayload(
-            new SignedMessage<>(
-                new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
-                signedBlindedBeaconBlock.getSignature()))
+        .getPayload(signedBlindedBeaconBlock)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsBellatrix.required(
-                            spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions())
-                        .getExecutionPayloadSchema()),
-            ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(
             executionPayload ->
                 LOG.trace(
