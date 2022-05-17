@@ -91,7 +91,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
     final Map<String, String> urlParams = new HashMap<>();
     urlParams.put("slot", slot.toString());
     urlParams.put("parent_hash", parentHash.toHexString());
-    urlParams.put("pubkey", pubKey.toString());
+    urlParams.put("pubkey", pubKey.toBytesCompressed().toHexString());
 
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
 
