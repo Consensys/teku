@@ -68,7 +68,7 @@ public abstract class Web3JClient {
             (response, exception) -> {
               if (exception != null) {
                 handleError(exception);
-                return new Response<>(
+                return Response.withErrorMessage(
                     exception.getMessage() != null
                         ? exception.getMessage()
                         : exception.getClass().getSimpleName());
@@ -76,7 +76,7 @@ public abstract class Web3JClient {
                 final String errorMessage =
                     response.getError().getCode() + ": " + response.getError().getMessage();
                 handleError(new IOException(errorMessage));
-                return new Response<>(errorMessage);
+                return Response.withErrorMessage(errorMessage);
               } else {
                 handleSuccess();
                 return new Response<>(response.getResult());

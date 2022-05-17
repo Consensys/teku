@@ -81,9 +81,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidV1;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1Schema;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1;
@@ -437,6 +439,18 @@ public final class DataStructureUtil {
             randomUInt256(),
             randomBytes32(),
             randomBytes32());
+  }
+
+  public BuilderBidV1 randomBuilderBidV1() {
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        .getBuilderBidV1Schema()
+        .create(randomExecutionPayloadHeader(), randomUInt256(), randomPublicKey());
+  }
+
+  public SignedBuilderBidV1 randomSignedBuilderBidV1() {
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBuilderBidV1Schema()
+        .create(randomBuilderBidV1(), randomSignature());
   }
 
   public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(

@@ -13,27 +13,50 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
-import tech.pegasys.teku.ethereum.executionclient.schema.ValidatorRegistrationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1Schema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
-  private final RestClient restClient;
+  private final Map<
+          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>>
+      cachedBuilderApiExecutionPayloadResponseType = new ConcurrentHashMap<>();
 
-  public RestExecutionBuilderClient(final RestClient restClient) {
+  private final Map<
+          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidV1>>>
+      cachedBuilderApiSignedBuilderBidV1ResponseType = new ConcurrentHashMap<>();
+
+  private final RestClient restClient;
+  private final SchemaDefinitionCache schemaDefinitionCache;
+
+  public RestExecutionBuilderClient(final RestClient restClient, final Spec spec) {
     this.restClient = restClient;
+    this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
   }
 
   @Override
@@ -45,19 +68,101 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      final SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1) {
-    throw new UnsupportedOperationException();
+      final UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
+
+    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
+    final SchemaDefinitionsBellatrix schemaDefinitions = getSchemaDefinitionsBellatrix(milestone);
+
+    DeserializableTypeDefinition<SignedValidatorRegistrationV1> requestType =
+        schemaDefinitions.getSignedValidatorRegistrationSchema().getJsonTypeDefinition();
+    return restClient
+        .postAsync(
+            BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
+            signedValidatorRegistrationV1,
+            requestType)
+        .orTimeout(EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 
   @Override
-  public SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
+  public SafeFuture<Response<SignedBuilderBidV1>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
-    throw new UnsupportedOperationException();
+
+    final Map<String, String> urlParams = new HashMap<>();
+    urlParams.put("slot", slot.toString());
+    urlParams.put("parent_hash", parentHash.toHexString());
+    urlParams.put("pubkey", pubKey.toString());
+
+    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
+
+    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidV1>>
+        responseTypeDefinition =
+            cachedBuilderApiSignedBuilderBidV1ResponseType.computeIfAbsent(
+                milestone,
+                __ -> {
+                  final SchemaDefinitionsBellatrix schemaDefinitions =
+                      getSchemaDefinitionsBellatrix(milestone);
+                  final SignedBuilderBidV1Schema signedBuilderBidV1Schema =
+                      schemaDefinitions.getSignedBuilderBidV1Schema();
+                  return BuilderApiResponse.createTypeDefinition(
+                      signedBuilderBidV1Schema.getJsonTypeDefinition());
+                });
+
+    return restClient
+        .getAsync(
+            BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
+            responseTypeDefinition)
+        .thenApply(this::getBuilderApiResponseData)
+        .orTimeout(EL_BUILDER_GET_HEADER_TIMEOUT);
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayload(
-      final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock) {
-    throw new UnsupportedOperationException();
+  public SafeFuture<Response<ExecutionPayload>> getPayload(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+
+    final UInt64 blockSlot = signedBlindedBeaconBlock.getSlot();
+    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(blockSlot);
+
+    final SchemaDefinitionsBellatrix schemaDefinitions = getSchemaDefinitionsBellatrix(milestone);
+
+    final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
+        schemaDefinitions.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
+
+    final DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>
+        responseTypeDefinition =
+            cachedBuilderApiExecutionPayloadResponseType.computeIfAbsent(
+                milestone,
+                __ -> {
+                  final ExecutionPayloadSchema executionPayloadSchema =
+                      schemaDefinitions.getExecutionPayloadSchema();
+                  return BuilderApiResponse.createTypeDefinition(
+                      executionPayloadSchema.getJsonTypeDefinition());
+                });
+
+    return restClient
+        .postAsync(
+            BuilderApiMethod.SEND_SIGNED_BLINDED_BLOCK.getPath(),
+            signedBlindedBeaconBlock,
+            requestTypeDefinition,
+            responseTypeDefinition)
+        .thenApply(this::getBuilderApiResponseData)
+        .orTimeout(EL_BUILDER_GET_PAYLOAD_TIMEOUT);
+  }
+
+  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(SpecMilestone specMilestone) {
+    return schemaDefinitionCache
+        .getSchemaDefinition(specMilestone)
+        .toVersionBellatrix()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    specMilestone
+                        + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are supported."));
+  }
+
+  private <T> Response<T> getBuilderApiResponseData(Response<BuilderApiResponse<T>> response) {
+    if (response.isFailure()) {
+      return Response.withErrorMessage(response.getErrorMessage());
+    }
+    return new Response<>(response.getPayload().getData());
   }
 }

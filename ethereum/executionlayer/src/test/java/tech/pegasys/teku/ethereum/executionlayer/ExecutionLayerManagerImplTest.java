@@ -27,13 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.BLSPubKey;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadHeaderV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
@@ -87,7 +83,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderShouldNotBeAvailableWhenBuilderIsNotOperatingNormally() {
     SafeFuture<Response<Void>> builderClientResponse =
-        SafeFuture.completedFuture(new Response<>("oops"));
+        SafeFuture.completedFuture(Response.withErrorMessage("oops"));
 
     updateBuilderStatus(builderClientResponse);
 
@@ -119,7 +115,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoInteractions(eventLogger);
 
     // Given builder status is not ok
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>("oops")));
+    updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")));
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
@@ -161,20 +157,15 @@ class ExecutionLayerManagerImplTest {
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-    final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlockRequest =
-        new SignedMessage<>(
-            new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
-            signedBlindedBeaconBlock.getSignature());
 
-    final ExecutionPayload payload =
-        prepareBuilderGetPayloadResponse(signedBlindedBeaconBlockRequest);
+    final ExecutionPayload payload = prepareBuilderGetPayloadResponse(signedBlindedBeaconBlock);
 
     // we expect result from the builder
     assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
         .isCompletedWithValue(payload);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlockRequest);
+    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
   }
 
@@ -327,20 +318,15 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = UInt64.ONE;
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-    final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlockRequest =
-        new SignedMessage<>(
-            new BlindedBeaconBlockV1(signedBlindedBeaconBlock.getMessage()),
-            signedBlindedBeaconBlock.getSignature());
 
-    final ExecutionPayload payload =
-        prepareBuilderGetPayloadResponse(signedBlindedBeaconBlockRequest);
+    final ExecutionPayload payload = prepareBuilderGetPayloadResponse(signedBlindedBeaconBlock);
 
     // we expect result from the builder
     assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
         .isCompletedWithValue(payload);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlockRequest);
+    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
   }
 
@@ -348,20 +334,7 @@ class ExecutionLayerManagerImplTest {
       final ExecutionPayloadContext executionPayloadContext) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    final ExecutionPayloadHeader header = dataStructureUtil.randomExecutionPayloadHeader();
-
-    final Response<SignedMessage<BuilderBidV1>> response =
-        new Response<>(
-            new SignedMessage<>(
-                new BuilderBidV1(
-                    ExecutionPayloadHeaderV1.fromInternalExecutionPayloadHeader(header),
-                    dataStructureUtil.randomUInt256(),
-                    new BLSPubKey(
-                        executionPayloadContext
-                            .getPayloadBuildingAttributes()
-                            .getValidatorRegistrationPublicKey()
-                            .orElseThrow())),
-                dataStructureUtil.randomSignature()));
+    SignedBuilderBidV1 signedBuilderBidV1 = dataStructureUtil.randomSignedBuilderBidV1();
 
     when(executionBuilderClient.getHeader(
             slot,
@@ -370,20 +343,18 @@ class ExecutionLayerManagerImplTest {
                 .getValidatorRegistrationPublicKey()
                 .orElseThrow(),
             executionPayloadContext.getParentHash()))
-        .thenReturn(SafeFuture.completedFuture(response));
+        .thenReturn(SafeFuture.completedFuture(new Response<>(signedBuilderBidV1)));
 
-    return header;
+    return signedBuilderBidV1.getMessage().getExecutionPayloadHeader();
   }
 
   private ExecutionPayload prepareBuilderGetPayloadResponse(
-      final SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock) {
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
 
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
     when(executionBuilderClient.getPayload(signedBlindedBeaconBlock))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new Response<>(ExecutionPayloadV1.fromInternalExecutionPayload(payload))));
+        .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
 
     return payload;
   }
@@ -438,7 +409,7 @@ class ExecutionLayerManagerImplTest {
   }
 
   private void setBuilderOffline(UInt64 slot) {
-    updateBuilderStatus(SafeFuture.completedFuture(new Response<>("oops")), slot);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")), slot);
     reset(executionBuilderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
   }

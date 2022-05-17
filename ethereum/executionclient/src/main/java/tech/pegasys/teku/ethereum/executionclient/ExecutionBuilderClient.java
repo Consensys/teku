@@ -15,25 +15,23 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlindedBeaconBlockV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.BuilderBidV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.SignedMessage;
-import tech.pegasys.teku.ethereum.executionclient.schema.ValidatorRegistrationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
 
 public interface ExecutionBuilderClient {
 
   SafeFuture<Response<Void>> status();
 
   SafeFuture<Response<Void>> registerValidator(
-      SignedMessage<ValidatorRegistrationV1> signedValidatorRegistrationV1);
+      UInt64 slot, SignedValidatorRegistrationV1 signedValidatorRegistrationV1);
 
-  SafeFuture<Response<SignedMessage<BuilderBidV1>>> getHeader(
+  SafeFuture<Response<SignedBuilderBidV1>> getHeader(
       UInt64 slot, BLSPublicKey pubKey, Bytes32 parentHash);
 
-  SafeFuture<Response<ExecutionPayloadV1>> getPayload(
-      SignedMessage<BlindedBeaconBlockV1> signedBlindedBeaconBlock);
+  SafeFuture<Response<ExecutionPayload>> getPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 }
