@@ -39,7 +39,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -56,7 +55,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
     network = {Eth2Network.MAINNET})
 class RestExecutionBuilderClientTest {
 
-  private static final JsonProvider JSON_PROVIDER = new JsonProvider();
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private static final Duration WAIT_FOR_CALL_COMPLETION = Duration.ofSeconds(10);
 
@@ -314,9 +313,8 @@ class RestExecutionBuilderClientTest {
         assertThat(actualRequestBody.size()).isZero();
       } else {
         assertThat(actualRequestBody.size()).isNotZero();
-        ObjectMapper jsonMapper = JSON_PROVIDER.getObjectMapper();
-        assertThat(jsonMapper.readTree(expectedRequestBody.get()))
-            .isEqualTo(jsonMapper.readTree(actualRequestBody.readUtf8()));
+        assertThat(OBJECT_MAPPER.readTree(expectedRequestBody.get()))
+            .isEqualTo(OBJECT_MAPPER.readTree(actualRequestBody.readUtf8()));
       }
     } catch (InterruptedException | JsonProcessingException ex) {
       Assertions.fail(ex);

@@ -21,6 +21,5 @@ dependencies {
 
   integrationTestImplementation testFixtures(project(':infrastructure:json'))
   integrationTestImplementation testFixtures(project(':infrastructure:time'))
-  integrationTestImplementation project(':data:serializer')
   integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
 }
