@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.nio.file.Path;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -25,6 +27,7 @@ public class InteropConfig {
   public static final int DEFAULT_INTEROP_NUMBER_OF_VALIDATORS = 64;
 
   private final Integer interopGenesisTime;
+  private final Optional<Path> interopGenesisPayloadHeader;
   private final int interopOwnedValidatorStartIndex;
   private final int interopOwnedValidatorCount;
   private final int interopNumberOfValidators;
@@ -32,11 +35,13 @@ public class InteropConfig {
 
   private InteropConfig(
       final Integer interopGenesisTime,
+      final Optional<Path> interopGenesisPayloadHeader,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
       final int interopNumberOfValidators,
       final boolean interopEnabled) {
     this.interopGenesisTime = interopGenesisTime;
+    this.interopGenesisPayloadHeader = interopGenesisPayloadHeader;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
     this.interopNumberOfValidators = interopNumberOfValidators;
@@ -49,6 +54,10 @@ public class InteropConfig {
 
   public Integer getInteropGenesisTime() {
     return interopGenesisTime;
+  }
+
+  public Optional<Path> getInteropGenesisPayloadHeader() {
+    return interopGenesisPayloadHeader;
   }
 
   public int getInteropOwnedValidatorStartIndex() {
@@ -70,6 +79,7 @@ public class InteropConfig {
   public static final class InteropConfigBuilder {
 
     private Integer interopGenesisTime = DEFAULT_INTEROP_GENESIS_TIME;
+    private Optional<Path> interopGenesisPayloadHeader = Optional.empty();
     private int interopOwnedValidatorStartIndex;
     private int interopOwnedValidatorCount;
     private int interopNumberOfValidators = DEFAULT_INTEROP_NUMBER_OF_VALIDATORS;
@@ -84,6 +94,12 @@ public class InteropConfig {
             String.format("Invalid interopGenesisTime: %d", interopGenesisTime));
       }
       this.interopGenesisTime = interopGenesisTime;
+      return this;
+    }
+
+    public InteropConfigBuilder interopGenesisPayloadHeader(
+        final Path interopGenesisPayloadHeader) {
+      this.interopGenesisPayloadHeader = Optional.ofNullable(interopGenesisPayloadHeader);
       return this;
     }
 
@@ -131,6 +147,7 @@ public class InteropConfig {
       validate();
       return new InteropConfig(
           interopGenesisTime,
+          interopGenesisPayloadHeader,
           interopOwnedValidatorStartIndex,
           interopOwnedValidatorCount,
           interopNumberOfValidators,

@@ -17,8 +17,11 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -270,6 +273,19 @@ public class Spec {
         .getSchemaDefinitions()
         .getBeaconBlockSchema()
         .sszDeserialize(serializedState);
+  }
+
+  public ExecutionPayloadHeader deserializeJsonExecutionPayloadHeader(
+      final ObjectMapper objectMapper, final File jsonFile, final UInt64 slot) throws IOException {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionBellatrix()
+        .orElseThrow(
+            () ->
+                new RuntimeException(
+                    "Bellatrix milestone is required to load execution payload header"))
+        .getExecutionPayloadHeaderSchema()
+        .jsonDeserialize(objectMapper.createParser(jsonFile));
   }
 
   // BeaconState
