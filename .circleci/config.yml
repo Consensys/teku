@@ -162,7 +162,7 @@ jobs:
       - run:
           name: Assemble
           command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava assemble
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
       - run:
           name: Prep Artifacts
           command: |
@@ -267,6 +267,34 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel test $GRADLE_ARGS
+      - notify
+      - capture_test_results
+
+  propertyTests:
+    parallelism: 1
+    executor: medium_plus_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: PropertyTests
+          no_output_timeout: 20m
+          command: |
+            CLASSNAMES=$(circleci tests glob "**/src/property-test/java/**/*.java" \
+              | sed 's@.*/src/property-test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' \
+              | circleci tests split --split-by=timings --timings-type=classname)
+            # Format the arguments to "./gradlew test"
+            GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+            echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+            if [[ -z "$GRADLE_ARGS" ]]
+            then
+              echo "Failed to determine correct distribution of tests across nodes"
+              exit 1
+            fi
+            ./gradlew --no-daemon --parallel --info propertyTest $GRADLE_ARGS
       - notify
       - capture_test_results
 
@@ -525,6 +553,12 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
+      - propertyTests:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
       - integrationTests:
           requires:
             - assemble
@@ -553,6 +587,7 @@ workflows:
               <<: *filters-release-tags
           requires:
             - unitTests
+            - propertyTests
             - integrationTests
             - acceptanceTests
             - referenceTests
@@ -571,6 +606,7 @@ workflows:
               <<: *filters-release-tags
           requires:
             - unitTests
+            - propertyTests
             - integrationTests
             - acceptanceTests
             - referenceTests
@@ -590,6 +626,7 @@ workflows:
               <<: *filters-release-tags
           requires:
             - unitTests
+            - propertyTests
             - integrationTests
             - acceptanceTests
             - referenceTests
@@ -623,6 +660,7 @@ workflows:
               <<: *filters-release-tags
           requires:
             - unitTests
+            - propertyTests
             - integrationTests
             - acceptanceTests
             - referenceTests

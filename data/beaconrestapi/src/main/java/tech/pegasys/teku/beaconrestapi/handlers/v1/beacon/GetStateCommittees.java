@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.INDEX_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
@@ -27,43 +32,77 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
-import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64Util;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 
-public class GetStateCommittees extends AbstractHandler implements Handler {
+public class GetStateCommittees extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/committees";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
 
+  private static final SerializableTypeDefinition<CommitteeAssignment> EPOCH_COMMITTEE_TYPE =
+      SerializableTypeDefinition.object(CommitteeAssignment.class)
+          .withField("index", UINT64_TYPE, CommitteeAssignment::getCommitteeIndex)
+          .withField("slot", UINT64_TYPE, CommitteeAssignment::getSlot)
+          .withField(
+              "validators",
+              listOf(UINT64_TYPE),
+              committeeAssignment -> UInt64Util.intToUInt64List(committeeAssignment.getCommittee()))
+          .build();
+
+  private static final SerializableTypeDefinition<ObjectAndMetaData<List<CommitteeAssignment>>>
+      RESPONSE_TYPE =
+          SerializableTypeDefinition.<ObjectAndMetaData<List<CommitteeAssignment>>>object()
+              .name("GetEpochCommitteesResponse")
+              .withField(
+                  "execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+              .withField("data", listOf(EPOCH_COMMITTEE_TYPE), ObjectAndMetaData::getData)
+              .build();
+
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateCommittees(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.chainDataProvider = dataProvider.getChainDataProvider();
+  public GetStateCommittees(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  GetStateCommittees(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  GetStateCommittees(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getStateCommittees")
+            .summary("Get committees at state")
+            .description("Retrieves the committees for the given state.")
+            .pathParam(PARAMETER_STATE_ID)
+            .queryParam(EPOCH_PARAMETER)
+            .queryParam(INDEX_PARAMETER)
+            .queryParam(SLOT_PARAMETER)
+            .tags(TAG_BEACON)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -89,27 +128,29 @@ public class GetStateCommittees extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
-    final Map<String, List<String>> queryParameters = ctx.queryParamMap();
-    final Optional<UInt64> epoch =
-        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, EPOCH);
-    final Optional<UInt64> committeeIndex =
-        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, INDEX);
-    final Optional<UInt64> slot =
-        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
-
-    SafeFuture<Optional<ObjectAndMetaData<List<EpochCommitteeResponse>>>> future =
-        chainDataProvider.getStateCommittees(
-            pathParams.get(PARAM_STATE_ID), epoch, committeeIndex, slot);
-
-    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+    adapt(ctx);
   }
 
-  private Optional<String> handleResult(
-      Context ctx, final ObjectAndMetaData<List<EpochCommitteeResponse>> response)
-      throws JsonProcessingException {
-    return Optional.of(
-        jsonProvider.objectToJSON(
-            new GetStateCommitteesResponse(response.isExecutionOptimistic(), response.getData())));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
+    final Optional<UInt64> committeeIndex = request.getOptionalQueryParameter(INDEX_PARAMETER);
+    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+
+    final SafeFuture<Optional<ObjectAndMetaData<List<CommitteeAssignment>>>> future =
+        chainDataProvider.getStateCommittees(
+            request.getPathParameter(PARAMETER_STATE_ID), epoch, committeeIndex, slot);
+
+    request.respondAsync(
+        future.thenApply(
+            maybeListObjectAndMetaData -> {
+              if (maybeListObjectAndMetaData.isEmpty()) {
+                return AsyncApiResponse.respondNotFound();
+              }
+
+              ObjectAndMetaData<List<CommitteeAssignment>> listObjectAndMetaData =
+                  maybeListObjectAndMetaData.get();
+              return AsyncApiResponse.respondOk(listObjectAndMetaData);
+            }));
   }
 }
