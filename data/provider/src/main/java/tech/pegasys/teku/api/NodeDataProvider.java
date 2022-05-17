@@ -58,7 +58,7 @@ public class NodeDataProvider {
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
   private final boolean isLivenessTrackingEnabled;
-  private final Optional<ProposersDataManager> proposersDataManager;
+  private final ProposersDataManager proposersDataManager;
 
   public NodeDataProvider(
       final Spec spec,
@@ -74,7 +74,7 @@ public class NodeDataProvider {
       final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
-      final Optional<ProposersDataManager> proposersDataManager) {
+      final ProposersDataManager proposersDataManager) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -185,12 +185,10 @@ public class NodeDataProvider {
   }
 
   public Map<String, Object> getProposersData() {
-    return proposersDataManager.map(ProposersDataManager::getData).orElse(Map.of());
+    return proposersDataManager.getData();
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {
-    return proposersDataManager
-        .map(ProposersDataManager::isProposerDefaultFeeRecipientDefined)
-        .orElse(false);
+    return proposersDataManager.isProposerDefaultFeeRecipientDefined();
   }
 }

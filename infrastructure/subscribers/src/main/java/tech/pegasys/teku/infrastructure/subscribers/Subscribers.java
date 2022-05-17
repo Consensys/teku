@@ -118,6 +118,15 @@ public class Subscribers<T> {
   }
 
   /**
+   * Deliver an event to each subscriber by calling eventMethod.
+   *
+   * @param eventMethod the method to call
+   */
+  public void deliver(final Consumer<T> eventMethod) {
+    forEach(eventMethod);
+  }
+
+  /**
    * Get the current subscriber count.
    *
    * @return the current number of subscribers.
