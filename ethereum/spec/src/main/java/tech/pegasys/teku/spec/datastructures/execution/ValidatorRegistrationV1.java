@@ -42,7 +42,7 @@ public class ValidatorRegistrationV1
     return Eth1Address.fromBytes(getField0().getBytes());
   }
 
-  public UInt64 getGasTarget() {
+  public UInt64 getGasLimit() {
     return getField1().get();
   }
 
