@@ -26,10 +26,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -37,23 +35,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.skyscreamer.jsonassert.JSONAssert;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidV1;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -72,6 +65,14 @@ class RestExecutionBuilderClientTest {
 
   private static final String SIGNED_BLINDED_BEACON_BLOCK_REQUEST =
       readResource("builder/signedBlindedBeaconBlock.json");
+
+  private static final String EXECUTION_PAYLOAD_HEADER_RESPONSE =
+      readResource("builder/executionPayloadHeaderResponse.json");
+
+  private static final String UNBLINDED_EXECUTION_PAYLOAD_RESPONSE =
+      readResource("builder/unblindedExecutionPayloadResponse.json");
+
+  private static final UInt64 SLOT = UInt64.ONE;
 
   private static final Bytes32 PARENT_HASH =
       Bytes32.fromHexString("0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2");
@@ -145,8 +146,7 @@ class RestExecutionBuilderClientTest {
 
     SignedValidatorRegistrationV1 signedValidatorRegistration = createSignedValidatorRegistration();
 
-    assertThat(
-            restExecutionBuilderClient.registerValidator(UInt64.ONE, signedValidatorRegistration))
+    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -166,8 +166,7 @@ class RestExecutionBuilderClientTest {
 
     SignedValidatorRegistrationV1 signedValidatorRegistration = createSignedValidatorRegistration();
 
-    assertThat(
-            restExecutionBuilderClient.registerValidator(UInt64.ONE, signedValidatorRegistration))
+    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -180,8 +179,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(
-            restExecutionBuilderClient.registerValidator(UInt64.ONE, signedValidatorRegistration))
+    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -195,18 +193,16 @@ class RestExecutionBuilderClientTest {
   @TestTemplate
   void getExecutionPayloadHeader_success() {
 
-    String executionPayloadHeaderResponse =
-        readResource("builder/executionPayloadHeaderResponse.json");
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+        new MockResponse().setResponseCode(200).setBody(EXECUTION_PAYLOAD_HEADER_RESPONSE));
 
-    assertThat(restExecutionBuilderClient.getHeader(UInt64.ONE, PUB_KEY, PARENT_HASH))
+    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
               SignedBuilderBidV1 responsePayload = response.getPayload();
-              verifySignedBuilderBidV1(responsePayload);
+              verifySignedBuilderBidV1Response(responsePayload);
             });
 
     verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
@@ -219,7 +215,7 @@ class RestExecutionBuilderClientTest {
         "{\"code\":400,\"message\":\"Unknown hash: missing parent hash\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(missingParentHashError));
 
-    assertThat(restExecutionBuilderClient.getHeader(UInt64.ONE, PUB_KEY, PARENT_HASH))
+    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -232,7 +228,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.getHeader(UInt64.ONE, PUB_KEY, PARENT_HASH))
+    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -246,10 +242,8 @@ class RestExecutionBuilderClientTest {
   @TestTemplate
   void sendSignedBlindedBlock_success() {
 
-    String unblindedExecutionPayloadResponse =
-        readResource("builder/unblindedExecutionPayloadResponse.json");
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(unblindedExecutionPayloadResponse));
+        new MockResponse().setResponseCode(200).setBody(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE));
 
     SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
@@ -306,7 +300,7 @@ class RestExecutionBuilderClientTest {
     verifyRequest("POST", apiPath, Optional.of(requestBody));
   }
 
-  private void verifyRequest(String method, String apiPath, Optional<String> requestBody) {
+  private <T> void verifyRequest(String method, String apiPath, Optional<String> requestBody) {
     try {
       RecordedRequest request = mockWebServer.takeRequest();
       assertThat(request.getMethod()).isEqualTo(method);
@@ -322,124 +316,29 @@ class RestExecutionBuilderClientTest {
     }
   }
 
-  private void verifySignedBuilderBidV1(SignedBuilderBidV1 response) {
-    assertThat(response).isNotNull();
-    BLSSignature signature = response.getSignature();
-    assertThat(signature.toString())
-        .isEqualTo(
-            "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505");
-    BuilderBidV1 builderBidV1 = response.getMessage();
-    assertThat(builderBidV1.getValue()).isEqualTo(UInt256.ONE);
-    assertThat(builderBidV1.getPublicKey()).isEqualTo(PUB_KEY);
-    // payload header assertions
-    ExecutionPayloadHeader payloadHeader = builderBidV1.getExecutionPayloadHeader();
-    assertThat(payloadHeader.getParentHash())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadHeader.getFeeRecipient())
-        .isEqualTo(Bytes20.fromHexString("0xabcf8e0d4e9587369b2301d0790347320302cc09"));
-    assertThat(payloadHeader.getStateRoot())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadHeader.getReceiptsRoot())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadHeader.getLogsBloom())
-        .isEqualTo(
-            Bytes.fromHexString(
-                "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
-    assertThat(payloadHeader.getPrevRandao())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadHeader.getBlockNumber()).isEqualTo(UInt64.ONE);
-    assertThat(payloadHeader.getGasLimit()).isEqualTo(UInt64.ONE);
-    assertThat(payloadHeader.getGasUsed()).isEqualTo(UInt64.ONE);
-    assertThat(payloadHeader.getTimestamp()).isEqualTo(UInt64.ONE);
-    assertThat(payloadHeader.getExtraData())
-        .isEqualTo(
-            Bytes.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadHeader.getBaseFeePerGas()).isEqualTo(UInt256.ONE);
-    assertThat(payloadHeader.getBlockHash())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadHeader.getTransactionsRoot())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-  }
-
-  private void verifyExecutionPayloadResponse(ExecutionPayload payloadResponse) {
-    assertThat(payloadResponse).isNotNull();
-    assertThat(payloadResponse.getParentHash())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadResponse.getFeeRecipient())
-        .isEqualTo(Bytes20.fromHexString("0xabcf8e0d4e9587369b2301d0790347320302cc09"));
-    assertThat(payloadResponse.getStateRoot())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadResponse.getReceiptsRoot())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadResponse.getLogsBloom())
-        .isEqualTo(
-            Bytes.fromHexString(
-                "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
-    assertThat(payloadResponse.getPrevRandao())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadResponse.getBlockNumber()).isEqualTo(UInt64.ONE);
-    assertThat(payloadResponse.getGasLimit()).isEqualTo(UInt64.ONE);
-    assertThat(payloadResponse.getGasUsed()).isEqualTo(UInt64.ONE);
-    assertThat(payloadResponse.getTimestamp()).isEqualTo(UInt64.ONE);
-    assertThat(payloadResponse.getExtraData())
-        .isEqualTo(
-            Bytes.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    assertThat(payloadResponse.getBaseFeePerGas()).isEqualTo(UInt256.ONE);
-    assertThat(payloadResponse.getBlockHash())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
-    // transactions assertions
-    SszList<Transaction> transactions = payloadResponse.getTransactions();
-    assertThat(transactions)
-        .hasSize(1)
-        .first()
-        .satisfies(
-            transaction ->
-                assertThat(transaction.getBytes())
-                    .isEqualTo(
-                        Bytes.fromHexString(
-                            "0x02f878831469668303f51d843b9ac9f9843b9aca0082520894c93269b73096998db66be0441e836d873535cb9c8894a19041886f000080c001a031cc29234036afbf9a1fb9476b463367cb1f957ac0b919b69bbc798436e604aaa018c4e9c3914eb27aadd0b91e10b18655739fcf8c1fc398763a9f1beecb8ddc86")));
-  }
-
   private SignedValidatorRegistrationV1 createSignedValidatorRegistration() {
-    BLSSignature signature =
-        BLSSignature.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"));
-    Bytes20 feeRecipient = Bytes20.fromHexString("0xabcf8e0d4e9587369b2301d0790347320302cc09");
-    UInt64 gasLimit = UInt64.ONE;
-    UInt64 timestamp = UInt64.ONE;
+    try {
+      return JsonUtil.parse(
+          SIGNED_VALIDATOR_REGISTRATION_REQUEST,
+          schemaDefinitionsBellatrix
+              .getSignedValidatorRegistrationSchema()
+              .getJsonTypeDefinition());
+    } catch (JsonProcessingException ex) {
+      throw new UncheckedIOException(ex);
+    }
+  }
 
-    ValidatorRegistrationV1 validatorRegistrationV1 =
-        schemaDefinitionsBellatrix
-            .getValidatorRegistrationSchema()
-            .create(feeRecipient, gasLimit, timestamp, PUB_KEY);
-    return schemaDefinitionsBellatrix
-        .getSignedValidatorRegistrationSchema()
-        .create(validatorRegistrationV1, signature);
+  private void verifySignedBuilderBidV1Response(SignedBuilderBidV1 actual) {
+    DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidV1>> responseTypeDefinition =
+        BuilderApiResponse.createTypeDefinition(
+            schemaDefinitionsBellatrix.getSignedBuilderBidV1Schema().getJsonTypeDefinition());
+    try {
+      SignedBuilderBidV1 expected =
+          JsonUtil.parse(EXECUTION_PAYLOAD_HEADER_RESPONSE, responseTypeDefinition).getData();
+      assertThat(actual).isEqualTo(expected);
+    } catch (JsonProcessingException ex) {
+      Assertions.fail(ex);
+    }
   }
 
   private SignedBeaconBlock createSignedBlindedBeaconBlock() {
@@ -449,6 +348,19 @@ class RestExecutionBuilderClientTest {
           schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition());
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
+    }
+  }
+
+  private void verifyExecutionPayloadResponse(ExecutionPayload actual) {
+    DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>> responseTypeDefinition =
+        BuilderApiResponse.createTypeDefinition(
+            schemaDefinitionsBellatrix.getExecutionPayloadSchema().getJsonTypeDefinition());
+    try {
+      ExecutionPayload expected =
+          JsonUtil.parse(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE, responseTypeDefinition).getData();
+      assertThat(actual).isEqualTo(expected);
+    } catch (JsonProcessingException ex) {
+      Assertions.fail(ex);
     }
   }
 
