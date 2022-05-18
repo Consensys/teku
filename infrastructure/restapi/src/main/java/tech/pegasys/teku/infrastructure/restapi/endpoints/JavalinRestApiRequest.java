@@ -173,10 +173,4 @@ public class JavalinRestApiRequest implements RestApiRequest {
         .map(item -> parameterMetadata.getType().deserializeFromString(item))
         .collect(Collectors.toList());
   }
-
-  @FunctionalInterface
-  public interface ResultProcessor<T> {
-    // Process result, returning an optional serialized response
-    Optional<String> process(Context context, T result) throws Exception;
-  }
 }
