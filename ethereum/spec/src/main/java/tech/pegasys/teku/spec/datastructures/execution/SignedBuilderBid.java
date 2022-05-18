@@ -25,9 +25,7 @@ public class SignedBuilderBid extends Container2<SignedBuilderBid, BuilderBid, S
   }
 
   SignedBuilderBid(
-      final SignedBuilderBidSchema type,
-      final BuilderBid message,
-      final BLSSignature signature) {
+      final SignedBuilderBidSchema type, final BuilderBid message, final BLSSignature signature) {
     super(type, message, new SszSignature(signature));
   }
 

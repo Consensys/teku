@@ -78,9 +78,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
         schemaDefinitionsBellatrix.getSignedValidatorRegistrationSchema().getJsonTypeDefinition();
     return restClient
         .postAsync(
-            BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
-            signedValidatorRegistration,
-            requestType)
+            BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistration, requestType)
         .orTimeout(EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 

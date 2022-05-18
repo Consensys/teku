@@ -50,9 +50,8 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
-    return taskQueue.queueTask(
-        () -> delegate.registerValidator(slot, signedValidatorRegistration));
+      final UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
+    return taskQueue.queueTask(() -> delegate.registerValidator(slot, signedValidatorRegistration));
   }
 
   @Override
@@ -63,7 +62,7 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
 
   @Override
   public SafeFuture<Response<ExecutionPayload>> getPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock) {
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
     return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBeaconBlock));
   }
 }
