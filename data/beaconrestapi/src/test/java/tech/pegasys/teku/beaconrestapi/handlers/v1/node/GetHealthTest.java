@@ -45,6 +45,15 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
+  void shouldReturnUnhealthyWhenRejectedExecutionsExist() throws Exception {
+    rejectedExecutionCount = 1;
+    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+  }
+
+  @Test
   public void shouldReturnSyncingStatusWhenStartingUp() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);

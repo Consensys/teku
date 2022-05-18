@@ -13,27 +13,48 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricTrackingExecutorFactory {
 
   private final MetricsSystem metricsSystem;
   private final LabelledGauge labelledGaugeQueueSize;
+  private final LabelledMetric<Counter> labelledGaugeRejectedExecutions;
+
+  private final Optional<OccuranceCounter> rejectedExecutionCounter;
 
   public MetricTrackingExecutorFactory(final MetricsSystem metricsSystem) {
+    this(metricsSystem, Optional.empty());
+  }
+
+  public MetricTrackingExecutorFactory(
+      final MetricsSystem metricsSystem,
+      final Optional<OccuranceCounter> rejectedExecutionCounter) {
     this.metricsSystem = metricsSystem;
     this.labelledGaugeQueueSize =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.EXECUTOR,
             "queue_size",
             "Current size of the executor task queue",
+            "name");
+
+    this.rejectedExecutionCounter = rejectedExecutionCounter;
+    this.labelledGaugeRejectedExecutions =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.EXECUTOR,
+            "rejected_execution_total",
+            "Count of rejected executions by task queue",
             "name");
   }
 
@@ -71,7 +92,8 @@ public class MetricTrackingExecutorFactory {
             60,
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(maxQueueSize),
-            threadFactory);
+            threadFactory,
+            (r, e) -> this.onRejectedExecution(name));
     executor.allowCoreThreadTimeOut(true);
 
     labelledGaugeQueueSize.labels(() -> executor.getQueue().size(), name);
@@ -88,5 +110,11 @@ public class MetricTrackingExecutorFactory {
         executor::getActiveCount);
 
     return executor;
+  }
+
+  private void onRejectedExecution(final String name) {
+    labelledGaugeRejectedExecutions.labels(name).inc();
+    rejectedExecutionCounter.ifPresent(OccuranceCounter::increment);
+    throw new RejectedExecutionException("Rejected execution on task queue - " + name);
   }
 }

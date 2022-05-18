@@ -23,6 +23,7 @@ import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
+import java.util.function.IntSupplier;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -52,7 +53,10 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
 
   protected final SyncService syncService = mock(SyncService.class);
-  protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
+  protected int rejectedExecutionCount = 0;
+  protected final IntSupplier rejectedExecutionSupplier = () -> rejectedExecutionCount;
+  protected final SyncDataProvider syncDataProvider =
+      new SyncDataProvider(syncService, rejectedExecutionSupplier);
   protected final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

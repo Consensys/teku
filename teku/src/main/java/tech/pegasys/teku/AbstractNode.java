@@ -17,6 +17,8 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +29,9 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.async.OccuranceCounter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -45,6 +49,10 @@ public abstract class AbstractNode implements Node {
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
+  private final OccuranceCounter rejectedExecutionCounter = new OccuranceCounter(120);
+
+  private Optional<Cancellable> counterMaintainer = Optional.empty();
+
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
@@ -61,7 +69,9 @@ public abstract class AbstractNode implements Node {
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
 
     asyncRunnerFactory =
-        AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(
+                metricsSystem, Optional.of(rejectedExecutionCounter)));
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(tekuConfig.dataConfig());
     serviceConfig =
         new ServiceConfig(
@@ -69,7 +79,8 @@ public abstract class AbstractNode implements Node {
             new SystemTimeProvider(),
             eventChannels,
             metricsSystem,
-            dataDirLayout);
+            dataDirLayout,
+            rejectedExecutionCounter::getTotalCount);
     this.metricsPublisher =
         new MetricsPublisherManager(
             asyncRunnerFactory,
@@ -124,6 +135,21 @@ public abstract class AbstractNode implements Node {
     metricsEndpoint.start().join();
     metricsPublisher.start().join();
     getServiceController().start().join();
+    counterMaintainer =
+        Optional.of(
+            serviceConfig
+                .createAsyncRunner("RejectedExecutionCounter", 1)
+                .runWithFixedDelay(
+                    this::pollRejectedExecutions,
+                    Duration.ofSeconds(5),
+                    (err) -> LOG.debug("rejected execution poll failed", err)));
+  }
+
+  private void pollRejectedExecutions() {
+    final int rejectedExecutions = rejectedExecutionCounter.poll();
+    if (rejectedExecutions > 0) {
+      LOG.trace("Rejected execution count from last 5 seconds: " + rejectedExecutions);
+    }
   }
 
   @Override
@@ -131,6 +157,7 @@ public abstract class AbstractNode implements Node {
     // Stop processing new events
     eventChannels.stop();
     threadPool.shutdownNow();
+    counterMaintainer.ifPresent(Cancellable::cancel);
 
     // Stop async actions
     asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
