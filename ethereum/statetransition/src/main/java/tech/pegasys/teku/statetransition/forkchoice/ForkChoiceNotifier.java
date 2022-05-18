@@ -13,18 +13,14 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import java.util.Collection;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public interface ForkChoiceNotifier {
-  void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);
-
   void onForkChoiceUpdated(ForkChoiceState forkChoiceState);
 
   void onAttestationsDue(UInt64 slot);
@@ -35,8 +31,6 @@ public interface ForkChoiceNotifier {
       Bytes32 parentBeaconBlockRoot, UInt64 blockSlot);
 
   void onTerminalBlockReached(Bytes32 executionBlockHash);
-
-  PayloadAttributesCalculator getPayloadAttributesCalculator();
 
   long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
 

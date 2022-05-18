@@ -186,7 +186,7 @@ public class OkHttpRestClient implements RestClient {
       final okhttp3.Response response, final SafeFuture<Response<T>> futureResponse) {
     try {
       final String errorMessage = getErrorMessageForFailedResponse(response);
-      futureResponse.complete(new Response<>(errorMessage));
+      futureResponse.complete(Response.withErrorMessage(errorMessage));
     } catch (Throwable ex) {
       futureResponse.completeExceptionally(ex);
     }

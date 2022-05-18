@@ -31,21 +31,21 @@ public class ValidatorRegistrationV1Schema
   public ValidatorRegistrationV1Schema() {
     super(
         "ValidatorRegistrationV1",
-        namedSchema("feeRecipient", SszByteVectorSchema.create(Bytes20.SIZE)),
-        namedSchema("gasTarget", SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema("fee_recipient", SszByteVectorSchema.create(Bytes20.SIZE)),
+        namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
   }
 
   public ValidatorRegistrationV1 create(
       final Bytes20 feeRecipient,
-      final UInt64 gasTarget,
+      final UInt64 gasLimit,
       final UInt64 timestamp,
       final BLSPublicKey publicKey) {
     return new ValidatorRegistrationV1(
         this,
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
-        SszUInt64.of(gasTarget),
+        SszUInt64.of(gasLimit),
         SszUInt64.of(timestamp),
         new SszPublicKey(publicKey));
   }

@@ -41,7 +41,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         @Override
         public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
             final ForkChoiceState forkChoiceState,
-            final Optional<PayloadAttributes> payloadAttributes) {
+            final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
           return SafeFuture.completedFuture(
               new ForkChoiceUpdatedResult(PayloadStatus.SYNCING, Optional.empty()));
         }
@@ -83,7 +83,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   // engine namespace
   SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes);
+      final ForkChoiceState forkChoiceState,
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
   SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);

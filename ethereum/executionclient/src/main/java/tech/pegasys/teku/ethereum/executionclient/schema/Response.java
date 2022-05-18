@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
 public class Response<T> {
@@ -20,22 +21,22 @@ public class Response<T> {
   private final T payload;
   private final String errorMessage;
 
-  private Response(T payload, String errorMessage) {
+  public Response(final T payload, final String errorMessage) {
     this.payload = payload;
     this.errorMessage = errorMessage;
   }
 
-  public Response(String errorMessage) {
-    this(null, errorMessage);
-  }
-
-  public Response(T payload) {
+  public Response(final T payload) {
     this.payload = payload;
     this.errorMessage = null;
   }
 
   public static <T> Response<T> withNullPayload() {
     return new Response<>(null, null);
+  }
+
+  public static <T> Response<T> withErrorMessage(final String errorMessage) {
+    return new Response<>(null, errorMessage);
   }
 
   public T getPayload() {
@@ -70,5 +71,13 @@ public class Response<T> {
   @Override
   public int hashCode() {
     return Objects.hash(payload, errorMessage);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("payload", payload)
+        .add("errorMessage", errorMessage)
+        .toString();
   }
 }
