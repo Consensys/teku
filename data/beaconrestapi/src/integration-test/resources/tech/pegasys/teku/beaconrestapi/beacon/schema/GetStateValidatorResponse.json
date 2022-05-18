@@ -1,6 +1,9 @@
 {
   "type" : "object",
   "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
     "data" : {
       "$ref" : "#/components/schemas/ValidatorResponse"
     }

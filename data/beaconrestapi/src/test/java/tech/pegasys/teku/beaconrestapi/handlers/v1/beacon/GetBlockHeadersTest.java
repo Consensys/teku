@@ -32,19 +32,16 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetBlockHeaders handler;
-  private StubRestApiRequest request;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
     handler = new GetBlockHeaders(chainDataProvider);
-    request = new StubRestApiRequest();
   }
 
   @Test
@@ -78,7 +75,7 @@ class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockAttestationsTest.class, "getBlockHeaders.json"), UTF_8);
+            Resources.getResource(GetBlockHeadersTest.class, "getBlockHeaders.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 

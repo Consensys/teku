@@ -30,13 +30,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 class GetProposerSlashingsTest extends AbstractMigratedBeaconHandlerTest {
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final GetProposerSlashings handler = new GetProposerSlashings(nodeDataProvider);
-  private final StubRestApiRequest request = new StubRestApiRequest();
   private final List<ProposerSlashing> responseData =
       List.of(
           dataStructureUtil.randomProposerSlashing(), dataStructureUtil.randomProposerSlashing());
@@ -65,7 +63,7 @@ class GetProposerSlashingsTest extends AbstractMigratedBeaconHandlerTest {
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockAttestationsTest.class, "getProposerSlashings.json"),
+            Resources.getResource(GetProposerSlashingsTest.class, "getProposerSlashings.json"),
             UTF_8);
     assertThat(data).isEqualTo(expected);
   }

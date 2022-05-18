@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,8 +42,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -61,6 +58,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -77,6 +75,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 class RemoteValidatorApiHandlerTest {
 
@@ -87,24 +86,21 @@ class RemoteValidatorApiHandlerTest {
 
   private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
 
+  private final OkHttpValidatorTypeDefClient typeDefClient =
+      mock(OkHttpValidatorTypeDefClient.class);
+
   private RemoteValidatorApiHandler apiHandler;
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(spec, apiClient, asyncRunner);
+    apiHandler = new RemoteValidatorApiHandler(spec, apiClient, typeDefClient, asyncRunner);
   }
 
   @Test
   public void getGenesisTime_WhenPresent_ReturnsValue() {
     final UInt64 genesisTime = dataStructureUtil.randomUInt64();
-    when(apiClient.getGenesis())
-        .thenReturn(
-            Optional.of(
-                new GetGenesisResponse(
-                    new GenesisData(
-                        genesisTime,
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes4()))));
+    when(typeDefClient.getGenesis())
+        .thenReturn(Optional.of(new GenesisData(genesisTime, dataStructureUtil.randomBytes32())));
 
     SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> future =
         apiHandler.getGenesisData();
@@ -382,14 +378,9 @@ class RemoteValidatorApiHandlerTest {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
-    final tech.pegasys.teku.api.schema.BLSSignature schemaBlsSignature =
-        new tech.pegasys.teku.api.schema.BLSSignature(blsSignature);
-    final tech.pegasys.teku.api.schema.BeaconBlock schemaBeaconBlock =
-        new tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0(beaconBlock);
-
-    when(apiClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), refEq(schemaBlsSignature), eq(graffiti), eq(false)))
-        .thenReturn(Optional.of(schemaBeaconBlock));
+    when(typeDefClient.createUnsignedBlock(
+            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(false)))
+        .thenReturn(Optional.of(beaconBlock));
 
     SafeFuture<Optional<BeaconBlock>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);
@@ -405,19 +396,16 @@ class RemoteValidatorApiHandlerTest {
         dataStructureUtil.signedBlock(beaconBlock, signature);
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock schemaSignedBlock =
-        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock);
+    when(typeDefClient.sendSignedBlock(any())).thenReturn(expectedResult);
 
-    when(apiClient.sendSignedBlock(any())).thenReturn(expectedResult);
-
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedBeaconBlock> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0.class);
+    ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
+        ArgumentCaptor.forClass(SignedBeaconBlock.class);
 
     final SafeFuture<SendSignedBlockResult> result = apiHandler.sendSignedBlock(signedBeaconBlock);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient).sendSignedBlock(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaSignedBlock);
+    verify(typeDefClient).sendSignedBlock(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue()).isEqualTo(signedBeaconBlock);
     assertThat(result).isCompletedWithValue(expectedResult);
   }
 
@@ -521,7 +509,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   void shouldRetryAfterDelayWhenRequestRateLimited() {
-    when(apiClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
+    when(typeDefClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
 
     final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> result =
         apiHandler.getGenesisData();
@@ -529,7 +517,7 @@ class RemoteValidatorApiHandlerTest {
     for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
       asyncRunner.executeQueuedActions();
       assertThat(result).isNotDone();
-      verify(apiClient, times(i + 1)).getGenesis();
+      verify(typeDefClient, times(i + 1)).getGenesis();
     }
 
     asyncRunner.executeQueuedActions();

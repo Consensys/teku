@@ -62,6 +62,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
@@ -110,6 +111,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
+  protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
 
   private StorageSystem storageSystem;
 
@@ -184,6 +186,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .proposerSlashingPool(proposerSlashingPool)
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .proposersDataManager(proposersDataManager)
             .build();
 
     beaconRestApi =

@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.beaconrestapi.SchemaDefinitionCache;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class MilestoneDependentTypesUtil {

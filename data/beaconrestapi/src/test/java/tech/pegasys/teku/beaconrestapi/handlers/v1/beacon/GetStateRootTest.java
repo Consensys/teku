@@ -25,18 +25,16 @@ import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetStateRoot handler;
-  private final StubRestApiRequest request =
-      StubRestApiRequest.builder().pathParameter("state_id", "head").build();
 
   @BeforeEach
   public void setup() {
+    request.setPathParameter("state_id", "head");
     initialise(SpecMilestone.PHASE0);
     genesis();
     handler = new GetStateRoot(chainDataProvider);
@@ -50,7 +48,7 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     StateAndMetaData expectedBody =
-        new StateAndMetaData(state, spec.getGenesisSpec().getMilestone(), false, false, true);
+        new StateAndMetaData(state, spec.getGenesisSpec().getMilestone(), false, true);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
 
@@ -70,7 +68,6 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
         new StateAndMetaData(
             dataStructureUtil.randomBeaconState(),
             spec.getGenesisSpec().getMilestone(),
-            false,
             false,
             true);
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);

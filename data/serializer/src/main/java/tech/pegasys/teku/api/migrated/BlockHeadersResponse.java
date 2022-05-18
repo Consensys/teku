@@ -15,12 +15,11 @@ package tech.pegasys.teku.api.migrated;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 public class BlockHeadersResponse {
-  private final Boolean executionOptimistic;
+  private final boolean executionOptimistic;
   private final List<BlockHeaderData> data;
 
   public BlockHeadersResponse(final List<BlockHeaderData> data, final Boolean executionOptimistic) {
@@ -29,13 +28,13 @@ public class BlockHeadersResponse {
   }
 
   public BlockHeadersResponse(
-      final Boolean executionOptimistic, final List<BlockAndMetaData> data) {
+      final boolean executionOptimistic, final List<BlockAndMetaData> data) {
     this.executionOptimistic = executionOptimistic;
     this.data = data.stream().map(BlockHeaderData::new).collect(Collectors.toList());
   }
 
-  public Optional<Boolean> isExecutionOptimistic() {
-    return Optional.ofNullable(executionOptimistic);
+  public boolean isExecutionOptimistic() {
+    return executionOptimistic;
   }
 
   public List<BlockHeaderData> getData() {
@@ -51,8 +50,7 @@ public class BlockHeadersResponse {
       return false;
     }
     BlockHeadersResponse that = (BlockHeadersResponse) o;
-    return Objects.equals(executionOptimistic, that.executionOptimistic)
-        && Objects.equals(data, that.data);
+    return executionOptimistic == that.executionOptimistic && Objects.equals(data, that.data);
   }
 
   @Override

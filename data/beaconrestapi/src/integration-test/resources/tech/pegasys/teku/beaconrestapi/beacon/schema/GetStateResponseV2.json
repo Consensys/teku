@@ -5,6 +5,9 @@
       "type" : "string",
       "enum" : [ "phase0", "altair", "bellatrix" ]
     },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
     "data" : {
       "$ref" : "#/components/schemas/State"
     }

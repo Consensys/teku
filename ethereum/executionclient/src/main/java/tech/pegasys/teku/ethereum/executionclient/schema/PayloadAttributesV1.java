@@ -30,7 +30,7 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeser
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class PayloadAttributesV1 {
   @JsonSerialize(using = UInt64AsHexSerializer.class)
@@ -57,9 +57,9 @@ public class PayloadAttributesV1 {
     this.suggestedFeeRecipient = suggestedFeeRecipient;
   }
 
-  public static Optional<PayloadAttributesV1> fromInternalForkChoiceState(
-      Optional<PayloadAttributes> maybePayloadAttributes) {
-    return maybePayloadAttributes.map(
+  public static Optional<PayloadAttributesV1> fromInternalPayloadBuildingAttributes(
+      Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+    return payloadBuildingAttributes.map(
         (payloadAttributes) ->
             new PayloadAttributesV1(
                 payloadAttributes.getTimestamp(),

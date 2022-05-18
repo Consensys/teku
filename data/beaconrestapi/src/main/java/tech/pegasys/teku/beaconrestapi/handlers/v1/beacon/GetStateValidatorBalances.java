@@ -41,9 +41,9 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
-import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
@@ -105,6 +105,6 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
     return Optional.of(
         jsonProvider.objectToJSON(
             new GetStateValidatorBalancesResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+                response.isExecutionOptimistic(), response.getData())));
   }
 }

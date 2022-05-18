@@ -150,6 +150,7 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Enables experimental multipeer sync",
+      fallbackValue = "true",
       hidden = true,
       arity = "1")
   private boolean multiPeerSyncEnabled = SyncConfig.DEFAULT_MULTI_PEER_SYNC_ENABLED;
@@ -178,6 +179,7 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "If true, turn on batch verification for gossiped attestation signatures",
+      fallbackValue = "true",
       hidden = true,
       arity = "0..1")
   private boolean batchVerifyAttestationSignatures =

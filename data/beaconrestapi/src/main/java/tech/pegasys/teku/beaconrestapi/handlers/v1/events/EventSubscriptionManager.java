@@ -32,10 +32,10 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -109,7 +109,6 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
 
-    final Boolean executionOptimisticForApi = getExecutionOptimisticForApi(executionOptimistic);
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -121,7 +120,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   context.getOldBestStateRoot(),
                   stateRoot,
                   configProvider.computeEpochAtSlot(slot),
-                  executionOptimisticForApi);
+                  executionOptimistic);
           notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
@@ -131,7 +130,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             bestBlockRoot,
             stateRoot,
             epochTransition,
-            executionOptimisticForApi,
+            executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
@@ -166,8 +165,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   protected void onNewBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block,
       final boolean executionOptimistic) {
-    final BlockEvent blockEvent =
-        new BlockEvent(block, getExecutionOptimisticForApi(executionOptimistic));
+    final BlockEvent blockEvent = new BlockEvent(block, executionOptimistic);
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
@@ -180,7 +178,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             checkpoint.getRoot(),
             stateRoot.orElse(Bytes32.ZERO),
             checkpoint.getEpoch(),
-            getExecutionOptimisticForApi(fromOptimisticBlock));
+            fromOptimisticBlock);
     notifySubscribersOfEvent(EventType.finalized_checkpoint, event);
   }
 
@@ -197,10 +195,6 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     } catch (final JsonProcessingException e) {
       LOG.error("Failed to serialize event", e);
     }
-  }
-
-  private Boolean getExecutionOptimisticForApi(final boolean executionOptimistic) {
-    return provider.isBellatrixEnabled() ? executionOptimistic : null;
   }
 
   public static class EventSource<T> {

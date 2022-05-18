@@ -15,24 +15,23 @@ package tech.pegasys.teku.spec.datastructures.execution;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.PayloadAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class ExecutionPayloadContext {
   private final Bytes8 payloadId;
   private final ForkChoiceState forkChoiceState;
-  private final Optional<PayloadAttributes> payloadAttributes;
+  private final PayloadBuildingAttributes payloadBuildingAttributes;
 
   public ExecutionPayloadContext(
       final Bytes8 payloadId,
       final ForkChoiceState forkChoiceState,
-      final Optional<PayloadAttributes> payloadAttributes) {
+      final PayloadBuildingAttributes payloadBuildingAttributes) {
     this.payloadId = payloadId;
     this.forkChoiceState = forkChoiceState;
-    this.payloadAttributes = payloadAttributes;
+    this.payloadBuildingAttributes = payloadBuildingAttributes;
   }
 
   public Bytes8 getPayloadId() {
@@ -43,8 +42,8 @@ public class ExecutionPayloadContext {
     return forkChoiceState;
   }
 
-  public Optional<PayloadAttributes> getPayloadAttributes() {
-    return payloadAttributes;
+  public PayloadBuildingAttributes getPayloadBuildingAttributes() {
+    return payloadBuildingAttributes;
   }
 
   public Bytes32 getParentHash() {
@@ -62,12 +61,12 @@ public class ExecutionPayloadContext {
     final ExecutionPayloadContext that = (ExecutionPayloadContext) o;
     return Objects.equals(payloadId, that.payloadId)
         && Objects.equals(forkChoiceState, that.forkChoiceState)
-        && Objects.equals(payloadAttributes, that.payloadAttributes);
+        && Objects.equals(payloadBuildingAttributes, that.payloadBuildingAttributes);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(payloadId, forkChoiceState, payloadAttributes);
+    return Objects.hash(payloadId, forkChoiceState, payloadBuildingAttributes);
   }
 
   @Override
@@ -75,7 +74,7 @@ public class ExecutionPayloadContext {
     return MoreObjects.toStringHelper(this)
         .add("payloadId", payloadId)
         .add("forkChoiceState", forkChoiceState)
-        .add("payloadAttributes", payloadAttributes)
+        .add("payloadBuildingAttributes", payloadBuildingAttributes)
         .toString();
   }
 }

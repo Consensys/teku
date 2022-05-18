@@ -99,6 +99,7 @@ public class VoluntaryExitCommand implements Runnable {
       description = "Request confirmation before submitting voluntary exits.",
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       arity = "1")
   private boolean confirmationEnabled = true;
 

@@ -40,19 +40,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetStateValidator handler;
-  private final StubRestApiRequest request =
-      StubRestApiRequest.builder()
-          .pathParameter("state_id", "head")
-          .pathParameter("validator_id", "1")
-          .build();
   private ObjectAndMetaData<StateValidatorData> responseData;
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
+    request.setPathParameter("state_id", "head");
+    request.setPathParameter("validator_id", "1");
     initialise(SpecMilestone.ALTAIR);
     genesis();
     handler = new GetStateValidator(chainDataProvider);
@@ -68,8 +66,7 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChai
             ValidatorStatus.active_ongoing,
             beaconState.getValidators().get(1));
 
-    responseData =
-        new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, false, true);
+    responseData = new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, true);
   }
 
   @Test
@@ -107,10 +104,13 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChai
   @Test
   void metadata_shouldHandle200() throws IOException {
     final String data = getResponseStringFromMetadata(handler, HttpStatusCodes.SC_OK, responseData);
-    String expected =
+    final Validator validator = responseData.getData().getValidator();
+    String resource =
         Resources.toString(
             Resources.getResource(GetStateValidatorTest.class, "validatorState.json"),
             StandardCharsets.UTF_8);
+    String expected =
+        String.format(resource, validator.getPublicKey(), validator.getWithdrawalCredentials());
 
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }

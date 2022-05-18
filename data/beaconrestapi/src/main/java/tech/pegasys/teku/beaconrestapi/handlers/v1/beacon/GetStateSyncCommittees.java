@@ -14,8 +14,9 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
@@ -27,44 +28,79 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateSyncCommitteesResponse;
-import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
-import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateSyncCommittees extends AbstractHandler implements Handler {
+public class GetStateSyncCommittees extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/sync_committees";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateSyncCommittees(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  private static final ObjectAndMetaData<StateSyncCommitteesData> EMPTY_RESPONSE =
+      new ObjectAndMetaData<>(
+          new StateSyncCommitteesData(List.of(), List.of()), SpecMilestone.PHASE0, false, true);
+
+  private static final SerializableTypeDefinition<StateSyncCommitteesData> DATA_TYPE =
+      SerializableTypeDefinition.object(StateSyncCommitteesData.class)
+          .withField("validators", listOf(UINT64_TYPE), StateSyncCommitteesData::getValidators)
+          .withField(
+              "validator_aggregates",
+              listOf(listOf(UINT64_TYPE)),
+              StateSyncCommitteesData::getValidatorAggregates)
+          .build();
+
+  private static final SerializableTypeDefinition<ObjectAndMetaData<StateSyncCommitteesData>>
+      RESPONSE_TYPE =
+          SerializableTypeDefinition.<ObjectAndMetaData<StateSyncCommitteesData>>object()
+              .name("GetEpochSyncCommitteesResponse")
+              .withField(
+                  "execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+              .withField("data", DATA_TYPE, ObjectAndMetaData::getData)
+              .build();
+
+  public GetStateSyncCommittees(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  public GetStateSyncCommittees(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetStateSyncCommittees(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getStateSyncCommittees")
+            .summary("Get sync committees")
+            .description("Retrieves the sync committees for the given state.")
+            .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+            .pathParam(PARAMETER_STATE_ID)
+            .queryParam(EPOCH_PARAMETER)
+            .response(HttpStatusCodes.SC_OK, "Request successful", RESPONSE_TYPE)
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -88,45 +124,44 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final Map<String, String> pathParams = ctx.pathParamMap();
-      final Map<String, List<String>> queryParameters = ctx.queryParamMap();
-      final Optional<UInt64> epoch =
-          SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, EPOCH);
-
-      if (!chainDataProvider.stateParameterMaySupportAltair(pathParams.get(PARAM_STATE_ID))) {
-        ctx.status(SC_OK);
-        ctx.json(jsonProvider.objectToJSON(List.of()));
-      }
-
-      final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> future =
-          chainDataProvider.getStateSyncCommittees(pathParams.get(PARAM_STATE_ID), epoch);
-
-      handleOptionalResult(
-          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
-    } catch (IllegalArgumentException ex) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    }
+    adapt(ctx);
   }
 
-  private SafeFuture<String> handleError(final Context context, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    } else if (rootCause instanceof IllegalStateException) {
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    } else {
-      return failedFuture(error);
-    }
-  }
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
 
-  private Optional<String> handleResult(
-      final Context context, final ObjectAndMetaData<StateSyncCommittees> response)
-      throws JsonProcessingException {
-    return Optional.of(
-        jsonProvider.objectToJSON(
-            new GetStateSyncCommitteesResponse(
-                response.isExecutionOptimisticForApi(), response.getData())));
+    if (!chainDataProvider.stateParameterMaySupportAltair(
+        request.getPathParameter(PARAMETER_STATE_ID))) {
+      request.respondOk(EMPTY_RESPONSE);
+      return;
+    }
+
+    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
+        chainDataProvider.getStateSyncCommittees(
+            request.getPathParameter(PARAMETER_STATE_ID), epoch);
+
+    request.respondAsync(
+        future
+            .thenApply(
+                maybeStateSyncCommitteesAndMetaData -> {
+                  if (maybeStateSyncCommitteesAndMetaData.isEmpty()) {
+                    return AsyncApiResponse.respondNotFound();
+                  }
+
+                  return AsyncApiResponse.respondOk(maybeStateSyncCommitteesAndMetaData.get());
+                })
+            .exceptionallyCompose(
+                error -> {
+                  final Throwable rootCause = Throwables.getRootCause(error);
+
+                  if (rootCause instanceof IllegalArgumentException
+                      || rootCause instanceof IllegalStateException) {
+                    return SafeFuture.completedFuture(
+                        AsyncApiResponse.respondWithError(SC_BAD_REQUEST, error.getMessage()));
+                  }
+
+                  return failedFuture(error);
+                }));
   }
 }

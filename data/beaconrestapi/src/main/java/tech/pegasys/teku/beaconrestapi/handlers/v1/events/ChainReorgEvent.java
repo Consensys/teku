@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,9 +33,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
           .withField("old_head_state", BYTES32_TYPE, ChainReorgData::getOldHeadState)
           .withField("new_head_state", BYTES32_TYPE, ChainReorgData::getNewHeadState)
           .withField("epoch", UINT64_TYPE, ChainReorgData::getEpoch)
-          // TODO #5264
-          // .withOptionalField("execution_optimistic", BOOLEAN_TYPE,
-          // ChainReorgData::getExecutionOptimistic)
+          .withField("execution_optimistic", BOOLEAN_TYPE, ChainReorgData::isExecutionOptimistic)
           .build();
 
   ChainReorgEvent(
@@ -46,7 +44,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
       final Bytes32 oldHeadState,
       final Bytes32 newHeadState,
       final UInt64 epoch,
-      final Boolean executionOptimistic) {
+      final boolean executionOptimistic) {
     super(
         CHAIN_REORG_EVENT_TYPE,
         new ChainReorgData(
@@ -57,7 +55,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
             oldHeadState,
             newHeadState,
             epoch,
-            Optional.ofNullable(executionOptimistic)));
+            executionOptimistic));
   }
 
   public static class ChainReorgData {
@@ -68,7 +66,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
     private final Bytes32 oldHeadState;
     private final Bytes32 newHeadState;
     private final UInt64 epoch;
-    private final Optional<Boolean> executionOptimistic;
+    private final boolean executionOptimistic;
 
     ChainReorgData(
         final UInt64 slot,
@@ -78,7 +76,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
         final Bytes32 oldHeadState,
         final Bytes32 newHeadState,
         final UInt64 epoch,
-        final Optional<Boolean> executionOptimistic) {
+        final boolean executionOptimistic) {
       this.slot = slot;
       this.depth = depth;
       this.oldHeadBlock = oldHeadBlock;
@@ -117,8 +115,7 @@ public class ChainReorgEvent extends Event<ChainReorgEvent.ChainReorgData> {
       return epoch;
     }
 
-    @SuppressWarnings("UnusedMethod")
-    public Optional<Boolean> getExecutionOptimistic() {
+    public boolean isExecutionOptimistic() {
       return executionOptimistic;
     }
   }

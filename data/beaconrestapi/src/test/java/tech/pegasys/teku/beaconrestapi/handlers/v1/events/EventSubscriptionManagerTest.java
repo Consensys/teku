@@ -75,7 +75,7 @@ public class EventSubscriptionManagerTest {
           data.randomBytes32(),
           data.randomBytes32(),
           epoch,
-          null);
+          false);
 
   private final HeadEvent headEvent =
       new HeadEvent(
@@ -90,7 +90,7 @@ public class EventSubscriptionManagerTest {
       data.randomSignedContributionAndProof(0L);
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
-      new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, null);
+      new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, false);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
@@ -203,7 +203,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlockEvent();
-    checkEvent("block", new BlockEvent(sampleBlock.asInternalSignedBeaconBlock(spec), null));
+    checkEvent("block", new BlockEvent(sampleBlock.asInternalSignedBeaconBlock(spec), false));
   }
 
   @Test
@@ -330,7 +330,7 @@ public class EventSubscriptionManagerTest {
         headEvent.getData().getState(),
         headEvent.getData().getBlock(),
         false,
-        false,
+        true,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
         Optional.empty());

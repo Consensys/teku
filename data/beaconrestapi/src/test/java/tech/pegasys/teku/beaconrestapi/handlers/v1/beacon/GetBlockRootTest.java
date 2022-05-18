@@ -30,13 +30,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetBlockRoot handler;
-  private StubRestApiRequest request;
 
   @BeforeEach
   void setup() {
@@ -44,7 +42,7 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
     genesis();
 
     handler = new GetBlockRoot(chainDataProvider);
-    request = StubRestApiRequest.builder().pathParameter("block_id", "head").build();
+    request.setPathParameter("block_id", "head");
   }
 
   @Test
@@ -74,16 +72,12 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
   void metadata_shouldHandle200() throws IOException {
     final ObjectAndMetaData<Bytes32> responseData =
         new ObjectAndMetaData<>(
-            dataStructureUtil.randomBytes32(),
-            spec.getGenesisSpec().getMilestone(),
-            false,
-            false,
-            true);
+            dataStructureUtil.randomBytes32(), spec.getGenesisSpec().getMilestone(), false, true);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlockHeaderTest.class, "getBlockRoot.json"), UTF_8);
+            Resources.getResource(GetBlockRootTest.class, "getBlockRoot.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }

@@ -44,7 +44,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetPreparedBeaconProposers;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
@@ -113,6 +113,7 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
@@ -344,8 +345,7 @@ public class BeaconRestApi {
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
-    app.get(
-        GetPreparedBeaconProposers.ROUTE, new GetPreparedBeaconProposers(provider, jsonProvider));
+    app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
@@ -399,8 +399,8 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetStateValidator(dataProvider));
     app.get(
         GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
-    app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
-    app.get(GetStateSyncCommittees.ROUTE, new GetStateSyncCommittees(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetStateCommittees(dataProvider));
+    addMigratedEndpoint(new GetStateSyncCommittees(dataProvider));
 
     addMigratedEndpoint(new GetBlockHeaders(dataProvider));
     addMigratedEndpoint(new GetBlockHeader(dataProvider));
@@ -424,7 +424,7 @@ public class BeaconRestApi {
     app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));
     addMigratedEndpoint(new GetProposerSlashings(dataProvider));
     app.post(PostProposerSlashing.ROUTE, new PostProposerSlashing(dataProvider, jsonProvider));
-    app.get(GetVoluntaryExits.ROUTE, new GetVoluntaryExits(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetVoluntaryExits(dataProvider));
     app.post(PostVoluntaryExit.ROUTE, new PostVoluntaryExit(dataProvider, jsonProvider));
     app.post(PostSyncCommittees.ROUTE, new PostSyncCommittees(dataProvider, jsonProvider));
     app.post(PostValidatorLiveness.ROUTE, new PostValidatorLiveness(dataProvider, jsonProvider));
