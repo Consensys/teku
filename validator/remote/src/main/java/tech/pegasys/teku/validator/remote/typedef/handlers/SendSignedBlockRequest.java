@@ -31,7 +31,7 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
   private final boolean preferSszBlockEncoding;
-  private boolean retryAsJson = false;
+  private boolean sszNotAcceptable = false;
 
   public SendSignedBlockRequest(
       final HttpUrl baseEndpoint,
@@ -47,21 +47,25 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             ? SEND_SIGNED_BLINDED_BLOCK
             : SEND_SIGNED_BLOCK;
 
-    final SendSignedBlockResult result =
-        preferSszBlockEncoding
-            ? sendSignedBlockAsSszOrFallback(apiMethod, signedBeaconBlock)
-            : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
-    if (!result.isPublished() && retryAsJson) {
+    return preferSszBlockEncoding
+        ? sendSignedBlockAsSszOrFallback(signedBeaconBlock, apiMethod)
+        : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
+  }
+
+  private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
+      final SignedBeaconBlock signedBeaconBlock, final ValidatorApiMethod apiMethod) {
+    final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBeaconBlock);
+    if (!result.isPublished() && sszNotAcceptable) {
       return sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
     }
     return result;
   }
 
-  public boolean isRetryAsJson() {
-    return retryAsJson;
+  public boolean isSszNotAcceptable() {
+    return sszNotAcceptable;
   }
 
-  private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
+  private SendSignedBlockResult sendSignedBlockAsSsz(
       final ValidatorApiMethod apiMethod, final SignedBeaconBlock signedBeaconBlock) {
     return postOctetStream(
             apiMethod,
@@ -74,7 +78,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
   private Optional<Object> handleNotAcceptableResult(
       final Request request, final Response response) {
-    retryAsJson = true;
+    sszNotAcceptable = true;
     return Optional.empty();
   }
 

@@ -86,12 +86,6 @@ public class JavalinRestApiRequest implements RestApiRequest {
     respond(statusCode, new HttpErrorResponse(statusCode, message));
   }
 
-  @Override
-  public Optional<String> getContentTypes() {
-    final String contentType = context.contentType();
-    return Optional.ofNullable(contentType);
-  }
-
   private byte[] respond(final int statusCode, final Optional<Object> response)
       throws JsonProcessingException {
     context.status(statusCode);
@@ -150,11 +144,5 @@ public class JavalinRestApiRequest implements RestApiRequest {
         .deserializeFromString(
             SingleQueryParameterUtils.validateQueryParameter(
                 queryParamMap, parameterMetadata.getName()));
-  }
-
-  @FunctionalInterface
-  public interface ResultProcessor<T> {
-    // Process result, returning an optional serialized response
-    Optional<String> process(Context context, T result) throws Exception;
   }
 }
