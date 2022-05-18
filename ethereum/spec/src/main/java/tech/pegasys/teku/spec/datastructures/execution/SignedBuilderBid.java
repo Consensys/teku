@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,27 +14,33 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedBuilderBidV1Schema
-    extends ContainerSchema2<SignedBuilderBidV1, BuilderBidV1, SszSignature> {
+public class SignedBuilderBid extends Container2<SignedBuilderBid, BuilderBid, SszSignature> {
 
-  public SignedBuilderBidV1Schema(final BuilderBidV1Schema builderBidV1Schema) {
-    super(
-        "SignedBuilderBidV1",
-        namedSchema("message", builderBidV1Schema),
-        namedSchema("signature", SszSignatureSchema.INSTANCE));
+  SignedBuilderBid(SignedBuilderBidSchema type, TreeNode backingNode) {
+    super(type, backingNode);
   }
 
-  public SignedBuilderBidV1 create(final BuilderBidV1 message, final BLSSignature signature) {
-    return new SignedBuilderBidV1(this, message, signature);
+  SignedBuilderBid(
+      final SignedBuilderBidSchema type,
+      final BuilderBid message,
+      final BLSSignature signature) {
+    super(type, message, new SszSignature(signature));
   }
 
   @Override
-  public SignedBuilderBidV1 createFromBackingNode(TreeNode node) {
-    return new SignedBuilderBidV1(this, node);
+  public SignedBuilderBidSchema getSchema() {
+    return (SignedBuilderBidSchema) super.getSchema();
+  }
+
+  public BuilderBid getMessage() {
+    return getField0();
+  }
+
+  public BLSSignature getSignature() {
+    return getField1().getSignature();
   }
 }

@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -92,7 +92,7 @@ public class ProposersDataManager {
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
-      final Collection<SignedValidatorRegistrationV1> validatorRegistrations,
+      final Collection<SignedValidatorRegistration> validatorRegistrations,
       final UInt64 currentSlot) {
     // Remove expired validators
     validatorRegistrationInfoByValidatorIndex
@@ -174,7 +174,7 @@ public class ProposersDataManager {
     }
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
-    final Optional<SignedValidatorRegistrationV1> validatorRegistration =
+    final Optional<SignedValidatorRegistration> validatorRegistration =
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
     return Optional.of(
@@ -251,7 +251,7 @@ public class ProposersDataManager {
                                     .getMessage()
                                     .getFeeRecipient())
                             .put(
-                                "gas_target",
+                                "gas_limit",
                                 registeredValidatorInfoEntry
                                     .getValue()
                                     .getSignedValidatorRegistration()

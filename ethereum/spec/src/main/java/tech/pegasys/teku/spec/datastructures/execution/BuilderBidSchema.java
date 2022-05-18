@@ -22,26 +22,26 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class BuilderBidV1Schema
-    extends ContainerSchema3<BuilderBidV1, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
-  public BuilderBidV1Schema(final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema) {
+public class BuilderBidSchema
+    extends ContainerSchema3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
+  public BuilderBidSchema(final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema) {
     super(
-        "BuilderBidV1",
+        "BuilderBid",
         namedSchema("header", executionPayloadHeaderSchema),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
   }
 
-  public BuilderBidV1 create(
+  public BuilderBid create(
       final ExecutionPayloadHeader executionPayloadHeader,
       final UInt256 value,
       final BLSPublicKey publicKey) {
-    return new BuilderBidV1(
+    return new BuilderBid(
         this, executionPayloadHeader, SszUInt256.of(value), new SszPublicKey(publicKey));
   }
 
   @Override
-  public BuilderBidV1 createFromBackingNode(TreeNode node) {
-    return new BuilderBidV1(this, node);
+  public BuilderBid createFromBackingNode(TreeNode node) {
+    return new BuilderBid(this, node);
   }
 }

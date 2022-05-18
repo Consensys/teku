@@ -25,24 +25,24 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class ValidatorRegistrationV1Schema
+public class ValidatorRegistrationSchema
     extends ContainerSchema4<
-        ValidatorRegistrationV1, SszByteVector, SszUInt64, SszUInt64, SszPublicKey> {
-  public ValidatorRegistrationV1Schema() {
+    ValidatorRegistration, SszByteVector, SszUInt64, SszUInt64, SszPublicKey> {
+  public ValidatorRegistrationSchema() {
     super(
-        "ValidatorRegistrationV1",
+        "ValidatorRegistration",
         namedSchema("fee_recipient", SszByteVectorSchema.create(Bytes20.SIZE)),
         namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
   }
 
-  public ValidatorRegistrationV1 create(
+  public ValidatorRegistration create(
       final Bytes20 feeRecipient,
       final UInt64 gasLimit,
       final UInt64 timestamp,
       final BLSPublicKey publicKey) {
-    return new ValidatorRegistrationV1(
+    return new ValidatorRegistration(
         this,
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
         SszUInt64.of(gasLimit),
@@ -51,7 +51,7 @@ public class ValidatorRegistrationV1Schema
   }
 
   @Override
-  public ValidatorRegistrationV1 createFromBackingNode(TreeNode node) {
-    return new ValidatorRegistrationV1(this, node);
+  public ValidatorRegistration createFromBackingNode(TreeNode node) {
+    return new ValidatorRegistration(this, node);
   }
 }

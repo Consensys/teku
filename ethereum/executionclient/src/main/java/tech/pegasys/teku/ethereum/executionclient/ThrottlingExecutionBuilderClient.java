@@ -23,8 +23,8 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient {
   private final ExecutionBuilderClient delegate;
@@ -50,13 +50,13 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
+      UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
     return taskQueue.queueTask(
-        () -> delegate.registerValidator(slot, signedValidatorRegistrationV1));
+        () -> delegate.registerValidator(slot, signedValidatorRegistration));
   }
 
   @Override
-  public SafeFuture<Response<SignedBuilderBidV1>> getHeader(
+  public SafeFuture<Response<SignedBuilderBid>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     return taskQueue.queueTask(() -> delegate.getHeader(slot, pubKey, parentHash));
   }

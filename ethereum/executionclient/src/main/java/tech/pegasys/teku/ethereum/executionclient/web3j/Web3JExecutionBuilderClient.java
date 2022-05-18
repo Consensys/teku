@@ -21,8 +21,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
   @SuppressWarnings("unused") // will be removed in upcoming PRs
@@ -39,12 +39,12 @@ public class Web3JExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
+      UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Deprecated"));
   }
 
   @Override
-  public SafeFuture<Response<SignedBuilderBidV1>> getHeader(
+  public SafeFuture<Response<SignedBuilderBid>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Deprecated"));
   }

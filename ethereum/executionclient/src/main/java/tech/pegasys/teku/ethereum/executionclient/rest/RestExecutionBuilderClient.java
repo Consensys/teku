@@ -35,9 +35,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1Schema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -48,8 +48,8 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
       cachedBuilderApiExecutionPayloadResponseType = new ConcurrentHashMap<>();
 
   private final Map<
-          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidV1>>>
-      cachedBuilderApiSignedBuilderBidV1ResponseType = new ConcurrentHashMap<>();
+          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>>
+      cachedBuilderApiSignedBuilderBidResponseType = new ConcurrentHashMap<>();
 
   private final RestClient restClient;
   private final SchemaDefinitionCache schemaDefinitionCache;
@@ -68,24 +68,24 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      final UInt64 slot, final SignedValidatorRegistrationV1 signedValidatorRegistrationV1) {
+      final UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
 
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
     final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
         getSchemaDefinitionsBellatrix(milestone);
 
-    final DeserializableTypeDefinition<SignedValidatorRegistrationV1> requestType =
+    final DeserializableTypeDefinition<SignedValidatorRegistration> requestType =
         schemaDefinitionsBellatrix.getSignedValidatorRegistrationSchema().getJsonTypeDefinition();
     return restClient
         .postAsync(
             BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
-            signedValidatorRegistrationV1,
+            signedValidatorRegistration,
             requestType)
         .orTimeout(EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 
   @Override
-  public SafeFuture<Response<SignedBuilderBidV1>> getHeader(
+  public SafeFuture<Response<SignedBuilderBid>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
 
     final Map<String, String> urlParams = new HashMap<>();
@@ -95,17 +95,17 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
 
-    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidV1>>
+    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>
         responseTypeDefinition =
-            cachedBuilderApiSignedBuilderBidV1ResponseType.computeIfAbsent(
+            cachedBuilderApiSignedBuilderBidResponseType.computeIfAbsent(
                 milestone,
                 __ -> {
                   final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
                       getSchemaDefinitionsBellatrix(milestone);
-                  final SignedBuilderBidV1Schema signedBuilderBidV1Schema =
-                      schemaDefinitionsBellatrix.getSignedBuilderBidV1Schema();
+                  final SignedBuilderBidSchema signedBuilderBidSchema =
+                      schemaDefinitionsBellatrix.getSignedBuilderBidSchema();
                   return BuilderApiResponse.createTypeDefinition(
-                      signedBuilderBidV1Schema.getJsonTypeDefinition());
+                      signedBuilderBidSchema.getJsonTypeDefinition());
                 });
 
     return restClient
