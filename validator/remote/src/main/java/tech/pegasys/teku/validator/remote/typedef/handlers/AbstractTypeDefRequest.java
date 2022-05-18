@@ -38,6 +38,7 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 public abstract class AbstractTypeDefRequest {
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
   private static final Logger LOG = LogManager.getLogger();
   private final HttpUrl baseEndpoint;
   private final OkHttpClient httpClient;
@@ -123,6 +124,21 @@ public abstract class AbstractTypeDefRequest {
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
+    return executeCall(request, responseHandler);
+  }
+
+  protected <T> Optional<T> postOctetStream(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final byte[] objectBytes,
+      final ResponseHandler<T> responseHandler) {
+    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    final Request request =
+        requestBuilder()
+            .url(httpUrlBuilder.build())
+            .post(RequestBody.create(objectBytes, OCTET_STREAM))
+            .build();
+
     return executeCall(request, responseHandler);
   }
 

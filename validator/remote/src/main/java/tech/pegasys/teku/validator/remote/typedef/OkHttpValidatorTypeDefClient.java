@@ -36,6 +36,8 @@ public class OkHttpValidatorTypeDefClient {
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
 
+  private boolean sendBlockReceivedNotAcceptable = false;
+
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
       final HttpUrl baseEndpoint,
@@ -54,9 +56,14 @@ public class OkHttpValidatorTypeDefClient {
 
   public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
     final SendSignedBlockRequest sendSignedBlockRequest =
-        new SendSignedBlockRequest(baseEndpoint, okHttpClient);
+        new SendSignedBlockRequest(
+            baseEndpoint, okHttpClient, !sendBlockReceivedNotAcceptable && preferSszBlockEncoding);
 
-    return sendSignedBlockRequest.sendSignedBlock(beaconBlock);
+    final SendSignedBlockResult result = sendSignedBlockRequest.sendSignedBlock(beaconBlock);
+    if (sendSignedBlockRequest.isSszNotAcceptable()) {
+      sendBlockReceivedNotAcceptable = true;
+    }
+    return result;
   }
 
   public Optional<BeaconBlock> createUnsignedBlock(
