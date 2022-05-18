@@ -51,12 +51,13 @@ public interface ExecutionWeb3jClientProvider {
       final TimeProvider timeProvider,
       final Duration timeout,
       final Optional<String> jwtSecretFile,
+      final boolean jwtSupported,
       final Path beaconDataDirectory) {
     if (endpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {
       return STUB;
     } else {
       return new DefaultExecutionWeb3jClientProvider(
-          endpoint, timeProvider, timeout, jwtSecretFile, beaconDataDirectory);
+          endpoint, timeProvider, timeout, jwtSecretFile, jwtSupported, beaconDataDirectory);
     }
   }
 
