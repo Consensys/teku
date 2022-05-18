@@ -30,11 +30,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 class GetVoluntaryExitsTest extends AbstractMigratedBeaconHandlerTest {
-  private final StubRestApiRequest request = new StubRestApiRequest();
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final GetVoluntaryExits handler = new GetVoluntaryExits(nodeDataProvider);
 

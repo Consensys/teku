@@ -29,11 +29,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 
 public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
   private final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-  private StubRestApiRequest request = new StubRestApiRequest();
 
   @Test
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {
@@ -66,7 +64,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnCustomSyncingStatusWhenSyncing() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    request = StubRestApiRequest.builder().optionalQueryParameter(SYNCING_STATUS, "100").build();
+    request.setOptionalQueryParameter(SYNCING_STATUS, "100");
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_CONTINUE);
@@ -76,7 +74,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnDefaultSyncingStatusWhenSyncingWrongParam() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    request = StubRestApiRequest.builder().optionalQueryParameter(SYNCING_STATUS, "a").build();
+    request.setOptionalQueryParameter(SYNCING_STATUS, "a");
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_PARTIAL_CONTENT);
   }
@@ -85,7 +83,7 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnDefaultSyncingStatusWhenSyncingMultipleParams() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    request = StubRestApiRequest.builder().optionalQueryParameter(SYNCING_STATUS, "1,2").build();
+    request.setOptionalQueryParameter(SYNCING_STATUS, "1,2");
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_PARTIAL_CONTENT);
