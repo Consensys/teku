@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -144,6 +145,15 @@ public class JavalinRestApiRequest implements RestApiRequest {
         .deserializeFromString(
             SingleQueryParameterUtils.validateQueryParameter(
                 queryParamMap, parameterMetadata.getName()));
+  }
+
+  public <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata) {
+    final List<String> paramList =
+        ListQueryParameterUtils.getParameterAsStringList(
+            queryParamMap, parameterMetadata.getName());
+    return paramList.stream()
+        .map(item -> parameterMetadata.getType().deserializeFromString(item))
+        .collect(Collectors.toList());
   }
 
   @FunctionalInterface
