@@ -48,6 +48,7 @@ public class ExecutionLayerService extends Service {
             serviceConfig.getTimeProvider(),
             EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
             config.getEngineJwtSecretFile(),
+            true,
             serviceConfig.getDataDirLayout().getBeaconDataDirectory());
 
     final Optional<ExecutionWeb3jClientProvider> builderWeb3jClientProvider =
@@ -60,6 +61,7 @@ public class ExecutionLayerService extends Service {
                         serviceConfig.getTimeProvider(),
                         EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
                         Optional.empty(),
+                        false,
                         serviceConfig.getDataDirLayout().getBeaconDataDirectory()));
 
     final boolean builderIsStub =
