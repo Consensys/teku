@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
@@ -334,7 +334,7 @@ class ExecutionLayerManagerImplTest {
       final ExecutionPayloadContext executionPayloadContext) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    SignedBuilderBidV1 signedBuilderBidV1 = dataStructureUtil.randomSignedBuilderBidV1();
+    SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid();
 
     when(executionBuilderClient.getHeader(
             slot,
@@ -343,9 +343,9 @@ class ExecutionLayerManagerImplTest {
                 .getValidatorRegistrationPublicKey()
                 .orElseThrow(),
             executionPayloadContext.getParentHash()))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(signedBuilderBidV1)));
+        .thenReturn(SafeFuture.completedFuture(new Response<>(signedBuilderBid)));
 
-    return signedBuilderBidV1.getMessage().getExecutionPayloadHeader();
+    return signedBuilderBid.getMessage().getExecutionPayloadHeader();
   }
 
   private ExecutionPayload prepareBuilderGetPayloadResponse(
