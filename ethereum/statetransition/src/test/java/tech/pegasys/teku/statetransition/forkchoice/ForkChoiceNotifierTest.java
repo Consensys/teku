@@ -103,8 +103,9 @@ class ForkChoiceNotifierTest {
     proposersDataManager =
         spy(
             new ProposersDataManager(
-                spec,
                 eventThread,
+                spec,
+                executionLayerChannel,
                 recentChainData,
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
@@ -130,7 +131,9 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     proposersDataManager =
-        spy(new ProposersDataManager(spec, eventThread, recentChainData, defaultFeeRecipient));
+        spy(
+            new ProposersDataManager(
+                eventThread, spec, executionLayerChannel, recentChainData, defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);
