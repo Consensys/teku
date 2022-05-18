@@ -18,26 +18,26 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class SignedValidatorRegistrationV1
-    extends Container2<SignedValidatorRegistrationV1, ValidatorRegistrationV1, SszSignature> {
+public class SignedValidatorRegistration
+    extends Container2<SignedValidatorRegistration, ValidatorRegistration, SszSignature> {
 
-  SignedValidatorRegistrationV1(SignedValidatorRegistrationV1Schema type, TreeNode backingNode) {
+  SignedValidatorRegistration(SignedValidatorRegistrationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  SignedValidatorRegistrationV1(
-      final SignedValidatorRegistrationV1Schema type,
-      final ValidatorRegistrationV1 message,
+  SignedValidatorRegistration(
+      final SignedValidatorRegistrationSchema type,
+      final ValidatorRegistration message,
       final BLSSignature signature) {
     super(type, message, new SszSignature(signature));
   }
 
   @Override
-  public SignedValidatorRegistrationV1Schema getSchema() {
-    return (SignedValidatorRegistrationV1Schema) super.getSchema();
+  public SignedValidatorRegistrationSchema getSchema() {
+    return (SignedValidatorRegistrationSchema) super.getSchema();
   }
 
-  public ValidatorRegistrationV1 getMessage() {
+  public ValidatorRegistration getMessage() {
     return getField0();
   }
 

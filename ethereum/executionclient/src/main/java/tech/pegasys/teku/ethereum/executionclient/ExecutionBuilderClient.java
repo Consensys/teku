@@ -20,17 +20,17 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 public interface ExecutionBuilderClient {
 
   SafeFuture<Response<Void>> status();
 
   SafeFuture<Response<Void>> registerValidator(
-      UInt64 slot, SignedValidatorRegistrationV1 signedValidatorRegistrationV1);
+      UInt64 slot, SignedValidatorRegistration signedValidatorRegistration);
 
-  SafeFuture<Response<SignedBuilderBidV1>> getHeader(
+  SafeFuture<Response<SignedBuilderBid>> getHeader(
       UInt64 slot, BLSPublicKey pubKey, Bytes32 parentHash);
 
   SafeFuture<Response<ExecutionPayload>> getPayload(SignedBeaconBlock signedBlindedBeaconBlock);

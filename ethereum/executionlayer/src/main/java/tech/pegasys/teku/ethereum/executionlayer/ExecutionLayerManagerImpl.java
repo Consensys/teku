@@ -50,12 +50,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -287,8 +287,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getHeader(
             slot, registeredValidatorPublicKey.get(), executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
-        .thenApply(SignedBuilderBidV1::getMessage)
-        .thenApply(BuilderBidV1::getExecutionPayloadHeader)
+        .thenApply(SignedBuilderBid::getMessage)
+        .thenApply(BuilderBid::getExecutionPayloadHeader)
         .thenPeek(
             executionPayloadHeader -> {
               // store that we haven't fallen back for this slot

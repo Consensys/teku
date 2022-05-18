@@ -49,8 +49,8 @@ public class RegisteredValidatorInfoSchema {
   Bytes20 fee_recipient;
 
   @Schema(type = "string", format = "uint64")
-  @JsonProperty("gas_target")
-  UInt64 gas_target;
+  @JsonProperty("gas_limit")
+  UInt64 gas_limit;
 
   @Schema(type = "string", format = "uint64")
   @JsonProperty("timestamp")

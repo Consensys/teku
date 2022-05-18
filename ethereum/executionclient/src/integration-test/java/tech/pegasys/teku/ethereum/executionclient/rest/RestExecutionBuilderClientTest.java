@@ -45,8 +45,8 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -146,7 +146,7 @@ class RestExecutionBuilderClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SignedValidatorRegistrationV1 signedValidatorRegistration = createSignedValidatorRegistration();
+    SignedValidatorRegistration signedValidatorRegistration = createSignedValidatorRegistration();
 
     assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -166,7 +166,7 @@ class RestExecutionBuilderClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(unknownValidatorError));
 
-    SignedValidatorRegistrationV1 signedValidatorRegistration = createSignedValidatorRegistration();
+    SignedValidatorRegistration signedValidatorRegistration = createSignedValidatorRegistration();
 
     assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -203,8 +203,8 @@ class RestExecutionBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              SignedBuilderBidV1 responsePayload = response.getPayload();
-              verifySignedBuilderBidV1Response(responsePayload);
+              SignedBuilderBid responsePayload = response.getPayload();
+              verifySignedBuilderBidResponse(responsePayload);
             });
 
     verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
@@ -321,7 +321,7 @@ class RestExecutionBuilderClientTest {
     }
   }
 
-  private SignedValidatorRegistrationV1 createSignedValidatorRegistration() {
+  private SignedValidatorRegistration createSignedValidatorRegistration() {
     try {
       return JsonUtil.parse(
           SIGNED_VALIDATOR_REGISTRATION_REQUEST,
@@ -333,12 +333,12 @@ class RestExecutionBuilderClientTest {
     }
   }
 
-  private void verifySignedBuilderBidV1Response(SignedBuilderBidV1 actual) {
-    DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidV1>> responseTypeDefinition =
+  private void verifySignedBuilderBidResponse(SignedBuilderBid actual) {
+    DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>> responseTypeDefinition =
         BuilderApiResponse.createTypeDefinition(
-            schemaDefinitionsBellatrix.getSignedBuilderBidV1Schema().getJsonTypeDefinition());
+            schemaDefinitionsBellatrix.getSignedBuilderBidSchema().getJsonTypeDefinition());
     try {
-      SignedBuilderBidV1 expected =
+      SignedBuilderBid expected =
           JsonUtil.parse(EXECUTION_PAYLOAD_HEADER_RESPONSE, responseTypeDefinition).getData();
       assertThat(actual).isEqualTo(expected);
     } catch (JsonProcessingException ex) {
