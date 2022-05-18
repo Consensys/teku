@@ -15,25 +15,18 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.io.Resources;
-import java.io.ByteArrayInputStream;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinRestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -47,15 +40,12 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   @BeforeEach
   public void setup() {
     handler = getHandler();
-    final Map<String, String> pathParams = Map.of(SLOT, "1");
-    final Map<String, List<String>> queryParams =
-        Map.of(RANDAO_REVEAL, List.of(signature.toBytesCompressed().toHexString()));
-
-    when(context.queryParamMap()).thenReturn(queryParams);
-    when(context.pathParamMap()).thenReturn(pathParams);
+    request.setPathParameter(SLOT, "1");
+    request.setQueryParameter(RANDAO_REVEAL, signature.toBytesCompressed().toHexString());
     when(validatorDataProvider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void shouldReturnBlockWithoutGraffiti() throws Exception {
     final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
@@ -63,11 +53,11 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
             ONE, signature, Optional.empty(), isBlindedBlocks()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)));
 
-    RestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
 
-    final ByteArrayInputStream byteArrayInputStream = safeJoin(getResultFuture());
-    assertThat(new String(byteArrayInputStream.readAllBytes(), UTF_8))
+    assertThat(request.getResponseBody()).isEqualTo(randomBeaconBlock);
+    // Check block serializes correctly
+    assertThat(request.getResponseBodyAsJson(handler))
         .isEqualTo(
             Resources.toString(
                 Resources.getResource(AbstractGetNewBlockTest.class, "beaconBlock.json"), UTF_8));
@@ -79,12 +69,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
             ONE, signature, Optional.empty(), isBlindedBlocks()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    JavalinRestApiRequest request = new JavalinRestApiRequest(context, handler.getMetadata());
     handler.handleRequest(request);
-
-    SafeFuture<ByteArrayInputStream> future = getResultFuture();
-    assertThat(future).isCompletedExceptionally();
-    assertThatThrownBy(future::get).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
+    assertThat(request.getResponseError()).containsInstanceOf(ChainDataUnavailableException.class);
   }
 
   public abstract MigratingEndpointAdapter getHandler();

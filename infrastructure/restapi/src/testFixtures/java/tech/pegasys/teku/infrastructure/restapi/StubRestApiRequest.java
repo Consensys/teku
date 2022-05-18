@@ -13,21 +13,29 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class StubRestApiRequest implements RestApiRequest {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,6 +43,7 @@ public class StubRestApiRequest implements RestApiRequest {
   private Object requestBody = null;
   private int responseCode = CODE_NOT_SET;
   private Object responseObject = null;
+  private Optional<Throwable> responseError = Optional.empty();
   private CacheLength cacheLength = null;
   private final Map<String, String> pathParameters = new HashMap<>();
   private final Map<String, String> queryParameters = new HashMap<>();
@@ -74,7 +83,16 @@ public class StubRestApiRequest implements RestApiRequest {
   @Override
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
     assertThat(this.responseCode).isEqualTo(CODE_NOT_SET);
-    final AsyncApiResponse response = futureResponse.join();
+    final AsyncApiResponse response;
+    try {
+      response = safeJoin(futureResponse);
+    } catch (final CompletionException e) {
+      responseError = Optional.of(e.getCause());
+      return;
+    } catch (final Throwable e) {
+      responseError = Optional.of(e);
+      return;
+    }
     responseCode = response.getResponseCode();
     if (response.getResponseBody().isEmpty()) {
       LOG.warn("Response body was empty on async response");
@@ -114,7 +132,7 @@ public class StubRestApiRequest implements RestApiRequest {
     this.queryParameters.put(parameter, value);
   }
 
-  private void setOptionalQueryParameter(final String parameter, final String value) {
+  public void setOptionalQueryParameter(final String parameter, final String value) {
     assertThat(this.optionalQueryParameters.containsKey(parameter)).isFalse();
     this.optionalQueryParameters.put(parameter, value);
   }
@@ -147,6 +165,20 @@ public class StubRestApiRequest implements RestApiRequest {
 
   public Object getResponseBody() {
     return responseObject;
+  }
+
+  @SuppressWarnings("unchecked")
+  public String getResponseBodyAsJson(final RestApiEndpoint handler) throws IOException {
+    final ResponseContentTypeDefinition<Object> responseType =
+        (ResponseContentTypeDefinition<Object>)
+            handler.getMetadata().getResponseType(responseCode, ContentTypes.JSON);
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    responseType.serialize(responseObject, out);
+    return out.toString(UTF_8);
+  }
+
+  public Optional<Throwable> getResponseError() {
+    return responseError;
   }
 
   public static class Builder {

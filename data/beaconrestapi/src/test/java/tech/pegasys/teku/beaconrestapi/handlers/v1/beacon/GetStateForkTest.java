@@ -36,11 +36,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetStateFork handler;
   private StateAndMetaData responseData;
-  private final StubRestApiRequest request =
-      StubRestApiRequest.builder().pathParameter("state_id", "head").build();
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
+    request.setPathParameter("state_id", "head");
     initialise(SpecMilestone.PHASE0);
     genesis();
     handler = new GetStateFork(chainDataProvider);

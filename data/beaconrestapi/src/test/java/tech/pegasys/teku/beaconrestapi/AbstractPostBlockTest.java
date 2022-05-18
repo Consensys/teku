@@ -13,19 +13,17 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -52,17 +50,21 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
   void shouldReturnUnavailableIfSyncing() throws Exception {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
-    handler.handle(context);
+    handler.handleRequest(request);
 
-    verify(context).status(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
   void shouldReturnBadRequestIfArgumentNotJSON() {
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    withRequestBody("Not a beacon block.");
-
-    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(BadRequestException.class);
+    assertThatThrownBy(
+            () ->
+                handler
+                    .getMetadata()
+                    .getRequestBody(
+                        new ByteArrayInputStream("Not a beacon block".getBytes(UTF_8)),
+                        Optional.empty()))
+        .isInstanceOf(BadRequestException.class);
   }
 
   @Test
@@ -70,12 +72,14 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
     final String notASignedBlock =
         jsonProvider.objectToJSON(new BeaconBlockPhase0(dataStructureUtil.randomBeaconBlock(3)));
 
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    withRequestBody(notASignedBlock);
-    when(validatorDataProvider.parseBlock(any(), any()))
-        .thenThrow(mock(JsonProcessingException.class));
-
-    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(BadRequestException.class);
+    assertThatThrownBy(
+            () ->
+                handler
+                    .getMetadata()
+                    .getRequestBody(
+                        new ByteArrayInputStream(notASignedBlock.getBytes(UTF_8)),
+                        Optional.empty()))
+        .isInstanceOf(BadRequestException.class);
   }
 
   @Test
@@ -84,37 +88,28 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
         SendSignedBlockResult.success(dataStructureUtil.randomBytes32());
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    withRequestBody(buildSignedBeaconBlock());
+    request.setRequestBody(dataStructureUtil.randomSignedBeaconBlock(3));
     setupValidatorDataProviderSubmit(SafeFuture.completedFuture(successResult));
 
-    handler.handle(context);
+    handler.handleRequest(request);
 
-    verify(context).status(SC_OK);
-    assertThat(getResultStringFromSuccessfulFuture()).isEqualTo("");
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   void shouldAcceptBlockAsSsz() throws Exception {
-    final SendSignedBlockResult successResult =
-        SendSignedBlockResult.success(dataStructureUtil.randomBytes32());
-
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     final SignedBeaconBlock data = dataStructureUtil.randomSignedBeaconBlock(3);
-
-    when(context.header("Content-Type")).thenReturn(ContentTypes.OCTET_STREAM);
-    when(context.bodyAsInputStream())
-        .thenReturn(new ByteArrayInputStream(data.sszSerialize().toArrayUnsafe()));
-
-    setupValidatorDataProviderSubmit(SafeFuture.completedFuture(successResult));
-
-    handler.handle(context);
-
-    verify(context).status(SC_OK);
-    assertThat(getResultStringFromSuccessfulFuture()).isEqualTo("");
+    final SignedBeaconBlock result =
+        handler
+            .getMetadata()
+            .getRequestBody(
+                new ByteArrayInputStream(data.sszSerialize().toArrayUnsafe()),
+                Optional.of(ContentTypes.OCTET_STREAM));
+    assertThat(result).isEqualTo(data);
   }
 
   private void setupValidatorDataProviderSubmit(final SafeFuture<SendSignedBlockResult> future) {
-
     if (isBlinded()) {
       when(validatorDataProvider.submitSignedBlindedBlock(any())).thenReturn(future);
     } else {
@@ -129,24 +124,13 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
         SafeFuture.completedFuture(failResult);
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    withRequestBody(buildSignedBeaconBlock());
+    request.setRequestBody(dataStructureUtil.randomSignedBeaconBlock(3));
 
     setupValidatorDataProviderSubmit(validatorBlockResultSafeFuture);
 
-    handler.handle(context);
+    handler.handleRequest(request);
 
-    verify(context).status(SC_ACCEPTED);
-    assertThat(getResultStringFromSuccessfulFuture()).isEqualTo("");
-  }
-
-  private String buildSignedBeaconBlock() throws JsonProcessingException {
-    return jsonProvider.objectToJSON(
-        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(
-            dataStructureUtil.randomSignedBeaconBlock(3)));
-  }
-
-  private void withRequestBody(final String data) {
-    when(context.bodyAsInputStream())
-        .thenReturn(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+    assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
+    assertThat(request.getResponseBody()).isNull();
   }
 }

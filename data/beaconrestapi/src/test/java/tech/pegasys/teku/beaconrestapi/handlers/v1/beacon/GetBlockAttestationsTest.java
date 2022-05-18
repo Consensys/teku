@@ -27,21 +27,24 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
-  private final StubRestApiRequest request =
-      StubRestApiRequest.builder().pathParameter("block_id", "head").build();
   private final GetBlockAttestations handler = new GetBlockAttestations(chainDataProvider, spec);
   private final List<Attestation> attestations =
       List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
   private final ObjectAndMetaData<List<Attestation>> responseData =
       new ObjectAndMetaData<>(attestations, spec.getGenesisSpec().getMilestone(), false, true);
+
+  @BeforeEach
+  void setUp() {
+    request.setPathParameter("block_id", "head");
+  }
 
   @Test
   public void shouldReturnBlockAttestationsInformation() throws JsonProcessingException {

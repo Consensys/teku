@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -38,12 +37,11 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
   private final MockNodeId peerId = new MockNodeId(123456);
   private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final StubRestApiRequest request =
-      StubRestApiRequest.builder().pathParameter("peer_id", peerId.toBase58()).build();
   private final GetPeerById handler = new GetPeerById(network);
 
   @BeforeEach
   void setUp() {
+    request.setPathParameter("peer_id", peerId.toBase58());
     when(peer.getId()).thenReturn(peerId);
     when(peer.getAddress()).thenReturn(new PeerAddress(peerId));
     when(peer.isConnected()).thenReturn(true);
