@@ -24,5 +24,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Optimised BLS batch validation.
 - Optimised message ID calculation in jvm-libp2p.
 - Reduced memory requirements when sending events on the REST API to many clients.
+- Added a labelled metric `executor_rejected_execution_total` to track rejected execution, and updated health check to return 503 if rejected executions are occurring.
 
 ### Bug Fixes

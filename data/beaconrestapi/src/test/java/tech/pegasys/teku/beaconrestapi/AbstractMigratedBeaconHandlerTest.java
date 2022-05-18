@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static org.mockito.Mockito.mock;
 
+import java.util.function.IntSupplier;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
@@ -40,7 +41,10 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
 
   protected final SyncService syncService = mock(SyncService.class);
-  protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
+  protected int rejectedExecutionCount = 0;
+  protected final IntSupplier rejectedExecutionSupplier = () -> rejectedExecutionCount;
+  protected final SyncDataProvider syncDataProvider =
+      new SyncDataProvider(syncService, rejectedExecutionSupplier);
   protected final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

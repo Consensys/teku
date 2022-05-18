@@ -15,6 +15,7 @@ package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.function.IntSupplier;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -101,6 +102,7 @@ public class DataProvider {
     private ProposersDataManager proposersDataManager;
 
     private boolean isLivenessTrackingEnabled = true;
+    private IntSupplier rejectedExecutionSupplier;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -203,7 +205,8 @@ public class DataProvider {
               proposersDataManager);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-      final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
+      final SyncDataProvider syncDataProvider =
+          new SyncDataProvider(syncService, rejectedExecutionSupplier);
       final ValidatorDataProvider validatorDataProvider =
           new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
 
@@ -219,6 +222,11 @@ public class DataProvider {
           chainDataProvider,
           syncDataProvider,
           validatorDataProvider);
+    }
+
+    public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {
+      this.rejectedExecutionSupplier = rejectedExecutionCountSupplier;
+      return this;
     }
   }
 }

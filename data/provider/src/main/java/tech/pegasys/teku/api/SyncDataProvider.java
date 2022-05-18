@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api;
 
+import java.util.function.IntSupplier;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
@@ -21,13 +22,19 @@ import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 public class SyncDataProvider {
 
   private final SyncService syncService;
+  private final IntSupplier rejectedExecutionSupplier;
 
-  public SyncDataProvider(SyncService syncService) {
+  public SyncDataProvider(SyncService syncService, final IntSupplier rejectedExecutionSupplier) {
     this.syncService = syncService;
+    this.rejectedExecutionSupplier = rejectedExecutionSupplier;
   }
 
   public SyncingStatus getSyncingStatus() {
     return syncService.getSyncStatus();
+  }
+
+  public int getRejectedExecutionCount() {
+    return rejectedExecutionSupplier.getAsInt();
   }
 
   public long subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber) {

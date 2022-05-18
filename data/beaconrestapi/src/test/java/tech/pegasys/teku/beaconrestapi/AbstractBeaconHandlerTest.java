@@ -46,7 +46,7 @@ public abstract class AbstractBeaconHandlerTest {
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
 
   protected final SyncService syncService = mock(SyncService.class);
-  protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
+  protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService, () -> 0);
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
 
   @SuppressWarnings("unchecked")
