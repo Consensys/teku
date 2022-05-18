@@ -33,6 +33,8 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -41,7 +43,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
-import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -89,14 +90,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   public static ExecutionLayerManagerImpl create(
       final Web3JClient engineWeb3JClient,
-      final Optional<Web3JClient> builderWeb3JClient,
+      final Optional<RestClient> builderRestClient,
       final Version version,
       final Spec spec,
       final MetricsSystem metricsSystem) {
     checkNotNull(version);
     return new ExecutionLayerManagerImpl(
         createEngineClient(version, engineWeb3JClient, metricsSystem),
-        createBuilderClient(builderWeb3JClient, metricsSystem),
+        createBuilderClient(builderRestClient, spec, metricsSystem),
         spec,
         EVENT_LOG);
   }
@@ -112,14 +113,15 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private static Optional<ExecutionBuilderClient> createBuilderClient(
-      final Optional<Web3JClient> web3JClient, final MetricsSystem metricsSystem) {
-    return web3JClient.flatMap(
+      final Optional<RestClient> builderRestClient,
+      final Spec spec,
+      final MetricsSystem metricsSystem) {
+    return builderRestClient.map(
         client ->
-            Optional.of(
-                new ThrottlingExecutionBuilderClient(
-                    new Web3JExecutionBuilderClient(client),
-                    MAXIMUM_CONCURRENT_EB_REQUESTS,
-                    metricsSystem)));
+            new ThrottlingExecutionBuilderClient(
+                new RestExecutionBuilderClient(client, spec),
+                MAXIMUM_CONCURRENT_EB_REQUESTS,
+                metricsSystem));
   }
 
   ExecutionLayerManagerImpl(

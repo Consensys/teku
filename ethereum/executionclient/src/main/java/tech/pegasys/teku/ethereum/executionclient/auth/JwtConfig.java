@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionclient.auth;
 
+import java.nio.file.Path;
 import java.security.Key;
+import java.util.Optional;
 
 public class JwtConfig {
 
@@ -37,5 +39,16 @@ public class JwtConfig {
 
   public Key getKey() {
     return key;
+  }
+
+  public static Optional<JwtConfig> createIfNeeded(
+      final boolean needed, final Optional<String> jwtSecretFile, final Path beaconDataDirectory) {
+    if (needed) {
+      final JwtSecretKeyLoader keyLoader =
+          new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
+      return Optional.of(new JwtConfig(keyLoader.getSecretKey()));
+    } else {
+      return Optional.empty();
+    }
   }
 }

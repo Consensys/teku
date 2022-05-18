@@ -11,34 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient.web3j;
+package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER;
 
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
-import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public interface ExecutionWeb3jClientProvider {
-  ExecutionWeb3jClientProvider STUB =
-      new ExecutionWeb3jClientProvider() {
-        @Override
-        public Web3JClient getWeb3JClient() {
-          throw new InvalidConfigurationException("Stub provider");
-        }
+public interface RestClientProvider {
+
+  RestClientProvider STUB =
+      new RestClientProvider() {
 
         @Override
-        public Web3j getWeb3j() {
+        public RestClient getRestClient() {
           throw new InvalidConfigurationException("Stub provider");
-        }
-
-        @Override
-        public String getEndpoint() {
-          return STUB_ENDPOINT_IDENTIFIER;
         }
 
         @Override
@@ -47,7 +38,7 @@ public interface ExecutionWeb3jClientProvider {
         }
       };
 
-  static ExecutionWeb3jClientProvider create(
+  static RestClientProvider create(
       final String endpoint,
       final Duration timeout,
       final boolean jwtSupported,
@@ -59,17 +50,11 @@ public interface ExecutionWeb3jClientProvider {
     } else {
       final Optional<JwtConfig> jwtConfig =
           JwtConfig.createIfNeeded(jwtSupported, jwtSecretFile, beaconDataDirectory);
-      return new DefaultExecutionWeb3jClientProvider(endpoint, timeout, jwtConfig, timeProvider);
+      return new OkHttpRestClientProvider(endpoint, timeout, jwtConfig, timeProvider);
     }
   }
 
-  Web3JClient getWeb3JClient();
+  RestClient getRestClient();
 
-  Web3j getWeb3j();
-
-  String getEndpoint();
-
-  default boolean isStub() {
-    return false;
-  }
+  boolean isStub();
 }
