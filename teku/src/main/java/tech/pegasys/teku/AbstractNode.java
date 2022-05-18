@@ -70,8 +70,7 @@ public abstract class AbstractNode implements Node {
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(
-            new MetricTrackingExecutorFactory(
-                metricsSystem, Optional.of(rejectedExecutionCounter)));
+            new MetricTrackingExecutorFactory(metricsSystem, rejectedExecutionCounter));
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(tekuConfig.dataConfig());
     serviceConfig =
         new ServiceConfig(

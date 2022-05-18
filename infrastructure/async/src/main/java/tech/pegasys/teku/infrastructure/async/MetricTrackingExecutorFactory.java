@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -32,15 +31,14 @@ public class MetricTrackingExecutorFactory {
   private final LabelledGauge labelledGaugeQueueSize;
   private final LabelledMetric<Counter> labelledGaugeRejectedExecutions;
 
-  private final Optional<OccuranceCounter> rejectedExecutionCounter;
+  private final OccuranceCounter rejectedExecutionCounter;
 
   public MetricTrackingExecutorFactory(final MetricsSystem metricsSystem) {
-    this(metricsSystem, Optional.empty());
+    this(metricsSystem, new OccuranceCounter(1));
   }
 
   public MetricTrackingExecutorFactory(
-      final MetricsSystem metricsSystem,
-      final Optional<OccuranceCounter> rejectedExecutionCounter) {
+      final MetricsSystem metricsSystem, final OccuranceCounter rejectedExecutionCounter) {
     this.metricsSystem = metricsSystem;
     this.labelledGaugeQueueSize =
         metricsSystem.createLabelledGauge(
@@ -114,7 +112,7 @@ public class MetricTrackingExecutorFactory {
 
   private void onRejectedExecution(final String name) {
     labelledGaugeRejectedExecutions.labels(name).inc();
-    rejectedExecutionCounter.ifPresent(OccuranceCounter::increment);
+    rejectedExecutionCounter.increment();
     throw new RejectedExecutionException("Rejected execution on task queue - " + name);
   }
 }
