@@ -148,6 +148,10 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   public <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata) {
+    if (!queryParamMap.containsKey(parameterMetadata.getName())) {
+      return List.of();
+    }
+
     final List<String> paramList =
         ListQueryParameterUtils.getParameterAsStringList(
             queryParamMap, parameterMetadata.getName());

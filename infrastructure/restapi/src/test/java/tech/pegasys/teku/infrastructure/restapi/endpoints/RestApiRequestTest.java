@@ -99,4 +99,12 @@ public class RestApiRequestTest {
 
     assertThat(request.getQueryParameterList(INT_PARAM)).isEqualTo(List.of(1, 2, 3));
   }
+
+  @Test
+  void shouldGetQueryParameterListWhenEmpty() {
+    when(context.queryParamMap()).thenReturn(Map.of());
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+
+    assertThat(request.getQueryParameterList(INT_PARAM)).isEqualTo(List.of());
+  }
 }
