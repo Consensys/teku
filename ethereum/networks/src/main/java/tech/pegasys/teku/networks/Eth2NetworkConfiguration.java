@@ -19,11 +19,11 @@ import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
-import static tech.pegasys.teku.spec.networks.Eth2Network.KINTSUGI;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
+import static tech.pegasys.teku.spec.networks.Eth2Network.ROPSTEN;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import java.util.ArrayList;
@@ -396,8 +396,8 @@ public class Eth2NetworkConfiguration {
           return applyMinimalNetworkDefaults();
         case PRATER:
           return applyPraterNetworkDefaults();
-        case KINTSUGI:
-          return applyKintsugiNetworkDefaults();
+        case ROPSTEN:
+          return applyRopstenNetworkDefaults();
         case KILN:
           return applyKilnNetworkDefaults();
         case GNOSIS:
@@ -487,20 +487,18 @@ public class Eth2NetworkConfiguration {
               "enr:-LK4QLM_pPHa78R8xlcU_s40Y3XhFjlb3kPddW9lRlY67N5qeFE2Wo7RgzDgRs2KLCXODnacVHMFw1SfpsW3R474RZEBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpB53wQoAAAQIP__________gmlkgnY0gmlwhANBY-yJc2VjcDI1NmsxoQNsZkFXgKbTzuxF7uwxlGauTGJelE6HD269CcFlZ_R7A4N0Y3CCI4yDdWRwgiOM");
     }
 
-    public Builder applyKintsugiNetworkDefaults() {
+    public Builder applyRopstenNetworkDefaults() {
       return reset()
-          .constants(KINTSUGI.configName())
+          .constants(ROPSTEN.configName())
           .startupTimeoutSeconds(120)
-          .eth1DepositContractDeployBlock(0)
+          .eth1DepositContractDeployBlock(12269949)
           .defaultInitialState(
-              "https://github.com/eth-clients/merge-testnets/raw/3d07b2914747c4a8bd847a27c272e048cb2d29d8/kintsugi/genesis.ssz")
+              "https://github.com/eth-clients/merge-testnets/raw/5b1b44aa912dd3433ba30d381345659c53918955/ropsten-beacon-chain/genesis.ssz")
           .discoveryBootnodes(
-              "enr:-Iq4QKuNB_wHmWon7hv5HntHiSsyE1a6cUTK1aT7xDSU_hNTLW3R4mowUboCsqYoh1kN9v3ZoSu_WuvW9Aw0tQ0Dxv6GAXxQ7Nv5gmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
-              "enr:-KG4QIkKUzDxrv7Xz8u9K9QqoTqEwKKCkLoChxVnfeILU6IdBoWoNOxPGvdl474l1iPFoR8CJUhgGEeO-k1SJ7SJCOEDhGV0aDKQR9ByjGEAAHAKAAAAAAAAAIJpZIJ2NIJpcISl6LnPiXNlY3AyNTZrMaEDprwHy6RKAKJguvGCldiGAI5JDJmQ8TZVnnWQur8zEh2DdGNwgiMog3VkcIIjKA",
-              "enr:-Ly4QGJodG8Q0vX5ePXsLsXody1Fbeauyottk3-iAvJ_6XfTVlWGsnfBQPlIOBgexXJqD78bUD5OCnXF5igBBJ4WuboBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhEDhBN-Jc2VjcDI1NmsxoQPf98kXQf3Nh3ooc8vBdbUY2WAHR1VDrDhXYTKvRt4n-IhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
-              "enr:-KG4QLIhAeEVABV4Id22qEbjemJ0b9JBjRhdYpKN0kvpVi_GbFkQTvAf7-Da-5sW2oNenTW3is_GxLImUCtYzxPMOR4DhGV0aDKQR9ByjGEAAHAKAAAAAAAAAIJpZIJ2NIJpcISl6LF5iXNlY3AyNTZrMaED6XFvht9SUPD0FlYWnjunXhF9FdQMQO56816C9iFNt-WDdGNwgiMog3VkcIIjKA",
-              "enr:-LK4QPluMnS3OaiMpy7E0dSF-n7ES9Ort7mpOj85lS_43jGvfuV-SOZyjYNG-WEIT5aOzpWH2vgBbF2MoB94IZdDLxIBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhKEjS06Jc2VjcDI1NmsxoQM0uDjlVaZoToQ6ReyUkgFTQizlE6avXGljrWIz9Rf4LoN0Y3CCIyiDdWRwgiMo",
-              "enr:-Ku4QM4JL9b3RGfRnnfAY7jqDRiTTGaU2OWk0j4YWbR7N2YHc7RjPGiVERqiWHasIjmMz-No86wsvf4KHuyM4FeRtuMFh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhKEjQ92Jc2VjcDI1NmsxoQN_UgL8zuTFqyGm5_lKZqUdoHMH2XeU0OvNmZwgycMmSIN0Y3CCIyg");
+              // Teku bootnode
+              "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA",
+              // EF bootnode
+              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk");
     }
 
     public Builder applyKilnNetworkDefaults() {
