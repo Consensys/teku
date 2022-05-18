@@ -17,7 +17,7 @@
       "description" : "Bytes20 hexadecimal",
       "format" : "byte"
     },
-    "gas_target" : {
+    "gas_limit" : {
       "type" : "string",
       "format" : "uint64"
     },

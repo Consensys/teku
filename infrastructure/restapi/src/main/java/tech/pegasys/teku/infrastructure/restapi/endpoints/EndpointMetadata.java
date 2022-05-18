@@ -27,9 +27,9 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_R
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.HandlerType;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -230,14 +230,13 @@ public class EndpointMetadata {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> byte[] serialize(final int statusCode, final String contentType, final T response)
+  public <T> void serialize(
+      final int statusCode, final String contentType, final T response, final OutputStream out)
       throws JsonProcessingException {
     final ResponseContentTypeDefinition<T> type =
         (ResponseContentTypeDefinition<T>) getResponseType(statusCode, contentType);
-    final ByteArrayOutputStream out = new ByteArrayOutputStream();
     try {
       type.serialize(response, out);
-      return out.toByteArray();
     } catch (final JsonProcessingException e) {
       throw e;
     } catch (final IOException e) {

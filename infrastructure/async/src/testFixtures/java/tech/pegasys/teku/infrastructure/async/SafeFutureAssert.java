@@ -73,7 +73,7 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
   }
 
   public T joinsImmediately() {
-    isCompleted();
+    isDone();
     return actual.join();
   }
 

@@ -27,6 +27,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
   private final String eeEndpoint;
   private final TimeProvider timeProvider;
   private final Optional<String> jwtSecretFile;
+  private final boolean jwtSupported;
   private final Duration timeout;
   private final Path beaconDataDirectory;
   private boolean alreadyBuilt = false;
@@ -37,6 +38,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
       final TimeProvider timeProvider,
       final Duration timeout,
       final Optional<String> jwtSecretFile,
+      final boolean jwtSupported,
       final Path beaconDataDirectory) {
     checkNotNull(eeEndpoint);
     this.eeEndpoint = eeEndpoint;
@@ -44,20 +46,24 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
     this.timeout = timeout;
     this.jwtSecretFile = jwtSecretFile;
     this.beaconDataDirectory = beaconDataDirectory;
+    this.jwtSupported = jwtSupported;
   }
 
   private synchronized void buildClient() {
     if (alreadyBuilt) {
       return;
     }
-    JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
-    JwtConfig jwtConfig = new JwtConfig(keyLoader.getSecretKey());
+    Optional<JwtConfig> jwtConfig = Optional.empty();
+    if (jwtSupported) {
+      JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
+      jwtConfig = Optional.of(new JwtConfig(keyLoader.getSecretKey()));
+    }
     Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
     this.web3JClient =
         web3JClientBuilder
             .endpoint(eeEndpoint)
             .timeout(timeout)
-            .jwtConfigOpt(Optional.of(jwtConfig))
+            .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .build();
     this.alreadyBuilt = true;

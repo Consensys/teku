@@ -18,9 +18,12 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
+import java.io.IOException;
 import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -72,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -1009,9 +1013,29 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final InteropConfig config = beaconConfig.interopConfig();
     STATUS_LOG.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
+
+    Optional<ExecutionPayloadHeader> executionPayloadHeader = Optional.empty();
+    if (config.getInteropGenesisPayloadHeader().isPresent()) {
+      try {
+        executionPayloadHeader =
+            Optional.of(
+                spec.deserializeJsonExecutionPayloadHeader(
+                    new ObjectMapper(),
+                    config.getInteropGenesisPayloadHeader().get().toFile(),
+                    GENESIS_SLOT));
+      } catch (IOException e) {
+        throw new RuntimeException(
+            "Unable to load payload header from " + config.getInteropGenesisPayloadHeader().get(),
+            e);
+      }
+    }
+
     final BeaconState genesisState =
         InteropStartupUtil.createMockedStartInitialBeaconState(
-            spec, config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
+            spec,
+            config.getInteropGenesisTime(),
+            config.getInteropNumberOfValidators(),
+            executionPayloadHeader);
 
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 
