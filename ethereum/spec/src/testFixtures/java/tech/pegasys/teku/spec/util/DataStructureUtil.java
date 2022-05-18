@@ -81,15 +81,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidV1;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1Schema;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationV1Schema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -441,16 +441,16 @@ public final class DataStructureUtil {
             randomBytes32());
   }
 
-  public BuilderBidV1 randomBuilderBidV1() {
+  public BuilderBid randomBuilderBid() {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
-        .getBuilderBidV1Schema()
+        .getBuilderBidSchema()
         .create(randomExecutionPayloadHeader(), randomUInt256(), randomPublicKey());
   }
 
-  public SignedBuilderBidV1 randomSignedBuilderBidV1() {
+  public SignedBuilderBid randomSignedBuilderBid() {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
-        .getSignedBuilderBidV1Schema()
-        .create(randomBuilderBidV1(), randomSignature());
+        .getSignedBuilderBidSchema()
+        .create(randomBuilderBid(), randomSignature());
   }
 
   public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(
@@ -1143,25 +1143,25 @@ public final class DataStructureUtil {
         withValidatorRegistration ? Optional.of(randomValidatorRegistration()) : Optional.empty());
   }
 
-  public SignedValidatorRegistrationV1 randomValidatorRegistration() {
+  public SignedValidatorRegistration randomValidatorRegistration() {
     return randomValidatorRegistration(randomPublicKey());
   }
 
-  public SignedValidatorRegistrationV1 randomValidatorRegistration(final BLSPublicKey publicKey) {
-    SignedValidatorRegistrationV1Schema signedSchema =
+  public SignedValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
+    SignedValidatorRegistrationSchema signedSchema =
         spec.getGenesisSpec()
             .getSchemaDefinitions()
             .toVersionBellatrix()
             .orElseThrow()
             .getSignedValidatorRegistrationSchema();
-    ValidatorRegistrationV1Schema schema =
+    ValidatorRegistrationSchema schema =
         spec.getGenesisSpec()
             .getSchemaDefinitions()
             .toVersionBellatrix()
             .orElseThrow()
             .getValidatorRegistrationSchema();
 
-    ValidatorRegistrationV1 validatorRegistration =
+    ValidatorRegistration validatorRegistration =
         schema.create(randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
 
     return signedSchema.create(validatorRegistration, randomSignature());

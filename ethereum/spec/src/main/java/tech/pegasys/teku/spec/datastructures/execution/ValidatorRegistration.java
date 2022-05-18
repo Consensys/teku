@@ -22,15 +22,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class ValidatorRegistrationV1
-    extends Container4<ValidatorRegistrationV1, SszByteVector, SszUInt64, SszUInt64, SszPublicKey> {
+public class ValidatorRegistration
+    extends Container4<ValidatorRegistration, SszByteVector, SszUInt64, SszUInt64, SszPublicKey> {
 
-  protected ValidatorRegistrationV1(ValidatorRegistrationV1Schema schema, TreeNode backingNode) {
+  protected ValidatorRegistration(ValidatorRegistrationSchema schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  protected ValidatorRegistrationV1(
-      ValidatorRegistrationV1Schema schema,
+  protected ValidatorRegistration(
+      ValidatorRegistrationSchema schema,
       SszByteVector feeRecipient,
       SszUInt64 gasLimit,
       SszUInt64 timestamp,

@@ -20,15 +20,15 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class BuilderBidV1
-    extends Container3<BuilderBidV1, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
+public class BuilderBid
+    extends Container3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
 
-  protected BuilderBidV1(BuilderBidV1Schema schema, TreeNode backingNode) {
+  protected BuilderBid(BuilderBidSchema schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  protected BuilderBidV1(
-      BuilderBidV1Schema schema,
+  protected BuilderBid(
+      BuilderBidSchema schema,
       ExecutionPayloadHeader executionPayloadHeader,
       SszUInt256 value,
       SszPublicKey publicKey) {
