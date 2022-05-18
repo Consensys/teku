@@ -30,13 +30,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 class GetProposerSlashingsTest extends AbstractMigratedBeaconHandlerTest {
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final GetProposerSlashings handler = new GetProposerSlashings(nodeDataProvider);
-  private final StubRestApiRequest request = new StubRestApiRequest();
   private final List<ProposerSlashing> responseData =
       List.of(
           dataStructureUtil.randomProposerSlashing(), dataStructureUtil.randomProposerSlashing());

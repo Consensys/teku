@@ -45,15 +45,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetStateValidator handler;
-  private final StubRestApiRequest request =
-      StubRestApiRequest.builder()
-          .pathParameter("state_id", "head")
-          .pathParameter("validator_id", "1")
-          .build();
   private ObjectAndMetaData<StateValidatorData> responseData;
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
+    request.setPathParameter("state_id", "head");
+    request.setPathParameter("validator_id", "1");
     initialise(SpecMilestone.ALTAIR);
     genesis();
     handler = new GetStateValidator(chainDataProvider);
