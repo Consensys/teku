@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 
 import java.util.Collections;
+import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
@@ -26,8 +30,15 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
-  public SendSignedBlockRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+  private final boolean preferSszBlockEncoding;
+  private boolean sszNotAcceptable = false;
+
+  public SendSignedBlockRequest(
+      final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
+      final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
+    this.preferSszBlockEncoding = preferSszBlockEncoding;
   }
 
   public SendSignedBlockResult sendSignedBlock(SignedBeaconBlock signedBeaconBlock) {
@@ -35,6 +46,44 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
         signedBeaconBlock.getMessage().getBody().isBlinded()
             ? SEND_SIGNED_BLINDED_BLOCK
             : SEND_SIGNED_BLOCK;
+
+    return preferSszBlockEncoding
+        ? sendSignedBlockAsSszOrFallback(signedBeaconBlock, apiMethod)
+        : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
+  }
+
+  private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
+      final SignedBeaconBlock signedBeaconBlock, final ValidatorApiMethod apiMethod) {
+    final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBeaconBlock);
+    if (!result.isPublished() && sszNotAcceptable) {
+      return sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
+    }
+    return result;
+  }
+
+  public boolean isSszNotAcceptable() {
+    return sszNotAcceptable;
+  }
+
+  private SendSignedBlockResult sendSignedBlockAsSsz(
+      final ValidatorApiMethod apiMethod, final SignedBeaconBlock signedBeaconBlock) {
+    return postOctetStream(
+            apiMethod,
+            Collections.emptyMap(),
+            signedBeaconBlock.sszSerialize().toArray(),
+            new ResponseHandler<>().withHandler(SC_NOT_ACCEPTABLE, this::handleNotAcceptableResult))
+        .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
+        .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
+  }
+
+  private Optional<Object> handleNotAcceptableResult(
+      final Request request, final Response response) {
+    sszNotAcceptable = true;
+    return Optional.empty();
+  }
+
+  private SendSignedBlockResult sendSignedBlockAsJson(
+      final ValidatorApiMethod apiMethod, final SignedBeaconBlock signedBeaconBlock) {
     return postJson(
             apiMethod,
             Collections.emptyMap(),

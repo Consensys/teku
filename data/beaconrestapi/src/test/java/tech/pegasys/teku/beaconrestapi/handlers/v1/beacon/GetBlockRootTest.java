@@ -30,13 +30,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private GetBlockRoot handler;
-  private StubRestApiRequest request;
 
   @BeforeEach
   void setup() {
@@ -44,7 +42,7 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
     genesis();
 
     handler = new GetBlockRoot(chainDataProvider);
-    request = StubRestApiRequest.builder().pathParameter("block_id", "head").build();
+    request.setPathParameter("block_id", "head");
   }
 
   @Test

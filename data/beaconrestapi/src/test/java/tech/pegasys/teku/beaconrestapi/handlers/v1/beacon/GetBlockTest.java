@@ -31,20 +31,18 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private StubRestApiRequest request;
   private GetBlock handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
-    request = StubRestApiRequest.builder().pathParameter("block_id", "head").build();
+    request.setPathParameter("block_id", "head");
     handler = new GetBlock(chainDataProvider, schemaDefinitionCache);
   }
 

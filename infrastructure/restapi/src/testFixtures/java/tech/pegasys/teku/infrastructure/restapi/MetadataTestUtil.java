@@ -16,6 +16,8 @@ package tech.pegasys.teku.infrastructure.restapi;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import org.assertj.core.api.AssertionsForClassTypes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
@@ -29,7 +31,10 @@ public class MetadataTestUtil {
       throws JsonProcessingException {
     final EndpointMetadata metadata = handler.getMetadata();
     final byte[] result =
-        metadata.serialize(code, ContentTypes.JSON, new HttpErrorResponse(code, "BAD"));
+        toBytes(
+            out ->
+                metadata.serialize(
+                    code, ContentTypes.JSON, new HttpErrorResponse(code, "BAD"), out));
     AssertionsForClassTypes.assertThat(new String(result, StandardCharsets.UTF_8))
         .isEqualTo("{\"code\":" + code + ",\"message\":\"BAD\"}");
   }
@@ -45,7 +50,17 @@ public class MetadataTestUtil {
       final RestApiEndpoint handler, final int code, final Object data)
       throws JsonProcessingException {
     final EndpointMetadata metadata = handler.getMetadata();
-    final byte[] result = metadata.serialize(code, ContentTypes.JSON, data);
+    final byte[] result = toBytes(out -> metadata.serialize(code, ContentTypes.JSON, data, out));
     return new String(result, StandardCharsets.UTF_8);
+  }
+
+  private static byte[] toBytes(final Serializer func) throws JsonProcessingException {
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    func.serialize(out);
+    return out.toByteArray();
+  }
+
+  private interface Serializer {
+    void serialize(OutputStream out) throws JsonProcessingException;
   }
 }

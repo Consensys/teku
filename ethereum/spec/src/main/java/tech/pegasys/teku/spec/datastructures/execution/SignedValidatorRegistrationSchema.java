@@ -19,24 +19,24 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedValidatorRegistrationV1Schema
-    extends ContainerSchema2<SignedValidatorRegistrationV1, ValidatorRegistrationV1, SszSignature> {
+public class SignedValidatorRegistrationSchema
+    extends ContainerSchema2<SignedValidatorRegistration, ValidatorRegistration, SszSignature> {
 
-  public SignedValidatorRegistrationV1Schema(
-      final ValidatorRegistrationV1Schema validatorRegistrationV1Schema) {
+  public SignedValidatorRegistrationSchema(
+      final ValidatorRegistrationSchema validatorRegistrationSchema) {
     super(
-        "SignedValidatorRegistrationV1",
-        namedSchema("message", validatorRegistrationV1Schema),
+        "SignedValidatorRegistration",
+        namedSchema("message", validatorRegistrationSchema),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
-  public SignedValidatorRegistrationV1 create(
-      final ValidatorRegistrationV1 message, final BLSSignature signature) {
-    return new SignedValidatorRegistrationV1(this, message, signature);
+  public SignedValidatorRegistration create(
+      final ValidatorRegistration message, final BLSSignature signature) {
+    return new SignedValidatorRegistration(this, message, signature);
   }
 
   @Override
-  public SignedValidatorRegistrationV1 createFromBackingNode(TreeNode node) {
-    return new SignedValidatorRegistrationV1(this, node);
+  public SignedValidatorRegistration createFromBackingNode(TreeNode node) {
+    return new SignedValidatorRegistration(this, node);
   }
 }

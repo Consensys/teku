@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.service.serviceutils;
 
+import java.util.function.IntSupplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -28,17 +29,21 @@ public class ServiceConfig {
   private final MetricsSystem metricsSystem;
   private final DataDirLayout dataDirLayout;
 
+  private final IntSupplier rejectedExecutionsSupplier;
+
   public ServiceConfig(
       final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
       final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
-      final DataDirLayout dataDirLayout) {
+      final DataDirLayout dataDirLayout,
+      final IntSupplier rejectedExecutionsSupplier) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.eventChannels = eventChannels;
     this.metricsSystem = metricsSystem;
     this.dataDirLayout = dataDirLayout;
+    this.rejectedExecutionsSupplier = rejectedExecutionsSupplier;
   }
 
   public TimeProvider getTimeProvider() {
@@ -55,6 +60,10 @@ public class ServiceConfig {
 
   public DataDirLayout getDataDirLayout() {
     return dataDirLayout;
+  }
+
+  public IntSupplier getRejectedExecutionsSupplier() {
+    return rejectedExecutionsSupplier;
   }
 
   public AsyncRunner createAsyncRunner(final String name) {
