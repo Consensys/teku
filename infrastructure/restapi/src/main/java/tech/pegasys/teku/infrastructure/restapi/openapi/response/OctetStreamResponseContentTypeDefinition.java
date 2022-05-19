@@ -30,25 +30,28 @@ public class OctetStreamResponseContentTypeDefinition<T> extends DelegatingOpenA
           .parser(Bytes::fromHexString)
           .format("binary")
           .build();
-  private final Function<T, Bytes> toBytes;
+  private final OctetStreamSerializer<T> serializer;
   private final Function<T, Map<String, String>> toAdditionalHeaders;
 
   public OctetStreamResponseContentTypeDefinition(
-      final Function<T, Bytes> toBytes,
+      final OctetStreamSerializer<T> serializer,
       final Function<T, Map<String, String>> toAdditionalHeaders) {
     super(OCTET_STREAM_BYTES_TYPE);
-    this.toBytes = toBytes;
+    this.serializer = serializer;
     this.toAdditionalHeaders = toAdditionalHeaders;
   }
 
   @Override
   public void serialize(final T value, final OutputStream out) throws IOException {
-    final Bytes data = toBytes.apply(value);
-    out.write(data.toArrayUnsafe());
+    serializer.serialize(value, out);
   }
 
   @Override
   public Map<String, String> getAdditionalHeaders(final T value) {
     return toAdditionalHeaders.apply(value);
+  }
+
+  public interface OctetStreamSerializer<T> {
+    void serialize(T data, OutputStream out) throws IOException;
   }
 }
