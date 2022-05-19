@@ -100,7 +100,7 @@ public class GetHealth extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    if (!chainDataProvider.isStoreAvailable()) {
+    if (!chainDataProvider.isStoreAvailable() || syncProvider.getRejectedExecutionCount() > 0) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else if (syncProvider.isSyncing()) {
       request.respondWithCode(getResponseCodeFromQueryParams(request));

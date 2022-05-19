@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -216,6 +217,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private TimerService timerService;
   private PendingPoolFactory pendingPoolFactory;
 
+  private IntSupplier rejectedExecutionCountSupplier;
+
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
@@ -231,6 +234,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.pendingPoolFactory = new PendingPoolFactory(this.metricsSystem);
+    this.rejectedExecutionCountSupplier = serviceConfig.getRejectedExecutionsSupplier();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
     this.futureItemsMetric =
@@ -819,6 +823,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .build();
 
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
