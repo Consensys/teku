@@ -13,27 +13,17 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
-
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 
 public class StateValidatorsUtil {
 
-  public Set<ValidatorStatus> parseStatusFilter(final Map<String, List<String>> queryParameters) {
-    if (!queryParameters.containsKey(STATUS)) {
-      return Set.of();
-    }
-
+  public Set<ValidatorStatus> parseStatusFilter(final List<String> statusList) {
     try {
-      return ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
-          .map(ValidatorStatus::valueOf)
-          .collect(Collectors.toSet());
+      return statusList.stream().map(ValidatorStatus::valueOf).collect(Collectors.toSet());
     } catch (IllegalArgumentException ex) {
       throw new BadRequestException("Invalid validator state requested: " + ex.getMessage());
     }

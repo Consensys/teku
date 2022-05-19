@@ -23,11 +23,13 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -68,4 +70,8 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> ID_PARAMETER =
       new ParameterMetadata<>(
           PARAM_ID, CoreTypes.STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
+
+  public static final ParameterMetadata<String> STATUS_PARAMETER =
+      new ParameterMetadata<>(
+          STATUS, CoreTypes.STRING_TYPE.withDescription(PARAM_STATUS_DESCRIPTION));
 }

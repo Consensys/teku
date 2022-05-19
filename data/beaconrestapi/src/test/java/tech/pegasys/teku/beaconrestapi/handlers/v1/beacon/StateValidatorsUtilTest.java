@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -29,23 +28,19 @@ public class StateValidatorsUtilTest {
 
   @Test
   public void shouldRaiseExceptionIfInputIsInvalid() {
-    assertThrows(
-        BadRequestException.class,
-        () -> util.parseStatusFilter(Map.of("status", List.of("withdraw"))));
+    assertThrows(BadRequestException.class, () -> util.parseStatusFilter(List.of("withdraw")));
   }
 
   @ParameterizedTest
   @EnumSource(ValidatorStatus.class)
   public void shouldParseValidatorSource(final ValidatorStatus status) {
-    assertThat(util.parseStatusFilter(Map.of("status", List.of(status.name()))))
-        .containsExactly(status);
+    assertThat(util.parseStatusFilter(List.of(status.name()))).containsExactly(status);
   }
 
   @Test
   public void shouldParseMultipleValidatorStatuses() {
     assertThat(
-            util.parseStatusFilter(
-                Map.of("status", List.of("active_ongoing", "active_exiting, withdrawal_done"))))
+            util.parseStatusFilter(List.of("active_ongoing", "active_exiting", "withdrawal_done")))
         .containsExactlyInAnyOrder(
             ValidatorStatus.active_ongoing,
             ValidatorStatus.active_exiting,

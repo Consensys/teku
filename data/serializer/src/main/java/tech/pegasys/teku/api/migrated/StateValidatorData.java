@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -73,6 +74,10 @@ public class StateValidatorData {
 
   public Validator getValidator() {
     return validator;
+  }
+
+  public BLSPublicKey getPublicKey() {
+    return validator.getPublicKey();
   }
 
   @Override
