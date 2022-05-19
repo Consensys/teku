@@ -65,7 +65,7 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           PARENT_ROOT, CoreTypes.BYTES32_TYPE.withDescription("Not currently supported."));
 
-  public static final ParameterMetadata<String> ID_PARAMETER = // TODO handle array[string] type
+  public static final ParameterMetadata<String> ID_PARAMETER =
       new ParameterMetadata<>(
           PARAM_ID, CoreTypes.STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
 }
