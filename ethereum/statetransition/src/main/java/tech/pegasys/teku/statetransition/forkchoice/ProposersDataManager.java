@@ -165,7 +165,7 @@ public class ProposersDataManager {
                               new RegisteredValidatorInfo(expirySlot, registration)),
                       () ->
                           LOG.warn(
-                              "validator public key not found: {}",
+                              "validator index not found for public key {}",
                               registration.getMessage().getPublicKey()));
 
               // continue asyncDoWhile
