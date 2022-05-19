@@ -28,7 +28,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils.SPLITTER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -37,10 +36,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -85,7 +82,7 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
             .description("Returns filterable list of validator balances.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_STATE_ID)
-            .queryParam(ID_PARAMETER)
+            .queryListParam(ID_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
@@ -120,8 +117,7 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final Optional<String> maybeValidatorsList = request.getOptionalQueryParameter(ID_PARAMETER);
-    final List<String> validators = getParameterAsStringList(maybeValidatorsList);
+    final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
 
     final SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>> future =
         chainDataProvider.getStateValidatorBalances(
@@ -136,18 +132,5 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
 
               return AsyncApiResponse.respondOk(maybeDataList.get());
             }));
-  }
-
-  public static List<String> getParameterAsStringList(final Optional<String> list)
-      throws IllegalArgumentException {
-    if (list.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    return SPLITTER
-        .splitToStream(list.get())
-        .distinct()
-        .map(String::trim)
-        .collect(Collectors.toList());
   }
 }
