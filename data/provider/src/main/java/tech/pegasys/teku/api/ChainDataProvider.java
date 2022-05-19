@@ -44,8 +44,6 @@ import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
-import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
