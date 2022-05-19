@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -261,6 +262,25 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     "engineExchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
                     transitionConfiguration,
                     remoteTransitionConfiguration));
+  }
+
+  @Override
+  public SafeFuture<Void> builderRegisterValidator(
+      final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
+    LOG.trace(
+        "calling builderRegisterValidator(slot={},signedValidatorRegistration={})",
+        slot,
+        signedValidatorRegistration);
+    return executionBuilderClient
+        .orElseThrow()
+        .registerValidator(slot, signedValidatorRegistration)
+        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenPeek(
+            __ ->
+                LOG.trace(
+                    "builderRegisterValidator(slot={},signedValidatorRegistration={}) -> success",
+                    slot,
+                    signedValidatorRegistration));
   }
 
   @Override

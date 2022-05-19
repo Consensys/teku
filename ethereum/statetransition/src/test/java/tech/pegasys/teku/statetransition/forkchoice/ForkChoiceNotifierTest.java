@@ -103,8 +103,9 @@ class ForkChoiceNotifierTest {
     proposersDataManager =
         spy(
             new ProposersDataManager(
-                spec,
                 eventThread,
+                spec,
+                executionLayerChannel,
                 recentChainData,
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
@@ -118,6 +119,8 @@ class ForkChoiceNotifierTest {
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 
+    when(executionLayerChannel.builderRegisterValidator(any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
     when(executionLayerChannel.engineNewPayload(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
     when(executionLayerChannel.engineForkChoiceUpdated(any(), any()))
@@ -130,7 +133,9 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     proposersDataManager =
-        spy(new ProposersDataManager(spec, eventThread, recentChainData, defaultFeeRecipient));
+        spy(
+            new ProposersDataManager(
+                eventThread, spec, executionLayerChannel, recentChainData, defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);
