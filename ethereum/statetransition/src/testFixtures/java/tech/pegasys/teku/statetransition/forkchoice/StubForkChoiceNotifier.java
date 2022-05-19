@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import java.util.Collection;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
@@ -48,9 +46,6 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   }
 
   @Override
-  public void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers) {}
-
-  @Override
   public void onForkChoiceUpdated(ForkChoiceState forkChoiceState) {
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
@@ -72,9 +67,4 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
   public void onTerminalBlockReached(Bytes32 executionBlockHash) {}
-
-  @Override
-  public PayloadAttributesCalculator getPayloadAttributesCalculator() {
-    return null;
-  }
 }

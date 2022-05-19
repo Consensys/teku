@@ -24,28 +24,20 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
 public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private StubRestApiRequest request;
   final GetGenesis handler = new GetGenesis(chainDataProvider);
   final UInt64 genesisTime = dataStructureUtil.randomUInt64();
   final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final Bytes4 fork = dataStructureUtil.randomBytes4();
   final GetGenesis.ResponseData responseData =
       new GetGenesis.ResponseData(new GenesisData(genesisTime, genesisValidatorsRoot), fork);
-
-  @BeforeEach
-  void setup() {
-    request = StubRestApiRequest.builder().build();
-  }
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {

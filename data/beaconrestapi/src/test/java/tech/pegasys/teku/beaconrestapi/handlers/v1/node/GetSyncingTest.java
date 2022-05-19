@@ -25,11 +25,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 
 public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   private final GetSyncing handler = new GetSyncing(syncDataProvider);
-  private StubRestApiRequest request = new StubRestApiRequest();
 
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {

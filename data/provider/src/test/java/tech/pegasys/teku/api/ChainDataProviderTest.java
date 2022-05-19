@@ -35,8 +35,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
@@ -323,12 +323,12 @@ public class ChainDataProviderTest {
     final List<UInt64> committeeIndices =
         List.of(UInt64.valueOf(6), UInt64.valueOf(9), UInt64.valueOf(0));
 
-    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         provider.getStateSyncCommittees("head", Optional.empty());
     assertThatSafeFuture(future)
         .isCompletedWithOptionalContaining(
             new ObjectAndMetaData<>(
-                new StateSyncCommittees(committeeIndices, List.of(committeeIndices)),
+                new StateSyncCommitteesData(committeeIndices, List.of(committeeIndices)),
                 SpecMilestone.ALTAIR,
                 false,
                 true));
@@ -343,17 +343,17 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.getBestState())
         .thenReturn(Optional.of(completedFuture(internalState)));
 
-    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         provider.getStateSyncCommittees("head", Optional.empty());
     assertThatSafeFuture(future)
         .isCompletedWithOptionalContaining(
-            addMetaData(new StateSyncCommittees(List.of(), List.of()), ZERO));
+            addMetaData(new StateSyncCommitteesData(List.of(), List.of()), ZERO));
   }
 
   @Test
   public void getStateSyncCommittees_shouldRejectFarFutureEpoch() {
     final ChainDataProvider provider = setupAltairState();
-    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommittees>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         provider.getStateSyncCommittees("head", Optional.of(UInt64.valueOf("1024000")));
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWith(IllegalArgumentException.class);

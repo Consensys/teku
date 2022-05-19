@@ -21,9 +21,12 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
 public class OkHttpValidatorTypeDefClient {
 
@@ -31,17 +34,36 @@ public class OkHttpValidatorTypeDefClient {
   private final HttpUrl baseEndpoint;
 
   private final Spec spec;
+  private final boolean preferSszBlockEncoding;
+
+  private boolean sendBlockReceivedNotAcceptable = false;
 
   public OkHttpValidatorTypeDefClient(
-      final OkHttpClient okHttpClient, final HttpUrl baseEndpoint, final Spec spec) {
+      final OkHttpClient okHttpClient,
+      final HttpUrl baseEndpoint,
+      final Spec spec,
+      final boolean preferSszBlockEncoding) {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
     this.spec = spec;
+    this.preferSszBlockEncoding = preferSszBlockEncoding;
   }
 
   public Optional<GenesisData> getGenesis() {
     final GetGenesisRequest request = new GetGenesisRequest(okHttpClient, baseEndpoint);
     return request.getGenesisData();
+  }
+
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
+    final SendSignedBlockRequest sendSignedBlockRequest =
+        new SendSignedBlockRequest(
+            baseEndpoint, okHttpClient, !sendBlockReceivedNotAcceptable && preferSszBlockEncoding);
+
+    final SendSignedBlockResult result = sendSignedBlockRequest.sendSignedBlock(beaconBlock);
+    if (sendSignedBlockRequest.isSszNotAcceptable()) {
+      sendBlockReceivedNotAcceptable = true;
+    }
+    return result;
   }
 
   public Optional<BeaconBlock> createUnsignedBlock(
@@ -50,7 +72,8 @@ public class OkHttpValidatorTypeDefClient {
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
     final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(baseEndpoint, okHttpClient, spec, slot, blinded);
+        new CreateBlockRequest(
+            baseEndpoint, okHttpClient, spec, slot, blinded, preferSszBlockEncoding);
     return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
   }
 }

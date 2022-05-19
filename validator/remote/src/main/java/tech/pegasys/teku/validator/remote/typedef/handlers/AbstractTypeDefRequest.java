@@ -16,21 +16,29 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public abstract class AbstractTypeDefRequest {
+  private static final MediaType APPLICATION_JSON =
+      MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
   private static final Logger LOG = LogManager.getLogger();
   private final HttpUrl baseEndpoint;
   private final OkHttpClient httpClient;
@@ -95,6 +103,43 @@ public abstract class AbstractTypeDefRequest {
       headers.forEach(builder::addHeader);
     }
     return executeCall(builder.build(), responseHandler);
+  }
+
+  protected <T, TObject> Optional<T> postJson(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final TObject requestBodyObj,
+      final SerializableTypeDefinition<TObject> objectTypeDefinition,
+      final ResponseHandler<T> responseHandler) {
+    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    final String requestBody;
+    final Request request;
+    try {
+      requestBody = JsonUtil.serialize(requestBodyObj, objectTypeDefinition);
+      request =
+          requestBuilder()
+              .url(httpUrlBuilder.build())
+              .post(RequestBody.create(requestBody, APPLICATION_JSON))
+              .build();
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return executeCall(request, responseHandler);
+  }
+
+  protected <T> Optional<T> postOctetStream(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final byte[] objectBytes,
+      final ResponseHandler<T> responseHandler) {
+    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    final Request request =
+        requestBuilder()
+            .url(httpUrlBuilder.build())
+            .post(RequestBody.create(objectBytes, OCTET_STREAM))
+            .build();
+
+    return executeCall(request, responseHandler);
   }
 
   private <T> Optional<T> executeCall(

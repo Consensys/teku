@@ -147,6 +147,7 @@ public class OkHttpRestClient implements RestClient {
   private <T> SafeFuture<Response<T>> makeAsyncRequest(
       final Request request,
       final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
+    final Call call = httpClient.newCall(request);
     final SafeFuture<Response<T>> futureResponse = new SafeFuture<>();
     final Callback responseCallback =
         new Callback() {
@@ -178,7 +179,7 @@ public class OkHttpRestClient implements RestClient {
             }
           }
         };
-    httpClient.newCall(request).enqueue(responseCallback);
+    call.enqueue(responseCallback);
     return futureResponse;
   }
 
@@ -186,7 +187,7 @@ public class OkHttpRestClient implements RestClient {
       final okhttp3.Response response, final SafeFuture<Response<T>> futureResponse) {
     try {
       final String errorMessage = getErrorMessageForFailedResponse(response);
-      futureResponse.complete(new Response<>(errorMessage));
+      futureResponse.complete(Response.withErrorMessage(errorMessage));
     } catch (Throwable ex) {
       futureResponse.completeExceptionally(ex);
     }

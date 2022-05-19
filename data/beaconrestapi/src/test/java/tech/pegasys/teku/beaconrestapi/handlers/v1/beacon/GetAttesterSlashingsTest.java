@@ -32,17 +32,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 
 class GetAttesterSlashingsTest extends AbstractMigratedBeaconHandlerTest {
-  private StubRestApiRequest request;
   private GetAttesterSlashings handler;
   private NodeDataProvider nodeDataProvider;
 
   @BeforeEach
   void setup() {
-    request = new StubRestApiRequest();
     nodeDataProvider = mock(NodeDataProvider.class);
     handler = new GetAttesterSlashings(nodeDataProvider, spec);
   }

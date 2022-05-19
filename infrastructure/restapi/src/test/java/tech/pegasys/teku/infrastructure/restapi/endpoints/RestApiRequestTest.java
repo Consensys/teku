@@ -91,4 +91,20 @@ public class RestApiRequestTest {
     assertThat(request.getPathParameter(BYTE_PARAM)).isEqualTo(b1);
     assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(b2);
   }
+
+  @Test
+  void shouldGetQueryParameterListTypeInteger() {
+    when(context.queryParamMap()).thenReturn(Map.of("int", List.of("1", "2", "3")));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+
+    assertThat(request.getQueryParameterList(INT_PARAM)).isEqualTo(List.of(1, 2, 3));
+  }
+
+  @Test
+  void shouldGetQueryParameterListWhenEmpty() {
+    when(context.queryParamMap()).thenReturn(Map.of());
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+
+    assertThat(request.getQueryParameterList(INT_PARAM)).isEqualTo(List.of());
+  }
 }

@@ -21,9 +21,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -53,7 +57,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
 
   @Override
   public void respondOk(final Object response) throws JsonProcessingException {
-    respond(SC_OK, response);
+    respond(SC_OK, response, getResponseOutputStream());
   }
 
   @Override
@@ -63,12 +67,15 @@ public class JavalinRestApiRequest implements RestApiRequest {
             .thenApply(
                 result -> {
                   try {
-                    return respond(result.getResponseCode(), result.getResponseBody());
+                    respond(
+                        result.getResponseCode(),
+                        result.getResponseBody(),
+                        getResponseOutputStream());
                   } catch (JsonProcessingException e) {
                     LOG.trace("Failed to generate API response", e);
                     context.status(SC_INTERNAL_SERVER_ERROR);
-                    return Bytes.EMPTY.toArrayUnsafe();
                   }
+                  return Bytes.EMPTY.toArrayUnsafe();
                 })
             .thenApply(ByteArrayInputStream::new));
   }
@@ -77,38 +84,46 @@ public class JavalinRestApiRequest implements RestApiRequest {
   public void respondOk(final Object response, final CacheLength cacheLength)
       throws JsonProcessingException {
     context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());
-    respond(SC_OK, response);
+    respond(SC_OK, response, getResponseOutputStream());
   }
 
   @Override
   public void respondError(final int statusCode, final String message)
       throws JsonProcessingException {
-    respond(statusCode, new HttpErrorResponse(statusCode, message));
+    respond(statusCode, new HttpErrorResponse(statusCode, message), getResponseOutputStream());
   }
 
-  private byte[] respond(final int statusCode, final Optional<Object> response)
+  private OutputStream getResponseOutputStream() {
+    try {
+      return context.res.getOutputStream();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private void respond(
+      final int statusCode, final Optional<Object> response, final OutputStream out)
       throws JsonProcessingException {
     context.status(statusCode);
     if (response.isPresent()) {
-      return respondImpl(statusCode, response.get());
+      respondImpl(statusCode, response.get(), out);
     }
-    return Bytes.EMPTY.toArrayUnsafe();
   }
 
-  private void respond(final int statusCode, final Object response) throws JsonProcessingException {
+  private void respond(final int statusCode, final Object response, final OutputStream out)
+      throws JsonProcessingException {
     context.status(statusCode);
-    final byte[] responseData = respondImpl(statusCode, response);
-    context.result(responseData);
+    respondImpl(statusCode, response, out);
   }
 
-  private byte[] respondImpl(final int statusCode, final Object response)
+  private void respondImpl(final int statusCode, final Object response, final OutputStream out)
       throws JsonProcessingException {
     final ResponseMetadata responseMetadata =
         metadata.createResponseMetadata(
             statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)), response);
     context.contentType(responseMetadata.getContentType());
     responseMetadata.getAdditionalHeaders().forEach(context::header);
-    return metadata.serialize(statusCode, responseMetadata.getContentType(), response);
+    metadata.serialize(statusCode, responseMetadata.getContentType(), response, out);
   }
 
   /** This is only used when intending to return status code without a response body */
@@ -146,9 +161,16 @@ public class JavalinRestApiRequest implements RestApiRequest {
                 queryParamMap, parameterMetadata.getName()));
   }
 
-  @FunctionalInterface
-  public interface ResultProcessor<T> {
-    // Process result, returning an optional serialized response
-    Optional<String> process(Context context, T result) throws Exception;
+  public <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata) {
+    if (!queryParamMap.containsKey(parameterMetadata.getName())) {
+      return List.of();
+    }
+
+    final List<String> paramList =
+        ListQueryParameterUtils.getParameterAsStringList(
+            queryParamMap, parameterMetadata.getName());
+    return paramList.stream()
+        .map(item -> parameterMetadata.getType().deserializeFromString(item))
+        .collect(Collectors.toList());
   }
 }

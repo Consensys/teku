@@ -23,11 +23,9 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class GetVersionTest extends AbstractMigratedBeaconHandlerTest {
-  private final StubRestApiRequest request = new StubRestApiRequest();
   private final GetVersion handler = new GetVersion();
 
   @Test
