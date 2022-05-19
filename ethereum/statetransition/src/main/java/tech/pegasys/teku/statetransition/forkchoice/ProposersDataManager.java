@@ -141,7 +141,7 @@ public class ProposersDataManager {
     }
     final SignedValidatorRegistration registration = registrationIterator.next();
     return executionLayerChannel
-        .registerValidator(registration, currentSlot)
+        .builderRegisterValidator(registration, currentSlot)
         .handle(
             (__, error) -> {
               if (error != null) {

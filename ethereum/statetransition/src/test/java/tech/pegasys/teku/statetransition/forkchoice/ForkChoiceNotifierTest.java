@@ -119,6 +119,8 @@ class ForkChoiceNotifierTest {
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 
+    when(executionLayerChannel.builderRegisterValidator(any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
     when(executionLayerChannel.engineNewPayload(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
     when(executionLayerChannel.engineForkChoiceUpdated(any(), any()))

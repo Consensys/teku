@@ -261,7 +261,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<Void> registerValidator(
+  public SafeFuture<Void> builderRegisterValidator(
       SignedValidatorRegistration signedValidatorRegistration, UInt64 slot) {
     return SafeFuture.COMPLETE;
   }

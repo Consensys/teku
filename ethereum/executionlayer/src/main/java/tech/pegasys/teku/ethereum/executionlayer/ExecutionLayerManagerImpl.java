@@ -265,7 +265,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<Void> registerValidator(
+  public SafeFuture<Void> builderRegisterValidator(
       final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
     return SafeFuture.COMPLETE;
   }

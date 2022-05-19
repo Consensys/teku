@@ -71,7 +71,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).registerValidator(registrations.get(0), slot);
+    verify(executionLayerChannel).builderRegisterValidator(registrations.get(0), slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
     // resolve first registration
@@ -79,7 +79,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     // second registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).registerValidator(registrations.get(1), slot);
+    verify(executionLayerChannel).builderRegisterValidator(registrations.get(1), slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
     // resolve second registration
@@ -99,7 +99,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).registerValidator(registrations.get(0), slot);
+    verify(executionLayerChannel).builderRegisterValidator(registrations.get(0), slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
     // resolve first registration
@@ -107,7 +107,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     // second registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).registerValidator(registrations.get(1), slot);
+    verify(executionLayerChannel).builderRegisterValidator(registrations.get(1), slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
     // resolve second registration
@@ -127,7 +127,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).registerValidator(registrations.get(0), slot);
+    verify(executionLayerChannel).builderRegisterValidator(registrations.get(0), slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
     // resolve first registration
@@ -145,8 +145,10 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
             dataStructureUtil.randomValidatorRegistration(),
             dataStructureUtil.randomValidatorRegistration());
 
-    when(executionLayerChannel.registerValidator(registrations.get(0), slot)).thenReturn(response1);
-    when(executionLayerChannel.registerValidator(registrations.get(1), slot)).thenReturn(response2);
+    when(executionLayerChannel.builderRegisterValidator(registrations.get(0), slot))
+        .thenReturn(response1);
+    when(executionLayerChannel.builderRegisterValidator(registrations.get(1), slot))
+        .thenReturn(response2);
     when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     when(specMock.getValidatorIndex(state, registrations.get(0).getMessage().getPublicKey()))
         .thenReturn(Optional.of(0));

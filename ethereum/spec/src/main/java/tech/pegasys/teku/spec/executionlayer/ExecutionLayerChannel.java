@@ -65,7 +65,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Void> registerValidator(
+        public SafeFuture<Void> builderRegisterValidator(
             final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
           return SafeFuture.COMPLETE;
         }
@@ -102,7 +102,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       TransitionConfiguration transitionConfiguration);
 
   // builder namespace
-  SafeFuture<Void> registerValidator(
+  SafeFuture<Void> builderRegisterValidator(
       SignedValidatorRegistration signedValidatorRegistration, UInt64 slot);
 
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
