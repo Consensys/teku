@@ -81,6 +81,7 @@ public class StateSelectorFactory {
     return () -> {
       final Optional<ChainHead> maybeChainHead = client.getChainHead();
       if (maybeChainHead.isEmpty()) {
+        // Can't have a state past the current chain head.
         return SafeFuture.completedFuture(Optional.empty());
       }
       final ChainHead chainHead = maybeChainHead.get();
@@ -131,13 +132,17 @@ public class StateSelectorFactory {
         client
             .getChainHead()
             .map(
-                head ->
-                    client
-                        .getStateAtSlotExact(slot, head.getRoot())
-                        .thenApply(
-                            maybeState ->
-                                maybeState.map(
-                                    state -> addMetaData(state, head.isOptimistic(), true))))
+                head -> {
+                  if (slot.isGreaterThan(head.getSlot())) {
+                    return SafeFuture.completedFuture(Optional.<StateAndMetaData>empty());
+                  }
+                  return client
+                      .getStateAtSlotExact(slot, head.getRoot())
+                      .thenApply(
+                          maybeState ->
+                              maybeState.map(
+                                  state -> addMetaData(state, head.isOptimistic(), true)));
+                })
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
