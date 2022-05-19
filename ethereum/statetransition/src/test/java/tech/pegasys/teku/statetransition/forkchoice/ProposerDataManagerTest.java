@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -53,7 +54,6 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
   private final BeaconState state = dataStructureUtil.randomBeaconState();
 
-  private boolean onPreparedProposersUpdatedCalled = false;
   private boolean onValidatorRegistrationsUpdatedCalled = false;
 
   private final UInt64 slot = UInt64.ONE;
@@ -66,7 +66,8 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     prepareRegistrations();
 
-    proposersDataManager.updateValidatorRegistrations(registrations, slot);
+    SafeFutureAssert.safeJoin(
+        proposersDataManager.updateValidatorRegistrations(registrations, slot));
 
     // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
@@ -93,7 +94,8 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     prepareRegistrations();
 
-    proposersDataManager.updateValidatorRegistrations(registrations, slot);
+    SafeFutureAssert.safeJoin(
+        proposersDataManager.updateValidatorRegistrations(registrations, slot));
 
     // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
@@ -120,7 +122,8 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     prepareRegistrations();
 
-    proposersDataManager.updateValidatorRegistrations(registrations, slot);
+    SafeFutureAssert.safeJoin(
+        proposersDataManager.updateValidatorRegistrations(registrations, slot));
 
     // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
@@ -154,9 +157,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
   }
 
   @Override
-  public void onPreparedProposersUpdated() {
-    onPreparedProposersUpdatedCalled = true;
-  }
+  public void onPreparedProposersUpdated() {}
 
   @Override
   public void onValidatorRegistrationsUpdated() {
