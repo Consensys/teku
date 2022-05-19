@@ -169,7 +169,10 @@ public class StubRestApiRequest implements RestApiRequest {
 
   @Override
   public <T> List<T> getQueryParameterList(ParameterMetadata<T> parameterMetadata) {
-    assertThat(this.listQueryParameters.containsKey(parameterMetadata.getName())).isTrue();
+    if (!this.listQueryParameters.containsKey(parameterMetadata.getName())) {
+      return List.of();
+    }
+
     final List<String> params = listQueryParameters.get(parameterMetadata.getName());
     return params.stream()
         .map(p -> parameterMetadata.getType().deserializeFromString(p))

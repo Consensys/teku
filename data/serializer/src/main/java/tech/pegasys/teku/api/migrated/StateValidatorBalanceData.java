@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.migrated;
 
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -55,5 +56,22 @@ public class StateValidatorBalanceData {
 
   public static SerializableTypeDefinition<StateValidatorBalanceData> getJsonTypeDefinition() {
     return DATA_TYPE;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    StateValidatorBalanceData that = (StateValidatorBalanceData) o;
+    return Objects.equals(index, that.index) && Objects.equals(balance, that.balance);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(index, balance);
   }
 }
