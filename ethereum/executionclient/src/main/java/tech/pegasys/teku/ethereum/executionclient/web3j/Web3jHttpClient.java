@@ -17,7 +17,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3jService;
@@ -35,18 +34,9 @@ class Web3jHttpClient extends Web3JClient {
       final Duration timeout,
       final Optional<JwtConfig> jwtConfig) {
     super(timeProvider);
-    final Optional<HttpLoggingInterceptor> loggingInterceptor;
-    if (LOG.isTraceEnabled()) {
-      loggingInterceptor =
-          Optional.of(
-              OkHttpClientCreator.createLoggingInterceptor(
-                  LOG::trace, HttpLoggingInterceptor.Level.BODY));
-    } else {
-      loggingInterceptor = Optional.empty();
-    }
     final OkHttpClient okHttpClient =
-        OkHttpClientCreator.create(jwtConfig, timeout, loggingInterceptor, timeProvider);
-    Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
+        OkHttpClientCreator.create(timeout, LOG, jwtConfig, timeProvider);
+    final Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
     initWeb3jService(httpService);
   }
 }

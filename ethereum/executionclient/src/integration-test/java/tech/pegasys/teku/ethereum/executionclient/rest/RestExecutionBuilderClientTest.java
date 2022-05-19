@@ -122,7 +122,7 @@ class RestExecutionBuilderClientTest {
               assertThat(response.getPayload()).isNull();
             });
 
-    verifyGetRequest("/eth1/v1/builder/status");
+    verifyGetRequest("/eth/v1/builder/status");
   }
 
   @TestTemplate
@@ -138,7 +138,7 @@ class RestExecutionBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyGetRequest("/eth1/v1/builder/status");
+    verifyGetRequest("/eth/v1/builder/status");
   }
 
   @TestTemplate
