@@ -267,7 +267,20 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<Void> builderRegisterValidator(
       final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
-    return SafeFuture.COMPLETE;
+    LOG.trace(
+        "calling builderRegisterValidator(slot={},signedValidatorRegistration={})",
+        slot,
+        signedValidatorRegistration);
+    return executionBuilderClient
+        .orElseThrow()
+        .registerValidator(slot, signedValidatorRegistration)
+        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenPeek(
+            __ ->
+                LOG.trace(
+                    "builderRegisterValidator(slot={},signedValidatorRegistration={}) -> success",
+                    slot,
+                    signedValidatorRegistration));
   }
 
   @Override
