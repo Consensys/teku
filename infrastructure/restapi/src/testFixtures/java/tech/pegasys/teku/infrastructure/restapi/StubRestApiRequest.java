@@ -140,6 +140,11 @@ public class StubRestApiRequest implements RestApiRequest {
     this.optionalQueryParameters.put(parameter, value);
   }
 
+  public void setListQueryParameters(final String parameter, final List<String> value) {
+    assertThat(this.optionalQueryParameters.containsKey(parameter)).isFalse();
+    this.listQueryParameters.put(parameter, value);
+  }
+
   @Override
   public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
     assertThat(this.pathParameters.containsKey(parameterMetadata.getName())).isTrue();
@@ -197,6 +202,7 @@ public class StubRestApiRequest implements RestApiRequest {
     private final Map<String, String> pathParameters = new HashMap<>();
     private final Map<String, String> queryParameters = new HashMap<>();
     private final Map<String, String> optionalQueryParameters = new HashMap<>();
+    private final Map<String, List<String>> listQueryParameters = new HashMap<>();
 
     Builder() {}
 
@@ -218,6 +224,12 @@ public class StubRestApiRequest implements RestApiRequest {
       return this;
     }
 
+    public Builder listQueryParameter(final String param, final List<String> value) {
+      assertThat(listQueryParameters.containsKey(param)).isFalse();
+      this.listQueryParameters.put(param, value);
+      return this;
+    }
+
     public StubRestApiRequest build() {
       final StubRestApiRequest request = new StubRestApiRequest();
       for (String k : pathParameters.keySet()) {
@@ -228,6 +240,9 @@ public class StubRestApiRequest implements RestApiRequest {
       }
       for (String k : optionalQueryParameters.keySet()) {
         request.setOptionalQueryParameter(k, optionalQueryParameters.get(k));
+      }
+      for (String k : listQueryParameters.keySet()) {
+        request.setListQueryParameters(k, listQueryParameters.get(k));
       }
 
       return request;
