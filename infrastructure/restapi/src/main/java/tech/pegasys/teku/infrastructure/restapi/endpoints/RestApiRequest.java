@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
@@ -36,4 +37,6 @@ public interface RestApiRequest {
   <T> Optional<T> getOptionalQueryParameter(ParameterMetadata<T> parameterMetadata);
 
   <T> T getQueryParameter(ParameterMetadata<T> parameterMetadata);
+
+  <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata);
 }
