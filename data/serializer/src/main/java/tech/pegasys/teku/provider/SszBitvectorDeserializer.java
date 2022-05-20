@@ -17,15 +17,19 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 
 public class SszBitvectorDeserializer extends JsonDeserializer<SszBitvector> {
   @Override
   public SszBitvector deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    Bytes data = Bytes.fromHexString(p.getValueAsString());
-    int length = data.bitLength() + 1;
-    return SszBitvectorSchema.create(length).sszDeserialize(data);
+    String serialized = p.getValueAsString();
+    Stream<String> strBits = Arrays.stream(serialized.split(""));
+    List<Boolean> boolBits = strBits.map("1"::equals).collect(Collectors.toList());
+    return SszBitvectorSchema.create(serialized.length()).of(boolBits);
   }
 }
