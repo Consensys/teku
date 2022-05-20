@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
-public class DeserializableStringMapTypeDefinitionTest {
+public class DeserializableMapTypeDefinitionTest {
   private final Map<String, String> data = new TreeMap<>();
 
   @BeforeEach
@@ -36,9 +36,14 @@ public class DeserializableStringMapTypeDefinitionTest {
   }
 
   final String serializedData = "{\"ak\":\"av\",\"bk\":\"bv\",\"ck\":\"cv\"}";
-  final DeserializableStringMapTypeDefinition definition =
-      new DeserializableStringMapTypeDefinition(
-          Optional.empty(), Optional.empty(), Optional.empty());
+  final DeserializableMapTypeDefinition<String, String> definition =
+      new DeserializableMapTypeDefinition<>(
+          CoreTypes.STRING_TYPE,
+          CoreTypes.STRING_TYPE,
+          TreeMap::new,
+          Optional.empty(),
+          Optional.empty(),
+          Optional.empty());
 
   @Test
   void shouldSerializeMap() throws JsonProcessingException {
@@ -51,14 +56,14 @@ public class DeserializableStringMapTypeDefinitionTest {
   }
 
   @Test
-  void shouldRejectNestedArray() throws JsonProcessingException {
+  void shouldRejectNestedArray() {
     final String input = "{\"ak\":[1,2,3]}";
     assertThatThrownBy(() -> JsonUtil.parse(input, definition))
         .isInstanceOf(MismatchedInputException.class);
   }
 
   @Test
-  void shouldRejectNestedObject() throws JsonProcessingException {
+  void shouldRejectNestedObject() {
     final String input = "{\"ak\":{\"bk\":1}}";
     assertThatThrownBy(() -> JsonUtil.parse(input, definition))
         .isInstanceOf(MismatchedInputException.class);
