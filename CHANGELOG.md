@@ -27,3 +27,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added a labelled metric `executor_rejected_execution_total` to track rejected execution, and updated health check to return 503 if rejected executions are occurring.
 
 ### Bug Fixes
+
+- Fix bit length calculation for JSON-deserialized `SszBitvector` objects.
