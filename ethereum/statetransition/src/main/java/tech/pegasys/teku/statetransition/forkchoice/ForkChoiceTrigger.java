@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceRatchet.ForkChoicePhase.ATTESTATION;
+
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -25,11 +27,11 @@ public class ForkChoiceTrigger {
   }
 
   public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
-    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
+    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot, ATTESTATION).join();
   }
 
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
-    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
+    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot, ATTESTATION).join();
   }
 
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
@@ -37,6 +39,6 @@ public class ForkChoiceTrigger {
   }
 
   public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {
-    return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot);
+    return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot, ATTESTATION);
   }
 }

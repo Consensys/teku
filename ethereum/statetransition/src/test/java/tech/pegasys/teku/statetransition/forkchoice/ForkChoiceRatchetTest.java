@@ -16,9 +16,12 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceRatchet.ForkChoicePhase.ATTESTATION;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceRatchet.ForkChoicePhase.BLOCK;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,37 +40,105 @@ class ForkChoiceRatchetTest {
   }
 
   @Test
-  void shouldNotRunForkChoiceAgainForTheSameSlot() {
-    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
+  void shouldNotRunForkChoiceAgainForTheSameSlotAndPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
     verify(forkChoice).processHead(UInt64.ONE);
 
-    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
     verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void shouldNotRunForkChoiceAgainForTheSameSlotAndEarlierPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
+    verify(forkChoice).processHead(UInt64.ONE);
+
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, BLOCK);
+    verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void shouldRunForkChoiceAgainForTheSameSlotAndLaterPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, BLOCK);
+    verify(forkChoice).processHead(UInt64.ONE);
+
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
+    verify(forkChoice, times(2)).processHead(UInt64.ONE);
   }
 
   @Test
   void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRun() {
-    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(2));
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(2), ATTESTATION);
     verify(forkChoice).processHead(UInt64.valueOf(2));
 
-    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
     verifyNoMoreInteractions(forkChoice);
   }
 
   @Test
-  void ensureForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlot() {
-    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(3));
+  void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRunAndSamePhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(2), ATTESTATION);
+    verify(forkChoice).processHead(UInt64.valueOf(2));
 
-    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
+    verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRunAndEarlierPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(2), ATTESTATION);
+    verify(forkChoice).processHead(UInt64.valueOf(2));
+
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, BLOCK);
+    verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRunAndLaterPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(2), BLOCK);
+    verify(forkChoice).processHead(UInt64.valueOf(2));
+
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
+    verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlotAndSamePhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(3), ATTESTATION);
+
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
     assertThat(result).isCompleted();
   }
 
   @Test
-  void ensureForkChoiceCompleteForSlot_shouldCompleteWhenCurrentRunCompletesIfSlotIsTheSame() {
-    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
+  void
+      ensureForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlotAndLaterPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(3), ATTESTATION);
+
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, BLOCK);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlotAndEarlierPhase() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(3), BLOCK);
+
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldCompleteWhenCurrentRunCompletesIfSlotAndPhaseAreTheSame() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
     verify(forkChoice).processHead(UInt64.ONE);
 
-    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
     verifyNoMoreInteractions(forkChoice);
     assertThat(result).isNotDone();
 
@@ -76,11 +147,71 @@ class ForkChoiceRatchetTest {
   }
 
   @Test
-  void ensureForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRun() {
-    ratchet.scheduleForkChoiceForSlot(UInt64.ZERO);
+  void
+      ensureForkChoiceCompleteForSlot_shouldCompleteWhenCurrentRunCompletesIfSlotIsTheSameAndPhaseIsLater() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, ATTESTATION);
+    verify(forkChoice).processHead(UInt64.ONE);
+
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, BLOCK);
+    verifyNoMoreInteractions(forkChoice);
+    assertThat(result).isNotDone();
+
+    processHeadResult.complete(true);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldRunAgainWhenCurrentRunCompletesIfSlotIsTheSameAndPhaseIsEarlier() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE, BLOCK);
+    verify(forkChoice).processHead(UInt64.ONE);
+
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
+    verify(forkChoice, times(2)).processHead(UInt64.ONE);
+    assertThat(result).isNotDone();
+
+    processHeadResult.complete(true);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRunAndPhaseIsSame() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ZERO, ATTESTATION);
     verify(forkChoice).processHead(UInt64.ZERO);
 
-    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
+    verify(forkChoice).processHead(UInt64.ONE);
+    assertThat(result).isNotDone();
+
+    processHeadResult.complete(true);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRunAndPhaseIsEarlier() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ZERO, ATTESTATION);
+    verify(forkChoice).processHead(UInt64.ZERO);
+
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, BLOCK);
+    verify(forkChoice).processHead(UInt64.ONE);
+    assertThat(result).isNotDone();
+
+    processHeadResult.complete(true);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void
+      ensureForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRunAndPhaseIsLater() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ZERO, BLOCK);
+    verify(forkChoice).processHead(UInt64.ZERO);
+
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
     verify(forkChoice).processHead(UInt64.ONE);
     assertThat(result).isNotDone();
 
@@ -91,7 +222,8 @@ class ForkChoiceRatchetTest {
   @Test
   void ensureForkChoiceCompleteForSlot_shouldNotFailWhenForkChoiceFails() {
     // Don't make block or attestation fail if fork choice fails, just go with the fork we're on
-    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    final SafeFuture<Void> result =
+        ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE, ATTESTATION);
     verify(forkChoice).processHead(UInt64.ONE);
     assertThat(result).isNotDone();
 

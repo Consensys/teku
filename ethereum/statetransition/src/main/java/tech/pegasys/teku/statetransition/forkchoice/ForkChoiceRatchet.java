@@ -21,9 +21,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Provides a ratchet-like functionality for running fork choice. Callers request that fork choice
- * be run for a specific slot and this class tracks which slot fork choice has been run for, only
- * running it again when the slot needs to ratchet up. Thus the slot we run fork choice for only
- * ever moves up and fork choice is never run for old slots, avoiding unnecessary work.
+ * be run for a specific slot and phase and this class tracks which slot fork choice has been run
+ * for, only running it again when the slot or phase needs to ratchet up. Thus the slot we run fork
+ * choice for only ever moves up and fork choice is never run for old slots, avoiding unnecessary
+ * work.
+ *
+ * <p>The phase allows fork choice to be run twice per slot - once at the start of the slot to
+ * prepare for producing blocks, and once to prepare for creating attestations.
  */
 class ForkChoiceRatchet {
 
@@ -37,12 +41,12 @@ class ForkChoiceRatchet {
     this.forkChoice = forkChoice;
   }
 
-  void scheduleForkChoiceForSlot(final UInt64 slot) {
-    processHead(slot);
+  void scheduleForkChoiceForSlot(final UInt64 slot, final ForkChoicePhase phase) {
+    processHead(slot, phase);
   }
 
-  SafeFuture<Void> ensureForkChoiceCompleteForSlot(final UInt64 slot) {
-    final ForkChoiceUpdate forkChoiceUpdate = processHead(slot);
+  SafeFuture<Void> ensureForkChoiceCompleteForSlot(final UInt64 slot, final ForkChoicePhase phase) {
+    final ForkChoiceUpdate forkChoiceUpdate = processHead(slot, phase);
     if (forkChoiceUpdate.nodeSlot.isGreaterThan(slot)) {
       return SafeFuture.COMPLETE;
     } else if (forkChoiceUpdate.nodeSlot.equals(slot)) {
@@ -58,18 +62,18 @@ class ForkChoiceRatchet {
     }
   }
 
-  private ForkChoiceUpdate processHead(final UInt64 nodeSlot) {
+  private ForkChoiceUpdate processHead(final UInt64 nodeSlot, final ForkChoicePhase phase) {
     // Keep trying to get our slot processed until we or someone else gets it done
     while (true) {
       final ForkChoiceUpdate previousUpdate = latestCompletedForkChoice.get();
-      if (previousUpdate != null && previousUpdate.nodeSlot.isGreaterThanOrEqualTo(nodeSlot)) {
+      if (previousUpdate != null && previousUpdate.isSufficientFor(nodeSlot, phase)) {
         LOG.debug(
             "Skipping fork choice update for slot {} as high water mark is already {}",
             nodeSlot,
             previousUpdate.nodeSlot);
         return previousUpdate;
       }
-      final ForkChoiceUpdate newUpdate = new ForkChoiceUpdate(nodeSlot);
+      final ForkChoiceUpdate newUpdate = new ForkChoiceUpdate(nodeSlot, phase);
       if (latestCompletedForkChoice.compareAndSet(previousUpdate, newUpdate)) {
         forkChoice
             .processHead(nodeSlot)
@@ -85,10 +89,27 @@ class ForkChoiceRatchet {
   private static class ForkChoiceUpdate {
 
     private final UInt64 nodeSlot;
+    private final ForkChoicePhase phase;
     private final SafeFuture<Void> result = new SafeFuture<>();
 
-    private ForkChoiceUpdate(final UInt64 nodeSlot) {
+    private ForkChoiceUpdate(final UInt64 nodeSlot, final ForkChoicePhase phase) {
       this.nodeSlot = nodeSlot;
+      this.phase = phase;
     }
+
+    boolean isSufficientFor(final UInt64 requiredSlot, final ForkChoicePhase requiredPhase) {
+      if (nodeSlot.isGreaterThan(requiredSlot)) {
+        return true;
+      } else if (nodeSlot.isLessThan(requiredSlot)) {
+        return false;
+      } else {
+        return phase.compareTo(requiredPhase) >= 0;
+      }
+    }
+  }
+
+  public enum ForkChoicePhase {
+    BLOCK,
+    ATTESTATION
   }
 }
