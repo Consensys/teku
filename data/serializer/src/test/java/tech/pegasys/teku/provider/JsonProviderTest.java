@@ -127,7 +127,6 @@ class JsonProviderTest {
     final SszBitvector data = SszBitvectorSchema.create(bitvectorSize).ofBits(bits);
     final String asJson = jsonProvider.objectToJSON(data);
     final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
-
     assertThat(data).isEqualTo(asData);
     assertThat(asData.size()).isEqualTo(bitvectorSize);
   }

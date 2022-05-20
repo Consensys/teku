@@ -81,7 +81,7 @@ public class JsonProviderPropertyTest {
     assertThat(deserialized).isEqualTo(original);
   }
 
-  static String byteArrayToUnsignedStringWithQuotesAndNoSpaces(byte[] bytes) {
+  static String byteArrayToUnsignedStringWithQuotesAndNoSpaces(final byte[] bytes) {
     return Arrays.toString(
             Arrays.asList(ArrayUtils.toObject(bytes)).stream()
                 .map(Byte::toUnsignedInt)
@@ -92,7 +92,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripBitVector(
-      @ForAll final Random random, @ForAll @IntRange(min = 1, max = 1000) int size)
+      @ForAll final Random random, @ForAll @IntRange(min = 1, max = 1000) final int size)
       throws JsonProcessingException {
     final int[] bits =
         IntStream.range(0, size).sequential().filter(__ -> random.nextBoolean()).toArray();
