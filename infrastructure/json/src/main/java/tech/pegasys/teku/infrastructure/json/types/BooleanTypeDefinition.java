@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 
 public class BooleanTypeDefinition implements StringValueTypeDefinition<Boolean> {
@@ -52,6 +53,11 @@ public class BooleanTypeDefinition implements StringValueTypeDefinition<Boolean>
   @Override
   public void serialize(final Boolean value, final JsonGenerator gen) throws IOException {
     gen.writeBoolean(value);
+  }
+
+  @Override
+  public String serializeToString(final Boolean value) {
+    return Objects.toString(value, null);
   }
 
   @Override

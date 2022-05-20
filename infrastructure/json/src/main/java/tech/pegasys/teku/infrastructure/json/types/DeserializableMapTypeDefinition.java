@@ -16,30 +16,42 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.function.Supplier;
 
-public class DeserializableStringMapTypeDefinition
-    extends SerializableObjectTypeDefinition<Map<String, String>>
-    implements DeserializableTypeDefinition<Map<String, String>> {
+public class DeserializableMapTypeDefinition<TKey, TValue>
+    extends SerializableObjectTypeDefinition<Map<TKey, TValue>>
+    implements DeserializableTypeDefinition<Map<TKey, TValue>> {
 
-  public DeserializableStringMapTypeDefinition() {
-    this(Optional.empty(), Optional.empty(), Optional.empty());
+  private final StringValueTypeDefinition<TKey> keyType;
+  private final DeserializableTypeDefinition<TValue> valueType;
+  private final Supplier<? extends Map<TKey, TValue>> mapConstructor;
+
+  public DeserializableMapTypeDefinition(
+      final StringValueTypeDefinition<TKey> keyType,
+      final DeserializableTypeDefinition<TValue> valueType,
+      final Supplier<? extends Map<TKey, TValue>> mapConstructor) {
+    this(keyType, valueType, mapConstructor, Optional.empty(), Optional.empty(), Optional.empty());
   }
 
-  public DeserializableStringMapTypeDefinition(
+  public DeserializableMapTypeDefinition(
+      final StringValueTypeDefinition<TKey> keyType,
+      final DeserializableTypeDefinition<TValue> valueType,
+      final Supplier<? extends Map<TKey, TValue>> mapConstructor,
       final Optional<String> name,
       final Optional<String> title,
       final Optional<String> description) {
     super(name, title, description, Map.of());
+    this.keyType = keyType;
+    this.valueType = valueType;
+    this.mapConstructor = mapConstructor;
   }
 
   @Override
-  public Map<String, String> deserialize(final JsonParser p) throws IOException {
-    final Map<String, String> result = new TreeMap<>();
+  public Map<TKey, TValue> deserialize(final JsonParser p) throws IOException {
+    final Map<TKey, TValue> result = mapConstructor.get();
     JsonToken t = p.getCurrentToken();
     if (t == null) {
       t = p.nextToken();
@@ -50,31 +62,27 @@ public class DeserializableStringMapTypeDefinition
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       final String fieldName = p.getCurrentName();
       p.nextToken();
-      if (!p.getCurrentToken().isScalarValue()) {
-        throw MismatchedInputException.from(
-            p, String.class, "Expected scalar value but got " + p.getCurrentToken());
-      }
-      final String fieldValue = p.getValueAsString();
-      result.put(fieldName, fieldValue);
+      final TValue fieldValue = valueType.deserialize(p);
+      result.put(keyType.deserializeFromString(fieldName), fieldValue);
     }
     return result;
   }
 
   @Override
-  public void serialize(final Map<String, String> value, final JsonGenerator gen)
-      throws IOException {
+  public void serialize(final Map<TKey, TValue> value, final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
-    for (Map.Entry<String, String> entry : value.entrySet()) {
-      gen.writeStringField(entry.getKey(), entry.getValue());
+    for (Map.Entry<TKey, TValue> entry : value.entrySet()) {
+      gen.writeFieldName(keyType.serializeToString(entry.getKey()));
+
+      valueType.serialize(entry.getValue(), gen);
     }
     gen.writeEndObject();
   }
 
   @Override
-  public DeserializableTypeDefinition<Map<String, String>> withDescription(
-      final String description) {
-    return new DeserializableStringMapTypeDefinition(
-        Optional.empty(), getTitle(), Optional.of(description));
+  public DeserializableTypeDefinition<Map<TKey, TValue>> withDescription(final String description) {
+    return new DeserializableMapTypeDefinition<>(
+        keyType, valueType, mapConstructor, Optional.empty(), getTitle(), Optional.of(description));
   }
 
   @Override
