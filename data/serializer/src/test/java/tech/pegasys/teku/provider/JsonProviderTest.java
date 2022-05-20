@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -98,9 +99,24 @@ class JsonProviderTest {
   }
 
   @Test
-  public void bitVectorShouldSerializeAndDeserialize() throws JsonProcessingException {
+  public void bitVectorShouldSerializeAndDeserializePositiveValue() throws JsonProcessingException {
     final int bitvectorSize = 40;
-    final SszBitvector data = dataStructureUtil.randomSszBitvector(bitvectorSize);
+    // Serialized to 0x75a02447f4 (505197905908).
+    int[] bits = {0, 2, 4, 5, 6, 13, 15, 18, 21, 24, 25, 26, 30, 34, 36, 37, 38, 39};
+    final SszBitvector data = SszBitvectorSchema.create(bitvectorSize).ofBits(bits);
+    final String asJson = jsonProvider.objectToJSON(data);
+    final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
+
+    assertThat(data).isEqualTo(asData);
+    assertThat(asData.size()).isEqualTo(bitvectorSize);
+  }
+
+  @Test
+  public void bitVectorShouldSerializeAndDeserializeNegativeValue() throws JsonProcessingException {
+    final int bitvectorSize = 40;
+    // Serialized to 0x878c3d6931 (-517338207951).
+    int[] bits = {0, 1, 2, 7, 10, 11, 15, 16, 18, 19, 20, 21, 24, 27, 29, 30, 32, 36, 37};
+    final SszBitvector data = SszBitvectorSchema.create(bitvectorSize).ofBits(bits);
     final String asJson = jsonProvider.objectToJSON(data);
     final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
 

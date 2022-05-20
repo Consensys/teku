@@ -25,7 +25,13 @@ public class SszBitvectorDeserializer extends JsonDeserializer<SszBitvector> {
   @Override
   public SszBitvector deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
-    int length = data.bitLength() + 1;
+    int length = data.bitLength();
+    // If the value has a leading zero (it is a negative number) we need to add a bit to
+    // compensate. During serialization, the value is converted to a hex string and the uppermost
+    // bit is left off.
+    if (data.hasLeadingZero()) {
+      length++;
+    }
     return SszBitvectorSchema.create(length).sszDeserialize(data);
   }
 }
