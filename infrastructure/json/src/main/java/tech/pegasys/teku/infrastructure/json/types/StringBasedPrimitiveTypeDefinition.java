@@ -119,6 +119,11 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
   }
 
   @Override
+  public String serializeToString(final T value) {
+    return stringFromObject.apply(value);
+  }
+
+  @Override
   public T deserializeFromString(final String value) {
     try {
       return objectFromString.apply(value);

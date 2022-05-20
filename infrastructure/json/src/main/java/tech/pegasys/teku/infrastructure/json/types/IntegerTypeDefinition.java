@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Objects;
 
 class IntegerTypeDefinition extends PrimitiveTypeDefinition<Integer> {
 
@@ -32,6 +33,11 @@ class IntegerTypeDefinition extends PrimitiveTypeDefinition<Integer> {
   @Override
   public Integer deserialize(final JsonParser parser) throws IOException {
     return parser.getIntValue();
+  }
+
+  @Override
+  public String serializeToString(final Integer value) {
+    return Objects.toString(value, null);
   }
 
   @Override

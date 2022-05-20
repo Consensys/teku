@@ -29,7 +29,7 @@ class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
 
   @Override
   public void serialize(final Byte value, final JsonGenerator gen) throws IOException {
-    gen.writeString(Integer.toString(Byte.toUnsignedInt(value)));
+    gen.writeString(serializeToString(value));
   }
 
   @Override
@@ -38,6 +38,11 @@ class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
     checkArgument(
         value < Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for unsigned byte", value);
     return (byte) value;
+  }
+
+  @Override
+  public String serializeToString(final Byte value) {
+    return value != null ? Integer.toString(Byte.toUnsignedInt(value)) : null;
   }
 
   @Override
