@@ -43,6 +43,7 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -117,8 +118,10 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    validatorDataProvider.registerValidators(request.getRequestBody());
-    request.respondWithCode(SC_OK);
+    request.respondAsync(
+        validatorDataProvider
+            .registerValidators(request.getRequestBody())
+            .thenApply(AsyncApiResponse::respondOk));
   }
 
   private static DeserializableTypeDefinition<SszList<SignedValidatorRegistration>> getRequestType(

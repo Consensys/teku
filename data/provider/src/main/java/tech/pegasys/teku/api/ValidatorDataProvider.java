@@ -413,8 +413,9 @@ public class ValidatorDataProvider {
     validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
   }
 
-  public void registerValidators(List<SignedValidatorRegistration> validatorRegistrations) {
-    validatorApiChannel.registerValidators(validatorRegistrations);
+  public SafeFuture<Void> registerValidators(
+      List<SignedValidatorRegistration> validatorRegistrations) {
+    return validatorApiChannel.registerValidators(validatorRegistrations);
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {
