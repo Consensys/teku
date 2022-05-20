@@ -70,7 +70,7 @@ class RuntimeProposerConfigTest {
     assertThat(data)
         .isEqualTo(
             String.format(
-                "[{\"public_key\":\"%s\",\"fee_recipient\":\"%s\"},{\"public_key\":\"%s\",\"fee_recipient\":\"%s\"}]",
+                "{\"%s\":{\"fee_recipient\":\"%s\"},\"%s\":{\"fee_recipient\":\"%s\"}}",
                 pubkey, address, pubkey2, address2));
   }
 
@@ -80,7 +80,7 @@ class RuntimeProposerConfigTest {
     Files.writeString(
         testData,
         String.format(
-            "[{\"public_key\":\"%s\",\"fee_recipient\":\"%s\"},{\"public_key\":\"%s\",\"fee_recipient\":\"%s\"}]",
+            "{\"%s\":{\"fee_recipient\":\"%s\"},\"%s\":{\"fee_recipient\":\"%s\"}}",
             pubkey, address, pubkey2, address2),
         StandardCharsets.UTF_8);
     proposerConfig = new RuntimeProposerConfig(Optional.of(testData));

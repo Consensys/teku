@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
-import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PUBKEY_TYPE;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,37 +21,38 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class RuntimeProposerConfig {
   private final Optional<Path> storagePath;
   private static final Logger LOG = LogManager.getLogger();
-  private static final DeserializableTypeDefinition<Map.Entry<BLSPublicKey, Eth1Address>> CONFIG_TYPE =
-      DeserializableTypeDefinition.<Map.Entry<BLSPublicKey, Eth1Address>, EntryBuilder>object()
-          .initializer(EntryBuilder::new)
-          .finisher(a->a)
-          .name("RuntimeProposerConfig")
-          .withField("public_key", PUBKEY_TYPE, Map.Entry::getKey, EntryBuilder::setKey)
-          .withField(
-              "fee_recipient", ETH1ADDRESS_TYPE, Map.Entry::getValue, EntryBuilder::setValue)
+
+  public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
+      DeserializableTypeDefinition.string(BLSPublicKey.class)
+          .formatter(BLSPublicKey::toString)
+          .parser(BLSPublicKey::fromHexString)
+          .format("byte")
           .build();
-  private static final DeserializableTypeDefinition<Collection<Map.Entry<BLSPublicKey, Eth1Address>>> CONFIG_LIST =
-      DeserializableTypeDefinition.collectionOf(CONFIG_TYPE, list -> list);
-//  private static final DeserializableTypeDefinition<List<Config>> CONFIG_LIST =
-//      DeserializableTypeDefinition.listOf(CONFIG_TYPE);
-  private final Map<BLSPublicKey, Eth1Address> proposerConfigMap = new ConcurrentHashMap<>();
+  private static final DeserializableTypeDefinition<Config> CONFIG_TYPE =
+      DeserializableTypeDefinition.object(Config.class)
+          .initializer(Config::new)
+          .name("RuntimeProposerConfig")
+          .withField(
+              "fee_recipient", ETH1ADDRESS_TYPE, Config::getFeeRecipient, Config::setFeeRecipient)
+          .build();
+  private static final DeserializableTypeDefinition<Map<BLSPublicKey, Config>> CONFIG_MAP_TYPE =
+      DeserializableTypeDefinition.mapOf(PUBKEY_TYPE, CONFIG_TYPE, ConcurrentHashMap::new);
+
+  private final Map<BLSPublicKey, Config> proposerConfigMap = new ConcurrentHashMap<>();
 
   public RuntimeProposerConfig(final Optional<Path> storagePath) {
     this.storagePath = storagePath;
@@ -60,12 +60,16 @@ public class RuntimeProposerConfig {
   }
 
   public Optional<Eth1Address> getEth1AddressForPubKey(final BLSPublicKey pubKey) {
-    return Optional.ofNullable(proposerConfigMap.get(pubKey));
+    final Config config = proposerConfigMap.get(pubKey);
+    if (config == null) {
+      return Optional.empty();
+    }
+    return Optional.of(config.getFeeRecipient());
   }
 
   public synchronized void addOrUpdate(
       final BLSPublicKey publicKey, final Eth1Address eth1Address) {
-    proposerConfigMap.put(publicKey, eth1Address);
+    proposerConfigMap.put(publicKey, new Config(eth1Address));
     storagePath.ifPresent(this::save);
   }
 
@@ -76,14 +80,9 @@ public class RuntimeProposerConfig {
 
   private void save(final Path path) {
     try (OutputStream writer = new FileOutputStream(path.toFile(), false)) {
-//      final List<Config> config =
-//          proposerConfigMap.entrySet().stream()
-//              .map((entry) -> new Config(entry.getKey(), entry.getValue()))
-//              .collect(Collectors.toList());
-      JsonUtil.serializeToBytes(proposerConfigMap.entrySet(), CONFIG_LIST, writer);
-
+      JsonUtil.serializeToBytes(proposerConfigMap, CONFIG_MAP_TYPE, writer);
     } catch (IOException e) {
-      LOG.error("Failed to store runtime key-manager/api_proposer_config file.", e);
+      LOG.error("Failed to store file: " + path.toAbsolutePath(), e);
     }
   }
 
@@ -91,65 +90,31 @@ public class RuntimeProposerConfig {
     if (!path.toFile().exists()) {
       return;
     }
+    if (!proposerConfigMap.isEmpty()) {
+      proposerConfigMap.clear();
+    }
     try (InputStream inputStream = new FileInputStream(path.toFile())) {
-      final Collection<Map.Entry<BLSPublicKey, Eth1Address>> config = JsonUtil.parse(inputStream, CONFIG_LIST);
-      config.forEach(item -> proposerConfigMap.put(item.getKey(), item.getValue()));
+      proposerConfigMap.putAll(JsonUtil.parse(inputStream, CONFIG_MAP_TYPE));
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to parse key-manager/api_proposer_config file", e);
+      throw new IllegalStateException("Failed to parse file: " + path.toAbsolutePath(), e);
     }
   }
 
-  static class EntryBuilder implements Map.Entry<BLSPublicKey, Eth1Address> {
-    private BLSPublicKey key;
-    private Eth1Address value;
+  static class Config {
+    private Eth1Address feeRecipient;
 
+    public Config() {}
 
-    @Override
-    public BLSPublicKey getKey() {
-      return key;
+    public Config(final Eth1Address feeRecipient) {
+      this.feeRecipient = feeRecipient;
     }
 
-    @Override
-    public Eth1Address getValue() {
-      return value;
+    public Eth1Address getFeeRecipient() {
+      return feeRecipient;
     }
 
-    @Override
-    public Eth1Address setValue(final Eth1Address value) {
-      final Eth1Address old = this.value;
-      this.value = value;
-      return old;
-    }
-
-    public void setKey(final BLSPublicKey key) {
-      this.key = key;
+    public void setFeeRecipient(final Eth1Address feeRecipient) {
+      this.feeRecipient = feeRecipient;
     }
   }
-//  static class Config {
-//    private BLSPublicKey publicKey;
-//    private Eth1Address feeRecipient;
-//
-//    public Config() {}
-//
-//    public Config(final BLSPublicKey publicKey, final Eth1Address feeRecipient) {
-//      this.publicKey = publicKey;
-//      this.feeRecipient = feeRecipient;
-//    }
-//
-//    public BLSPublicKey getPublicKey() {
-//      return publicKey;
-//    }
-//
-//    public void setPublicKey(final BLSPublicKey publicKey) {
-//      this.publicKey = publicKey;
-//    }
-//
-//    public Eth1Address getFeeRecipient() {
-//      return feeRecipient;
-//    }
-//
-//    public void setFeeRecipient(final Eth1Address feeRecipient) {
-//      this.feeRecipient = feeRecipient;
-//    }
-//  }
 }

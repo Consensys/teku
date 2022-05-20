@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -39,7 +38,6 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
       final DeserializableTypeDefinition<TObject> itemType) {
     return new DeserializableListTypeDefinition<>(itemType);
   }
-
 
   static DeserializableTypeDefinition<Map<String, String>> mapOfStrings() {
     return mapOf(CoreTypes.STRING_TYPE, CoreTypes.STRING_TYPE, TreeMap::new);
