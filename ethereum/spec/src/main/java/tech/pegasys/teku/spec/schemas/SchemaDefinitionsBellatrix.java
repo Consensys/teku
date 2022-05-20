@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -48,6 +49,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final SignedBuilderBidSchema signedBuilderBidSchema;
   private final ValidatorRegistrationSchema validatorRegistrationSchema;
   private final SignedValidatorRegistrationSchema signedValidatorRegistrationSchema;
+  private final SignedValidatorRegistrationsSchema signedValidatorRegistrationsSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
@@ -71,6 +73,9 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.validatorRegistrationSchema = new ValidatorRegistrationSchema();
     this.signedValidatorRegistrationSchema =
         new SignedValidatorRegistrationSchema(validatorRegistrationSchema);
+    this.signedValidatorRegistrationsSchema =
+        new SignedValidatorRegistrationsSchema(
+            signedValidatorRegistrationSchema, specConfig.getValidatorRegistryLimit());
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -140,6 +145,10 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
 
   public SignedValidatorRegistrationSchema getSignedValidatorRegistrationSchema() {
     return signedValidatorRegistrationSchema;
+  }
+
+  public SignedValidatorRegistrationsSchema getSignedValidatorRegistrationsSchema() {
+    return signedValidatorRegistrationsSchema;
   }
 
   @Override

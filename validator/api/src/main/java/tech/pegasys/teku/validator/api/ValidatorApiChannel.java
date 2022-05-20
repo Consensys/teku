@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -87,4 +88,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
       Collection<SignedContributionAndProof> signedContributionAndProofs);
 
   void prepareBeaconProposer(Collection<BeaconPreparableProposer> beaconPreparableProposers);
+
+  SafeFuture<Void> registerValidators(
+      final Collection<SignedValidatorRegistration> validatorRegistrations);
 }

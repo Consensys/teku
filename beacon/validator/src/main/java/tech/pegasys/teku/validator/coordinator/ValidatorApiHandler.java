@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -621,6 +622,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     proposersDataManager.updatePreparedProposers(
         beaconPreparableProposers, combinedChainDataClient.getCurrentSlot());
+  }
+
+  @Override
+  public SafeFuture<Void> registerValidators(
+      final Collection<SignedValidatorRegistration> validatorRegistrations) {
+    return proposersDataManager.updateValidatorRegistrations(
+        validatorRegistrations, combinedChainDataClient.getCurrentSlot());
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(

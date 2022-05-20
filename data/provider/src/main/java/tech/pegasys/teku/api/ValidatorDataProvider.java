@@ -60,6 +60,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -410,6 +411,10 @@ public class ValidatorDataProvider {
                   .BeaconPreparableProposer>
           beaconPreparableProposers) {
     validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
+  }
+
+  public void registerValidators(List<SignedValidatorRegistration> validatorRegistrations) {
+    validatorApiChannel.registerValidators(validatorRegistrations);
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {
