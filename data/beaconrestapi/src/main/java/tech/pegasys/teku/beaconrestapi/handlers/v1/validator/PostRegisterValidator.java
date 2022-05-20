@@ -134,6 +134,7 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
         .getJsonTypeDefinition();
   }
 
+  @SuppressWarnings("JavaCase")
   public static class SignedValidatorRegistrationOpenApiSchema {
     @JsonProperty("message")
     ValidatorRegistration message;
