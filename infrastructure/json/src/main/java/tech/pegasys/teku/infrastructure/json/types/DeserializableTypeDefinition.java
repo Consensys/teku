@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
@@ -34,6 +35,12 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
     return new DeserializableListTypeDefinition<>(itemType);
+  }
+
+  static <TObject, C extends Collection<TObject>> DeserializableTypeDefinition<C> collectionOf(
+      final DeserializableTypeDefinition<TObject> itemType,
+      final Function<List<TObject>, C> createFromList) {
+    return new DeserializableArrayTypeDefinition<>(itemType, createFromList);
   }
 
   static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
