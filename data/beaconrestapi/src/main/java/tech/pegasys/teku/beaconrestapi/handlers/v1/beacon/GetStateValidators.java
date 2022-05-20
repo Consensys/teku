@@ -137,7 +137,7 @@ public class GetStateValidators extends MigratingEndpointAdapter {
             request.getPathParameter(PARAMETER_STATE_ID), validators, statusFilter);
 
     request.respondAsync(
-        future.thenApplyChecked(
+        future.thenApply(
             maybeValidatorResponsesAndMetaData -> {
               if (maybeValidatorResponsesAndMetaData.isEmpty()) {
                 return AsyncApiResponse.respondNotFound();
