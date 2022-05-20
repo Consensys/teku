@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +28,6 @@ public class DeserializableMapTypeDefinition<TKey, TValue>
   private final StringValueTypeDefinition<TKey> keyType;
   private final DeserializableTypeDefinition<TValue> valueType;
   private final Supplier<? extends Map<TKey, TValue>> mapConstructor;
-
 
   public DeserializableMapTypeDefinition(
       final StringValueTypeDefinition<TKey> keyType,
@@ -64,10 +62,6 @@ public class DeserializableMapTypeDefinition<TKey, TValue>
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       final String fieldName = p.getCurrentName();
       p.nextToken();
-      if (!p.getCurrentToken().isScalarValue()) {
-        throw MismatchedInputException.from(
-            p, String.class, "Expected scalar value but got " + p.getCurrentToken());
-      }
       final TValue fieldValue = valueType.deserialize(p);
       result.put(keyType.deserializeFromString(fieldName), fieldValue);
     }

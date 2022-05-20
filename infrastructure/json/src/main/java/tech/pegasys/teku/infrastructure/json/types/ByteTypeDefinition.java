@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import java.util.Objects;
 
 class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
 
