@@ -104,6 +104,8 @@ class JsonProviderTest {
     final SszBitvector data = dataStructureUtil.randomSszBitvector(bitvectorSize);
     final String asJson = jsonProvider.objectToJSON(data);
     final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
+    assertThat(data).isEqualTo(asData);
+    assertThat(asData.size()).isEqualTo(bitvectorSize);
   }
 
   @Test
