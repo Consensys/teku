@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Objects;
 
 public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefinition<T> {
   final Class<T> itemType;
@@ -35,14 +36,19 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     gen.writeArrayFieldStart("enum");
 
     for (T value : itemType.getEnumConstants()) {
-      gen.writeString(value.toString());
+      gen.writeString(serializeToString(value));
     }
     gen.writeEndArray();
   }
 
   @Override
   public void serialize(final T value, final JsonGenerator gen) throws IOException {
-    gen.writeString(value.toString());
+    gen.writeString(serializeToString(value));
+  }
+
+  @Override
+  public String serializeToString(final T value) {
+    return Objects.toString(value, null);
   }
 
   @Override

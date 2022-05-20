@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
@@ -257,6 +258,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         transitionConfiguration,
         transitionConfigurationResponse);
     return SafeFuture.completedFuture(transitionConfigurationResponse);
+  }
+
+  @Override
+  public SafeFuture<Void> builderRegisterValidator(
+      SignedValidatorRegistration signedValidatorRegistration, UInt64 slot) {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

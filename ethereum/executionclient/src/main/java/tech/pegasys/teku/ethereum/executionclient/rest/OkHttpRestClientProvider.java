@@ -11,33 +11,43 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient;
+package tech.pegasys.teku.ethereum.executionclient.rest;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.time.Duration;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import okhttp3.logging.HttpLoggingInterceptor.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.ethereum.executionclient.auth.JwtAuthHttpInterceptor;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class OkHttpClientCreator {
+class OkHttpRestClientProvider implements RestClientProvider {
 
-  public static OkHttpClient create(
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final OkHttpRestClient okHttpRestClient;
+
+  OkHttpRestClientProvider(
+      final String endpoint,
       final Duration timeout,
-      final Logger logger,
       final Optional<JwtConfig> jwtConfig,
       final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder().callTimeout(timeout);
-    if (logger.isTraceEnabled()) {
-      final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(logger::trace);
-      loggingInterceptor.setLevel(Level.BODY);
-      builder.addInterceptor(loggingInterceptor);
-    }
-    jwtConfig.ifPresent(
-        config -> builder.addInterceptor(new JwtAuthHttpInterceptor(config, timeProvider)));
-    return builder.build();
+    checkNotNull(endpoint);
+    final OkHttpClient okHttpClient =
+        OkHttpClientCreator.create(timeout, LOG, jwtConfig, timeProvider);
+    this.okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
+  }
+
+  @Override
+  public RestClient getRestClient() {
+    return okHttpRestClient;
+  }
+
+  @Override
+  public boolean isStub() {
+    return false;
   }
 }
