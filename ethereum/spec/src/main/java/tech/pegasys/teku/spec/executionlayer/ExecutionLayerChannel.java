@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
   String STUB_ENDPOINT_IDENTIFIER = "stub";
@@ -59,8 +60,14 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-            TransitionConfiguration transitionConfiguration) {
+            final TransitionConfiguration transitionConfiguration) {
           return SafeFuture.completedFuture(transitionConfiguration);
+        }
+
+        @Override
+        public SafeFuture<Void> builderRegisterValidator(
+            final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
+          return SafeFuture.COMPLETE;
         }
 
         @Override
@@ -77,28 +84,31 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       };
 
   // eth namespace
-  SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash);
+  SafeFuture<Optional<PowBlock>> eth1GetPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> eth1GetPowChainHead();
 
   // engine namespace
   SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState,
-      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
+      ForkChoiceState forkChoiceState,
+      Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
   SafeFuture<ExecutionPayload> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);
+      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
-  SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload);
+  SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
 
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration);
+      TransitionConfiguration transitionConfiguration);
 
   // builder namespace
-  SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);
+  SafeFuture<Void> builderRegisterValidator(
+      SignedValidatorRegistration signedValidatorRegistration, UInt64 slot);
 
-  SafeFuture<ExecutionPayload> builderGetPayload(final SignedBeaconBlock signedBlindedBeaconBlock);
+  SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
+
+  SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 
   enum Version {
     KILNV2;
