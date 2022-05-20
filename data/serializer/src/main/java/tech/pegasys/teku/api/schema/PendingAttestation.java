@@ -18,6 +18,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
@@ -62,5 +63,25 @@ public class PendingAttestation {
         data.asInternalAttestationData(),
         inclusion_delay,
         proposer_index);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof PendingAttestation)) {
+      return false;
+    }
+    PendingAttestation that = (PendingAttestation) o;
+    return Objects.equals(aggregation_bits, that.aggregation_bits)
+        && Objects.equals(data, that.data)
+        && Objects.equals(inclusion_delay, that.inclusion_delay)
+        && Objects.equals(proposer_index, that.proposer_index);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(aggregation_bits, data, inclusion_delay, proposer_index);
   }
 }
