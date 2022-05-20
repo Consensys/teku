@@ -176,6 +176,7 @@ allprojects {
       '-Xlint:finally',
       '-Xlint:static',
       '-Werror',
+      '-parameters',
     ]
     options.forkOptions.jvmArgs += [
         '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
