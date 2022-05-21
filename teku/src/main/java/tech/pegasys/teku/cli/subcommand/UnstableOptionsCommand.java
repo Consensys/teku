@@ -47,7 +47,7 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
   @Override
   public void run() {
     final CommandSpec commandSpec = helpCommandLine.getParent().getCommandSpec();
-    commandSpec.mixins().forEach(this::printUnstableOptions);
+    commandSpec.argGroups().forEach(this::printUnstableOptions);
   }
 
   @Override
@@ -61,18 +61,17 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
     this.outWriter = outWriter;
   }
 
-  private void printUnstableOptions(
-      final String mixinName, final CommandLine.Model.CommandSpec commandSpec) {
-    // Recreate the options but flip hidden to false.
+  private void printUnstableOptions(final CommandLine.Model.ArgGroupSpec argGroupSpec) {
     final CommandLine.Model.CommandSpec cs = CommandLine.Model.CommandSpec.create();
-    cs.usageMessage().showDefaultValues(true);
-    commandSpec.options().stream()
+    argGroupSpec.allOptionsNested().stream()
         .filter(option -> option.hidden() && option.names()[0].startsWith("--X"))
         .forEach(option -> cs.addOption(option.toBuilder().hidden(false).build()));
-
     if (cs.options().size() > 0) {
       // Print out the help text.
-      outWriter.println(mixinName + " unstable options");
+      if (argGroupSpec.heading() != null) {
+        outWriter.println(argGroupSpec.heading().replace("%n", "") + " unstable options");
+      }
+
       outWriter.println(new CommandLine.Help(cs, colorScheme).optionList());
     }
   }
