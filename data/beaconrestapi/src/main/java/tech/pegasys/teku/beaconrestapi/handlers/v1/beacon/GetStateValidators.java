@@ -138,14 +138,9 @@ public class GetStateValidators extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeValidatorResponsesAndMetaData -> {
-              if (maybeValidatorResponsesAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              final ObjectAndMetaData<List<StateValidatorData>> data =
-                  maybeValidatorResponsesAndMetaData.get();
-              return AsyncApiResponse.respondOk(data);
-            }));
+            maybeData ->
+                maybeData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 }
