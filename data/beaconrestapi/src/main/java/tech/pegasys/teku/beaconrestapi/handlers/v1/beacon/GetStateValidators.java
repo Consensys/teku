@@ -36,6 +36,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Sets;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -72,7 +73,6 @@ public class GetStateValidators extends MigratingEndpointAdapter {
               .withField("data", listOf(STATE_VALIDATOR_DATA_TYPE), ObjectAndMetaData::getData)
               .build();
 
-  private final StateValidatorsUtil stateValidatorsUtil = new StateValidatorsUtil();
   private final ChainDataProvider chainDataProvider;
 
   public GetStateValidators(final DataProvider dataProvider) {
@@ -130,7 +130,7 @@ public class GetStateValidators extends MigratingEndpointAdapter {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
     final Set<ValidatorStatus> statusFilter =
-        stateValidatorsUtil.parseStatusFilter(request.getQueryParameterList(STATUS_PARAMETER));
+        Sets.newHashSet(request.getQueryParameterList(STATUS_PARAMETER));
 
     SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorData>>>> future =
         chainDataProvider.getStateValidators(

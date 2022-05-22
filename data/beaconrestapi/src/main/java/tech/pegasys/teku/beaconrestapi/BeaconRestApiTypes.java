@@ -32,11 +32,23 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconRestApiTypes {
+  private static final StringValueTypeDefinition<ValidatorStatus> STATUS_VALUE =
+      DeserializableTypeDefinition.string(ValidatorStatus.class)
+          .formatter(ValidatorStatus::toString)
+          .parser(ValidatorStatus::valueOf)
+          .example("active_ongoing")
+          .description("ValidatorStatus string")
+          .format("string")
+          .build();
+
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
       new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
 
@@ -71,7 +83,6 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           PARAM_ID, CoreTypes.STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
 
-  public static final ParameterMetadata<String> STATUS_PARAMETER =
-      new ParameterMetadata<>(
-          STATUS, CoreTypes.STRING_TYPE.withDescription(PARAM_STATUS_DESCRIPTION));
+  public static final ParameterMetadata<ValidatorStatus> STATUS_PARAMETER =
+      new ParameterMetadata<>(STATUS, STATUS_VALUE.withDescription(PARAM_STATUS_DESCRIPTION));
 }
