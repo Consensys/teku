@@ -55,15 +55,15 @@ class BranchMerkleTree extends MerkleTree {
     if (deposits <= depositsToFinalize) {
       return new FinalizedMerkleTree(deposits, getRoot());
     }
-    final MerkleTree left = this.left.finalize(depositsToFinalize, level - 1);
-    final MerkleTree right;
+    final MerkleTree newLeft = left.finalize(depositsToFinalize, level - 1);
+    final MerkleTree newRight;
     if (depositsToFinalize > deposits / 2) {
       final long remaining = depositsToFinalize - (deposits / 2);
-      right = this.right.finalize(remaining, level - 1);
+      newRight = right.finalize(remaining, level - 1);
     } else {
-      right = this.right;
+      newRight = right;
     }
-    return new BranchMerkleTree(left, right);
+    return new BranchMerkleTree(newLeft, newRight);
   }
 
   @Override
