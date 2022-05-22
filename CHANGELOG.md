@@ -17,11 +17,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Check `Eth1Address` checksum ([EIP-55](https://eips.ethereum.org/EIPS/eip-55)) if address is mixed-case.
-- Ignore aggregate attestation and sync contribution gossip that does not include any new validators.
-- Optimised BLS batch validation.
-- Optimised message ID calculation in jvm-libp2p.
-- Reduced memory requirements when sending events on the REST API to many clients.
 - Reduced memory requirements for storing the deposit merkle tree.
 
 ### Bug Fixes

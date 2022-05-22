@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
+import java.io.OutputStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 
@@ -32,4 +33,6 @@ public interface SimpleOffsetSerializable {
    * @return number of bytes written
    */
   int sszSerialize(SszWriter writer);
+
+  int sszSerialize(OutputStream out);
 }

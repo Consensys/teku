@@ -20,19 +20,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 public class PayloadBuildingAttributes {
   private final UInt64 timestamp;
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
-  private final Optional<SignedValidatorRegistrationV1> validatorRegistration;
+  private final Optional<SignedValidatorRegistration> validatorRegistration;
 
   public PayloadBuildingAttributes(
       final UInt64 timestamp,
       final Bytes32 prevRandao,
       final Eth1Address feeRecipient,
-      final Optional<SignedValidatorRegistrationV1> validatorRegistration) {
+      final Optional<SignedValidatorRegistration> validatorRegistration) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
@@ -51,7 +51,7 @@ public class PayloadBuildingAttributes {
     return feeRecipient;
   }
 
-  public Optional<SignedValidatorRegistrationV1> getValidatorRegistration() {
+  public Optional<SignedValidatorRegistration> getValidatorRegistration() {
     return validatorRegistration;
   }
 

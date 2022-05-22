@@ -13,37 +13,105 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
-  private final GetStateValidatorBalances handler =
-      new GetStateValidatorBalances(chainDataProvider, jsonProvider);
-  private final ValidatorBalanceResponse validatorBalanceResponse =
-      new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
+public class GetStateValidatorBalancesTest
+    extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetStateValidatorBalances handler;
+
+  @BeforeEach
+  void setup() {
+    initialise(SpecMilestone.ALTAIR);
+    genesis();
+
+    handler = new GetStateValidatorBalances(chainDataProvider);
+  }
 
   @Test
-  public void shouldGetValidatorBalancesFromState() throws Exception {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
-    when(chainDataProvider.getStateValidatorBalances("head", List.of("1", "2", "3", "4")))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(withMetaData(List.of(validatorBalanceResponse)))));
-    handler.handle(context);
-    GetStateValidatorBalancesResponse response =
-        getResponseFromFuture(GetStateValidatorBalancesResponse.class);
-    assertThat(response.data).containsExactly(validatorBalanceResponse);
+  public void shouldGetSpecifiedValidatorBalancesFromState() throws Exception {
+    StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", "head")
+            .listQueryParameter("id", List.of("1", "2"))
+            .build();
+
+    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> stateValidatorBalancesData =
+        chainDataProvider.getStateValidatorBalances("head", List.of("1", "2")).get();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(stateValidatorBalancesData.orElseThrow());
+  }
+
+  @Test
+  public void shouldGetAllValidatorBalancesFromState() throws Exception {
+    StubRestApiRequest request =
+        StubRestApiRequest.builder().pathParameter("state_id", "head").build();
+
+    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> stateValidatorBalancesData =
+        chainDataProvider.getStateValidatorBalances("head", List.of()).get();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(stateValidatorBalancesData.orElseThrow());
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle404() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    List<StateValidatorBalanceData> stateValidatorBalanceData = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      stateValidatorBalanceData.add(
+          new StateValidatorBalanceData(UInt64.valueOf(i), dataStructureUtil.randomUInt64()));
+    }
+
+    ObjectAndMetaData<List<StateValidatorBalanceData>> responseData =
+        withMetaData(stateValidatorBalanceData);
+
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(
+                GetStateValidatorBalancesTest.class, "getStateValidatorBalances.json"),
+            UTF_8);
+    assertThat(data).isEqualTo(expected);
   }
 }

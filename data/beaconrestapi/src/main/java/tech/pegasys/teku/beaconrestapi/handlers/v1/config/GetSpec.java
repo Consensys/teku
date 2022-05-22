@@ -36,7 +36,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.GetSpecResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableStringMapTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -49,7 +49,7 @@ public class GetSpec extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<Map<String, String>> GET_SPEC_RESPONSE_TYPE =
       SerializableTypeDefinition.<Map<String, String>>object()
           .name("GetSpecResponse")
-          .withField("data", new DeserializableStringMapTypeDefinition(), Function.identity())
+          .withField("data", DeserializableTypeDefinition.mapOfStrings(), Function.identity())
           .build();
 
   public GetSpec(final DataProvider dataProvider) {

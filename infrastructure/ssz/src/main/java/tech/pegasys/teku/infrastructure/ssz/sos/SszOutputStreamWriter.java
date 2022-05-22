@@ -11,13 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.json.types;
+package tech.pegasys.teku.infrastructure.ssz.sos;
 
-public interface StringValueTypeDefinition<T> extends DeserializableTypeDefinition<T> {
-  String serializeToString(T value);
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 
-  T deserializeFromString(String value);
+public class SszOutputStreamWriter implements SszWriter {
+  private final OutputStream out;
+
+  public SszOutputStreamWriter(final OutputStream out) {
+    this.out = out;
+  }
 
   @Override
-  StringValueTypeDefinition<T> withDescription(final String description);
+  public void write(final byte[] bytes, final int offset, final int length) {
+    try {
+      out.write(bytes, offset, length);
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
 }

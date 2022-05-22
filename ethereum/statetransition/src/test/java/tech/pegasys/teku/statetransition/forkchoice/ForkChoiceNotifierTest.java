@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -103,8 +103,9 @@ class ForkChoiceNotifierTest {
     proposersDataManager =
         spy(
             new ProposersDataManager(
-                spec,
                 eventThread,
+                spec,
+                executionLayerChannel,
                 recentChainData,
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
@@ -118,6 +119,8 @@ class ForkChoiceNotifierTest {
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 
+    when(executionLayerChannel.builderRegisterValidator(any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
     when(executionLayerChannel.engineNewPayload(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
     when(executionLayerChannel.engineForkChoiceUpdated(any(), any()))
@@ -130,7 +133,9 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     proposersDataManager =
-        spy(new ProposersDataManager(spec, eventThread, recentChainData, defaultFeeRecipient));
+        spy(
+            new ProposersDataManager(
+                eventThread, spec, executionLayerChannel, recentChainData, defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);
@@ -819,7 +824,7 @@ class ForkChoiceNotifierTest {
       final UInt64 blockSlot,
       final boolean doPrepare,
       final Optional<Eth1Address> overrideFeeRecipient,
-      final Optional<SignedValidatorRegistrationV1> validatorRegistration) {
+      final Optional<SignedValidatorRegistration> validatorRegistration) {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
     final PayloadBuildingAttributes payloadBuildingAttributes =
         getExpectedPayloadBuildingAttributes(
@@ -832,10 +837,10 @@ class ForkChoiceNotifierTest {
           recentChainData.getHeadSlot());
     }
     validatorRegistration.ifPresent(
-        signedValidatorRegistrationV1 ->
+        signedValidatorRegistration ->
             SafeFutureAssert.safeJoin(
                 proposersDataManager.updateValidatorRegistrations(
-                    List.of(signedValidatorRegistrationV1), recentChainData.getHeadSlot())));
+                    List.of(signedValidatorRegistration), recentChainData.getHeadSlot())));
     return payloadBuildingAttributes;
   }
 
@@ -868,7 +873,7 @@ class ForkChoiceNotifierTest {
       final BeaconState headState,
       final UInt64 blockSlot,
       final Optional<Eth1Address> overrideFeeRecipient,
-      final Optional<SignedValidatorRegistrationV1> validatorRegistration) {
+      final Optional<SignedValidatorRegistration> validatorRegistration) {
     final Eth1Address feeRecipient =
         overrideFeeRecipient.orElse(dataStructureUtil.randomEth1Address());
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
@@ -894,7 +899,7 @@ class ForkChoiceNotifierTest {
         false);
   }
 
-  private SignedValidatorRegistrationV1 createValidatorRegistration(
+  private SignedValidatorRegistration createValidatorRegistration(
       final BeaconState headState, final UInt64 blockSlot) {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
     return dataStructureUtil.randomValidatorRegistration(

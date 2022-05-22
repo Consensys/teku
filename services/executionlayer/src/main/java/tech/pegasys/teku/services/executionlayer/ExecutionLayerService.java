@@ -15,19 +15,23 @@ package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_CALL_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -42,31 +46,37 @@ public class ExecutionLayerService extends Service {
 
   public static ExecutionLayerService create(
       final ServiceConfig serviceConfig, final ExecutionLayerConfiguration config) {
+
+    final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
+    final TimeProvider timeProvider = serviceConfig.getTimeProvider();
+
     final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
-            serviceConfig.getTimeProvider(),
             EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
+            true,
             config.getEngineJwtSecretFile(),
-            serviceConfig.getDataDirLayout().getBeaconDataDirectory());
+            beaconDataDirectory,
+            timeProvider);
 
-    final Optional<ExecutionWeb3jClientProvider> builderWeb3jClientProvider =
+    final Optional<RestClientProvider> builderRestClientProvider =
         config
             .getBuilderEndpoint()
             .map(
                 builderEndpoint ->
-                    ExecutionWeb3jClientProvider.create(
+                    RestClientProvider.create(
                         builderEndpoint,
-                        serviceConfig.getTimeProvider(),
-                        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
+                        EL_BUILDER_CALL_TIMEOUT,
+                        false,
                         Optional.empty(),
-                        serviceConfig.getDataDirLayout().getBeaconDataDirectory()));
+                        beaconDataDirectory,
+                        timeProvider));
 
     final boolean builderIsStub =
-        builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::isStub).orElse(false);
+        builderRestClientProvider.map(RestClientProvider::isStub).orElse(false);
 
     checkState(
-        engineWeb3jClientProvider.isStub() == builderIsStub || builderWeb3jClientProvider.isEmpty(),
+        engineWeb3jClientProvider.isStub() == builderIsStub || builderRestClientProvider.isEmpty(),
         "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
 
     final String endpoint = engineWeb3jClientProvider.getEndpoint();
@@ -75,14 +85,13 @@ public class ExecutionLayerService extends Service {
     final ExecutionLayerManager executionLayerManager;
     if (engineWeb3jClientProvider.isStub()) {
       EVENT_LOG.executionLayerStubEnabled();
-      executionLayerManager =
-          new ExecutionLayerManagerStub(config.getSpec(), serviceConfig.getTimeProvider(), true);
+      executionLayerManager = new ExecutionLayerManagerStub(config.getSpec(), timeProvider, true);
     } else {
       final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
       executionLayerManager =
           ExecutionLayerManagerImpl.create(
               engineWeb3jClientProvider.getWeb3JClient(),
-              builderWeb3jClientProvider.map(ExecutionWeb3jClientProvider::getWeb3JClient),
+              builderRestClientProvider.map(RestClientProvider::getRestClient),
               config.getEngineVersion(),
               config.getSpec(),
               metricsSystem);

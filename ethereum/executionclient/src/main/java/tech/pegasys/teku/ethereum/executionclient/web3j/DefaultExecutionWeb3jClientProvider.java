@@ -15,49 +15,43 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
-import tech.pegasys.teku.ethereum.executionclient.auth.JwtSecretKeyLoader;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClientProvider {
   private final String eeEndpoint;
-  private final TimeProvider timeProvider;
-  private final Optional<String> jwtSecretFile;
   private final Duration timeout;
-  private final Path beaconDataDirectory;
+  private final Optional<JwtConfig> jwtConfig;
+  private final TimeProvider timeProvider;
+
   private boolean alreadyBuilt = false;
   private Web3JClient web3JClient;
 
   DefaultExecutionWeb3jClientProvider(
       final String eeEndpoint,
-      final TimeProvider timeProvider,
       final Duration timeout,
-      final Optional<String> jwtSecretFile,
-      final Path beaconDataDirectory) {
+      final Optional<JwtConfig> jwtConfig,
+      final TimeProvider timeProvider) {
     checkNotNull(eeEndpoint);
     this.eeEndpoint = eeEndpoint;
-    this.timeProvider = timeProvider;
     this.timeout = timeout;
-    this.jwtSecretFile = jwtSecretFile;
-    this.beaconDataDirectory = beaconDataDirectory;
+    this.jwtConfig = jwtConfig;
+    this.timeProvider = timeProvider;
   }
 
   private synchronized void buildClient() {
     if (alreadyBuilt) {
       return;
     }
-    JwtSecretKeyLoader keyLoader = new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
-    JwtConfig jwtConfig = new JwtConfig(keyLoader.getSecretKey());
     Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
     this.web3JClient =
         web3JClientBuilder
             .endpoint(eeEndpoint)
             .timeout(timeout)
-            .jwtConfigOpt(Optional.of(jwtConfig))
+            .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .build();
     this.alreadyBuilt = true;

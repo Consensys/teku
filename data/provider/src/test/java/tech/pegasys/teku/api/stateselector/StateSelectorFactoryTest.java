@@ -15,14 +15,16 @@ package tech.pegasys.teku.api.stateselector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -52,56 +54,65 @@ public class StateSelectorFactoryTest {
   private final StateSelectorFactory factory = new StateSelectorFactory(spec, client);
 
   @Test
-  public void headSelector_shouldGetBestState() throws ExecutionException, InterruptedException {
+  public void headSelector_shouldGetBestState() {
     final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(10);
     final ChainHead chainHead = ChainHead.create(blockAndState);
     when(client.getChainHead()).thenReturn(Optional.of(chainHead));
-    Optional<StateAndMetaData> result = factory.headSelector().getState().get();
+    Optional<StateAndMetaData> result = safeJoin(factory.headSelector().getState());
     assertThat(result).contains(withMetaData(blockAndState.getState()));
   }
 
   @Test
-  public void finalizedSelector_shouldGetFinalizedState()
-      throws ExecutionException, InterruptedException {
+  public void finalizedSelector_shouldGetFinalizedState() {
     when(client.getLatestFinalized())
         .thenReturn(Optional.of(AnchorPoint.fromInitialState(spec, state)));
-    Optional<StateAndMetaData> result = factory.finalizedSelector().getState().get();
+    Optional<StateAndMetaData> result = safeJoin(factory.finalizedSelector().getState());
     assertThat(result).contains(withMetaData(state));
   }
 
   @Test
-  public void justifiedSelector_shouldGetJustifiedState()
-      throws ExecutionException, InterruptedException {
+  public void justifiedSelector_shouldGetJustifiedState() {
     when(client.getJustifiedState()).thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<StateAndMetaData> result = factory.justifiedSelector().getState().get();
+    Optional<StateAndMetaData> result = safeJoin(factory.justifiedSelector().getState());
     assertThat(result).contains(withMetaData(state));
     verify(client).getJustifiedState();
   }
 
   @Test
-  public void genesisSelector_shouldGetStateAtSlotExact()
-      throws ExecutionException, InterruptedException {
+  public void genesisSelector_shouldGetStateAtSlotExact() {
     when(client.getStateAtSlotExact(ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<StateAndMetaData> result = factory.genesisSelector().getState().get();
+    Optional<StateAndMetaData> result = safeJoin(factory.genesisSelector().getState());
     assertThat(result).contains(withMetaData(state));
     verify(client).getStateAtSlotExact(ZERO);
   }
 
   @Test
-  public void forSlot_shouldGetStateAtSlotExact() throws ExecutionException, InterruptedException {
-    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(15);
+  public void forSlot_shouldGetStateAtSlotExact() {
+    final SignedBlockAndState blockAndState =
+        data.randomSignedBlockAndState(state.getSlot().plus(5));
     final ChainHead chainHead = ChainHead.create(blockAndState);
     when(client.getChainHead()).thenReturn(Optional.of(chainHead));
     when(client.getStateAtSlotExact(state.getSlot(), chainHead.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<StateAndMetaData> result = factory.forSlot(state.getSlot()).getState().get();
+    Optional<StateAndMetaData> result = safeJoin(factory.forSlot(state.getSlot()).getState());
     assertThat(result).contains(withMetaData(state));
   }
 
   @Test
-  public void forStateRoot_shouldGetStateAtSlotExact()
-      throws ExecutionException, InterruptedException {
+  public void forSlot_shouldReturnEmptyWhenSlotAfterChainHead() {
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(15);
+    final ChainHead chainHead = ChainHead.create(blockAndState);
+    when(client.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(client.getStateAtSlotExact(chainHead.getSlot().plus(1), chainHead.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+    Optional<StateAndMetaData> result = safeJoin(factory.forSlot(state.getSlot()).getState());
+    assertThat(result).isEmpty();
+    verify(client, never()).getStateAtSlotExact(any(), any());
+  }
+
+  @Test
+  public void forStateRoot_shouldGetStateAtSlotExact() {
     final Bytes32 blockRoot = BeaconBlockHeader.fromState(state).getRoot();
     final SignedBlockAndState head =
         data.randomSignedBlockAndState(state.getSlot().plus(3), blockRoot);
@@ -110,7 +121,8 @@ public class StateSelectorFactoryTest {
     when(client.isCanonicalBlock(state.getSlot(), blockRoot, chainHead.getRoot())).thenReturn(true);
     when(client.getStateByStateRoot(state.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<StateAndMetaData> result = factory.forStateRoot(state.hashTreeRoot()).getState().get();
+    Optional<StateAndMetaData> result =
+        safeJoin(factory.forStateRoot(state.hashTreeRoot()).getState());
     assertThat(result).contains(withMetaData(state));
     verify(client).getStateByStateRoot(state.hashTreeRoot());
   }

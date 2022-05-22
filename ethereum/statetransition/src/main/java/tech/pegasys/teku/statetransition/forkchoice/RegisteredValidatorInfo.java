@@ -14,18 +14,18 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 class RegisteredValidatorInfo extends ExpiringInfo {
-  private final SignedValidatorRegistrationV1 signedValidatorRegistration;
+  private final SignedValidatorRegistration signedValidatorRegistration;
 
   public RegisteredValidatorInfo(
-      final UInt64 expirySlot, final SignedValidatorRegistrationV1 signedValidatorRegistration) {
+      final UInt64 expirySlot, final SignedValidatorRegistration signedValidatorRegistration) {
     super(expirySlot);
     this.signedValidatorRegistration = signedValidatorRegistration;
   }
 
-  public SignedValidatorRegistrationV1 getSignedValidatorRegistration() {
+  public SignedValidatorRegistration getSignedValidatorRegistration() {
     return signedValidatorRegistration;
   }
 }

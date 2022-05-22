@@ -40,10 +40,10 @@ import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
+import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
@@ -309,17 +309,17 @@ public class ChainDataProvider {
         stateIdParam, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState::getFork);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorBalanceResponse>>>>
+  public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>>
       getStateValidatorBalances(final String stateIdParam, final List<String> validators) {
     return fromState(stateIdParam, state -> getValidatorBalancesFromState(state, validators));
   }
 
   @VisibleForTesting
-  List<ValidatorBalanceResponse> getValidatorBalancesFromState(
+  List<StateValidatorBalanceData> getValidatorBalancesFromState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final List<String> validators) {
     return getValidatorSelector(state, validators)
-        .mapToObj(index -> ValidatorBalanceResponse.fromState(state, index))
+        .mapToObj(index -> StateValidatorBalanceData.fromState(state, index))
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }

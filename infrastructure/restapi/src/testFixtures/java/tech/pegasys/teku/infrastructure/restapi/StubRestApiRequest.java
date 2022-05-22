@@ -22,9 +22,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -48,6 +50,7 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> pathParameters = new HashMap<>();
   private final Map<String, String> queryParameters = new HashMap<>();
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
+  private final Map<String, List<String>> listQueryParameters = new HashMap<>();
 
   public boolean responseCodeSet() {
     return responseCode != CODE_NOT_SET;
@@ -137,6 +140,11 @@ public class StubRestApiRequest implements RestApiRequest {
     this.optionalQueryParameters.put(parameter, value);
   }
 
+  public void setListQueryParameters(final String parameter, final List<String> value) {
+    assertThat(this.optionalQueryParameters.containsKey(parameter)).isFalse();
+    this.listQueryParameters.put(parameter, value);
+  }
+
   @Override
   public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
     assertThat(this.pathParameters.containsKey(parameterMetadata.getName())).isTrue();
@@ -157,6 +165,18 @@ public class StubRestApiRequest implements RestApiRequest {
     assertThat(this.queryParameters.containsKey(parameterMetadata.getName())).isTrue();
     final String param = queryParameters.get(parameterMetadata.getName());
     return parameterMetadata.getType().deserializeFromString(param);
+  }
+
+  @Override
+  public <T> List<T> getQueryParameterList(ParameterMetadata<T> parameterMetadata) {
+    if (!this.listQueryParameters.containsKey(parameterMetadata.getName())) {
+      return List.of();
+    }
+
+    final List<String> params = listQueryParameters.get(parameterMetadata.getName());
+    return params.stream()
+        .map(p -> parameterMetadata.getType().deserializeFromString(p))
+        .collect(Collectors.toList());
   }
 
   public static Builder builder() {
@@ -185,6 +205,7 @@ public class StubRestApiRequest implements RestApiRequest {
     private final Map<String, String> pathParameters = new HashMap<>();
     private final Map<String, String> queryParameters = new HashMap<>();
     private final Map<String, String> optionalQueryParameters = new HashMap<>();
+    private final Map<String, List<String>> listQueryParameters = new HashMap<>();
 
     Builder() {}
 
@@ -206,6 +227,12 @@ public class StubRestApiRequest implements RestApiRequest {
       return this;
     }
 
+    public Builder listQueryParameter(final String param, final List<String> value) {
+      assertThat(listQueryParameters.containsKey(param)).isFalse();
+      this.listQueryParameters.put(param, value);
+      return this;
+    }
+
     public StubRestApiRequest build() {
       final StubRestApiRequest request = new StubRestApiRequest();
       for (String k : pathParameters.keySet()) {
@@ -216,6 +243,9 @@ public class StubRestApiRequest implements RestApiRequest {
       }
       for (String k : optionalQueryParameters.keySet()) {
         request.setOptionalQueryParameter(k, optionalQueryParameters.get(k));
+      }
+      for (String k : listQueryParameters.keySet()) {
+        request.setListQueryParameters(k, listQueryParameters.get(k));
       }
 
       return request;

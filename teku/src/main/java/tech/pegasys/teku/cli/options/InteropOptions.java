@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.Strings;
+import java.nio.file.Path;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -27,6 +29,14 @@ public class InteropOptions {
       description = "Time of mocked genesis",
       arity = "1")
   private int interopGenesisTime = InteropConfig.DEFAULT_INTEROP_GENESIS_TIME;
+
+  @Option(
+      hidden = true,
+      names = {"--Xinterop-genesis-payload-header"},
+      paramLabel = "<FILE>",
+      description = "Payload header to be included in the mocked genesis",
+      arity = "0..1")
+  private String interopGenesisPayloadHeader = null;
 
   @Option(
       hidden = true,
@@ -66,9 +76,17 @@ public class InteropOptions {
         interopBuilder ->
             interopBuilder
                 .interopGenesisTime(interopGenesisTime)
+                .interopGenesisPayloadHeader(convertToPath(interopGenesisPayloadHeader))
                 .interopOwnedValidatorStartIndex(interopOwnerValidatorStartIndex)
                 .interopOwnedValidatorCount(interopOwnerValidatorCount)
                 .interopNumberOfValidators(interopNumberOfValidators)
                 .interopEnabled(interopEnabled));
+  }
+
+  private Path convertToPath(final String option) {
+    if (Strings.isNullOrEmpty(option)) {
+      return null;
+    }
+    return Path.of(option);
   }
 }

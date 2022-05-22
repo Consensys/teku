@@ -16,10 +16,13 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,9 +34,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationV1;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -46,6 +50,7 @@ public class ProposersDataManager {
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
+  private final ExecutionLayerChannel executionLayerChannel;
   private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
@@ -55,14 +60,16 @@ public class ProposersDataManager {
   private final Subscribers<ProposersDataManagerSubscriber> subscribers = Subscribers.create(true);
 
   public ProposersDataManager(
-      final Spec spec,
       final EventThread eventThread,
+      final Spec spec,
+      final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
       final Optional<Eth1Address> proposerDefaultFeeRecipient) {
     this.spec = spec;
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
+    this.executionLayerChannel = executionLayerChannel;
   }
 
   public long subscribeToProposersDataChanges(ProposersDataManagerSubscriber subscriber) {
@@ -92,7 +99,7 @@ public class ProposersDataManager {
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
-      final Collection<SignedValidatorRegistrationV1> validatorRegistrations,
+      final Collection<SignedValidatorRegistration> validatorRegistrations,
       final UInt64 currentSlot) {
     // Remove expired validators
     validatorRegistrationInfoByValidatorIndex
@@ -104,27 +111,65 @@ public class ProposersDataManager {
         currentSlot.plus(
             spec.getSlotsPerEpoch(currentSlot) * VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS);
 
+    final Iterator<SignedValidatorRegistration> registrationIterator =
+        validatorRegistrations.iterator();
+
     return recentChainData
         .getBestState()
         .orElseThrow()
-        // TODO: call execution layer builder register validator
         .thenAccept(
-            headState -> {
-              validatorRegistrations.forEach(
-                  validatorRegistration ->
-                      spec.getValidatorIndex(
-                              headState, validatorRegistration.getMessage().getPublicKey())
-                          .ifPresentOrElse(
-                              index ->
-                                  validatorRegistrationInfoByValidatorIndex.put(
-                                      UInt64.valueOf(index),
-                                      new RegisteredValidatorInfo(
-                                          expirySlot, validatorRegistration)),
-                              () ->
-                                  LOG.warn(
-                                      "validator public key not found: {}",
-                                      validatorRegistration.getMessage().getPublicKey())));
-              subscribers.deliver(ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
+            headState ->
+                SafeFuture.asyncDoWhile(
+                        () ->
+                            callBuilderRegisterValidator(
+                                registrationIterator, currentSlot, expirySlot, headState))
+                    .thenRun(
+                        () ->
+                            subscribers.deliver(
+                                ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated))
+                    .reportExceptions());
+  }
+
+  private SafeFuture<Boolean> callBuilderRegisterValidator(
+      final Iterator<SignedValidatorRegistration> registrationIterator,
+      final UInt64 currentSlot,
+      final UInt64 expirySlot,
+      final BeaconState headState) {
+    if (!registrationIterator.hasNext()) {
+      // stop asyncDoWhile
+      return SafeFuture.completedFuture(false);
+    }
+    final SignedValidatorRegistration registration = registrationIterator.next();
+    return executionLayerChannel
+        .builderRegisterValidator(registration, currentSlot)
+        .handle(
+            (__, error) -> {
+              if (error != null) {
+                LOG.warn(
+                    "An error occurred while registering: "
+                        + registration.getMessage().getPublicKey(),
+                    error);
+                if (error instanceof IOException || error instanceof TimeoutException) {
+                  LOG.warn(
+                      "Stopping registration process due to networking error or timeout. Will retry on next registration call from Validator Client.");
+                  // stop asyncDoWhile
+                  return false;
+                }
+              }
+
+              spec.getValidatorIndex(headState, registration.getMessage().getPublicKey())
+                  .ifPresentOrElse(
+                      index ->
+                          validatorRegistrationInfoByValidatorIndex.put(
+                              UInt64.valueOf(index),
+                              new RegisteredValidatorInfo(expirySlot, registration)),
+                      () ->
+                          LOG.warn(
+                              "validator index not found for public key {}",
+                              registration.getMessage().getPublicKey()));
+
+              // continue asyncDoWhile
+              return true;
             });
   }
 
@@ -174,7 +219,7 @@ public class ProposersDataManager {
     }
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
-    final Optional<SignedValidatorRegistrationV1> validatorRegistration =
+    final Optional<SignedValidatorRegistration> validatorRegistration =
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
     return Optional.of(
@@ -251,7 +296,7 @@ public class ProposersDataManager {
                                     .getMessage()
                                     .getFeeRecipient())
                             .put(
-                                "gas_target",
+                                "gas_limit",
                                 registeredValidatorInfoEntry
                                     .getValue()
                                     .getSignedValidatorRegistration()

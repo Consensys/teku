@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,33 +14,27 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedBuilderBidV1 extends Container2<SignedBuilderBidV1, BuilderBidV1, SszSignature> {
+public class SignedBuilderBidSchema
+    extends ContainerSchema2<SignedBuilderBid, BuilderBid, SszSignature> {
 
-  SignedBuilderBidV1(SignedBuilderBidV1Schema type, TreeNode backingNode) {
-    super(type, backingNode);
+  public SignedBuilderBidSchema(final BuilderBidSchema builderBidSchema) {
+    super(
+        "SignedBuilderBid",
+        namedSchema("message", builderBidSchema),
+        namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
-  SignedBuilderBidV1(
-      final SignedBuilderBidV1Schema type,
-      final BuilderBidV1 message,
-      final BLSSignature signature) {
-    super(type, message, new SszSignature(signature));
+  public SignedBuilderBid create(final BuilderBid message, final BLSSignature signature) {
+    return new SignedBuilderBid(this, message, signature);
   }
 
   @Override
-  public SignedBuilderBidV1Schema getSchema() {
-    return (SignedBuilderBidV1Schema) super.getSchema();
-  }
-
-  public BuilderBidV1 getMessage() {
-    return getField0();
-  }
-
-  public BLSSignature getSignature() {
-    return getField1().getSignature();
+  public SignedBuilderBid createFromBackingNode(TreeNode node) {
+    return new SignedBuilderBid(this, node);
   }
 }

@@ -18,6 +18,7 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
@@ -25,27 +26,40 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 public final class InteropStartupUtil {
 
   public static BeaconState createMockedStartInitialBeaconState(
-      final Spec spec, final long genesisTime, final int numValidators) {
+      final Spec spec,
+      final long genesisTime,
+      final int numValidators,
+      final Optional<ExecutionPayloadHeader> payloadHeader) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
-    return createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys, true);
+    return createMockedStartInitialBeaconState(
+        spec, genesisTime, validatorKeys, true, payloadHeader);
   }
 
   public static BeaconState createMockedStartInitialBeaconState(
-      final Spec spec, final long genesisTime, List<BLSKeyPair> validatorKeys) {
+      final Spec spec, final long genesisTime, final List<BLSKeyPair> validatorKeys) {
     return createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys, true);
   }
 
   public static BeaconState createMockedStartInitialBeaconState(
       final Spec spec,
       final long genesisTime,
-      List<BLSKeyPair> validatorKeys,
-      boolean signDeposits) {
+      final List<BLSKeyPair> validatorKeys,
+      final boolean signDeposits) {
+    return createMockedStartInitialBeaconState(
+        spec, genesisTime, validatorKeys, signDeposits, Optional.empty());
+  }
+
+  public static BeaconState createMockedStartInitialBeaconState(
+      final Spec spec,
+      final long genesisTime,
+      final List<BLSKeyPair> validatorKeys,
+      final boolean signDeposits,
+      final Optional<ExecutionPayloadHeader> payloadHeader) {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(spec, new DepositGenerator(spec, signDeposits))
             .createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator(spec)
-        .createInitialBeaconState(
-            UInt64.valueOf(genesisTime), initialDepositData, Optional.empty());
+        .createInitialBeaconState(UInt64.valueOf(genesisTime), initialDepositData, payloadHeader);
   }
 }
