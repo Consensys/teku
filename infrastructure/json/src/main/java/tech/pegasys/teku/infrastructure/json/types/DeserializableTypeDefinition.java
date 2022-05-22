@@ -16,7 +16,10 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 
 public interface DeserializableTypeDefinition<TObject> extends SerializableTypeDefinition<TObject> {
@@ -34,6 +37,17 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
     return new DeserializableListTypeDefinition<>(itemType);
+  }
+
+  static DeserializableTypeDefinition<Map<String, String>> mapOfStrings() {
+    return mapOf(CoreTypes.STRING_TYPE, CoreTypes.STRING_TYPE, TreeMap::new);
+  }
+
+  static <TKey, TValue> DeserializableTypeDefinition<Map<TKey, TValue>> mapOf(
+      final StringValueTypeDefinition<TKey> keyType,
+      final DeserializableTypeDefinition<TValue> valueType,
+      final Supplier<Map<TKey, TValue>> mapConstructor) {
+    return new DeserializableMapTypeDefinition<>(keyType, valueType, mapConstructor);
   }
 
   static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(

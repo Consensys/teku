@@ -14,6 +14,8 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 public interface StringValueTypeDefinition<T> extends DeserializableTypeDefinition<T> {
+  String serializeToString(T value);
+
   T deserializeFromString(String value);
 
   @Override
