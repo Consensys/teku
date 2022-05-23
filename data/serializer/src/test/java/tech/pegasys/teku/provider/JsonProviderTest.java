@@ -98,11 +98,12 @@ class JsonProviderTest {
   }
 
   @Test
-  public void bitVectorShouldSerializeAndDeserialize() throws JsonProcessingException {
+  public void bitVectorShouldSerializeAsSsz() throws JsonProcessingException {
     final int bitvectorSize = 40;
     final SszBitvector data = dataStructureUtil.randomSszBitvector(bitvectorSize);
     final String asJson = jsonProvider.objectToJSON(data);
-    final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
+    final String hexData = jsonProvider.jsonToObject(asJson, String.class);
+    final SszBitvector asData = data.getSchema().sszDeserialize(Bytes.fromHexString(hexData));
 
     assertThat(data).isEqualTo(asData);
     assertThat(asData.size()).isEqualTo(bitvectorSize);

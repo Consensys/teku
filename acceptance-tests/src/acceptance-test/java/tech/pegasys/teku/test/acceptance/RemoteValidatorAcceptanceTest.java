@@ -51,6 +51,8 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published block");
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
+    validatorClient.waitForLogMessageContaining("Published sync_signature");
+    validatorClient.waitForLogMessageContaining("Published sync_contribution");
   }
 
   @Test
@@ -65,5 +67,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published block");
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
+    validatorClient.waitForLogMessageContaining("Published sync_signature");
+    validatorClient.waitForLogMessageContaining("Published sync_contribution");
   }
 }

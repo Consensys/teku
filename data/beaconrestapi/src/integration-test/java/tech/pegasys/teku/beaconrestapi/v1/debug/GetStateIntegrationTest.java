@@ -19,13 +19,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 
 import java.io.IOException;
+import java.util.function.Function;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -36,8 +40,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final Response response = get("head", ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateResponse stateResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetStateResponse.class);
+    final ResponseData<? extends BeaconState> stateResponse = getJsonResponseData(response);
     assertThat(stateResponse).isNotNull();
   }
 
@@ -46,8 +49,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateResponse stateResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetStateResponse.class);
+    final ResponseData<? extends BeaconState> stateResponse = getJsonResponseData(response);
     assertThat(stateResponse).isNotNull();
   }
 
@@ -70,11 +72,44 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
+  private ResponseData<? extends BeaconState> getJsonResponseData(final Response response)
+      throws IOException {
+    return JsonUtil.parse(
+        response.body().string(),
+        typeDefinition(
+            spec.forMilestone(SpecMilestone.PHASE0).getSchemaDefinitions().getBeaconStateSchema()));
+  }
+
   public Response get(final String stateIdIdString, final String contentType) throws IOException {
     return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString), contentType);
   }
 
   public Response get(final String stateIdIdString) throws IOException {
     return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString));
+  }
+
+  private <T extends SszData> DeserializableTypeDefinition<ResponseData<T>> typeDefinition(
+      final SszSchema<T> dataSchema) {
+    return DeserializableTypeDefinition.<ResponseData<T>, ResponseData<T>>object()
+        .initializer(ResponseData::new)
+        .finisher(Function.identity())
+        .withField(
+            "data",
+            dataSchema.getJsonTypeDefinition(),
+            ResponseData::getData,
+            ResponseData::setData)
+        .build();
+  }
+
+  private static class ResponseData<T> {
+    private T data;
+
+    public T getData() {
+      return data;
+    }
+
+    public void setData(final T data) {
+      this.data = data;
+    }
   }
 }
