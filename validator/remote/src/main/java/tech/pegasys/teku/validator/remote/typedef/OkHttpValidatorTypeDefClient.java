@@ -60,7 +60,7 @@ public class OkHttpValidatorTypeDefClient {
             baseEndpoint, okHttpClient, !sendBlockReceivedNotAcceptable && preferSszBlockEncoding);
 
     final SendSignedBlockResult result = sendSignedBlockRequest.sendSignedBlock(beaconBlock);
-    if (sendSignedBlockRequest.isSszNotAcceptable()) {
+    if (sendSignedBlockRequest.inUnsupportedMediaType()) {
       sendBlockReceivedNotAcceptable = true;
     }
     return result;
