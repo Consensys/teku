@@ -33,6 +33,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
+import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Checkpoint;
@@ -129,11 +131,33 @@ public class JsonProviderPropertyTest {
         .replace(" ", "");
   }
 
-  // Missing:
-  //   ForkData
-  //   HistoricalBatch
-  //   DepositMessage
-  //   SigningData
+  @Property
+  void roundTripBlsPubKey(
+      @ForAll final int seed,
+      @ForAll final SpecMilestone specMilestone,
+      @ForAll final Eth2Network network)
+      throws JsonProcessingException {
+    final Spec spec = TestSpecFactory.create(specMilestone, network);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
+    final BLSPubKey original = new BLSPubKey(dataStructureUtil.randomPublicKey());
+    final String serialized = jsonProvider.objectToJSON(original);
+    final BLSPubKey deserialized = jsonProvider.jsonToObject(serialized, BLSPubKey.class);
+    assertThat(deserialized).isEqualTo(original);
+  }
+
+  @Property
+  void roundTripBlsSignature(
+      @ForAll final int seed,
+      @ForAll final SpecMilestone specMilestone,
+      @ForAll final Eth2Network network)
+      throws JsonProcessingException {
+    final Spec spec = TestSpecFactory.create(specMilestone, network);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
+    final BLSSignature original = new BLSSignature(dataStructureUtil.randomSignature());
+    final String serialized = jsonProvider.objectToJSON(original);
+    final BLSSignature deserialized = jsonProvider.jsonToObject(serialized, BLSSignature.class);
+    assertThat(deserialized).isEqualTo(original);
+  }
 
   @Property
   public void roundTripBitVector(
@@ -146,9 +170,8 @@ public class JsonProviderPropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SszBitvector original = dataStructureUtil.randomSszBitvector(size);
     final String serialized = jsonProvider.objectToJSON(original);
-    final String hexData = jsonProvider.jsonToObject(serialized, String.class);
     final SszBitvector deserialized =
-        original.getSchema().sszDeserialize(Bytes.fromHexString(hexData));
+        original.getSchema().sszDeserialize(Bytes.wrap(serialized.getBytes(UTF_8)));
     assertThat(deserialized).isEqualTo(original);
   }
 
@@ -163,22 +186,6 @@ public class JsonProviderPropertyTest {
     final Fork original = new Fork(dataStructureUtil.randomFork());
     final String serialized = jsonProvider.objectToJSON(original);
     final Object deserialized = jsonProvider.jsonToObject(serialized, Fork.class);
-    assertThat(deserialized).isEqualToComparingFieldByField(original);
-  }
-
-  @Property
-  public void roundTripForkData(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final long epoch)
-      throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final Checkpoint original =
-        new Checkpoint(dataStructureUtil.randomCheckpoint(UInt64.fromLongBits(epoch)));
-    final String serialized = jsonProvider.objectToJSON(original);
-    final Object deserialized = jsonProvider.jsonToObject(serialized, Checkpoint.class);
     assertThat(deserialized).isEqualToComparingFieldByField(original);
   }
 
