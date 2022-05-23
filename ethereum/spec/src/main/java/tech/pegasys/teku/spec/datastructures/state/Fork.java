@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
-
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
