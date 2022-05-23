@@ -27,22 +27,36 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconRestApiTypes {
+  private static final StringValueTypeDefinition<ValidatorStatus> STATUS_VALUE =
+      DeserializableTypeDefinition.string(ValidatorStatus.class)
+          .formatter(ValidatorStatus::toString)
+          .parser(ValidatorStatus::valueOf)
+          .example("active_ongoing")
+          .description("ValidatorStatus string")
+          .format("string")
+          .build();
+
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
       new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
 
@@ -102,4 +116,7 @@ public class BeaconRestApiTypes {
           PARAM_PEER_ID,
           CoreTypes.string(
               PARAM_PEER_ID_DESCRIPTION, "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"));
+
+  public static final ParameterMetadata<ValidatorStatus> STATUS_PARAMETER =
+      new ParameterMetadata<>(STATUS, STATUS_VALUE.withDescription(PARAM_STATUS_DESCRIPTION));
 }
