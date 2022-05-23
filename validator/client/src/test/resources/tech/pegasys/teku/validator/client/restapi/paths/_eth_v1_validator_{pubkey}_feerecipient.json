@@ -88,7 +88,7 @@
   "post" : {
     "operationId" : "SetFeeRecipient",
     "summary" : "Set validator fee recipient",
-    "description" : "Sets the validator client fee recipient mapping which will then update the beacon node. Existing mappings for the same validator public key will be overwritten. Configuration file settings will take precedence over this API, so if your validator fee recipient configuration file contains this public key, it will need to be removed before attempting to update with this api.Cannot specify default fee recipient address through API.\n\nWARNING: The fee_recipient is not used on Phase0 or Altair networks.",
+    "description" : "Sets the validator client fee recipient mapping which will then update the beacon node. Existing mappings for the same validator public key will be overwritten.\n\nConfiguration file settings will take precedence over this API, so if your validator fee recipient configuration file contains this public key, it will need to be removed before attempting to update with this api. Cannot specify a fee recipient of 0x00 via the API.\n\nWARNING: The fee_recipient is not used on Phase0 or Altair networks.",
     "parameters" : [ {
       "name" : "pubkey",
       "required" : true,

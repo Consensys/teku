@@ -43,11 +43,15 @@ public class RuntimeProposerConfig {
           .format("byte")
           .build();
   private static final DeserializableTypeDefinition<Config> CONFIG_TYPE =
-      DeserializableTypeDefinition.object(Config.class)
-          .initializer(Config::new)
+      DeserializableTypeDefinition.object(Config.class, ConfigBuilder.class)
+          .initializer(ConfigBuilder::new)
+          .finisher(ConfigBuilder::build)
           .name("RuntimeProposerConfig")
           .withField(
-              "fee_recipient", ETH1ADDRESS_TYPE, Config::getFeeRecipient, Config::setFeeRecipient)
+              "fee_recipient",
+              ETH1ADDRESS_TYPE,
+              Config::getFeeRecipient,
+              ConfigBuilder::feeRecipient)
           .build();
   private static final DeserializableTypeDefinition<Map<BLSPublicKey, Config>> CONFIG_MAP_TYPE =
       DeserializableTypeDefinition.mapOf(PUBKEY_TYPE, CONFIG_TYPE, ConcurrentHashMap::new);
@@ -101,9 +105,7 @@ public class RuntimeProposerConfig {
   }
 
   static class Config {
-    private Eth1Address feeRecipient;
-
-    public Config() {}
+    private final Eth1Address feeRecipient;
 
     public Config(final Eth1Address feeRecipient) {
       this.feeRecipient = feeRecipient;
@@ -112,9 +114,20 @@ public class RuntimeProposerConfig {
     public Eth1Address getFeeRecipient() {
       return feeRecipient;
     }
+  }
 
-    public void setFeeRecipient(final Eth1Address feeRecipient) {
+  static class ConfigBuilder {
+    private Eth1Address feeRecipient;
+
+    public ConfigBuilder() {}
+
+    public ConfigBuilder feeRecipient(final Eth1Address feeRecipient) {
       this.feeRecipient = feeRecipient;
+      return this;
+    }
+
+    public Config build() {
+      return new Config(feeRecipient);
     }
   }
 }

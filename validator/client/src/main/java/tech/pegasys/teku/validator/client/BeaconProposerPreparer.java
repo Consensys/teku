@@ -124,11 +124,11 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   public void setFeeRecipient(final BLSPublicKey publicKey, final Eth1Address eth1Address)
       throws SetFeeRecipientException {
     if (eth1Address.equals(Eth1Address.ZERO)) {
-      throw new IllegalArgumentException("Cannot set fee recipient to 0x00 address.");
+      throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
     }
     if (validatorIndexProvider.isEmpty()
         || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
-      throw new IllegalArgumentException(
+      throw new SetFeeRecipientException(
           "Validator public key not found when attempting to set fee recipient.");
     }
     Optional<Eth1Address> maybeEth1Address =

@@ -46,6 +46,7 @@ public class SetFeeRecipient extends RestApiEndpoint {
                   SetFeeRecipientBody::setEth1Address)
               .build();
 
+  // beaconProposerPreparer is only empty when debug tools is creating documentation
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
 
   public SetFeeRecipient(final Optional<BeaconProposerPreparer> beaconProposerPreparer) {
@@ -58,10 +59,10 @@ public class SetFeeRecipient extends RestApiEndpoint {
             .requestBodyType(FEE_RECIPIENT_REQUEST_BODY)
             .description(
                 "Sets the validator client fee recipient mapping which will then update the beacon node. "
-                    + "Existing mappings for the same validator public key will be overwritten. "
+                    + "Existing mappings for the same validator public key will be overwritten.\n\n"
                     + "Configuration file settings will take precedence over this API, so if your validator fee recipient "
-                    + "configuration file contains this public key, it will need to be removed before attempting to update with this api."
-                    + "Cannot specify default fee recipient address through API.\n\n"
+                    + "configuration file contains this public key, it will need to be removed before attempting to update with this api. "
+                    + "Cannot specify a fee recipient of 0x00 via the API.\n\n"
                     + "WARNING: The fee_recipient is not used on Phase0 or Altair networks.")
             .response(SC_ACCEPTED, "Success")
             .response(SC_SERVICE_UNAVAILABLE, "Unable to update fee recipient at this time")
@@ -75,11 +76,6 @@ public class SetFeeRecipient extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final SetFeeRecipientBody body = request.getRequestBody();
-    if (beaconProposerPreparer.isEmpty()) {
-      request.respondError(
-          SC_SERVICE_UNAVAILABLE, "Not able to update fee recipient at this time.");
-      return;
-    }
     try {
       beaconProposerPreparer.orElseThrow().setFeeRecipient(publicKey, body.getEth1Address());
     } catch (SetFeeRecipientException e) {

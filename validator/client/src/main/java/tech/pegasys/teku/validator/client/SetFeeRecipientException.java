@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-public class SetFeeRecipientException extends Exception {
+public class SetFeeRecipientException extends IllegalArgumentException {
 
   public SetFeeRecipientException(final String message) {
     super(message);
