@@ -10,6 +10,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:events')
   implementation project(':ethereum:pow:api')
+  implementation project(':ethereum:pow:merkletree')
   implementation project(':ethereum:spec')
   implementation project(':networking:eth2')
   implementation project(':infrastructure:logging')

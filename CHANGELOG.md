@@ -15,15 +15,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- Removed network definition for kintsugi testnet. Support for the execution engine API used in kintsugi was removed in an earlier release.
 
 ### Additions and Improvements
-- Added support for the ropsten testnet beacon chain.
-- Check `Eth1Address` checksum ([EIP-55](https://eips.ethereum.org/EIPS/eip-55)) if address is mixed-case.
-- Ignore aggregate attestation and sync contribution gossip that does not include any new validators.
-- Optimised BLS batch validation.
-- Optimised message ID calculation in jvm-libp2p.
-- Reduced memory requirements when sending events on the REST API to many clients.
-- Added a labelled metric `executor_rejected_execution_total` to track rejected execution, and updated health check to return 503 if rejected executions are occurring.
+- Reduced memory requirements for storing the deposit merkle tree.
 
 ### Bug Fixes
