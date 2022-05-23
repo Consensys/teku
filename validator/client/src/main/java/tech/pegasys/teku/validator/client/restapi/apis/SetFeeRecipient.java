@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS
 import static tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -33,8 +34,6 @@ import tech.pegasys.teku.validator.client.SetFeeRecipientException;
 public class SetFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";
 
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
-
   private static final DeserializableTypeDefinition<SetFeeRecipientBody>
       FEE_RECIPIENT_REQUEST_BODY =
           DeserializableTypeDefinition.object(SetFeeRecipientBody.class)
@@ -46,6 +45,8 @@ public class SetFeeRecipient extends RestApiEndpoint {
                   SetFeeRecipientBody::getEth1Address,
                   SetFeeRecipientBody::setEth1Address)
               .build();
+
+  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
 
   public SetFeeRecipient(final Optional<BeaconProposerPreparer> beaconProposerPreparer) {
     super(
@@ -88,10 +89,14 @@ public class SetFeeRecipient extends RestApiEndpoint {
     request.respondWithCode(SC_ACCEPTED);
   }
 
-  private static class SetFeeRecipientBody {
+  public static class SetFeeRecipientBody {
     private Eth1Address eth1Address;
 
     public SetFeeRecipientBody() {}
+
+    public SetFeeRecipientBody(final Eth1Address eth1Address) {
+      this.eth1Address = eth1Address;
+    }
 
     public Eth1Address getEth1Address() {
       return eth1Address;
@@ -99,6 +104,23 @@ public class SetFeeRecipient extends RestApiEndpoint {
 
     public void setEth1Address(final Eth1Address eth1Address) {
       this.eth1Address = eth1Address;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final SetFeeRecipientBody that = (SetFeeRecipientBody) o;
+      return Objects.equals(eth1Address, that.eth1Address);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(eth1Address);
     }
   }
 }

@@ -34,7 +34,7 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 public class GetFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
-  public static final String PARAM_PUBKEY = "pubkey";
+  private static final String PARAM_PUBKEY = "pubkey";
   public static final ParameterMetadata<BLSPublicKey> PARAM_PUBKEY_TYPE =
       new ParameterMetadata<>(
           PARAM_PUBKEY,
@@ -55,7 +55,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
               "pubkey", ValidatorTypes.PUBKEY_TYPE, GetFeeRecipientResponse::getPublicKey)
           .build();
 
-  static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =
+  private static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =
       SerializableTypeDefinition.object(GetFeeRecipientResponse.class)
           .withField("data", FEE_RECIPIENT_DATA, Function.identity())
           .build();

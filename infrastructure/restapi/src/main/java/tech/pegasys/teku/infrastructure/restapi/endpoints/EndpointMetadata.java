@@ -355,6 +355,13 @@ public class EndpointMetadata {
         .collect(Collectors.toSet());
   }
 
+  public RequestContentTypeDefinition<?> getRequestBodyType() {
+    final RequestContentTypeDefinition<?> requestContentTypeDefinition =
+        requestBodyTypes.get(ContentTypes.JSON);
+    checkArgument(requestContentTypeDefinition != null, "Request body not found");
+    return requestContentTypeDefinition;
+  }
+
   public static class EndpointMetaDataBuilder {
     private HandlerType method;
     private String path;

@@ -36,7 +36,7 @@ public class RuntimeProposerConfig {
   private final Optional<Path> storagePath;
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
+  private static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .formatter(BLSPublicKey::toString)
           .parser(BLSPublicKey::fromHexString)
