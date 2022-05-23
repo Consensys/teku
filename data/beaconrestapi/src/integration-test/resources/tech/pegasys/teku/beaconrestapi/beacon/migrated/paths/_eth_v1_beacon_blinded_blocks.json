@@ -32,6 +32,16 @@
         "description" : "Block has been successfully broadcast, validated and imported.",
         "content" : { }
       },
+      "415" : {
+        "description" : "Unsupported media-type supplied",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "202" : {
         "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
         "content" : { }

@@ -19,6 +19,9 @@
       }
     },
     "responses" : {
+      "415" : {
+        "description" : "Unsupported media-type supplied in request body."
+      },
       "200" : {
         "description" : "Block has been successfully broadcast, validated and imported."
       },
