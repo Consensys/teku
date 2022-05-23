@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.List;
 import java.util.Optional;
@@ -192,7 +193,7 @@ public class BeaconChainUtil {
   public void setTime(final UInt64 time) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setTimeSeconds(time);
+    tx.setTimeMillis(secondsToMillis(time));
     tx.commit().join();
   }
 
