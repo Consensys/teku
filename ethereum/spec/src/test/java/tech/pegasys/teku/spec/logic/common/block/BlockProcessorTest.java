@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
-import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -211,8 +210,7 @@ public abstract class BlockProcessorTest {
       throws BlockProcessingException {
 
     // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data
-    MerkleTree depositMerkleTree =
-        new OptimizedMerkleTree(specConfig.getDepositContractTreeDepth());
+    MerkleTree depositMerkleTree = new MerkleTree(specConfig.getDepositContractTreeDepth());
     depositMerkleTree.add(depositData.hashTreeRoot());
 
     beaconState =

@@ -65,6 +65,11 @@ class DescribedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T
   }
 
   @Override
+  public String serializeToString(final T value) {
+    return delegate.serializeToString(value);
+  }
+
+  @Override
   public T deserializeFromString(final String value) {
     return delegate.deserializeFromString(value);
   }

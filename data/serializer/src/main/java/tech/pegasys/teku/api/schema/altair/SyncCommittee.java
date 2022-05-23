@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -58,5 +59,23 @@ public class SyncCommittee {
             .map(key -> new SszPublicKey(key.asBLSPublicKey()))
             .collect(Collectors.toList());
     return schema.create(committee, aggregate);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SyncCommittee)) {
+      return false;
+    }
+    SyncCommittee that = (SyncCommittee) o;
+    return Objects.equals(pubkeys, that.pubkeys)
+        && Objects.equals(aggregatePubkey, that.aggregatePubkey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pubkeys, aggregatePubkey);
   }
 }
