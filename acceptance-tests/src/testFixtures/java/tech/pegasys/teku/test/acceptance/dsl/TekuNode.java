@@ -64,8 +64,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsRespo
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
-import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
-import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
@@ -78,6 +76,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -431,14 +430,15 @@ public class TekuNode extends Node {
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/debug/beacon/states/head");
+    final Bytes result =
+        httpClient.getAsBytes(
+            getRestApiUrl(),
+            "/eth/v2/debug/beacon/states/head",
+            Map.of("Accept", "application/octet-stream"));
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      final GetStateResponseV2 response =
-          jsonProvider.jsonToObject(result, GetStateResponseV2.class);
-
-      return Optional.of((BeaconState) response.data);
+      return Optional.of(spec.deserializeBeaconState(result));
     }
   }
 
@@ -448,8 +448,7 @@ public class TekuNode extends Node {
           Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeState).isPresent();
           BeaconState state = maybeState.get();
-          assertThat(state.asInternalBeaconState(spec).getValidators().size())
-              .isEqualTo(numberOfValidators);
+          assertThat(state.getValidators().size()).isEqualTo(numberOfValidators);
         });
   }
 
@@ -471,11 +470,9 @@ public class TekuNode extends Node {
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
-          assertThat(state.latest_block_header.parent_root)
+          assertThat(state.getLatestBlockHeader().getParentRoot())
               .isEqualTo(block.getMessage().parent_root);
 
-          tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalBeaconState =
-              state.asInternalBeaconState(spec);
           UInt64 proposerIndex = block.getMessage().proposer_index;
 
           Set<UInt64> attesterIndicesInAttestations =
@@ -483,7 +480,7 @@ public class TekuNode extends Node {
                   .map(
                       a ->
                           spec.getAttestingIndices(
-                              internalBeaconState,
+                              state,
                               a.asInternalAttestation(spec).getData(),
                               a.asInternalAttestation(spec).getAggregationBits()))
                   .flatMap(Collection::stream)

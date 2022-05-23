@@ -41,6 +41,7 @@ dependencies {
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
+  testFixturesImplementation project(':infrastructure:time')
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
 }

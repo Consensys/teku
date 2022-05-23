@@ -312,7 +312,7 @@ class RecentChainDataTest {
     final Checkpoint originalCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setTimeSeconds(UInt64.valueOf(11L));
+    tx.setTimeMillis(UInt64.valueOf(11000L));
     tx.commit().reportExceptions();
 
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
