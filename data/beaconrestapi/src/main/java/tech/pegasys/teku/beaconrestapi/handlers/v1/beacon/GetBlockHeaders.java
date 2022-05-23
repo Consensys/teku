@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARENT_ROOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_QUERY_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -77,7 +77,7 @@ public class GetBlockHeaders extends MigratingEndpointAdapter {
             .description(
                 "Retrieves block headers matching given query. By default it will fetch current head slot blocks.")
             .tags(TAG_BEACON)
-            .queryParam(SLOT_PARAMETER)
+            .queryParam(SLOT_QUERY_PARAMETER)
             .queryParam(PARENT_ROOT_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .build());
@@ -110,7 +110,7 @@ public class GetBlockHeaders extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final Optional<Bytes32> parentRoot = request.getOptionalQueryParameter(PARENT_ROOT_PARAMETER);
-    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_QUERY_PARAMETER);
 
     final SafeFuture<BlockHeadersResponse> future =
         chainDataProvider.getBlockHeaders(parentRoot, slot);

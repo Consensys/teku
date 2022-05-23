@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_QUERY_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
@@ -67,7 +67,7 @@ public class GetAttestations extends MigratingEndpointAdapter {
             .description(
                 "Retrieves attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
-            .queryParam(SLOT_PARAMETER)
+            .queryParam(SLOT_QUERY_PARAMETER)
             .queryParam(COMMITTEE_INDEX_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
             .build());
@@ -100,7 +100,7 @@ public class GetAttestations extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_QUERY_PARAMETER);
     final Optional<UInt64> committeeIndex =
         request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
 
