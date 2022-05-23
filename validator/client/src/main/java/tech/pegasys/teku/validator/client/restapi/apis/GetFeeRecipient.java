@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -64,9 +65,10 @@ public class GetFeeRecipient extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("GetFeeRecipient")
-            .withBearerAuthSecurity()
-            .pathParam(PARAM_PUBKEY_TYPE)
             .summary("Get validator fee recipient")
+            .withBearerAuthSecurity()
+            .tags(TAG_FEE_RECIPIENT)
+            .pathParam(PARAM_PUBKEY_TYPE)
             .description(
                 "List the validator public key to eth address mapping for fee recipient feature on a specific public key. "
                     + "The validator public key will return with the default fee recipient address if a specific one was not found.\n\n"

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
 import static tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,10 +54,10 @@ public class SetFeeRecipient extends RestApiEndpoint {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("SetFeeRecipient")
-            .withBearerAuthSecurity()
-            .pathParam(PARAM_PUBKEY_TYPE)
             .summary("Set validator fee recipient")
-            .requestBodyType(FEE_RECIPIENT_REQUEST_BODY)
+            .withBearerAuthSecurity()
+            .tags(TAG_FEE_RECIPIENT)
+            .pathParam(PARAM_PUBKEY_TYPE)
             .description(
                 "Sets the validator client fee recipient mapping which will then update the beacon node. "
                     + "Existing mappings for the same validator public key will be overwritten.\n\n"
@@ -64,6 +65,7 @@ public class SetFeeRecipient extends RestApiEndpoint {
                     + "configuration file contains this public key, it will need to be removed before attempting to update with this api. "
                     + "Cannot specify a fee recipient of 0x00 via the API.\n\n"
                     + "WARNING: The fee_recipient is not used on Phase0 or Altair networks.")
+            .requestBodyType(FEE_RECIPIENT_REQUEST_BODY)
             .response(SC_ACCEPTED, "Success")
             .response(SC_SERVICE_UNAVAILABLE, "Unable to update fee recipient at this time")
             .withAuthenticationResponses()

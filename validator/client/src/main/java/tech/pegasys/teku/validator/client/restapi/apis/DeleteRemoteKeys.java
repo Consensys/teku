@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_KEY_MANAGEMENT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -33,6 +34,7 @@ public class DeleteRemoteKeys extends RestApiEndpoint {
             .operationId("DeleteRemoteKeys")
             .summary("Delete Remote Keys")
             .withBearerAuthSecurity()
+            .tags(TAG_KEY_MANAGEMENT)
             .description(
                 "DELETE must delete all keys from `request.pubkeys` that are known to the validator client and exist in its persistent storage."
                     + "<br>DELETE should never return a 404 response, even if all pubkeys from request.pubkeys have no existing keystores.")

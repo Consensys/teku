@@ -40,6 +40,9 @@ import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
 
 public class ValidatorRestApi {
+  public static final String TAG_KEY_MANAGEMENT = "Key Management";
+  public static final String TAG_FEE_RECIPIENT = "Fee Recipient";
+
   public static RestApi create(
       final ValidatorRestApiConfig config,
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,

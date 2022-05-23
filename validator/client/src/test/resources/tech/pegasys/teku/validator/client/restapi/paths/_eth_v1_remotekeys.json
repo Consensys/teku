@@ -1,9 +1,12 @@
 {
   "get" : {
-    "tags" : [ "Experimental" ],
+    "tags" : [ "Key Management" ],
     "operationId" : "ListRemoteKeys",
     "summary" : "List Remote Keys",
     "description" : "List all remote keys in use by a validator client",
+    "security" : [ {
+      "bearerAuth" : [ ]
+    } ],
     "responses" : {
       "200" : {
         "description" : "Success response",
@@ -58,7 +61,7 @@
     }
   },
   "post" : {
-    "tags" : [ "Experimental" ],
+    "tags" : [ "Key Management" ],
     "operationId" : "ImportRemoteKeys",
     "summary" : "Import Remote Keys",
     "description" : "Import remote keys for the validator client to request duties for.",
@@ -128,6 +131,7 @@
     }
   },
   "delete" : {
+    "tags" : [ "Key Management" ],
     "operationId" : "DeleteRemoteKeys",
     "summary" : "Delete Remote Keys",
     "description" : "DELETE must delete all keys from `request.pubkeys` that are known to the validator client and exist in its persistent storage.<br>DELETE should never return a 404 response, even if all pubkeys from request.pubkeys have no existing keystores.",
