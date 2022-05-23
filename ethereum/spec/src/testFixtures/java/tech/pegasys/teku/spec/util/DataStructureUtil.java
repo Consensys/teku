@@ -140,6 +140,11 @@ public final class DataStructureUtil {
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
 
+  private final ValidatorRegistrationSchema validatorRegistrationSchema =
+      new ValidatorRegistrationSchema();
+  private final SignedValidatorRegistrationSchema signedValidatorRegistrationSchema =
+      new SignedValidatorRegistrationSchema(validatorRegistrationSchema);
+
   public DataStructureUtil(final Spec spec) {
     this(92892824, spec);
   }
@@ -1148,23 +1153,11 @@ public final class DataStructureUtil {
   }
 
   public SignedValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
-    SignedValidatorRegistrationSchema signedSchema =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getSignedValidatorRegistrationSchema();
-    ValidatorRegistrationSchema schema =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getValidatorRegistrationSchema();
+    final ValidatorRegistration validatorRegistration =
+        validatorRegistrationSchema.create(
+            randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
 
-    ValidatorRegistration validatorRegistration =
-        schema.create(randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
-
-    return signedSchema.create(validatorRegistration, randomSignature());
+    return signedValidatorRegistrationSchema.create(validatorRegistration, randomSignature());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

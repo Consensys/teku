@@ -28,9 +28,6 @@ import tech.pegasys.teku.spec.datastructures.execution.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationsSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
@@ -47,9 +44,6 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema;
   private final BuilderBidSchema builderBidSchema;
   private final SignedBuilderBidSchema signedBuilderBidSchema;
-  private final ValidatorRegistrationSchema validatorRegistrationSchema;
-  private final SignedValidatorRegistrationSchema signedValidatorRegistrationSchema;
-  private final SignedValidatorRegistrationsSchema signedValidatorRegistrationsSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
@@ -70,12 +64,6 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);
     this.builderBidSchema = new BuilderBidSchema(executionPayloadHeaderSchema);
     this.signedBuilderBidSchema = new SignedBuilderBidSchema(builderBidSchema);
-    this.validatorRegistrationSchema = new ValidatorRegistrationSchema();
-    this.signedValidatorRegistrationSchema =
-        new SignedValidatorRegistrationSchema(validatorRegistrationSchema);
-    this.signedValidatorRegistrationsSchema =
-        new SignedValidatorRegistrationsSchema(
-            signedValidatorRegistrationSchema, specConfig.getValidatorRegistryLimit());
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -137,18 +125,6 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
 
   public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchema;
-  }
-
-  public ValidatorRegistrationSchema getValidatorRegistrationSchema() {
-    return validatorRegistrationSchema;
-  }
-
-  public SignedValidatorRegistrationSchema getSignedValidatorRegistrationSchema() {
-    return signedValidatorRegistrationSchema;
-  }
-
-  public SignedValidatorRegistrationsSchema getSignedValidatorRegistrationsSchema() {
-    return signedValidatorRegistrationsSchema;
   }
 
   @Override

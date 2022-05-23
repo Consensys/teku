@@ -36,7 +36,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -288,20 +286,6 @@ public class Spec {
                     "Bellatrix milestone is required to load execution payload header"))
         .getExecutionPayloadHeaderSchema()
         .jsonDeserialize(objectMapper.createParser(jsonFile));
-  }
-
-  public SszList<SignedValidatorRegistration> deserializeSignedValidatorRegistrations(
-      final Bytes serializedSignedValidatorRegistration) {
-    return Optional.ofNullable(forMilestone(SpecMilestone.BELLATRIX))
-        .orElseThrow(
-            () ->
-                new RuntimeException(
-                    "Bellatrix milestone is required to load execution payload header"))
-        .getSchemaDefinitions()
-        .toVersionBellatrix()
-        .orElseThrow()
-        .getSignedValidatorRegistrationsSchema()
-        .sszDeserialize(serializedSignedValidatorRegistration);
   }
 
   // BeaconState

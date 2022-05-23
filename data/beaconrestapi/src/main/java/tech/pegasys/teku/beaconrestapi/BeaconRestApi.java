@@ -115,7 +115,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -401,9 +400,7 @@ public class BeaconRestApi {
     app.post(
         PostContributionAndProofs.ROUTE, new PostContributionAndProofs(dataProvider, jsonProvider));
     addMigratedEndpoint(new PostPrepareBeaconProposer(dataProvider));
-    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      addMigratedEndpoint(new PostRegisterValidator(dataProvider, spec, schemaCache));
-    }
+    addMigratedEndpoint(new PostRegisterValidator(dataProvider, spec));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider, final Spec spec) {
