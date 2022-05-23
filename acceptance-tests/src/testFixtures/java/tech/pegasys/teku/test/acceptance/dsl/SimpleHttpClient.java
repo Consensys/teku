@@ -56,9 +56,7 @@ public class SimpleHttpClient {
   }
 
   private ResponseBody getResponseBody(
-      final URI baseUrl,
-      final String path,
-      final Map<String, String> headers) throws IOException {
+      final URI baseUrl, final String path, final Map<String, String> headers) throws IOException {
     LOG.debug("GET {}, headers: {}", path, headers.toString());
     final URL url = baseUrl.resolve(path).toURL();
     final Request.Builder builder = new Request.Builder().url(baseUrl.resolve(path).toURL()).get();
