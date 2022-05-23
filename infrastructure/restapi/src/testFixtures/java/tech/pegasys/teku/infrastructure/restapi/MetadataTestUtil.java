@@ -17,13 +17,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.AssertionsForClassTypes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.RequestContentTypeDefinition;
 
 public class MetadataTestUtil {
 
@@ -52,6 +55,14 @@ public class MetadataTestUtil {
     final EndpointMetadata metadata = handler.getMetadata();
     final byte[] result = toBytes(out -> metadata.serialize(code, ContentTypes.JSON, data, out));
     return new String(result, StandardCharsets.UTF_8);
+  }
+
+  public static Object getRequestBodyFromMetadata(final RestApiEndpoint handler, final String json)
+      throws IOException {
+    final RequestContentTypeDefinition<?> requestContentTypeDefinition =
+        handler.getMetadata().getRequestBodyType();
+    return requestContentTypeDefinition.deserialize(
+        IOUtils.toInputStream(json, StandardCharsets.UTF_8));
   }
 
   private static byte[] toBytes(final Serializer func) throws JsonProcessingException {
