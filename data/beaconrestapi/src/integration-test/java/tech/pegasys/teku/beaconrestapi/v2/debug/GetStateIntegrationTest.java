@@ -19,16 +19,22 @@ import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
+import java.util.function.Function;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 
 public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @Test
@@ -36,11 +42,16 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final Response response = get("head", ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateResponseV2 stateResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
+    final ResponseData<? extends BeaconState> stateResponse =
+        JsonUtil.parse(
+            response.body().string(),
+            typeDefinition(
+                spec.forMilestone(SpecMilestone.PHASE0)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema()));
     assertThat(stateResponse).isNotNull();
-    assertThat(stateResponse.version).isEqualTo(Version.phase0);
-    assertThat(stateResponse.data).isInstanceOf(BeaconStatePhase0.class);
+    assertThat(stateResponse.getVersion()).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(stateResponse.getData()).isInstanceOf(BeaconStatePhase0.class);
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
   }
 
@@ -49,11 +60,16 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final Response response = get("head", ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateResponseV2 stateResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
+    final ResponseData<? extends BeaconState> stateResponse =
+        JsonUtil.parse(
+            response.body().string(),
+            typeDefinition(
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema()));
     assertThat(stateResponse).isNotNull();
-    assertThat(stateResponse.version).isEqualTo(Version.altair);
-    assertThat(stateResponse.data).isInstanceOf(BeaconStateAltair.class);
+    assertThat(stateResponse.getVersion()).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(stateResponse.getData()).isInstanceOf(BeaconStateAltair.class);
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
@@ -71,5 +87,58 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
 
   public Response get(final String stateIdIdString) throws IOException {
     return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString));
+  }
+
+  private <T extends SszData> DeserializableTypeDefinition<ResponseData<T>> typeDefinition(
+      final SszSchema<T> dataSchema) {
+    return DeserializableTypeDefinition.<ResponseData<T>, ResponseData<T>>object()
+        .initializer(ResponseData::new)
+        .finisher(Function.identity())
+        .withField(
+            "version",
+            DeserializableTypeDefinition.enumOf(SpecMilestone.class),
+            ResponseData::getVersion,
+            ResponseData::setVersion)
+        .withField(
+            "execution_optimistic",
+            CoreTypes.BOOLEAN_TYPE,
+            ResponseData::isExecutionOptimistic,
+            ResponseData::setExecutionOptimistic)
+        .withField(
+            "data",
+            dataSchema.getJsonTypeDefinition(),
+            ResponseData::getData,
+            ResponseData::setData)
+        .build();
+  }
+
+  private static class ResponseData<T> {
+    private SpecMilestone version;
+    private Boolean executionOptimistic;
+    private T data;
+
+    public SpecMilestone getVersion() {
+      return version;
+    }
+
+    public void setVersion(final SpecMilestone version) {
+      this.version = version;
+    }
+
+    public T getData() {
+      return data;
+    }
+
+    public void setData(final T data) {
+      this.data = data;
+    }
+
+    public Boolean isExecutionOptimistic() {
+      return executionOptimistic;
+    }
+
+    public void setExecutionOptimistic(final Boolean executionOptimistic) {
+      this.executionOptimistic = executionOptimistic;
+    }
   }
 }

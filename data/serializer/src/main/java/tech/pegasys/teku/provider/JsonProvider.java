@@ -52,7 +52,6 @@ public class JsonProvider {
   private void addTekuMappers() {
     SimpleModule module = new SimpleModule("TekuJson", new Version(1, 0, 0, null, null, null));
 
-    module.addDeserializer(SszBitvector.class, new SszBitvectorDeserializer());
     module.addSerializer(SszBitvector.class, new SszBitvectorSerializer());
 
     module.addSerializer(BLSPubKey.class, new BLSPubKeySerializer());
