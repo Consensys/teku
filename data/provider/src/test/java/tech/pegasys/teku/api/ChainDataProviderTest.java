@@ -158,7 +158,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-        provider.getBeaconState(data.randomBytes32().toHexString());
+        provider.getSchemaBeaconState(data.randomBytes32().toHexString());
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
@@ -166,7 +166,8 @@ public class ChainDataProviderTest {
   public void getBeaconState_shouldFindHeadState() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future = provider.getBeaconState("head");
+    SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
+        provider.getSchemaBeaconState("head");
     final Optional<ObjectAndMetaData<BeaconState>> maybeState = safeJoin(future);
     assertThat(maybeState.orElseThrow().getData().asInternalBeaconState(spec).hashTreeRoot())
         .isEqualTo(beaconStateInternal.hashTreeRoot());

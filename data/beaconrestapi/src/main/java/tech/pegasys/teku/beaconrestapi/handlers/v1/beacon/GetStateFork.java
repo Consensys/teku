@@ -51,7 +51,7 @@ public class GetStateFork extends AbstractGetSimpleDataFromState {
               "Returns [Fork](https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/beacon-chain.md#fork) object for state with given 'stateId'.")
           .withField(
               "data",
-              Fork.getJsonTypeDefinition(),
+              Fork.SSZ_SCHEMA.getJsonTypeDefinition(),
               stateAndMetaData -> stateAndMetaData.getData().getFork())
           .build();
 

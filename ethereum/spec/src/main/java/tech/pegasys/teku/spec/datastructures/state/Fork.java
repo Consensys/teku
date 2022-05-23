@@ -27,15 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
-  private static final SerializableTypeDefinition<Fork> FORK_TYPE =
-      SerializableTypeDefinition.object(Fork.class)
-          .name("Fork")
-          .description(
-              "The [Fork](https://github.com/ethereum/consensus-specs/blob/v1.0.1/specs/phase0/beacon-chain.md#fork) object from the Eth2.0 spec.")
-          .withField("previous_version", BYTES4_TYPE, Fork::getPreviousVersion)
-          .withField("current_version", BYTES4_TYPE, Fork::getCurrentVersion)
-          .withField("epoch", UINT64_TYPE, Fork::getEpoch)
-          .build();
 
   public static class ForkSchema extends ContainerSchema3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
@@ -77,9 +68,5 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
   public UInt64 getEpoch() {
     return getField2().get();
-  }
-
-  public static SerializableTypeDefinition<Fork> getJsonTypeDefinition() {
-    return FORK_TYPE;
   }
 }

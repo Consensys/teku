@@ -65,7 +65,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
 
   @Test
   public void shouldRejectAltairStateRequestsForJson() throws IOException {
-    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR); // TODO check, should it not handle ALTAIR?
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }

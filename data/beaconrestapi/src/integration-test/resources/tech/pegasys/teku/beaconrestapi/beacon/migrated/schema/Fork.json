@@ -1,6 +1,5 @@
 {
   "title" : "Fork",
-  "description" : "The [Fork](https://github.com/ethereum/consensus-specs/blob/v1.0.1/specs/phase0/beacon-chain.md#fork) object from the Eth2.0 spec.",
   "type" : "object",
   "required" : [ "previous_version", "current_version", "epoch" ],
   "properties" : {
