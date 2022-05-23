@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIME
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -55,9 +54,6 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
   private final RestClient restClient;
   private final SchemaDefinitionCache schemaDefinitionCache;
-
-  private final SignedValidatorRegistrationSchema signedValidatorRegistrationSchema =
-      new SignedValidatorRegistrationSchema(new ValidatorRegistrationSchema());
 
   public RestExecutionBuilderClient(final RestClient restClient, final Spec spec) {
     this.restClient = restClient;
@@ -76,7 +72,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
       final UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
 
     final DeserializableTypeDefinition<SignedValidatorRegistration> requestType =
-        signedValidatorRegistrationSchema.getJsonTypeDefinition();
+        SIGNED_VALIDATOR_REGISTRATION_SCHEMA.getJsonTypeDefinition();
     return restClient
         .postAsync(
             BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistration, requestType)

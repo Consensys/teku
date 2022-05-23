@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -27,26 +28,18 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.request.v1.validator.PostRegisterValidatorRequest;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationsSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 
 public class PostRegisterValidator extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/register_validator";
-  private static SignedValidatorRegistrationsSchema signedValidatorRegistrationsSchema;
 
   private final ValidatorDataProvider validatorDataProvider;
 
@@ -69,8 +62,8 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
                     + " blocks that do not adhere to their latest fee recipient and gas limit preferences.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
-                getRequestType(spec),
-                PostRegisterValidator::deserializeSignedValidatorRegistrations)
+                SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
+                SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA::sszDeserialize)
             .response(SC_OK, "Registration information has been received.")
             .build());
 
@@ -108,20 +101,5 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
         validatorDataProvider
             .registerValidators(request.getRequestBody())
             .thenApply(AsyncApiResponse::respondOk));
-  }
-
-  private static DeserializableTypeDefinition<SszList<SignedValidatorRegistration>> getRequestType(
-      final Spec spec) {
-
-    signedValidatorRegistrationsSchema =
-        new SignedValidatorRegistrationsSchema(
-            new SignedValidatorRegistrationSchema(new ValidatorRegistrationSchema()),
-            spec.getGenesisSpecConfig().getValidatorRegistryLimit());
-    return signedValidatorRegistrationsSchema.getJsonTypeDefinition();
-  }
-
-  private static SszList<SignedValidatorRegistration> deserializeSignedValidatorRegistrations(
-      final Bytes serializedSignedValidatorRegistration) {
-    return signedValidatorRegistrationsSchema.sszDeserialize(serializedSignedValidatorRegistration);
   }
 }
