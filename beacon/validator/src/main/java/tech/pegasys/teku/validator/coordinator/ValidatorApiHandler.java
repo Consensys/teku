@@ -36,7 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -263,8 +263,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                             list.getData().stream()
                                 .collect(
                                     toMap(
-                                        ValidatorResponse::getPublicKey,
-                                        ValidatorResponse::getStatus))));
+                                        StateValidatorData::getPublicKey,
+                                        StateValidatorData::getStatus))));
   }
 
   @Override
