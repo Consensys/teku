@@ -65,7 +65,7 @@ public class GetStateValidator extends MigratingEndpointAdapter {
   private static final DeserializableTypeDefinition<ValidatorStatus> STATUS_TYPE =
       DeserializableTypeDefinition.enumOf(ValidatorStatus.class);
 
-  private static final SerializableTypeDefinition<StateValidatorData> DATA_TYPE =
+  public static final SerializableTypeDefinition<StateValidatorData> STATE_VALIDATOR_DATA_TYPE =
       SerializableTypeDefinition.object(StateValidatorData.class)
           .withField("index", UINT64_TYPE, StateValidatorData::getIndex)
           .withField("balance", UINT64_TYPE, StateValidatorData::getBalance)
@@ -82,7 +82,7 @@ public class GetStateValidator extends MigratingEndpointAdapter {
               .name("GetStateValidatorResponse")
               .withField(
                   "execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField("data", DATA_TYPE, ObjectAndMetaData::getData)
+              .withField("data", STATE_VALIDATOR_DATA_TYPE, ObjectAndMetaData::getData)
               .build();
 
   private final ChainDataProvider chainDataProvider;
