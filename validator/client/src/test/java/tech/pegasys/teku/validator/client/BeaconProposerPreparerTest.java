@@ -228,6 +228,14 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
+  void setFeeRecipient_shouldNotAllowSettingToZero() {
+    assertThatThrownBy(
+            () ->
+                beaconProposerPreparer.setFeeRecipient(validator2.getPublicKey(), Eth1Address.ZERO))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
   void send_shouldIncludeRuntimeFeeRecipients(@TempDir final Path tempDir)
       throws IOException, SetFeeRecipientException {
     final Eth1Address address2 = dataStructureUtil.randomEth1Address();
