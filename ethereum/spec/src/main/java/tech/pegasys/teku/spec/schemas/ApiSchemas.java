@@ -25,6 +25,7 @@ public class ApiSchemas {
   public static final SignedValidatorRegistrationSchema SIGNED_VALIDATOR_REGISTRATION_SCHEMA =
       new SignedValidatorRegistrationSchema(VALIDATOR_REGISTRATION_SCHEMA);
 
+  // the max size is based on VALIDATOR_REGISTRY_LIMIT spec config
   public static final long MAX_VALIDATOR_REGISTRATIONS_SIZE = 1099511627776L;
   public static final SignedValidatorRegistrationsSchema SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA =
       new SignedValidatorRegistrationsSchema(
