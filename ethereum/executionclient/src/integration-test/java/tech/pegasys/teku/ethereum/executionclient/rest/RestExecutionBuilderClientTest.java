@@ -47,6 +47,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -86,6 +88,10 @@ class RestExecutionBuilderClientTest {
 
   private final MockWebServer mockWebServer = new MockWebServer();
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
+  private final DeserializableTypeDefinition<SignedValidatorRegistration>
+      signedValidatorRegistrationType =
+          new SignedValidatorRegistrationSchema(new ValidatorRegistrationSchema())
+              .getJsonTypeDefinition();
 
   private SchemaDefinitionsBellatrix schemaDefinitionsBellatrix;
 
@@ -323,11 +329,7 @@ class RestExecutionBuilderClientTest {
 
   private SignedValidatorRegistration createSignedValidatorRegistration() {
     try {
-      return JsonUtil.parse(
-          SIGNED_VALIDATOR_REGISTRATION_REQUEST,
-          schemaDefinitionsBellatrix
-              .getSignedValidatorRegistrationSchema()
-              .getJsonTypeDefinition());
+      return JsonUtil.parse(SIGNED_VALIDATOR_REGISTRATION_REQUEST, signedValidatorRegistrationType);
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }
