@@ -18,15 +18,25 @@
       "200" : {
         "description" : "Request successful",
         "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateResponse"
+            }
+          },
           "application/octet-stream" : {
             "schema" : {
               "type" : "string",
               "format" : "binary"
             }
-          },
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
+        "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetStateResponse"
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
