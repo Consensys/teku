@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -1153,6 +1155,13 @@ public final class DataStructureUtil {
             randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
 
     return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(validatorRegistration, randomSignature());
+  }
+
+  public SszList<SignedValidatorRegistration> randomValidatorRegistrations(final int size) {
+    return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
+        IntStream.range(0, size)
+            .mapToObj(__ -> randomValidatorRegistration())
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

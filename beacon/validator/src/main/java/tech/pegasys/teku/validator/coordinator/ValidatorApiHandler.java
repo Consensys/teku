@@ -42,6 +42,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -626,7 +627,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> registerValidators(
-      final Collection<SignedValidatorRegistration> validatorRegistrations) {
+      final SszList<SignedValidatorRegistration> validatorRegistrations) {
     return proposersDataManager.updateValidatorRegistrations(
         validatorRegistrations, combinedChainDataClient.getCurrentSlot());
   }

@@ -55,6 +55,7 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -414,7 +415,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Void> registerValidators(
-      List<SignedValidatorRegistration> validatorRegistrations) {
+      SszList<SignedValidatorRegistration> validatorRegistrations) {
     return validatorApiChannel.registerValidators(validatorRegistrations);
   }
 

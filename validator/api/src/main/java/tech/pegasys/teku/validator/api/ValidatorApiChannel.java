@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -90,5 +91,5 @@ public interface ValidatorApiChannel extends ChannelInterface {
   void prepareBeaconProposer(Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
   SafeFuture<Void> registerValidators(
-      final Collection<SignedValidatorRegistration> validatorRegistrations);
+      final SszList<SignedValidatorRegistration> validatorRegistrations);
 }
