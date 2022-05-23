@@ -239,7 +239,10 @@ public class BeaconRestApi {
 
   private void unsupportedContentType(final Throwable throwable, final Context context) {
     context.status(SC_UNSUPPORTED_MEDIA_TYPE);
-    setErrorBody(context, () -> BadRequest.serialize(jsonProvider, SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()));
+    setErrorBody(
+        context,
+        () ->
+            BadRequest.serialize(jsonProvider, SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()));
   }
 
   private void serviceUnavailable(final Throwable throwable, final Context context) {
