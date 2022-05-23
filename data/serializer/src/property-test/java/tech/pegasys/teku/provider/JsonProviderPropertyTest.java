@@ -17,14 +17,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringEscapeUtils.unescapeJava;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Random;
-import java.util.stream.IntStream;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.constraints.IntRange;
@@ -56,7 +53,6 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -141,17 +137,19 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripBitVector(
-      @ForAll final Random random, @ForAll @IntRange(min = 1, max = 1000) final int size)
+      @ForAll final int seed,
+      @ForAll final SpecMilestone specMilestone,
+      @ForAll final Eth2Network network,
+      @ForAll @IntRange(min = 1, max = 1000) final int size)
       throws JsonProcessingException {
-    final int[] bits =
-        IntStream.range(0, size).sequential().filter(__ -> random.nextBoolean()).toArray();
-    final SszBitvector original = SszBitvectorSchema.create(size).ofBits(bits);
+    final Spec spec = TestSpecFactory.create(specMilestone, network);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
+    final SszBitvector original = dataStructureUtil.randomSszBitvector(size);
     final String serialized = jsonProvider.objectToJSON(original);
     final String hexData = jsonProvider.jsonToObject(serialized, String.class);
     final SszBitvector deserialized =
         original.getSchema().sszDeserialize(Bytes.fromHexString(hexData));
     assertThat(deserialized).isEqualTo(original);
-    assertThat(deserialized.size()).isEqualTo(size);
   }
 
   @Property
@@ -159,7 +157,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Fork original = new Fork(dataStructureUtil.randomFork());
@@ -174,7 +172,7 @@ public class JsonProviderPropertyTest {
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network,
       @ForAll final long epoch)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Checkpoint original =
@@ -190,7 +188,7 @@ public class JsonProviderPropertyTest {
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network,
       @ForAll final long epoch)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Checkpoint original =
@@ -205,7 +203,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Validator original = new Validator(dataStructureUtil.randomValidator());
@@ -218,16 +216,11 @@ public class JsonProviderPropertyTest {
   public void roundTripAttestationData(
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final long slot,
-      @ForAll @Size(32) final byte[] blockRoot)
-      throws Exception {
+      @ForAll final Eth2Network network)
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final AttestationData original =
-        new AttestationData(
-            dataStructureUtil.randomAttestationData(
-                UInt64.fromLongBits(slot), Bytes32.wrap(blockRoot)));
+    final AttestationData original = new AttestationData(dataStructureUtil.randomAttestationData());
     final String serialized = jsonProvider.objectToJSON(original);
     final Object deserialized = jsonProvider.jsonToObject(serialized, AttestationData.class);
     assertThat(deserialized).isEqualToComparingFieldByField(original);
@@ -238,7 +231,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final IndexedAttestation original =
@@ -250,7 +243,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripPendingAttestation(@ForAll final int seed, @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final SpecMilestone specMilestone = SpecMilestone.PHASE0;
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
@@ -266,7 +259,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Eth1Data original = new Eth1Data(dataStructureUtil.randomEth1Data());
@@ -280,7 +273,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final DepositData original = new DepositData(dataStructureUtil.randomDepositData());
@@ -293,16 +286,12 @@ public class JsonProviderPropertyTest {
   public void roundTripBeaconBlockHeader(
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final long slot,
-      @ForAll final long proposerIndex)
-      throws Exception {
+      @ForAll final Eth2Network network)
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BeaconBlockHeader original =
-        new BeaconBlockHeader(
-            dataStructureUtil.randomBeaconBlockHeader(
-                UInt64.fromLongBits(slot), UInt64.fromLongBits(proposerIndex)));
+        new BeaconBlockHeader(dataStructureUtil.randomBeaconBlockHeader());
     final String serialized = jsonProvider.objectToJSON(original);
     final Object deserialized = jsonProvider.jsonToObject(serialized, BeaconBlockHeader.class);
     assertThat(deserialized).isEqualToComparingFieldByField(original);
@@ -313,7 +302,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final ProposerSlashing original =
@@ -328,7 +317,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final AttesterSlashing original =
@@ -343,7 +332,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Attestation original = new Attestation(dataStructureUtil.randomAttestation());
@@ -357,7 +346,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Deposit original = new Deposit(dataStructureUtil.randomDeposit());
@@ -371,7 +360,7 @@ public class JsonProviderPropertyTest {
       @ForAll final int seed,
       @ForAll final SpecMilestone specMilestone,
       @ForAll final Eth2Network network)
-      throws Exception {
+      throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final VoluntaryExit original = new VoluntaryExit(dataStructureUtil.randomVoluntaryExit());
@@ -404,7 +393,6 @@ public class JsonProviderPropertyTest {
                     Bytes32.wrap(parentRoot),
                     Bytes32.wrap(stateRoot),
                     isFull)));
-    assertInstanceOf(clazz, original);
     final String serialized = jsonProvider.objectToJSON(original);
     final Object deserialized = jsonProvider.jsonToObject(serialized, clazz);
     assertThat(deserialized).isEqualToComparingFieldByField(original);
@@ -427,7 +415,6 @@ public class JsonProviderPropertyTest {
     final Object original =
         constructor.newInstance(
             dataStructureUtil.randomBeaconState(validatorCount, numItemsInSSZLists));
-    assertInstanceOf(clazz, original);
     final String serialized = jsonProvider.objectToJSON(original);
     final Object deserialized = spec.deserializeBeaconState(Bytes.wrap(serialized.getBytes(UTF_8)));
     assertThat(deserialized).isEqualToComparingFieldByField(original);
