@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -97,9 +98,14 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    request.respondAsync(
-        validatorDataProvider
-            .registerValidators(request.getRequestBody())
-            .thenApply(AsyncApiResponse::respondOk));
+
+    try {
+      request.respondAsync(
+          validatorDataProvider
+              .registerValidators(request.getRequestBody())
+              .thenApply(AsyncApiResponse::respondOk));
+    } catch (final JsonProcessingException jsonProcessingException) {
+      request.respondError(SC_BAD_REQUEST, jsonProcessingException.getMessage());
+    }
   }
 }

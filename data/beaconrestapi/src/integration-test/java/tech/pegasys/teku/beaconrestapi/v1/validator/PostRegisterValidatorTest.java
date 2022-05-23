@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
@@ -54,5 +55,17 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
                 request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()));
 
     Assertions.assertThat(response.code()).isEqualTo(SC_OK);
+  }
+
+  @Test
+  void shouldReturnBadRequest() throws IOException {
+    final SszList<SignedValidatorRegistration> request =
+        dataStructureUtil.randomValidatorRegistrations(10);
+
+    when(validatorApiChannel.registerValidators(request)).thenReturn(SafeFuture.COMPLETE);
+
+    Response response = post(PostRegisterValidator.ROUTE, "");
+
+    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 }
