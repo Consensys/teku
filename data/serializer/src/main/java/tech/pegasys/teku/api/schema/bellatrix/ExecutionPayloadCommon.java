@@ -159,7 +159,7 @@ public abstract class ExecutionPayloadCommon {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final ExecutionPayload that = (ExecutionPayload) o;
+    final ExecutionPayloadCommon that = (ExecutionPayloadCommon) o;
     return Objects.equals(parentHash, that.parentHash)
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(stateRoot, that.stateRoot)

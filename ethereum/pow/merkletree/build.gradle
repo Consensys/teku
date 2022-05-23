@@ -1,0 +1,10 @@
+dependencies {
+  implementation project(':ethereum:pow:api')
+  implementation project(':ethereum:spec')
+  implementation project(':infrastructure:crypto')
+
+  testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation project(':infrastructure:json')
+  testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+  testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+}
