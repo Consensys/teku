@@ -35,7 +35,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private static final String PARAM_PUBKEY = "pubkey";
-  static final ParameterMetadata<BLSPublicKey> PARAM_PUBKEY_TYPE =
+  public static final ParameterMetadata<BLSPublicKey> PARAM_PUBKEY_TYPE =
       new ParameterMetadata<>(
           PARAM_PUBKEY,
           new StringBasedPrimitiveTypeDefinition.StringTypeBuilder<BLSPublicKey>()
@@ -55,7 +55,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
               "pubkey", ValidatorTypes.PUBKEY_TYPE, GetFeeRecipientResponse::getPublicKey)
           .build();
 
-  static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =
+  private static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =
       SerializableTypeDefinition.object(GetFeeRecipientResponse.class)
           .withField("data", FEE_RECIPIENT_DATA, Function.identity())
           .build();
@@ -72,6 +72,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
                     + "The validator public key will return with the default fee recipient address if a specific one was not found.\n\n"
                     + "WARNING: The fee_recipient is not used on Phase0 or Altair networks.")
             .response(SC_OK, "Success response", RESPONSE_TYPE)
+            .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
     this.beaconProposerPreparer = beaconProposerPreparer;

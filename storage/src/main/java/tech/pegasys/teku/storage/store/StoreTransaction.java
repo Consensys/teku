@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -95,24 +94,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
     stateRoots.put(stateRoot, slotAndBlockRoot);
-  }
-
-  @Override
-  public void setTimeSeconds(UInt64 timeSeconds) {
-    final UInt64 storeTime = store.getTimeSeconds();
-    checkArgument(
-        timeSeconds.isGreaterThanOrEqualTo(storeTime),
-        "Cannot revert time (seconds) from %s to %s",
-        storeTime,
-        timeSeconds);
-    UInt64 timeMillis = secondsToMillis(timeSeconds);
-    if (updatingMillisIsRequired(timeMillis)) {
-      this.timeMillis = Optional.of(timeMillis);
-    }
-  }
-
-  private boolean updatingMillisIsRequired(UInt64 timeMillis) {
-    return timeMillis.isGreaterThan(store.getTimeMillis());
   }
 
   @Override

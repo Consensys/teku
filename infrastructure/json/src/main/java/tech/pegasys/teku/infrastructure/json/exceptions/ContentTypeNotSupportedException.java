@@ -11,18 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.infrastructure.json.exceptions;
 
-public enum BesuDockerVersion {
-  STABLE("22.4.1");
-
-  private final String version;
-
-  BesuDockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
+public class ContentTypeNotSupportedException extends RuntimeException {
+  public ContentTypeNotSupportedException(String message) {
+    super(message);
   }
 }

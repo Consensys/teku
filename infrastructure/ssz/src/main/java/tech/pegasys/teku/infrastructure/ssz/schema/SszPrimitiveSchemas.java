@@ -14,7 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BIT_TYPE_DEFINTION;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BIT_TYPE_DEFINITION;
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES32_TYPE_DEFINITION;
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES4_TYPE_DEFINITION;
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_NONE_TYPE_DEFINITION;
@@ -118,7 +118,7 @@ public interface SszPrimitiveSchemas {
 
         @Override
         public DeserializableTypeDefinition<SszBit> getJsonTypeDefinition() {
-          return SSZ_BIT_TYPE_DEFINTION;
+          return SSZ_BIT_TYPE_DEFINITION;
         }
 
         @Override
@@ -163,7 +163,7 @@ public interface SszPrimitiveSchemas {
 
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
-          return SszPrimitiveTypeDefinitions.SSZ_BYTE_TYPE_DEFINTION;
+          return SszPrimitiveTypeDefinitions.SSZ_BYTE_TYPE_DEFINITION;
         }
 
         @Override

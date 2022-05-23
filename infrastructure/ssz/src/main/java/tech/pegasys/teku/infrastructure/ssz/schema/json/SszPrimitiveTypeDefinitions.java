@@ -46,10 +46,10 @@ public interface SszPrimitiveTypeDefinitions {
           .format("null")
           .build();
 
-  DeserializableTypeDefinition<SszBit> SSZ_BIT_TYPE_DEFINTION =
+  DeserializableTypeDefinition<SszBit> SSZ_BIT_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BIT_SCHEMA, new BooleanTypeDefinition());
 
-  DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINTION =
+  DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTE_SCHEMA, CoreTypes.BYTE_TYPE);
 
   DeserializableTypeDefinition<SszBytes32> SSZ_BYTES32_TYPE_DEFINITION =

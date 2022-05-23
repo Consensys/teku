@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -173,7 +174,9 @@ public class StubRestApiRequest implements RestApiRequest {
       return List.of();
     }
 
-    final List<String> params = listQueryParameters.get(parameterMetadata.getName());
+    final List<String> params =
+        ListQueryParameterUtils.getParameterAsStringList(
+            listQueryParameters, parameterMetadata.getName());
     return params.stream()
         .map(p -> parameterMetadata.getType().deserializeFromString(p))
         .collect(Collectors.toList());

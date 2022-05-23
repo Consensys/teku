@@ -13,68 +13,142 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptySet;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_exiting;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_ongoing;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_done;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.schema.Validator;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
+public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetStateValidators handler;
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final GetStateValidators handler =
-      new GetStateValidators(chainDataProvider, jsonProvider);
-  private final Validator validator = new Validator(dataStructureUtil.randomValidator());
-  private final ValidatorResponse validatorResponse =
-      new ValidatorResponse(
-          ONE,
-          UInt64.valueOf("32000000000"),
-          ValidatorStatus.active_ongoing,
-          new Validator(
-              validator.pubkey,
-              validator.withdrawal_credentials,
-              UInt64.valueOf("32000000000"),
-              false,
-              ZERO,
-              ZERO,
-              FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH));
+  @BeforeEach
+  void setup() {
+    initialise(SpecMilestone.ALTAIR);
+    genesis();
 
-  @Test
-  public void shouldGetValidatorFromState() throws Exception {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
-    when(chainDataProvider.getStateValidators("head", List.of("1", "2", "3", "4"), emptySet()))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(withMetaData(List.of(validatorResponse)))));
-    handler.handle(context);
-    GetStateValidatorsResponse response = getResponseFromFuture(GetStateValidatorsResponse.class);
-    assertThat(response.data).containsExactly(validatorResponse);
+    handler = new GetStateValidators(chainDataProvider);
   }
 
   @Test
-  public void shouldGetNotFoundForMissingState() throws Exception {
-    when(context.pathParamMap()).thenReturn(Map.of("state_id", "1"));
-    when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1")));
-    when(chainDataProvider.getStateValidators("1", List.of("1"), emptySet()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    handler.handle(context);
-    verify(context).status(SC_NOT_FOUND);
+  public void shouldGetValidatorFromState() throws Exception {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", "head")
+            .listQueryParameter("id", List.of("1", "2", "3,4"))
+            .build();
+
+    final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
+        chainDataProvider
+            .getStateValidators("head", List.of("1", "2", "3", "4"), emptySet())
+            .get()
+            .orElseThrow();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  public void shouldGetValidatorFromStateWithList() throws Exception {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", "head")
+            .listQueryParameter("id", List.of("1", "2"))
+            .listQueryParameter(
+                "status", List.of("active_ongoing", "active_exiting, withdrawal_done"))
+            .build();
+
+    final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
+        chainDataProvider
+            .getStateValidators(
+                "head", List.of("1", "2"), Set.of(active_ongoing, active_exiting, withdrawal_done))
+            .get()
+            .orElseThrow();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  public void shouldGetBadRequestForInvalidState() {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .pathParameter("state_id", "invalid")
+            .listQueryParameter("id", List.of("1"))
+            .build();
+
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Invalid state");
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle404() {
+    verifyMetadataEmptyResponse(new GetGenesis(chainDataProvider), SC_NOT_FOUND);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final StateValidatorData data1 =
+        new StateValidatorData(
+            UInt64.valueOf(0),
+            dataStructureUtil.randomUInt64(),
+            active_ongoing,
+            dataStructureUtil.randomValidator());
+    final StateValidatorData data2 =
+        new StateValidatorData(
+            UInt64.valueOf(1),
+            dataStructureUtil.randomUInt64(),
+            active_ongoing,
+            dataStructureUtil.randomValidator());
+    final List<StateValidatorData> value = List.of(data1, data2);
+    final ObjectAndMetaData<List<StateValidatorData>> responseData = withMetaData(value);
+
+    final String data = getResponseStringFromMetadata(handler, HttpStatusCodes.SC_OK, responseData);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(GetStateValidatorsTest.class, "getStateValidatorsTest.json"),
+            UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }
