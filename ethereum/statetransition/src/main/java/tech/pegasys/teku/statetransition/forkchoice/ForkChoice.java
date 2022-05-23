@@ -68,6 +68,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
+
+  public static final int BLOCK_CREATION_TOLERANCE_MS = 500;
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -565,16 +567,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .reportExceptions();
   }
 
-  private void applyDeferredAttestations(final Collection<DeferredVotes> deferredVoteUpdates) {
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              deferredVoteUpdates.forEach(
-                  update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
-              transaction.commit();
-            })
-        .reportExceptions();
+  private SafeFuture<Void> applyDeferredAttestations(
+      final Collection<DeferredVotes> deferredVoteUpdates) {
+    return onForkChoiceThread(
+        () -> {
+          final VoteUpdater transaction = recentChainData.startVoteUpdate();
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          deferredVoteUpdates.forEach(
+              update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
+          transaction.commit();
+        });
   }
 
   private void applyAttesterSlashingsFromBlock(
@@ -622,18 +624,52 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     spec.onTick(transaction, currentTimeMillis);
     final UInt64 currentSlot = spec.getCurrentSlot(transaction);
     if (currentSlot.isGreaterThan(previousSlot)) {
-      prepareForNextSlot(currentSlot, transaction);
+      transaction.removeProposerBoostRoot();
+      applyDeferredAttestations(currentSlot).reportExceptions();
     }
     transaction.commit().join();
   }
 
-  public void prepareForNextSlot(final UInt64 slot, final StoreTransaction transaction) {
-    transaction.removeProposerBoostRoot();
-    // Apply deferred attestations
-    final Collection<DeferredVotes> deferredVoteUpdates = deferredAttestations.prune(slot);
-    if (!deferredVoteUpdates.isEmpty()) {
-      applyDeferredAttestations(deferredVoteUpdates);
+  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 currentTime = recentChainData.getStore().getTimeMillis();
+    // We haven't yet transitioned into this slot but will do very soon, so make it happen now
+    if (!currentTime
+        .plus(BLOCK_CREATION_TOLERANCE_MS)
+        .isGreaterThanOrEqualTo(slotStartTimeMillis)) {
+      // Creating a block too far before the slot start, don't run fork choice at all.
+      LOG.warn(
+          "Block creation requested more than {}ms before the start of slot {}",
+          BLOCK_CREATION_TOLERANCE_MS,
+          slot);
+      return SafeFuture.COMPLETE;
     }
+    return prepareForNextSlot(slot).thenCompose(__ -> processHead(slot)).thenApply(__ -> null);
+  }
+
+  // TODO: This is potentially dangerous to run at the same time as onTick.
+  // Maybe both should run on fork choice thread at least for the store transaction part?
+  private SafeFuture<Void> prepareForNextSlot(final UInt64 slot) {
+    final UInt64 slotStartTime =
+        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
+    if (recentChainData.getStore().getTimeMillis().isGreaterThanOrEqualTo(slotStartTime)) {
+      // Already in this slot, nothing to do
+      return SafeFuture.COMPLETE;
+    }
+    LOG.debug("Advancing fork choice to slot {} in preparation for block proposal", slot);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    spec.onTick(transaction, slotStartTime);
+    transaction.removeProposerBoostRoot();
+    return SafeFuture.allOf(transaction.commit(), applyDeferredAttestations(slot));
+  }
+
+  private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {
+    final Collection<DeferredVotes> deferredVoteUpdates = deferredAttestations.prune(slot);
+    if (deferredVoteUpdates.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    return applyDeferredAttestations(deferredVoteUpdates);
   }
 
   private ForkChoiceStrategy getForkChoiceStrategy() {
