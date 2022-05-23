@@ -116,7 +116,6 @@ public class BesuNode extends Node {
       configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE"});
       configMap.put("engine-rpc-http-port", Integer.toString(ENGINE_JSON_RPC_PORT));
       configMap.put("engine-host-allowlist", new String[] {"*"});
-      configMap.put("Xmerge-support", enableMergeSupport);
       return this;
     }
 
