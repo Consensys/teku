@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -44,16 +45,15 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetState extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/debug/beacon/states/:state_id";
@@ -84,7 +84,15 @@ public class GetState extends MigratingEndpointAdapter {
                 "Request successful",
                 SerializableTypeDefinition.<BeaconState>object()
                     .name("GetStateResponse")
-                    .withField("data", getDataSchemaDefinition(schemaCache), Function.identity())
+                    .withField(
+                        "data",
+                        getSchemaDefinitionForAllMilestones(
+                            schemaCache,
+                            "BeaconState",
+                            SchemaDefinitions::getBeaconStateSchema,
+                            (state, milestone) ->
+                                schemaCache.milestoneAtSlot(state.getSlot()).equals(milestone)),
+                        Function.identity())
                     .build(),
                 sszResponseType(
                     beaconState ->
@@ -132,21 +140,5 @@ public class GetState extends MigratingEndpointAdapter {
                 maybeStateAndMetaData
                     .map(stateAndMetaData -> AsyncApiResponse.respondOk(stateAndMetaData.getData()))
                     .orElseGet(AsyncApiResponse::respondNotFound)));
-  }
-
-  private static SerializableTypeDefinition<BeaconState> getDataSchemaDefinition(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    final SerializableOneOfTypeDefinitionBuilder<BeaconState> builder =
-        new SerializableOneOfTypeDefinitionBuilder<BeaconState>().title("BeaconState");
-
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      builder.withType(
-          block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone),
-          schemaDefinitionCache
-              .getSchemaDefinition(milestone)
-              .getBeaconStateSchema()
-              .getJsonTypeDefinition());
-    }
-    return builder.build();
   }
 }
