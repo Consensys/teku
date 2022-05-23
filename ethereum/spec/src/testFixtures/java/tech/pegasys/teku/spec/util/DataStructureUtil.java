@@ -812,9 +812,12 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlock randomBeaconBlock(
-      long slotNum, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
-    UInt64 slot = UInt64.valueOf(slotNum);
+      long slot, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
+    return randomBeaconBlock(UInt64.valueOf(slot), parentRoot, stateRoot, isFull);
+  }
 
+  public BeaconBlock randomBeaconBlock(
+      UInt64 slot, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
     final UInt64 proposerIndex = randomUInt64();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
@@ -924,7 +927,9 @@ public final class DataStructureUtil {
                     randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
                 .voluntaryExits(
                     randomFullSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit)));
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
+                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
   }
 
   public ProposerSlashing randomProposerSlashing() {
