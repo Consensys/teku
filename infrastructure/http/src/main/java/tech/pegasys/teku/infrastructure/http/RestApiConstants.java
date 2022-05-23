@@ -98,6 +98,17 @@ public class RestApiConstants {
   public static final String PARAM_VALIDATOR_DESCRIPTION =
       "Either hex encoded public key (with 0x prefix) or validator index";
 
+  public static final String PARAM_STATUS_DESCRIPTION =
+      "valid values:   pending_initialized, "
+          + "  pending_queued, "
+          + "  active_ongoing, "
+          + "  active_exiting, "
+          + "  active_slashed, "
+          + "  exited_unslashed, "
+          + "  exited_slashed, "
+          + "  withdrawal_possible, "
+          + "  withdrawal_done";
+
   public static final String SYNCING_STATUS = "syncing_status";
   public static final String SYNCING_STATUS_DESCRIPTION =
       "Customize syncing status instead of default status code (" + SC_PARTIAL_CONTENT + ")";

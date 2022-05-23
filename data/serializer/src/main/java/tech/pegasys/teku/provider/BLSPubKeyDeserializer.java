@@ -17,11 +17,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 
 public class BLSPubKeyDeserializer extends JsonDeserializer<BLSPubKey> {
   @Override
   public BLSPubKey deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return BLSPubKey.fromHexString(p.getValueAsString());
+    return new BLSPubKey(Bytes.fromHexString(p.getValueAsString()));
   }
 }
