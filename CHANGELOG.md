@@ -1,4 +1,5 @@
 
+
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -18,5 +19,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Reduced memory requirements for storing the deposit merkle tree.
+- Enabled proposer boost on Ropsten testnet.
 
 ### Bug Fixes
