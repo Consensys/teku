@@ -249,11 +249,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void setTimeSeconds(final UInt64 timeSeconds) {
-    setTimeMillis(secondsToMillis(timeSeconds));
-  }
-
-  @Override
   public void setTimeMillis(final UInt64 time) {
     this.timeMillis = time;
   }
