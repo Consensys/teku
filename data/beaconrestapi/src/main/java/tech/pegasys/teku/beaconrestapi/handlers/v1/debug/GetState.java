@@ -41,6 +41,7 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -138,7 +139,13 @@ public class GetState extends MigratingEndpointAdapter {
         future.thenApply(
             maybeStateAndMetaData ->
                 maybeStateAndMetaData
-                    .map(stateAndMetaData -> AsyncApiResponse.respondOk(stateAndMetaData.getData()))
+                    .map(
+                        stateAndMetaData -> {
+                          if (stateAndMetaData.getMilestone() != SpecMilestone.PHASE0) {
+                            throw new BadRequestException("SpecMilestone not PHASE0");
+                          }
+                          return AsyncApiResponse.respondOk(stateAndMetaData.getData());
+                        })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 }
