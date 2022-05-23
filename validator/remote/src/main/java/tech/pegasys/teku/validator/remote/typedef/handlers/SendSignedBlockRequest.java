@@ -61,7 +61,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
     return result;
   }
 
-  public boolean inUnsupportedMediaType() {
+  public boolean isUnsupportedMediaType() {
     return unsupportedMediaType;
   }
 
