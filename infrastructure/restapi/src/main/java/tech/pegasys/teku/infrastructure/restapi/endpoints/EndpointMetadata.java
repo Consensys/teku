@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -46,6 +47,7 @@ import org.apache.commons.io.function.IOFunction;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
+import tech.pegasys.teku.infrastructure.json.exceptions.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
@@ -155,7 +157,7 @@ public class EndpointMetadata {
     return ContentTypes.getContentType(requestBodyTypes.keySet(), maybeContentType)
         .orElseThrow(
             () ->
-                new BadRequestException(
+                new ContentTypeNotSupportedException(
                     "Request content type "
                         + maybeContentType.get()
                         + " is not supported. Must be one of: "
@@ -498,6 +500,10 @@ public class EndpointMetadata {
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector,
         final IOFunction<Bytes, T> octetStreamParser) {
+      // any time we're setting a request body type, it's possible to get unsupported media-type, so
+      // add implicitly
+      response(
+          SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media-type supplied", HTTP_ERROR_RESPONSE_TYPE);
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
