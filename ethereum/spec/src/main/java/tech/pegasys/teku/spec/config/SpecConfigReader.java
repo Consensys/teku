@@ -57,8 +57,10 @@ public class SpecConfigReader {
           // Unsupported, upcoming fork-related keys
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
-          "TRANSITION_TOTAL_DIFFICULTY",
-          "MIN_ANCHOR_POW_BLOCK_DIFFICULTY");
+          "CAPELLA_FORK_EPOCH",
+          "CAPELLA_FORK_VERSION",
+          // Old merge config item which is no longer used, ignore for backwards compatibility
+          "TRANSITION_TOTAL_DIFFICULTY");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored

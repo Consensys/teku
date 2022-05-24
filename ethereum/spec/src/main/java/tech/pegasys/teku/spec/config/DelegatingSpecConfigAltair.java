@@ -77,6 +77,11 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   }
 
   @Override
+  public int getUpdateTimeout() {
+    return specConfigAltair.getUpdateTimeout();
+  }
+
+  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }
