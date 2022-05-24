@@ -1,5 +1,6 @@
 {
   "get" : {
+    "tags" : [ "Fee Recipient" ],
     "operationId" : "GetFeeRecipient",
     "summary" : "Get validator fee recipient",
     "description" : "List the validator public key to eth address mapping for fee recipient feature on a specific public key. The validator public key will return with the default fee recipient address if a specific one was not found.\n\nWARNING: The fee_recipient is not used on Phase0 or Altair networks.",
@@ -86,6 +87,7 @@
     }
   },
   "post" : {
+    "tags" : [ "Fee Recipient" ],
     "operationId" : "SetFeeRecipient",
     "summary" : "Set validator fee recipient",
     "description" : "Sets the validator client fee recipient mapping which will then update the beacon node. Existing mappings for the same validator public key will be overwritten.\n\nConfiguration file settings will take precedence over this API, so if your validator fee recipient configuration file contains this public key, it will need to be removed before attempting to update with this api. Cannot specify a fee recipient of 0x00 via the API.\n\nWARNING: The fee_recipient is not used on Phase0 or Altair networks.",
