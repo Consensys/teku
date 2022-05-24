@@ -65,7 +65,8 @@ public class AttestationGossipManager implements GossipManager {
             error -> {
               if (Throwables.getRootCause(error) instanceof MessageAlreadySeenException) {
                 LOG.debug(
-                    "Failed to publish attestation for slot {} because the message has already been seen", attestation.getData().getSlot());
+                    "Failed to publish attestation for slot {} because the message has already been seen",
+                    attestation.getData().getSlot());
               } else if (Throwables.getRootCause(error)
                   instanceof NoPeersForOutboundMessageException) {
                 LOG.warn(
