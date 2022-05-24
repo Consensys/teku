@@ -55,7 +55,6 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -175,9 +174,7 @@ public class JsonProviderPropertyTest {
     final SszBitvector original = dataStructureUtil.randomSszBitvector(size);
     final String serialized = jsonProvider.objectToJSON(original);
     final SszBitvector deserialized =
-        original
-            .getSchema()
-            .sszDeserialize(Bytes.fromHexString(JsonUtil.parse(serialized, CoreTypes.STRING_TYPE)));
+        JsonUtil.parse(serialized, original.getSchema().getJsonTypeDefinition());
     assertThat(deserialized).isEqualTo(original);
   }
 
