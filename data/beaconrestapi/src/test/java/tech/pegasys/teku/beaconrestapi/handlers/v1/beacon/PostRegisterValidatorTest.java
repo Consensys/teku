@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -24,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,11 +31,9 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 
 public class PostRegisterValidatorTest extends AbstractMigratedBeaconHandlerTest {
   private PostRegisterValidator handler;
-  private ValidatorDataProvider validatorDataProvider;
 
   @BeforeEach
   void setup() {
-    validatorDataProvider = mock(ValidatorDataProvider.class);
     handler = new PostRegisterValidator(validatorDataProvider);
   }
 
