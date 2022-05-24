@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.api.schema.bellatrix;
 
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES20;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_EXECUTION_ADDRESS;
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_EXECUTION_ADDRESS;
 import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
-import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_EXECUTION_ADDRESS;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,9 +33,9 @@ public class BeaconPreparableProposer {
   @JsonProperty("fee_recipient")
   @Schema(
       type = "string",
-      format = "byte",
-      pattern = PATTERN_BYTES20,
-      description = DESCRIPTION_BYTES20)
+      pattern = PATTERN_EXECUTION_ADDRESS,
+      example = EXAMPLE_EXECUTION_ADDRESS,
+      description = DESCRIPTION_EXECUTION_ADDRESS)
   public final Eth1Address fee_recipient;
 
   @JsonCreator

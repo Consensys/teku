@@ -336,6 +336,35 @@ class EndpointMetadataTest {
   }
 
   @Test
+  void getRequestBody_shouldSupportOctetStreamWithoutSelector() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(
+                STRING_TYPE, bytes -> new String(bytes.toArrayUnsafe(), StandardCharsets.UTF_8))
+            .response(SC_OK, "Success")
+            .build();
+    final byte[] data = "test".getBytes(StandardCharsets.UTF_8);
+    final String body =
+        metadata.getRequestBody(
+            new ByteArrayInputStream(data), Optional.of(ContentTypes.OCTET_STREAM));
+    assertThat(body).isEqualTo("test");
+  }
+
+  @Test
+  void getRequestBody_shouldSupportJsonWithoutSelector() throws Exception {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(
+                STRING_TYPE, bytes -> new String(bytes.toArrayUnsafe(), StandardCharsets.UTF_8))
+            .response(SC_OK, "Success")
+            .build();
+
+    final String body =
+        metadata.getRequestBody(toStream("\"abcdef\""), Optional.of(ContentTypes.JSON));
+    assertThat(body).isEqualTo("abcdef");
+  }
+
+  @Test
   void getRequestBody_shouldSupportJsonWithCharset() throws Exception {
     final EndpointMetadata metadata =
         validBuilder()

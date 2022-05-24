@@ -9,8 +9,8 @@
     "fee_recipient" : {
       "pattern" : "^0x[a-fA-F0-9]{40}$",
       "type" : "string",
-      "description" : "Bytes20 hexadecimal",
-      "format" : "byte"
+      "description" : "An address on the execution (Ethereum 1) network.",
+      "example" : "0xabcf8e0d4e9587369b2301d0790347320302cc09"
     }
   }
 }

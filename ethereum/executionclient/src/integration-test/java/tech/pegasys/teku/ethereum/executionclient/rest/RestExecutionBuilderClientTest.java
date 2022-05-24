@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -325,9 +326,7 @@ class RestExecutionBuilderClientTest {
     try {
       return JsonUtil.parse(
           SIGNED_VALIDATOR_REGISTRATION_REQUEST,
-          schemaDefinitionsBellatrix
-              .getSignedValidatorRegistrationSchema()
-              .getJsonTypeDefinition());
+          SIGNED_VALIDATOR_REGISTRATION_SCHEMA.getJsonTypeDefinition());
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }

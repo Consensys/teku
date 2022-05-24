@@ -55,11 +55,13 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -410,6 +412,11 @@ public class ValidatorDataProvider {
                   .BeaconPreparableProposer>
           beaconPreparableProposers) {
     validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
+  }
+
+  public SafeFuture<Void> registerValidators(
+      SszList<SignedValidatorRegistration> validatorRegistrations) {
+    return validatorApiChannel.registerValidators(validatorRegistrations);
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {
