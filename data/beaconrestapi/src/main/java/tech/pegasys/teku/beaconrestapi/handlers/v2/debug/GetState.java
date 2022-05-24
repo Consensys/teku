@@ -100,7 +100,7 @@ public class GetState extends AbstractHandler implements Handler {
       // accept header is not octet, could be anything else, or even not set - our default return is
       // json.
       final SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
+          chainDataProvider.getSchemaBeaconState(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
