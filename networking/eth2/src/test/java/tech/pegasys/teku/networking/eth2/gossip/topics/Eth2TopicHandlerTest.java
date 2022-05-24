@@ -30,6 +30,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -220,6 +221,43 @@ public class Eth2TopicHandlerTest {
             asyncRunner,
             (b) -> {
               throw new RejectedExecutionException("No more capacity", new NullPointerException());
+            });
+
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
+    asyncRunner.executeQueuedActions();
+
+    assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
+  }
+
+  @Test
+  public void handleMessage_errorWhileProcessing_serviceCapacityExceededExecution() {
+    MockEth2TopicHandler topicHandler =
+        new MockEth2TopicHandler(
+            recentChainData,
+            spec,
+            asyncRunner,
+            (b) -> {
+              throw new ServiceCapacityExceededException("No more capacity");
+            });
+
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
+    asyncRunner.executeQueuedActions();
+
+    assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
+  }
+
+  @Test
+  public void handleMessage_errorWhileProcessing_wrappedServiceCapacityExceededExecution() {
+    MockEth2TopicHandler topicHandler =
+        new MockEth2TopicHandler(
+            recentChainData,
+            spec,
+            asyncRunner,
+            (b) -> {
+              throw new CompletionException(
+                  new ServiceCapacityExceededException("No more capacity"));
             });
 
     final SafeFuture<ValidationResult> result =
