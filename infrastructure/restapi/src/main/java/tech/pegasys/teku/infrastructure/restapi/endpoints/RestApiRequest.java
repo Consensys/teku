@@ -34,6 +34,8 @@ public interface RestApiRequest {
 
   <T> T getPathParameter(ParameterMetadata<T> parameterMetadata);
 
+  <T> String getResponseContentType(final int statusCode);
+
   <T> Optional<T> getOptionalQueryParameter(ParameterMetadata<T> parameterMetadata);
 
   <T> T getQueryParameter(ParameterMetadata<T> parameterMetadata);
