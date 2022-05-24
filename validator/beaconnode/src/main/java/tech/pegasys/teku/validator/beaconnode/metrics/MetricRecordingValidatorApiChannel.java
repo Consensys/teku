@@ -108,7 +108,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final Counter sendBlockRequestCounter;
   private final Counter sendContributionAndProofsRequestCounter;
   private final Counter prepareBeaconProposerCounter;
-  private final Counter registrerValidatorCounter;
+  private final Counter registerValidatorsCounter;
 
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
@@ -204,11 +204,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             PREPARE_BEACON_PROPOSER_NAME,
             "Counter recording the number of prepare beacon proposer requests sent to the beacon node");
-    registrerValidatorCounter =
+    registerValidatorsCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.VALIDATOR,
             REGISTER_VALIDATOR_NAME,
-            "Counter recording the number of validator registration requests sent to the beacon node");
+            "Counter recording the number of validator registrations requests sent to the beacon node");
   }
 
   @Override
@@ -346,7 +346,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> registerValidators(
       SszList<SignedValidatorRegistration> validatorRegistrations) {
-    registrerValidatorCounter.inc();
+    registerValidatorsCounter.inc();
     return delegate.registerValidators(validatorRegistrations);
   }
 

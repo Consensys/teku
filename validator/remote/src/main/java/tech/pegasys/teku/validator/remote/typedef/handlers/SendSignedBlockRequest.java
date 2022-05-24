@@ -30,8 +30,12 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
+  private final ResponseHandler<Object> responseHandler =
+      new ResponseHandler<>()
+          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedResponse);
+
   private final boolean preferSszBlockEncoding;
-  private boolean unsupportedMediaType = false;
+  private volatile boolean unsupportedMediaType = false;
 
   public SendSignedBlockRequest(
       final HttpUrl baseEndpoint,
@@ -47,7 +51,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             ? SEND_SIGNED_BLINDED_BLOCK
             : SEND_SIGNED_BLOCK;
 
-    return preferSszBlockEncoding
+    return preferSszBlockEncoding && !unsupportedMediaType
         ? sendSignedBlockAsSszOrFallback(signedBeaconBlock, apiMethod)
         : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
   }
@@ -61,26 +65,15 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
     return result;
   }
 
-  public boolean isUnsupportedMediaType() {
-    return unsupportedMediaType;
-  }
-
   private SendSignedBlockResult sendSignedBlockAsSsz(
       final ValidatorApiMethod apiMethod, final SignedBeaconBlock signedBeaconBlock) {
     return postOctetStream(
             apiMethod,
             Collections.emptyMap(),
             signedBeaconBlock.sszSerialize().toArray(),
-            new ResponseHandler<>()
-                .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedResponse))
+            responseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
-  }
-
-  private Optional<Object> handleUnsupportedResponse(
-      final Request request, final Response response) {
-    unsupportedMediaType = true;
-    return Optional.empty();
   }
 
   private SendSignedBlockResult sendSignedBlockAsJson(
@@ -90,8 +83,14 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             Collections.emptyMap(),
             signedBeaconBlock,
             signedBeaconBlock.getSchema().getJsonTypeDefinition(),
-            new ResponseHandler<>())
+            responseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
+  }
+
+  private Optional<Object> handleUnsupportedResponse(
+      final Request request, final Response response) {
+    unsupportedMediaType = true;
+    return Optional.empty();
   }
 }
