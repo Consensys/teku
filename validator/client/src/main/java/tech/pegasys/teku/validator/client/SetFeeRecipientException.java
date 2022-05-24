@@ -11,18 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.validator.client;
 
-public enum BesuDockerVersion {
-  STABLE("22.4.1");
+public class SetFeeRecipientException extends IllegalArgumentException {
 
-  private final String version;
-
-  BesuDockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
+  public SetFeeRecipientException(final String message) {
+    super(message);
   }
 }

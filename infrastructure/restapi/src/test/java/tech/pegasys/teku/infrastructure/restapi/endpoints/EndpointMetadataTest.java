@@ -42,7 +42,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
-import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
+import tech.pegasys.teku.infrastructure.json.exceptions.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -357,7 +357,7 @@ class EndpointMetadataTest {
         validBuilder().requestBodyType(STRING_TYPE).response(SC_OK, "Success").build();
     assertThatThrownBy(
             () -> metadata.getRequestBody(toStream("abc"), Optional.of(ContentTypes.OCTET_STREAM)))
-        .isInstanceOf(BadRequestException.class);
+        .isInstanceOf(ContentTypeNotSupportedException.class);
   }
 
   private InputStream toStream(final String json) {

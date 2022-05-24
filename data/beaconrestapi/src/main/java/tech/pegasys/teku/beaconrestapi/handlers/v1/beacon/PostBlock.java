@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQ
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
@@ -132,6 +133,9 @@ public class PostBlock extends MigratingEndpointAdapter {
             description =
                 "Block has been successfully broadcast, but failed validation and has not been imported."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Unable to parse request body."),
+        @OpenApiResponse(
+            status = RES_UNSUPPORTED_MEDIA_TYPE,
+            description = "Unsupported media-type supplied in request body."),
         @OpenApiResponse(
             status = RES_INTERNAL_ERROR,
             description = "Beacon node experienced an internal error."),

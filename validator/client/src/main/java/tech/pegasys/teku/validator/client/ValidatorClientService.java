@@ -151,7 +151,10 @@ public class ValidatorClientService extends Service {
                   Optional.empty(),
                   proposerConfigProvider.get(),
                   config.getValidatorConfig().getProposerDefaultFeeRecipient(),
-                  config.getSpec()));
+                  config.getSpec(),
+                  Optional.of(
+                      ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
+                          .resolve("api-proposer-config.json"))));
     }
     if (validatorApiConfig.isRestApiEnabled()) {
       validatorRestApi =

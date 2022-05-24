@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
 public class RestApiConstants {
 
@@ -57,6 +58,7 @@ public class RestApiConstants {
   public static final String RES_FORBIDDEN = "" + SC_FORBIDDEN;
   public static final String RES_NOT_FOUND = "" + SC_NOT_FOUND;
   public static final String RES_INTERNAL_ERROR = "" + SC_INTERNAL_SERVER_ERROR;
+  public static final String RES_UNSUPPORTED_MEDIA_TYPE = "" + SC_UNSUPPORTED_MEDIA_TYPE;
   public static final String RES_SERVICE_UNAVAILABLE = "" + SC_SERVICE_UNAVAILABLE;
 
   public static final String INVALID_BODY_SUPPLIED = "Invalid body supplied.";

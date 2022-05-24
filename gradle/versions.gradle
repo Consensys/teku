@@ -147,13 +147,13 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '22.1.3') {
+      dependencySet(group: 'org.hyperledger.besu.internal', version: '22.4.1') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
     }
-    dependency 'org.hyperledger.besu:plugin-api:22.1.3'
+    dependency 'org.hyperledger.besu:plugin-api:22.4.1'
 
     dependencySet(group: 'org.testcontainers', version: '1.17.1') {
       entry "testcontainers"
