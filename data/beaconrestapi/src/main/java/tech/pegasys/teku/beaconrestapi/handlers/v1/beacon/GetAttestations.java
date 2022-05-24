@@ -67,7 +67,7 @@ public class GetAttestations extends MigratingEndpointAdapter {
             .description(
                 "Retrieves attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
-            .queryParam(SLOT_PARAMETER)
+            .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
             .build());
@@ -100,7 +100,8 @@ public class GetAttestations extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+    final Optional<UInt64> slot =
+        request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
     final Optional<UInt64> committeeIndex =
         request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
 

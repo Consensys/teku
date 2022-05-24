@@ -69,6 +69,8 @@ public class RestApiConstants {
   public static final String EPOCH_QUERY_DESCRIPTION = "`uint64` Epoch number to query.";
   public static final String SLOT_QUERY_DESCRIPTION =
       "`UInt64` Slot to query in the canonical chain.";
+  public static final String SLOT_PATH_DESCRIPTION =
+      "The slot for which the block should be proposed.";
 
   public static final String COMMITTEE_INDEX_QUERY_DESCRIPTION =
       "`uint64` Committee index to query.";

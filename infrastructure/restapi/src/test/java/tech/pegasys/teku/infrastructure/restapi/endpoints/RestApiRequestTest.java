@@ -14,10 +14,13 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
@@ -25,7 +28,13 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class RestApiRequestTest {
   private static final ParameterMetadata<String> STR_PARAM =
@@ -79,6 +88,36 @@ public class RestApiRequestTest {
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(BOOL_PARAM)).isEqualTo(true);
     assertThat(request.getQueryParameter(BOOL_PARAM)).isEqualTo(false);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getContentTypeAndExpectedResponseType")
+  void shouldReturnExpectedResponseType(
+      final String contentType, final String expectedResponseType) {
+    @SuppressWarnings("unchecked")
+    final ResponseContentTypeDefinition<Bytes32> responseContentTypeDefinition =
+        mock(ResponseContentTypeDefinition.class);
+
+    when(context.header(eq(HEADER_ACCEPT))).thenReturn(contentType);
+    EndpointMetadata metadata =
+        EndpointMetadata.get("/foo")
+            .operationId("foo")
+            .description("foobar")
+            .summary("Foo Summary")
+            .response(SC_OK, "Good", BYTES32_TYPE, responseContentTypeDefinition)
+            .build();
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, metadata);
+    assertThat(request.getResponseContentType(SC_OK)).isEqualTo(expectedResponseType);
+  }
+
+  public static Stream<Arguments> getContentTypeAndExpectedResponseType() {
+    return Stream.of(
+        Arguments.of(
+            "application/octet-stream;q=0.9, application/json;q=0.4", "application/octet-stream"),
+        Arguments.of("application/octet-stream;q=0.3, application/json;q=0.4", "application/json"),
+        Arguments.of("application/json", "application/json"),
+        Arguments.of("application/octet-stream", "application/octet-stream"),
+        Arguments.of(null, "application/json"));
   }
 
   @Test

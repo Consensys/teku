@@ -98,7 +98,7 @@ public class GetStateCommittees extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_STATE_ID)
             .queryParam(EPOCH_PARAMETER)
             .queryParam(INDEX_PARAMETER)
-            .queryParam(SLOT_PARAMETER)
+            .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
@@ -135,7 +135,8 @@ public class GetStateCommittees extends MigratingEndpointAdapter {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
     final Optional<UInt64> committeeIndex = request.getOptionalQueryParameter(INDEX_PARAMETER);
-    final Optional<UInt64> slot = request.getOptionalQueryParameter(SLOT_PARAMETER);
+    final Optional<UInt64> slot =
+        request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
 
     final SafeFuture<Optional<ObjectAndMetaData<List<CommitteeAssignment>>>> future =
         chainDataProvider.getStateCommittees(

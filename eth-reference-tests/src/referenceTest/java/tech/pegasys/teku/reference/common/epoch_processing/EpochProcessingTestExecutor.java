@@ -14,6 +14,7 @@
 package tech.pegasys.teku.reference.common.epoch_processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
@@ -23,6 +24,9 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class EpochProcessingTestExecutor implements TestExecutor {
 
@@ -82,15 +86,32 @@ public class EpochProcessingTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
-    final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz_snappy");
+    final String postStateFileName = "post.ssz_snappy";
 
     final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
     final EpochProcessor epochProcessor = genesisSpec.getEpochProcessor();
     final ValidatorStatusFactory validatorStatusFactory = genesisSpec.getValidatorStatusFactory();
     final EpochProcessingExecutor processor =
         new EpochProcessingExecutor(epochProcessor, validatorStatusFactory);
-    final BeaconState result =
-        preState.updated(state -> processor.executeOperation(operation, state));
-    assertThat(result).isEqualTo(expectedPostState);
+
+    if (testDefinition.getTestDirectory().resolve(postStateFileName).toFile().exists()) {
+      final BeaconState expectedPostState = loadStateFromSsz(testDefinition, postStateFileName);
+      final BeaconState result = executeOperation(preState, processor);
+      assertThat(result).isEqualTo(expectedPostState);
+    } else {
+      assertThatThrownBy(() -> executeOperation(preState, processor))
+          // Currently the only
+          .isInstanceOfAny(
+              StateTransitionException.class,
+              SlotProcessingException.class,
+              EpochProcessingException.class,
+              ArithmeticException.class);
+    }
+  }
+
+  private BeaconState executeOperation(
+      final BeaconState preState, final EpochProcessingExecutor processor)
+      throws EpochProcessingException {
+    return preState.updated(state -> processor.executeOperation(operation, state));
   }
 }

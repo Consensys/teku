@@ -229,6 +229,11 @@ public class EndpointMetadata {
     return new ResponseMetadata(selectedType, typeDefinition.getAdditionalHeaders(response));
   }
 
+  public String getContentType(final int statusCode, final Optional<String> acceptHeader) {
+    final OpenApiResponse openApiResponse = responses.get(Integer.toString(statusCode));
+    return selectContentType(openApiResponse, acceptHeader);
+  }
+
   private String selectContentType(
       final OpenApiResponse openApiResponse, final Optional<String> acceptHeader) {
     final Collection<String> supportedTypes = openApiResponse.getSupportedContentTypes();
@@ -484,6 +489,17 @@ public class EndpointMetadata {
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyTypes.put(
           ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final DeserializableTypeDefinition<T> requestBodyType,
+        final IOFunction<Bytes, T> octetStreamParser) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+      this.requestBodyTypes.put(
+          ContentTypes.OCTET_STREAM,
+          OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
       return this;
     }
 

@@ -27,9 +27,11 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -85,6 +87,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       "beacon_node_send_sync_committee_contributions_total";
   public static final String PREPARE_BEACON_PROPOSER_NAME =
       "beacon_node_prepare_beacon_proposer_requests_total";
+  public static final String REGISTER_VALIDATOR_NAME =
+      "beacon_node_register_validator_requests_total";
   private final ValidatorApiChannel delegate;
   private final BeaconChainRequestCounter genesisTimeRequestCounter;
   private final BeaconChainRequestCounter attestationDutiesRequestCounter;
@@ -104,6 +108,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final Counter sendBlockRequestCounter;
   private final Counter sendContributionAndProofsRequestCounter;
   private final Counter prepareBeaconProposerCounter;
+  private final Counter registrerValidatorCounter;
 
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
@@ -199,6 +204,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             PREPARE_BEACON_PROPOSER_NAME,
             "Counter recording the number of prepare beacon proposer requests sent to the beacon node");
+    registrerValidatorCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.VALIDATOR,
+            REGISTER_VALIDATOR_NAME,
+            "Counter recording the number of validator registration requests sent to the beacon node");
   }
 
   @Override
@@ -331,6 +341,13 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     prepareBeaconProposerCounter.inc();
     delegate.prepareBeaconProposer(beaconPreparableProposers);
+  }
+
+  @Override
+  public SafeFuture<Void> registerValidators(
+      SszList<SignedValidatorRegistration> validatorRegistrations) {
+    registrerValidatorCounter.inc();
+    return delegate.registerValidators(validatorRegistrations);
   }
 
   private <T> SafeFuture<List<T>> countSendRequest(

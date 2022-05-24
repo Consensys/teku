@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_KEY_MANAGEMENT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
@@ -35,6 +36,7 @@ public class DeleteKeys extends RestApiEndpoint {
             .operationId("DeleteKeys")
             .summary("Delete Keys")
             .withBearerAuthSecurity()
+            .tags(TAG_KEY_MANAGEMENT)
             .description(
                 "DELETE must delete all keys from `request.pubkeys` that are known to the key manager."
                     + "<br>Additionally, DELETE must fetch the slashing protection data for the requested keys, "

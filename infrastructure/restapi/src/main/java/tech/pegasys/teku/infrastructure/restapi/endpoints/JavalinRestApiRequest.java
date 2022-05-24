@@ -140,6 +140,11 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> String getResponseContentType(final int statusCode) {
+    return metadata.getContentType(statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
+  }
+
+  @Override
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
     if (!queryParamMap.containsKey(parameterMetadata.getName())) {
       return Optional.empty();
