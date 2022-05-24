@@ -43,6 +43,9 @@ public class EthereumTypes {
   public static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION_TYPE =
       DeserializableTypeDefinition.enumOf(SpecMilestone.class);
 
+  public static final DeserializableTypeDefinition<Version> VERSION_TYPE =
+      DeserializableTypeDefinition.enumOf(Version.class);
+
   public static <T extends SszData> ResponseContentTypeDefinition<T> sszResponseType(
       final Function<T, SpecMilestone> milestoneSelector) {
     return new OctetStreamResponseContentTypeDefinition<>(
