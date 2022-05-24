@@ -39,6 +39,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
 
   // Sync protocol
   private final int minSyncCommitteeParticipants;
+  private final int updateTimeout;
 
   public SpecConfigAltairImpl(
       final SpecConfig specConfig,
@@ -51,7 +52,8 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
       final int epochsPerSyncCommitteePeriod,
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
-      final int minSyncCommitteeParticipants) {
+      final int minSyncCommitteeParticipants,
+      final int updateTimeout) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -63,6 +65,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.altairForkVersion = altairForkVersion;
     this.altairForkEpoch = altairForkEpoch;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
+    this.updateTimeout = updateTimeout;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -123,6 +126,11 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   @Override
   public int getMinSyncCommitteeParticipants() {
     return minSyncCommitteeParticipants;
+  }
+
+  @Override
+  public int getUpdateTimeout() {
+    return updateTimeout;
   }
 
   @Override
