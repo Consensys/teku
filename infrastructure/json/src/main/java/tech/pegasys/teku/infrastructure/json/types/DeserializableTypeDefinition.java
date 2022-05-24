@@ -55,6 +55,11 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return new EnumTypeDefinition<>(itemType);
   }
 
+  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
+      final Class<TObject> itemType, final Function<TObject, String> serializer) {
+    return new EnumTypeDefinition<>(itemType, serializer);
+  }
+
   static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(
       @SuppressWarnings("unused") final Class<TObject> type) {
     final DeserializableObjectTypeDefinitionBuilder<TObject, TObject> typeBuilder = object();

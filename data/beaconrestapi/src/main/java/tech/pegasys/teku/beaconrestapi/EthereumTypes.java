@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,11 +43,9 @@ public class EthereumTypes {
           .format("byte")
           .build();
 
-  public static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION_TYPE =
-      DeserializableTypeDefinition.enumOf(SpecMilestone.class);
-
-  public static final DeserializableTypeDefinition<Version> VERSION_TYPE =
-      DeserializableTypeDefinition.enumOf(Version.class);
+  public static final DeserializableTypeDefinition<SpecMilestone> MILESTONE_TYPE =
+      DeserializableTypeDefinition.enumOf(
+          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT));
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<T> sszResponseType() {

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.VERSION_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
@@ -44,7 +44,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -135,10 +134,7 @@ public class GetState extends MigratingEndpointAdapter {
       SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
         .name("GetStateResponse")
-        .withField(
-            "version",
-            VERSION_TYPE,
-            stateAndMetaData -> Version.fromMilestone(stateAndMetaData.getMilestone()))
+        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(
             "data",
