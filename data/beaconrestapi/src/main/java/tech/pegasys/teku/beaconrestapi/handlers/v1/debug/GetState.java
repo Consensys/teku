@@ -142,7 +142,8 @@ public class GetState extends MigratingEndpointAdapter {
                 maybeStateAndMetaData
                     .map(
                         stateAndMetaData -> {
-                          if (stateAndMetaData.getMilestone() != SpecMilestone.PHASE0) {
+                          if (JSON.equals(request.getResponseContentType(SC_OK))
+                              && (stateAndMetaData.getMilestone() != SpecMilestone.PHASE0)) {
                             throw new BadRequestException("SpecMilestone not PHASE0");
                           }
                           return AsyncApiResponse.respondOk(stateAndMetaData.getData());
