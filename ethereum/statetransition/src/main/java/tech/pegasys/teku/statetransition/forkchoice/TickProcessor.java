@@ -26,6 +26,10 @@ public class TickProcessor {
   private final RecentChainData recentChainData;
 
   private UInt64 highestProcessedTime = UInt64.ZERO;
+  private UInt64 highestPendingTime = UInt64.ZERO;
+  private SafeFuture<Void> lastUpdate = SafeFuture.COMPLETE;
+  private SafeFuture<Void> nextUpdate = new SafeFuture<>();
+  private boolean nextUpdateScheduled = false;
 
   public TickProcessor(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
@@ -34,13 +38,25 @@ public class TickProcessor {
 
   public synchronized SafeFuture<Void> onTick(final UInt64 currentTimeMillis) {
     if (currentTimeMillis.isLessThanOrEqualTo(highestProcessedTime)) {
-      return SafeFuture.COMPLETE;
+      return lastUpdate;
     }
-    highestProcessedTime = currentTimeMillis;
+    highestPendingTime = highestPendingTime.max(currentTimeMillis);
+    if (nextUpdateScheduled) {
+      return nextUpdate;
+    }
+
+    nextUpdate = new SafeFuture<>();
+    nextUpdateScheduled = true;
+    lastUpdate.thenCompose(__ -> processOnTick()).propagateTo(nextUpdate);
+    return nextUpdate;
+  }
+
+  private synchronized SafeFuture<Void> processOnTick() {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    spec.onTick(transaction, currentTimeMillis);
-    // TODO: The changes made in this transaction aren't actually applied until the commit completes
-    // which may mean later updates are wrong (removing wrong proposer boost mostly).
-    return transaction.commit();
+    spec.onTick(transaction, highestPendingTime);
+    highestProcessedTime = highestPendingTime;
+    nextUpdateScheduled = false;
+    lastUpdate = transaction.commit();
+    return lastUpdate;
   }
 }

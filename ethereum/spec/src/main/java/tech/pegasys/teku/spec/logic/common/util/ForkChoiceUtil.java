@@ -206,8 +206,10 @@ public class ForkChoiceUtil {
     }
 
     // Not a new epoch, return
-    if (!(currentSlot.isGreaterThan(previousSlot)
-        && computeSlotsSinceEpochStart(currentSlot).isZero())) {
+    // Note this allows for potentially entirely skipping the first slot of the epoch
+    if (!miscHelpers
+        .computeEpochAtSlot(previousSlot)
+        .isLessThan(miscHelpers.computeEpochAtSlot(currentSlot))) {
       return;
     }
 
