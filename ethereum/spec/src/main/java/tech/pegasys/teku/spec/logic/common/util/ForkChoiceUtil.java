@@ -201,6 +201,10 @@ public class ForkChoiceUtil {
 
     UInt64 currentSlot = getCurrentSlot(store);
 
+    if (currentSlot.isGreaterThan(previousSlot)) {
+      store.removeProposerBoostRoot();
+    }
+
     // Not a new epoch, return
     if (!(currentSlot.isGreaterThan(previousSlot)
         && computeSlotsSinceEpochStart(currentSlot).isZero())) {

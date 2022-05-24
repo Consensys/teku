@@ -84,6 +84,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
+  private final TickProcessor tickProcessor;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
   public ForkChoice(
@@ -101,7 +102,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
-    attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.tickProcessor = new TickProcessor(spec, recentChainData);
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -619,15 +621,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public void onTick(final UInt64 currentTimeMillis) {
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    final UInt64 previousSlot = spec.getCurrentSlot(transaction);
-    spec.onTick(transaction, currentTimeMillis);
-    final UInt64 currentSlot = spec.getCurrentSlot(transaction);
+    final UInt64 previousSlot = spec.getCurrentSlot(recentChainData.getStore());
+    tickProcessor.onTick(currentTimeMillis).join();
+    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
     if (currentSlot.isGreaterThan(previousSlot)) {
-      transaction.removeProposerBoostRoot();
       applyDeferredAttestations(currentSlot).reportExceptions();
     }
-    transaction.commit().join();
   }
 
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
@@ -645,23 +644,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           slot);
       return SafeFuture.COMPLETE;
     }
-    return prepareForNextSlot(slot).thenCompose(__ -> processHead(slot)).thenApply(__ -> null);
-  }
 
-  // TODO: This is potentially dangerous to run at the same time as onTick.
-  // Maybe both should run on fork choice thread at least for the store transaction part?
-  private SafeFuture<Void> prepareForNextSlot(final UInt64 slot) {
-    final UInt64 slotStartTime =
-        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
-    if (recentChainData.getStore().getTimeMillis().isGreaterThanOrEqualTo(slotStartTime)) {
-      // Already in this slot, nothing to do
-      return SafeFuture.COMPLETE;
-    }
-    LOG.debug("Advancing fork choice to slot {} in preparation for block proposal", slot);
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    spec.onTick(transaction, slotStartTime);
-    transaction.removeProposerBoostRoot();
-    return SafeFuture.allOf(transaction.commit(), applyDeferredAttestations(slot));
+    return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
+        .thenCompose(__ -> processHead(slot))
+        .toVoid();
   }
 
   private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {
