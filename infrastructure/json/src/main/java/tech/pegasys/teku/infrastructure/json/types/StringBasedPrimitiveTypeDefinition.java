@@ -128,7 +128,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
     try {
       return objectFromString.apply(value);
     } catch (RuntimeException ex) {
-      throw new IllegalArgumentException(ex.getMessage(), ex);
+      throw new IllegalArgumentException("Unable to parse " + this + ": " + ex.getMessage(), ex);
     }
   }
 

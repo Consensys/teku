@@ -236,7 +236,9 @@ public final class DataStructureUtil {
 
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, final long numItems, Supplier<T> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collector());
+    return Stream.generate(valueGenerator)
+        .limit(Math.min(numItems, schema.getMaxLength()))
+        .collect(schema.collector());
   }
 
   public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
@@ -244,7 +246,9 @@ public final class DataStructureUtil {
           SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
           final long numItems,
           Supplier<ElementT> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
+    return Stream.generate(valueGenerator)
+        .limit(Math.min(numItems, schema.getMaxLength()))
+        .collect(schema.collectorUnboxed());
   }
 
   public SszUInt64List randomSszUInt64List(SszUInt64ListSchema<?> schema, final long numItems) {

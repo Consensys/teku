@@ -37,7 +37,12 @@ class RequiredDeserializableFieldDefinition<TObject, TBuilder, TField>
 
   @Override
   public void readField(final TBuilder target, final JsonParser parser) throws IOException {
-    final TField value = deserializableType.deserialize(parser);
-    setter.accept(target, value);
+    try {
+      final TField value = deserializableType.deserialize(parser);
+      setter.accept(target, value);
+    } catch (final RuntimeException | IOException e) {
+      System.out.println("Failed to parse field " + getName());
+      throw e;
+    }
   }
 }

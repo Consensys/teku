@@ -54,6 +54,10 @@ import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -93,7 +97,7 @@ public class JsonProviderPropertyTest {
     final Bytes bytes = Bytes.wrap(value);
     final UInt256 original = UInt256.fromBytes(bytes);
     final String serialized = jsonProvider.objectToJSON(original);
-    assertEquals(serialized, Q + bytes.toQuantityHexString() + Q);
+    assertEquals(serialized, Q + original.toDecimalString() + Q);
     final UInt256 deserialized = jsonProvider.jsonToObject(serialized, UInt256.class);
     assertEquals(deserialized, original);
   }
@@ -171,7 +175,9 @@ public class JsonProviderPropertyTest {
     final SszBitvector original = dataStructureUtil.randomSszBitvector(size);
     final String serialized = jsonProvider.objectToJSON(original);
     final SszBitvector deserialized =
-        original.getSchema().sszDeserialize(Bytes.wrap(serialized.getBytes(UTF_8)));
+        original
+            .getSchema()
+            .sszDeserialize(Bytes.fromHexString(JsonUtil.parse(serialized, CoreTypes.STRING_TYPE)));
     assertThat(deserialized).isEqualTo(original);
   }
 
@@ -416,14 +422,21 @@ public class JsonProviderPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Class<? extends BeaconState> clazz = BEACON_STATE_CLASS_MAP.get(specMilestone);
-    final Constructor<?> constructor =
+    final Constructor<? extends BeaconState> constructor =
         clazz.getConstructor(
             tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState.class);
-    final Object original =
+    final BeaconState original =
         constructor.newInstance(
             dataStructureUtil.randomBeaconState(validatorCount, numItemsInSSZLists));
+    final DeserializableTypeDefinition<? extends SszData> stateTypeDefinition =
+        spec.forMilestone(specMilestone)
+            .getSchemaDefinitions()
+            .getBeaconStateSchema()
+            .getJsonTypeDefinition();
+
     final String serialized = jsonProvider.objectToJSON(original);
-    final Object deserialized = spec.deserializeBeaconState(Bytes.wrap(serialized.getBytes(UTF_8)));
-    assertThat(deserialized).isEqualToComparingFieldByField(original);
+    final SszData deserialized = JsonUtil.parse(serialized, stateTypeDefinition);
+    assertThat(deserialized.hashTreeRoot())
+        .isEqualTo(original.asInternalBeaconState(spec).hashTreeRoot());
   }
 }
