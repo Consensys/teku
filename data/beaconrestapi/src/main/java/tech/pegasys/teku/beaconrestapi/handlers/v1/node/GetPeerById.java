@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PEER_ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PEER_DATA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -40,21 +41,14 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.PeerResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetPeerById extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/node/peers/:peer_id";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
-  private static final ParameterMetadata<String> PARAMETER_PEER_ID =
-      new ParameterMetadata<>(
-          PARAM_PEER_ID,
-          CoreTypes.string(
-              PARAM_PEER_ID_DESCRIPTION, "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"));
 
   private static final SerializableTypeDefinition<Eth2Peer> PEERS_BY_ID_RESPONSE_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)
@@ -74,7 +68,7 @@ public class GetPeerById extends MigratingEndpointAdapter {
             .operationId("getNodePeer")
             .summary("Get node peer")
             .description("Retrieves data about the given peer.")
-            .pathParam(PARAMETER_PEER_ID)
+            .pathParam(PEER_ID_PARAMETER)
             .tags(TAG_NODE)
             .response(SC_OK, "Request successful", PEERS_BY_ID_RESPONSE_TYPE)
             .response(SC_NOT_FOUND, "Peer not found")
@@ -102,7 +96,7 @@ public class GetPeerById extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    Optional<Eth2Peer> peer = network.getEth2PeerById(request.getPathParameter(PARAMETER_PEER_ID));
+    Optional<Eth2Peer> peer = network.getEth2PeerById(request.getPathParameter(PEER_ID_PARAMETER));
     if (peer.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Peer not found");
     } else {
