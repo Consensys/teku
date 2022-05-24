@@ -86,8 +86,7 @@ public class GetState extends MigratingEndpointAdapter {
                 SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                sszResponseType( // TODO fix?? Not recognising BeaconState and MetaData
-                    (StateAndMetaData stateAndMetaData) -> stateAndMetaData.getMilestone()))
+                sszResponseType())
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;

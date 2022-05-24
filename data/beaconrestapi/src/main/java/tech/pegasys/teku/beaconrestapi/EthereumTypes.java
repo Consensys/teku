@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class EthereumTypes {
 
@@ -45,6 +46,21 @@ public class EthereumTypes {
 
   public static final DeserializableTypeDefinition<Version> VERSION_TYPE =
       DeserializableTypeDefinition.enumOf(Version.class);
+
+  public static <X extends SszData, T extends ObjectAndMetaData<X>>
+      ResponseContentTypeDefinition<T> sszResponseType() {
+    return new OctetStreamResponseContentTypeDefinition<>(
+        (data, out) -> data.getData().sszSerialize(out),
+        value ->
+            Map.of(
+                RestApiConstants.HEADER_CONSENSUS_VERSION,
+                Version.fromMilestone(value.getMilestone()).name(),
+                RestApiConstants.HEADER_CONTENT_DISPOSITION,
+                String.format(
+                    "filename=\"%s%s.ssz\"",
+                    value.getData().getSchema().getName().map(name -> name + "-").orElse(""),
+                    value.getData().hashTreeRoot().toUnprefixedHexString())));
+  }
 
   public static <T extends SszData> ResponseContentTypeDefinition<T> sszResponseType(
       final Function<T, SpecMilestone> milestoneSelector) {
