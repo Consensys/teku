@@ -22,6 +22,7 @@ import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -30,11 +31,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -62,7 +61,7 @@ public class BlockProposalTestUtil {
     blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   }
 
-  public SignedBlockAndState createNewBlock(
+  public SafeFuture<SignedBlockAndState> createNewBlock(
       final Signer signer,
       final UInt64 newSlot,
       final BeaconState state,
@@ -76,15 +75,15 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload)
-      throws StateTransitionException, EpochProcessingException, SlotProcessingException {
+      throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
-    final BeaconBlockAndState newBlockAndState =
-        spec.createNewUnsignedBlock(
+
+    return spec.createNewUnsignedBlock(
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
@@ -103,21 +102,25 @@ public class BlockProposalTestUtil {
                         () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
                     .executionPayload(
                         () ->
-                            executionPayload.orElseGet(
-                                () ->
-                                    createExecutionPayload(
-                                        newSlot, state, transactions, terminalBlock))),
-            false);
+                            SafeFuture.completedFuture(
+                                executionPayload.orElseGet(
+                                    () ->
+                                        createExecutionPayload(
+                                            newSlot, state, transactions, terminalBlock)))),
+            false)
+        .thenApply(
+            newBlockAndState -> {
+              // Sign block and set block signature
+              final BeaconBlock block = newBlockAndState.getBlock();
+              BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
 
-    // Sign block and set block signature
-    final BeaconBlock block = newBlockAndState.getBlock();
-    BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
-
-    final SignedBeaconBlock signedBlock = SignedBeaconBlock.create(spec, block, blockSignature);
-    return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
+              final SignedBeaconBlock signedBlock =
+                  SignedBeaconBlock.create(spec, block, blockSignature);
+              return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
+            });
   }
 
-  public SignedBlockAndState createNewBlockSkippingStateTransition(
+  public SafeFuture<SignedBlockAndState> createNewBlockSkippingStateTransition(
       final Signer signer,
       final UInt64 newSlot,
       final BeaconState state,
@@ -140,49 +143,49 @@ public class BlockProposalTestUtil {
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
 
     // Sign block and set block signature
-
-    final BeaconBlockBody blockBody =
-        spec.atSlot(newSlot)
-            .getSchemaDefinitions()
-            .getBeaconBlockBodySchema()
-            .createBlockBody(
-                builder ->
-                    builder
-                        .randaoReveal(randaoReveal)
-                        .eth1Data(eth1Data)
-                        .graffiti(Bytes32.ZERO)
-                        .attestations(attestations)
-                        .proposerSlashings(proposerSlashings)
-                        .attesterSlashings(attesterSlashings)
-                        .deposits(deposits)
-                        .voluntaryExits(exits)
-                        .syncAggregate(
-                            () ->
-                                dataStructureUtil.emptySyncAggregateIfRequiredByState(
-                                    blockSlotState))
-                        .executionPayload(
-                            () ->
+    return spec.atSlot(newSlot)
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .createBlockBody(
+            builder ->
+                builder
+                    .randaoReveal(randaoReveal)
+                    .eth1Data(eth1Data)
+                    .graffiti(Bytes32.ZERO)
+                    .attestations(attestations)
+                    .proposerSlashings(proposerSlashings)
+                    .attesterSlashings(attesterSlashings)
+                    .deposits(deposits)
+                    .voluntaryExits(exits)
+                    .syncAggregate(
+                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
+                    .executionPayload(
+                        () ->
+                            SafeFuture.completedFuture(
                                 executionPayload.orElseGet(
                                     () ->
                                         createExecutionPayload(
-                                            newSlot, state, transactions, terminalBlock))));
+                                            newSlot, state, transactions, terminalBlock)))))
+        .thenApply(
+            blockBody -> {
+              final BeaconBlock block =
+                  spec.atSlot(newSlot)
+                      .getSchemaDefinitions()
+                      .getBeaconBlockSchema()
+                      .create(
+                          newSlot,
+                          UInt64.valueOf(spec.getBeaconProposerIndex(blockSlotState, newSlot)),
+                          parentBlockSigningRoot,
+                          blockSlotState.hashTreeRoot(),
+                          blockBody);
 
-    final BeaconBlock block =
-        spec.atSlot(newSlot)
-            .getSchemaDefinitions()
-            .getBeaconBlockSchema()
-            .create(
-                newSlot,
-                UInt64.valueOf(spec.getBeaconProposerIndex(blockSlotState, newSlot)),
-                parentBlockSigningRoot,
-                blockSlotState.hashTreeRoot(),
-                blockBody);
+              // Sign block and set block signature
+              BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
 
-    // Sign block and set block signature
-    BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
-
-    final SignedBeaconBlock signedBlock = SignedBeaconBlock.create(spec, block, blockSignature);
-    return new SignedBlockAndState(signedBlock, blockSlotState);
+              final SignedBeaconBlock signedBlock =
+                  SignedBeaconBlock.create(spec, block, blockSignature);
+              return new SignedBlockAndState(signedBlock, blockSlotState);
+            });
   }
 
   private ExecutionPayload createExecutionPayload(
@@ -227,7 +230,7 @@ public class BlockProposalTestUtil {
     return spec.atSlot(state.getSlot()).miscHelpers().isMergeTransitionComplete(state);
   }
 
-  public SignedBlockAndState createBlock(
+  public SafeFuture<SignedBlockAndState> createBlock(
       final Signer signer,
       final UInt64 newSlot,
       final BeaconState previousState,

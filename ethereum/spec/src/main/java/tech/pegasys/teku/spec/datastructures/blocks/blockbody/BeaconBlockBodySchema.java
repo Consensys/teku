@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -28,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
-  BeaconBlockBody createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
+  SafeFuture<BeaconBlockBody> createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
 
   BeaconBlockBody createEmpty();
 

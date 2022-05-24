@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -30,8 +31,8 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   private BeaconBlockBodySchemaBellatrixImpl schema;
   private BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema;
   protected Optional<Boolean> blinded = Optional.empty();
-  protected ExecutionPayload executionPayload;
-  protected ExecutionPayloadHeader executionPayloadHeader;
+  protected SafeFuture<ExecutionPayload> executionPayload;
+  protected SafeFuture<ExecutionPayloadHeader> executionPayloadHeader;
 
   public BeaconBlockBodyBuilderBellatrix schema(final BeaconBlockBodySchemaBellatrixImpl schema) {
     this.schema = schema;
@@ -48,7 +49,7 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
 
   @Override
   public BeaconBlockBodyBuilder executionPayload(
-      Supplier<ExecutionPayload> executionPayloadSupplier) {
+      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
     if (!isBlinded()) {
       this.executionPayload = executionPayloadSupplier.get();
     }
@@ -57,7 +58,7 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
+      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
     if (isBlinded()) {
       this.executionPayloadHeader = executionPayloadHeaderSupplier.get();
     }
@@ -88,33 +89,37 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   }
 
   @Override
-  public BeaconBlockBody build() {
+  public SafeFuture<BeaconBlockBody> build() {
     validate();
     if (isBlinded()) {
-      return new BlindedBeaconBlockBodyBellatrixImpl(
-          blindedSchema,
-          new SszSignature(randaoReveal),
-          eth1Data,
-          SszBytes32.of(graffiti),
-          proposerSlashings,
-          attesterSlashings,
-          attestations,
-          deposits,
-          voluntaryExits,
-          syncAggregate,
-          executionPayloadHeader);
+      return executionPayloadHeader.thenApply(
+          header ->
+              new BlindedBeaconBlockBodyBellatrixImpl(
+                  blindedSchema,
+                  new SszSignature(randaoReveal),
+                  eth1Data,
+                  SszBytes32.of(graffiti),
+                  proposerSlashings,
+                  attesterSlashings,
+                  attestations,
+                  deposits,
+                  voluntaryExits,
+                  syncAggregate,
+                  header));
     }
-    return new BeaconBlockBodyBellatrixImpl(
-        schema,
-        new SszSignature(randaoReveal),
-        eth1Data,
-        SszBytes32.of(graffiti),
-        proposerSlashings,
-        attesterSlashings,
-        attestations,
-        deposits,
-        voluntaryExits,
-        syncAggregate,
-        executionPayload);
+    return executionPayload.thenApply(
+        payload ->
+            new BeaconBlockBodyBellatrixImpl(
+                schema,
+                new SszSignature(randaoReveal),
+                eth1Data,
+                SszBytes32.of(graffiti),
+                proposerSlashings,
+                attesterSlashings,
+                attestations,
+                deposits,
+                voluntaryExits,
+                syncAggregate,
+                payload));
   }
 }

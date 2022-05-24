@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema9;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -107,7 +108,8 @@ public class BeaconBlockBodySchemaAltairImpl
   }
 
   @Override
-  public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+  public SafeFuture<BeaconBlockBody> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderAltair builder = new BeaconBlockBodyBuilderAltair().schema(this);
     builderConsumer.accept(builder);
     return builder.build();

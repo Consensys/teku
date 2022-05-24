@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -49,15 +50,16 @@ public interface BeaconBlockBodyBuilder {
   BeaconBlockBodyBuilder syncAggregate(Supplier<SyncAggregate> syncAggregateSupplier);
 
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder executionPayload(Supplier<ExecutionPayload> executionPayloadSupplier);
+  BeaconBlockBodyBuilder executionPayload(
+      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
 
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
   BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier);
+      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier);
 
   default Boolean isBlinded() {
     return false;
   }
 
-  BeaconBlockBody build();
+  SafeFuture<BeaconBlockBody> build();
 }
