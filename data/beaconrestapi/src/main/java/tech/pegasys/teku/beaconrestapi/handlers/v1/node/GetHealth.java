@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SYNCING_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_PARTIAL_CONTENT;
@@ -38,9 +39,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetHealth extends MigratingEndpointAdapter {
@@ -48,10 +47,6 @@ public class GetHealth extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/health";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
-
-  private static final ParameterMetadata<Integer> SYNCING_PARAMETER =
-      new ParameterMetadata<>(
-          SYNCING_STATUS, CoreTypes.INTEGER_TYPE.withDescription(SYNCING_STATUS_DESCRIPTION));
 
   public GetHealth(final DataProvider provider) {
     this(provider.getSyncDataProvider(), provider.getChainDataProvider());
