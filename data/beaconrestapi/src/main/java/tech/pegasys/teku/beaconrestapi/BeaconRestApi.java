@@ -400,7 +400,7 @@ public class BeaconRestApi {
     app.post(
         PostContributionAndProofs.ROUTE, new PostContributionAndProofs(dataProvider, jsonProvider));
     addMigratedEndpoint(new PostPrepareBeaconProposer(dataProvider));
-    addMigratedEndpoint(new PostRegisterValidator(dataProvider, spec));
+    addMigratedEndpoint(new PostRegisterValidator(dataProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider, final Spec spec) {

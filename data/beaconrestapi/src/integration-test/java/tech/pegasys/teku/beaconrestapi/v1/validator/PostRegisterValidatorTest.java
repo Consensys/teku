@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.io.IOException;
 import okhttp3.Response;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -54,18 +53,6 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
             JsonUtil.serialize(
                 request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()));
 
-    Assertions.assertThat(response.code()).isEqualTo(SC_OK);
-  }
-
-  @Test
-  void shouldReturnBadRequest() throws IOException {
-    final SszList<SignedValidatorRegistration> request =
-        dataStructureUtil.randomValidatorRegistrations(10);
-
-    when(validatorApiChannel.registerValidators(request)).thenReturn(SafeFuture.COMPLETE);
-
-    Response response = post(PostRegisterValidator.ROUTE, "");
-
-    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.code()).isEqualTo(SC_OK);
   }
 }

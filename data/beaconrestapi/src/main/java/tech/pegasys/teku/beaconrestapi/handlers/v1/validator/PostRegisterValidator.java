@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -29,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -37,18 +37,17 @@ import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
 
 public class PostRegisterValidator extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/register_validator";
 
   private final ValidatorDataProvider validatorDataProvider;
 
-  public PostRegisterValidator(final DataProvider provider, final Spec spec) {
-    this(provider.getValidatorDataProvider(), spec);
+  public PostRegisterValidator(final DataProvider provider) {
+    this(provider.getValidatorDataProvider());
   }
 
-  public PostRegisterValidator(final ValidatorDataProvider validatorDataProvider, final Spec spec) {
+  public PostRegisterValidator(final ValidatorDataProvider validatorDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("registerValidator")
@@ -66,6 +65,9 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA::sszDeserialize)
             .response(SC_OK, "Registration information has been received.")
+            .withBadRequestResponse(
+                Optional.of(
+                    "The request could not be processed, check the response for more information."))
             .build());
 
     this.validatorDataProvider = validatorDataProvider;
@@ -98,14 +100,9 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-
-    try {
-      request.respondAsync(
-          validatorDataProvider
-              .registerValidators(request.getRequestBody())
-              .thenApply(AsyncApiResponse::respondOk));
-    } catch (final JsonProcessingException jsonProcessingException) {
-      request.respondError(SC_BAD_REQUEST, jsonProcessingException.getMessage());
-    }
+    request.respondAsync(
+        validatorDataProvider
+            .registerValidators(request.getRequestBody())
+            .thenApply(AsyncApiResponse::respondOk));
   }
 }
