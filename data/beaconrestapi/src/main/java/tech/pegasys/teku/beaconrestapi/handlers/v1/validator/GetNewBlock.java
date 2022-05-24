@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent;
@@ -77,9 +78,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
           "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n\n"
               + "__NOTE__: deprecated, switch to using `/eth/v2/validator/blocks/{slot}` for multiple milestone support.",
       pathParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description = "The slot for which the block should be proposed."),
+        @OpenApiParam(name = SLOT, description = SLOT_PATH_DESCRIPTION),
       },
       queryParams = {
         @OpenApiParam(

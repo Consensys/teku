@@ -15,8 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PATH_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_QUERY_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -29,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
@@ -99,9 +99,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
               + "will be added to as forks progress.\n\n"
               + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.",
       pathParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description = "The slot for which the block should be proposed."),
+        @OpenApiParam(name = SLOT, description = SLOT_PATH_DESCRIPTION),
       },
       queryParams = {
         @OpenApiParam(
@@ -128,7 +126,8 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final UInt64 slot = request.getPathParameter(SLOT_QUERY_PARAMETER);
+    final UInt64 slot =
+        request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock>> result =
@@ -155,7 +154,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                 + "will be added to as forks progress.\n\n"
                 + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
-        .pathParam(SLOT_PATH_PARAMETER)
+        .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
         .response(

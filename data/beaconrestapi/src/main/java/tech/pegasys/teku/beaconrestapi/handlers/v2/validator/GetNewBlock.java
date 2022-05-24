@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PATH_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SPEC_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
@@ -29,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
@@ -90,9 +91,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
       description =
           "Requests a beacon node to produce a valid block, which can then be signed by a validator.",
       pathParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description = "The slot for which the block should be proposed."),
+        @OpenApiParam(name = SLOT, description = SLOT_PATH_DESCRIPTION),
       },
       queryParams = {
         @OpenApiParam(
@@ -127,7 +126,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
                 + "Metadata in the response indicates the type of block produced, and the supported types of block "
                 + "will be added to as forks progress.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-        .pathParam(SLOT_PATH_PARAMETER)
+        .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
         .response(
@@ -149,7 +148,8 @@ public class GetNewBlock extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final UInt64 slot = request.getPathParameter(SLOT_PATH_PARAMETER);
+    final UInt64 slot =
+        request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final SafeFuture<Optional<BeaconBlock>> result =
