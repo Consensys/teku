@@ -14,11 +14,11 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_KEY_MANAGEMENT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
-import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -38,9 +38,9 @@ public class PostRemoteKeys extends RestApiEndpoint {
         EndpointMetadata.post(ROUTE)
             .operationId("ImportRemoteKeys")
             .summary("Import Remote Keys")
-            .tags(RestApiConstants.TAG_EXPERIMENTAL)
-            .description("Import remote keys for the validator client to request duties for.")
             .withBearerAuthSecurity()
+            .tags(TAG_KEY_MANAGEMENT)
+            .description("Import remote keys for the validator client to request duties for.")
             .requestBodyType(ValidatorTypes.POST_REMOTE_KEYS_REQUEST)
             .response(SC_OK, "Success response", ValidatorTypes.POST_KEYS_RESPONSE)
             .withAuthenticationResponses()

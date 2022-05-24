@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -64,7 +65,7 @@ public class ChainUpdater {
   public void setTime(final UInt64 time) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.setTimeSeconds(time);
+    tx.setTimeMillis(secondsToMillis(time));
     tx.commit().join();
   }
 

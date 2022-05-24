@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
@@ -107,6 +108,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.json.exceptions.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -187,7 +189,7 @@ public class BeaconRestApi {
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider, spec);
     addConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
-    addDebugHandlers(dataProvider);
+    addDebugHandlers(dataProvider, spec);
   }
 
   private void addConfigHandlers(
@@ -197,12 +199,12 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetSpec(dataProvider));
   }
 
-  private void addDebugHandlers(final DataProvider dataProvider) {
+  private void addDebugHandlers(final DataProvider dataProvider, final Spec spec) {
     addMigratedEndpoint(new GetChainHeadsV1(dataProvider));
     addMigratedEndpoint(new GetChainHeadsV2(dataProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
-        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
+    addMigratedEndpoint(
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
+            dataProvider, spec, schemaCache));
     app.get(GetState.ROUTE, new GetState(dataProvider, jsonProvider));
   }
 
@@ -221,6 +223,7 @@ public class BeaconRestApi {
     app.exception(ChainDataUnavailableException.class, (e, ctx) -> ctx.status(SC_NO_CONTENT));
     app.exception(NodeSyncingException.class, this::serviceUnavailable);
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
+    app.exception(ContentTypeNotSupportedException.class, this::unsupportedContentType);
     app.exception(BadRequestException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
     // Add catch-all handler
@@ -232,6 +235,14 @@ public class BeaconRestApi {
           setErrorBody(
               ctx, () -> BadRequest.internalError(jsonProvider, "An unexpected error occurred"));
         });
+  }
+
+  private void unsupportedContentType(final Throwable throwable, final Context context) {
+    context.status(SC_UNSUPPORTED_MEDIA_TYPE);
+    setErrorBody(
+        context,
+        () ->
+            BadRequest.serialize(jsonProvider, SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()));
   }
 
   private void serviceUnavailable(final Throwable throwable, final Context context) {

@@ -25,6 +25,10 @@ public class ParameterMetadata<T> {
     this.type = type;
   }
 
+  public ParameterMetadata<T> withDescription(final String typeDescription) {
+    return new ParameterMetadata<>(name, type.withDescription(typeDescription));
+  }
+
   public String getName() {
     return name;
   }

@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -30,39 +31,75 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.ByteArrayInputStream;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.SszResponse;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
-import tech.pegasys.teku.api.schema.BeaconState;
-import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
-public class GetState extends AbstractHandler implements Handler {
+public class GetState extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/debug/beacon/states/:state_id";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  public GetState(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  public GetState(
+      final DataProvider dataProvider, final Spec spec, final SchemaDefinitionCache schemaCache) {
+    this(dataProvider.getChainDataProvider(), spec, schemaCache);
   }
 
-  public GetState(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  @SuppressWarnings("unchecked")
+  public GetState(
+      final ChainDataProvider chainDataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getState")
+            .summary("Get state")
+            .description(
+                "Returns full BeaconState object for given state_id.\n\n"
+                    + "Use Accept header to select `application/octet-stream` if SSZ response type is required.\n\n"
+                    + "__NOTE__: Only phase0 beacon state will be returned in JSON, use `/eth/v2/beacon/states/{state_id}` for altair.")
+            .tags(TAG_DEBUG)
+            .pathParam(PARAMETER_STATE_ID)
+            .response(
+                SC_OK,
+                "Request successful",
+                SerializableTypeDefinition.<BeaconState>object()
+                    .name("GetStateResponse")
+                    .withField(
+                        "data",
+                        (DeserializableTypeDefinition<BeaconState>)
+                            schemaCache
+                                .getSchemaDefinition(SpecMilestone.PHASE0)
+                                .getBeaconStateSchema()
+                                .getJsonTypeDefinition(),
+                        Function.identity())
+                    .build(),
+                sszResponseType(
+                    beaconState ->
+                        spec.getForkSchedule().getSpecMilestoneAtSlot(beaconState.getSlot())))
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -91,45 +128,26 @@ public class GetState extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
-    final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (getContentType(SSZ_OR_JSON_CONTENT_TYPES, maybeAcceptHeader)
-        .equalsIgnoreCase(OCTET_STREAM)) {
-      final SafeFuture<Optional<SszResponse>> future =
-          chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalSszResult(
-          ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
-    } else {
-      // accept header is not octet, could be anything else, or even not set - our default return is
-      // json.
-      final SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
-    }
+    adapt(ctx);
   }
 
-  private String resultFilename(final SszResponse response) {
-    return response.abbreviatedHash + ".ssz";
-  }
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final SafeFuture<Optional<StateAndMetaData>> future =
+        chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
 
-  private Optional<ByteArrayInputStream> handleSszResult(
-      final Context context, final SszResponse response) {
-    return Optional.of(response.byteStream);
-  }
-
-  private Optional<String> handleJsonResult(
-      Context ctx, final ObjectAndMetaData<BeaconState> response) throws JsonProcessingException {
-    final Version version = Version.fromMilestone(response.getMilestone());
-    if (!version.equals(Version.phase0)) {
-      ctx.status(SC_BAD_REQUEST);
-      return Optional.of(
-          BadRequest.badRequest(
-              jsonProvider,
-              String.format(
-                  "Slot %s is not a phase0 slot, please fetch via /eth/v2/debug/states",
-                  response.getData().slot)));
-    }
-    return Optional.of(
-        jsonProvider.objectToJSON(new GetStateResponse(version, response.getData())));
+    request.respondAsync(
+        future.thenApply(
+            maybeStateAndMetaData ->
+                maybeStateAndMetaData
+                    .map(
+                        stateAndMetaData -> {
+                          if (JSON.equals(request.getResponseContentType(SC_OK))
+                              && (stateAndMetaData.getMilestone() != SpecMilestone.PHASE0)) {
+                            throw new BadRequestException("SpecMilestone not PHASE0");
+                          }
+                          return AsyncApiResponse.respondOk(stateAndMetaData.getData());
+                        })
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 }

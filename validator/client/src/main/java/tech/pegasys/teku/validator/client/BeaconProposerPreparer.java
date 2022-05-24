@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private boolean firstCallDone = false;
 
   private Optional<ProposerConfig> maybeProposerConfig = Optional.empty();
-  private final Optional<ProposerConfig> maybeRuntimeProposerConfig = Optional.empty();
+  private final RuntimeProposerConfig runtimeProposerConfig;
 
   BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
@@ -57,7 +58,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         Optional.of(validatorIndexProvider),
         proposerConfigProvider,
         defaultFeeRecipient,
-        spec);
+        spec,
+        Optional.empty());
   }
 
   public BeaconProposerPreparer(
@@ -65,12 +67,14 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
       Optional<ValidatorIndexProvider> validatorIndexProvider,
       ProposerConfigProvider proposerConfigProvider,
       Optional<Eth1Address> defaultFeeRecipient,
-      Spec spec) {
+      Spec spec,
+      Optional<Path> mutableProposerConfigPath) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.proposerConfigProvider = proposerConfigProvider;
     this.defaultFeeRecipient = defaultFeeRecipient;
     this.spec = spec;
+    runtimeProposerConfig = new RuntimeProposerConfig(mutableProposerConfigPath);
   }
 
   public void initialize(final Optional<ValidatorIndexProvider> provider) {
@@ -88,20 +92,24 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     }
   }
 
+  // 2 configurations, 2 defaults
+  // Priority order
+  // - Specifically configured key in --validator-proposer-config file
+  // - proposer set via the SET api (runtime configuration)
+  // - default set in --validator-proposer-config file
+  // - default set by --validators-proposer-default-fee-recipient
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
     if (validatorIndexProvider.isEmpty()
         || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
       return Optional.empty();
     }
-
     Optional<Eth1Address> maybeEth1Address =
-        maybeRuntimeProposerConfig.flatMap(
-            config -> getFeeRecipientFromProposerConfig(config, publicKey));
+        maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
     if (maybeEth1Address.isPresent()) {
       return maybeEth1Address;
     }
-    maybeEth1Address =
-        maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
+
+    maybeEth1Address = runtimeProposerConfig.getEth1AddressForPubKey(publicKey);
     if (maybeEth1Address.isPresent()) {
       return maybeEth1Address;
     }
@@ -109,6 +117,27 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     return maybeProposerConfig
         .map(proposerConfig -> proposerConfig.getDefaultConfig().map(Config::getFeeRecipient))
         .orElse(defaultFeeRecipient);
+  }
+
+  // Cannot set a fee recipient if the key is specified in the configuration file
+  // Cannot set fee recipient to 0x00
+  public void setFeeRecipient(final BLSPublicKey publicKey, final Eth1Address eth1Address)
+      throws SetFeeRecipientException {
+    if (eth1Address.equals(Eth1Address.ZERO)) {
+      throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
+    }
+    if (validatorIndexProvider.isEmpty()
+        || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
+      throw new SetFeeRecipientException(
+          "Validator public key not found when attempting to set fee recipient.");
+    }
+    Optional<Eth1Address> maybeEth1Address =
+        maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
+    if (maybeEth1Address.isPresent()) {
+      throw new SetFeeRecipientException(
+          "Validator public key has been configured in validators-proposer-config file - cannot update via api.");
+    }
+    runtimeProposerConfig.addOrUpdate(publicKey, eth1Address);
   }
 
   private Optional<Eth1Address> getFeeRecipientFromProposerConfig(

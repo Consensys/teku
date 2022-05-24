@@ -28,6 +28,9 @@
       "400" : {
         "description" : "Unable to parse request body."
       },
+      "415" : {
+        "description" : "Unsupported media-type supplied in request body."
+      },
       "500" : {
         "description" : "Beacon node experienced an internal error."
       },

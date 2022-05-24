@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_KEY_MANAGEMENT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -31,8 +32,9 @@ public class GetKeys extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
-            .withBearerAuthSecurity()
             .summary("List Keys")
+            .tags(TAG_KEY_MANAGEMENT)
+            .withBearerAuthSecurity()
             .description(
                 "List all validating pubkeys known to and decrypted by this keymanager binary")
             .response(SC_OK, "Success response", ValidatorTypes.LIST_KEYS_RESPONSE_TYPE)
