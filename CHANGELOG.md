@@ -20,5 +20,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Reduced memory requirements for storing the deposit merkle tree.
 - Enabled proposer boost on Ropsten testnet.
+- Run full fork choice prior to creating blocks.
 
 ### Bug Fixes
