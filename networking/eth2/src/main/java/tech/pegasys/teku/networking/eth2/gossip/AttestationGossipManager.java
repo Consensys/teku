@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import com.google.common.base.Throwables;
+import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +63,12 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              if (Throwables.getRootCause(error) instanceof NoPeersForOutboundMessageException) {
+              if (Throwables.getRootCause(error) instanceof MessageAlreadySeenException) {
+                LOG.debug(
+                    "Failed to publish attestation for slot {} because the message has already been seen",
+                    attestation.getData().getSlot());
+              } else if (Throwables.getRootCause(error)
+                  instanceof NoPeersForOutboundMessageException) {
                 LOG.warn(
                     "Failed to publish attestation for slot {} because no peers were available on the required gossip topic",
                     attestation.getData().getSlot());
