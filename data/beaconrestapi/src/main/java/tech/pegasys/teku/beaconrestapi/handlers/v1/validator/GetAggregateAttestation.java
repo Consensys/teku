@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ATTESTATION_DATA_ROOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
@@ -28,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -132,24 +129,11 @@ public class GetAggregateAttestation extends MigratingEndpointAdapter {
         provider.createAggregate(slot, beaconBlockRoot);
 
     request.respondAsync(
-        future
-            .thenApply(
-                maybeAttestation ->
-                    maybeAttestation
-                        .map(AsyncApiResponse::respondOk)
-                        .orElseGet(AsyncApiResponse::respondNotFound))
-            .exceptionallyCompose(
-                error -> {
-                  final Throwable rootCause = Throwables.getRootCause(error);
-
-                  if (rootCause instanceof IllegalArgumentException) {
-                    return SafeFuture.completedFuture(
-                        AsyncApiResponse.respondWithError(SC_BAD_REQUEST, error.getMessage()));
-                  }
-                  return SafeFuture.completedFuture(
-                      AsyncApiResponse.respondWithError(
-                          SC_INTERNAL_SERVER_ERROR, error.getMessage()));
-                }));
+        future.thenApply(
+            maybeAttestation ->
+                maybeAttestation
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
   private static SerializableTypeDefinition<Attestation> getResponseType(SpecConfig specConfig) {
