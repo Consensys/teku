@@ -74,7 +74,7 @@ public class GetDeposits extends MigratingEndpointAdapter {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getDeposits")
-            .summary("Deposits not yet included in the chain")
+            .summary("Deposits not yet included on the chain")
             .description(
                 "Range of deposits that could be used in new block if we are assigned to be a proposer.")
             .tags(TAG_DEBUG)
@@ -88,7 +88,7 @@ public class GetDeposits extends MigratingEndpointAdapter {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Deposits not yet included in the chain",
+      summary = "Deposits not yet included on the chain",
       description =
           "Range of deposits that could be used in new block if we are assigned to be a proposer.",
       tags = {TAG_DEBUG},
