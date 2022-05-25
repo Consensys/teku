@@ -50,7 +50,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -62,16 +61,13 @@ public class GetState extends MigratingEndpointAdapter {
   private final ChainDataProvider chainDataProvider;
 
   public GetState(
-      final DataProvider dataProvider,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final Spec spec) {
-    this(dataProvider.getChainDataProvider(), schemaDefinitionCache, spec);
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
   public GetState(
       final ChainDataProvider chainDataProvider,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final Spec spec) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getStateV2")

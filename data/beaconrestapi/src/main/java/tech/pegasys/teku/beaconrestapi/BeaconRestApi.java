@@ -205,7 +205,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
             dataProvider, spec, schemaCache));
-    addMigratedEndpoint(new GetState(dataProvider, schemaCache, spec));
+    addMigratedEndpoint(new GetState(dataProvider, schemaCache));
   }
 
   private void addHostAllowlistHandler(final BeaconRestApiConfig configuration) {
