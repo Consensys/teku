@@ -23,4 +23,10 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:ssz'))
   testImplementation 'com.squareup.okhttp3:mockwebserver'
   testImplementation 'org.mockito:mockito-core'
+
+  integrationTestImplementation testFixtures(project(':ethereum:spec'))
+  integrationTestImplementation testFixtures(project(':infrastructure:ssz'))
+  integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
+
+
 }

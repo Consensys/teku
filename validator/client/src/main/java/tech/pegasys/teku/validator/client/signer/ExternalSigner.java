@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -251,6 +252,14 @@ public class ExternalSigner implements Signer {
                         FORK_INFO,
                         forkInfo(forkInfo)),
                     slashableGenericMessage("sync committee contribution and proof")));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signValidatorRegistration(
+      final ValidatorRegistration validatorRegistration,
+      final UInt64 epoch,
+      final ForkInfo forkInfo) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
   }
 
   @Override

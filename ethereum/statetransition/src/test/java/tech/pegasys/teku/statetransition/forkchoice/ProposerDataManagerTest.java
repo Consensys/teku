@@ -140,7 +140,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
   }
 
   private void prepareRegistrations() {
-    registrations = dataStructureUtil.randomValidatorRegistrations(2);
+    registrations = dataStructureUtil.randomSignedValidatorRegistrations(2);
 
     when(executionLayerChannel.builderRegisterValidator(registrations.get(0), slot))
         .thenReturn(response1);
