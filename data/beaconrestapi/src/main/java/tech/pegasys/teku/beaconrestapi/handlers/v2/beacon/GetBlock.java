@@ -114,14 +114,14 @@ public class GetBlock extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybebeaconBlockAndMetaData ->
-                maybebeaconBlockAndMetaData
+            maybeBlockAndMetaData ->
+                maybeBlockAndMetaData
                     .map(
-                        beaconBlockAndMetaData -> {
+                        blockAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(beaconBlockAndMetaData.getMilestone()).name());
-                          return AsyncApiResponse.respondOk(beaconBlockAndMetaData);
+                              Version.fromMilestone(blockAndMetaData.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(blockAndMetaData);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
