@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Beacon" ],
     "operationId" : "getBlockV2",
-    "summary" : "Retrieves block details for given block id.",
+    "summary" : "Get block",
     "description" : "Retrieves block details for given block id.",
     "parameters" : [ {
       "name" : "block_id",

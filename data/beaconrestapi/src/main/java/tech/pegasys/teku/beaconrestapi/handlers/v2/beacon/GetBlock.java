@@ -71,7 +71,7 @@ public class GetBlock extends MigratingEndpointAdapter {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockV2")
-            .summary("Retrieves block details for given block id.")
+            .summary("Get block")
             .description("Retrieves block details for given block id.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_BLOCK_ID)
