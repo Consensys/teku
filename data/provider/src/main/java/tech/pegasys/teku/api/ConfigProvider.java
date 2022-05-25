@@ -43,7 +43,7 @@ public class ConfigProvider {
 
   public static String formatValue(final Object v) {
     if (v instanceof UInt256) {
-      return ((UInt256) v).toBigInteger().toString(10);
+      return ((UInt256) v).toDecimalString();
     }
     return v.toString();
   }
