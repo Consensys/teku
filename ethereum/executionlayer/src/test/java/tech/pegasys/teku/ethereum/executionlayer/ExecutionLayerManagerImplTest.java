@@ -141,7 +141,7 @@ class ExecutionLayerManagerImplTest {
     prepareEngineGetPayloadResponse(executionPayloadContext);
 
     // we expect result from the builder
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot, false))
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
@@ -189,7 +189,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot, false))
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
@@ -234,7 +234,46 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot, false))
+        .isCompletedWithValue(header);
+
+    // we expect only local engine have been called
+    verifyNoInteractions(executionBuilderClient);
+    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    // we expect result from the cached payload
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect no additional calls
+    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(executionEngineClient);
+  }
+
+  @Test
+  public void
+      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfForceLocalFallbacl() {
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+
+    final ExecutionPayloadHeader header =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(payload);
+
+    // we expect local engine header as result
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot, true))
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
@@ -273,7 +312,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot, false))
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
@@ -303,7 +342,8 @@ class ExecutionLayerManagerImplTest {
               final ExecutionPayloadContext executionPayloadContext =
                   dataStructureUtil.randomPayloadExecutionContext(slot, false);
               prepareEngineGetPayloadResponse(executionPayloadContext);
-              assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, slot))
+              assertThat(
+                      executionLayerManager.builderGetHeader(executionPayloadContext, slot, false))
                   .isCompleted();
             });
 

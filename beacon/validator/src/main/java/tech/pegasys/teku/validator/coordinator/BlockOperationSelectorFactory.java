@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -132,9 +133,15 @@ public class BlockOperationSelectorFactory {
                   contributionPool.createSyncAggregateForBlock(
                       blockSlotState.getSlot(), parentRoot));
 
+      final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
+
       // execution payload handling
       if (bodyBuilder.isBlinded()) {
         // an execution payload header is required
+
+        final boolean forceLocalFallback =
+            !specVersion.miscHelpers().isMergeTransitionComplete(blockSlotState);
+
         bodyBuilder.executionPayloadHeader(
             payloadProvider(
                 parentRoot,
@@ -145,8 +152,9 @@ public class BlockOperationSelectorFactory {
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
                 (executionPayloadContext) ->
-                    executionLayerChannel.builderGetHeader(
-                        executionPayloadContext, blockSlotState.getSlot())));
+                    executionLayerChannel
+                        .builderGetHeader(
+                            executionPayloadContext, blockSlotState.getSlot(), forceLocalFallback)));
         return;
       }
 
@@ -156,8 +164,7 @@ public class BlockOperationSelectorFactory {
               parentRoot,
               blockSlotState,
               () ->
-                  SchemaDefinitionsBellatrix.required(
-                          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                  SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
                       .getExecutionPayloadSchema()
                       .getDefault(),
               (executionPayloadContext) ->

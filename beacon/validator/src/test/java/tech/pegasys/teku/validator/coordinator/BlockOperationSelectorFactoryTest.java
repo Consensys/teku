@@ -129,6 +129,11 @@ class BlockOperationSelectorFactoryTest {
           .getExecutionPayloadSchema()
           .getDefault();
 
+  private final ExecutionPayloadHeader executionPayloadHeaderOfDefaultPayload =
+          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+                  .getExecutionPayloadHeaderSchema()
+                  .getHeaderOfDefaultPayload();
+
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false);
 
@@ -275,12 +280,23 @@ class BlockOperationSelectorFactoryTest {
   @Test
   void shouldIncludeDefaultExecutionPayload() {
     final UInt64 slot = UInt64.ONE;
-    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
     factory
         .createSelector(
             parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
         .accept(bodyBuilder);
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
+  }
+
+  @Test
+  void shouldIncludeExecutionPayloadHeaderOfDefaultPayload() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
+    factory
+            .createSelector(
+                    parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            .accept(blindedBodyBuilder);
+    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(executionPayloadHeaderOfDefaultPayload);
   }
 
   @Test
@@ -317,7 +333,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, slot))
+    when(executionLayer.builderGetHeader(executionPayloadContext, slot, false))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory
@@ -348,6 +364,29 @@ class BlockOperationSelectorFactoryTest {
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
+  @Test
+  void shouldIncludeExecutionPayloadIfBlindedBlockRequestedButPreMerge() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false);
+    final ExecutionPayloadHeader randomExecutionPayloadHeader =
+        dataStructureUtil.randomExecutionPayloadHeader();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    when(executionLayer.builderGetHeader(executionPayloadContext, slot, true))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
+
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(blindedBodyBuilder);
+
+    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
   }
 
   @Test

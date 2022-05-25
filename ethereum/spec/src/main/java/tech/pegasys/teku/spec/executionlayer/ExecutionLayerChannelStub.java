@@ -268,7 +268,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt64 slot,
+      boolean forceLocalFallback) {
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
         executionPayloadContext,

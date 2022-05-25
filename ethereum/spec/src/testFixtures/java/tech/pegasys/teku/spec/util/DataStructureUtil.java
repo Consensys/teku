@@ -1260,6 +1260,20 @@ public final class DataStructureUtil {
     return randomBeaconState().updated(state -> state.setSlot(slot));
   }
 
+  public BeaconState randomBeaconStatePreMerge(UInt64 slot) {
+    return randomBeaconState()
+        .updated(state -> state.setSlot(slot))
+        .updated(
+            state ->
+                state
+                    .toMutableVersionBellatrix()
+                    .orElseThrow()
+                    .setLatestExecutionPayloadHeader(
+                        getBellatrixSchemaDefinitions(slot)
+                            .getExecutionPayloadHeaderSchema()
+                            .getDefault()));
+  }
+
   public AnchorPoint randomAnchorPoint(final long epoch) {
     return randomAnchorPoint(UInt64.valueOf(epoch));
   }
