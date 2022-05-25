@@ -130,9 +130,9 @@ class BlockOperationSelectorFactoryTest {
           .getDefault();
 
   private final ExecutionPayloadHeader executionPayloadHeaderOfDefaultPayload =
-          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-                  .getExecutionPayloadHeaderSchema()
-                  .getHeaderOfDefaultPayload();
+      SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+          .getExecutionPayloadHeaderSchema()
+          .getHeaderOfDefaultPayload();
 
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false);
@@ -293,10 +293,11 @@ class BlockOperationSelectorFactoryTest {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
     factory
-            .createSelector(
-                    parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
-            .accept(blindedBodyBuilder);
-    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(executionPayloadHeaderOfDefaultPayload);
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(blindedBodyBuilder);
+    assertThat(blindedBodyBuilder.executionPayloadHeader)
+        .isEqualTo(executionPayloadHeaderOfDefaultPayload);
   }
 
   @Test
