@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -102,8 +103,8 @@ public class BlockProposalUtil {
             })
         .exceptionallyCompose(
             error -> {
-              if (error instanceof BlockProcessingException) {
-                return SafeFuture.failedFuture(new StateTransitionException((Exception) error));
+              if (ExceptionUtil.getCause(error, BlockProcessingException.class).isPresent()) {
+                return SafeFuture.failedFuture(new StateTransitionException(error));
               }
               return SafeFuture.failedFuture(error);
             });

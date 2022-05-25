@@ -4,6 +4,7 @@ dependencies {
     api 'org.apache.tuweni:tuweni-bytes'
 
     implementation project(':infrastructure:ssz')
+    implementation project(':infrastructure:exceptions')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

@@ -21,7 +21,7 @@ public class StateTransitionException extends Exception {
     super(message);
   }
 
-  public StateTransitionException(Exception e) {
+  public StateTransitionException(Throwable e) {
     super(e);
   }
 }
