@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORT
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -29,24 +30,23 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
 
-  private final ResponseHandler<Object> responseHandler =
+  private final ResponseHandler<Object> sszResponseHandler =
       new ResponseHandler<>()
-          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedResponse);
+          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedSszRequest);
 
-  private final boolean preferSszEncoding;
-  private volatile boolean unsupportedMediaType = false;
+  private final AtomicBoolean preferSszEncoding;
 
   public RegisterValidatorsRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final boolean preferSszEncoding) {
     super(baseEndpoint, okHttpClient);
-    this.preferSszEncoding = preferSszEncoding;
+    this.preferSszEncoding = new AtomicBoolean(preferSszEncoding);
   }
 
   public void registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
-    if (preferSszEncoding && !unsupportedMediaType) {
+    if (preferSszEncoding.get()) {
       sendValidatorRegistrationsAsSszOrFallback(validatorRegistrations);
     } else {
       sendValidatorRegistrationsAsJson(validatorRegistrations);
@@ -56,7 +56,7 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
   private void sendValidatorRegistrationsAsSszOrFallback(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     sendValidatorRegistrationsAsSsz(validatorRegistrations);
-    if (unsupportedMediaType) {
+    if (!preferSszEncoding.get()) {
       sendValidatorRegistrationsAsJson(validatorRegistrations);
     }
   }
@@ -69,7 +69,7 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
         ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA
             .sszSerialize(validatorRegistrations)
             .toArray(),
-        responseHandler);
+        sszResponseHandler);
   }
 
   private void sendValidatorRegistrationsAsJson(
@@ -79,12 +79,12 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
         Collections.emptyMap(),
         validatorRegistrations,
         ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
-        responseHandler);
+        new ResponseHandler<>());
   }
 
-  private Optional<Object> handleUnsupportedResponse(
+  private Optional<Object> handleUnsupportedSszRequest(
       final Request request, final Response response) {
-    unsupportedMediaType = true;
+    preferSszEncoding.set(false);
     return Optional.empty();
   }
 }

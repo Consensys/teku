@@ -19,6 +19,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SE
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,19 +31,18 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
-  private final ResponseHandler<Object> responseHandler =
+  private final ResponseHandler<Object> sszResponseHandler =
       new ResponseHandler<>()
-          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedResponse);
+          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedSszRequest);
 
-  private final boolean preferSszBlockEncoding;
-  private volatile boolean unsupportedMediaType = false;
+  private final AtomicBoolean preferSszBlockEncoding;
 
   public SendSignedBlockRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
-    this.preferSszBlockEncoding = preferSszBlockEncoding;
+    this.preferSszBlockEncoding = new AtomicBoolean(preferSszBlockEncoding);
   }
 
   public SendSignedBlockResult sendSignedBlock(SignedBeaconBlock signedBeaconBlock) {
@@ -51,7 +51,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             ? SEND_SIGNED_BLINDED_BLOCK
             : SEND_SIGNED_BLOCK;
 
-    return preferSszBlockEncoding && !unsupportedMediaType
+    return preferSszBlockEncoding.get()
         ? sendSignedBlockAsSszOrFallback(signedBeaconBlock, apiMethod)
         : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
   }
@@ -59,7 +59,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
   private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
       final SignedBeaconBlock signedBeaconBlock, final ValidatorApiMethod apiMethod) {
     final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBeaconBlock);
-    if (!result.isPublished() && unsupportedMediaType) {
+    if (!result.isPublished() && !preferSszBlockEncoding.get()) {
       return sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
     }
     return result;
@@ -71,7 +71,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             apiMethod,
             Collections.emptyMap(),
             signedBeaconBlock.sszSerialize().toArray(),
-            responseHandler)
+            sszResponseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
@@ -83,14 +83,14 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             Collections.emptyMap(),
             signedBeaconBlock,
             signedBeaconBlock.getSchema().getJsonTypeDefinition(),
-            responseHandler)
+            new ResponseHandler<>())
         .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
-  private Optional<Object> handleUnsupportedResponse(
+  private Optional<Object> handleUnsupportedSszRequest(
       final Request request, final Response response) {
-    unsupportedMediaType = true;
+    preferSszBlockEncoding.set(false);
     return Optional.empty();
   }
 }

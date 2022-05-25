@@ -44,11 +44,16 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsReq
     network = {Eth2Network.MAINNET})
 class OkHttpValidatorTypeDefClientTest {
 
+  private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
+  private static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
+
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private DataStructureUtil dataStructureUtil;
 
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;
+
+  private RegisterValidatorsRequest sszRegisterValidatorsRequest;
 
   private final MockWebServer mockWebServer = new MockWebServer();
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
@@ -59,6 +64,8 @@ class OkHttpValidatorTypeDefClientTest {
     okHttpValidatorTypeDefClient =
         new OkHttpValidatorTypeDefClient(
             okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false);
+    sszRegisterValidatorsRequest =
+        new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
     dataStructureUtil = specContext.getDataStructureUtil();
   }
 
@@ -84,10 +91,7 @@ class OkHttpValidatorTypeDefClientTest {
 
     RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
-    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/register_validator");
-    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-    assertThat(recordedRequest.getHeader("Content-Type"))
-        .isEqualTo("application/json; charset=utf-8");
+    verifyRegisterValidatorsPostRequest(recordedRequest, JSON_CONTENT_TYPE);
 
     String actualRequest = recordedRequest.getBody().readUtf8();
 
@@ -126,21 +130,16 @@ class OkHttpValidatorTypeDefClientTest {
   @TestTemplate
   void registerValidators_makesSszRequestIfSszEncodingPreferred() throws InterruptedException {
 
-    RegisterValidatorsRequest registerValidatorsRequest =
-        new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
-
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
     SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomValidatorRegistrations(5);
 
-    registerValidatorsRequest.registerValidators(validatorRegistrations);
+    sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
 
     RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
-    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/register_validator");
-    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/octet-stream");
+    verifyRegisterValidatorsPostRequest(recordedRequest, OCTET_STREAM_CONTENT_TYPE);
 
     byte[] sszBytes = recordedRequest.getBody().readByteArray();
 
@@ -149,6 +148,38 @@ class OkHttpValidatorTypeDefClientTest {
 
     SszDataAssert.assertThatSszData(deserializedSszBytes)
         .isEqualByAllMeansTo(validatorRegistrations);
+  }
+
+  @TestTemplate
+  void registerValidators_fallbacksToJsonIfSszNotSupported() throws InterruptedException {
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(415));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+    SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomValidatorRegistrations(5);
+
+    sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
+
+    verifyRegisterValidatorsPostRequest(mockWebServer.takeRequest(), OCTET_STREAM_CONTENT_TYPE);
+    verifyRegisterValidatorsPostRequest(mockWebServer.takeRequest(), JSON_CONTENT_TYPE);
+
+    // subsequent requests default immediately to json
+    sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(3);
+
+    verifyRegisterValidatorsPostRequest(mockWebServer.takeRequest(), JSON_CONTENT_TYPE);
+  }
+
+  private void verifyRegisterValidatorsPostRequest(
+      RecordedRequest recordedRequest, String expectedContentType) {
+    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/register_validator");
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(expectedContentType);
   }
 
   private void assertJsonEquals(String actual, String expected) {
