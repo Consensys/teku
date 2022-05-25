@@ -64,7 +64,7 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
   private void sendValidatorRegistrationsAsSsz(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     postOctetStream(
-        ValidatorApiMethod.REGISTER_VALIDATORS,
+        ValidatorApiMethod.REGISTER_VALIDATOR,
         Collections.emptyMap(),
         ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA
             .sszSerialize(validatorRegistrations)
@@ -75,7 +75,7 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
   private void sendValidatorRegistrationsAsJson(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     postJson(
-        ValidatorApiMethod.REGISTER_VALIDATORS,
+        ValidatorApiMethod.REGISTER_VALIDATOR,
         Collections.emptyMap(),
         validatorRegistrations,
         ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
