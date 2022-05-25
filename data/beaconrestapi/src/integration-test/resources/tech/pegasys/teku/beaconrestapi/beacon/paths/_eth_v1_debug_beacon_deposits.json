@@ -1,0 +1,26 @@
+{
+  "get" : {
+    "tags" : [ "Debug" ],
+    "summary" : "Deposits not yet included in the chain",
+    "description" : "Range of deposits that could be used in new block if we are assigned to be a proposer.",
+    "operationId" : "getEthV1DebugBeaconDeposits",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetDepositsResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

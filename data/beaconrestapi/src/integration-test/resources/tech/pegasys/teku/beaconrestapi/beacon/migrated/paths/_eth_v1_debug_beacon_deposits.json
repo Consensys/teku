@@ -1,0 +1,40 @@
+{
+  "get" : {
+    "tags" : [ "Debug" ],
+    "operationId" : "getDeposits",
+    "summary" : "Deposits not yet included in the chain",
+    "description" : "Range of deposits that could be used in new block if we are assigned to be a proposer.",
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetDepositsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
