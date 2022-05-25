@@ -44,10 +44,11 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 public class CreateBlockRequest extends AbstractTypeDefRequest {
   private static final Logger LOG = LogManager.getLogger();
   private final UInt64 slot;
-  private DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
+  private final DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
   private final BeaconBlockSchema beaconBlockSchema;
   private final ValidatorApiMethod apiMethod;
   private final boolean preferSszBlockEncoding;
+  private final ResponseHandler<GetBlockResponse> responseHandler;
 
   public CreateBlockRequest(
       final HttpUrl baseEndpoint,
@@ -78,6 +79,9 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
                 GetBlockResponse::getSpecMilestone,
                 GetBlockResponse::setSpecMilestone)
             .build();
+    this.responseHandler =
+        new ResponseHandler<>(getBlockResponseDefinition)
+            .withHandler(SC_OK, this::handleBeaconBlockResult);
   }
 
   public Optional<BeaconBlock> createUnsignedBlock(
@@ -92,13 +96,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
       headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
 
-    return get(
-            apiMethod,
-            Map.of("slot", slot.toString()),
-            queryParams,
-            headers,
-            new ResponseHandler<>(getBlockResponseDefinition)
-                .withHandler(SC_OK, this::handleBeaconBlockResult))
+    return get(apiMethod, Map.of("slot", slot.toString()), queryParams, headers, responseHandler)
         .map(GetBlockResponse::getData);
   }
 
