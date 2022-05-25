@@ -15,8 +15,8 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ATTESTATION_DATA_ROOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_FORBIDDEN;
@@ -26,44 +26,63 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.beaconrestapi.schema.ErrorResponse;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
-public class GetAggregateAttestation extends AbstractHandler implements Handler {
+public class GetAggregateAttestation extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/aggregate_attestation";
   private final ValidatorDataProvider provider;
 
-  public GetAggregateAttestation(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getValidatorDataProvider(), jsonProvider);
+  private static final ParameterMetadata<UInt64> SLOT_PARAM =
+      SLOT_PARAMETER.withDescription(
+          "`uint64` Non-finalized slot for which to create the aggregation.");
+
+  public GetAggregateAttestation(final DataProvider dataProvider, final Spec spec) {
+    this(dataProvider.getValidatorDataProvider(), spec);
   }
 
-  public GetAggregateAttestation(
-      final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetAggregateAttestation(final ValidatorDataProvider provider, final Spec spec) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getAggregateAttestation")
+            .summary("Get aggregated attestations")
+            .description(
+                "Aggregates all attestations matching given attestation data root and slot.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .queryParamRequired(ATTESTATION_DATA_ROOT_PARAMETER)
+            .queryParamRequired(SLOT_PARAM)
+            .response(
+                HttpStatusCodes.SC_OK,
+                "Request successful",
+                getResponseType(spec.getGenesisSpecConfig()))
+            .withNotFoundResponse()
+            .build());
     this.provider = provider;
   }
 
@@ -100,56 +119,45 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
-  public void handle(Context ctx) throws Exception {
-
-    try {
-      final Map<String, List<String>> parameters = ctx.queryParamMap();
-      if (parameters.size() < 2) {
-        throw new IllegalArgumentException(
-            String.format("Please specify both %s and %s", ATTESTATION_DATA_ROOT, SLOT));
-      }
-      Bytes32 beaconBlockRoot = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
-      final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
-
-      ctx.future(
-          provider
-              .createAggregate(slot, beaconBlockRoot)
-              .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
-              .exceptionallyCompose(error -> handleError(ctx, error)));
-    } catch (final IllegalArgumentException e) {
-      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
-    }
+  public void handle(@NotNull Context ctx) throws Exception {
+    adapt(ctx);
   }
 
-  private String serializeResult(final Context ctx, final Optional<Attestation> optionalAttestation)
-      throws com.fasterxml.jackson.core.JsonProcessingException {
-    if (optionalAttestation.isPresent()) {
-      ctx.status(SC_OK);
-      return jsonProvider.objectToJSON(
-          new GetAggregatedAttestationResponse(optionalAttestation.get()));
-    } else {
-      ctx.status(SC_NOT_FOUND);
-      return "";
-    }
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final Bytes32 beaconBlockRoot = request.getQueryParameter(ATTESTATION_DATA_ROOT_PARAMETER);
+    final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
+
+    final SafeFuture<Optional<Attestation>> future =
+        provider.createAggregate(slot, beaconBlockRoot);
+
+    request.respondAsync(
+        future
+            .thenApply(
+                maybeAttestation ->
+                    maybeAttestation
+                        .map(AsyncApiResponse::respondOk)
+                        .orElseGet(AsyncApiResponse::respondNotFound))
+            .exceptionallyCompose(
+                error -> {
+                  final Throwable rootCause = Throwables.getRootCause(error);
+
+                  if (rootCause instanceof IllegalArgumentException) {
+                    return SafeFuture.completedFuture(
+                        AsyncApiResponse.respondWithError(SC_BAD_REQUEST, error.getMessage()));
+                  }
+                  return SafeFuture.completedFuture(
+                      AsyncApiResponse.respondWithError(
+                          SC_INTERNAL_SERVER_ERROR, error.getMessage()));
+                }));
   }
 
-  /*
-   At the moment we aren't enforcing:
-   `Beacon node was not assigned to aggregate on that subnet` that should return a status code 403
-  */
-  private CompletionStage<String> handleError(final Context ctx, final Throwable error) {
-    if (Throwables.getRootCause(error) instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return error(SC_BAD_REQUEST, error);
-    } else {
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
-      return error(SC_INTERNAL_SERVER_ERROR, error);
-    }
-  }
+  private static SerializableTypeDefinition<Attestation> getResponseType(SpecConfig specConfig) {
+    Attestation.AttestationSchema dataSchema = new Attestation.AttestationSchema(specConfig);
 
-  private SafeFuture<String> error(final int code, final Throwable error) {
-    return SafeFuture.of(
-        () -> jsonProvider.objectToJSON(new ErrorResponse(code, error.getMessage())));
+    return SerializableTypeDefinition.object(Attestation.class)
+        .name("GetAggregatedAttestationResponse")
+        .withField("data", dataSchema.getJsonTypeDefinition(), Function.identity())
+        .build();
   }
 }
