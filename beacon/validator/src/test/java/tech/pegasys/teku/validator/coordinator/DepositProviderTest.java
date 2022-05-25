@@ -288,6 +288,27 @@ public class DepositProviderTest {
         .hasMessageContaining("7 to 9");
   }
 
+  @Test
+  void whenAllDepositsIncludedCallingPendingDeposits_NoDepositReturned() {
+    setup(5);
+    mockStateEth1DepositIndex(10);
+    mockDepositsFromEth1Block(0, 10);
+    List<Deposit> deposits = depositProvider.getAllPendingDeposits(state);
+    assertThat(deposits).isEmpty();
+  }
+
+  @Test
+  void whenSomeDepositsNotIncludedCallingPendingDeposits_NotIncludedYetReturned() {
+    setup(10);
+    mockStateEth1DepositIndex(2);
+    mockDepositsFromEth1Block(0, 10);
+    List<Deposit> allPendingDeposits = depositProvider.getAllPendingDeposits(state);
+    assertThat(allPendingDeposits.size()).isEqualTo(8);
+    mockEth1DataDepositCount(10);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    assertThat(deposits.asList()).isEqualTo(allPendingDeposits);
+  }
+
   private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     deposits.forEach(

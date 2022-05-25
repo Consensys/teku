@@ -74,6 +74,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.coordinator.DepositProvider;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
@@ -112,6 +113,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  protected final DepositProvider depositProvider = mock(DepositProvider.class);
 
   private StorageSystem storageSystem;
 
@@ -192,6 +194,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     beaconRestApi =
         new BeaconRestApi(
             dataProvider,
+            depositProvider,
             config,
             eventChannels,
             SyncAsyncRunner.SYNC_RUNNER,
