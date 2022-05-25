@@ -386,7 +386,7 @@ public class BeaconRestApi {
             dataProvider, jsonProvider));
     addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
-    app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAttestationData(dataProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
     app.post(

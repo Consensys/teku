@@ -13,120 +13,67 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.BeforeEach;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
-import tech.pegasys.teku.api.schema.AttestationData;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
-class GetAttestationDataTest {
-
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-  private Context context = mock(Context.class);
-  private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private GetAttestationData handler;
-  private AttestationData attestationData =
-      new AttestationData(dataStructureUtil.randomAttestationData());
-
-  @SuppressWarnings("unchecked")
-  final ArgumentCaptor<SafeFuture<String>> resultCaptor = ArgumentCaptor.forClass(SafeFuture.class);
-
-  @BeforeEach
-  public void setup() {
-    handler = new GetAttestationData(provider, jsonProvider);
-  }
+class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
+  private final GetAttestationData handler = new GetAttestationData(validatorDataProvider);
+  private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
   @Test
-  void shouldRejectTooFewArguments() throws Exception {
-    badRequestParamsTest(Map.of(), "Please specify both slot and committee_index");
-  }
+  void shouldReturnAttestationDataInformation() throws Exception {
+    request.setQueryParameter(SLOT, "1");
+    request.setQueryParameter(COMMITTEE_INDEX, "1");
 
-  @Test
-  void shouldRejectWithoutSlot() throws Exception {
-    badRequestParamsTest(
-        Map.of("foo", List.of(), "Foo2", List.of()), "'slot' cannot be null or empty.");
-  }
-
-  @Test
-  void shouldRejectWithoutCommitteeIndex() throws Exception {
-    badRequestParamsTest(
-        Map.of(SLOT, List.of("1"), "Foo2", List.of()),
-        "'committee_index' cannot be null or empty.");
-  }
-
-  @Test
-  void shouldRejectNegativeCommitteeIndex() throws Exception {
-    badRequestParamsTest(
-        Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("-1")),
-        "'committee_index' needs to be greater than or equal to 0.");
-  }
-
-  @Test
-  void shouldReturnNoContentIfNotReady() throws Exception {
-    Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
-
-    when(context.queryParamMap()).thenReturn(params);
-    when(provider.createAttestationDataAtSlot(UInt64.ONE, 1))
-        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
-    handler.handle(context);
-
-    verify(context).future(resultCaptor.capture());
-    final SafeFuture<String> result = resultCaptor.getValue();
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
-  }
-
-  @Test
-  void shouldReturnAttestationData() throws Exception {
-    Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
-
-    when(context.queryParamMap()).thenReturn(params);
-    when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.createAttestationDataAtSlot(UInt64.ONE, 1))
+    when(validatorDataProvider.createAttestationDataAtSlot(UInt64.ONE, 1))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
-    handler.handle(context);
 
-    verify(context).future(resultCaptor.capture());
-    final SafeFuture<String> result = resultCaptor.getValue();
-    assertThat(result)
-        .isCompletedWithValue(
-            jsonProvider.objectToJSON(new GetAttestationDataResponse(attestationData)));
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(attestationData);
   }
 
-  private void badRequestParamsTest(final Map<String, List<String>> params, String message)
-      throws Exception {
-    when(context.queryParamMap()).thenReturn(params);
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, HttpStatusCodes.SC_BAD_REQUEST);
+  }
 
-    handler.handle(context);
-    verify(context).status(SC_BAD_REQUEST);
+  @Test
+  void metadata_shouldHandle404() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, HttpStatusCodes.SC_NOT_FOUND);
+  }
 
-    if (StringUtils.isNotEmpty(message)) {
-      BadRequest badRequest = new BadRequest(message);
-      verify(context).json(jsonProvider.objectToJSON(badRequest));
-    }
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final String data = getResponseStringFromMetadata(handler, SC_OK, attestationData);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(GetAttestationDataTest.class, "getAttestationData.json"), UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }

@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -154,7 +155,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createAttestationData(ONE, 0))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Computer says no")));
 
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ONE, 0);
     verify(validatorApiChannel).createAttestationData(ONE, 0);
     SafeFutureAssert.assertThatSafeFuture(result)
@@ -164,7 +165,7 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getAttestationDataAtSlot_shouldThrowIfStoreNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ZERO, 0);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
@@ -177,7 +178,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createAttestationData(ZERO, 0))
         .thenReturn(completedFuture(Optional.empty()));
 
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ZERO, 0);
     verify(validatorApiChannel).createAttestationData(ZERO, 0);
     assertThat(result).isCompletedWithValue(Optional.empty());
@@ -245,13 +246,13 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createAttestationData(ONE, 0))
         .thenReturn(completedFuture(Optional.of(internalData)));
 
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ONE, 0);
     assertThat(result).isCompleted();
-    tech.pegasys.teku.api.schema.AttestationData data = result.join().orElseThrow();
-    assertThat(data.index).isEqualTo(internalData.getIndex());
-    assertThat(data.slot).isEqualTo(internalData.getSlot());
-    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeaconBlockRoot());
+    AttestationData data = result.join().orElseThrow();
+    assertThat(data.getIndex()).isEqualTo(internalData.getIndex());
+    assertThat(data.getSlot()).isEqualTo(internalData.getSlot());
+    assertThat(data.getBeaconBlockRoot()).isEqualTo(internalData.getBeaconBlockRoot());
   }
 
   @TestTemplate

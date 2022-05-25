@@ -83,6 +83,15 @@ public class BeaconRestApiTypes {
           COMMITTEE_INDEX,
           CoreTypes.UINT64_TYPE.withDescription(COMMITTEE_INDEX_QUERY_DESCRIPTION));
 
+  public static final ParameterMetadata<Integer>
+      // TODO This one is an Int, previously COMMITTEE_INDEX_PARAMETER have been UInt64. Is this
+      // correct?
+      COMMITTEE_INDEX_PARAMETER_INT =
+      new ParameterMetadata<>(
+          COMMITTEE_INDEX,
+          CoreTypes.INTEGER_TYPE.withDescription(
+              "`Integer` The committee index for which an attestation data should be created."));
+
   public static final ParameterMetadata<Bytes32> PARENT_ROOT_PARAMETER =
       new ParameterMetadata<>(
           PARENT_ROOT, CoreTypes.BYTES32_TYPE.withDescription("Not currently supported."));
