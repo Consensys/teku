@@ -123,7 +123,7 @@ public class LocalSigner implements Signer {
       final ForkInfo forkInfo) {
     return sign(
         signingRootUtil.signingRootForValidatorRegistration(
-            epoch, validatorRegistration, forkInfo));
+            validatorRegistration, epoch, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

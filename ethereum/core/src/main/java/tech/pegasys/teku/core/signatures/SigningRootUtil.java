@@ -111,8 +111,8 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForValidatorRegistration(
-      final UInt64 epoch,
       final ValidatorRegistration validatorRegistration,
+      final UInt64 epoch,
       final ForkInfo forkInfo) {
     final SpecVersion specVersion = spec.atEpoch(epoch);
     final Bytes32 domain =
