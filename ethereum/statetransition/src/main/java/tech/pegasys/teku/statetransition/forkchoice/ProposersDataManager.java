@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -99,8 +100,7 @@ public class ProposersDataManager {
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
-      final Collection<SignedValidatorRegistration> validatorRegistrations,
-      final UInt64 currentSlot) {
+      final SszList<SignedValidatorRegistration> validatorRegistrations, final UInt64 currentSlot) {
     // Remove expired validators
     validatorRegistrationInfoByValidatorIndex
         .values()

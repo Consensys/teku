@@ -39,12 +39,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SchemaObjectsTestFixture {
 
-  private final Spec spec;
   private final DataStructureUtil dataStructureUtil;
 
   public SchemaObjectsTestFixture(final Spec spec) {
-    this.spec = spec;
-    this.dataStructureUtil = new DataStructureUtil(this.spec);
+    this.dataStructureUtil = new DataStructureUtil(spec);
   }
 
   public SchemaObjectsTestFixture() {

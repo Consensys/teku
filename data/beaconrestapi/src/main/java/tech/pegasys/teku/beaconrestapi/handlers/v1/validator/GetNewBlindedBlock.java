@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -49,7 +50,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -68,9 +68,6 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/validator/blinded_blocks/:slot";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ValidatorDataProvider provider;
-
-  private static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION =
-      DeserializableTypeDefinition.enumOf(SpecMilestone.class);
 
   public GetNewBlindedBlock(
       final DataProvider dataProvider,
@@ -168,7 +165,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                     Function.identity())
                 .withField(
                     "version",
-                    SPEC_VERSION,
+                    MILESTONE_TYPE,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build(),
             sszResponseType(

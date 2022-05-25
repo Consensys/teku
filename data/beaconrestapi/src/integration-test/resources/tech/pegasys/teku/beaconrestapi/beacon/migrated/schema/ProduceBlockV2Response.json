@@ -16,7 +16,7 @@
     },
     "version" : {
       "type" : "string",
-      "enum" : [ "PHASE0", "ALTAIR", "BELLATRIX" ]
+      "enum" : [ "phase0", "altair", "bellatrix" ]
     }
   }
 }

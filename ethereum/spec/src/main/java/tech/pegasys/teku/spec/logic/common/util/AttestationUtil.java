@@ -176,13 +176,14 @@ public class AttestationUtil {
               }
               return result;
             })
-        .exceptionally(
+        .exceptionallyCompose(
             err -> {
               if (err.getCause() instanceof IllegalArgumentException) {
                 LOG.debug("on_attestation: Attestation is not valid: ", err);
-                return AttestationProcessingResult.invalid(err.getMessage());
+                return SafeFuture.completedFuture(
+                    AttestationProcessingResult.invalid(err.getMessage()));
               } else {
-                throw new RuntimeException(err);
+                return SafeFuture.failedFuture(err);
               }
             });
   }
