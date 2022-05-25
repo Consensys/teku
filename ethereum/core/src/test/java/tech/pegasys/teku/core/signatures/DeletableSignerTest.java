@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -221,6 +222,19 @@ public class DeletableSignerTest {
   }
 
   @Test
+  void signValidatorRegistration_shouldSignWhenActive() {
+
+    final ValidatorRegistration validatorRegistration =
+        dataStructureUtil.randomValidatorRegistration();
+    when(delegate.signValidatorRegistration(validatorRegistration, UInt64.ONE, forkInfo))
+        .thenReturn(signatureFuture);
+
+    assertThatSafeFuture(
+            signer.signValidatorRegistration(validatorRegistration, UInt64.ONE, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
   void delete_shouldCallDeleteOnDelegate() {
     signer.delete();
     verify(delegate).delete();
@@ -230,11 +244,26 @@ public class DeletableSignerTest {
   void signContributionAndProof_shouldNotSignWhenDisabled() {
     final ContributionAndProof contributionAndProof =
         dataStructureUtil.randomSignedContributionAndProof(6L).getMessage();
-    when(delegate.signContributionAndProof(contributionAndProof, forkInfo))
-        .thenReturn(signatureFuture);
+    signer.delete();
 
     assertThatSafeFuture(signer.signContributionAndProof(contributionAndProof, forkInfo))
-        .isCompletedWithValue(signature);
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+
+    verify(delegate, never()).signContributionAndProof(contributionAndProof, forkInfo);
+  }
+
+  @Test
+  void signValidatorRegistration_shouldNotSignWhenDisabled() {
+    final ValidatorRegistration validatorRegistration =
+        dataStructureUtil.randomValidatorRegistration();
+    signer.delete();
+
+    assertThatSafeFuture(
+            signer.signValidatorRegistration(validatorRegistration, UInt64.ONE, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+
+    verify(delegate, never())
+        .signValidatorRegistration(validatorRegistration, UInt64.ONE, forkInfo);
   }
 
   @Test

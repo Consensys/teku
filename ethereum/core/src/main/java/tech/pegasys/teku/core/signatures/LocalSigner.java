@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -113,6 +114,16 @@ public class LocalSigner implements Signer {
             contributionAndProof.getContribution().getSlot(),
             utils -> utils.getContributionAndProofSigningRoot(contributionAndProof, forkInfo))
         .thenCompose(this::sign);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signValidatorRegistration(
+      final ValidatorRegistration validatorRegistration,
+      final UInt64 epoch,
+      final ForkInfo forkInfo) {
+    return sign(
+        signingRootUtil.signingRootForValidatorRegistration(
+            epoch, validatorRegistration, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

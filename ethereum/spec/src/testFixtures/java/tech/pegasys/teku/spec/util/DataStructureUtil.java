@@ -1151,25 +1151,35 @@ public final class DataStructureUtil {
         randomUInt64(),
         randomBytes32(),
         randomEth1Address(),
-        withValidatorRegistration ? Optional.of(randomValidatorRegistration()) : Optional.empty());
+        withValidatorRegistration
+            ? Optional.of(randomSignedValidatorRegistration())
+            : Optional.empty());
   }
 
-  public SignedValidatorRegistration randomValidatorRegistration() {
-    return randomValidatorRegistration(randomPublicKey());
+  public ValidatorRegistration randomValidatorRegistration() {
+    return VALIDATOR_REGISTRATION_SCHEMA.create(
+        randomBytes20(), randomUInt64(), randomUInt64(), randomPublicKey());
   }
 
-  public SignedValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
-    final ValidatorRegistration validatorRegistration =
-        VALIDATOR_REGISTRATION_SCHEMA.create(
-            randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
-
-    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(validatorRegistration, randomSignature());
+  public ValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
+    return VALIDATOR_REGISTRATION_SCHEMA.create(
+        randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
   }
 
-  public SszList<SignedValidatorRegistration> randomValidatorRegistrations(final int size) {
+  public SignedValidatorRegistration randomSignedValidatorRegistration() {
+    return randomSignedValidatorRegistration(randomPublicKey());
+  }
+
+  public SignedValidatorRegistration randomSignedValidatorRegistration(
+      final BLSPublicKey publicKey) {
+    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
+        randomValidatorRegistration(publicKey), randomSignature());
+  }
+
+  public SszList<SignedValidatorRegistration> randomSignedValidatorRegistrations(final int size) {
     return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
         IntStream.range(0, size)
-            .mapToObj(__ -> randomValidatorRegistration())
+            .mapToObj(__ -> randomSignedValidatorRegistration())
             .collect(Collectors.toUnmodifiableList()));
   }
 

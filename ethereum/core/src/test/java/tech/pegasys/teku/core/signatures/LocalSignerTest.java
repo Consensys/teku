@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -132,6 +133,22 @@ class LocalSignerTest {
                 "qumUYTSgi8hmsS3/a1oDLGSIfOQ4+PgByZpDprnvlQKaDTXnlzGQloQ/W0kAeMa8EhXvGvF0OiGkQxEEznpVsFNhZ01H+3S2StWqq7S0mbRcbJhT6fEcyrOMqRer36q8"));
 
     final SafeFuture<BLSSignature> result = signer.signVoluntaryExit(voluntaryExit, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignValidatorRegistration() {
+    final ValidatorRegistration validatorRegistration =
+        dataStructureUtil.randomValidatorRegistration();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "hQLueiLQoxQIVdziM1Fu9VRFHUdHsyBVdTezeBQBlJ7eLL/7o4fVCEwn7C4DShcmFpYiUjU2Fx942SGPTHGyn42dEMsB/GX1s+jJ0ynkTGiFVFGujX8de2UELM5QExg3"));
+
+    final SafeFuture<BLSSignature> result =
+        signer.signValidatorRegistration(validatorRegistration, UInt64.valueOf(7), fork);
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompletedWithValue(expectedSignature);
