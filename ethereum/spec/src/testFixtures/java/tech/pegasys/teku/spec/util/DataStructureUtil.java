@@ -926,27 +926,33 @@ public final class DataStructureUtil {
   public BeaconBlockBody randomFullBeaconBlockBody() {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
-    return schema.createBlockBody(
-        builder ->
-            builder
-                .randaoReveal(randomSignature())
-                .eth1Data(randomEth1Data())
-                .graffiti(Bytes32.ZERO)
-                .proposerSlashings(
-                    randomFullSszList(
-                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
-                .attesterSlashings(
-                    randomFullSszList(
-                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
-                .attestations(
-                    randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
-                .deposits(
-                    randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
-                .voluntaryExits(
-                    randomFullSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
-                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
-                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
+    return schema
+        .createBlockBody(
+            builder ->
+                builder
+                    .randaoReveal(randomSignature())
+                    .eth1Data(randomEth1Data())
+                    .graffiti(Bytes32.ZERO)
+                    .proposerSlashings(
+                        randomFullSszList(
+                            schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
+                    .attesterSlashings(
+                        randomFullSszList(
+                            schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
+                    .attestations(
+                        randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
+                    .deposits(
+                        randomFullSszList(
+                            schema.getDepositsSchema(), this::randomDepositWithoutIndex))
+                    .voluntaryExits(
+                        randomFullSszList(
+                            schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
+                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .executionPayload(
+                        () ->
+                            SafeFuture.completedFuture(
+                                this.randomExecutionPayloadIfRequiredBySchema(schema))))
+        .join();
   }
 
   public ProposerSlashing randomProposerSlashing() {
