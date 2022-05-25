@@ -80,6 +80,7 @@ public class GetBlock extends MigratingEndpointAdapter {
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
                 sszResponseType())
+            .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
