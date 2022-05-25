@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -226,6 +227,7 @@ public class BeaconRestApi {
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
     app.exception(ContentTypeNotSupportedException.class, this::unsupportedContentType);
     app.exception(BadRequestException.class, this::badRequest);
+    app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
     // Add catch-all handler
     app.exception(
