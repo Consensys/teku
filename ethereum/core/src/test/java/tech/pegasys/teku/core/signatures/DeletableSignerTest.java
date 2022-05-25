@@ -255,7 +255,7 @@ public class DeletableSignerTest {
     signer.delete();
 
     assertThatSafeFuture(
-        signer.signValidatorRegistration(validatorRegistration, UInt64.ONE, forkInfo))
+            signer.signValidatorRegistration(validatorRegistration, UInt64.ONE, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
 
     verify(delegate, never())
