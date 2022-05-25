@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   private final GetAttestationData handler = new GetAttestationData(validatorDataProvider);
@@ -51,6 +52,19 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(attestationData);
+  }
+
+  @Test
+  void shouldReturnNoContentIfNotReady() throws Exception {
+    request.setQueryParameter(SLOT, "1");
+    request.setQueryParameter(COMMITTEE_INDEX, "1");
+
+    when(validatorDataProvider.createAttestationDataAtSlot(UInt64.ONE, 1))
+        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
