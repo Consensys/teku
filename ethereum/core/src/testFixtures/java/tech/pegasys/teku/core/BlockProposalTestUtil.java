@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -244,7 +243,7 @@ public class BlockProposalTestUtil {
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
       final boolean skipStateTransition)
-      throws StateTransitionException, EpochProcessingException, SlotProcessingException {
+      throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     if (skipStateTransition) {
       return createNewBlockSkippingStateTransition(

@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
@@ -430,7 +429,7 @@ public class ChainBuilder {
                   options.getSkipStateTransition()));
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
-    } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {
+    } catch (EpochProcessingException | SlotProcessingException e) {
       throw new RuntimeException(e);
     }
   }
