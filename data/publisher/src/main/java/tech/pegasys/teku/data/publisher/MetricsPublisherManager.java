@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -98,7 +100,14 @@ public class MetricsPublisherManager extends Service {
         asyncRunner.runWithFixedDelay(
             this::publishMetrics,
             Duration.ofSeconds(intervalBetweenPublications),
-            (err) -> LOG.error("Error while attempting to publish metrics to remote service", err));
+            (err) -> {
+              if (Throwables.getRootCause(err) instanceof IOException
+                  && !(Throwables.getRootCause(err) instanceof JsonProcessingException)) {
+                LOG.warn("Error publishing metrics to remote service: " + err.getMessage());
+              } else {
+                LOG.warn("Error publishing metrics to remote service", err);
+              }
+            });
     return SafeFuture.COMPLETE;
   }
 

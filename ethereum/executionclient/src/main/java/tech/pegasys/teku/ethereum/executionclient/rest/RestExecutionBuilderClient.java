@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIME
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -70,12 +71,8 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   public SafeFuture<Response<Void>> registerValidator(
       final UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
 
-    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
-    final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-        getSchemaDefinitionsBellatrix(milestone);
-
     final DeserializableTypeDefinition<SignedValidatorRegistration> requestType =
-        schemaDefinitionsBellatrix.getSignedValidatorRegistrationSchema().getJsonTypeDefinition();
+        SIGNED_VALIDATOR_REGISTRATION_SCHEMA.getJsonTypeDefinition();
     return restClient
         .postAsync(
             BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistration, requestType)

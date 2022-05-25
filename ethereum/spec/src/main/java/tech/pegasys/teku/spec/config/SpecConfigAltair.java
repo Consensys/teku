@@ -49,6 +49,8 @@ public interface SpecConfigAltair extends SpecConfig {
 
   int getMinSyncCommitteeParticipants();
 
+  int getUpdateTimeout();
+
   @Override
   Optional<SpecConfigAltair> toVersionAltair();
 }

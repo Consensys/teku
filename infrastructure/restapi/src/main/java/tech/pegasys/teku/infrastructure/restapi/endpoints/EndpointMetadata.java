@@ -493,6 +493,17 @@ public class EndpointMetadata {
     }
 
     public <T> EndpointMetaDataBuilder requestBodyType(
+        final DeserializableTypeDefinition<T> requestBodyType,
+        final IOFunction<Bytes, T> octetStreamParser) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+      this.requestBodyTypes.put(
+          ContentTypes.OCTET_STREAM,
+          OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector) {
       this.requestBodyTypes.put(

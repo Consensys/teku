@@ -17,6 +17,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
@@ -25,6 +28,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -87,9 +91,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -1148,23 +1150,18 @@ public final class DataStructureUtil {
   }
 
   public SignedValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
-    SignedValidatorRegistrationSchema signedSchema =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getSignedValidatorRegistrationSchema();
-    ValidatorRegistrationSchema schema =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getValidatorRegistrationSchema();
+    final ValidatorRegistration validatorRegistration =
+        VALIDATOR_REGISTRATION_SCHEMA.create(
+            randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
 
-    ValidatorRegistration validatorRegistration =
-        schema.create(randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
+    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(validatorRegistration, randomSignature());
+  }
 
-    return signedSchema.create(validatorRegistration, randomSignature());
+  public SszList<SignedValidatorRegistration> randomValidatorRegistrations(final int size) {
+    return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
+        IntStream.range(0, size)
+            .mapToObj(__ -> randomValidatorRegistration())
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {
