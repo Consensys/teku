@@ -139,7 +139,7 @@ public class GetBlock extends MigratingEndpointAdapter {
                     .equals(milestone));
 
     return SerializableTypeDefinition.<ObjectAndMetaData<SignedBeaconBlock>>object()
-        .name("GetStateV2Response")
+        .name("GetBlockV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField("data", signedBeaconBlockType, ObjectAndMetaData::getData)
