@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -149,6 +150,11 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     } else if (ExceptionUtil.getCause(err, RejectedExecutionException.class).isPresent()) {
       LOG.warn(
           "Discarding gossip message for topic {} because the executor queue is full", getTopic());
+      response = ValidationResult.Ignore;
+    } else if (ExceptionUtil.getCause(err, ServiceCapacityExceededException.class).isPresent()) {
+      LOG.warn(
+          "Discarding gossip message for topic {} because the signature verification queue is full",
+          getTopic());
       response = ValidationResult.Ignore;
     } else {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), err);
