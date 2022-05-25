@@ -50,7 +50,7 @@ class JsonProviderTest {
   public void minUInt256ShouldSerializeAndDeserialize() throws JsonProcessingException {
     final UInt256 data = UInt256.ZERO;
     final String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, Q + "0x0" + Q);
+    assertEquals(serialized, Q + "0" + Q);
     final UInt256 data2 = jsonProvider.jsonToObject(serialized, UInt256.class);
     assertEquals(data2, data);
   }
@@ -77,7 +77,7 @@ class JsonProviderTest {
   public void UInt256ShouldSerializeAndDeserialize() throws JsonProcessingException {
     final UInt256 data = dataStructureUtil.randomUInt256();
     final String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, Q + data.toShortHexString() + Q);
+    assertEquals(serialized, Q + data.toDecimalString() + Q);
     final UInt256 data2 = jsonProvider.jsonToObject(serialized, UInt256.class);
     assertEquals(data2, data);
   }
@@ -86,7 +86,7 @@ class JsonProviderTest {
   public void maxUInt256ShouldSerializeAndDeserialize() throws JsonProcessingException {
     final UInt256 data = UInt256.MAX_VALUE;
     final String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, Q + data.toShortHexString() + Q);
+    assertEquals(serialized, Q + data.toDecimalString() + Q);
     final UInt256 data2 = jsonProvider.jsonToObject(serialized, UInt256.class);
     assertEquals(data2, data);
   }
@@ -98,11 +98,12 @@ class JsonProviderTest {
   }
 
   @Test
-  public void bitVectorShouldSerializeAndDeserialize() throws JsonProcessingException {
+  public void bitVectorShouldSerializeAsSsz() throws JsonProcessingException {
     final int bitvectorSize = 40;
     final SszBitvector data = dataStructureUtil.randomSszBitvector(bitvectorSize);
     final String asJson = jsonProvider.objectToJSON(data);
-    final SszBitvector asData = jsonProvider.jsonToObject(asJson, SszBitvector.class);
+    final String hexData = jsonProvider.jsonToObject(asJson, String.class);
+    final SszBitvector asData = data.getSchema().sszDeserialize(Bytes.fromHexString(hexData));
 
     assertThat(data).isEqualTo(asData);
     assertThat(asData.size()).isEqualTo(bitvectorSize);

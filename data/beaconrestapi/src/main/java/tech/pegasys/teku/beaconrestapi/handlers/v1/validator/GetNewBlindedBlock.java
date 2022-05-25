@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -26,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
@@ -46,15 +50,11 @@ import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.RestApiConstants;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -68,24 +68,6 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/validator/blinded_blocks/:slot";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ValidatorDataProvider provider;
-
-  private static final ParameterMetadata<UInt64> PARAM_SLOT =
-      new ParameterMetadata<>(
-          SLOT,
-          CoreTypes.UINT64_TYPE.withDescription(
-              "The slot for which the block should be proposed."));
-
-  private static final ParameterMetadata<BLSSignature> PARAM_RANDAO =
-      new ParameterMetadata<>(
-          RestApiConstants.RANDAO_REVEAL,
-          SIGNATURE_TYPE.withDescription(
-              "`BLSSignature Hex` BLS12-381 signature for the current epoch."));
-
-  private static final ParameterMetadata<Bytes32> PARAM_GRAFFITI =
-      new ParameterMetadata<>(
-          GRAFFITI, CoreTypes.BYTES32_TYPE.withDescription("`Bytes32 Hex` Graffiti."));
-  private static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION =
-      DeserializableTypeDefinition.enumOf(SpecMilestone.class);
 
   public GetNewBlindedBlock(
       final DataProvider dataProvider,
@@ -114,9 +96,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
               + "will be added to as forks progress.\n\n"
               + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.",
       pathParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description = "The slot for which the block should be proposed."),
+        @OpenApiParam(name = SLOT, description = SLOT_PATH_DESCRIPTION),
       },
       queryParams = {
         @OpenApiParam(
@@ -143,9 +123,10 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final UInt64 slot = request.getPathParameter(PARAM_SLOT);
-    final BLSSignature randao = request.getQueryParameter(PARAM_RANDAO);
-    final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(PARAM_GRAFFITI);
+    final UInt64 slot =
+        request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
+    final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
+    final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock>> result =
         provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true);
     request.respondAsync(
@@ -170,9 +151,9 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                 + "will be added to as forks progress.\n\n"
                 + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
-        .pathParam(PARAM_SLOT)
-        .queryParamRequired(PARAM_RANDAO)
-        .queryParam(PARAM_GRAFFITI)
+        .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
+        .queryParamRequired(RANDAO_PARAMETER)
+        .queryParam(GRAFFITI_PARAMETER)
         .response(
             SC_OK,
             "Request successful",
@@ -184,7 +165,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                     Function.identity())
                 .withField(
                     "version",
-                    SPEC_VERSION,
+                    MILESTONE_TYPE,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build(),
             sszResponseType(

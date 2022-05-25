@@ -1,0 +1,13 @@
+{
+  "title" : "SetFeeRecipientBody",
+  "type" : "object",
+  "required" : [ "ethaddress" ],
+  "properties" : {
+    "ethaddress" : {
+      "type" : "string",
+      "description" : "Hex encoded deposit contract address with 0x prefix",
+      "example" : "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6",
+      "format" : "byte"
+    }
+  }
+}

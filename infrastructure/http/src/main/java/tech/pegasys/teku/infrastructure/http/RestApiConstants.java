@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
 public class RestApiConstants {
 
@@ -57,6 +58,7 @@ public class RestApiConstants {
   public static final String RES_FORBIDDEN = "" + SC_FORBIDDEN;
   public static final String RES_NOT_FOUND = "" + SC_NOT_FOUND;
   public static final String RES_INTERNAL_ERROR = "" + SC_INTERNAL_SERVER_ERROR;
+  public static final String RES_UNSUPPORTED_MEDIA_TYPE = "" + SC_UNSUPPORTED_MEDIA_TYPE;
   public static final String RES_SERVICE_UNAVAILABLE = "" + SC_SERVICE_UNAVAILABLE;
 
   public static final String INVALID_BODY_SUPPLIED = "Invalid body supplied.";
@@ -67,6 +69,8 @@ public class RestApiConstants {
   public static final String EPOCH_QUERY_DESCRIPTION = "`uint64` Epoch number to query.";
   public static final String SLOT_QUERY_DESCRIPTION =
       "`UInt64` Slot to query in the canonical chain.";
+  public static final String SLOT_PATH_DESCRIPTION =
+      "The slot for which the block should be proposed.";
 
   public static final String COMMITTEE_INDEX_QUERY_DESCRIPTION =
       "`uint64` Committee index to query.";
@@ -97,6 +101,17 @@ public class RestApiConstants {
   public static final String PARAM_VALIDATOR_ID = "validator_id";
   public static final String PARAM_VALIDATOR_DESCRIPTION =
       "Either hex encoded public key (with 0x prefix) or validator index";
+
+  public static final String PARAM_STATUS_DESCRIPTION =
+      "valid values:   pending_initialized, "
+          + "  pending_queued, "
+          + "  active_ongoing, "
+          + "  active_exiting, "
+          + "  active_slashed, "
+          + "  exited_unslashed, "
+          + "  exited_slashed, "
+          + "  withdrawal_possible, "
+          + "  withdrawal_done";
 
   public static final String SYNCING_STATUS = "syncing_status";
   public static final String SYNCING_STATUS_DESCRIPTION =

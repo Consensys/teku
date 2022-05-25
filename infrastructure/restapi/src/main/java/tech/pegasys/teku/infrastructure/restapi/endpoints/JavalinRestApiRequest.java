@@ -140,6 +140,11 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> String getResponseContentType(final int statusCode) {
+    return metadata.getContentType(statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
+  }
+
+  @Override
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
     if (!queryParamMap.containsKey(parameterMetadata.getName())) {
       return Optional.empty();
@@ -173,5 +178,10 @@ public class JavalinRestApiRequest implements RestApiRequest {
     return paramList.stream()
         .map(item -> parameterMetadata.getType().deserializeFromString(item))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public void header(String name, String value) {
+    context.header(name, value);
   }
 }

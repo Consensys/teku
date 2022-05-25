@@ -13,28 +13,49 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconRestApiTypes {
+  private static final StringValueTypeDefinition<ValidatorStatus> STATUS_VALUE =
+      DeserializableTypeDefinition.string(ValidatorStatus.class)
+          .formatter(ValidatorStatus::toString)
+          .parser(ValidatorStatus::valueOf)
+          .example("active_ongoing")
+          .description("ValidatorStatus string")
+          .format("string")
+          .build();
+
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
       new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));
 
@@ -46,7 +67,8 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(PARAM_BLOCK_ID, CoreTypes.string(PARAM_BLOCK_ID_DESCRIPTION, "head"));
 
   public static final ParameterMetadata<UInt64> SLOT_PARAMETER =
-      new ParameterMetadata<>(SLOT, CoreTypes.UINT64_TYPE.withDescription(SLOT_QUERY_DESCRIPTION));
+      new ParameterMetadata<>(
+          SLOT, CoreTypes.UINT64_TYPE.withDescription("`uint64` value representing slot"));
 
   public static final ParameterMetadata<UInt64> EPOCH_PARAMETER =
       new ParameterMetadata<>(
@@ -68,4 +90,27 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> ID_PARAMETER =
       new ParameterMetadata<>(
           PARAM_ID, CoreTypes.STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
+
+  public static final ParameterMetadata<BLSSignature> RANDAO_PARAMETER =
+      new ParameterMetadata<>(
+          RestApiConstants.RANDAO_REVEAL,
+          SIGNATURE_TYPE.withDescription(
+              "`BLSSignature Hex` BLS12-381 signature for the current epoch."));
+
+  public static final ParameterMetadata<Bytes32> GRAFFITI_PARAMETER =
+      new ParameterMetadata<>(
+          GRAFFITI, CoreTypes.BYTES32_TYPE.withDescription("`Bytes32 Hex` Graffiti."));
+
+  public static final ParameterMetadata<Integer> SYNCING_PARAMETER =
+      new ParameterMetadata<>(
+          SYNCING_STATUS, CoreTypes.INTEGER_TYPE.withDescription(SYNCING_STATUS_DESCRIPTION));
+
+  public static final ParameterMetadata<String> PEER_ID_PARAMETER =
+      new ParameterMetadata<>(
+          PARAM_PEER_ID,
+          CoreTypes.string(
+              PARAM_PEER_ID_DESCRIPTION, "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"));
+
+  public static final ParameterMetadata<ValidatorStatus> STATUS_PARAMETER =
+      new ParameterMetadata<>(STATUS, STATUS_VALUE.withDescription(PARAM_STATUS_DESCRIPTION));
 }

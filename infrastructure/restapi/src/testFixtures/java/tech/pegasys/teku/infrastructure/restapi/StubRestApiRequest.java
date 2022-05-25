@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -51,6 +52,8 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> queryParameters = new HashMap<>();
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
+  private final Map<Integer, String> contentTypeMap = new HashMap<>();
+  private final Map<String, String> headers = new HashMap<>();
 
   public boolean responseCodeSet() {
     return responseCode != CODE_NOT_SET;
@@ -154,6 +157,15 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> String getResponseContentType(final int statusCode) {
+    return contentTypeMap.get(statusCode);
+  }
+
+  public void setContentType(final int statusCode, final String contentType) {
+    contentTypeMap.put(statusCode, contentType);
+  }
+
+  @Override
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
     final Optional<String> param =
         Optional.ofNullable(optionalQueryParameters.get(parameterMetadata.getName()));
@@ -173,10 +185,21 @@ public class StubRestApiRequest implements RestApiRequest {
       return List.of();
     }
 
-    final List<String> params = listQueryParameters.get(parameterMetadata.getName());
+    final List<String> params =
+        ListQueryParameterUtils.getParameterAsStringList(
+            listQueryParameters, parameterMetadata.getName());
     return params.stream()
         .map(p -> parameterMetadata.getType().deserializeFromString(p))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public void header(final String name, final String value) {
+    headers.put(name, value);
+  }
+
+  public String getHeader(String name) {
+    return headers.get(name);
   }
 
   public static Builder builder() {

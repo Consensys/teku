@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class EthereumTypes {
 
@@ -40,21 +43,37 @@ public class EthereumTypes {
           .format("byte")
           .build();
 
-  public static final DeserializableTypeDefinition<SpecMilestone> SPEC_VERSION_TYPE =
-      DeserializableTypeDefinition.enumOf(SpecMilestone.class);
+  public static final DeserializableTypeDefinition<SpecMilestone> MILESTONE_TYPE =
+      DeserializableTypeDefinition.enumOf(
+          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT));
+
+  public static <X extends SszData, T extends ObjectAndMetaData<X>>
+      ResponseContentTypeDefinition<T> sszResponseType() {
+    return new OctetStreamResponseContentTypeDefinition<>(
+        (data, out) -> data.getData().sszSerialize(out),
+        value -> getSszHeaders(__ -> value.getMilestone(), value.getData()));
+  }
 
   public static <T extends SszData> ResponseContentTypeDefinition<T> sszResponseType(
       final Function<T, SpecMilestone> milestoneSelector) {
     return new OctetStreamResponseContentTypeDefinition<>(
-        SszData::sszSerialize,
-        value ->
-            Map.of(
-                RestApiConstants.HEADER_CONSENSUS_VERSION,
-                Version.fromMilestone(milestoneSelector.apply(value)).name(),
-                RestApiConstants.HEADER_CONTENT_DISPOSITION,
-                String.format(
-                    "filename=\"%s%s.ssz\"",
-                    value.getSchema().getName().map(name -> name + "-").orElse(""),
-                    value.hashTreeRoot().toUnprefixedHexString())));
+        SszData::sszSerialize, value -> getSszHeaders(milestoneSelector, value));
+  }
+
+  @NotNull
+  private static <T extends SszData> Map<String, String> getSszHeaders(
+      final Function<T, SpecMilestone> milestoneSelector, final T value) {
+    return Map.of(
+        RestApiConstants.HEADER_CONSENSUS_VERSION,
+        Version.fromMilestone(milestoneSelector.apply(value)).name(),
+        RestApiConstants.HEADER_CONTENT_DISPOSITION,
+        getSszFilename(value));
+  }
+
+  private static <T extends SszData> String getSszFilename(final T value) {
+    return String.format(
+        "filename=\"%s%s.ssz\"",
+        value.getSchema().getName().map(name -> name + "-").orElse(""),
+        value.hashTreeRoot().toUnprefixedHexString());
   }
 }

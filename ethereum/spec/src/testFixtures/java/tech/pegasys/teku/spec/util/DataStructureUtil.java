@@ -17,6 +17,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
@@ -25,6 +28,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -87,9 +91,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -236,7 +238,9 @@ public final class DataStructureUtil {
 
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, final long numItems, Supplier<T> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collector());
+    return Stream.generate(valueGenerator)
+        .limit(Math.min(numItems, schema.getMaxLength()))
+        .collect(schema.collector());
   }
 
   public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
@@ -244,7 +248,9 @@ public final class DataStructureUtil {
           SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
           final long numItems,
           Supplier<ElementT> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
+    return Stream.generate(valueGenerator)
+        .limit(Math.min(numItems, schema.getMaxLength()))
+        .collect(schema.collectorUnboxed());
   }
 
   public SszUInt64List randomSszUInt64List(SszUInt64ListSchema<?> schema, final long numItems) {
@@ -812,9 +818,12 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlock randomBeaconBlock(
-      long slotNum, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
-    UInt64 slot = UInt64.valueOf(slotNum);
+      long slot, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
+    return randomBeaconBlock(UInt64.valueOf(slot), parentRoot, stateRoot, isFull);
+  }
 
+  public BeaconBlock randomBeaconBlock(
+      UInt64 slot, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
     final UInt64 proposerIndex = randomUInt64();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
@@ -924,7 +933,9 @@ public final class DataStructureUtil {
                     randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
                 .voluntaryExits(
                     randomFullSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit)));
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
+                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -1148,23 +1159,18 @@ public final class DataStructureUtil {
   }
 
   public SignedValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
-    SignedValidatorRegistrationSchema signedSchema =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getSignedValidatorRegistrationSchema();
-    ValidatorRegistrationSchema schema =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getValidatorRegistrationSchema();
+    final ValidatorRegistration validatorRegistration =
+        VALIDATOR_REGISTRATION_SCHEMA.create(
+            randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
 
-    ValidatorRegistration validatorRegistration =
-        schema.create(randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
+    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(validatorRegistration, randomSignature());
+  }
 
-    return signedSchema.create(validatorRegistration, randomSignature());
+  public SszList<SignedValidatorRegistration> randomValidatorRegistrations(final int size) {
+    return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
+        IntStream.range(0, size)
+            .mapToObj(__ -> randomValidatorRegistration())
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

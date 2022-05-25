@@ -44,7 +44,6 @@ import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -180,9 +179,17 @@ public class ChainDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getBeaconState(
+  public SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> getSchemaBeaconState(
       final String stateIdParam) {
     return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
+  }
+
+  public SafeFuture<
+          Optional<
+              ObjectAndMetaData<
+                  tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>>
+      getBeaconState(final String stateIdParam) {
+    return fromState(stateIdParam, beaconState -> beaconState);
   }
 
   public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAndMetadata(
@@ -351,7 +358,7 @@ public class ChainDataProvider {
             });
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<ValidatorResponse>>>> getStateValidators(
+  public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorData>>>> getStateValidators(
       final String stateIdParam,
       final List<String> validators,
       final Set<ValidatorStatus> statusFilter) {
@@ -360,14 +367,14 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  List<ValidatorResponse> getFilteredValidatorList(
+  List<StateValidatorData> getFilteredValidatorList(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final List<String> validators,
       final Set<ValidatorStatus> statusFilter) {
     final UInt64 epoch = spec.getCurrentEpoch(state);
     return getValidatorSelector(state, validators)
         .filter(getStatusPredicate(state, statusFilter))
-        .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
+        .mapToObj(index -> StateValidatorData.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
         .flatMap(Optional::stream)
         .collect(toList());
   }

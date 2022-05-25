@@ -45,7 +45,7 @@ public class GetForkSchedule extends MigratingEndpointAdapter {
       SerializableTypeDefinition.<List<Fork>>object()
           .name("GetForkScheduleResponse")
           .description("Retrieve all forks, past present and future, of which this node is aware.")
-          .withField("data", listOf(Fork.getJsonTypeDefinition()), Function.identity())
+          .withField("data", listOf(Fork.SSZ_SCHEMA.getJsonTypeDefinition()), Function.identity())
           .build();
 
   public GetForkSchedule(final DataProvider dataProvider) {

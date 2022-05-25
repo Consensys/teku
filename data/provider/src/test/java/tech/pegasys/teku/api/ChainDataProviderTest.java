@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.BlockHeaderData;
@@ -158,7 +159,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-        provider.getBeaconState(data.randomBytes32().toHexString());
+        provider.getSchemaBeaconState(data.randomBytes32().toHexString());
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
@@ -166,7 +167,8 @@ public class ChainDataProviderTest {
   public void getBeaconState_shouldFindHeadState() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future = provider.getBeaconState("head");
+    SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
+        provider.getSchemaBeaconState("head");
     final Optional<ObjectAndMetaData<BeaconState>> maybeState = safeJoin(future);
     assertThat(maybeState.orElseThrow().getData().asInternalBeaconState(spec).hashTreeRoot())
         .isEqualTo(beaconStateInternal.hashTreeRoot());
@@ -229,7 +231,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     List<Integer> indices =
         provider.getFilteredValidatorList(internalState, List.of("1", "33"), emptySet()).stream()
-            .map(v -> v.index.intValue())
+            .map(v -> v.getIndex().intValue())
             .collect(toList());
     assertThat(indices).containsExactly(1, 33);
   }
@@ -240,13 +242,14 @@ public class ChainDataProviderTest {
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final String key = internalState.getValidators().get(12).getPubkeyBytes().toString();
+    final Bytes48 key = internalState.getValidators().get(12).getPubkeyBytes();
     final String missingKey = data.randomPublicKey().toString();
-    List<String> pubkeys =
+    List<Bytes48> pubkeys =
         provider
-            .getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())
+            .getFilteredValidatorList(
+                internalState, List.of(key.toHexString(), missingKey), emptySet())
             .stream()
-            .map(v -> v.validator.pubkey.toHexString())
+            .map(v -> v.getValidator().getPublicKey().toBytesCompressed())
             .collect(toList());
     assertThat(pubkeys).containsExactly(key);
   }

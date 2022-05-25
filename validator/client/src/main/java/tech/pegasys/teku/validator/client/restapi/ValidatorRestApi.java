@@ -37,8 +37,12 @@ import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
 
 public class ValidatorRestApi {
+  public static final String TAG_KEY_MANAGEMENT = "Key Management";
+  public static final String TAG_FEE_RECIPIENT = "Fee Recipient";
+
   public static RestApi create(
       final ValidatorRestApiConfig config,
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,
@@ -80,6 +84,7 @@ public class ValidatorRestApi {
         .endpoint(new PostRemoteKeys(keyManager))
         .endpoint(new DeleteRemoteKeys(keyManager))
         .endpoint(new GetFeeRecipient(beaconProposerPreparer))
+        .endpoint(new SetFeeRecipient(beaconProposerPreparer))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

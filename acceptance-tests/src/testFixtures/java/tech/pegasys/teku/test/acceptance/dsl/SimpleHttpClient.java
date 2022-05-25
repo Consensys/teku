@@ -27,6 +27,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 
 public class SimpleHttpClient {
   private static final Logger LOG = LogManager.getLogger();
@@ -44,6 +45,18 @@ public class SimpleHttpClient {
 
   public String get(final URI baseUrl, final String path, Map<String, String> headers)
       throws IOException {
+    final ResponseBody body = getResponseBody(baseUrl, path, headers);
+    return body.string();
+  }
+
+  public Bytes getAsBytes(final URI baseUrl, final String path, Map<String, String> headers)
+      throws IOException {
+    final ResponseBody body = getResponseBody(baseUrl, path, headers);
+    return Bytes.wrap(body.bytes());
+  }
+
+  private ResponseBody getResponseBody(
+      final URI baseUrl, final String path, final Map<String, String> headers) throws IOException {
     LOG.debug("GET {}, headers: {}", path, headers.toString());
     final URL url = baseUrl.resolve(path).toURL();
     final Request.Builder builder = new Request.Builder().url(baseUrl.resolve(path).toURL()).get();
@@ -56,7 +69,7 @@ public class SimpleHttpClient {
         .isTrue();
     final ResponseBody body = response.body();
     assertThat(body).isNotNull();
-    return body.string();
+    return body;
   }
 
   public String post(final URI baseUrl, final String path, final String jsonBody)

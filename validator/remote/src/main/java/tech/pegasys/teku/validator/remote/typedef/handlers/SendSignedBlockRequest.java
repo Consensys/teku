@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,15 +31,18 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
-  private final boolean preferSszBlockEncoding;
-  private boolean sszNotAcceptable = false;
+  private final ResponseHandler<Object> sszResponseHandler =
+      new ResponseHandler<>()
+          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedSszRequest);
+
+  private final AtomicBoolean preferSszBlockEncoding;
 
   public SendSignedBlockRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
-    this.preferSszBlockEncoding = preferSszBlockEncoding;
+    this.preferSszBlockEncoding = new AtomicBoolean(preferSszBlockEncoding);
   }
 
   public SendSignedBlockResult sendSignedBlock(SignedBeaconBlock signedBeaconBlock) {
@@ -47,7 +51,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             ? SEND_SIGNED_BLINDED_BLOCK
             : SEND_SIGNED_BLOCK;
 
-    return preferSszBlockEncoding
+    return preferSszBlockEncoding.get()
         ? sendSignedBlockAsSszOrFallback(signedBeaconBlock, apiMethod)
         : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
   }
@@ -55,14 +59,10 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
   private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
       final SignedBeaconBlock signedBeaconBlock, final ValidatorApiMethod apiMethod) {
     final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBeaconBlock);
-    if (!result.isPublished() && sszNotAcceptable) {
+    if (!result.isPublished() && !preferSszBlockEncoding.get()) {
       return sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
     }
     return result;
-  }
-
-  public boolean isSszNotAcceptable() {
-    return sszNotAcceptable;
   }
 
   private SendSignedBlockResult sendSignedBlockAsSsz(
@@ -71,15 +71,9 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             apiMethod,
             Collections.emptyMap(),
             signedBeaconBlock.sszSerialize().toArray(),
-            new ResponseHandler<>().withHandler(SC_NOT_ACCEPTABLE, this::handleNotAcceptableResult))
+            sszResponseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
-  }
-
-  private Optional<Object> handleNotAcceptableResult(
-      final Request request, final Response response) {
-    sszNotAcceptable = true;
-    return Optional.empty();
   }
 
   private SendSignedBlockResult sendSignedBlockAsJson(
@@ -92,5 +86,11 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             new ResponseHandler<>())
         .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
+  }
+
+  private Optional<Object> handleUnsupportedSszRequest(
+      final Request request, final Response response) {
+    preferSszBlockEncoding.set(false);
+    return Optional.empty();
   }
 }
