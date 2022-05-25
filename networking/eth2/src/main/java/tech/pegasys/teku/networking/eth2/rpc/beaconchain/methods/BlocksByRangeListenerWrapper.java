@@ -41,12 +41,11 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
       Peer peer,
       RpcResponseListener<SignedBeaconBlock> blockResponseListener,
       UInt64 startSlot,
-      UInt64 count,
-      UInt64 step) {
+      UInt64 count) {
     this.peer = peer;
     this.blockResponseListener = blockResponseListener;
     this.startSlot = startSlot;
-    this.step = step;
+    this.step = UInt64.ONE;
     this.endSlot = startSlot.plus(step.times(count));
   }
 
