@@ -233,7 +233,7 @@ public class P2POptions {
       showDefaultValue = Visibility.ALWAYS,
       description =
           "When enabled, signature verification is entirely constrained to the max threads with no use of shared executor pools",
-      arity = "1",
+      arity = "0..1",
       hidden = true,
       fallbackValue = "true")
   private boolean batchVerifyStrictThreadLimitEnabled =
