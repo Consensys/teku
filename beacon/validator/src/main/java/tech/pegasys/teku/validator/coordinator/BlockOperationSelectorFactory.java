@@ -143,14 +143,6 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.isBlinded()) {
         // an execution payload header is required
 
-        final boolean forceLocalFallback =
-            !specVersion.miscHelpers().isMergeTransitionComplete(blockSlotState);
-
-        if (forceLocalFallback) {
-          LOG.info(
-              "Merge transition not completed: forcing block production using local execution engine");
-        }
-
         bodyBuilder.executionPayloadHeader(
             payloadProvider(
                 parentRoot,
@@ -160,10 +152,21 @@ public class BlockOperationSelectorFactory {
                             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
-                (executionPayloadContext) ->
-                    executionLayerChannel
-                        .builderGetHeader(
-                            executionPayloadContext, blockSlotState.getSlot(), forceLocalFallback)));
+                (executionPayloadContext) -> {
+                  final boolean forceLocalFallback =
+                          executionPayloadContext
+                                  .getForkChoiceState()
+                                  .getFinalizedExecutionBlockHash()
+                                  .isZero();
+
+                  if (forceLocalFallback) {
+                    LOG.info(
+                            "Merge transition not finalized: forcing block production using local execution engine");
+                  }
+                  return executionLayerChannel
+                          .builderGetHeader(
+                                  executionPayloadContext, blockSlotState.getSlot(), forceLocalFallback);
+                }));
         return;
       }
 

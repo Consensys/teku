@@ -373,7 +373,7 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
 
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(Bytes32.ZERO, false);
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 

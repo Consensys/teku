@@ -1147,6 +1147,14 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadContext randomPayloadExecutionContext(
+      final Bytes32 finalizedBlockHash, final boolean optimisticHead) {
+    return new ExecutionPayloadContext(
+        randomBytes8(),
+        randomForkChoiceState(randomUInt64(), finalizedBlockHash, optimisticHead),
+        randomPayloadBuildingAttributes(false));
+  }
+
+  public ExecutionPayloadContext randomPayloadExecutionContext(
       final boolean optimisticHead, final boolean withValidatorRegistration) {
     return new ExecutionPayloadContext(
         randomBytes8(),
@@ -1158,7 +1166,7 @@ public final class DataStructureUtil {
       final UInt64 slot, final boolean optimisticHead) {
     return new ExecutionPayloadContext(
         randomBytes8(),
-        randomForkChoiceState(slot, optimisticHead),
+        randomForkChoiceState(slot, randomBytes32(), optimisticHead),
         randomPayloadBuildingAttributes(false));
   }
 
@@ -1201,17 +1209,17 @@ public final class DataStructureUtil {
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {
-    return randomForkChoiceState(randomUInt64(), optimisticHead);
+    return randomForkChoiceState(randomUInt64(), randomBytes32(), optimisticHead);
   }
 
   public ForkChoiceState randomForkChoiceState(
-      final UInt64 headBlockSlot, final boolean optimisticHead) {
+      final UInt64 headBlockSlot, final Bytes32 finalizedBlockHash, final boolean optimisticHead) {
     return new ForkChoiceState(
         randomBytes32(),
         headBlockSlot,
         randomBytes32(),
         randomBytes32(),
-        randomBytes32(),
+        finalizedBlockHash,
         optimisticHead);
   }
 
