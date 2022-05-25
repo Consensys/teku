@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER_INT;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -122,8 +123,10 @@ public class GetAttestationData extends MigratingEndpointAdapter {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
     final int committeeIndex = request.getQueryParameter(COMMITTEE_INDEX_PARAMETER_INT);
     if (committeeIndex < 0) {
-      throw new IllegalArgumentException(
+      request.respondError(
+          SC_BAD_REQUEST,
           String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
+      return;
     }
 
     final SafeFuture<Optional<AttestationData>> future =
