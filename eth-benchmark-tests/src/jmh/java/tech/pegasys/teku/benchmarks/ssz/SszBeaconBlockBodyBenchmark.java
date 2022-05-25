@@ -42,7 +42,8 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
                     .proposerSlashings(beaconBlockBody.getProposerSlashings())
                     .attesterSlashings(beaconBlockBody.getAttesterSlashings())
                     .deposits(beaconBlockBody.getDeposits())
-                    .voluntaryExits(beaconBlockBody.getVoluntaryExits()));
+                    .voluntaryExits(beaconBlockBody.getVoluntaryExits()))
+        .join();
   }
 
   @Override

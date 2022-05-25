@@ -15,6 +15,7 @@ package tech.pegasys.teku.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.ArrayList;
@@ -412,20 +413,21 @@ public class ChainBuilder {
               .createAttesterSlashings(
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
       nextBlockAndState =
-          blockProposalTestUtil.createBlock(
-              signer,
-              slot,
-              preState,
-              parentRoot,
-              Optional.of(attestations),
-              Optional.empty(),
-              Optional.of(attesterSlashings),
-              Optional.empty(),
-              options.getEth1Data(),
-              options.getTransactions(),
-              options.getTerminalBlockHash(),
-              options.getExecutionPayload(),
-              options.getSkipStateTransition());
+          safeJoin(
+              blockProposalTestUtil.createBlock(
+                  signer,
+                  slot,
+                  preState,
+                  parentRoot,
+                  Optional.of(attestations),
+                  Optional.empty(),
+                  Optional.of(attesterSlashings),
+                  Optional.empty(),
+                  options.getEth1Data(),
+                  options.getTransactions(),
+                  options.getTerminalBlockHash(),
+                  options.getExecutionPayload(),
+                  options.getSkipStateTransition()));
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
     } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {

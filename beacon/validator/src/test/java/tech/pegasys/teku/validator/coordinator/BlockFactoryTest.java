@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
 
 import java.util.Optional;
@@ -290,8 +291,9 @@ class BlockFactoryTest {
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(
-            blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded);
+        safeJoin(
+            blockFactory.createUnsignedBlock(
+                blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded));
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);

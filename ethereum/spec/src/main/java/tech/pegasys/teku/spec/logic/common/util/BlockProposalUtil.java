@@ -58,7 +58,7 @@ public class BlockProposalUtil {
         blockSlotState.getSlot());
 
     // Create block body
-    final SafeFuture<BeaconBlockBody> beaconBlockBody;
+    final SafeFuture<? extends BeaconBlockBody> beaconBlockBody;
     final BeaconBlockSchema beaconBlockSchema;
 
     if (blinded) {
@@ -109,12 +109,12 @@ public class BlockProposalUtil {
             });
   }
 
-  private SafeFuture<BeaconBlockBody> createBeaconBlockBody(
+  private SafeFuture<? extends BeaconBlockBody> createBeaconBlockBody(
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
     return schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
   }
 
-  private SafeFuture<BeaconBlockBody> createBlindedBeaconBlockBody(
+  private SafeFuture<? extends BeaconBlockBody> createBlindedBeaconBlockBody(
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
     return schemaDefinitions.getBlindedBeaconBlockBodySchema().createBlockBody(bodyBuilder);
   }

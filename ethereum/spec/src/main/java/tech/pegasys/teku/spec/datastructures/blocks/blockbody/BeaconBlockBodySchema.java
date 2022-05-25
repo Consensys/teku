@@ -29,7 +29,8 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
-  SafeFuture<BeaconBlockBody> createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
+  SafeFuture<? extends BeaconBlockBody> createBlockBody(
+      Consumer<BeaconBlockBodyBuilder> bodyBuilder);
 
   BeaconBlockBody createEmpty();
 

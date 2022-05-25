@@ -61,5 +61,5 @@ public interface BeaconBlockBodyBuilder {
     return false;
   }
 
-  SafeFuture<BeaconBlockBody> build();
+  SafeFuture<? extends BeaconBlockBody> build();
 }
