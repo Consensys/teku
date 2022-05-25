@@ -80,7 +80,7 @@ class OkHttpValidatorTypeDefClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
     SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomValidatorRegistrations(5);
+        dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     String expectedRequest =
         JsonUtil.serialize(
@@ -104,7 +104,7 @@ class OkHttpValidatorTypeDefClientTest {
         new MockResponse().setResponseCode(400).setBody("{\"code\":400,\"message\":\"oopsy\"}"));
 
     SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomValidatorRegistrations(5);
+        dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     IllegalArgumentException badRequestException =
         Assertions.assertThrows(
@@ -133,7 +133,7 @@ class OkHttpValidatorTypeDefClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
     SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomValidatorRegistrations(5);
+        dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
 
@@ -158,7 +158,7 @@ class OkHttpValidatorTypeDefClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
     SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomValidatorRegistrations(5);
+        dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
 

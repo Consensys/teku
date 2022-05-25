@@ -48,6 +48,7 @@ public class GetSpecResponse {
     configAttributes.put("DOMAIN_VOLUNTARY_EXIT", getDomainVoluntaryExit().toHexString());
     configAttributes.put("DOMAIN_SELECTION_PROOF", getDomainSelectionProof().toHexString());
     configAttributes.put("DOMAIN_AGGREGATE_AND_PROOF", getDomainAggregateAndProof().toHexString());
+    configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
     getDomainSyncCommittee()
         .ifPresent(
             committee -> configAttributes.put("DOMAIN_SYNC_COMMITTEE", committee.toHexString()));
@@ -112,6 +113,10 @@ public class GetSpecResponse {
 
   private Bytes4 getDomainAggregateAndProof() {
     return Domain.AGGREGATE_AND_PROOF;
+  }
+
+  public Bytes4 getDomainApplicationBuilder() {
+    return Domain.APPLICATION_BUILDER;
   }
 
   private Optional<Bytes4> getDomainSyncCommittee() {
