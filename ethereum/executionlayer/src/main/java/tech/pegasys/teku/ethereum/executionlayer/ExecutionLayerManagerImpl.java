@@ -287,7 +287,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt64 slot,
-      boolean forceLocalFallback) {
+      final boolean forceLocalFallback) {
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
         engineGetPayload(executionPayloadContext, slot, true);

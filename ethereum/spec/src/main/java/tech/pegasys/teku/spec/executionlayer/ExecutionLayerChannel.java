@@ -74,7 +74,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final UInt64 slot,
-            boolean forceLocalFallback) {
+            final boolean forceLocalFallback) {
           return SafeFuture.completedFuture(null);
         }
 
