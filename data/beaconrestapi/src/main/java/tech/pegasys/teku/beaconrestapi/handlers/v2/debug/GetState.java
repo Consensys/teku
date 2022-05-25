@@ -129,7 +129,7 @@ public class GetState extends MigratingEndpointAdapter {
   private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
-        .name("GetStateResponse")
+        .name("GetStateV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(
