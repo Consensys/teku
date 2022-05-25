@@ -159,28 +159,21 @@ public class BlstBLS12381 implements BLS12381 {
       return true;
     }
 
-    try {
-      final BlstSemiAggregate first = (BlstSemiAggregate) preparedList.get(0);
-      if (!first.isValid()) {
-        return false;
-      }
-      Pairing ctx0 = first.getCtx();
-      for (int i = 1; i < preparedList.size(); i++) {
-        final BlstSemiAggregate semiAggregate = (BlstSemiAggregate) preparedList.get(i);
-        if (!semiAggregate.isValid()) {
-          return false;
-        }
-        BLST_ERROR ret = ctx0.merge(semiAggregate.getCtx());
-        if (ret != BLST_ERROR.BLST_SUCCESS) {
-          return false;
-        }
-      }
+    List<BlstSemiAggregate> blstList =
+        preparedList.stream().map(b -> (BlstSemiAggregate) b).collect(Collectors.toList());
 
-      return ctx0.finalverify();
-    } catch (final ClassCastException e) {
-      // One of the semi aggregates was invalid and not a BlstSemiAggregate
+    if (blstList.stream().anyMatch(b -> !b.isValid())) {
       return false;
     }
+
+    Pairing ctx0 = blstList.get(0).getCtx();
+    boolean mergeRes = true;
+    for (int i = 1; i < blstList.size(); i++) {
+      BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());
+      mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
+    }
+
+    return mergeRes && ctx0.finalverify();
   }
 
   static BigInteger nextBatchRandomMultiplier() {
