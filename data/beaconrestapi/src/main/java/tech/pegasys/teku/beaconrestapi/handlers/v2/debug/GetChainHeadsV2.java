@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
@@ -41,7 +42,7 @@ public class GetChainHeadsV2 extends GetChainHeads {
           .name("ChainHeadV2")
           .withField("slot", CoreTypes.UINT64_TYPE, ProtoNodeData::getSlot)
           .withField("root", CoreTypes.BYTES32_TYPE, ProtoNodeData::getRoot)
-          .withField("execution_optimistic", CoreTypes.BOOLEAN_TYPE, ProtoNodeData::isOptimistic)
+          .withField(EXECUTION_OPTIMISTIC, CoreTypes.BOOLEAN_TYPE, ProtoNodeData::isOptimistic)
           .build();
 
   public GetChainHeadsV2(final DataProvider dataProvider) {
