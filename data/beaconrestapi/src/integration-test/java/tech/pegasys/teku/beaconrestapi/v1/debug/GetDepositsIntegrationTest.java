@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.debug.GetDepositsResponse;
+import tech.pegasys.teku.api.response.v1.teku.GetDepositsResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.spec.SpecMilestone;
