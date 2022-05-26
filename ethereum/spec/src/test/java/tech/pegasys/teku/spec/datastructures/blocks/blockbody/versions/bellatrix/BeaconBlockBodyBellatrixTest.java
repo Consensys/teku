@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
@@ -42,15 +44,17 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   @Test
   void equalsReturnsFalseWhenExecutionPayloadIsDifferent() {
     executionPayload = dataStructureUtil.randomExecutionPayload();
-    BeaconBlockBodyBellatrix testBeaconBlockBody = createBlockBody();
+    BeaconBlockBodyBellatrix testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
-  protected BeaconBlockBodyBellatrix createBlockBody(
+  protected SafeFuture<BeaconBlockBodyBellatrix> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return (BeaconBlockBodyBellatrix) getBlockBodySchema().createBlockBody(contentProvider);
+    return getBlockBodySchema()
+        .createBlockBody(contentProvider)
+        .thenApply(body -> (BeaconBlockBodyBellatrix) body);
   }
 
   @Override
@@ -60,6 +64,6 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
             builder ->
                 builder
                     .syncAggregate(() -> syncAggregate)
-                    .executionPayload(() -> executionPayload));
+                    .executionPayload(() -> SafeFuture.completedFuture(executionPayload)));
   }
 }

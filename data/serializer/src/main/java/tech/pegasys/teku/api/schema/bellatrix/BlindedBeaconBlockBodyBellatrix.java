@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
@@ -102,20 +103,21 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
         (builder) ->
             builder.executionPayloadHeader(
                 () ->
-                    executionPayloadHeaderSchema.create(
-                        executionPayloadHeader.parentHash,
-                        executionPayloadHeader.feeRecipient,
-                        executionPayloadHeader.stateRoot,
-                        executionPayloadHeader.receiptsRoot,
-                        executionPayloadHeader.logsBloom,
-                        executionPayloadHeader.prevRandao,
-                        executionPayloadHeader.blockNumber,
-                        executionPayloadHeader.gasLimit,
-                        executionPayloadHeader.gasUsed,
-                        executionPayloadHeader.timestamp,
-                        executionPayloadHeader.extraData,
-                        executionPayloadHeader.baseFeePerGas,
-                        executionPayloadHeader.blockHash,
-                        executionPayloadHeader.transactionsRoot)));
+                    SafeFuture.completedFuture(
+                        executionPayloadHeaderSchema.create(
+                            executionPayloadHeader.parentHash,
+                            executionPayloadHeader.feeRecipient,
+                            executionPayloadHeader.stateRoot,
+                            executionPayloadHeader.receiptsRoot,
+                            executionPayloadHeader.logsBloom,
+                            executionPayloadHeader.prevRandao,
+                            executionPayloadHeader.blockNumber,
+                            executionPayloadHeader.gasLimit,
+                            executionPayloadHeader.gasUsed,
+                            executionPayloadHeader.timestamp,
+                            executionPayloadHeader.extraData,
+                            executionPayloadHeader.baseFeePerGas,
+                            executionPayloadHeader.blockHash,
+                            executionPayloadHeader.transactionsRoot))));
   }
 }

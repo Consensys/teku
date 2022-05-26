@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.spec.util;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -44,7 +44,7 @@ public class BeaconBlockBuilder {
     return this;
   }
 
-  public BeaconBlock build() {
+  public SafeFuture<BeaconBlock> build() {
     final BeaconBlockBodySchema<?> bodySchema =
         spec.getSchemaDefinitions().getBeaconBlockBodySchema();
 
@@ -58,8 +58,8 @@ public class BeaconBlockBuilder {
               .map(definitions -> definitions.getExecutionPayloadSchema().getDefault())
               .orElse(null);
     }
-    final BeaconBlockBody blockBody =
-        bodySchema.createBlockBody(
+    return bodySchema
+        .createBlockBody(
             builder ->
                 builder
                     .randaoReveal(dataStructureUtil.randomSignature())
@@ -71,14 +71,16 @@ public class BeaconBlockBuilder {
                     .deposits(bodySchema.getDepositsSchema().getDefault())
                     .voluntaryExits(bodySchema.getVoluntaryExitsSchema().getDefault())
                     .syncAggregate(() -> syncAggregate)
-                    .executionPayload(() -> executionPayload));
-    return spec.getSchemaDefinitions()
-        .getBeaconBlockSchema()
-        .create(
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            blockBody);
+                    .executionPayload(() -> SafeFuture.completedFuture(executionPayload)))
+        .thenApply(
+            blockBody ->
+                spec.getSchemaDefinitions()
+                    .getBeaconBlockSchema()
+                    .create(
+                        dataStructureUtil.randomUInt64(),
+                        dataStructureUtil.randomUInt64(),
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        blockBody));
   }
 }
