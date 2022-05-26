@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -431,7 +430,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
-    return SafeFuture.failedFuture(new NotImplementedException("not yet implemented"));
+    return sendRequest(() -> typeDefClient.registerValidators(validatorRegistrations));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

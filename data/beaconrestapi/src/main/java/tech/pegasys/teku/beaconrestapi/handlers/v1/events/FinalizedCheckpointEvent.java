@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -31,7 +32,7 @@ public class FinalizedCheckpointEvent
           .withField("state", BYTES32_TYPE, FinalizedCheckpointData::getState)
           .withField("epoch", UINT64_TYPE, FinalizedCheckpointData::getEpoch)
           .withField(
-              "execution_optimistic", BOOLEAN_TYPE, FinalizedCheckpointData::isExecutionOptimistic)
+              EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, FinalizedCheckpointData::isExecutionOptimistic)
           .build();
 
   FinalizedCheckpointEvent(

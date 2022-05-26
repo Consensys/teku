@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
@@ -201,7 +202,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
-        new BeaconBlocksByRangeRequestMessage(slot, UInt64.ONE, UInt64.ONE);
+        new BeaconBlocksByRangeRequestMessage(slot, ONE, ONE);
     return requestOptionalItem(blocksByRange, request);
   }
 
@@ -217,14 +218,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,
-      final UInt64 step,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
         blocksByRange,
-        new BeaconBlocksByRangeRequestMessage(startSlot, count, step),
-        new BlocksByRangeListenerWrapper(this, listener, startSlot, count, step));
+        new BeaconBlocksByRangeRequestMessage(startSlot, count, ONE),
+        new BlocksByRangeListenerWrapper(this, listener, startSlot, count));
   }
 
   @Override

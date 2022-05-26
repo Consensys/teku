@@ -461,7 +461,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .listenUdpPort(1234)
                     .advertisedUdpPort(OptionalInt.of(9000))
                     .minPeers(64)
-                    .maxPeers(74)
+                    .maxPeers(100)
                     .minRandomlySelectedPeers(12))
         .network(
             n ->

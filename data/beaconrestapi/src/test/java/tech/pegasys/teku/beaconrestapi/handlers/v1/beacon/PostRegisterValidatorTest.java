@@ -41,7 +41,7 @@ public class PostRegisterValidatorTest extends AbstractMigratedBeaconHandlerTest
   public void shouldReturnOK() throws JsonProcessingException {
 
     final SszList<SignedValidatorRegistration> requestBody =
-        dataStructureUtil.randomValidatorRegistrations(2);
+        dataStructureUtil.randomSignedValidatorRegistrations(2);
     when(validatorDataProvider.registerValidators(requestBody)).thenReturn(SafeFuture.COMPLETE);
 
     request.setRequestBody(requestBody);

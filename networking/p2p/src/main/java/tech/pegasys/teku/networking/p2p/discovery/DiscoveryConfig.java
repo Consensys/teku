@@ -26,7 +26,7 @@ public class DiscoveryConfig {
 
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND = 64;
-  public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 74;
+  public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 100;
 
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;

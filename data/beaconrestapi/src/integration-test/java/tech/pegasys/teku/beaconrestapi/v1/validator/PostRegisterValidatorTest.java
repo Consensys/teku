@@ -48,7 +48,7 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
   @Test
   void shouldReturnOk() throws IOException {
     final SszList<SignedValidatorRegistration> request =
-        dataStructureUtil.randomValidatorRegistrations(10);
+        dataStructureUtil.randomSignedValidatorRegistrations(10);
     when(validatorApiChannel.registerValidators(request)).thenReturn(SafeFuture.COMPLETE);
 
     try (Response response =
