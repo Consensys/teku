@@ -905,7 +905,7 @@ class ForkChoiceNotifierTest {
   private SignedValidatorRegistration createValidatorRegistration(
       final BeaconState headState, final UInt64 blockSlot) {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
-    return dataStructureUtil.randomValidatorRegistration(
+    return dataStructureUtil.randomSignedValidatorRegistration(
         spec.getValidatorPubKey(headState, UInt64.valueOf(block2Proposer)).orElseThrow());
   }
 

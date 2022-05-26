@@ -253,6 +253,11 @@ public class BeaconBlocksByRangeMessageHandler
     }
 
     SafeFuture<Void> sendBlock(final SignedBeaconBlock block) {
+      // request step is deprecated, if a step greater than 1 is requested, only return the first
+      // block
+      if (step.isGreaterThan(1L)) {
+        remainingBlocks = ZERO;
+      }
       return callback.respond(block);
     }
 

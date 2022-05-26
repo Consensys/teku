@@ -200,7 +200,7 @@ public class SyncSourceBatch implements Batch {
     LOG.debug(
         "Requesting {} slots starting at {} from peer {}", remainingSlots, startSlot, syncSource);
     syncSource
-        .requestBlocksByRange(startSlot, remainingSlots, UInt64.ONE, requestHandler)
+        .requestBlocksByRange(startSlot, remainingSlots, requestHandler)
         .thenRunAsync(() -> onRequestComplete(requestHandler), eventThread)
         .handleAsync(
             (__, error) -> {

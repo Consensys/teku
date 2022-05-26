@@ -524,7 +524,7 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void registerValidators_InvokeApiWithCorrectRequest() {
     final SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomValidatorRegistrations(5);
+        dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     final SafeFuture<Void> result = apiHandler.registerValidators(validatorRegistrations);
     asyncRunner.executeQueuedActions();

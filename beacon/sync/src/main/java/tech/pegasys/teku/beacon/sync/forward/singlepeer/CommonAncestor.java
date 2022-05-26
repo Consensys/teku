@@ -28,9 +28,7 @@ public class CommonAncestor {
 
   static final UInt64 OPTIMISTIC_HISTORY_LENGTH = UInt64.valueOf(3000);
   // prysm allows a maximum range of 1000 blocks (endSlot - startSlot) due to database limitations
-  static final UInt64 MAX_BLOCK_RANGE = UInt64.valueOf(1000);
-  static final UInt64 SAMPLE_RATE = UInt64.valueOf(50);
-  static final UInt64 BLOCK_COUNT = MAX_BLOCK_RANGE.dividedBy(SAMPLE_RATE);
+  static final UInt64 BLOCK_COUNT = UInt64.valueOf(100);
 
   public CommonAncestor(final RecentChainData storageClient) {
     this.storageClient = storageClient;
@@ -46,14 +44,13 @@ public class CommonAncestor {
 
     final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minus(firstNonFinalSlot);
     final UInt64 firstRequestedSlot = lowestHeadSlot.minus(OPTIMISTIC_HISTORY_LENGTH);
-    final UInt64 lastSlot = firstRequestedSlot.plus(MAX_BLOCK_RANGE);
+    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT);
 
     LOG.debug(
         "Local head slot {}. Have {} non finalized slots, "
-            + "will sample ahead every {} slots from {} to {}. Peer head is {}",
+            + "will sample ahead from {} to {}. Peer head is {}",
         ourHeadSlot,
         localNonFinalisedSlotCount,
-        SAMPLE_RATE,
         firstRequestedSlot,
         lastSlot,
         peerHeadSlot);
@@ -62,7 +59,7 @@ public class CommonAncestor {
     final PeerSyncBlockRequest request =
         new PeerSyncBlockRequest(SafeFuture.COMPLETE, lastSlot, blockListener);
 
-    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, SAMPLE_RATE, request)
+    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, request)
         .thenApply(__ -> blockListener.getBestSlot());
   }
 

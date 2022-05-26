@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -192,9 +194,8 @@ public class RespondingEth2Peer implements Eth2Peer {
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,
-      final UInt64 step,
       final RpcResponseListener<SignedBeaconBlock> listener) {
-    final long lastSlotExclusive = startSlot.longValue() + count.longValue() * step.longValue();
+    final long lastSlotExclusive = startSlot.longValue() + count.longValue();
 
     final PendingBlockRequestHandler<Void> handler =
         PendingBlockRequestHandler.createForBatchRequest(
@@ -202,7 +203,6 @@ public class RespondingEth2Peer implements Eth2Peer {
             () ->
                 chain
                     .streamBlocksAndStates(startSlot.longValue(), lastSlotExclusive + 1)
-                    .filter(b -> b.getSlot().minus(startSlot).mod(step).equals(UInt64.ZERO))
                     .map(SignedBlockAndState::getBlock)
                     .collect(Collectors.toList()));
     return createPendingRequest(handler);
@@ -276,7 +276,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<UInt64> sendPing() {
-    return SafeFuture.completedFuture(UInt64.ONE);
+    return SafeFuture.completedFuture(ONE);
   }
 
   @Override
