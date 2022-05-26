@@ -151,7 +151,7 @@ class RestExecutionBuilderClientTest {
     SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
-    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistrations))
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -172,7 +172,7 @@ class RestExecutionBuilderClientTest {
     SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
-    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistrations))
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -185,7 +185,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistrations))
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {

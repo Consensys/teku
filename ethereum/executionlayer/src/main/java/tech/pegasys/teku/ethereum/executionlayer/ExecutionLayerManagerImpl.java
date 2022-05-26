@@ -274,7 +274,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         signedValidatorRegistrations);
     return executionBuilderClient
         .orElseThrow()
-        .registerValidator(slot, signedValidatorRegistrations)
+        .registerValidators(slot, signedValidatorRegistrations)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
             __ ->

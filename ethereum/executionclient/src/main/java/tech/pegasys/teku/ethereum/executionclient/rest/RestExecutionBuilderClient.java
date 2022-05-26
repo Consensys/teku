@@ -69,7 +69,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   }
 
   @Override
-  public SafeFuture<Response<Void>> registerValidator(
+  public SafeFuture<Response<Void>> registerValidators(
       final UInt64 slot, final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
 
     final DeserializableTypeDefinition<SszList<SignedValidatorRegistration>> requestType =

@@ -50,10 +50,10 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
   }
 
   @Override
-  public SafeFuture<Response<Void>> registerValidator(
+  public SafeFuture<Response<Void>> registerValidators(
       final UInt64 slot, final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
     return taskQueue.queueTask(
-        () -> delegate.registerValidator(slot, signedValidatorRegistrations));
+        () -> delegate.registerValidators(slot, signedValidatorRegistrations));
   }
 
   @Override

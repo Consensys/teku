@@ -28,7 +28,7 @@ public interface ExecutionBuilderClient {
 
   SafeFuture<Response<Void>> status();
 
-  SafeFuture<Response<Void>> registerValidator(
+  SafeFuture<Response<Void>> registerValidators(
       UInt64 slot, SszList<SignedValidatorRegistration> signedValidatorRegistrations);
 
   SafeFuture<Response<SignedBuilderBid>> getHeader(
