@@ -1,5 +1,4 @@
 
-
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -26,3 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Update any calls we make to `BeaconBlocksByRange` to use a step of 1, as step is deprecated in 1.20 spec.
 
 ### Bug Fixes
+- Resolve a performance degradation in batch signature verification on machines with multiple, slower CPUs.
