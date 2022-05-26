@@ -64,8 +64,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     prepareRegistrations();
 
-    SafeFutureAssert.safeJoin(
-        proposersDataManager.updateValidatorRegistrations(registrations, slot));
+    final SafeFuture<Void> updateCall = proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
@@ -73,22 +72,25 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     response.complete(null);
 
+    assertThat(updateCall).isCompleted();
+
     // final update
     assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
   }
 
   @Test
-  void shouldNotInterruptCallRegisterValidatorOnNonNetworkingException() {
+  void shouldNotSignalValidatorRegistrationUpdatedOnError() {
 
     prepareRegistrations();
 
-    SafeFutureAssert.safeJoin(
-        proposersDataManager.updateValidatorRegistrations(registrations, slot));
+    final SafeFuture<Void> updateCall = proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
 
     response.completeExceptionally(new RuntimeException("generic error"));
+
+    assertThat(updateCall).isCompletedExceptionally();
 
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verifyNoMoreInteractions(executionLayerChannel);
