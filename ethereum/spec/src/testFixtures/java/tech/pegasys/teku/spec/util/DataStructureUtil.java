@@ -238,7 +238,9 @@ public final class DataStructureUtil {
 
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, final long numItems, Supplier<T> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collector());
+    return Stream.generate(valueGenerator)
+        .limit(Math.min(numItems, schema.getMaxLength()))
+        .collect(schema.collector());
   }
 
   public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
@@ -246,7 +248,9 @@ public final class DataStructureUtil {
           SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
           final long numItems,
           Supplier<ElementT> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
+    return Stream.generate(valueGenerator)
+        .limit(Math.min(numItems, schema.getMaxLength()))
+        .collect(schema.collectorUnboxed());
   }
 
   public SszUInt64List randomSszUInt64List(SszUInt64ListSchema<?> schema, final long numItems) {
@@ -814,9 +818,12 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlock randomBeaconBlock(
-      long slotNum, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
-    UInt64 slot = UInt64.valueOf(slotNum);
+      long slot, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
+    return randomBeaconBlock(UInt64.valueOf(slot), parentRoot, stateRoot, isFull);
+  }
 
+  public BeaconBlock randomBeaconBlock(
+      UInt64 slot, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
     final UInt64 proposerIndex = randomUInt64();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
@@ -926,7 +933,9 @@ public final class DataStructureUtil {
                     randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
                 .voluntaryExits(
                     randomFullSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit)));
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
+                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -1142,25 +1151,35 @@ public final class DataStructureUtil {
         randomUInt64(),
         randomBytes32(),
         randomEth1Address(),
-        withValidatorRegistration ? Optional.of(randomValidatorRegistration()) : Optional.empty());
+        withValidatorRegistration
+            ? Optional.of(randomSignedValidatorRegistration())
+            : Optional.empty());
   }
 
-  public SignedValidatorRegistration randomValidatorRegistration() {
-    return randomValidatorRegistration(randomPublicKey());
+  public ValidatorRegistration randomValidatorRegistration() {
+    return VALIDATOR_REGISTRATION_SCHEMA.create(
+        randomBytes20(), randomUInt64(), randomUInt64(), randomPublicKey());
   }
 
-  public SignedValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
-    final ValidatorRegistration validatorRegistration =
-        VALIDATOR_REGISTRATION_SCHEMA.create(
-            randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
-
-    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(validatorRegistration, randomSignature());
+  public ValidatorRegistration randomValidatorRegistration(final BLSPublicKey publicKey) {
+    return VALIDATOR_REGISTRATION_SCHEMA.create(
+        randomBytes20(), randomUInt64(), randomUInt64(), publicKey);
   }
 
-  public SszList<SignedValidatorRegistration> randomValidatorRegistrations(final int size) {
+  public SignedValidatorRegistration randomSignedValidatorRegistration() {
+    return randomSignedValidatorRegistration(randomPublicKey());
+  }
+
+  public SignedValidatorRegistration randomSignedValidatorRegistration(
+      final BLSPublicKey publicKey) {
+    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
+        randomValidatorRegistration(publicKey), randomSignature());
+  }
+
+  public SszList<SignedValidatorRegistration> randomSignedValidatorRegistrations(final int size) {
     return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
         IntStream.range(0, size)
-            .mapToObj(__ -> randomValidatorRegistration())
+            .mapToObj(__ -> randomSignedValidatorRegistration())
             .collect(Collectors.toUnmodifiableList()));
   }
 

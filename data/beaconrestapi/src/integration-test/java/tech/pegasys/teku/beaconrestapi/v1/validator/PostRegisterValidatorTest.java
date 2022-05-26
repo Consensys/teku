@@ -14,7 +14,10 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
@@ -22,6 +25,8 @@ import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -43,16 +48,34 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
   @Test
   void shouldReturnOk() throws IOException {
     final SszList<SignedValidatorRegistration> request =
-        dataStructureUtil.randomValidatorRegistrations(10);
-
+        dataStructureUtil.randomSignedValidatorRegistrations(10);
     when(validatorApiChannel.registerValidators(request)).thenReturn(SafeFuture.COMPLETE);
 
-    Response response =
+    try (Response response =
         post(
             PostRegisterValidator.ROUTE,
             JsonUtil.serialize(
-                request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()));
+                request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()))) {
 
-    assertThat(response.code()).isEqualTo(SC_OK);
+      assertThat(response.code()).isEqualTo(SC_OK);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"[{}]", "{}", "invalid"})
+  void shouldReturnBadRequest(final String body) throws IOException {
+    when(validatorApiChannel.registerValidators(any())).thenReturn(SafeFuture.COMPLETE);
+    try (Response response = post(PostRegisterValidator.ROUTE, body)) {
+      assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    }
+    verifyNoInteractions(validatorApiChannel);
+  }
+
+  @Test
+  void shouldHandleEmptyRequest() throws IOException {
+    when(validatorApiChannel.registerValidators(any())).thenReturn(SafeFuture.COMPLETE);
+    try (Response response = post(PostRegisterValidator.ROUTE, "[]")) {
+      assertThat(response.code()).isEqualTo(SC_OK);
+    }
   }
 }

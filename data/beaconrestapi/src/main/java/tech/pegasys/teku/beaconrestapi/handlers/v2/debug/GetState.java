@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -27,41 +31,61 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.ByteArrayInputStream;
-import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
-import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class GetState extends AbstractHandler implements Handler {
+public class GetState extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v2/debug/beacon/states/:state_id";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  public GetState(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  public GetState(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  public GetState(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetState(
+      final ChainDataProvider chainDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getStateV2")
+            .summary("Get full BeaconState object")
+            .description(
+                "Returns full BeaconState object for given state_id.\n\n"
+                    + "Use Accept header to select `application/octet-stream` if SSZ response type is required.")
+            .tags(TAG_DEBUG)
+            .pathParam(PARAMETER_STATE_ID)
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                sszResponseType())
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -88,39 +112,43 @@ public class GetState extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
-    final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (getContentType(SSZ_OR_JSON_CONTENT_TYPES, maybeAcceptHeader)
-        .equalsIgnoreCase(OCTET_STREAM)) {
-      final SafeFuture<Optional<SszResponse>> future =
-          chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalSszResult(
-          ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
-    } else {
-      // accept header is not octet, could be anything else, or even not set - our default return is
-      // json.
-      final SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-          chainDataProvider.getSchemaBeaconState(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
-    }
+    adapt(ctx);
   }
 
-  private String resultFilename(final SszResponse response) {
-    return response.abbreviatedHash + ".ssz";
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final SafeFuture<Optional<StateAndMetaData>> future =
+        chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
+
+    request.respondAsync(
+        future.thenApply(
+            maybeStateAndMetaData ->
+                maybeStateAndMetaData
+                    .map(
+                        stateAndMetaData -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              Version.fromMilestone(stateAndMetaData.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(stateAndMetaData);
+                        })
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private Optional<ByteArrayInputStream> handleSszResult(
-      final Context ctx, final SszResponse response) {
-    ctx.header(HEADER_CONSENSUS_VERSION, response.version.name());
-    return Optional.of(response.byteStream);
-  }
-
-  private Optional<String> handleJsonResult(
-      Context ctx, final ObjectAndMetaData<BeaconState> response) throws JsonProcessingException {
-    final Version version = Version.fromMilestone(response.getMilestone());
-    ctx.header(HEADER_CONSENSUS_VERSION, version.name());
-    return Optional.of(
-        jsonProvider.objectToJSON(
-            new GetStateResponseV2(version, response.isExecutionOptimistic(), response.getData())));
+  private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
+      SchemaDefinitionCache schemaDefinitionCache) {
+    return SerializableTypeDefinition.<StateAndMetaData>object()
+        .name("GetStateV2Response")
+        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
+        .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+        .withField(
+            "data",
+            getSchemaDefinitionForAllMilestones(
+                schemaDefinitionCache,
+                "BeaconState",
+                SchemaDefinitions::getBeaconStateSchema,
+                (beaconState, milestone) ->
+                    schemaDefinitionCache.milestoneAtSlot(beaconState.getSlot()).equals(milestone)),
+            ObjectAndMetaData::getData)
+        .build();
   }
 }
