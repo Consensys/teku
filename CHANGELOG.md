@@ -18,8 +18,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - removed `/teku/v1/beacon/states/{state_id}`, as the functionality is in the standard state apis.
 
 ### Additions and Improvements
+- Upated ropsten testnet config to include extremely high TTD and enable proposer boost.
 - Reduced memory requirements for storing the deposit merkle tree.
-- Enabled proposer boost on Ropsten testnet.
 - Changed the default maximum peers count from 74 to 100 (`--p2p-peer-upper-bound 74` was old setting)
 - Update proposer boost weighting to 40%.
 - Update `BeaconBlocksByRange` to only return the first block if the step is greater than 1, in line with 1.20 spec.
