@@ -262,11 +262,9 @@ public class ValidatorDataProvider {
                 .collect(Collectors.toList())));
   }
 
-  public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return validatorApiChannel
-        .createAggregate(slot, attestationHashTreeRoot)
-        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
+  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.operations.Attestation>>
+      createAggregate(final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+    return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot);
   }
 
   public SafeFuture<Optional<PostDataFailureResponse>> sendAggregateAndProofs(

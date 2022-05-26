@@ -282,7 +282,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldReturnRequestedNumberOfBlocksWhenStepIsGreaterThanOne() {
+  public void shouldReturnFirstBlockWhenStepIsGreaterThanOne() {
     // Asking for every second block from 2 onwards, up to 5 blocks.
     final int startBlock = 2;
     final int count = 5;
@@ -293,7 +293,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
-    verifyBlocksReturned(2, 4, 6, 8, 10);
+    verifyBlocksReturned(2);
   }
 
   @Test
@@ -312,17 +312,16 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldReturnFewerBlocksWhenStepIsGreaterThanOneAndSomeSlotsAreEmpty() {
+  public void shouldReturnFirstBlockInRangeAccountingForSkip() {
     final int startBlock = 2;
     final int count = 4;
     final int skip = 2;
     withCanonicalHeadBlock(blocksWStates.get(10));
-    withAncestorRoots(startBlock, count, skip, hotBlocks(2, 3, 5, 6, 8, 10));
-
+    // block 2 is missing, 3 is first in range, but 4 is the first if we're looking at skip, so
+    // expect block 4 to be returned in this instance
+    withAncestorRoots(startBlock, count, skip, hotBlocks(1, 3, 4, 5, 6, 8, 10));
     requestBlocks(startBlock, count, skip);
-
-    // Slot 4 is empty so we only wind up returning 3 blocks, not 4.
-    verifyBlocksReturned(2, 6, 8);
+    verifyBlocksReturned(4);
   }
 
   @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,50 +11,60 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateRoot handler;
+class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+  private GetBlock handler;
 
   @BeforeEach
-  public void setup() {
-    request.setPathParameter("state_id", "head");
-    initialise(SpecMilestone.PHASE0);
+  void setup() {
+    initialise(SpecMilestone.ALTAIR);
     genesis();
-    handler = new GetStateRoot(chainDataProvider);
+
+    handler = new GetBlock(chainDataProvider, schemaDefinitionCache);
+    request.setPathParameter("block_id", "head");
   }
 
   @Test
-  public void shouldReturnRootInfo() throws Exception {
-    final BeaconState state = recentChainData.getBestState().orElseThrow().get();
+  void shouldReturnBlockInformation()
+      throws JsonProcessingException, ExecutionException, InterruptedException {
+    final ObjectAndMetaData<SignedBeaconBlock> blockAndMetaData =
+        chainDataProvider.getBlock("head").get().orElseThrow();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    StateAndMetaData expectedBody =
-        new StateAndMetaData(state, spec.getGenesisSpec().getMilestone(), false, true);
-    assertThat(request.getResponseBody()).isEqualTo(expectedBody);
+    assertThat(request.getResponseBody()).isEqualTo(blockAndMetaData);
   }
 
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle404() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
   }
 
   @Test
@@ -64,17 +74,12 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final StateAndMetaData responseData =
-        new StateAndMetaData(
-            dataStructureUtil.randomBeaconState(),
-            spec.getGenesisSpec().getMilestone(),
-            false,
-            true);
+    final SignedBeaconBlock beaconBlock = dataStructureUtil.randomSignedBeaconBlock(1);
+    final ObjectAndMetaData<SignedBeaconBlock> responseData = withMetaData(beaconBlock);
+
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
-    String expected =
-        String.format(
-            "{\"execution_optimistic\":false,\"data\":{\"root\":\"%s\"}}",
-            responseData.getData().hashTreeRoot());
+    final String expected =
+        Resources.toString(Resources.getResource(GetBlockTest.class, "getBlock.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }

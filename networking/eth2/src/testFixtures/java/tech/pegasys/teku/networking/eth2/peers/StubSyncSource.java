@@ -48,10 +48,8 @@ public class StubSyncSource implements SyncSource {
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,
-      final UInt64 step,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
-    checkArgument(step.isGreaterThan(UInt64.ZERO), "Step must be greater than zero");
     requests.add(new Request(startSlot, count));
     final SafeFuture<Void> request = new SafeFuture<>();
     currentRequest = Optional.of(request);

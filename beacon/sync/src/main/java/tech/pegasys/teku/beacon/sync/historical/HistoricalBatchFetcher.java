@@ -192,10 +192,7 @@ public class HistoricalBatchFetcher {
     final RequestManager requestManager =
         new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
     return peer.requestBlocksByRange(
-            requestParams.getStartSlot(),
-            requestParams.getCount(),
-            UInt64.ONE,
-            requestManager::processBlock)
+            requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock)
         .thenApply(__ -> shouldRetryBlockByRangeRequest());
   }
 
