@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -27,8 +28,8 @@ public interface ExecutionBuilderClient {
 
   SafeFuture<Response<Void>> status();
 
-  SafeFuture<Response<Void>> registerValidator(
-      UInt64 slot, SignedValidatorRegistration signedValidatorRegistration);
+  SafeFuture<Response<Void>> registerValidators(
+      UInt64 slot, SszList<SignedValidatorRegistration> signedValidatorRegistrations);
 
   SafeFuture<Response<SignedBuilderBid>> getHeader(
       UInt64 slot, BLSPublicKey pubKey, Bytes32 parentHash);
