@@ -15,6 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- removed `/teku/v1/beacon/states/{state_id}`, as the functionality is in the standard state apis.
 
 ### Additions and Improvements
 - Reduced memory requirements for storing the deposit merkle tree.
