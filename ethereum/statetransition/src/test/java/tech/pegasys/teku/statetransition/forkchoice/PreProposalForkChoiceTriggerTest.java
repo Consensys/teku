@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,6 @@ class PreProposalForkChoiceTriggerTest {
   @BeforeEach
   void setUp() {
     when(forkChoice.processHead(any())).thenReturn(SafeFuture.completedFuture(true));
-    when(forkChoice.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -48,7 +48,13 @@ class PreProposalForkChoiceTriggerTest {
 
   @Test
   void shouldRunForkChoicePriorToBlockProduction() {
-    trigger.prepareForBlockProduction(UInt64.ONE);
+    final SafeFuture<Void> prepareFuture = new SafeFuture<>();
+    when(forkChoice.prepareForBlockProduction(any())).thenReturn(prepareFuture);
+    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    assertThatSafeFuture(result).isNotDone();
     verify(forkChoice).prepareForBlockProduction(UInt64.ONE);
+
+    prepareFuture.complete(null);
+    assertThatSafeFuture(result).isCompleted();
   }
 }
