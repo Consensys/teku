@@ -21,6 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -139,7 +140,7 @@ public class GetState extends MigratingEndpointAdapter {
     return SerializableTypeDefinition.<StateAndMetaData>object()
         .name("GetStateV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
-        .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+        .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(
             "data",
             getSchemaDefinitionForAllMilestones(

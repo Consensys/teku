@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -23,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
@@ -49,6 +52,7 @@ public class GetStateFork extends AbstractGetSimpleDataFromState {
           .name("GetStateForkResponse")
           .description(
               "Returns [Fork](https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/beacon-chain.md#fork) object for state with given 'stateId'.")
+          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
           .withField(
               "data",
               Fork.SSZ_SCHEMA.getJsonTypeDefinition(),

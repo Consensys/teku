@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -116,7 +117,7 @@ public class GetBlockAttestations extends MigratingEndpointAdapter {
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
         .name("GetBlockAttestationsResponse")
-        .withField("execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+        .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField("data", listOf(dataSchema.getJsonTypeDefinition()), ObjectAndMetaData::getData)
         .build();
   }
