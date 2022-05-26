@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -26,45 +30,59 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetNewBlock extends AbstractHandler implements Handler {
+public class GetNewBlock extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/validator/blocks/:slot";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   protected final ValidatorDataProvider provider;
 
-  public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.provider = dataProvider.getValidatorDataProvider();
+  public GetNewBlock(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
-  public GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public GetNewBlock(
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getNewBlockV1")
+            .summary("Produce unsigned block")
+            .description(
+                "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n\n"
+                    + "__NOTE__: deprecated, switch to using `/eth/v2/validator/blocks/{slot}` for multiple milestone support.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
+            .queryParamRequired(RANDAO_PARAMETER)
+            .queryParam(GRAFFITI_PARAMETER)
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .build());
     this.provider = provider;
   }
 
@@ -96,42 +114,40 @@ public class GetNewBlock extends AbstractHandler implements Handler {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(final Context ctx) throws Exception {
-    try {
-      final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-      final Map<String, String> pathParamMap = ctx.pathParamMap();
-
-      final UInt64 slot = UInt64.valueOf(pathParamMap.get(SLOT));
-      final BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
-      final Optional<Bytes32> graffiti =
-          getParameterValueAsBytes32IfPresent(queryParamMap, GRAFFITI);
-      ctx.future(
-          provider
-              .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
-              .thenApplyChecked(
-                  maybeBlock -> {
-                    if (maybeBlock.isEmpty()) {
-                      throw new ChainDataUnavailableException();
-                    }
-                    return produceResultString(maybeBlock.get());
-                  })
-              .exceptionallyCompose(error -> handleError(ctx, error)));
-    } catch (final IllegalArgumentException e) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-    }
+  public void handle(@NotNull final Context ctx) throws Exception {
+    adapt(ctx);
   }
 
-  protected String produceResultString(final BeaconBlock block) throws JsonProcessingException {
-    return jsonProvider.objectToJSON(new GetNewBlockResponse(block));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final UInt64 slot = request.getPathParameter(SLOT_PARAMETER);
+    final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
+    final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
+
+    SafeFuture<Optional<BeaconBlock>> future =
+        provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti);
+
+    request.respondAsync(
+        future.thenApply(
+            maybeBlock ->
+                maybeBlock
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseThrow(ChainDataUnavailableException::new))); // TODO is this correct?
   }
 
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> jsonProvider.objectToJSON(new BadRequest(error.getMessage())));
-    }
-    return SafeFuture.failedFuture(error);
+  private static SerializableTypeDefinition<BeaconBlock> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableTypeDefinition<BeaconBlock> beaconBlockType =
+        getSchemaDefinitionForAllMilestones(
+            schemaDefinitionCache,
+            "BeaconState",
+            SchemaDefinitions::getBeaconBlockSchema,
+            (beaconBlock, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone));
+
+    return SerializableTypeDefinition.<BeaconBlock>object()
+        .name("ProduceBlockResponse")
+        .withField("data", beaconBlockType, Function.identity())
+        .build();
   }
 }
