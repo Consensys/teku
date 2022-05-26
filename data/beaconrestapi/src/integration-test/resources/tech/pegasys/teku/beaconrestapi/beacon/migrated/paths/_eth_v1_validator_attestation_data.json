@@ -34,6 +34,16 @@
           }
         }
       },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "404" : {
         "description" : "Not found",
         "content" : {

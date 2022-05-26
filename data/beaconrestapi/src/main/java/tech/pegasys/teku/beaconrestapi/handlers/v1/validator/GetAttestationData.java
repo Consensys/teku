@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -26,8 +27,10 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -49,6 +52,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetAttestationData extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/attestation_data";
@@ -81,6 +85,7 @@ public class GetAttestationData extends MigratingEndpointAdapter {
                 COMMITTEE_INDEX_PARAMETER.withDescription(
                     "`UInt64` The committee index for which an attestation data should be created."))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_SERVICE_UNAVAILABLE, "Service unavailable", HTTP_ERROR_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.provider = provider;
@@ -134,10 +139,22 @@ public class GetAttestationData extends MigratingEndpointAdapter {
         provider.createAttestationDataAtSlot(slot, committeeIndex.intValue());
 
     request.respondAsync(
-        future.thenApply(
-            maybeAttestationData ->
-                maybeAttestationData
-                    .map(AsyncApiResponse::respondOk)
-                    .orElseGet(AsyncApiResponse::respondNotFound)));
+        future
+            .thenApply(
+                maybeAttestationData ->
+                    maybeAttestationData
+                        .map(AsyncApiResponse::respondOk)
+                        .orElseGet(AsyncApiResponse::respondNotFound))
+            .exceptionallyCompose(
+                error -> {
+                  final Throwable rootCause = Throwables.getRootCause(error);
+                  if (rootCause instanceof ChainDataUnavailableException) {
+                    return SafeFuture.of(
+                        () ->
+                            AsyncApiResponse.respondWithError(
+                                SC_SERVICE_UNAVAILABLE, "Service unavailable"));
+                  }
+                  return SafeFuture.failedFuture(error);
+                }));
   }
 }
