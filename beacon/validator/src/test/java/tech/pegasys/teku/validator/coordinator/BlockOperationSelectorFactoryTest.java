@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
 import java.util.Comparator;
@@ -442,20 +443,20 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockBodyBuilder executionPayload(
-        Supplier<ExecutionPayload> executionPayloadSupplier) {
-      this.executionPayload = executionPayloadSupplier.get();
+        Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
+      this.executionPayload = safeJoin(executionPayloadSupplier.get());
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder executionPayloadHeader(
-        Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
-      this.executionPayloadHeader = executionPayloadHeaderSupplier.get();
+        Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
+      this.executionPayloadHeader = safeJoin(executionPayloadHeaderSupplier.get());
       return this;
     }
 
     @Override
-    public BeaconBlockBody build() {
+    public SafeFuture<BeaconBlockBody> build() {
       return null;
     }
   }

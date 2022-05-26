@@ -145,9 +145,8 @@ public class BlockOperationSelectorFactory {
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
                 (executionPayloadContext) ->
-                    executionLayerChannel
-                        .builderGetHeader(executionPayloadContext, blockSlotState.getSlot())
-                        .join()));
+                    executionLayerChannel.builderGetHeader(
+                        executionPayloadContext, blockSlotState.getSlot())));
         return;
       }
 
@@ -162,30 +161,28 @@ public class BlockOperationSelectorFactory {
                       .getExecutionPayloadSchema()
                       .getDefault(),
               (executionPayloadContext) ->
-                  executionLayerChannel
-                      .engineGetPayload(executionPayloadContext, blockSlotState.getSlot())
-                      .join()));
+                  executionLayerChannel.engineGetPayload(
+                      executionPayloadContext, blockSlotState.getSlot())));
     };
   }
 
-  private <T> Supplier<T> payloadProvider(
+  private <T> Supplier<SafeFuture<T>> payloadProvider(
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       Supplier<T> defaultSupplier,
-      Function<ExecutionPayloadContext, T> supplier) {
+      Function<ExecutionPayloadContext, SafeFuture<T>> supplier) {
     return () ->
         forkChoiceNotifier
             .getPayloadId(parentRoot, blockSlotState.getSlot())
-            .thenApply(
+            .thenCompose(
                 maybePayloadId -> {
                   if (maybePayloadId.isEmpty()) {
                     // Terminal block not reached, provide default payload
-                    return defaultSupplier.get();
+                    return SafeFuture.completedFuture(defaultSupplier.get());
                   } else {
                     return supplier.apply(maybePayloadId.get());
                   }
-                })
-            .join();
+                });
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {

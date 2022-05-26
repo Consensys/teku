@@ -42,6 +42,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -863,79 +864,95 @@ public final class DataStructureUtil {
     BeaconBlockBodySchema<?> schema =
         spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
 
-    return schema.createBlockBody(
-        builder ->
-            builder
-                .randaoReveal(randomSignature())
-                .eth1Data(randomEth1Data())
-                .graffiti(Bytes32.ZERO)
-                .proposerSlashings(
-                    randomSszList(
-                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
-                .attesterSlashings(
-                    randomSszList(
-                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
-                .attestations(
-                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
-                .deposits(
-                    randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
-                .voluntaryExits(
-                    randomSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
-                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
-                .executionPayloadHeader(this::randomExecutionPayloadHeader));
+    return schema
+        .createBlockBody(
+            builder ->
+                builder
+                    .randaoReveal(randomSignature())
+                    .eth1Data(randomEth1Data())
+                    .graffiti(Bytes32.ZERO)
+                    .proposerSlashings(
+                        randomSszList(
+                            schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                    .attesterSlashings(
+                        randomSszList(
+                            schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                    .attestations(
+                        randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                    .deposits(
+                        randomSszList(
+                            schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                    .voluntaryExits(
+                        randomSszList(
+                            schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .executionPayloadHeader(
+                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader())))
+        .join();
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
-    return schema.createBlockBody(
-        builder ->
-            builder
-                .randaoReveal(randomSignature())
-                .eth1Data(randomEth1Data())
-                .graffiti(Bytes32.ZERO)
-                .proposerSlashings(
-                    randomSszList(
-                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
-                .attesterSlashings(
-                    randomSszList(
-                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
-                .attestations(
-                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
-                .deposits(
-                    randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
-                .voluntaryExits(
-                    randomSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
-                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
-                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
+    return schema
+        .createBlockBody(
+            builder ->
+                builder
+                    .randaoReveal(randomSignature())
+                    .eth1Data(randomEth1Data())
+                    .graffiti(Bytes32.ZERO)
+                    .proposerSlashings(
+                        randomSszList(
+                            schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                    .attesterSlashings(
+                        randomSszList(
+                            schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                    .attestations(
+                        randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                    .deposits(
+                        randomSszList(
+                            schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                    .voluntaryExits(
+                        randomSszList(
+                            schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .executionPayload(
+                        () ->
+                            SafeFuture.completedFuture(
+                                randomExecutionPayloadIfRequiredBySchema(schema))))
+        .join();
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
-    return schema.createBlockBody(
-        builder ->
-            builder
-                .randaoReveal(randomSignature())
-                .eth1Data(randomEth1Data())
-                .graffiti(Bytes32.ZERO)
-                .proposerSlashings(
-                    randomFullSszList(
-                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
-                .attesterSlashings(
-                    randomFullSszList(
-                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
-                .attestations(
-                    randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
-                .deposits(
-                    randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
-                .voluntaryExits(
-                    randomFullSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
-                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
-                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
+    return schema
+        .createBlockBody(
+            builder ->
+                builder
+                    .randaoReveal(randomSignature())
+                    .eth1Data(randomEth1Data())
+                    .graffiti(Bytes32.ZERO)
+                    .proposerSlashings(
+                        randomFullSszList(
+                            schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
+                    .attesterSlashings(
+                        randomFullSszList(
+                            schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
+                    .attestations(
+                        randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
+                    .deposits(
+                        randomFullSszList(
+                            schema.getDepositsSchema(), this::randomDepositWithoutIndex))
+                    .voluntaryExits(
+                        randomFullSszList(
+                            schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
+                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .executionPayload(
+                        () ->
+                            SafeFuture.completedFuture(
+                                this.randomExecutionPayloadIfRequiredBySchema(schema))))
+        .join();
   }
 
   public ProposerSlashing randomProposerSlashing() {

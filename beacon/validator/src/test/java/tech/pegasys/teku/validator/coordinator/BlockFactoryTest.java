@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,10 +21,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,16 +55,17 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 @SuppressWarnings("unchecked")
 class BlockFactoryTest {
@@ -76,27 +81,39 @@ class BlockFactoryTest {
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
   final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  ExecutionPayload executionPayload;
-  ExecutionPayloadHeader executionPayloadHeader;
+  ExecutionPayload executionPayload = null;
+  ExecutionPayloadHeader executionPayloadHeader = null;
+  ;
 
-  @Test
-  public void shouldCreateBlockAfterNormalSlot() throws Exception {
-    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false);
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.blsVerifyDeposit = false;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @Test
-  public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false);
+  public void shouldCreateBlockAfterNormalSlot() {
+    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, false);
   }
 
   @Test
-  public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false);
+  public void shouldCreateBlockAfterSkippedSlot() {
+    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false, false);
   }
 
   @Test
-  void shouldIncludeSyncAggregateWhenAltairIsActive() throws Exception {
-    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false);
+  public void shouldCreateBlockAfterMultipleSkippedSlot() {
+    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false, false);
+  }
+
+  @Test
+  void shouldIncludeSyncAggregateWhenAltairIsActive() {
+    final BeaconBlock block =
+        assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, false);
     final SyncAggregate result = getSyncAggregate(block);
     assertThatSyncAggregate(result).isNotNull();
     verify(syncCommitteeContributionPool)
@@ -104,19 +121,35 @@ class BlockFactoryTest {
   }
 
   @Test
-  void shouldIncludeExecutionPayloadWhenBellatrixIsActive() throws Exception {
-    final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), false);
+  void shouldIncludeExecutionPayloadWhenBellatrixIsActive() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+
+    prepareDefaultPayload(spec);
+
+    final BeaconBlock block = assertBlockCreated(1, spec, false, false);
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
   }
 
   @Test
-  void shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndBlindedBlockRequested()
-      throws Exception {
-    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix(), true);
+  void shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndBlindedBlockRequested() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+
+    prepareDefaultPayload(spec);
+
+    final BeaconBlock block = assertBlockCreated(1, spec, false, true);
     final ExecutionPayloadHeader result = getExecutionPayloadHeader(block);
     assertThat(result).isEqualTo(executionPayloadHeader);
+  }
+
+  @Test
+  void shouldThrowPostMergeWithWrongPayload() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+
+    prepareDefaultPayload(spec);
+
+    assertThatThrownBy(() -> assertBlockCreated(1, spec, true, false))
+        .hasCauseInstanceOf(StateTransitionException.class);
   }
 
   @Test
@@ -218,12 +251,13 @@ class BlockFactoryTest {
   }
 
   private BeaconBlock assertBlockCreated(
-      final int blockSlot, final Spec spec, final boolean blinded) throws StateTransitionException {
+      final int blockSlot, final Spec spec, final boolean postMerge, final boolean blinded) {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
-    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
-    final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 1, recentChainData);
+    final StorageSystem localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final RecentChainData recentChainData = localChain.recentChainData();
+
     final SszList<Deposit> deposits = blockBodyLists.createDeposits();
     final SszList<Attestation> attestations = blockBodyLists.createAttestations();
     final SszList<AttesterSlashing> attesterSlashings = blockBodyLists.createAttesterSlashings();
@@ -231,18 +265,15 @@ class BlockFactoryTest {
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      executionPayload =
-          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-              .getExecutionPayloadSchema()
-              .getDefault();
-
-      executionPayloadHeader =
-          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-              .getExecutionPayloadHeaderSchema()
-              .getHeaderOfDefaultPayload();
+      if (postMerge) {
+        localChain.chainUpdater().initializeGenesisWithPayload(false);
+      } else {
+        localChain.chainUpdater().initializeGenesis(false);
+      }
     } else {
-      executionPayload = null;
-      executionPayloadHeader = null;
+      checkArgument(
+          !postMerge, "Cannot initialize genesis state post merge in non Bellatrix genesis");
+      localChain.chainUpdater().initializeGenesis(false);
     }
 
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
@@ -276,7 +307,6 @@ class BlockFactoryTest {
         .thenReturn(SafeFuture.completedFuture(executionPayload));
     when(executionLayer.builderGetHeader(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
-    beaconChainUtil.initializeStorage();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
@@ -290,8 +320,9 @@ class BlockFactoryTest {
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(
-            blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded);
+        safeJoin(
+            blockFactory.createUnsignedBlock(
+                blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded));
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
@@ -371,5 +402,17 @@ class BlockFactoryTest {
             graffiti,
             forkChoiceNotifier,
             executionLayer));
+  }
+
+  private void prepareDefaultPayload(final Spec spec) {
+    executionPayload =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+            .getExecutionPayloadSchema()
+            .getDefault();
+
+    executionPayloadHeader =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema()
+            .getHeaderOfDefaultPayload();
   }
 }
