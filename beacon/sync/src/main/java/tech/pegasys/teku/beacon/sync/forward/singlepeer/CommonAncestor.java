@@ -28,7 +28,7 @@ public class CommonAncestor {
 
   static final UInt64 OPTIMISTIC_HISTORY_LENGTH = UInt64.valueOf(3000);
   // prysm allows a maximum range of 1000 blocks (endSlot - startSlot) due to database limitations
-  static final UInt64 BLOCK_COUNT = UInt64.valueOf(1000);
+  static final UInt64 BLOCK_COUNT = UInt64.valueOf(100);
 
   public CommonAncestor(final RecentChainData storageClient) {
     this.storageClient = storageClient;
