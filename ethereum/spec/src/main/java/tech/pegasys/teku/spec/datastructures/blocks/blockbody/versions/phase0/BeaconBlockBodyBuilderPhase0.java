@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -107,14 +108,14 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
 
   @Override
   public BeaconBlockBodyBuilder executionPayload(
-      Supplier<ExecutionPayload> executionPayloadSupplier) {
+      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
     // No execution payload in phase 0
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<ExecutionPayloadHeader> executionPayloadHeaderSupplier) {
+      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
     // No execution payload in phase 0
     return this;
   }
@@ -136,17 +137,18 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   }
 
   @Override
-  public BeaconBlockBody build() {
+  public SafeFuture<BeaconBlockBody> build() {
     validate();
-    return new BeaconBlockBodyPhase0(
-        schema,
-        new SszSignature(randaoReveal),
-        eth1Data,
-        SszBytes32.of(graffiti),
-        proposerSlashings,
-        attesterSlashings,
-        attestations,
-        deposits,
-        voluntaryExits);
+    return SafeFuture.completedFuture(
+        new BeaconBlockBodyPhase0(
+            schema,
+            new SszSignature(randaoReveal),
+            eth1Data,
+            SszBytes32.of(graffiti),
+            proposerSlashings,
+            attesterSlashings,
+            attestations,
+            deposits,
+            voluntaryExits));
   }
 }
