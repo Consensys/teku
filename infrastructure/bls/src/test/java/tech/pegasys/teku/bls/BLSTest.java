@@ -271,6 +271,34 @@ public abstract class BLSTest {
   }
 
   @Test
+  void batchVerifyWithPairingOddNumberOfVerifications() {
+    BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(1);
+
+    Bytes message1 = Bytes.wrap("Hello, 1!".getBytes(UTF_8));
+    Bytes message2 = Bytes.wrap("Hello, 2!".getBytes(UTF_8));
+    Bytes message3 = Bytes.wrap("Hello, 3!".getBytes(UTF_8));
+
+    final BLSSignature signature1 = BLS.sign(keyPair.getSecretKey(), message1);
+    final BLSSignature signature2 = BLS.sign(keyPair.getSecretKey(), message2);
+    final BLSSignature signature3 = BLS.sign(keyPair.getSecretKey(), message3);
+    // Invalid because wrong message signed
+    final BLSSignature invalidSignature3 = BLS.sign(keyPair.getSecretKey(), message2);
+
+    final List<List<BLSPublicKey>> pubKeys =
+        List.of(
+            List.of(keyPair.getPublicKey()),
+            List.of(keyPair.getPublicKey()),
+            List.of(keyPair.getPublicKey()));
+    final List<Bytes> messages = List.of(message1, message2, message3);
+    assertFalse(
+        BLS.batchVerify(
+            pubKeys, messages, List.of(signature1, signature2, invalidSignature3), true, false));
+    assertTrue(
+        BLS.batchVerify(
+            pubKeys, messages, List.of(signature1, signature2, signature3), true, false));
+  }
+
+  @Test
   void batchVerifyInfinitePublicKeyAndSignature() {
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK());

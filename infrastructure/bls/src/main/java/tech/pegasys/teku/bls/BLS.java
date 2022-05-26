@@ -15,7 +15,6 @@ package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import java.util.List;
@@ -229,7 +228,7 @@ public class BLS {
   public static boolean batchVerify(
       List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
     try {
-      Preconditions.checkArgument(
+      checkArgument(
           publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
           "Different collection sizes");
 
@@ -280,7 +279,7 @@ public class BLS {
       return true;
     }
     try {
-      Preconditions.checkArgument(
+      checkArgument(
           publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
           "Different collection sizes");
       int count = publicKeys.size();
@@ -369,7 +368,7 @@ public class BLS {
    * <p>The returned instances can be mixed up with the instances returned by {@link
    * #prepareBatchVerify(int, List, Bytes, BLSSignature)}
    */
-  public static BatchSemiAggregate prepareBatchVerify2(
+  private static BatchSemiAggregate prepareBatchVerify2(
       int index,
       List<BLSPublicKey> publicKeys1,
       Bytes message1,
@@ -403,9 +402,6 @@ public class BLS {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
-    }
-    if (preparedSignatures.stream().anyMatch(it -> it instanceof InvalidBatchSemiAggregate)) {
-      return false;
     }
     return getBlsImpl().completeBatchVerify(preparedSignatures);
   }
