@@ -6,6 +6,7 @@ dependencies {
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:jackson')
+  implementation project(':infrastructure:async')
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-units'
 

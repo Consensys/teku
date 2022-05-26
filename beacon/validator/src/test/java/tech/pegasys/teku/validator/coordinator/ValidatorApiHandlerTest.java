@@ -456,7 +456,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
             blockSlotState, newSlot, randaoReveal, Optional.empty(), false))
-        .thenReturn(createdBlock);
+        .thenReturn(SafeFuture.completedFuture(createdBlock));
 
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty(), false);

@@ -60,7 +60,6 @@ public class PeerSync {
           FailureReason.UNKNOWN_PARENT);
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final UInt64 STEP = UInt64.ONE;
   static final int MAX_THROTTLED_REQUESTS = 10;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -160,7 +159,7 @@ public class PeerSync {
                       readyForNextRequest,
                       ancestorStartSlot.plus(count),
                       this::blockResponseListener);
-              return peer.requestBlocksByRange(ancestorStartSlot, count, STEP, request)
+              return peer.requestBlocksByRange(ancestorStartSlot, count, request)
                   .thenApply((res) -> request);
             })
         .thenCompose(

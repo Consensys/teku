@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatri
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema10;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -117,7 +118,8 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   }
 
   @Override
-  public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+  public SafeFuture<BeaconBlockBody> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderBellatrix builder =
         new BeaconBlockBodyBuilderBellatrix().blindedSchema(this);
     builderConsumer.accept(builder);

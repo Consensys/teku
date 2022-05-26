@@ -1,5 +1,4 @@
 
-
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -22,5 +21,9 @@ For information on changes in released versions of Teku, see the [releases page]
 - Enabled proposer boost on Ropsten testnet.
 - Changed the default maximum peers count from 74 to 100 (`--p2p-peer-upper-bound 74` was old setting)
 - Update proposer boost weighting to 40%.
+- Update `BeaconBlocksByRange` to only return the first block if the step is greater than 1, in line with 1.20 spec.
+- Update any calls we make to `BeaconBlocksByRange` to use a step of 1, as step is deprecated in 1.20 spec.
+- Added `failOnRejectedCount` query parameter to liveness endpoint.
 
 ### Bug Fixes
+- Resolve a performance degradation in batch signature verification on machines with multiple, slower CPUs.

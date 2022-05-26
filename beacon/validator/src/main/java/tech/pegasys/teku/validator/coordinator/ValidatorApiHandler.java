@@ -66,7 +66,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -282,25 +281,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return forkChoiceTrigger
         .prepareForBlockProduction(slot)
+        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenCompose(
-            __ -> {
-              final SafeFuture<Optional<BeaconState>> blockSlotStateFuture =
-                  combinedChainDataClient.getStateAtSlotExact(slot);
-              return blockSlotStateFuture.thenApplyChecked(
-                  blockSlotState ->
-                      createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
-            });
+            blockSlotState -> createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
   }
 
-  private Optional<BeaconBlock> createBlock(
+  private SafeFuture<Optional<BeaconBlock>> createBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final boolean blinded,
-      final Optional<BeaconState> maybeBlockSlotState)
-      throws StateTransitionException {
+      final Optional<BeaconState> maybeBlockSlotState) {
     if (maybeBlockSlotState.isEmpty()) {
-      return Optional.empty();
+      return SafeFuture.completedFuture(Optional.empty());
     }
     final BeaconState blockSlotState = maybeBlockSlotState.get();
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
@@ -310,8 +303,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           slot);
       throw new NodeSyncingException();
     }
-    return Optional.of(
-        blockFactory.createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti, blinded));
+    return blockFactory
+        .createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti, blinded)
+        .thenApply(Optional::of);
   }
 
   @Override

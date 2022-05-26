@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
@@ -35,15 +37,17 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Test
   void equalsReturnsFalseWhenSyncAggregateIsDifferent() {
     syncAggregate = dataStructureUtil.randomSyncAggregate();
-    BeaconBlockBodyAltair testBeaconBlockBody = createBlockBody();
+    BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
-  protected BeaconBlockBodyAltair createBlockBody(
+  protected SafeFuture<BeaconBlockBodyAltair> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return (BeaconBlockBodyAltair) getBlockBodySchema().createBlockBody(contentProvider);
+    return getBlockBodySchema()
+        .createBlockBody(contentProvider)
+        .thenApply(body -> (BeaconBlockBodyAltair) body);
   }
 
   @Override
