@@ -1,5 +1,4 @@
 
-
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -27,3 +26,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Run fork choice prior to creating blocks.
 
 ### Bug Fixes
+- Resolve a performance degradation in batch signature verification on machines with multiple, slower CPUs.
