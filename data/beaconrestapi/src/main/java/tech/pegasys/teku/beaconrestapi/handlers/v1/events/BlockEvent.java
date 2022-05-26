@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -28,7 +29,7 @@ public class BlockEvent extends Event<BlockEvent.BlockData> {
           .name("BlockEvent")
           .withField("slot", UINT64_TYPE, BlockData::getSlot)
           .withField("block", BYTES32_TYPE, BlockData::getBlock)
-          .withField("execution_optimistic", BOOLEAN_TYPE, BlockData::isExecutionOptimistic)
+          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, BlockData::isExecutionOptimistic)
           .build();
 
   BlockEvent(final SignedBeaconBlock block, final boolean executionOptimistic) {
