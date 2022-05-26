@@ -21,8 +21,11 @@
           "application/json" : {
             "schema" : {
               "type" : "object",
-              "required" : [ "data" ],
+              "required" : [ "execution_optimistic", "data" ],
               "properties" : {
+                "execution_optimistic" : {
+                  "type" : "boolean"
+                },
                 "data" : {
                   "type" : "object",
                   "required" : [ "previous_justified", "current_justified", "finalized" ],

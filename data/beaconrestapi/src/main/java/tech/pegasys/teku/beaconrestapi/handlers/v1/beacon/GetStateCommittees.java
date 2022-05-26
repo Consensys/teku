@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -79,7 +80,7 @@ public class GetStateCommittees extends MigratingEndpointAdapter {
           SerializableTypeDefinition.<ObjectAndMetaData<List<CommitteeAssignment>>>object()
               .name("GetEpochCommitteesResponse")
               .withField(
-                  "execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
               .withField("data", listOf(EPOCH_COMMITTEE_TYPE), ObjectAndMetaData::getData)
               .build();
 

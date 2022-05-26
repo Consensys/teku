@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARENT_ROOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -59,7 +60,7 @@ public class GetBlockHeaders extends MigratingEndpointAdapter {
       SerializableTypeDefinition.object(BlockHeadersResponse.class)
           .name("GetBlockHeadersResponse")
           .withField(
-              "execution_optimistic", BOOLEAN_TYPE, BlockHeadersResponse::isExecutionOptimistic)
+              EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, BlockHeadersResponse::isExecutionOptimistic)
           .withField(
               "data",
               listOf(BlockHeaderData.getJsonTypeDefinition()),
