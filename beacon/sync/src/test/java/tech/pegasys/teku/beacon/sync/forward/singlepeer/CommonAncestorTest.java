@@ -80,11 +80,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final CommonAncestor commonAncestor = new CommonAncestor(storageClient);
     final UInt64 syncStartSlot = currentRemoteHead.minus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH);
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
-    when(peer.requestBlocksByRange(
-            eq(syncStartSlot),
-            eq(CommonAncestor.BLOCK_COUNT),
-            eq(CommonAncestor.SAMPLE_RATE),
-            any()))
+    when(peer.requestBlocksByRange(eq(syncStartSlot), eq(CommonAncestor.BLOCK_COUNT), any()))
         .thenReturn(requestFuture1);
     final PeerStatus status =
         withPeerHeadSlot(
@@ -101,7 +97,6 @@ public class CommonAncestorTest extends AbstractSyncTest {
         .requestBlocksByRange(
             eq(syncStartSlot),
             eq(CommonAncestor.BLOCK_COUNT),
-            eq(CommonAncestor.SAMPLE_RATE),
             responseListenerArgumentCaptor.capture());
 
     assertThat(futureSlot.isDone()).isFalse();

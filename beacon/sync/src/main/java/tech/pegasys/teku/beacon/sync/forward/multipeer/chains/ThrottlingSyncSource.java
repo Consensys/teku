@@ -48,14 +48,13 @@ public class ThrottlingSyncSource implements SyncSource {
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,
-      final UInt64 step,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     if (rateTracker.wantToRequestObjects(count.longValue()) > 0) {
       LOG.debug("Sending request for {} blocks", count);
-      return delegate.requestBlocksByRange(startSlot, count, step, listener);
+      return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlocksByRange(startSlot, count, step, listener), Duration.ofSeconds(3));
+          () -> requestBlocksByRange(startSlot, count, listener), Duration.ofSeconds(3));
     }
   }
 

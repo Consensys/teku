@@ -80,7 +80,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer.requestBlocksByRange(
-            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add));
+            UInt64.ONE, UInt64.valueOf(10), RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -101,7 +101,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer.requestBlocksByRange(
-            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add));
+            UInt64.ONE, UInt64.valueOf(10), RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -190,7 +190,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer.requestBlocksByRange(
-            block1.getSlot(), UInt64.valueOf(2), UInt64.ONE, RpcResponseListener.from(blocks::add));
+            block1.getSlot(), UInt64.valueOf(2), RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
@@ -228,7 +228,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer.requestBlocksByRange(
-            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add)));
+            UInt64.ONE, UInt64.valueOf(10), RpcResponseListener.from(blocks::add)));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return blocks;
   }

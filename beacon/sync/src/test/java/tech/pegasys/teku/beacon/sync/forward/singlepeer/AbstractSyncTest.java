@@ -67,7 +67,7 @@ public abstract class AbstractSyncTest {
       final SafeFuture<Void> requestFuture1, final UInt64 lastBlockSlot) {
     // Capture latest response listener
     verify(peer, atLeastOnce())
-        .requestBlocksByRange(any(), any(), any(), responseListenerArgumentCaptor.capture());
+        .requestBlocksByRange(any(), any(), responseListenerArgumentCaptor.capture());
     final RpcResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
 
