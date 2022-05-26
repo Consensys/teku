@@ -29,7 +29,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.response.v1.debug.GetDepositsResponse;
+import tech.pegasys.teku.api.response.v1.teku.GetDepositsResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
