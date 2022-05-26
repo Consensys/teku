@@ -15,6 +15,7 @@ package tech.pegasys.teku.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.ArrayList;
@@ -64,7 +65,6 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
@@ -412,23 +412,24 @@ public class ChainBuilder {
               .createAttesterSlashings(
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
       nextBlockAndState =
-          blockProposalTestUtil.createBlock(
-              signer,
-              slot,
-              preState,
-              parentRoot,
-              Optional.of(attestations),
-              Optional.empty(),
-              Optional.of(attesterSlashings),
-              Optional.empty(),
-              options.getEth1Data(),
-              options.getTransactions(),
-              options.getTerminalBlockHash(),
-              options.getExecutionPayload(),
-              options.getSkipStateTransition());
+          safeJoin(
+              blockProposalTestUtil.createBlock(
+                  signer,
+                  slot,
+                  preState,
+                  parentRoot,
+                  Optional.of(attestations),
+                  Optional.empty(),
+                  Optional.of(attesterSlashings),
+                  Optional.empty(),
+                  options.getEth1Data(),
+                  options.getTransactions(),
+                  options.getTerminalBlockHash(),
+                  options.getExecutionPayload(),
+                  options.getSkipStateTransition()));
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
-    } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {
+    } catch (EpochProcessingException | SlotProcessingException e) {
       throw new RuntimeException(e);
     }
   }

@@ -128,6 +128,13 @@ public class StubRestApiRequest implements RestApiRequest {
     this.responseCode = statusCode;
   }
 
+  @Override
+  public void respondWithCode(final int statusCode, final CacheLength cacheLength) {
+    assertThat(this.cacheLength).isNull();
+    this.cacheLength = cacheLength;
+    respondWithCode(statusCode);
+  }
+
   public void setPathParameter(final String parameter, final String value) {
     assertThat(this.pathParameters.containsKey(parameter)).isFalse();
     this.pathParameters.put(parameter, value);

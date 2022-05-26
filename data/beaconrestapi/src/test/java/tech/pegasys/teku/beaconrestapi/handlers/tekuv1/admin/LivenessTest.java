@@ -14,30 +14,46 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 
-public class LivenessTest {
+public class LivenessTest extends AbstractMigratedBeaconHandlerTest {
 
   private Liveness handler;
 
   @BeforeEach
   public void setup() {
-    handler = new Liveness();
+    handler = new Liveness(syncDataProvider);
   }
-
-  private Context context = mock(Context.class);
 
   @Test
   public void shouldReturnOkWhenTekuIsUp() throws Exception {
-    handler.handle(context);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).status(SC_OK);
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getCacheLength()).isEqualTo(CacheLength.NO_CACHE);
+  }
+
+  @Test
+  public void shouldReturnOkWhenQueryParamAndNoRejectedExecutions() throws Exception {
+    rejectedExecutionCount = 0;
+    request.setOptionalQueryParameter("failOnRejectedCount", "true");
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getCacheLength()).isEqualTo(CacheLength.NO_CACHE);
+  }
+
+  @Test
+  public void shouldReturnServiceNotAvailableWhenQueryParamAndRejectedExecutions()
+      throws Exception {
+    rejectedExecutionCount = 1;
+    request.setOptionalQueryParameter("failOnRejectedCount", "true");
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getCacheLength()).isEqualTo(CacheLength.NO_CACHE);
   }
 }

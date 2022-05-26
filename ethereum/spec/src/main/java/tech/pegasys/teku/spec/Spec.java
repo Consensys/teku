@@ -537,14 +537,13 @@ public class Spec {
   }
 
   // Block Proposal
-  public BeaconBlockAndState createNewUnsignedBlock(
+  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final boolean blinded)
-      throws StateTransitionException {
+      final boolean blinded) {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(

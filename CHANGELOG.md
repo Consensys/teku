@@ -1,5 +1,4 @@
 
-
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -24,5 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Update proposer boost weighting to 40%.
 - Update `BeaconBlocksByRange` to only return the first block if the step is greater than 1, in line with 1.20 spec.
 - Update any calls we make to `BeaconBlocksByRange` to use a step of 1, as step is deprecated in 1.20 spec.
+- Added `failOnRejectedCount` query parameter to liveness endpoint.
 
 ### Bug Fixes
+- Resolve a performance degradation in batch signature verification on machines with multiple, slower CPUs.
