@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -64,7 +63,8 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     prepareRegistrations();
 
-    final SafeFuture<Void> updateCall = proposersDataManager.updateValidatorRegistrations(registrations, slot);
+    final SafeFuture<Void> updateCall =
+        proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
@@ -83,7 +83,8 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     prepareRegistrations();
 
-    final SafeFuture<Void> updateCall = proposersDataManager.updateValidatorRegistrations(registrations, slot);
+    final SafeFuture<Void> updateCall =
+        proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
