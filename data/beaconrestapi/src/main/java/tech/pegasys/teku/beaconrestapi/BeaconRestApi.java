@@ -354,7 +354,7 @@ public class BeaconRestApi {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
-    app.get(Liveness.ROUTE, new Liveness());
+    addMigratedEndpoint(new Liveness(provider));
     app.get(Readiness.ROUTE, new Readiness(provider, jsonProvider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));

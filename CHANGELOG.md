@@ -22,5 +22,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Enabled proposer boost on Ropsten testnet.
 - Changed the default maximum peers count from 74 to 100 (`--p2p-peer-upper-bound 74` was old setting)
 - Update proposer boost weighting to 40%.
+- Added `failOnRejectedCount` query parameter to liveness endpoint.
 
 ### Bug Fixes
