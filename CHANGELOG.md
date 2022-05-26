@@ -23,3 +23,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Update proposer boost weighting to 40%.
 
 ### Bug Fixes
+- Resolve a performance degradation in batch signature verification on machines with multiple, slower CPUs.
