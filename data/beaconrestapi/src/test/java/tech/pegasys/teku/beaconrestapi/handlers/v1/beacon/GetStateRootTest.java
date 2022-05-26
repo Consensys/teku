@@ -72,7 +72,9 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
             true);
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     String expected =
-        String.format("{\"data\":{\"root\":\"%s\"}}", responseData.getData().hashTreeRoot());
+        String.format(
+            "{\"execution_optimistic\":false,\"data\":{\"root\":\"%s\"}}",
+            responseData.getData().hashTreeRoot());
     assertThat(data).isEqualTo(expected);
   }
 }

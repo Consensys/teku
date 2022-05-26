@@ -20,6 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWith
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -81,7 +82,7 @@ public class GetStateSyncCommittees extends MigratingEndpointAdapter {
           SerializableTypeDefinition.<ObjectAndMetaData<StateSyncCommitteesData>>object()
               .name("GetEpochSyncCommitteesResponse")
               .withField(
-                  "execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
               .withField("data", DATA_TYPE, ObjectAndMetaData::getData)
               .build();
 
