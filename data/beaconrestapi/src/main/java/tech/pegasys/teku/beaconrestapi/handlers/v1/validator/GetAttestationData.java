@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER_INT;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -78,7 +77,9 @@ public class GetAttestationData extends MigratingEndpointAdapter {
             .description("Requests that the beacon node produce an AttestationData.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .queryParam(SLOT_PARAM)
-            .queryParam(COMMITTEE_INDEX_PARAMETER)
+            .queryParam(
+                COMMITTEE_INDEX_PARAMETER.withDescription(
+                    "`UInt64` The committee index for which an attestation data should be created."))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
@@ -121,8 +122,8 @@ public class GetAttestationData extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
-    final int committeeIndex = request.getQueryParameter(COMMITTEE_INDEX_PARAMETER_INT);
-    if (committeeIndex < 0) {
+    final UInt64 committeeIndex = request.getQueryParameter(COMMITTEE_INDEX_PARAMETER);
+    if (committeeIndex.isLessThan(0)) {
       request.respondError(
           SC_BAD_REQUEST,
           String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
@@ -130,7 +131,7 @@ public class GetAttestationData extends MigratingEndpointAdapter {
     }
 
     final SafeFuture<Optional<AttestationData>> future =
-        provider.createAttestationDataAtSlot(slot, committeeIndex);
+        provider.createAttestationDataAtSlot(slot, committeeIndex.intValue());
 
     request.respondAsync(
         future.thenApply(

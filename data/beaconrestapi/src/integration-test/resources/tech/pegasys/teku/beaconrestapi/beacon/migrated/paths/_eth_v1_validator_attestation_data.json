@@ -18,7 +18,7 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "`uint64` Committee index to query.",
+        "description" : "`UInt64` The committee index for which an attestation data should be created.",
         "example" : "1",
         "format" : "uint64"
       }
