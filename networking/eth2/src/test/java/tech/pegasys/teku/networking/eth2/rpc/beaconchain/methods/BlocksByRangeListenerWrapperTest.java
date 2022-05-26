@@ -48,8 +48,7 @@ public class BlocksByRangeListenerWrapperTest {
   void blockSlotSmallerThanFromSlot() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(4);
-    UInt64 step = UInt64.valueOf(2);
-    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count, step);
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(0);
 
@@ -68,13 +67,12 @@ public class BlocksByRangeListenerWrapperTest {
   void blockSlotIsCorrect() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(4);
-    UInt64 step = UInt64.valueOf(2);
-    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count, step);
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(3);
-    final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(7);
-    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(9);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2, block1.getRoot());
+    final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(3, block2.getRoot());
+    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(4, block3.getRoot());
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(block1).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(block2).join());
@@ -83,40 +81,18 @@ public class BlocksByRangeListenerWrapperTest {
   }
 
   @Test
-  void blockSlotDoesNotMatchStep() {
-    UInt64 startSlot = UInt64.valueOf(1);
-    UInt64 count = UInt64.valueOf(4);
-    UInt64 step = UInt64.valueOf(2);
-    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count, step);
-
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
-    listener.onResponse(block1).join();
-
-    SafeFuture<?> result = listenerWrapper.onResponse(block2);
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
-    assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
-                .BLOCK_SLOT_DOES_NOT_MATCH_STEP
-                .describe());
-  }
-
-  @Test
   void blockSlotGreaterThanToSlot() {
     UInt64 startSlot = UInt64.valueOf(1);
-    UInt64 count = UInt64.valueOf(4);
-    UInt64 step = UInt64.valueOf(2);
-    // end slot is 9
-    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count, step);
+    UInt64 count = UInt64.valueOf(8);
+    // end slot is 9 (1 + 8), so slot 10 will be unexpected
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(3);
-    final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(7);
-    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(9);
-    final SignedBeaconBlock block5 = dataStructureUtil.randomSignedBeaconBlock(11);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2, block1.getRoot());
+    final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(5, block2.getRoot());
+    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(9, block3.getRoot());
+    final SignedBeaconBlock block5 =
+        dataStructureUtil.randomSignedBeaconBlock(10, block4.getRoot());
     listenerWrapper.onResponse(block1).join();
     listenerWrapper.onResponse(block2).join();
     listenerWrapper.onResponse(block3).join();
@@ -137,9 +113,8 @@ public class BlocksByRangeListenerWrapperTest {
   void blockParentRootDoesNotMatch() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(4);
-    UInt64 step = UInt64.valueOf(1);
     // end slot is 9
-    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count, step);
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
@@ -161,9 +136,8 @@ public class BlocksByRangeListenerWrapperTest {
   void blockSlotGreaterThanPreviousBlockSlot() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(4);
-    UInt64 step = UInt64.valueOf(1);
     // end slot is 9
-    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count, step);
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(1);
