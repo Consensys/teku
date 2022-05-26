@@ -179,4 +179,9 @@ public class JavalinRestApiRequest implements RestApiRequest {
         .map(item -> parameterMetadata.getType().deserializeFromString(item))
         .collect(Collectors.toList());
   }
+
+  @Override
+  public void header(String name, String value) {
+    context.header(name, value);
+  }
 }

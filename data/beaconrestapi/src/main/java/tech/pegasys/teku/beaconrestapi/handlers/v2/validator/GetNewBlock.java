@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SPEC_VERSION_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -138,7 +138,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
                     "data", getBlockSchemaDefinition(schemaDefinitionCache), Function.identity())
                 .withField(
                     "version",
-                    SPEC_VERSION_TYPE,
+                    MILESTONE_TYPE,
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build(),
             sszResponseType(

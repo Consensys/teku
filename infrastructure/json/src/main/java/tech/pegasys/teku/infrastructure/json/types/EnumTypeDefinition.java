@@ -17,12 +17,19 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefinition<T> {
   final Class<T> itemType;
+  private final Function<T, String> serializer;
 
   public EnumTypeDefinition(final Class<T> itemType) {
+    this(itemType, Objects::toString);
+  }
+
+  public EnumTypeDefinition(final Class<T> itemType, final Function<T, String> serializer) {
     this.itemType = itemType;
+    this.serializer = serializer;
   }
 
   @Override
@@ -48,7 +55,7 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
 
   @Override
   public String serializeToString(final T value) {
-    return Objects.toString(value, null);
+    return value != null ? serializer.apply(value) : null;
   }
 
   @Override

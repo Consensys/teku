@@ -135,9 +135,9 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getBlock();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.api.schema.SignedBeaconBlock>>>
-      getBlock(final String slotParameter) {
-    return fromBlock(slotParameter, schemaObjectProvider::getSignedBeaconBlock);
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
+      final String slotParameter) {
+    return fromBlock(slotParameter, signedBeaconBlock -> signedBeaconBlock);
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getSignedBeaconBlock(

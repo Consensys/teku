@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -96,6 +97,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndPro
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostPrepareBeaconProposer;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
@@ -205,7 +207,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
             dataProvider, spec, schemaCache));
-    app.get(GetState.ROUTE, new GetState(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetState(dataProvider, schemaCache));
   }
 
   private void addHostAllowlistHandler(final BeaconRestApiConfig configuration) {
@@ -225,6 +227,7 @@ public class BeaconRestApi {
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
     app.exception(ContentTypeNotSupportedException.class, this::unsupportedContentType);
     app.exception(BadRequestException.class, this::badRequest);
+    app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
     // Add catch-all handler
     app.exception(
@@ -384,7 +387,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
-    app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAggregateAttestation(dataProvider, spec));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
     app.post(
         PostSubscribeToBeaconCommitteeSubnet.ROUTE,
@@ -399,6 +402,7 @@ public class BeaconRestApi {
     app.post(
         PostContributionAndProofs.ROUTE, new PostContributionAndProofs(dataProvider, jsonProvider));
     addMigratedEndpoint(new PostPrepareBeaconProposer(dataProvider));
+    addMigratedEndpoint(new PostRegisterValidator(dataProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider, final Spec spec) {
@@ -419,10 +423,8 @@ public class BeaconRestApi {
     addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
 
     addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
-        new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
-            dataProvider, jsonProvider));
+    addMigratedEndpoint(
+        new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(dataProvider, schemaCache));
 
     addMigratedEndpoint(new GetBlockRoot(dataProvider));
     addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));

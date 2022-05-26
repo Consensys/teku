@@ -581,6 +581,7 @@ public class SpecConfigBuilder {
 
     // Sync protocol
     private Integer minSyncCommitteeParticipants;
+    private Integer updateTimeout;
 
     private AltairBuilder() {}
 
@@ -596,7 +597,8 @@ public class SpecConfigBuilder {
           epochsPerSyncCommitteePeriod,
           altairForkVersion,
           altairForkEpoch,
-          minSyncCommitteeParticipants);
+          minSyncCommitteeParticipants,
+          updateTimeout);
     }
 
     void validate() {
@@ -611,6 +613,10 @@ public class SpecConfigBuilder {
       validateConstant("altairForkVersion", altairForkVersion);
       validateConstant("altairForkEpoch", altairForkEpoch);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+      if (updateTimeout == null) {
+        // Config item was added after launch so provide a default to preserve compatibility
+        updateTimeout = epochsPerSyncCommitteePeriod * slotsPerEpoch;
+      }
     }
 
     public AltairBuilder inactivityPenaltyQuotientAltair(
@@ -674,6 +680,12 @@ public class SpecConfigBuilder {
     public AltairBuilder minSyncCommitteeParticipants(final Integer minSyncCommitteeParticipants) {
       checkNotNull(minSyncCommitteeParticipants);
       this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
+      return this;
+    }
+
+    public AltairBuilder updateTimeout(final Integer updateTimeout) {
+      checkNotNull(updateTimeout);
+      this.updateTimeout = updateTimeout;
       return this;
     }
   }

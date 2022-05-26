@@ -53,6 +53,7 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
   private final Map<Integer, String> contentTypeMap = new HashMap<>();
+  private final Map<String, String> headers = new HashMap<>();
 
   public boolean responseCodeSet() {
     return responseCode != CODE_NOT_SET;
@@ -190,6 +191,15 @@ public class StubRestApiRequest implements RestApiRequest {
     return params.stream()
         .map(p -> parameterMetadata.getType().deserializeFromString(p))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public void header(final String name, final String value) {
+    headers.put(name, value);
+  }
+
+  public String getHeader(String name) {
+    return headers.get(name);
   }
 
   public static Builder builder() {

@@ -20,12 +20,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.http.HttpConnectTimeoutException;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -57,7 +57,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
   private boolean onValidatorRegistrationsUpdatedCalled = false;
 
   private final UInt64 slot = UInt64.ONE;
-  private List<SignedValidatorRegistration> registrations;
+  private SszList<SignedValidatorRegistration> registrations;
   private final SafeFuture<Void> response1 = new SafeFuture<>();
   private final SafeFuture<Void> response2 = new SafeFuture<>();
 
@@ -140,10 +140,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
   }
 
   private void prepareRegistrations() {
-    registrations =
-        List.of(
-            dataStructureUtil.randomValidatorRegistration(),
-            dataStructureUtil.randomValidatorRegistration());
+    registrations = dataStructureUtil.randomSignedValidatorRegistrations(2);
 
     when(executionLayerChannel.builderRegisterValidator(registrations.get(0), slot))
         .thenReturn(response1);

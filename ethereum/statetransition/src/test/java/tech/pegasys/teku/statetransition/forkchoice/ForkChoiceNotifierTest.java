@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.util.List;
 import java.util.Optional;
@@ -840,7 +841,9 @@ class ForkChoiceNotifierTest {
         signedValidatorRegistration ->
             SafeFutureAssert.safeJoin(
                 proposersDataManager.updateValidatorRegistrations(
-                    List.of(signedValidatorRegistration), recentChainData.getHeadSlot())));
+                    SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
+                        List.of(signedValidatorRegistration)),
+                    recentChainData.getHeadSlot())));
     return payloadBuildingAttributes;
   }
 
@@ -902,7 +905,7 @@ class ForkChoiceNotifierTest {
   private SignedValidatorRegistration createValidatorRegistration(
       final BeaconState headState, final UInt64 blockSlot) {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
-    return dataStructureUtil.randomValidatorRegistration(
+    return dataStructureUtil.randomSignedValidatorRegistration(
         spec.getValidatorPubKey(headState, UInt64.valueOf(block2Proposer)).orElseThrow());
   }
 

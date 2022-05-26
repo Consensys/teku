@@ -20,6 +20,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Reduced memory requirements for storing the deposit merkle tree.
 - Enabled proposer boost on Ropsten testnet.
+- Changed the default maximum peers count from 74 to 100 (`--p2p-peer-upper-bound 74` was old setting)
+- Update proposer boost weighting to 40%.
 - Run full fork choice prior to creating blocks.
 
 ### Bug Fixes

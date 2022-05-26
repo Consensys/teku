@@ -50,13 +50,13 @@ public class BlsBatchVerifyTestExecutor extends BlsTestExecutor {
   }
 
   private static class Input {
-    @JsonProperty(value = "pubkey", required = true)
+    @JsonProperty(value = "pubkeys", required = true)
     private List<String> publicKeys;
 
-    @JsonProperty(value = "message", required = true)
+    @JsonProperty(value = "messages", required = true)
     private List<String> messages;
 
-    @JsonProperty(value = "signature", required = true)
+    @JsonProperty(value = "signatures", required = true)
     private List<String> signatures;
 
     public List<List<BLSPublicKey>> getPublicKeys() {
