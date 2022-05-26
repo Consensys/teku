@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIME
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
-import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +30,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -69,13 +70,15 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      final UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
+      final UInt64 slot, final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
 
-    final DeserializableTypeDefinition<SignedValidatorRegistration> requestType =
-        SIGNED_VALIDATOR_REGISTRATION_SCHEMA.getJsonTypeDefinition();
+    final DeserializableTypeDefinition<SszList<SignedValidatorRegistration>> requestType =
+        SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition();
     return restClient
         .postAsync(
-            BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistration, requestType)
+            BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
+            signedValidatorRegistrations,
+            requestType)
         .orTimeout(EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 

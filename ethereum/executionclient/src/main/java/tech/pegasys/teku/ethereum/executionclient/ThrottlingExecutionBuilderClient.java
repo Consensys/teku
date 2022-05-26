@@ -20,6 +20,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -50,8 +51,9 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
 
   @Override
   public SafeFuture<Response<Void>> registerValidator(
-      final UInt64 slot, final SignedValidatorRegistration signedValidatorRegistration) {
-    return taskQueue.queueTask(() -> delegate.registerValidator(slot, signedValidatorRegistration));
+      final UInt64 slot, final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
+    return taskQueue.queueTask(
+        () -> delegate.registerValidator(slot, signedValidatorRegistrations));
   }
 
   @Override
