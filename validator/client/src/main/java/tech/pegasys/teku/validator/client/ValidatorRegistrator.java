@@ -66,7 +66,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     if (isBeginningOfEpoch(slot) || firstCallDone.compareAndSet(false, true)) {
       forkProvider
           .getForkInfo(slot)
-          .thenApply(
+          .thenCompose(
               forkInfo -> {
                 final UInt64 epoch = spec.computeEpochAtSlot(slot);
                 return registerValidators(epoch, forkInfo);
