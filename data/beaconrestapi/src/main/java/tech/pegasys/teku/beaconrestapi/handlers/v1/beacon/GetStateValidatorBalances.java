@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -61,7 +62,7 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
           SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorBalanceData>>>object()
               .name("GetStateValidatorBalancesResponse")
               .withField(
-                  "execution_optimistic", BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
               .withField(
                   "data",
                   listOf(StateValidatorBalanceData.getJsonTypeDefinition()),

@@ -21,12 +21,12 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 /**
- * Represents an external source of blocks to sync. Typically a peer, but this provides the minimal
+ * Represents an external source of blocks to sync. Typically, a peer, but this provides the minimal
  * interface required by the sync system.
  */
 public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
-      UInt64 startSlot, UInt64 count, UInt64 step, RpcResponseListener<SignedBeaconBlock> listener);
+      UInt64 startSlot, UInt64 count, RpcResponseListener<SignedBeaconBlock> listener);
 
   void adjustReputation(final ReputationAdjustment adjustment);
 
