@@ -1,0 +1,26 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get new Eth1Data",
+    "description" : "Eth1Data we'd include in a new block if we are a proposer.",
+    "operationId" : "getTekuV1BeaconStateEth1data",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetEth1DataResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}
