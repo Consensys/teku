@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.v1.debug;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -44,7 +43,7 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
 
   @Test
   public void shouldBeGoodWithNoDeposits() throws IOException {
-    when(depositProvider.getAllPendingDeposits(any())).thenReturn(new ArrayList<>());
+    when(depositProvider.getAvailableDeposits()).thenReturn(new ArrayList<>());
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     GetDepositsResponse getDepositsResponse =
@@ -60,7 +59,7 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
     List<Deposit> deposits = new ArrayList<>();
     deposits.add(deposit1);
     deposits.add(deposit2);
-    when(depositProvider.getAllPendingDeposits(any())).thenReturn(deposits);
+    when(depositProvider.getAvailableDeposits()).thenReturn(deposits);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     GetDepositsResponse getDepositsResponse =
@@ -74,12 +73,10 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
   }
 
   @Test
-  public void shouldBeUnavailableWhenProviderFails() throws IOException {
-    when(depositProvider.getAllPendingDeposits(any())).thenThrow(new RuntimeException(""));
+  public void shouldBeServerErrorWhenProviderFails() throws IOException {
+    when(depositProvider.getAvailableDeposits()).thenThrow(new RuntimeException(""));
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-    assertThat(response.body().string().contains("check the server logs for more details"))
-        .isTrue();
   }
 
   private Response get() throws IOException {

@@ -194,13 +194,12 @@ public class DepositProvider
     return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, maxDeposits);
   }
 
-  public synchronized List<Deposit> getAllPendingDeposits(BeaconState state) {
+  public synchronized List<Deposit> getAvailableDeposits() {
+    final UInt64 fromDepositIndex = depositNavigableMap.firstEntry().getKey();
     final UInt64 eth1DepositCount = depositNavigableMap.lastKey().plus(ONE);
-    final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
     final UInt64 toDepositIndex = eth1DepositCount;
     final long maxDeposits = MAX_LIST_MAX_LENGTH;
-    checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
-    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, maxDeposits)
+    return getDepositsWithProof(fromDepositIndex, toDepositIndex, eth1DepositCount, maxDeposits)
         .asList();
   }
 

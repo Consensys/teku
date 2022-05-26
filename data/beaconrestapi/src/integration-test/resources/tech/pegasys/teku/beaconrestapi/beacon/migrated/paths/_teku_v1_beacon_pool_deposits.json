@@ -1,9 +1,9 @@
 {
   "get" : {
-    "tags" : [ "Debug" ],
+    "tags" : [ "Teku" ],
     "operationId" : "getDeposits",
-    "summary" : "Deposits not yet included on the chain",
-    "description" : "Range of deposits that could be used in new block if we are assigned to be a proposer.",
+    "summary" : "Get deposits",
+    "description" : "Range of deposits that are currently available.",
     "responses" : {
       "200" : {
         "description" : "Request successful",

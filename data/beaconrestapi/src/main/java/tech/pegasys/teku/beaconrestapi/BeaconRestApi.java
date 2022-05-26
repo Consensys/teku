@@ -174,7 +174,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, depositProvider, spec);
+    addTekuSpecificHandlers(dataProvider, depositProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -370,7 +370,7 @@ public class BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider, final DepositProvider depositProvider, final Spec spec) {
+      final DataProvider provider, final DepositProvider depositProvider) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
@@ -380,7 +380,7 @@ public class BeaconRestApi {
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
     app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
-    addMigratedEndpoint(new GetDeposits(provider, depositProvider, spec));
+    addMigratedEndpoint(new GetDeposits(depositProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
