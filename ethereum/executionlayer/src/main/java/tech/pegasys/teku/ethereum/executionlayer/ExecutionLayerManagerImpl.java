@@ -74,7 +74,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final AtomicBoolean latestBuilderAvailability;
 
   /**
-   * slotToLocalElFallbackData usage:
+   * slotToLocalElFallbackPayload usage:
    *
    * <p>if we serve builderGetHeader using local execution engine, we store slot->executionPayload
    * to be able to serve builderGetPayload later
@@ -285,7 +285,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt64 slot,
+      final boolean forceLocalFallback) {
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
         engineGetPayload(executionPayloadContext, slot, true);
@@ -293,7 +295,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final Optional<BLSPublicKey> registeredValidatorPublicKey =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistrationPublicKey();
 
-    if (!isBuilderAvailable() || registeredValidatorPublicKey.isEmpty()) {
+    if (forceLocalFallback || !isBuilderAvailable() || registeredValidatorPublicKey.isEmpty()) {
       // fallback to local execution engine
       return doFallbackToLocal(localExecutionPayload, slot);
     }
