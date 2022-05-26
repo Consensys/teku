@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
@@ -35,6 +36,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -88,8 +91,7 @@ public class BeaconRestApiTypes {
           PARENT_ROOT, CoreTypes.BYTES32_TYPE.withDescription("Not currently supported."));
 
   public static final ParameterMetadata<String> ID_PARAMETER =
-      new ParameterMetadata<>(
-          PARAM_ID, CoreTypes.STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
+      new ParameterMetadata<>(PARAM_ID, STRING_TYPE.withDescription(PARAM_VALIDATOR_DESCRIPTION));
 
   public static final ParameterMetadata<BLSSignature> RANDAO_PARAMETER =
       new ParameterMetadata<>(
@@ -113,4 +115,10 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<ValidatorStatus> STATUS_PARAMETER =
       new ParameterMetadata<>(STATUS, STATUS_VALUE.withDescription(PARAM_STATUS_DESCRIPTION));
+
+  public static final ParameterMetadata<Bytes32> ATTESTATION_DATA_ROOT_PARAMETER =
+      new ParameterMetadata<>(
+          ATTESTATION_DATA_ROOT,
+          BYTES32_TYPE.withDescription(
+              "`String` HashTreeRoot of AttestationData that validator wants aggregated."));
 }
