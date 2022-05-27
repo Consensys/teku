@@ -35,7 +35,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
@@ -247,7 +246,6 @@ public class BeaconRestApiV1Test {
             tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState.class));
 
     // TEKU
-    builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
     builder.add(Arguments.of(GetStateByBlockRoot.ROUTE, GetStateByBlockRoot.class));
     builder.add(Arguments.of(Liveness.ROUTE, Liveness.class));
     builder.add(Arguments.of(Readiness.ROUTE, Readiness.class));

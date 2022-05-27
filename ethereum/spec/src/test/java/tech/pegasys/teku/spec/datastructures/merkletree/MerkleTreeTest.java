@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
+import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 
 public class MerkleTreeTest {
 
@@ -57,7 +58,7 @@ public class MerkleTreeTest {
 
   @Test
   void getProof() {
-    merkleTree1 = new MerkleTree(treeDepth);
+    merkleTree1 = new OptimizedMerkleTree(treeDepth);
 
     BooleanList results = new BooleanArrayList();
     for (int index = 0; index < 7; index++) {
@@ -84,8 +85,8 @@ public class MerkleTreeTest {
 
   @Test
   void proofsWithViewBoundaryOptimizedTree_getProofForIndexAlwaysSmallerThanLimit() {
-    merkleTree1 = new MerkleTree(treeDepth);
-    merkleTree2 = new MerkleTree(treeDepth);
+    merkleTree1 = new OptimizedMerkleTree(treeDepth);
+    merkleTree2 = new OptimizedMerkleTree(treeDepth);
 
     for (int i = 0; i < 8; i++) {
       merkleTree2.add(leaves.get(i));
@@ -112,8 +113,8 @@ public class MerkleTreeTest {
 
   @Test
   void proofsWithViewBoundary_getProofForEachIndexInTheSmallTree() {
-    merkleTree1 = new MerkleTree(treeDepth);
-    merkleTree2 = new MerkleTree(treeDepth);
+    merkleTree1 = new OptimizedMerkleTree(treeDepth);
+    merkleTree2 = new OptimizedMerkleTree(treeDepth);
 
     for (int i = 0; i < 16; i++) {
       merkleTree2.add(leaves.get(i));
