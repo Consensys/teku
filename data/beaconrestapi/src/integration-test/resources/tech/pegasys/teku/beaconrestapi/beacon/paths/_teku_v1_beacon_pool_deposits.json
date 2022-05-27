@@ -1,0 +1,26 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get deposits",
+    "description" : "Get all deposits currently held for inclusion in future blocks.",
+    "operationId" : "getTekuV1BeaconPoolDeposits",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetDepositsResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

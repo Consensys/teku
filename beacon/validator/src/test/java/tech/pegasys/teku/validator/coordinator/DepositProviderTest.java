@@ -288,6 +288,49 @@ public class DepositProviderTest {
         .hasMessageContaining("7 to 9");
   }
 
+  @Test
+  void whenCallingAvailableDeposits_AllDepositReturned() {
+    setup(5);
+    mockStateEth1DepositIndex(10);
+    mockDepositsFromEth1Block(0, 10);
+    List<Deposit> deposits = depositProvider.getAvailableDeposits();
+    assertThat(deposits.size()).isEqualTo(10);
+  }
+
+  @Test
+  void whenCallingAvailableDepositsAndSomeDepositsAlreadyInState_AllDepositsReturned() {
+    setup(10);
+    mockStateEth1DepositIndex(2);
+    mockDepositsFromEth1Block(0, 10);
+    mockEth1DataDepositCount(10);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    assertThat(deposits.size()).isEqualTo(8);
+    List<Deposit> availableDeposits = depositProvider.getAvailableDeposits();
+    assertThat(availableDeposits.size()).isEqualTo(10);
+  }
+
+  @Test
+  void whenCallingAvailableDepositsAndSomeDepositsPruned_AllNotPrunedDepositsReturned() {
+    setup(16);
+    Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
+    mockStateEth1DepositIndex(10);
+    mockEth1DataDepositCount(10);
+    mockDepositsFromEth1Block(0, 20);
+    final AnchorPoint anchorPoint = mock(AnchorPoint.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getLatestFinalized()).thenReturn(anchorPoint);
+    when(anchorPoint.getState()).thenReturn(state);
+
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
+
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
+
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
+    List<Deposit> availableDeposits = depositProvider.getAvailableDeposits();
+    assertThat(availableDeposits.size()).isEqualTo(10);
+  }
+
   private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     deposits.forEach(

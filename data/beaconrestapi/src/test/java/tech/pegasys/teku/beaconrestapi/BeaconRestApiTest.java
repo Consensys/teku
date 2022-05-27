@@ -45,6 +45,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.validator.coordinator.DepositProvider;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
@@ -66,6 +67,7 @@ class BeaconRestApiTest {
       mock(SyncCommitteeContributionPool.class);
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  private final DepositProvider depositProvider = mock(DepositProvider.class);
 
   @BeforeEach
   public void setup() {
@@ -98,6 +100,7 @@ class BeaconRestApiTest {
             .build();
     new BeaconRestApi(
         dataProvider,
+        depositProvider,
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
