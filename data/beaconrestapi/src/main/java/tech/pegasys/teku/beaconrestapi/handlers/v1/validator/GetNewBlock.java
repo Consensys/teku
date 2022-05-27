@@ -82,6 +82,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
             .queryParamRequired(RANDAO_PARAMETER)
             .queryParam(GRAFFITI_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }
@@ -132,7 +133,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
             maybeBlock ->
                 maybeBlock
                     .map(AsyncApiResponse::respondOk)
-                    .orElseThrow(ChainDataUnavailableException::new))); // TODO is this correct?
+                    .orElseThrow(ChainDataUnavailableException::new)));
   }
 
   private static SerializableTypeDefinition<BeaconBlock> getResponseType(
