@@ -39,7 +39,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -62,6 +61,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -154,7 +154,7 @@ public class ValidatorDataProvider {
     }
     return validatorApiChannel
         .createAttestationData(slot, committeeIndex)
-        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new))
+        .thenApply(maybeAttestation -> maybeAttestation)
         .exceptionallyCompose(
             error -> {
               final Throwable rootCause = Throwables.getRootCause(error);
