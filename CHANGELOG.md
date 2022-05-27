@@ -2,7 +2,6 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
@@ -15,14 +14,16 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- removed `/teku/v1/beacon/states/{state_id}`, as the functionality is in the standard state apis.
 
 ### Additions and Improvements
+- Upated ropsten testnet config to include extremely high TTD and enable proposer boost.
 - Reduced memory requirements for storing the deposit merkle tree.
-- Enabled proposer boost on Ropsten testnet.
 - Changed the default maximum peers count from 74 to 100 (`--p2p-peer-upper-bound 74` was old setting)
 - Update proposer boost weighting to 40%.
 - Update `BeaconBlocksByRange` to only return the first block if the step is greater than 1, in line with 1.20 spec.
 - Update any calls we make to `BeaconBlocksByRange` to use a step of 1, as step is deprecated in 1.20 spec.
+- Added `failOnRejectedCount` query parameter to liveness endpoint.
 
 ### Bug Fixes
 - Resolve a performance degradation in batch signature verification on machines with multiple, slower CPUs.

@@ -48,8 +48,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
@@ -63,6 +61,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -88,10 +87,8 @@ public class ValidatorDataProviderTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
   private tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock blockInternal;
-  private BeaconBlock block;
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       BLSTestUtil.randomSignature(1234);
-  private final BLSSignature signature = new BLSSignature(signatureInternal);
 
   @BeforeEach
   public void setup(SpecContext specContext) {
@@ -100,7 +97,6 @@ public class ValidatorDataProviderTest {
     schemaProvider = new SchemaObjectProvider(spec);
     provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
     blockInternal = dataStructureUtil.randomBeaconBlock(123);
-    block = schemaProvider.getBeaconBlock(blockInternal);
   }
 
   @TestTemplate
@@ -120,7 +116,8 @@ public class ValidatorDataProviderTest {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature, Optional.empty()));
+        .isThrownBy(
+            () -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signatureInternal, Optional.empty()));
   }
 
   @TestTemplate
@@ -131,7 +128,7 @@ public class ValidatorDataProviderTest {
         .isThrownBy(
             () ->
                 provider.getUnsignedBeaconBlockAtSlot(
-                    UInt64.valueOf(10L), signature, Optional.empty()));
+                    UInt64.valueOf(10L), signatureInternal, Optional.empty()));
   }
 
   @TestTemplate
@@ -140,12 +137,12 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
-    SafeFuture<Optional<BeaconBlock>> data =
-        provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty());
+    SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock>> data =
+        provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
     verify(validatorApiChannel)
         .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
     assertThat(data).isCompleted();
-    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
+    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(blockInternal);
   }
 
   @TestTemplate
@@ -154,7 +151,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createAttestationData(ONE, 0))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Computer says no")));
 
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ONE, 0);
     verify(validatorApiChannel).createAttestationData(ONE, 0);
     SafeFutureAssert.assertThatSafeFuture(result)
@@ -164,7 +161,7 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getAttestationDataAtSlot_shouldThrowIfStoreNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ZERO, 0);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
@@ -177,7 +174,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createAttestationData(ZERO, 0))
         .thenReturn(completedFuture(Optional.empty()));
 
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ZERO, 0);
     verify(validatorApiChannel).createAttestationData(ZERO, 0);
     assertThat(result).isCompletedWithValue(Optional.empty());
@@ -245,13 +242,13 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createAttestationData(ONE, 0))
         .thenReturn(completedFuture(Optional.of(internalData)));
 
-    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+    final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ONE, 0);
     assertThat(result).isCompleted();
-    tech.pegasys.teku.api.schema.AttestationData data = result.join().orElseThrow();
-    assertThat(data.index).isEqualTo(internalData.getIndex());
-    assertThat(data.slot).isEqualTo(internalData.getSlot());
-    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeaconBlockRoot());
+    AttestationData data = result.join().orElseThrow();
+    assertThat(data.getIndex()).isEqualTo(internalData.getIndex());
+    assertThat(data.getSlot()).isEqualTo(internalData.getSlot());
+    assertThat(data.getBeaconBlockRoot()).isEqualTo(internalData.getBeaconBlockRoot());
   }
 
   @TestTemplate

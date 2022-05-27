@@ -47,6 +47,7 @@ import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClie
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -74,7 +75,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final AtomicBoolean latestBuilderAvailability;
 
   /**
-   * slotToLocalElFallbackData usage:
+   * slotToLocalElFallbackPayload usage:
    *
    * <p>if we serve builderGetHeader using local execution engine, we store slot->executionPayload
    * to be able to serve builderGetPayload later
@@ -265,27 +266,29 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<Void> builderRegisterValidator(
-      final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
+  public SafeFuture<Void> builderRegisterValidators(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     LOG.trace(
-        "calling builderRegisterValidator(slot={},signedValidatorRegistration={})",
+        "calling builderRegisterValidator(slot={},signedValidatorRegistrations={})",
         slot,
-        signedValidatorRegistration);
+        signedValidatorRegistrations);
     return executionBuilderClient
         .orElseThrow()
-        .registerValidator(slot, signedValidatorRegistration)
+        .registerValidators(slot, signedValidatorRegistrations)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
             __ ->
                 LOG.trace(
-                    "builderRegisterValidator(slot={},signedValidatorRegistration={}) -> success",
+                    "builderRegisterValidator(slot={},signedValidatorRegistrations={}) -> success",
                     slot,
-                    signedValidatorRegistration));
+                    signedValidatorRegistrations));
   }
 
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt64 slot,
+      final boolean forceLocalFallback) {
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
         engineGetPayload(executionPayloadContext, slot, true);
@@ -293,7 +296,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final Optional<BLSPublicKey> registeredValidatorPublicKey =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistrationPublicKey();
 
-    if (!isBuilderAvailable() || registeredValidatorPublicKey.isEmpty()) {
+    if (forceLocalFallback || !isBuilderAvailable() || registeredValidatorPublicKey.isEmpty()) {
       // fallback to local execution engine
       return doFallbackToLocal(localExecutionPayload, slot);
     }
