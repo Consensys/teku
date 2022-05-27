@@ -19,6 +19,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,10 +114,11 @@ class SyncCommitteeMetricsTest {
     for (int i = 0; i < slotsPerEpoch; i++) {
       final Bytes32 blockRoot = spec.getBlockRootAtSlot(state, UInt64.valueOf(i));
       final BeaconBlock block =
-          dataStructureUtil
-              .blockBuilder(i)
-              .syncAggregate(dataStructureUtil.randomSyncAggregate(1, 2, 3))
-              .build();
+          safeJoin(
+              dataStructureUtil
+                  .blockBuilder(i)
+                  .syncAggregate(dataStructureUtil.randomSyncAggregate(1, 2, 3))
+                  .build());
       when(recentChainData.getSlotForBlockRoot(blockRoot))
           .thenReturn(Optional.of(UInt64.valueOf(i)));
       when(recentChainData.retrieveBlockByRoot(blockRoot))

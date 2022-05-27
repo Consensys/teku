@@ -19,12 +19,15 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -44,6 +47,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -132,9 +137,12 @@ public class BlockOperationSelectorFactory {
                   contributionPool.createSyncAggregateForBlock(
                       blockSlotState.getSlot(), parentRoot));
 
+      final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
+
       // execution payload handling
       if (bodyBuilder.isBlinded()) {
         // an execution payload header is required
+
         bodyBuilder.executionPayloadHeader(
             payloadProvider(
                 parentRoot,
@@ -144,10 +152,20 @@ public class BlockOperationSelectorFactory {
                             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
-                (executionPayloadContext) ->
-                    executionLayerChannel
-                        .builderGetHeader(executionPayloadContext, blockSlotState.getSlot())
-                        .join()));
+                (executionPayloadContext) -> {
+                  final boolean forceLocalFallback =
+                      executionPayloadContext
+                          .getForkChoiceState()
+                          .getFinalizedExecutionBlockHash()
+                          .isZero();
+
+                  if (forceLocalFallback) {
+                    LOG.info(
+                        "Merge transition not finalized: forcing block production using local execution engine");
+                  }
+                  return executionLayerChannel.builderGetHeader(
+                      executionPayloadContext, blockSlotState.getSlot(), forceLocalFallback);
+                }));
         return;
       }
 
@@ -157,35 +175,32 @@ public class BlockOperationSelectorFactory {
               parentRoot,
               blockSlotState,
               () ->
-                  SchemaDefinitionsBellatrix.required(
-                          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                  SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
                       .getExecutionPayloadSchema()
                       .getDefault(),
               (executionPayloadContext) ->
-                  executionLayerChannel
-                      .engineGetPayload(executionPayloadContext, blockSlotState.getSlot())
-                      .join()));
+                  executionLayerChannel.engineGetPayload(
+                      executionPayloadContext, blockSlotState.getSlot())));
     };
   }
 
-  private <T> Supplier<T> payloadProvider(
+  private <T> Supplier<SafeFuture<T>> payloadProvider(
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       Supplier<T> defaultSupplier,
-      Function<ExecutionPayloadContext, T> supplier) {
+      Function<ExecutionPayloadContext, SafeFuture<T>> supplier) {
     return () ->
         forkChoiceNotifier
             .getPayloadId(parentRoot, blockSlotState.getSlot())
-            .thenApply(
+            .thenCompose(
                 maybePayloadId -> {
                   if (maybePayloadId.isEmpty()) {
                     // Terminal block not reached, provide default payload
-                    return defaultSupplier.get();
+                    return SafeFuture.completedFuture(defaultSupplier.get());
                   } else {
                     return supplier.apply(maybePayloadId.get());
                   }
-                })
-            .join();
+                });
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +39,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -63,8 +64,8 @@ class RestExecutionBuilderClientTest {
   private static final String INTERNAL_SERVER_ERROR_MESSAGE =
       "{\"code\":500,\"message\":\"Internal server error\"}";
 
-  private static final String SIGNED_VALIDATOR_REGISTRATION_REQUEST =
-      readResource("builder/signedValidatorRegistration.json");
+  private static final String SIGNED_VALIDATOR_REGISTRATIONS_REQUEST =
+      readResource("builder/signedValidatorRegistrations.json");
 
   private static final String SIGNED_BLINDED_BEACON_BLOCK_REQUEST =
       readResource("builder/signedBlindedBeaconBlock.json");
@@ -147,9 +148,10 @@ class RestExecutionBuilderClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SignedValidatorRegistration signedValidatorRegistration = createSignedValidatorRegistration();
+    SszList<SignedValidatorRegistration> signedValidatorRegistrations =
+        createSignedValidatorRegistrations();
 
-    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -157,7 +159,7 @@ class RestExecutionBuilderClientTest {
               assertThat(response.getPayload()).isNull();
             });
 
-    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATION_REQUEST);
+    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATIONS_REQUEST);
   }
 
   @TestTemplate
@@ -167,9 +169,10 @@ class RestExecutionBuilderClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(unknownValidatorError));
 
-    SignedValidatorRegistration signedValidatorRegistration = createSignedValidatorRegistration();
+    SszList<SignedValidatorRegistration> signedValidatorRegistrations =
+        createSignedValidatorRegistrations();
 
-    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -177,12 +180,12 @@ class RestExecutionBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(unknownValidatorError);
             });
 
-    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATION_REQUEST);
+    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATIONS_REQUEST);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.registerValidator(SLOT, signedValidatorRegistration))
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -190,7 +193,7 @@ class RestExecutionBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATION_REQUEST);
+    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATIONS_REQUEST);
   }
 
   @TestTemplate
@@ -322,11 +325,11 @@ class RestExecutionBuilderClientTest {
     }
   }
 
-  private SignedValidatorRegistration createSignedValidatorRegistration() {
+  private SszList<SignedValidatorRegistration> createSignedValidatorRegistrations() {
     try {
       return JsonUtil.parse(
-          SIGNED_VALIDATOR_REGISTRATION_REQUEST,
-          SIGNED_VALIDATOR_REGISTRATION_SCHEMA.getJsonTypeDefinition());
+          SIGNED_VALIDATOR_REGISTRATIONS_REQUEST,
+          SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition());
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }

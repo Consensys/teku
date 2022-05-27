@@ -133,6 +133,12 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public void respondWithCode(final int statusCode, final CacheLength cacheLength) {
+    context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());
+    context.status(statusCode);
+  }
+
+  @Override
   public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
     return parameterMetadata
         .getType()

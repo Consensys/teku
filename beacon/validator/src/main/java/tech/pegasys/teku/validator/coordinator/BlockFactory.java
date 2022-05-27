@@ -22,9 +22,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class BlockFactory {
   private final Spec spec;
@@ -35,13 +35,12 @@ public class BlockFactory {
     this.operationSelector = operationSelector;
   }
 
-  public BeaconBlock createUnsignedBlock(
+  public SafeFuture<BeaconBlock> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final boolean blinded)
-      throws StateTransitionException {
+      final boolean blinded) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
         "Block slot state for slot %s but should be for slot %s",
@@ -61,7 +60,7 @@ public class BlockFactory {
             operationSelector.createSelector(
                 parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
-        .getBlock();
+        .thenApply(BeaconBlockAndState::getBlock);
   }
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlockIfBlinded(
