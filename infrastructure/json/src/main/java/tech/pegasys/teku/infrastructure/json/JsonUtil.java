@@ -77,12 +77,6 @@ public class JsonUtil {
     return parse(() -> FACTORY.createParser(json), type);
   }
 
-  public static <T> T parse(
-      final JsonFactory factory, final InputStream json, final DeserializableTypeDefinition<T> type)
-      throws JsonProcessingException {
-    return parse(() -> factory.createParser(json), type);
-  }
-
   public static <T> T parse(final InputStream json, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
     return parse(() -> FACTORY.createParser(json), type);
