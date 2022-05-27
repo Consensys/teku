@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -44,13 +43,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
-import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DepositProviderTest {
 
@@ -78,8 +78,7 @@ public class DepositProviderTest {
         new DepositProvider(
             new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
     depositProvider.onSyncingStatusChanged(true);
-    depositMerkleTree =
-        new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
+    depositMerkleTree = new MerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
     createDepositEvents(40);
     randomEth1Data = dataStructureUtil.randomEth1Data();
@@ -153,9 +152,13 @@ public class DepositProviderTest {
     setup(16);
     Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
     mockStateEth1DepositIndex(10);
+    mockEth1DataDepositCount(10);
     mockDepositsFromEth1Block(0, 20);
-    when(recentChainData.retrieveBlockState(eq(finalizedBlockRoot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.ofNullable(state)));
+    final AnchorPoint anchorPoint = mock(AnchorPoint.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getLatestFinalized()).thenReturn(anchorPoint);
+    when(anchorPoint.getState()).thenReturn(state);
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
@@ -298,6 +301,7 @@ public class DepositProviderTest {
                             genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
                             ((DepositWithIndex) deposit).getIndex().intValue(),
                             depositMerkleTree.getRoot()))
+                .withFailMessage("Expected proof to be valid but was not")
                 .isTrue());
   }
 
@@ -325,6 +329,7 @@ public class DepositProviderTest {
   private void mockEth1DataDepositCount(int n) {
     Eth1Data eth1Data = mock(Eth1Data.class);
     when(state.getEth1Data()).thenReturn(eth1Data);
+    when(eth1Data.getBlockHash()).thenReturn(dataStructureUtil.randomBytes32());
     when(eth1Data.getDepositCount()).thenReturn(UInt64.valueOf(n));
   }
 
