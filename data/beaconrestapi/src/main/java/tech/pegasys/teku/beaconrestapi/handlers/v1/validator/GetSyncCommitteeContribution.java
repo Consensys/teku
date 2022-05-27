@@ -62,6 +62,12 @@ public class GetSyncCommitteeContribution extends MigratingEndpointAdapter {
 
   public GetSyncCommitteeContribution(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
+  }
+
+  public GetSyncCommitteeContribution(
+      final ValidatorDataProvider validatorDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getSyncCommitteeContribution")
@@ -77,7 +83,7 @@ public class GetSyncCommitteeContribution extends MigratingEndpointAdapter {
             .withNotFoundResponse()
             .withChainDataResponses()
             .build());
-    this.provider = dataProvider.getValidatorDataProvider();
+    this.provider = validatorDataProvider;
   }
 
   @OpenApi(
