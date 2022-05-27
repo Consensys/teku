@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -54,19 +55,24 @@ public class GetNewBlockTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseBody()).isEqualTo(block);
   }
 
+  //  @Test // TODO remove? Does not pass
+  //  void metadata_shouldHandle204() throws JsonProcessingException {
+  //    verifyMetadataErrorResponse(handler, SC_NO_CONTENT);
+  //  }
+
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }
 
-  //  @Test // TODO add if don't throw ChainDataUnavailableException
-  //  void metadata_shouldHandle404() throws JsonProcessingException {
-  //    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
-  //  }
-
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
