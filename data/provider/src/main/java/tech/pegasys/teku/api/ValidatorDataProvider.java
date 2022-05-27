@@ -41,7 +41,6 @@ import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
@@ -334,23 +333,9 @@ public class ValidatorDataProvider {
                                 .collect(toList()))));
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution>>
-      createSyncCommitteeContribution(
-          final UInt64 slot, final int subcommitteeIndex, final Bytes32 blockRoot) {
-    return validatorApiChannel
-        .createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot)
-        .thenApply(
-            maybeContribution -> maybeContribution.map(this::toSchemaSyncCommitteeContribution));
-  }
-
-  private tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution
-      toSchemaSyncCommitteeContribution(final SyncCommitteeContribution contribution) {
-    return new tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution(
-        contribution.getSlot(),
-        contribution.getBeaconBlockRoot(),
-        contribution.getSubcommitteeIndex(),
-        contribution.getAggregationBits().sszSerialize(),
-        new BLSSignature(contribution.getSignature()));
+  public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 blockRoot) {
+    return validatorApiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
   }
 
   private tech.pegasys.teku.api.response.v1.validator.ProposerDuty mapToProposerDuties(

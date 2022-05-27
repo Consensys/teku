@@ -13,20 +13,20 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BEACON_BLOCK_ROOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SUBCOMMITTEE_INDEX_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsInt;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -35,30 +35,48 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
-public class GetSyncCommitteeContribution extends AbstractHandler {
+public class GetSyncCommitteeContribution extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/sync_committee_contribution";
-
   private final ValidatorDataProvider provider;
 
   public GetSyncCommitteeContribution(
-      final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getSyncCommitteeContribution")
+            .summary("Produce a sync committee contribution")
+            .description(
+                "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeMessage` "
+                    + "values known to this node matching the specified slot, subcommittee index and beacon block root.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .queryParamRequired(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
+            .queryParamRequired(SUBCOMMITTEE_INDEX_PARAMETER)
+            .queryParamRequired(BEACON_BLOCK_ROOT_PARAMETER)
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .withNotFoundResponse()
+            .withChainDataResponses()
+            .build());
     this.provider = dataProvider.getValidatorDataProvider();
   }
 
@@ -97,42 +115,47 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final Map<String, List<String>> parameters = ctx.queryParamMap();
-      if (parameters.size() < 3) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Please specify all of %s, %s and %s",
-                SLOT, SUBCOMMITTEE_INDEX, BEACON_BLOCK_ROOT));
-      }
-      final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
-      final Bytes32 blockRoot = getParameterValueAsBytes32(parameters, BEACON_BLOCK_ROOT);
-      final int subcommitteeIndex = getParameterValueAsInt(parameters, SUBCOMMITTEE_INDEX);
-      if (subcommitteeIndex < 0
-          || subcommitteeIndex >= NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Subcommittee index needs to be between 0 and %s, %s is outside of this range.",
-                NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT - 1, subcommitteeIndex));
-      }
-
-      if (provider.isPhase0Slot(slot)) {
-        throw new IllegalArgumentException(String.format("Slot %s is not an Altair slot", slot));
-      }
-
-      final SafeFuture<Optional<SyncCommitteeContribution>> future =
-          provider.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
-      handleOptionalResult(ctx, future, this::processResult, SC_NOT_FOUND);
-    } catch (final IllegalArgumentException e) {
-      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
-    }
+    adapt(ctx);
   }
 
-  private Optional<String> processResult(
-      final Context ctx, final SyncCommitteeContribution contribution)
-      throws JsonProcessingException {
-    return Optional.of(
-        jsonProvider.objectToJSON(new GetSyncCommitteeContributionResponse(contribution)));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final UInt64 slot =
+        request.getQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
+    final Bytes32 blockRoot = request.getQueryParameter(BEACON_BLOCK_ROOT_PARAMETER);
+    final Integer subcommitteeIndex = request.getQueryParameter(SUBCOMMITTEE_INDEX_PARAMETER);
+
+    if (subcommitteeIndex < 0
+        || subcommitteeIndex >= NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Subcommittee index needs to be between 0 and %s, %s is outside of this range.",
+              NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT - 1, subcommitteeIndex));
+    } else if (provider.isPhase0Slot(slot)) {
+      throw new IllegalArgumentException(String.format("Slot %s is not an Altair slot", slot));
+    }
+
+    final SafeFuture<Optional<SyncCommitteeContribution>> future =
+        provider.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
+
+    request.respondAsync(
+        future.thenApply(
+            maybeSyncCommitteeContribution ->
+                maybeSyncCommitteeContribution
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
+  }
+
+  private static SerializableTypeDefinition<SyncCommitteeContribution> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SyncCommitteeContributionSchema typeDefinition =
+        SchemaDefinitionsAltair.required(
+                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))
+            .getSyncCommitteeContributionSchema();
+
+    return SerializableTypeDefinition.object(SyncCommitteeContribution.class)
+        .name("GetSyncCommitteeContributionResponse")
+        .withField("data", typeDefinition.getJsonTypeDefinition(), Function.identity())
+        .build();
   }
 }
