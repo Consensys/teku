@@ -916,6 +916,31 @@ class ForkChoiceTest {
                 "LMD vote must be consistent with FFG vote target"));
   }
 
+  @Test
+  void onAttestation_shouldDeferAttestationsFromCurrentSlot() {
+    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(currentSlot);
+    importBlock(targetBlock);
+
+    final Attestation attestation =
+        chainBuilder.streamValidAttestationsWithTargetBlock(targetBlock).findFirst().orElseThrow();
+    final SafeFuture<AttestationProcessingResult> result =
+        forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation));
+    assertThat(result).isCompletedWithValue(AttestationProcessingResult.DEFER_FOR_FORK_CHOICE);
+
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    assertThat(forkChoiceStrategy.getWeight(targetBlock.getRoot())).contains(ZERO);
+
+    // Should apply at start of next slot.
+    forkChoice.onTick(
+        spec.getSlotStartTimeMillis(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()));
+    processHead(currentSlot.plus(1));
+
+    assertThat(forkChoiceStrategy.getWeight(targetBlock.getRoot()).orElseThrow())
+        .isGreaterThan(ZERO);
+  }
+
   private UInt64 applyAttestationFromValidator(
       final UInt64 validatorIndex, final SignedBlockAndState targetBlock) {
     // Note this attestation is wildly invalid but we're going to shove it straight into fork choice

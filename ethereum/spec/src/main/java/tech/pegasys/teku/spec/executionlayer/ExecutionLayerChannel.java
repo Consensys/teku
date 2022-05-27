@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -65,8 +66,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Void> builderRegisterValidator(
-            final SignedValidatorRegistration signedValidatorRegistration, final UInt64 slot) {
+        public SafeFuture<Void> builderRegisterValidators(
+            final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
+            final UInt64 slot) {
           return SafeFuture.COMPLETE;
         }
 
@@ -104,8 +106,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       TransitionConfiguration transitionConfiguration);
 
   // builder namespace
-  SafeFuture<Void> builderRegisterValidator(
-      SignedValidatorRegistration signedValidatorRegistration, UInt64 slot);
+  SafeFuture<Void> builderRegisterValidators(
+      SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot, boolean forceLocalFallback);

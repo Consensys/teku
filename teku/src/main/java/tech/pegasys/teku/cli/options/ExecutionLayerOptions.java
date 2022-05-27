@@ -15,10 +15,14 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
 
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerOptions {
+
+  @CommandLine.ArgGroup(validate = false)
+  private DepositOptions depositOptions = new DepositOptions();
 
   @Option(
       names = {"--ee-endpoint"},
@@ -58,5 +62,6 @@ public class ExecutionLayerOptions {
                 .engineVersion(executionEngineVersion)
                 .engineJwtSecretFile(engineJwtSecretFile)
                 .builderEndpoint(executionBuilderEndpoint));
+    depositOptions.configure(builder);
   }
 }

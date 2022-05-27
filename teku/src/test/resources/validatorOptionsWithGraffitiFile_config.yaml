@@ -4,4 +4,4 @@ validators-external-signer-url: "https://signer.url/"
 validators-external-signer-timeout: 1234
 validators-graffiti: "U K E T" # the test shouldn't return this value
 validators-graffiti-file: "src/test/resources/graffitiFile.txt"
-validators-performance-tracking-enabled: "true"
+validators-performance-tracking-mode: "all"
