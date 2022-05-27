@@ -66,7 +66,7 @@ public class GetDeposits extends MigratingEndpointAdapter {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get deposits",
-      description = "Range of deposits that are currently available.",
+      description = "Get all deposits currently held for inclusion in future blocks.",
       tags = {TAG_TEKU},
       responses = {
         @OpenApiResponse(
