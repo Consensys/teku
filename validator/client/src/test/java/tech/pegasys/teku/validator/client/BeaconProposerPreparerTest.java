@@ -189,6 +189,29 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
+  void deleteFeeRecipient_shouldReturnFalseIfConfigurationSetsAddress() {
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+    assertThat(beaconProposerPreparer.deleteFeeRecipient(validator1.getPublicKey())).isFalse();
+  }
+
+  @TestTemplate
+  void deleteFeeRecipient_shouldReturnTrueIfConfigHasPublicKey(@TempDir final Path tempDir)
+      throws IOException {
+    proposerWithRuntimeConfiguration(
+        tempDir, validator2.getPublicKey(), dataStructureUtil.randomEth1Address());
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+    assertThat(beaconProposerPreparer.deleteFeeRecipient(validator2.getPublicKey())).isTrue();
+  }
+
+  @TestTemplate
+  void deleteFeeRecipient_shouldReturnTrueIfConfigMissingPublicKey() {
+    // successful in that it is not a configured key, and it is not listed in the runtime
+    // configuration.
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+    assertThat(beaconProposerPreparer.deleteFeeRecipient(validator2.getPublicKey())).isTrue();
+  }
+
+  @TestTemplate
   void getFeeRecipient_shouldReturnRuntimeConfigIfNotPresentInConfigurationFile(
       @TempDir final Path tempDir) throws IOException {
     final Eth1Address address = dataStructureUtil.randomEth1Address();

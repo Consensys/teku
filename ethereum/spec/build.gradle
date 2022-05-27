@@ -4,6 +4,7 @@ dependencies {
     api 'org.apache.tuweni:tuweni-bytes'
 
     implementation project(':infrastructure:ssz')
+    implementation project(':infrastructure:exceptions')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -47,6 +48,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.apache.tuweni:tuweni-ssz'
 
+    testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
     testImplementation testFixtures(project(':infrastructure:json'))
@@ -64,7 +66,6 @@ dependencies {
     testFixturesImplementation project(':infrastructure:bls')
     testFixturesImplementation project(':infrastructure:bytes')
     testFixturesImplementation testFixtures(project(':infrastructure:bls'))
-    testFixturesImplementation project(':infrastructure:crypto')
     testFixturesImplementation project(':infrastructure:events')
     testFixturesImplementation project(':infrastructure:time')
 }

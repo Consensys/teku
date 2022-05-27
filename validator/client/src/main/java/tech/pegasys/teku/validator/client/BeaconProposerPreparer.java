@@ -140,6 +140,16 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     runtimeProposerConfig.addOrUpdate(publicKey, eth1Address);
   }
 
+  public boolean deleteFeeRecipient(final BLSPublicKey publicKey) {
+    Optional<Eth1Address> maybeEth1Address =
+        maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
+    if (maybeEth1Address.isPresent()) {
+      return false;
+    }
+    runtimeProposerConfig.delete(publicKey);
+    return true;
+  }
+
   private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
     return config.getConfigForPubKey(publicKey).map(Config::getFeeRecipient);

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
@@ -87,15 +89,16 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
     additionalSetup.run();
 
-    defaultBlockBody = createDefaultBlockBody();
+    defaultBlockBody = safeJoin(createDefaultBlockBody());
     blockBodySchema = defaultBlockBody.getSchema();
   }
 
-  protected T createBlockBody() {
+  protected SafeFuture<T> createBlockBody() {
     return createBlockBody(createContentProvider());
   }
 
-  protected abstract T createBlockBody(final Consumer<BeaconBlockBodyBuilder> contentProvider);
+  protected abstract SafeFuture<T> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> contentProvider);
 
   @SuppressWarnings("unchecked")
   protected BeaconBlockBodySchema<? extends T> getBlockBodySchema() {
@@ -103,7 +106,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
-  protected T createDefaultBlockBody() {
+  protected SafeFuture<T> createDefaultBlockBody() {
     return createBlockBody();
   }
 
@@ -116,7 +119,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    T testBeaconBlockBody = createDefaultBlockBody();
+    T testBeaconBlockBody = safeJoin(createDefaultBlockBody());
     assertEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
@@ -130,7 +133,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
     this.proposerSlashings = reversed(proposerSlashings);
-    T testBeaconBlockBody = createBlockBody();
+    T testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -143,7 +146,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
                 Stream.of(dataStructureUtil.randomAttesterSlashing()), attesterSlashings.stream())
             .collect(blockBodySchema.getAttesterSlashingsSchema().collector());
 
-    T testBeaconBlockBody = createBlockBody();
+    T testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -153,7 +156,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     // Create copy of attestations and reverse to ensure it is different.
     attestations = reversed(attestations);
 
-    T testBeaconBlockBody = createBlockBody();
+    T testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -163,7 +166,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     // Create copy of deposits and reverse to ensure it is different.
     deposits = reversed(deposits);
 
-    T testBeaconBlockBody = createBlockBody();
+    T testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -173,7 +176,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     // Create copy of exits and reverse to ensure it is different.
     voluntaryExits = reversed(voluntaryExits);
 
-    T testBeaconBlockBody = createBlockBody();
+    T testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
