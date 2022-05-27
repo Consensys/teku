@@ -28,7 +28,7 @@ public abstract class DataOptions {
   private Path dataBasePath = DataConfig.defaultDataPath();
 
   public DataConfig getDataConfig() {
-    return configure(DataConfig.builder()).build();
+    return configureDataConfig(DataConfig.builder()).build();
   }
 
   public String getDataPath() {
@@ -36,10 +36,10 @@ public abstract class DataOptions {
   }
 
   public void configure(TekuConfiguration.Builder builder) {
-    builder.data(this::configure);
+    builder.data(this::configureDataConfig);
   }
 
-  protected DataConfig.Builder configure(final DataConfig.Builder config) {
+  protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return config.dataBasePath(dataBasePath);
   }
 }
