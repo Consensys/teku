@@ -53,6 +53,7 @@ public abstract class AbstractSszCollectionSchema<
   private final SszSchemaHints hints;
   protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementSchema()));
+  private final int treeDepth;
   private volatile TreeNode defaultTree;
 
   protected AbstractSszCollectionSchema(
@@ -61,6 +62,7 @@ public abstract class AbstractSszCollectionSchema<
     this.maxLength = maxLength;
     this.elementSchema = elementSchema;
     this.hints = hints;
+    this.treeDepth = SszCompositeSchema.super.treeDepth();
   }
 
   protected abstract TreeNode createDefaultTree();
@@ -76,6 +78,11 @@ public abstract class AbstractSszCollectionSchema<
   @Override
   public long getMaxLength() {
     return maxLength;
+  }
+
+  @Override
+  public int treeDepth() {
+    return treeDepth;
   }
 
   public SszSchema<SszElementT> getElementSchema() {
