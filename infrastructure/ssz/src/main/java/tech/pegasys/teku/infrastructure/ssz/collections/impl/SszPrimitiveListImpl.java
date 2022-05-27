@@ -30,6 +30,7 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
   private final SszPrimitiveSchema<ElementT, SszElementT> elementType;
   private final CachingTreeAccessor cachingTreeAccessor;
 
+  @SuppressWarnings("unchecked")
   public SszPrimitiveListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
     this.elementsPerChunk = schema.getElementsPerChunk();
@@ -38,6 +39,7 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
         new CachingTreeAccessor(backingNode, schema::getChildGeneralizedIndex);
   }
 
+  @SuppressWarnings("unchecked")
   public SszPrimitiveListImpl(
       SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
