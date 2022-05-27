@@ -26,8 +26,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
     extends SszListImpl<SszElementT> implements SszPrimitiveList<ElementT, SszElementT> {
 
-  private final int elementsPerChunk;
-  private final SszPrimitiveSchema<ElementT, SszElementT> elementType;
+  protected final int elementsPerChunk;
+  protected final SszPrimitiveSchema<ElementT, SszElementT> elementType;
   private final CachingTreeAccessor cachingTreeAccessor;
 
   @SuppressWarnings("unchecked")
@@ -50,16 +50,11 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
   }
 
   @Override
-  public ElementT getElement(int index) {
-    return elementType.createFromPackedNodeUnboxed(getTreeNode(index), index % elementsPerChunk);
-  }
-
-  @Override
   protected SszElementT getImpl(int index) {
     return elementType.createFromPackedNode(getTreeNode(index), index % elementsPerChunk);
   }
 
-  private TreeNode getTreeNode(int index) {
+  protected TreeNode getTreeNode(int index) {
     int nodeIndex = index / elementsPerChunk;
     return cachingTreeAccessor.getNodeByVectorIndex(nodeIndex);
   }
