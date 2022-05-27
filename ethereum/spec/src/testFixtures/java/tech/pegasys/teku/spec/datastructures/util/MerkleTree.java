@@ -18,28 +18,27 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 
-public abstract class MerkleTree {
-  protected final List<List<Bytes32>> tree;
-  protected final List<Bytes32> zeroHashes;
+public class MerkleTree {
+
+  private final List<List<Bytes32>> tree;
+  private final List<Bytes32> zeroHashes;
   protected final int treeDepth; // Root does not count as depth, i.e. tree height is treeDepth + 1
 
-  protected MerkleTree(int treeDepth) {
+  public MerkleTree(int treeDepth) {
     checkArgument(treeDepth > 1, "MerkleTree: treeDepth must be greater than 1");
     this.treeDepth = treeDepth;
-    tree = new ArrayList<>();
+    this.tree = new ArrayList<>();
     for (int i = 0; i <= treeDepth; i++) {
-      tree.add(new ArrayList<>());
+      this.tree.add(new ArrayList<>());
     }
-    zeroHashes = generateZeroHashes(treeDepth);
+    this.zeroHashes = generateZeroHashes(treeDepth);
   }
-
-  public abstract void add(Bytes32 leaf);
-
-  public abstract int getNumberOfLeaves();
 
   protected static List<Bytes32> generateZeroHashes(int height) {
     List<Bytes32> zeroHashes = new ArrayList<>();
@@ -48,6 +47,43 @@ public abstract class MerkleTree {
       zeroHashes.add(i, Hash.sha256(zeroHashes.get(i - 1), zeroHashes.get(i - 1)));
     }
     return zeroHashes;
+  }
+
+  public void add(Bytes32 leaf) {
+    if (!tree.get(0).isEmpty()
+        && tree.get(0).get(tree.get(0).size() - 1).equals(zeroHashes.get(0))) {
+      tree.get(0).remove(tree.get(0).size() - 1);
+    }
+    int stageSize = tree.get(0).size();
+    tree.get(0).add(leaf);
+    for (int h = 0; h <= treeDepth; h++) {
+      List<Bytes32> stage = tree.get(h);
+      if (h > 0) {
+        // Remove elements that should be modified
+        stageSize = stageSize / 2;
+        while (stage.size() != stageSize) {
+          stage.remove(stage.size() - 1);
+        }
+
+        List<Bytes32> previousStage = tree.get(h - 1);
+        int previousStageSize = previousStage.size();
+        stage.add(
+            Hash.sha256(
+                previousStage.get(previousStageSize - 2),
+                previousStage.get(previousStageSize - 1)));
+      }
+      if (stage.size() % 2 == 1 && h != treeDepth) {
+        stage.add(zeroHashes.get(h));
+      }
+    }
+  }
+
+  public int getNumberOfLeaves() {
+    int lastLeafIndex = tree.get(0).size() - 1;
+    if (tree.get(0).get(lastLeafIndex).equals(Bytes32.ZERO)) {
+      return tree.get(0).size() - 1;
+    }
+    return tree.get(0).size();
   }
 
   public List<Bytes32> getProof(Bytes32 value) {
@@ -162,9 +198,35 @@ public abstract class MerkleTree {
   @Override
   public String toString() {
     StringBuilder returnString = new StringBuilder();
+    int numLeaves = (int) Math.pow(2, treeDepth);
+    int height = 0;
+    int stageFullSize;
     for (int i = treeDepth; i >= 0; i--) {
-      returnString.append("\n").append(tree.get(i));
+      stageFullSize = (int) Math.pow(2, height);
+      height++;
+      int stageNonZeroSize = tree.get(i).size();
+      List<Bytes32> stageItems = new ArrayList<>(tree.get(i));
+      for (int j = stageNonZeroSize; j < stageFullSize; j++) {
+        stageItems.add(zeroHashes.get(i));
+      }
+      returnString.append("\n").append(centerPrint(stageItems, numLeaves)).append(stageFullSize);
     }
     return "MerkleTree{" + "tree=" + returnString + ", treeDepth=" + treeDepth + '}';
+  }
+
+  private String centerPrint(List<Bytes32> stageItems, int numLeaves) {
+    String emptySpaceOnSide =
+        IntStream.range(0, (numLeaves - stageItems.size()))
+            .mapToObj(i -> "    ")
+            .collect(Collectors.joining("    "));
+    if (numLeaves == stageItems.size()) {
+      emptySpaceOnSide = "                ";
+    }
+    String stageString =
+        stageItems.stream()
+            .map(item -> item.toHexString().substring(63))
+            .collect(Collectors.joining(emptySpaceOnSide));
+
+    return emptySpaceOnSide.concat(stageString).concat(emptySpaceOnSide);
   }
 }
