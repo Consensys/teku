@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @State(Scope.Thread)
@@ -37,18 +38,21 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 public class ByteListBenchmark {
 
+  private static final long MAX_LIST_SIZE = 1L << 40; // Max Validators on Mainnet
   private static final int LIST_SIZE = 1 << 19; // ~500K, MainNet state participation flags
-  private static final SszByteListSchema<?> LIST_SCHEMA = SszByteListSchema.create(LIST_SIZE);
+  private static final SszByteListSchema<?> LIST_SCHEMA = SszByteListSchema.create(MAX_LIST_SIZE);
   private static final TreeNode LIST_TREE =
       LIST_SCHEMA.fromBytes(Bytes.wrap(new byte[LIST_SIZE])).getBackingNode();
 
-  private static final BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(1);
-  private static final DataStructureUtil dataStructureUtil =
+  private static final BLSPublicKey PUBLIC_KEY = BLSTestUtil.randomPublicKey(1);
+  private static final DataStructureUtil DATA_STRUCTURE_UTIL =
       new DataStructureUtil(TestSpecFactory.createMainnetAltair())
-          .withPubKeyGenerator(() -> publicKey);
-  private static BeaconStateAltair state =
-      (BeaconStateAltair) dataStructureUtil.randomBeaconState(LIST_SIZE);
-
+          .withPubKeyGenerator(() -> PUBLIC_KEY);
+  private static final BeaconStateAltair STATE =
+      (BeaconStateAltair) DATA_STRUCTURE_UTIL.randomBeaconState(LIST_SIZE);
+  private static final BeaconStateSchemaAltair STATE_SCHEMA =
+      (BeaconStateSchemaAltair) STATE.getBeaconStateSchema();
+  private static final TreeNode STATE_TREE = STATE.getBackingNode();
 
   @Benchmark
   public void iterateBoxed(Blackhole bh) {
@@ -91,22 +95,9 @@ public class ByteListBenchmark {
 
   @Benchmark
   public void iterateBeaconStateParticipationFlags(Blackhole bh) {
-    BeaconStateAltair freshState = (BeaconStateAltair) state.getBeaconStateSchema()
-        .createFromBackingNode(state.getBackingNode());
+    BeaconStateAltair freshState = STATE_SCHEMA.createFromBackingNode(STATE_TREE);
     for (SszByte aByte : freshState.getCurrentEpochParticipation()) {
-      Byte bb = aByte.get();
-      bh.consume(bb);
-    }
-  }
-
-  public static void main(String[] args) {
-    final Blackhole blackhole =
-        new Blackhole(
-            "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
-    ByteListBenchmark benchmark = new ByteListBenchmark();
-
-    while (true) {
-      benchmark.iterateBeaconStateParticipationFlags(blackhole);
+      bh.consume(aByte);
     }
   }
 }
