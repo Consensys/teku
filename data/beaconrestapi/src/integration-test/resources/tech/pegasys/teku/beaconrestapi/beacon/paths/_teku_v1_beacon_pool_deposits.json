@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Teku" ],
     "summary" : "Get deposits",
-    "description" : "Range of deposits that are currently available.",
+    "description" : "Get all deposits currently held for inclusion in future blocks.",
     "operationId" : "getTekuV1BeaconPoolDeposits",
     "responses" : {
       "200" : {

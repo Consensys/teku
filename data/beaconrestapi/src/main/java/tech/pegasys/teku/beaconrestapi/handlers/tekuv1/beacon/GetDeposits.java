@@ -55,7 +55,7 @@ public class GetDeposits extends MigratingEndpointAdapter {
         EndpointMetadata.get(ROUTE)
             .operationId("getDeposits")
             .summary("Get deposits")
-            .description("Range of deposits that are currently available.")
+            .description("Get all deposits currently held for inclusion in future blocks.")
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", DEPOSITS_RESPONSE_TYPE)
             .build());
@@ -66,7 +66,7 @@ public class GetDeposits extends MigratingEndpointAdapter {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get deposits",
-      description = "Range of deposits that are currently available.",
+      description = "Get all deposits currently held for inclusion in future blocks.",
       tags = {TAG_TEKU},
       responses = {
         @OpenApiResponse(

@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 public class GetEth1Data extends MigratingEndpointAdapter {
@@ -89,13 +89,12 @@ public class GetEth1Data extends MigratingEndpointAdapter {
         chainDataProvider
             .getBeaconStateAtHead()
             .thenApply(
-                mayBeState -> {
-                  if (mayBeState.isEmpty()) {
+                maybeState -> {
+                  if (maybeState.isEmpty()) {
                     return AsyncApiResponse.respondNotFound();
                   } else {
-                    StateAndMetaData stateAndMetaData = mayBeState.get();
-                    Eth1Data eth1Vote = eth1DataCache.getEth1Vote(stateAndMetaData.getData());
-                    return AsyncApiResponse.respondOk(eth1Vote);
+                    final BeaconState beaconState = maybeState.get().getData();
+                    return AsyncApiResponse.respondOk(eth1DataCache.getEth1Vote(beaconState));
                   }
                 }));
   }

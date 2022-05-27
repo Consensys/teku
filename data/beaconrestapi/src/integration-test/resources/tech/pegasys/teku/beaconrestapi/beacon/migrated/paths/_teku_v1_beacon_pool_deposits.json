@@ -3,7 +3,7 @@
     "tags" : [ "Teku" ],
     "operationId" : "getDeposits",
     "summary" : "Get deposits",
-    "description" : "Range of deposits that are currently available.",
+    "description" : "Get all deposits currently held for inclusion in future blocks.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
