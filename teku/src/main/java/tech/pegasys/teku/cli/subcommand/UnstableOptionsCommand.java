@@ -14,9 +14,13 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Model.OptionSpec;
 
 /**
  * This class provides a CLI command to enumerate the unstable options available in Teku.
@@ -47,7 +51,15 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
   @Override
   public void run() {
     final CommandSpec commandSpec = helpCommandLine.getParent().getCommandSpec();
-    commandSpec.argGroups().forEach(this::printUnstableOptions);
+    final Map<String, List<OptionSpec>> optionsByModuleName = new TreeMap<>();
+    commandSpec
+        .argGroups()
+        .forEach(
+            argSpec ->
+                optionsByModuleName.put(
+                    argSpec.heading().replace("%n", ""), argSpec.allOptionsNested()));
+    commandSpec.mixins().forEach((name, spec) -> optionsByModuleName.put(name, spec.options()));
+    optionsByModuleName.forEach(this::printUnstableOptions);
   }
 
   @Override
@@ -61,17 +73,17 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
     this.outWriter = outWriter;
   }
 
-  private void printUnstableOptions(final CommandLine.Model.ArgGroupSpec argGroupSpec) {
-    final CommandLine.Model.CommandSpec cs = CommandLine.Model.CommandSpec.create();
-    argGroupSpec.allOptionsNested().stream()
+  private void printUnstableOptions(final String mixinName, final List<OptionSpec> options) {
+    // Recreate the options but flip hidden to false.
+    final CommandSpec cs = CommandSpec.create();
+    cs.usageMessage().showDefaultValues(true);
+    options.stream()
         .filter(option -> option.hidden() && option.names()[0].startsWith("--X"))
         .forEach(option -> cs.addOption(option.toBuilder().hidden(false).build()));
+
     if (cs.options().size() > 0) {
       // Print out the help text.
-      if (argGroupSpec.heading() != null) {
-        outWriter.println(argGroupSpec.heading().replace("%n", "") + " unstable options");
-      }
-
+      outWriter.println(mixinName + " unstable options");
       outWriter.println(new CommandLine.Help(cs, colorScheme).optionList());
     }
   }

@@ -29,7 +29,7 @@ public class ValidatorClientDataOptions extends DataOptions {
   private Path dataValidatorPath;
 
   @Override
-  protected DataConfig.Builder configure(final DataConfig.Builder config) {
-    return super.configure(config).validatorDataPath(dataValidatorPath);
+  protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
+    return super.configureDataConfig(config).validatorDataPath(dataValidatorPath);
   }
 }

@@ -27,6 +27,7 @@ import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.Unmatched;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
-import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ExecutionLayerOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
@@ -143,11 +143,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @CommandLine.ArgGroup(validate = false, heading = "Execution Layer%n")
   private ExecutionLayerOptions executionLayerOptions = new ExecutionLayerOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Beacon Node Data%n")
-  private BeaconNodeDataOptions dataOptions = new BeaconNodeDataOptions();
-
   @CommandLine.ArgGroup(validate = false, heading = "Data Storage%n")
-  private DataStorageOptions dataStorageOptions = new DataStorageOptions();
+  private BeaconNodeDataOptions beaconNodeDataOptions = new BeaconNodeDataOptions();
 
   @CommandLine.ArgGroup(validate = false, heading = "Beacon REST API%n")
   private BeaconRestApiOptions beaconRestApiOptions = new BeaconRestApiOptions();
@@ -158,10 +155,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @CommandLine.ArgGroup(validate = false, heading = "Weak Subjectivity%n")
   private WeakSubjectivityOptions weakSubjectivityOptions = new WeakSubjectivityOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Interop Options%n")
+  @Mixin(name = "Interop")
   private InteropOptions interopOptions = new InteropOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Store Options%n")
+  @Mixin(name = "Store")
   private final StoreOptions storeOptions = new StoreOptions();
 
   @CommandLine.ArgGroup(validate = false, heading = "Logging%n")
@@ -324,7 +321,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private void startLogging() {
-    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfig loggingConfig =
+        buildLoggingConfig(beaconNodeDataOptions.getDataPath(), LOG_FILE_PREFIX);
     loggingConfigurator.startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
@@ -347,13 +345,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
       executionLayerOptions.configure(builder);
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
-      dataOptions.configure(builder);
       p2POptions.configure(builder);
       beaconRestApiOptions.configure(builder);
       validatorRestApiOptions.configure(builder);
       loggingOptions.configureWireLogs(builder);
       interopOptions.configure(builder);
-      dataStorageOptions.configure(builder);
+      beaconNodeDataOptions.configure(builder);
       metricsOptions.configure(builder);
       storeOptions.configure(builder);
 
