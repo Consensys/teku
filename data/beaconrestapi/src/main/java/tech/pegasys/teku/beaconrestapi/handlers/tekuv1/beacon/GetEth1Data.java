@@ -89,11 +89,11 @@ public class GetEth1Data extends MigratingEndpointAdapter {
         chainDataProvider
             .getBeaconStateAtHead()
             .thenApply(
-                maybeState -> {
-                  if (maybeState.isEmpty()) {
+                maybeStateAndMetadata -> {
+                  if (maybeStateAndMetadata.isEmpty()) {
                     return AsyncApiResponse.respondNotFound();
                   } else {
-                    final BeaconState beaconState = maybeState.get().getData();
+                    final BeaconState beaconState = maybeStateAndMetadata.get().getData();
                     return AsyncApiResponse.respondOk(eth1DataCache.getEth1Vote(beaconState));
                   }
                 }));
