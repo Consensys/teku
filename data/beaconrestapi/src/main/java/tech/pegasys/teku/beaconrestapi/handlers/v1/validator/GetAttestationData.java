@@ -30,7 +30,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -52,7 +51,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetAttestationData extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/attestation_data";
@@ -87,6 +85,7 @@ public class GetAttestationData extends MigratingEndpointAdapter {
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .response(SC_SERVICE_UNAVAILABLE, "Service unavailable", HTTP_ERROR_RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }
@@ -139,22 +138,10 @@ public class GetAttestationData extends MigratingEndpointAdapter {
         provider.createAttestationDataAtSlot(slot, committeeIndex.intValue());
 
     request.respondAsync(
-        future
-            .thenApply(
-                maybeAttestationData ->
-                    maybeAttestationData
-                        .map(AsyncApiResponse::respondOk)
-                        .orElseGet(AsyncApiResponse::respondNotFound))
-            .exceptionallyCompose(
-                error -> {
-                  final Throwable rootCause = Throwables.getRootCause(error);
-                  if (rootCause instanceof ChainDataUnavailableException) {
-                    return SafeFuture.of(
-                        () ->
-                            AsyncApiResponse.respondWithError(
-                                SC_SERVICE_UNAVAILABLE, "Service unavailable"));
-                  }
-                  return SafeFuture.failedFuture(error);
-                }));
+        future.thenApply(
+            maybeAttestationData ->
+                maybeAttestationData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 }
