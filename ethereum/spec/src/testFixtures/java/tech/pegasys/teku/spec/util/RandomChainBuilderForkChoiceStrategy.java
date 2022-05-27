@@ -151,6 +151,12 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
                     false));
   }
 
+  @Override
+  public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
+    // We don't track weight so return 0 for all known blocks.
+    return getBlock(blockRoot).map(block -> UInt64.ZERO);
+  }
+
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {
     return chainBuilder
         .getBlock(root)
