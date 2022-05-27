@@ -18,7 +18,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
@@ -41,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private DataStructureUtil dataStructureUtil;
@@ -88,6 +92,30 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
     assertThat(response.code()).isEqualTo(SC_OK);
     BeaconBlock block = spec.deserializeBeaconBlock(Bytes.of(response.body().bytes()));
     assertThat(block).isEqualTo(randomBlock);
+  }
+
+  @ParameterizedTest(name = "blinded_{1}")
+  @MethodSource("getNewBlockCases")
+  void shouldShowNoContent(final String route, final boolean isBlindedBlock) throws IOException {
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
+        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
+    Response response = get(route, signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
+    assertThat(response.body().string()).isEqualTo("");
+  }
+
+  @ParameterizedTest(name = "blinded_{1}")
+  @MethodSource("getNewBlockCases")
+  void shouldShowUnavailable(final String route, final boolean isBlindedBlock) throws IOException {
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
+        .thenReturn(SafeFuture.failedFuture(new ServiceUnavailableException()));
+    Response response = get(route, signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(response.body().string())
+        .isEqualTo(
+            "{\"code\":503,\"message\":\"Beacon node is currently syncing and not serving requests\"}");
   }
 
   public Response get(final String route, final BLSSignature signature, final String contentType)
