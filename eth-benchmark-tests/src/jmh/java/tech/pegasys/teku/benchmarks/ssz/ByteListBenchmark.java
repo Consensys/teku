@@ -22,10 +22,15 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -36,6 +41,14 @@ public class ByteListBenchmark {
   private static final SszByteListSchema<?> LIST_SCHEMA = SszByteListSchema.create(LIST_SIZE);
   private static final TreeNode LIST_TREE =
       LIST_SCHEMA.fromBytes(Bytes.wrap(new byte[LIST_SIZE])).getBackingNode();
+
+  private static final BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(1);
+  private static final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMainnetAltair())
+          .withPubKeyGenerator(() -> publicKey);
+  private static BeaconStateAltair state =
+      (BeaconStateAltair) dataStructureUtil.randomBeaconState(LIST_SIZE);
+
 
   @Benchmark
   public void iterateBoxed(Blackhole bh) {
@@ -76,6 +89,16 @@ public class ByteListBenchmark {
     }
   }
 
+  @Benchmark
+  public void iterateBeaconStateParticipationFlags(Blackhole bh) {
+    BeaconStateAltair freshState = (BeaconStateAltair) state.getBeaconStateSchema()
+        .createFromBackingNode(state.getBackingNode());
+    for (SszByte aByte : freshState.getCurrentEpochParticipation()) {
+      Byte bb = aByte.get();
+      bh.consume(bb);
+    }
+  }
+
   public static void main(String[] args) {
     final Blackhole blackhole =
         new Blackhole(
@@ -83,7 +106,7 @@ public class ByteListBenchmark {
     ByteListBenchmark benchmark = new ByteListBenchmark();
 
     while (true) {
-      benchmark.serialIndexedAccess(blackhole);
+      benchmark.iterateBeaconStateParticipationFlags(blackhole);
     }
   }
 }
