@@ -20,32 +20,31 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.CachingTreeAccessor;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
     extends SszListImpl<SszElementT> implements SszPrimitiveList<ElementT, SszElementT> {
 
-  private final static CachedTreeNode NA_CACHED_NODE = new CachedTreeNode(-1, null);
-
-  private volatile CachedTreeNode cachedTreeNode = NA_CACHED_NODE;
-
-  private final SszListSchema<SszElementT, ?> schema;
   private final int elementsPerChunk;
   private final SszPrimitiveSchema<ElementT, SszElementT> elementType;
+  private final CachingTreeAccessor cachingTreeAccessor;
 
   public SszPrimitiveListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
-    this.schema = schema;
     this.elementsPerChunk = schema.getElementsPerChunk();
     this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
+    this.cachingTreeAccessor = new CachingTreeAccessor(backingNode,
+        schema::getChildGeneralizedIndex);
   }
 
   public SszPrimitiveListImpl(
       SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
-    this.schema = schema;
     this.elementsPerChunk = schema.getElementsPerChunk();
     this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
+    this.cachingTreeAccessor = new CachingTreeAccessor(backingNode,
+        schema::getChildGeneralizedIndex);
   }
 
   @Override
@@ -60,14 +59,7 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
 
   private TreeNode getTreeNode(int index) {
     int nodeIndex = index / elementsPerChunk;
-    CachedTreeNode cached = cachedTreeNode;
-    if (cached.getNodeIndex() == nodeIndex) {
-      return cached.getNode();
-    } else {
-      TreeNode node = getBackingNode().get(schema.getChildGeneralizedIndex(nodeIndex));
-      cachedTreeNode = new CachedTreeNode(nodeIndex, node);
-      return node;
-    }
+    return cachingTreeAccessor.getNodeByVectorIndex(nodeIndex);
   }
 
   @Override
@@ -75,22 +67,4 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
     return new SszMutablePrimitiveListImpl<>(this);
   }
 
-  private static class CachedTreeNode {
-
-    private final int nodeIndex;
-    private final TreeNode node;
-
-    public CachedTreeNode(int nodeIndex, TreeNode node) {
-      this.nodeIndex = nodeIndex;
-      this.node = node;
-    }
-
-    public int getNodeIndex() {
-      return nodeIndex;
-    }
-
-    public TreeNode getNode() {
-      return node;
-    }
-  }
 }
