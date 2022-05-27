@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -28,6 +29,9 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptions {
+
+  @CommandLine.ArgGroup(validate = false)
+  private NatOptions natOptions = new NatOptions();
 
   @Option(
       names = {"--p2p-enabled"},
@@ -304,5 +308,6 @@ public class P2POptions {
                   .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
             })
         .sync(s -> s.isMultiPeerSyncEnabled(multiPeerSyncEnabled));
+    natOptions.configure(builder);
   }
 }
