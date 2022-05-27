@@ -17,7 +17,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   private final GetAttestationData handler = new GetAttestationData(validatorDataProvider);
@@ -54,20 +52,6 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(attestationData);
-  }
-
-  @Test
-  void shouldReturnNoContentIfNotReady() throws Exception {
-    request.setQueryParameter(SLOT, "1");
-    request.setQueryParameter(COMMITTEE_INDEX, "1");
-
-    when(validatorDataProvider.createAttestationDataAtSlot(UInt64.ONE, 1))
-        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
-    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
