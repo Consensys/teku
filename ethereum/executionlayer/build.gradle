@@ -11,6 +11,7 @@ dependencies {
   implementation project(':infrastructure:time')
 
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':ethereum:spec'))
 }
 
