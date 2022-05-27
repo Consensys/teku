@@ -56,7 +56,7 @@
         }
       },
       "204" : {
-        "description" : "No content",
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
         "content" : { }
       },
       "400" : {

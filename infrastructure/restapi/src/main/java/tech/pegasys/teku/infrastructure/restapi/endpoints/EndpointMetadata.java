@@ -566,7 +566,8 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder withChainDataResponses() {
       return response(SC_SERVICE_UNAVAILABLE, "Service unavailable", HTTP_ERROR_RESPONSE_TYPE)
-          .response(SC_NO_CONTENT, "No content");
+          .response(
+              SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis");
     }
 
     public EndpointMetaDataBuilder withForbiddenResponse() {
