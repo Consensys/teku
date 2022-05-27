@@ -52,16 +52,6 @@ public class ValidatorOptions {
   private Path graffitiFile;
 
   @Option(
-      names = {"--validators-performance-tracking-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Enable validator performance tracking",
-      fallbackValue = "true",
-      arity = "0..1",
-      hidden = true)
-  private Boolean validatorPerformanceTrackingEnabled = null;
-
-  @Option(
       names = {"--validators-performance-tracking-mode"},
       paramLabel = "<TRACKING_MODE>",
       description =
@@ -102,14 +92,6 @@ public class ValidatorOptions {
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
   public void configure(TekuConfiguration.Builder builder) {
-    if (validatorPerformanceTrackingEnabled != null) {
-      if (validatorPerformanceTrackingEnabled) {
-        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
-      } else {
-        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.NONE;
-      }
-    }
-
     builder.validator(
         config ->
             config
