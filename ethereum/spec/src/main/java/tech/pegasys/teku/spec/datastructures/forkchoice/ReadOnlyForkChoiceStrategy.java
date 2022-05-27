@@ -47,4 +47,6 @@ public interface ReadOnlyForkChoiceStrategy {
   boolean isFullyValidated(final Bytes32 blockRoot);
 
   Optional<ProtoNodeData> getBlockData(Bytes32 blockRoot);
+
+  Optional<UInt64> getWeight(Bytes32 blockRoot);
 }

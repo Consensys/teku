@@ -23,6 +23,7 @@ class BranchMerkleTree extends MerkleTree {
 
   private MerkleTree left;
   private MerkleTree right;
+  private Bytes32 root;
 
   public BranchMerkleTree(final MerkleTree left, final MerkleTree right) {
     this.left = left;
@@ -31,7 +32,10 @@ class BranchMerkleTree extends MerkleTree {
 
   @Override
   public Bytes32 getRoot() {
-    return sha256(left.getRoot(), right.getRoot());
+    if (root == null) {
+      root = sha256(left.getRoot(), right.getRoot());
+    }
+    return root;
   }
 
   @Override
@@ -46,6 +50,7 @@ class BranchMerkleTree extends MerkleTree {
     } else {
       right = right.pushLeaf(leaf, level - 1);
     }
+    root = null;
     return this;
   }
 

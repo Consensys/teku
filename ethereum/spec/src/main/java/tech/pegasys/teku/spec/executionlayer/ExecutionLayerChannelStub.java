@@ -31,6 +31,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -239,7 +240,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      TransitionConfiguration transitionConfiguration) {
+      final TransitionConfiguration transitionConfiguration) {
     final TransitionConfiguration transitionConfigurationResponse;
 
     this.transitionConfiguration = Optional.of(transitionConfiguration);
@@ -261,8 +262,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<Void> builderRegisterValidator(
-      SignedValidatorRegistration signedValidatorRegistration, UInt64 slot) {
+  public SafeFuture<Void> builderRegisterValidators(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     return SafeFuture.COMPLETE;
   }
 

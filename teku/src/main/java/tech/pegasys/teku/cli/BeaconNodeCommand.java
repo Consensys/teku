@@ -35,14 +35,11 @@ import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
-import tech.pegasys.teku.cli.options.DataStorageOptions;
-import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ExecutionLayerOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.NatOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -93,8 +90,8 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     mixinStandardHelpOptions = true,
     versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
-    descriptionHeading = "%nDescription:%n%n",
-    optionListHeading = "%nOptions:%n",
+    descriptionHeading = "%n@|bold Description:|@%n%n",
+    optionListHeading = "%n@|bold Options:|@%n",
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
@@ -134,50 +131,41 @@ public class BeaconNodeCommand implements Callable<Integer> {
       scope = ScopeType.INHERIT)
   private File configFile;
 
-  @Mixin(name = "Network")
-  private Eth2NetworkOptions eth2NetworkOptions;
+  @CommandLine.ArgGroup(validate = false, heading = "Network%n")
+  private Eth2NetworkOptions eth2NetworkOptions = new Eth2NetworkOptions();
 
-  @Mixin(name = "P2P")
-  private P2POptions p2POptions;
+  @CommandLine.ArgGroup(validate = false, heading = "P2P%n")
+  private P2POptions p2POptions = new P2POptions();
+
+  @CommandLine.ArgGroup(validate = false, heading = "Validator%n")
+  private ValidatorOptions validatorOptions = new ValidatorOptions();
+
+  @CommandLine.ArgGroup(validate = false, heading = "Execution Layer%n")
+  private ExecutionLayerOptions executionLayerOptions = new ExecutionLayerOptions();
+
+  @CommandLine.ArgGroup(validate = false, heading = "Data Storage%n")
+  private BeaconNodeDataOptions beaconNodeDataOptions = new BeaconNodeDataOptions();
+
+  @CommandLine.ArgGroup(validate = false, heading = "Beacon REST API%n")
+  private BeaconRestApiOptions beaconRestApiOptions = new BeaconRestApiOptions();
+
+  @CommandLine.ArgGroup(validate = false, heading = "Validator REST API%n")
+  private ValidatorRestApiOptions validatorRestApiOptions = new ValidatorRestApiOptions();
+
+  @CommandLine.ArgGroup(validate = false, heading = "Weak Subjectivity%n")
+  private WeakSubjectivityOptions weakSubjectivityOptions = new WeakSubjectivityOptions();
 
   @Mixin(name = "Interop")
-  private InteropOptions interopOptions;
-
-  @Mixin(name = "Validator")
-  private ValidatorOptions validatorOptions;
-
-  @Mixin(name = "Deposit")
-  private DepositOptions depositOptions;
-
-  @Mixin(name = "Execution Layer")
-  private ExecutionLayerOptions executionLayerOptions;
-
-  @Mixin(name = "Logging")
-  private final LoggingOptions loggingOptions = new LoggingOptions();
-
-  @Mixin(name = "Metrics")
-  private MetricsOptions metricsOptions;
-
-  @Mixin(name = "Data")
-  private BeaconNodeDataOptions dataOptions;
-
-  @Mixin(name = "Data Storage")
-  private DataStorageOptions dataStorageOptions;
+  private InteropOptions interopOptions = new InteropOptions();
 
   @Mixin(name = "Store")
-  private StoreOptions storeOptions;
+  private final StoreOptions storeOptions = new StoreOptions();
 
-  @Mixin(name = "Beacon REST API")
-  private BeaconRestApiOptions beaconRestApiOptions;
+  @CommandLine.ArgGroup(validate = false, heading = "Logging%n")
+  private final LoggingOptions loggingOptions = new LoggingOptions();
 
-  @Mixin(name = "Validator REST API")
-  private ValidatorRestApiOptions validatorRestApiOptions;
-
-  @Mixin(name = "Weak Subjectivity")
-  private WeakSubjectivityOptions weakSubjectivityOptions;
-
-  @Mixin(name = "NAT")
-  private NatOptions natOptions;
+  @CommandLine.ArgGroup(validate = false, heading = "Metrics%n")
+  private MetricsOptions metricsOptions = new MetricsOptions();
 
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
@@ -333,7 +321,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private void startLogging() {
-    LoggingConfig loggingConfig = buildLoggingConfig(dataOptions.getDataPath(), LOG_FILE_PREFIX);
+    LoggingConfig loggingConfig =
+        buildLoggingConfig(beaconNodeDataOptions.getDataPath(), LOG_FILE_PREFIX);
     loggingConfigurator.startLogging(loggingConfig);
     // jupnp logs a lot of context to level WARN, and it is quite verbose.
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
@@ -353,19 +342,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
       // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);
-      depositOptions.configure(builder);
       executionLayerOptions.configure(builder);
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
-      dataOptions.configure(builder);
       p2POptions.configure(builder);
       beaconRestApiOptions.configure(builder);
       validatorRestApiOptions.configure(builder);
       loggingOptions.configureWireLogs(builder);
       interopOptions.configure(builder);
-      dataStorageOptions.configure(builder);
+      beaconNodeDataOptions.configure(builder);
       metricsOptions.configure(builder);
-      natOptions.configure(builder);
       storeOptions.configure(builder);
 
       return builder.build();

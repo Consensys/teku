@@ -49,7 +49,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
@@ -372,7 +371,6 @@ public class BeaconRestApi {
   private void addTekuSpecificHandlers(
       final DataProvider provider, final DepositProvider depositProvider) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
-    app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
     app.get(Readiness.ROUTE, new Readiness(provider, jsonProvider));
@@ -401,13 +399,12 @@ public class BeaconRestApi {
   private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
+    addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
-            dataProvider, jsonProvider));
+            dataProvider, schemaCache));
     addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
-    app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAttestationData(dataProvider));
     addMigratedEndpoint(new GetAggregateAttestation(dataProvider, spec));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
     app.post(
