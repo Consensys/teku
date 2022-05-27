@@ -60,6 +60,7 @@ class ValidatorRegistratorTest {
   private final Signer signer = mock(Signer.class);
 
   private DataStructureUtil dataStructureUtil;
+  private int slotsPerEpoch;
 
   private Validator validator1;
   private Validator validator2;
@@ -69,16 +70,11 @@ class ValidatorRegistratorTest {
 
   @BeforeEach
   void setUp(SpecContext specContext) {
+    slotsPerEpoch = specContext.getSpec().getGenesisSpecConfig().getSlotsPerEpoch();
     dataStructureUtil = specContext.getDataStructureUtil();
-    validator1 =
-        new Validator(
-            specContext.getDataStructureUtil().randomPublicKey(), signer, Optional::empty);
-    validator2 =
-        new Validator(
-            specContext.getDataStructureUtil().randomPublicKey(), signer, Optional::empty);
-    validator3 =
-        new Validator(
-            specContext.getDataStructureUtil().randomPublicKey(), signer, Optional::empty);
+    validator1 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
+    validator2 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
+    validator3 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
     validatorRegistrator =
         new ValidatorRegistrator(
             forkProvider,
@@ -86,6 +82,8 @@ class ValidatorRegistratorTest {
             validatorApiChannel,
             specContext.getSpec(),
             stubTimeProvider);
+    when(validatorApiChannel.registerValidators(any()))
+        .thenReturn(SafeFuture.completedFuture(null));
   }
 
   @TestTemplate
@@ -98,7 +96,7 @@ class ValidatorRegistratorTest {
     verify(forkProvider).getForkInfo(UInt64.ONE);
 
     // after the initial call, registration should not occur if not beginning of epoch
-    validatorRegistrator.onSlot(UInt64.ONE);
+    validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch).plus(UInt64.ONE));
     verifyNoMoreInteractions(forkProvider);
 
     verifyNoInteractions(ownedValidators, validatorApiChannel, signer);
@@ -108,14 +106,16 @@ class ValidatorRegistratorTest {
   void registersValidators_onBeginningOfEpoch() {
     // GIVEN
     ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-    when(forkProvider.getForkInfo(UInt64.ZERO)).thenReturn(SafeFuture.completedFuture(forkInfo));
+    when(forkProvider.getForkInfo(any(UInt64.class)))
+        .thenReturn(SafeFuture.completedFuture(forkInfo));
 
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
-        .signValidatorRegistration(any(ValidatorRegistration.class), eq(UInt64.ZERO), eq(forkInfo));
+        .signValidatorRegistration(
+            any(ValidatorRegistration.class), any(UInt64.class), eq(forkInfo));
 
     // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
@@ -127,11 +127,11 @@ class ValidatorRegistratorTest {
 
     InOrder inOrder = Mockito.inOrder(validatorApiChannel);
 
-    inOrder.verify(validatorApiChannel, timeout(5000)).registerValidators(argumentCaptor.capture());
+    inOrder.verify(validatorApiChannel, timeout(1000)).registerValidators(argumentCaptor.capture());
     verifyRegistrations(argumentCaptor.getValue());
 
-    // WHEN onSlot called again next time in a beginning of an epoch, registrations will be cached
-    validatorRegistrator.onSlot(UInt64.ZERO);
+    // WHEN onSlot called again next epoch, registrations will be cached
+    validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
 
     // THEN
 
@@ -139,7 +139,7 @@ class ValidatorRegistratorTest {
     // be cached
     verify(signer, times(3)).signValidatorRegistration(any(), any(), any());
 
-    inOrder.verify(validatorApiChannel, timeout(5000)).registerValidators(argumentCaptor.capture());
+    inOrder.verify(validatorApiChannel, timeout(1000)).registerValidators(argumentCaptor.capture());
     verifyRegistrations(argumentCaptor.getValue());
   }
 
