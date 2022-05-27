@@ -36,6 +36,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -330,6 +331,10 @@ public class Spec {
 
   public Bytes computeSigningRoot(UInt64 slot, Bytes32 domain) {
     return atSlot(slot).miscHelpers().computeSigningRoot(slot, domain);
+  }
+
+  public Bytes computeSigningRoot(UInt64 slot, Merkleizable object, Bytes32 domain) {
+    return atSlot(slot).miscHelpers().computeSigningRoot(object, domain);
   }
 
   public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
