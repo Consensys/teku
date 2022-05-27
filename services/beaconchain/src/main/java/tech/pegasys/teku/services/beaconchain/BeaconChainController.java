@@ -102,6 +102,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
+import tech.pegasys.teku.statetransition.forkchoice.PreProposalForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
@@ -509,7 +510,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             proposerBoostEnabled,
             equivocatingIndicesEnabled);
-    forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
+    forkChoiceTrigger =
+        beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()
+            ? new PreProposalForkChoiceTrigger(forkChoice)
+            : new ForkChoiceTrigger(forkChoice);
   }
 
   public void initMetrics() {

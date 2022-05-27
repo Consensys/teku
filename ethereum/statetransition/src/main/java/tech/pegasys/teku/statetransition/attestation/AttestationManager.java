@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import java.util.Collection;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
-import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
 public class AttestationManager extends Service
     implements SlotEventsChannel, BlockImportNotifications {
@@ -51,7 +49,6 @@ public class AttestationManager extends Service
 
   private final PendingPool<ValidateableAttestation> pendingAttestations;
   private final FutureItems<ValidateableAttestation> futureAttestations;
-  private final DeferredAttestations deferredAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
   private final Subscribers<ProcessedAttestationListener> attestationsToSendSubscribers =
@@ -69,7 +66,6 @@ public class AttestationManager extends Service
       final ForkChoice attestationProcessor,
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
-      final DeferredAttestations deferredAttestations,
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
@@ -78,7 +74,6 @@ public class AttestationManager extends Service
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
-    this.deferredAttestations = deferredAttestations;
     this.aggregatingAttestationPool = aggregatingAttestationPool;
     this.attestationValidator = attestationValidator;
     this.aggregateValidator = aggregateValidator;
@@ -99,7 +94,6 @@ public class AttestationManager extends Service
         attestationProcessor,
         pendingAttestations,
         futureAttestations,
-        new DeferredAttestations(),
         aggregatingAttestationPool,
         attestationValidator,
         aggregateValidator,
@@ -158,16 +152,7 @@ public class AttestationManager extends Service
 
   @Override
   public void onSlot(final UInt64 slot) {
-    applyDeferredAttestations(slot);
     applyFutureAttestations(slot);
-  }
-
-  private void applyDeferredAttestations(final UInt64 slot) {
-    final Collection<DeferredVotes> deferredUpdates = deferredAttestations.prune(slot);
-    if (deferredUpdates.isEmpty()) {
-      return;
-    }
-    attestationProcessor.applyDeferredAttestations(deferredUpdates);
   }
 
   private void applyFutureAttestations(final UInt64 slot) {
@@ -234,9 +219,6 @@ public class AttestationManager extends Service
                       "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);
                   sendToSubscribersIfProducedLocally(attestation);
                   aggregatingAttestationPool.add(attestation);
-                  attestation
-                      .getIndexedAttestation()
-                      .ifPresent(deferredAttestations::addAttestation);
                   break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(

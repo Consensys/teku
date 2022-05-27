@@ -24,7 +24,6 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
-import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -74,13 +73,11 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getDeposits(
-      @Mixin final BeaconNodeDataOptions dataOptions,
-      @Mixin final DataStorageOptions dataStorageOptions,
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
     try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
-        final Database database =
-            createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
+        final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final DepositStorage depositStorage = DepositStorage.create(eth1EventsChannel, database);
       depositStorage.replayDepositEvents().join();
     }
@@ -100,8 +97,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getFinalizedState(
-      @Mixin final BeaconNodeDataOptions dataOptions,
-      @Mixin final DataStorageOptions dataStorageOptions,
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               required = true,
@@ -115,8 +111,7 @@ public class DebugDbCommand implements Runnable {
                   "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
-    try (final Database database =
-        createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       return writeState(
           outputFile, database.getLatestAvailableFinalizedState(UInt64.valueOf(slot)));
     }
@@ -135,8 +130,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getLatestFinalizedState(
-      @Mixin final BeaconNodeDataOptions dataOptions,
-      @Mixin final DataStorageOptions dataStorageOptions,
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               required = true,
@@ -151,8 +145,7 @@ public class DebugDbCommand implements Runnable {
     final AsyncRunner asyncRunner =
         ScheduledExecutorAsyncRunner.create(
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
-    try (final Database database =
-        createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<AnchorPoint> finalizedAnchor =
           database
               .createMemoryStore()
@@ -180,17 +173,17 @@ public class DebugDbCommand implements Runnable {
   }
 
   private Database createDatabase(
-      final BeaconNodeDataOptions dataOptions,
-      final DataStorageOptions dataStorageOptions,
+      final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
-            DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
-            dataStorageOptions.getDataStorageMode(),
+            DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
+                .getBeaconDataDirectory(),
+            beaconNodeDataOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
-            dataStorageOptions.isStoreNonCanonicalBlocks(),
+            beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
             eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
             spec);
     return databaseFactory.createDatabase();
