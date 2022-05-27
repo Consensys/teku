@@ -34,8 +34,8 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
     super(schema, backingNode);
     this.elementsPerChunk = schema.getElementsPerChunk();
     this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
-    this.cachingTreeAccessor = new CachingTreeAccessor(backingNode,
-        schema::getChildGeneralizedIndex);
+    this.cachingTreeAccessor =
+        new CachingTreeAccessor(backingNode, schema::getChildGeneralizedIndex);
   }
 
   public SszPrimitiveListImpl(
@@ -43,8 +43,8 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
     super(schema, backingNode, cache);
     this.elementsPerChunk = schema.getElementsPerChunk();
     this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
-    this.cachingTreeAccessor = new CachingTreeAccessor(backingNode,
-        schema::getChildGeneralizedIndex);
+    this.cachingTreeAccessor =
+        new CachingTreeAccessor(backingNode, schema::getChildGeneralizedIndex);
   }
 
   @Override
@@ -66,5 +66,4 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
   public SszMutablePrimitiveList<ElementT, SszElementT> createWritableCopy() {
     return new SszMutablePrimitiveListImpl<>(this);
   }
-
 }
