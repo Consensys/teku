@@ -54,6 +54,10 @@
           }
         }
       },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
         "content" : {
