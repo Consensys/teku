@@ -39,7 +39,8 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private static final Duration RECHECK_INTERVAL = Duration.ofSeconds(2);
 
   private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);
-  private final Set<SignedBeaconBlock> pendingBlocksForEPReexecution = LimitedSet.create(10);
+  private final Set<SignedBeaconBlock> pendingBlocksForEPReexecution =
+      LimitedSet.createIterable(10);
   private final AsyncRunner asyncRunner;
 
   private Optional<Cancellable> cancellable = Optional.empty();
