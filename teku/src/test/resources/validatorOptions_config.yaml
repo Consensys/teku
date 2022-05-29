@@ -3,4 +3,4 @@ validators-external-signer-public-keys: ["0xad113a7d152dc74ae2b26db65bfb89ed0750
 validators-external-signer-url: "https://signer.url/"
 validators-external-signer-timeout: 1234
 validators-graffiti: "T E K U"
-validators-performance-tracking-enabled: "true"
+validators-performance-tracking-mode: "all"
