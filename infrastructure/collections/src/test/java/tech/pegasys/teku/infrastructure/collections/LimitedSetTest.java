@@ -22,7 +22,7 @@ public class LimitedSetTest {
 
   @Test
   public void create_evictLeastRecentlyAccessed() {
-    final Set<Integer> set = LimitedSet.create(2);
+    final Set<Integer> set = LimitedSet.createSynchronized(2);
     set.add(1);
     assertThat(set.size()).isEqualTo(1);
     set.add(2);
