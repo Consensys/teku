@@ -19,11 +19,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.net.http.HttpConnectTimeoutException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -58,94 +56,51 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
   private final UInt64 slot = UInt64.ONE;
   private SszList<SignedValidatorRegistration> registrations;
-  private final SafeFuture<Void> response1 = new SafeFuture<>();
-  private final SafeFuture<Void> response2 = new SafeFuture<>();
+  private final SafeFuture<Void> response = new SafeFuture<>();
 
   @Test
   void shouldCallRegisterValidator() {
 
     prepareRegistrations();
 
-    SafeFutureAssert.safeJoin(
-        proposersDataManager.updateValidatorRegistrations(registrations, slot));
+    final SafeFuture<Void> updateCall =
+        proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
-    // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).builderRegisterValidator(registrations.get(0), slot);
+    verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
-    // resolve first registration
-    response1.complete(null);
+    response.complete(null);
 
-    // second registration
-    assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).builderRegisterValidator(registrations.get(1), slot);
-    verifyNoMoreInteractions(executionLayerChannel);
-
-    // resolve second registration
-    response2.complete(null);
+    assertThat(updateCall).isCompleted();
 
     // final update
     assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
   }
 
   @Test
-  void shouldNotInterruptCallRegisterValidatorOnNonNetworkingException() {
+  void shouldNotSignalValidatorRegistrationUpdatedOnError() {
 
     prepareRegistrations();
 
-    SafeFutureAssert.safeJoin(
-        proposersDataManager.updateValidatorRegistrations(registrations, slot));
+    final SafeFuture<Void> updateCall =
+        proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
-    // first registration
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).builderRegisterValidator(registrations.get(0), slot);
-    verifyNoMoreInteractions(executionLayerChannel);
+    verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
 
-    // resolve first registration
-    response1.completeExceptionally(new RuntimeException("generic error"));
+    response.completeExceptionally(new RuntimeException("generic error"));
 
-    // second registration
+    assertThat(updateCall).isCompletedExceptionally();
+
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).builderRegisterValidator(registrations.get(1), slot);
     verifyNoMoreInteractions(executionLayerChannel);
-
-    // resolve second registration
-    response2.complete(null);
-
-    // final update
-    assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
-  }
-
-  @Test
-  void shouldInterruptCallRegisterValidatorOnNetworkingException() {
-
-    prepareRegistrations();
-
-    SafeFutureAssert.safeJoin(
-        proposersDataManager.updateValidatorRegistrations(registrations, slot));
-
-    // first registration
-    assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
-    verify(executionLayerChannel).builderRegisterValidator(registrations.get(0), slot);
-    verifyNoMoreInteractions(executionLayerChannel);
-
-    // resolve first registration
-    response1.completeExceptionally(new HttpConnectTimeoutException("timeout"));
-
-    verifyNoMoreInteractions(executionLayerChannel);
-
-    // final update
-    assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
   }
 
   private void prepareRegistrations() {
     registrations = dataStructureUtil.randomSignedValidatorRegistrations(2);
 
-    when(executionLayerChannel.builderRegisterValidator(registrations.get(0), slot))
-        .thenReturn(response1);
-    when(executionLayerChannel.builderRegisterValidator(registrations.get(1), slot))
-        .thenReturn(response2);
+    when(executionLayerChannel.builderRegisterValidators(registrations, slot)).thenReturn(response);
     when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
     when(specMock.getValidatorIndex(state, registrations.get(0).getMessage().getPublicKey()))
         .thenReturn(Optional.of(0));

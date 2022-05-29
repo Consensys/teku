@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.Status;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -66,6 +68,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
+
+  public static final int BLOCK_CREATION_TOLERANCE_MS = 500;
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -75,11 +79,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean proposerBoostEnabled;
   private final boolean equivocatingIndicesEnabled;
+  private final AttestationStateSelector attestationStateSelector;
+  private final DeferredAttestations deferredAttestations = new DeferredAttestations();
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
+  private final TickProcessor tickProcessor;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
-  private AttestationStateSelector attestationStateSelector;
 
   public ForkChoice(
       final Spec spec,
@@ -96,7 +102,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.transitionBlockValidator = transitionBlockValidator;
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
-    attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.tickProcessor = new TickProcessor(spec, recentChainData);
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -523,6 +530,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   spec.validateAttestation(store, attestation, maybeState);
 
               if (!validationResult.isSuccessful()) {
+                if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
+                  deferredAttestations.addAttestation(getIndexedAttestation(attestation));
+                }
                 return SafeFuture.completedFuture(validationResult);
               }
               return onForkChoiceThread(
@@ -559,16 +569,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .reportExceptions();
   }
 
-  public void applyDeferredAttestations(final Collection<DeferredVotes> deferredVoteUpdates) {
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              deferredVoteUpdates.forEach(
-                  update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
-              transaction.commit();
-            })
-        .reportExceptions();
+  private SafeFuture<Void> applyDeferredAttestations(
+      final Collection<DeferredVotes> deferredVoteUpdates) {
+    return onForkChoiceThread(
+        () -> {
+          final VoteUpdater transaction = recentChainData.startVoteUpdate();
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          deferredVoteUpdates.forEach(
+              update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
+          transaction.commit();
+        });
   }
 
   private void applyAttesterSlashingsFromBlock(
@@ -611,13 +621,41 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public void onTick(final UInt64 currentTimeMillis) {
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    final UInt64 previousSlot = spec.getCurrentSlot(transaction);
-    spec.onTick(transaction, currentTimeMillis);
-    if (spec.getCurrentSlot(transaction).isGreaterThan(previousSlot)) {
-      transaction.removeProposerBoostRoot();
+    final UInt64 previousSlot = spec.getCurrentSlot(recentChainData.getStore());
+    tickProcessor.onTick(currentTimeMillis).join();
+    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
+    if (currentSlot.isGreaterThan(previousSlot)) {
+      applyDeferredAttestations(currentSlot).reportExceptions();
     }
-    transaction.commit().join();
+  }
+
+  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 currentTime = recentChainData.getStore().getTimeMillis();
+    // We haven't yet transitioned into this slot but will do very soon, so make it happen now
+    if (!currentTime
+        .plus(BLOCK_CREATION_TOLERANCE_MS)
+        .isGreaterThanOrEqualTo(slotStartTimeMillis)) {
+      // Creating a block too far before the slot start, don't run fork choice at all.
+      LOG.warn(
+          "Block creation requested more than {}ms before the start of slot {}",
+          BLOCK_CREATION_TOLERANCE_MS,
+          slot);
+      return SafeFuture.COMPLETE;
+    }
+
+    return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
+        .thenCompose(__ -> processHead(slot))
+        .toVoid();
+  }
+
+  private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {
+    final Collection<DeferredVotes> deferredVoteUpdates = deferredAttestations.prune(slot);
+    if (deferredVoteUpdates.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    return applyDeferredAttestations(deferredVoteUpdates);
   }
 
   private ForkChoiceStrategy getForkChoiceStrategy() {

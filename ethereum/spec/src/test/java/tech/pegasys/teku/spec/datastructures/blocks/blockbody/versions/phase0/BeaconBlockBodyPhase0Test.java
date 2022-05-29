@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
@@ -27,8 +28,10 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
   }
 
   @Override
-  protected BeaconBlockBodyPhase0 createBlockBody(
+  protected SafeFuture<BeaconBlockBodyPhase0> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return (BeaconBlockBodyPhase0) getBlockBodySchema().createBlockBody(contentProvider);
+    return getBlockBodySchema()
+        .createBlockBody(contentProvider)
+        .thenApply(block -> (BeaconBlockBodyPhase0) block);
   }
 }

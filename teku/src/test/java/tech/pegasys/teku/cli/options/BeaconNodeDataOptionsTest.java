@@ -24,7 +24,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 
-public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
+public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final Path TEST_PATH = Path.of("/tmp/teku");
 
   @Test

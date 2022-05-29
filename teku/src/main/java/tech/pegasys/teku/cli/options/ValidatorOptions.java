@@ -16,8 +16,8 @@ package tech.pegasys.teku.cli.options;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -27,11 +27,11 @@ import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
 
-  @Mixin(name = "Validator Keys")
-  private ValidatorKeysOptions validatorKeysOptions;
+  @CommandLine.ArgGroup(validate = false)
+  private ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
 
-  @Mixin(name = "Validator Proposer")
-  private ValidatorProposerOptions validatorProposerOptions;
+  @CommandLine.ArgGroup(validate = false)
+  private ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
 
   @Option(
       names = {"--validators-graffiti"},
@@ -50,16 +50,6 @@ public class ValidatorOptions {
               + "Takes precedence over --validators-graffiti. If the file can not be read, the --validators-graffiti value is used as a fallback.",
       arity = "1")
   private Path graffitiFile;
-
-  @Option(
-      names = {"--validators-performance-tracking-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Enable validator performance tracking",
-      fallbackValue = "true",
-      arity = "0..1",
-      hidden = true)
-  private Boolean validatorPerformanceTrackingEnabled = null;
 
   @Option(
       names = {"--validators-performance-tracking-mode"},
@@ -102,14 +92,6 @@ public class ValidatorOptions {
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
   public void configure(TekuConfiguration.Builder builder) {
-    if (validatorPerformanceTrackingEnabled != null) {
-      if (validatorPerformanceTrackingEnabled) {
-        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
-      } else {
-        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.NONE;
-      }
-    }
-
     builder.validator(
         config ->
             config

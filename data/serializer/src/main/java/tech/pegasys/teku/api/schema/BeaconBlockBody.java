@@ -91,36 +91,38 @@ public class BeaconBlockBody {
       asInternalBeaconBlockBody(
           final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
     final BeaconBlockBodySchema<?> schema = getBeaconBlockBodySchema(spec);
-    return schema.createBlockBody(
-        builder -> {
-          builderRef.accept(builder);
-          builder
-              .randaoReveal(randao_reveal.asInternalBLSSignature())
-              .eth1Data(
-                  new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
-                      eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash))
-              .graffiti(graffiti)
-              .attestations(
-                  attestations.stream()
-                      .map(attestation -> attestation.asInternalAttestation(spec))
-                      .collect(schema.getAttestationsSchema().collector()))
-              .proposerSlashings(
-                  proposer_slashings.stream()
-                      .map(ProposerSlashing::asInternalProposerSlashing)
-                      .collect(schema.getProposerSlashingsSchema().collector()))
-              .attesterSlashings(
-                  attester_slashings.stream()
-                      .map(slashing -> slashing.asInternalAttesterSlashing(spec))
-                      .collect(schema.getAttesterSlashingsSchema().collector()))
-              .deposits(
-                  deposits.stream()
-                      .map(Deposit::asInternalDeposit)
-                      .collect(schema.getDepositsSchema().collector()))
-              .voluntaryExits(
-                  voluntary_exits.stream()
-                      .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
-                      .collect(schema.getVoluntaryExitsSchema().collector()));
-        });
+    return schema
+        .createBlockBody(
+            builder -> {
+              builderRef.accept(builder);
+              builder
+                  .randaoReveal(randao_reveal.asInternalBLSSignature())
+                  .eth1Data(
+                      new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
+                          eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash))
+                  .graffiti(graffiti)
+                  .attestations(
+                      attestations.stream()
+                          .map(attestation -> attestation.asInternalAttestation(spec))
+                          .collect(schema.getAttestationsSchema().collector()))
+                  .proposerSlashings(
+                      proposer_slashings.stream()
+                          .map(ProposerSlashing::asInternalProposerSlashing)
+                          .collect(schema.getProposerSlashingsSchema().collector()))
+                  .attesterSlashings(
+                      attester_slashings.stream()
+                          .map(slashing -> slashing.asInternalAttesterSlashing(spec))
+                          .collect(schema.getAttesterSlashingsSchema().collector()))
+                  .deposits(
+                      deposits.stream()
+                          .map(Deposit::asInternalDeposit)
+                          .collect(schema.getDepositsSchema().collector()))
+                  .voluntaryExits(
+                      voluntary_exits.stream()
+                          .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
+                          .collect(schema.getVoluntaryExitsSchema().collector()));
+            })
+        .join();
   }
 
   @JsonIgnore

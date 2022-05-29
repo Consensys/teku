@@ -46,9 +46,9 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.coordinator.DepositProvider;
 
 public class BeaconRestApi {
 
@@ -133,6 +134,7 @@ public class BeaconRestApi {
 
   private void initialize(
       final DataProvider dataProvider,
+      final DepositProvider depositProvider,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -171,7 +173,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider);
+    addTekuSpecificHandlers(dataProvider, depositProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -268,6 +270,7 @@ public class BeaconRestApi {
 
   public BeaconRestApi(
       final DataProvider dataProvider,
+      final DepositProvider depositProvider,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -290,11 +293,19 @@ public class BeaconRestApi {
                 }
               }
             });
-    initialize(dataProvider, configuration, eventChannels, asyncRunner, timeProvider, spec);
+    initialize(
+        dataProvider,
+        depositProvider,
+        configuration,
+        eventChannels,
+        asyncRunner,
+        timeProvider,
+        spec);
   }
 
   BeaconRestApi(
       final DataProvider dataProvider,
+      final DepositProvider depositProvider,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -302,7 +313,14 @@ public class BeaconRestApi {
       final Javalin app,
       final Spec spec) {
     this.app = app;
-    initialize(dataProvider, configuration, eventChannels, asyncRunner, timeProvider, spec);
+    initialize(
+        dataProvider,
+        depositProvider,
+        configuration,
+        eventChannels,
+        asyncRunner,
+        timeProvider,
+        spec);
   }
 
   public void start() {
@@ -350,16 +368,17 @@ public class BeaconRestApi {
                 .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
   }
 
-  private void addTekuSpecificHandlers(final DataProvider provider) {
+  private void addTekuSpecificHandlers(
+      final DataProvider provider, final DepositProvider depositProvider) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
-    app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
-    app.get(Liveness.ROUTE, new Liveness());
+    addMigratedEndpoint(new Liveness(provider));
     app.get(Readiness.ROUTE, new Readiness(provider, jsonProvider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
     app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
+    addMigratedEndpoint(new GetDeposits(depositProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
@@ -380,13 +399,12 @@ public class BeaconRestApi {
   private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
     addMigratedEndpoint(new GetProposerDuties(dataProvider));
-    app.get(
-        tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
+    addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
-            dataProvider, jsonProvider));
+            dataProvider, schemaCache));
     addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
     addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
-    app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetAttestationData(dataProvider));
     addMigratedEndpoint(new GetAggregateAttestation(dataProvider, spec));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
     app.post(

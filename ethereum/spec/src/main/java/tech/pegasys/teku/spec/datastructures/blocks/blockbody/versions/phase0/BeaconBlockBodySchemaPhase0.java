@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema8;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -101,7 +102,8 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   @Override
-  public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+  public SafeFuture<BeaconBlockBody> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderPhase0 builder = new BeaconBlockBodyBuilderPhase0().schema(this);
     builderConsumer.accept(builder);
     return builder.build();

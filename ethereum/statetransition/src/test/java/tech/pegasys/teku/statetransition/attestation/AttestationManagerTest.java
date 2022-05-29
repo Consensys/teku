@@ -29,7 +29,6 @@ import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingRe
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
 
 import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +58,6 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
-import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -72,7 +70,6 @@ class AttestationManagerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       new PendingPoolFactory(metricsSystem).createForAttestations(spec);
-  private final DeferredAttestations deferredAttestations = new DeferredAttestations();
   private final FutureItems<ValidateableAttestation> futureAttestations =
       FutureItems.create(
           ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
@@ -87,7 +84,6 @@ class AttestationManagerTest {
           forkChoice,
           pendingAttestations,
           futureAttestations,
-          deferredAttestations,
           attestationPool,
           mock(AttestationValidator.class),
           mock(AggregateAttestationValidator.class),
@@ -166,7 +162,7 @@ class AttestationManagerTest {
   }
 
   @Test
-  public void shouldDeferForkChoiceProcessingAttestationUntilNextSlot() {
+  public void shouldNotAddDeferredAttestationsToFuturePool() {
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     final UInt64 attestationSlot = randomIndexedAttestation.getData().getSlot();
     final UInt64 currentSlot = attestationSlot.minus(1);
@@ -182,23 +178,6 @@ class AttestationManagerTest {
     verify(attestationPool).add(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(deferredAttestations.getDeferredVotesFromSlot(attestationSlot)).isNotEmpty();
-
-    // Shouldn't try to process the attestation until after its slot.
-    attestationManager.onSlot(attestationSlot);
-    assertThat(futureAttestations.size()).isZero();
-    final Optional<DeferredVotes> deferredVotes =
-        deferredAttestations.getDeferredVotesFromSlot(attestationSlot);
-    assertThat(deferredVotes).isNotEmpty();
-    verify(forkChoice, never()).applyIndexedAttestations(any());
-    verify(forkChoice, never()).applyDeferredAttestations(any());
-
-    attestationManager.onSlot(attestationSlot.plus(1));
-    verify(forkChoice, never()).applyIndexedAttestations(any());
-    verify(forkChoice).applyDeferredAttestations(List.of(deferredVotes.orElseThrow()));
-    assertThat(futureAttestations.size()).isZero();
-    assertThat(pendingAttestations.size()).isZero();
-    assertThat(deferredAttestations.getDeferredVotesFromSlot(attestationSlot)).isEmpty();
   }
 
   @Test

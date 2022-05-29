@@ -38,10 +38,8 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
@@ -60,7 +58,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -87,7 +87,6 @@ public class ValidatorDataProvider {
       "Some items failed to publish, refer to errors for details";
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final SchemaObjectProvider schemaObjectProvider;
 
   private static final int SC_INTERNAL_ERROR = 500;
   private static final int SC_ACCEPTED = 202;
@@ -100,7 +99,6 @@ public class ValidatorDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.spec = spec;
   }
 
@@ -133,16 +131,15 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
-      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
+      UInt64 slot, tech.pegasys.teku.bls.BLSSignature randao, Optional<Bytes32> graffiti) {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
     return getUnsignedBeaconBlockAtSlot(
-            slot,
-            tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
-            graffiti,
-            false)
-        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getBeaconBlock));
+        slot,
+        tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.toSSZBytes()),
+        graffiti,
+        false);
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
@@ -156,7 +153,7 @@ public class ValidatorDataProvider {
     }
     return validatorApiChannel
         .createAttestationData(slot, committeeIndex)
-        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new))
+        .thenApply(maybeAttestation -> maybeAttestation)
         .exceptionallyCompose(
             error -> {
               final Throwable rootCause = Throwables.getRootCause(error);
