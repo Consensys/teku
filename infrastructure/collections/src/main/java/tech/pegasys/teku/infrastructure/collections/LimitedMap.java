@@ -19,16 +19,31 @@ import java.util.Map;
 public interface LimitedMap<K, V> extends Map<K, V> {
 
   /**
-   * Creates a limited map. The returned map is safe for concurrent access and evicts the least
-   * recently used items.
+   * Creates a limited map. The returned map is safe for concurrent access *except* iteration and
+   * evicts the least recently used items. Iteration requires synchronizing on the map instance.
+   *
+   * <p>Synchronized instances are generally faster than iterable versions.
    *
    * @param maxSize The maximum number of elements to keep in the map.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A map that will evict elements when the max size is exceeded.
    */
-  static <K, V> LimitedMap<K, V> create(final int maxSize) {
+  static <K, V> LimitedMap<K, V> createSynchronized(final int maxSize) {
     return new SynchronizedLimitedMap<>(maxSize);
+  }
+
+  /**
+   * Creates a limited map. The returned map is safe for all forms of concurrent access including
+   * iteration and evicts the least recently used items.
+   *
+   * @param maxSize The maximum number of elements to keep in the map.
+   * @param <K> The key type of the map.
+   * @param <V> The value type of the map.
+   * @return A map that will evict elements when the max size is exceeded.
+   */
+  static <K, V> Map<K, V> createIterable(final int maxSize) {
+    return CacheBuilder.newBuilder().maximumSize(maxSize).<K, V>build().asMap();
   }
 
   /**

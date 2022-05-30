@@ -32,7 +32,7 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
-  private final Set<UInt64> seenIndices = LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
+  private final Set<UInt64> seenIndices = LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
   private final Spec spec;
 
   public AttesterSlashingValidator(RecentChainData recentChainData, final Spec spec) {

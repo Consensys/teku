@@ -3,6 +3,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':ethereum:executionclient')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:logging')
@@ -10,6 +11,7 @@ dependencies {
   implementation project(':infrastructure:time')
 
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':ethereum:spec'))
 }
 

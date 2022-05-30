@@ -408,7 +408,7 @@ public class BeaconRestApi {
 
   private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
-    app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetProposerDuties(dataProvider));
     addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, schemaCache));
@@ -421,9 +421,7 @@ public class BeaconRestApi {
         PostSubscribeToBeaconCommitteeSubnet.ROUTE,
         new PostSubscribeToBeaconCommitteeSubnet(dataProvider, jsonProvider));
     app.post(PostSyncDuties.ROUTE, new PostSyncDuties(dataProvider, jsonProvider));
-    app.get(
-        GetSyncCommitteeContribution.ROUTE,
-        new GetSyncCommitteeContribution(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache));
     app.post(
         PostSyncCommitteeSubscriptions.ROUTE,
         new PostSyncCommitteeSubscriptions(dataProvider, jsonProvider));
