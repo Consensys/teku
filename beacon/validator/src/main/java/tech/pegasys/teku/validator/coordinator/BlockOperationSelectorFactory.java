@@ -164,7 +164,7 @@ public class BlockOperationSelectorFactory {
                         "Merge transition not finalized: forcing block production using local execution engine");
                   }
                   return executionLayerChannel.builderGetHeader(
-                      executionPayloadContext, blockSlotState.getSlot(), forceLocalFallback);
+                      executionPayloadContext, blockSlotState, forceLocalFallback);
                 }));
         return;
       }

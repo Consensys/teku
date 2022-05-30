@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
@@ -270,8 +271,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
+      final BeaconState state,
       final boolean forceLocalFallback) {
+    final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
         executionPayloadContext,

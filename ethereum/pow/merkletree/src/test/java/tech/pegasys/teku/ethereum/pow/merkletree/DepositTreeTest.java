@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.pow.merkletree;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.List;
@@ -63,6 +64,15 @@ class DepositTreeTest {
       final DepositTree tree = DepositTree.fromSnapshot(testCase.snapshot);
       assertThat(tree.getRoot()).isEqualTo(testCase.eth1Data.getDepositRoot());
     }
+  }
+
+  @Test
+  void shouldFinalizeWithZeroDeposits() {
+    final DepositTree tree = new DepositTree();
+    final Eth1Data eth1Data =
+        new Eth1Data(Bytes32.fromHexString("0x1234"), UInt64.ZERO, Bytes32.fromHexString("0x5678"));
+
+    assertThatNoException().isThrownBy(() -> tree.finalize(eth1Data));
   }
 
   @Test

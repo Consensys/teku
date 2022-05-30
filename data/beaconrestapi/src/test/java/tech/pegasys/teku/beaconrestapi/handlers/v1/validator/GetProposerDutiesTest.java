@@ -13,66 +13,77 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 
-public class GetProposerDutiesTest extends AbstractValidatorApiTest {
-
-  @BeforeEach
-  public void setup() {
-    handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider);
-  }
+public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
+  private final GetProposerDuties handler =
+      new GetProposerDuties(syncDataProvider, validatorDataProvider);
+  private final ProposerDuties duties =
+      new ProposerDuties(
+          Bytes32.fromHexString("0x1234"),
+          List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
 
   @Test
   public void shouldGetProposerDuties() throws Exception {
+    request.setPathParameter(EPOCH, "100");
+
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-
-    GetProposerDutiesResponse duties =
-        new GetProposerDutiesResponse(
-            Bytes32.fromHexString("0x1234"),
-            List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
-    handler.handle(context);
-    GetProposerDutiesResponse response = getResponseFromFuture(GetProposerDutiesResponse.class);
-    assertThat(response).isEqualTo(duties);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(duties);
+  }
+
+  private tech.pegasys.teku.validator.api.ProposerDuty getProposerDuty(
+      final int validatorIndex, final UInt64 slot) {
+    return new ProposerDuty(BLSTestUtil.randomPublicKey(1), validatorIndex, slot);
   }
 
   @Test
-  public void shouldReturnBadRequestWhenIllegalArgumentExceptionThrown() throws Exception {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(validatorDataProvider.getProposerDuties(UInt64.valueOf(100)))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));
-
-    handler.handle(context);
-    verifyStatusCode(SC_BAD_REQUEST);
-    final BadRequest badRequest = getBadRequestFromFuture();
-    assertThat(badRequest).usingRecursiveComparison().isEqualTo(new BadRequest(400, "Bad epoch"));
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, HttpStatusCodes.SC_BAD_REQUEST);
   }
 
-  private ProposerDuty getProposerDuty(final int validatorIndex, final UInt64 slot) {
-    return new ProposerDuty(new BLSPubKey(BLSTestUtil.randomPublicKey(1)), validatorIndex, slot);
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final String data = getResponseStringFromMetadata(handler, SC_OK, duties);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(GetProposerDutiesTest.class, "getProposerDuties.json"), UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }
