@@ -86,10 +86,6 @@ public class Bytes4 {
     return new Bytes4(bytes.copy());
   }
 
-  public Bytes4 and(Bytes4 other) {
-    return new Bytes4(bytes.and(other.getWrappedBytes()).copy());
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
