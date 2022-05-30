@@ -38,7 +38,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -60,6 +59,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -164,14 +164,8 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<Optional<PostDataFailureResponse>> submitAttestations(
-      List<Attestation> attestations) {
-    return validatorApiChannel
-        .sendSignedAttestations(
-            attestations.stream()
-                .map(attestation -> attestation.asInternalAttestation(spec))
-                .collect(toList()))
-        .thenApply(this::convertToPostDataFailureResponse);
+  public SafeFuture<List<SubmitDataError>> submitAttestations(List<Attestation> attestations) {
+    return validatorApiChannel.sendSignedAttestations(attestations);
   }
 
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
