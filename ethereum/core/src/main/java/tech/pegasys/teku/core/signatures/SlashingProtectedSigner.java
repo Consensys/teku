@@ -144,8 +144,8 @@ public class SlashingProtectedSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      ValidatorRegistration validatorRegistration, UInt64 epoch, ForkInfo forkInfo) {
-    return delegate.signValidatorRegistration(validatorRegistration, epoch, forkInfo);
+      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
+    return delegate.signValidatorRegistration(validatorRegistration, epoch);
   }
 
   @Override
