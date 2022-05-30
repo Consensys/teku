@@ -148,7 +148,7 @@ class LocalSignerTest {
                 "hQLueiLQoxQIVdziM1Fu9VRFHUdHsyBVdTezeBQBlJ7eLL/7o4fVCEwn7C4DShcmFpYiUjU2Fx942SGPTHGyn42dEMsB/GX1s+jJ0ynkTGiFVFGujX8de2UELM5QExg3"));
 
     final SafeFuture<BLSSignature> result =
-        signer.signValidatorRegistration(validatorRegistration, UInt64.valueOf(7), fork);
+        signer.signValidatorRegistration(validatorRegistration, UInt64.valueOf(7));
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompletedWithValue(expectedSignature);

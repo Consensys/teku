@@ -55,7 +55,7 @@ public interface Signer {
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signValidatorRegistration(
-      ValidatorRegistration validatorRegistration, UInt64 epoch, ForkInfo forkInfo);
+      ValidatorRegistration validatorRegistration, UInt64 epoch);
 
   default boolean isLocal() {
     return getSigningServiceUrl().isEmpty();
