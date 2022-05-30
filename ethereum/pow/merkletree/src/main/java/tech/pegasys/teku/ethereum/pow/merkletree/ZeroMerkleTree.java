@@ -58,7 +58,6 @@ class ZeroMerkleTree extends MerkleTree {
   public MerkleTree finalize(final long depositsToFinalize, final int level) {
     checkArgument(depositsToFinalize == 0, "Attempted to finalized more deposits than are present");
     return this;
-    //    throw new UnsupportedOperationException("Cannot finalized an empty tree");
   }
 
   @Override
