@@ -108,7 +108,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             .map(
                 validator -> {
                   // hardcoding fee_recipient and gas_limit to ZERO for now. The real values will be
-                  // passed in a future PR.
+                  // taken from the proposer config in a future PR.
                   final ValidatorIdentity validatorIdentity =
                       new ValidatorIdentity(Bytes20.ZERO, UInt64.ZERO, validator.getPublicKey());
 

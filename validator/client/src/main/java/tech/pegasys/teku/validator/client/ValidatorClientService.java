@@ -159,15 +159,6 @@ public class ValidatorClientService extends Service {
                   Optional.of(
                       ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
                           .resolve("api-proposer-config.json"))));
-
-      validatorRegistrator =
-          Optional.of(
-              new ValidatorRegistrator(
-                  forkProvider,
-                  validatorLoader.getOwnedValidators(),
-                  validatorApiChannel,
-                  config.getSpec(),
-                  services.getTimeProvider()));
     }
     if (validatorApiConfig.isRestApiEnabled()) {
       validatorRestApi =
