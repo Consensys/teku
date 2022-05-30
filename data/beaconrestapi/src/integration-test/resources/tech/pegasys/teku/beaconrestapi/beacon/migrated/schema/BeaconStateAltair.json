@@ -103,16 +103,18 @@
       }
     },
     "previous_epoch_participation" : {
-      "type": "string",
-      "pattern": "^0x[a-fA-F0-9]{2,}$",
-      "description": "SSZ encoded byte list",
-      "format": "bytes"
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "format" : "byte"
+      }
     },
     "current_epoch_participation" : {
-      "type": "string",
-      "pattern": "^0x[a-fA-F0-9]{2,}$",
-      "description": "SSZ encoded byte list",
-      "format": "bytes"
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "format" : "byte"
+      }
     },
     "justification_bits" : {
       "type" : "string",
