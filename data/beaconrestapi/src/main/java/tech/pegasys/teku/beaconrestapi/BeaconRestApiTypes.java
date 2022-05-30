@@ -41,7 +41,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STA
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -49,11 +48,9 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<ValidatorStatus> STATUS_VALUE =
@@ -63,13 +60,6 @@ public class BeaconRestApiTypes {
           .example("active_ongoing")
           .description("ValidatorStatus string")
           .format("string")
-          .build();
-
-  public static final SerializableTypeDefinition<SubmitDataError> SUBMIT_DATA_ERROR_TYPE =
-      SerializableTypeDefinition.object(SubmitDataError.class)
-          .name("SubmitDataError")
-          .withField("index", UINT64_TYPE, SubmitDataError::getIndex)
-          .withField("message", STRING_TYPE, SubmitDataError::getMessage)
           .build();
 
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
