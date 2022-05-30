@@ -64,7 +64,8 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       @JsonProperty("inactivity_scores") final List<UInt64> inactivityScores,
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
-      @JsonProperty("latest_execution_payload_header") final ExecutionPayloadHeader latestExecutionPayloadHeader) {
+      @JsonProperty("latest_execution_payload_header")
+          final ExecutionPayloadHeader latestExecutionPayloadHeader) {
     super(
         genesisTime,
         genesisValidatorsRoot,
