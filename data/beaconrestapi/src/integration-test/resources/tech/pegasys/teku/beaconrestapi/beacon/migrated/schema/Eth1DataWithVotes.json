@@ -1,0 +1,16 @@
+{
+  "title" : "Eth1DataWithVotes",
+  "type" : "object",
+  "required" : [ "eth1_data", "votes" ],
+  "properties" : {
+    "eth1_data" : {
+      "$ref" : "#/components/schemas/Eth1Data"
+    },
+    "votes" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}

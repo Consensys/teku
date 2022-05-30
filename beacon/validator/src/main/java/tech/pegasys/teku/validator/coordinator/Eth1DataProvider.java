@@ -1,0 +1,91 @@
+/*
+ * Copyright 2022 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.validator.coordinator;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+
+public class Eth1DataProvider {
+  private static final Comparator<Eth1Vote> REVERSE_VOTE_COMPARATOR =
+      Comparator.comparingInt(Eth1Vote::getVoteCount).reversed();
+  private final Eth1DataCache eth1DataCache;
+  private final DepositProvider depositProvider;
+
+  public Eth1DataProvider(Eth1DataCache eth1DataCache, DepositProvider depositProvider) {
+    this.eth1DataCache = eth1DataCache;
+    this.depositProvider = depositProvider;
+  }
+
+  public List<Deposit> getAvailableDeposits() {
+    return depositProvider.getAvailableDeposits();
+  }
+
+  public Eth1Data getEth1Vote(final StateAndMetaData stateAndMetaData) {
+    return eth1DataCache.getEth1Vote(stateAndMetaData.getData());
+  }
+
+  public List<Pair<Eth1Data, UInt64>> getEth1DataVotesBreakdown(
+      final StateAndMetaData stateAndMetaData) {
+    final Map<Eth1Data, Eth1Vote> votes = eth1DataCache.countVotes(stateAndMetaData.getData());
+    return votes.entrySet().stream()
+        .sorted(Entry.comparingByValue(REVERSE_VOTE_COMPARATOR))
+        .map(entry -> Pair.of(entry.getKey(), UInt64.valueOf(entry.getValue().getVoteCount())))
+        .collect(Collectors.toList());
+  }
+
+  public VotingPeriodInfo getVotingPeriodInfo(final StateAndMetaData stateAndMetaData) {
+    final BeaconState beaconState = stateAndMetaData.getData();
+    final Eth1VotingPeriod eth1VotingPeriod = eth1DataCache.getEth1VotingPeriod();
+    final UInt64 totalSlots =
+        UInt64.valueOf(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot()));
+    final UInt64 startSlot = eth1VotingPeriod.computeVotingPeriodStartSlot(beaconState.getSlot());
+    final UInt64 slotsLeft = startSlot.plus(totalSlots).minus(beaconState.getSlot());
+    final UInt64 votesRequired = totalSlots.dividedBy(2);
+    return new VotingPeriodInfo(votesRequired, totalSlots, slotsLeft);
+  }
+
+  public static class VotingPeriodInfo {
+    private final UInt64 winVotesRequired;
+    private final UInt64 votingSlots;
+    private final UInt64 votingSlotsLeft;
+
+    public VotingPeriodInfo(
+        final UInt64 winVotesRequired, final UInt64 votingSlots, final UInt64 votingSlotsLeft) {
+      this.winVotesRequired = winVotesRequired;
+      this.votingSlots = votingSlots;
+      this.votingSlotsLeft = votingSlotsLeft;
+    }
+
+    public UInt64 getWinVotesRequired() {
+      return winVotesRequired;
+    }
+
+    public UInt64 getVotingSlots() {
+      return votingSlots;
+    }
+
+    public UInt64 getVotingSlotsLeft() {
+      return votingSlotsLeft;
+    }
+  }
+}

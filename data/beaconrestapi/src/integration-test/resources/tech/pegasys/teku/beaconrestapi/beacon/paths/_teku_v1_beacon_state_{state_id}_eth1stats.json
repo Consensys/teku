@@ -1,0 +1,35 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get Eth1DataVotes stats",
+    "description" : "Eth1Data from the state, Eth1Data statistics breakdown by votes for provided state id plus voting period information (slots length, slots left, Eth1Data votes required to win).",
+    "operationId" : "getTekuV1BeaconStateWithState_idEth1stats",
+    "parameters" : [ {
+      "name" : "state_id",
+      "in" : "path",
+      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetEth1VotesStatsResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

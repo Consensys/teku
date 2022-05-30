@@ -146,7 +146,7 @@ public class Eth1DataCache {
             .orElse(0));
   }
 
-  private Map<Eth1Data, Eth1Vote> countVotes(final BeaconState state) {
+  protected Map<Eth1Data, Eth1Vote> countVotes(final BeaconState state) {
     Map<Eth1Data, Eth1Vote> votes = new HashMap<>();
     int i = 0;
     for (Eth1Data eth1Data : state.getEth1DataVotes()) {
@@ -167,6 +167,10 @@ public class Eth1DataCache {
             true),
         eth1Data ->
             eth1Data.getDepositCount().isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
+  }
+
+  protected Eth1VotingPeriod getEth1VotingPeriod() {
+    return eth1VotingPeriod;
   }
 
   private void prune(final UInt64 latestBlockTimestamp) {

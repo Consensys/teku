@@ -36,8 +36,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetEth1Data extends MigratingEndpointAdapter {
 
@@ -50,9 +49,9 @@ public class GetEth1Data extends MigratingEndpointAdapter {
           .build();
 
   private final ChainDataProvider chainDataProvider;
-  private final Eth1DataCache eth1DataCache;
+  private final Eth1DataProvider eth1DataProvider;
 
-  public GetEth1Data(final DataProvider dataProvider, final Eth1DataCache eth1DataCache) {
+  public GetEth1Data(final DataProvider dataProvider, final Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getEth1Data")
@@ -62,7 +61,7 @@ public class GetEth1Data extends MigratingEndpointAdapter {
             .response(SC_OK, "Request successful", ETH1DATA_RESPONSE_TYPE)
             .build());
     this.chainDataProvider = dataProvider.getChainDataProvider();
-    this.eth1DataCache = eth1DataCache;
+    this.eth1DataProvider = eth1DataProvider;
   }
 
   @OpenApi(
@@ -93,8 +92,8 @@ public class GetEth1Data extends MigratingEndpointAdapter {
                   if (maybeStateAndMetadata.isEmpty()) {
                     return AsyncApiResponse.respondNotFound();
                   } else {
-                    final BeaconState beaconState = maybeStateAndMetadata.get().getData();
-                    return AsyncApiResponse.respondOk(eth1DataCache.getEth1Vote(beaconState));
+                    return AsyncApiResponse.respondOk(
+                        eth1DataProvider.getEth1Vote(maybeStateAndMetadata.get()));
                   }
                 }));
   }
