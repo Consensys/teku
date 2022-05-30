@@ -126,19 +126,38 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   public SszContainerStorageSchema<C> asStorageVersion() {
     final IntList replacedChildren = new IntArrayList();
+    final IntList partlyReplacedChildren = new IntArrayList();
     final List<NamedSchema<?>> namedStorageSchemas = new ArrayList<>();
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final SszSchema<?> childSchema = childrenSchemas.get(i);
+      if (!(childSchema instanceof SszContainerSchema<?>)) {
+        continue;
+      }
+      final SszContainerSchema<?> childContainerSchema = (SszContainerSchema<?>) childSchema;
       final String childName = childrenNames.get(i);
-      if (childSchema.isStoredSeparately()) {
+      if (childContainerSchema.isStoredSeparately()) {
         namedStorageSchemas.add(new NamedSchema<>(childName, SszPrimitiveSchemas.BYTES32_SCHEMA));
         replacedChildren.add(i);
+      } else if (childContainerSchema.hasSeparatelyStoredParts()) {
+        namedStorageSchemas.add(
+            new NamedSchema<>(childName, childContainerSchema.asStorageVersion()));
+        partlyReplacedChildren.add(i);
       } else {
-        namedStorageSchemas.add(new NamedSchema<>(childName, childSchema));
+        namedStorageSchemas.add(new NamedSchema<>(childName, childContainerSchema));
       }
     }
     return new SszContainerStorageSchema<>(
-        containerName, this, namedStorageSchemas, replacedChildren);
+        containerName, this, namedStorageSchemas, replacedChildren, partlyReplacedChildren);
+  }
+
+  @Override
+  public boolean hasSeparatelyStoredParts() {
+    return isStoredSeparately()
+        || childrenSchemas.stream()
+            .anyMatch(
+                schema ->
+                    schema instanceof SszContainerSchema
+                        && ((SszContainerSchema<?>) schema).hasSeparatelyStoredParts());
   }
 
   @Override

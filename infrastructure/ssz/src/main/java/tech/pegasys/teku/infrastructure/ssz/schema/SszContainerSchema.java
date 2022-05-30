@@ -61,6 +61,12 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
     };
   }
 
+  default boolean isStoredSeparately() {
+    return false;
+  }
+
+  boolean hasSeparatelyStoredParts();
+
   SszContainerStorageSchema<C> asStorageVersion();
 
   /**

@@ -14,9 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszContainerStorage;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -106,5 +109,10 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   @Override
   public Bytes32 getRoot() {
     return getMessage().hashTreeRoot();
+  }
+
+  public SszContainerStorage<SignedBeaconBlock> toStorageVersion(
+      final Consumer<SszData> separateStorage) {
+    return getSchema().asStorageVersion().createFromFullVersion(this, separateStorage);
   }
 }

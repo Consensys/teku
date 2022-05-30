@@ -33,15 +33,18 @@ public class SszContainerStorageSchema<C extends SszContainer>
 
   private final AbstractSszContainerSchema<C> fullSchema;
   private final IntList ommittedChildren;
+  private final IntList partlyReplacedChildren;
 
   public SszContainerStorageSchema(
       final String containerName,
       final AbstractSszContainerSchema<C> fullSchema,
       final List<NamedSchema<?>> childSchemas,
-      final IntList ommittedChildren) {
+      final IntList ommittedChildren,
+      final IntList partlyReplacedChildren) {
     super(containerName, childSchemas);
     this.fullSchema = fullSchema;
     this.ommittedChildren = ommittedChildren;
+    this.partlyReplacedChildren = partlyReplacedChildren;
   }
 
   @Override
@@ -63,23 +66,53 @@ public class SszContainerStorageSchema<C extends SszContainer>
           separateStorage.accept(childData);
         });
 
+    partlyReplacedChildren.forEach(
+        index -> {
+          final SszContainer childData = (SszContainer) value.get(index);
+          final SszContainerStorage<?> childReplacement =
+              createChildStorageVersion(childData, separateStorage);
+          updates.add(
+              new Update(getChildGeneralizedIndex(index), childReplacement.getBackingNode()));
+        });
+
     final TreeNode storageTree = value.getBackingNode().updated(new TreeUpdates(updates));
     return createFromBackingNode(storageTree);
   }
 
+  @SuppressWarnings("unchecked")
+  private <T extends SszContainer> SszContainerStorage<T> createChildStorageVersion(
+      final T childData, final Consumer<SszData> separateStorage) {
+    final SszContainerStorageSchema<T> childStorageSchema =
+        (SszContainerStorageSchema<T>) childData.getSchema().asStorageVersion();
+    return childStorageSchema.createFromFullVersion(childData, separateStorage);
+  }
+
   public C loadFully(
       final Function<Bytes32, Bytes> partLoader, final SszContainerStorage<C> storedContainer) {
-    final List<TreeUpdates.Update> updates = new ArrayList<>();
+    final TreeNode fullTree = loadBackingTreeFully(partLoader, storedContainer);
+    return fullSchema.createFromBackingNode(fullTree);
+  }
+
+  private TreeNode loadBackingTreeFully(
+      final Function<Bytes32, Bytes> partLoader, final SszContainerStorage<C> storedContainer) {
+    final List<Update> updates = new ArrayList<>();
     ommittedChildren.forEach(
         index -> {
           final SszBytes32 root = storedContainer.getAny(index);
           final Bytes partSszData = partLoader.apply(root.get());
           final TreeNode childTreeNode =
               fullSchema.getChildSchema(index).sszDeserializeTree(SszReader.fromBytes(partSszData));
-          updates.add(new TreeUpdates.Update(getChildGeneralizedIndex(index), childTreeNode));
+          updates.add(new Update(getChildGeneralizedIndex(index), childTreeNode));
         });
 
-    final TreeNode fullTree = storedContainer.getBackingNode().updated(new TreeUpdates(updates));
-    return fullSchema.createFromBackingNode(fullTree);
+    partlyReplacedChildren.forEach(
+        index -> {
+          final SszContainerStorageSchema<?> childSchema =
+              (SszContainerStorageSchema<?>) getChildSchema(index);
+          final TreeNode loadedChildTree =
+              childSchema.loadBackingTreeFully(partLoader, storedContainer.getAny(index));
+          updates.add(new Update(getChildGeneralizedIndex(index), loadedChildTree));
+        });
+    return storedContainer.getBackingNode().updated(new TreeUpdates(updates));
   }
 }

@@ -124,8 +124,4 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     final TreeNode node = loadBackingNodes(nodeSource, rootHash, rootGIndex);
     return createFromBackingNode(node);
   }
-
-  default boolean isStoredSeparately() {
-    return false;
-  }
 }

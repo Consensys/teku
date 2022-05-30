@@ -15,8 +15,12 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszContainerStorage;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -32,5 +36,28 @@ class SignedBeaconBlockTest {
     final SignedBeaconBlock result =
         schemaDefinitions.getSignedBeaconBlockSchema().sszDeserialize(ssz);
     assertThat(result).isEqualTo(block);
+  }
+
+  @Test
+  public void shouldStoreComponentsSeparately() {
+
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
+    final SignedBeaconBlock block = new DataStructureUtil(spec).randomSignedBeaconBlock(1);
+
+    final Map<Bytes32, Bytes> separateStorage = new HashMap<>();
+    final SszContainerStorage<SignedBeaconBlock> storageVersion =
+        block.toStorageVersion(
+            data -> separateStorage.put(data.hashTreeRoot(), data.sszSerialize()));
+
+    final Bytes ssz = storageVersion.sszSerialize();
+    assertThat(block.hashTreeRoot()).isEqualTo(storageVersion.hashTreeRoot());
+    assertThat(separateStorage).hasSize(1);
+
+    final SszContainerStorage<SignedBeaconBlock> fromStoredSsz =
+        schemaDefinitions.getSignedBeaconBlockSchema().asStorageVersion().sszDeserialize(ssz);
+    final SignedBeaconBlock result = fromStoredSsz.loadFully(separateStorage::get);
+    assertThat(result).isEqualTo(block);
+    assertThat(result.sszSerialize()).isEqualTo(block.sszSerialize());
   }
 }
