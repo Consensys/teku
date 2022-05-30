@@ -423,16 +423,20 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder applyTestnetDefaults() {
+      return reset().forkChoiceBeforeProposingEnabled(true);
+    }
+
     public Builder applyMinimalNetworkDefaults() {
-      return reset().constants(MINIMAL.configName()).startupTargetPeerCount(0);
+      return applyTestnetDefaults().constants(MINIMAL.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applySwiftNetworkDefaults() {
-      return reset().constants(SWIFT.configName()).startupTargetPeerCount(0);
+      return applyTestnetDefaults().constants(SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyLessSwiftNetworkDefaults() {
-      return reset().constants(LESS_SWIFT.configName()).startupTargetPeerCount(0);
+      return applyTestnetDefaults().constants(LESS_SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyMainnetNetworkDefaults() {
@@ -465,7 +469,7 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyPraterNetworkDefaults() {
-      return reset()
+      return applyTestnetDefaults()
           .constants(PRATER.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
@@ -488,7 +492,7 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyRopstenNetworkDefaults() {
-      return reset()
+      return applyTestnetDefaults()
           .constants(ROPSTEN.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(12269949)
@@ -502,7 +506,8 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyKilnNetworkDefaults() {
-      return reset()
+      return applyTestnetDefaults()
+          .forkChoiceBeforeProposingEnabled(true)
           .constants(KILN.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(0)
