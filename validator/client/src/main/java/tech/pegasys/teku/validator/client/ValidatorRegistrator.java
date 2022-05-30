@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import com.google.common.collect.Maps;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -42,19 +42,16 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
 
-  private final ForkProvider forkProvider;
   private final Spec spec;
   private final TimeProvider timeProvider;
   private final OwnedValidators ownedValidators;
   private final ValidatorApiChannel validatorApiChannel;
 
   public ValidatorRegistrator(
-      final ForkProvider forkProvider,
       final OwnedValidators ownedValidators,
       final ValidatorApiChannel validatorApiChannel,
       final Spec spec,
       final TimeProvider timeProvider) {
-    this.forkProvider = forkProvider;
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
@@ -64,14 +61,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   @Override
   public void onSlot(UInt64 slot) {
     if (isBeginningOfEpoch(slot) || firstCallDone.compareAndSet(false, true)) {
-      forkProvider
-          .getForkInfo(slot)
-          .thenCompose(
-              forkInfo -> {
-                final UInt64 epoch = spec.computeEpochAtSlot(slot);
-                return registerValidators(epoch, forkInfo);
-              })
-          .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+      final UInt64 epoch = spec.computeEpochAtSlot(slot);
+      registerValidators(epoch).finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
   }
 
@@ -101,10 +92,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
   }
 
-  private SafeFuture<Void> registerValidators(final UInt64 epoch, final ForkInfo forkInfo) {
+  private SafeFuture<Void> registerValidators(final UInt64 epoch) {
+    final List<Validator> activeValidators = ownedValidators.getActiveValidators();
+
+    if (activeValidators.isEmpty()) {
+      return SafeFuture.completedFuture(null);
+    }
 
     final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
-        ownedValidators.getActiveValidators().stream()
+        activeValidators.stream()
             .map(
                 validator -> {
                   // hardcoding fee_recipient and gas_limit to ZERO for now. The real values will be
@@ -120,7 +116,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                   final ValidatorRegistration validatorRegistration =
                       createValidatorRegistration(validatorIdentity);
                   final Signer signer = validator.getSigner();
-                  return signValidatorRegistration(validatorRegistration, signer, epoch, forkInfo)
+                  return signValidatorRegistration(validatorRegistration, signer, epoch)
                       .thenPeek(
                           signedValidatorRegistration ->
                               cachedValidatorRegistrations.put(
@@ -145,12 +141,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private SafeFuture<SignedValidatorRegistration> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration,
-      final Signer signer,
-      final UInt64 epoch,
-      final ForkInfo forkInfo) {
+      final ValidatorRegistration validatorRegistration, final Signer signer, final UInt64 epoch) {
     return signer
-        .signValidatorRegistration(validatorRegistration, epoch, forkInfo)
+        .signValidatorRegistration(validatorRegistration, epoch)
         .thenApply(
             signature ->
                 ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(

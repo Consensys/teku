@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -53,7 +51,6 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 class ValidatorRegistratorTest {
 
-  private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(500);
@@ -77,45 +74,35 @@ class ValidatorRegistratorTest {
     validator3 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
     validatorRegistrator =
         new ValidatorRegistrator(
-            forkProvider,
-            ownedValidators,
-            validatorApiChannel,
-            specContext.getSpec(),
-            stubTimeProvider);
+            ownedValidators, validatorApiChannel, specContext.getSpec(), stubTimeProvider);
     when(validatorApiChannel.registerValidators(any()))
         .thenReturn(SafeFuture.completedFuture(null));
   }
 
   @TestTemplate
   void doesNotRegisterValidators_ifNotBeginningOfEpoch() {
-    when(forkProvider.getForkInfo(UInt64.ONE))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("doesn't matter")));
+    when(ownedValidators.getActiveValidators()).thenReturn(List.of());
 
     // initially validators will be registered anyway since it's the first call
     validatorRegistrator.onSlot(UInt64.ONE);
-    verify(forkProvider).getForkInfo(UInt64.ONE);
+    verify(ownedValidators).getActiveValidators();
 
     // after the initial call, registration should not occur if not beginning of epoch
     validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch).plus(UInt64.ONE));
-    verifyNoMoreInteractions(forkProvider);
+    verifyNoMoreInteractions(ownedValidators);
 
-    verifyNoInteractions(ownedValidators, validatorApiChannel, signer);
+    verifyNoInteractions(validatorApiChannel, signer);
   }
 
   @TestTemplate
   void registersValidators_onBeginningOfEpoch() {
     // GIVEN
-    ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-    when(forkProvider.getForkInfo(any(UInt64.class)))
-        .thenReturn(SafeFuture.completedFuture(forkInfo));
-
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
-        .signValidatorRegistration(
-            any(ValidatorRegistration.class), any(UInt64.class), eq(forkInfo));
+        .signValidatorRegistration(any(ValidatorRegistration.class), any(UInt64.class));
 
     // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
@@ -137,7 +124,7 @@ class ValidatorRegistratorTest {
 
     // signer will be called in total 3 times, since from the 2nd run the signed registrations will
     // be cached
-    verify(signer, times(3)).signValidatorRegistration(any(), any(), any());
+    verify(signer, times(3)).signValidatorRegistration(any(), any());
 
     inOrder.verify(validatorApiChannel, timeout(1000)).registerValidators(argumentCaptor.capture());
     verifyRegistrations(argumentCaptor.getValue());
