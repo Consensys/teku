@@ -19,11 +19,13 @@ import static org.assertj.core.api.Assertions.entry;
 import static tech.pegasys.teku.infrastructure.json.JsonTestUtil.getObject;
 import static tech.pegasys.teku.infrastructure.json.JsonTestUtil.parse;
 
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -124,10 +126,9 @@ class OpenApiDocBuilderTest {
                 .response(
                     200,
                     "It depends",
-                    Map.of(
-                        "application/json",
-                            new JsonResponseContentTypeDefinition<>(CoreTypes.STRING_TYPE),
-                        "uint", new JsonResponseContentTypeDefinition<>(CoreTypes.UINT64_TYPE)))
+                    List.of(
+                        new JsonResponseContentTypeDefinition<>(CoreTypes.STRING_TYPE),
+                        new CustomResponseTypeDefinition<>("uint", CoreTypes.UINT64_TYPE)))
                 .response(404, "Not 'ere gov", CoreTypes.HTTP_ERROR_RESPONSE_TYPE)
                 .build());
     final Map<String, Object> result = parse(validBuilder().endpoint(endpoint).build());

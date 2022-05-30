@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -49,7 +49,6 @@ import org.apache.commons.io.function.IOFunction;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
-import tech.pegasys.teku.infrastructure.json.exceptions.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
@@ -153,17 +152,8 @@ public class EndpointMetadata {
 
   private String selectRequestContentType(final Optional<String> maybeContentType)
       throws BadRequestException {
-    if (maybeContentType.isEmpty()) {
-      return defaultRequestContentType;
-    }
-    return ContentTypes.getContentType(requestBodyTypes.keySet(), maybeContentType)
-        .orElseThrow(
-            () ->
-                new ContentTypeNotSupportedException(
-                    "Request content type "
-                        + maybeContentType.get()
-                        + " is not supported. Must be one of: "
-                        + requestBodyTypes.keySet()));
+    return ContentTypes.getRequestContentType(
+        maybeContentType, requestBodyTypes.keySet(), defaultRequestContentType);
   }
 
   public HandlerType getMethod() {
@@ -238,9 +228,9 @@ public class EndpointMetadata {
 
   private String selectContentType(
       final OpenApiResponse openApiResponse, final Optional<String> acceptHeader) {
-    final Collection<String> supportedTypes = openApiResponse.getSupportedContentTypes();
+    final List<String> supportedTypes = openApiResponse.getSupportedContentTypes();
     final String selectedType =
-        ContentTypes.getContentType(supportedTypes, acceptHeader)
+        ContentTypes.getResponseContentType(supportedTypes, acceptHeader)
             .orElse(defaultResponseContentType);
     checkState(supportedTypes.contains(selectedType), "Default content type is not supported.");
     return selectedType;
@@ -474,7 +464,7 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder response(final int responseCode, final String description) {
-      return response(responseCode, description, emptyMap());
+      return response(responseCode, description, emptyList());
     }
 
     public EndpointMetaDataBuilder defaultResponseType(final String defaultContentType) {
@@ -536,9 +526,7 @@ public class EndpointMetadata {
         final String description,
         final SerializableTypeDefinition<?> content) {
       return response(
-          responseCode,
-          description,
-          Map.of(ContentTypes.JSON, new JsonResponseContentTypeDefinition<>(content)));
+          responseCode, description, List.of(new JsonResponseContentTypeDefinition<>(content)));
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -549,11 +537,7 @@ public class EndpointMetadata {
       return response(
           responseCode,
           description,
-          Map.of(
-              ContentTypes.JSON,
-              new JsonResponseContentTypeDefinition<>(content),
-              ContentTypes.OCTET_STREAM,
-              octetStreamTypeDefinition));
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
@@ -596,7 +580,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
-        final Map<String, ? extends ResponseContentTypeDefinition<?>> content) {
+        final List<? extends ResponseContentTypeDefinition<?>> content) {
       this.responses.put(Integer.toString(responseCode), new OpenApiResponse(description, content));
       return this;
     }
