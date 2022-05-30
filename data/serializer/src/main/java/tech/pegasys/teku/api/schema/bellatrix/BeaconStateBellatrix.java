@@ -55,8 +55,8 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       @JsonProperty("balances") final List<UInt64> balances,
       @JsonProperty("randao_mixes") final List<Bytes32> randaoMixes,
       @JsonProperty("slashings") final List<UInt64> slashings,
-      @JsonProperty("previous_epoch_participation") final byte[] previousEpochParticipation,
-      @JsonProperty("current_epoch_participation") final byte[] currentEpochParticipation,
+      @JsonProperty("previous_epoch_participation") final Bytes previousEpochParticipation,
+      @JsonProperty("current_epoch_participation") final Bytes currentEpochParticipation,
       @JsonProperty("justification_bits") final SszBitvector justificationBits,
       @JsonProperty("previous_justified_checkpoint") final Checkpoint previousJustifiedCheckpoint,
       @JsonProperty("current_justified_checkpoint") final Checkpoint currentJustifiedCheckpoint,
@@ -64,8 +64,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       @JsonProperty("inactivity_scores") final List<UInt64> inactivityScores,
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
-      @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeader latestExecutionPayloadHeader) {
+      @JsonProperty("latest_execution_payload_header") final ExecutionPayloadHeader latestExecutionPayloadHeader) {
     super(
         genesisTime,
         genesisValidatorsRoot,
