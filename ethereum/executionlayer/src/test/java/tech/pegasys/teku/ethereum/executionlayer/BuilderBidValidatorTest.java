@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
@@ -65,7 +64,7 @@ public class BuilderBidValidatorTest {
     BLSConstants.disableBLSVerification();
     when(specMock.getDomain(any(), any(), any(), any()))
         .thenReturn(dataStructureUtil.randomBytes32());
-    when(specMock.computeSigningRoot(any(), any(), any()))
+    when(specMock.computeBuilderApplicationSigningRoot(any(), any()))
         .thenReturn(dataStructureUtil.randomBytes32());
     when(specMock.atSlot(any())).thenReturn(specVersionMock);
     when(specVersionMock.getBlockProcessor()).thenReturn(blockProcessor);
@@ -186,13 +185,9 @@ public class BuilderBidValidatorTest {
   private void prepareValidSignedBuilderBid() {
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(1);
     final BuilderBid builderBid = dataStructureUtil.randomBuilderBid(keyPair.getPublicKey());
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.APPLICATION_BUILDER,
-            spec.getCurrentEpoch(state),
-            state.getFork(),
-            state.getGenesisValidatorsRoot());
-    final Bytes signingRoot = spec.computeSigningRoot(state.getSlot(), builderBid, domain);
+
+    final Bytes signingRoot =
+        spec.computeBuilderApplicationSigningRoot(state.getSlot(), builderBid);
 
     signedBuilderBid =
         spec.atSlot(state.getSlot())

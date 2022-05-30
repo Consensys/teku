@@ -15,11 +15,9 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
@@ -35,14 +33,9 @@ public interface BuilderBidValidator {
   BuilderBidValidator VALIDATOR =
       (spec, signedBuilderBid, signedValidatorRegistration, state) -> {
         // validating Bid Signature
-        final Bytes32 domain =
-            spec.getDomain(
-                Domain.APPLICATION_BUILDER,
-                spec.getCurrentEpoch(state),
-                state.getFork(),
-                state.getGenesisValidatorsRoot());
         final Bytes signingRoot =
-            spec.computeSigningRoot(state.getSlot(), signedBuilderBid.getMessage(), domain);
+            spec.computeBuilderApplicationSigningRoot(
+                state.getSlot(), signedBuilderBid.getMessage());
 
         if (!BLS.verify(
             signedBuilderBid.getMessage().getPublicKey(),
