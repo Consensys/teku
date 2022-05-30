@@ -99,7 +99,11 @@ public class PostAttestation extends MigratingEndpointAdapter {
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = Attestation.class, isArray = true)}),
+              content = {
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.schema.Attestation.class,
+                    isArray = true)
+              }),
       description =
           "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\n"
               + "This endpoint does not protected against slashing.",
