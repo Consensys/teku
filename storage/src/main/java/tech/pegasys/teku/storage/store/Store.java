@@ -180,7 +180,8 @@ class Store implements UpdatableStore {
       final StoreConfig config) {
 
     // Create limited collections for non-final data
-    final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
+    final Map<Bytes32, SignedBeaconBlock> blocks =
+        LimitedMap.createSynchronized(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner,

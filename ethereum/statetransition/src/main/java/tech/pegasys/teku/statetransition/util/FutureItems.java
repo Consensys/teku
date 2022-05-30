@@ -96,7 +96,6 @@ public class FutureItems<T> implements SlotEventsChannel {
    * @param currentSlot The slot to be considered current
    * @return The set of items that are no longer in the future
    */
-  @SuppressWarnings("rawtypes")
   public List<T> prune(final UInt64 currentSlot) {
     final List<T> dequeued = new ArrayList<>();
     queuedFutureItems
@@ -118,6 +117,6 @@ public class FutureItems<T> implements SlotEventsChannel {
   }
 
   private Set<T> createNewSet() {
-    return LimitedSet.create(MAX_ITEMS_PER_SLOT);
+    return LimitedSet.createSynchronized(MAX_ITEMS_PER_SLOT);
   }
 }

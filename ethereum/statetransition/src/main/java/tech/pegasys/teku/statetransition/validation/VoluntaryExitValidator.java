@@ -36,7 +36,8 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final Set<UInt64> receivedValidExitSet = LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
+  private final Set<UInt64> receivedValidExitSet =
+      LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
 
   public VoluntaryExitValidator(final Spec spec, RecentChainData recentChainData) {
     this.spec = spec;

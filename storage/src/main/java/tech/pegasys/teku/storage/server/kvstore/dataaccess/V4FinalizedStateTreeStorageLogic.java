@@ -42,7 +42,7 @@ public class V4FinalizedStateTreeStorageLogic
   public V4FinalizedStateTreeStorageLogic(
       final MetricsSystem metricsSystem, final Spec spec, final int maxKnownNodeCacheSize) {
     this.spec = spec;
-    this.knownStoredBranchesCache = LimitedSet.create(maxKnownNodeCacheSize);
+    this.knownStoredBranchesCache = LimitedSet.createSynchronized(maxKnownNodeCacheSize);
     this.branchNodeStoredCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE_FINALIZED_DB,

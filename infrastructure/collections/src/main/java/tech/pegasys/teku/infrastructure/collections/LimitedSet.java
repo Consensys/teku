@@ -22,14 +22,28 @@ public final class LimitedSet {
   private LimitedSet() {}
 
   /**
-   * Creates a limited set. The returned set is safe for concurrent access and evicts the least
-   * recently used items.
+   * Creates a limited set. The returned set is safe for concurrent access *except* iteration and
+   * evicts the least recently used items. There is no thread safe way to iterate this set.
+   *
+   * <p>Synchronized instances are generally faster than iterable versions.
    *
    * @param maxSize The maximum number of elements to keep in the set.
    * @param <T> The type of object held in the set.
    * @return A set that will evict elements when the max size is exceeded.
    */
-  public static <T> Set<T> create(final int maxSize) {
-    return Collections.newSetFromMap(LimitedMap.create(maxSize));
+  public static <T> Set<T> createSynchronized(final int maxSize) {
+    return Collections.newSetFromMap(LimitedMap.createSynchronized(maxSize));
+  }
+
+  /**
+   * Creates a limited set. The returned set is safe for all forms of concurrent access including
+   * iteration and evicts the least recently used items.
+   *
+   * @param maxSize The maximum number of elements to keep in the set.
+   * @param <T> The type of object held in the set.
+   * @return A set that will evict elements when the max size is exceeded.
+   */
+  public static <T> Set<T> createIterable(final int maxSize) {
+    return Collections.newSetFromMap(LimitedMap.createIterable(maxSize));
   }
 }

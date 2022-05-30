@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.pow.merkletree;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
@@ -54,7 +56,8 @@ class ZeroMerkleTree extends MerkleTree {
 
   @Override
   public MerkleTree finalize(final long depositsToFinalize, final int level) {
-    throw new UnsupportedOperationException("Cannot finalized an empty tree");
+    checkArgument(depositsToFinalize == 0, "Attempted to finalized more deposits than are present");
+    return this;
   }
 
   @Override
