@@ -297,6 +297,7 @@ public class ValidatorClientService extends Service {
             preparer.initialize(Optional.of(validatorIndexProvider));
             validatorTimingChannels.add(preparer);
           });
+      validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
