@@ -45,7 +45,7 @@ public class BlockValidator {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
-      LimitedSet.create(VALID_BLOCK_SET_SIZE);
+      LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
   public BlockValidator(final Spec spec, RecentChainData recentChainData) {
     this.spec = spec;

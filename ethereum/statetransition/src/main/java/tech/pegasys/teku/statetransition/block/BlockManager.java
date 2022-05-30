@@ -55,7 +55,8 @@ public class BlockManager extends Service
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
   // and will not require any further retry. Descendants of these blocks will be considered invalid
   // as well.
-  private final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.create(500);
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
+      LimitedMap.createSynchronized(500);
   private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 

@@ -25,7 +25,7 @@ class StateCache {
   private final Map<Bytes32, BeaconState> knownStates;
 
   public StateCache(final int maxCachedStates, final Map<Bytes32, BeaconState> knownStates) {
-    this.cache = LimitedMap.create(maxCachedStates);
+    this.cache = LimitedMap.createSynchronized(maxCachedStates);
     this.knownStates = knownStates;
   }
 

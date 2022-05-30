@@ -54,7 +54,7 @@ public class SignedContributionAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final Set<SourceUniquenessKey> seenIndices =
-      LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
+      LimitedSet.createSynchronized(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SeenAggregatesCache<TargetUniquenessKey> seenAggregatesCache =
       new SeenAggregatesCache<>(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
