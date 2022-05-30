@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
@@ -67,7 +68,7 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<ProposerDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(ProposerDuties.class)
           .name("GetProposerDutiesResponse")
-          //              .withField("execution_optimistic", BOOLEAN_TYPE, ??) TODO fix?
+          .withOptionalField("execution_optimistic", BOOLEAN_TYPE, (__) -> Optional.empty())
           .withField("dependent_root", BYTES32_TYPE, ProposerDuties::getDependentRoot)
           .withField("data", listOf(PROPOSER_DUTY_TYPE), ProposerDuties::getDuties)
           .build();

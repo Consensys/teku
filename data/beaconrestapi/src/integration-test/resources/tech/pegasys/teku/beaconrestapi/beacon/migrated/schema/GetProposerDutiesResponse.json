@@ -3,6 +3,9 @@
   "type" : "object",
   "required" : [ "dependent_root", "data" ],
   "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
     "dependent_root" : {
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
