@@ -37,7 +37,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
-  private final PostAttestation handler = new PostAttestation(validatorDataProvider, spec);
+  private final PostAttestation handler =
+      new PostAttestation(validatorDataProvider, schemaDefinitionCache);
 
   @Test
   void shouldBeAbleToSubmitAttestation() throws Exception {

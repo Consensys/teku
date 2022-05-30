@@ -446,7 +446,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));
-    addMigratedEndpoint(new PostAttestation(dataProvider, spec));
+    addMigratedEndpoint(new PostAttestation(dataProvider, schemaCache));
 
     addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
     app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));

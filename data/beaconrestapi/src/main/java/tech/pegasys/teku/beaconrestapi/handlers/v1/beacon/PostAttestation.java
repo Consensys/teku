@@ -45,9 +45,9 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAttestation extends MigratingEndpointAdapter {
@@ -65,11 +65,13 @@ public class PostAttestation extends MigratingEndpointAdapter {
           .withField("failures", listOf(SUBMIT_DATA_ERROR_TYPE), Function.identity())
           .build();
 
-  public PostAttestation(final DataProvider provider, final Spec spec) {
-    this(provider.getValidatorDataProvider(), spec);
+  public PostAttestation(
+      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
-  public PostAttestation(final ValidatorDataProvider provider, final Spec spec) {
+  public PostAttestation(
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("postAttestation")
@@ -80,7 +82,10 @@ public class PostAttestation extends MigratingEndpointAdapter {
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(
-                    new AttestationSchema(spec.getGenesisSpecConfig()).getJsonTypeDefinition()))
+                    schemaDefinitionCache
+                        .getSchemaDefinition(SpecMilestone.PHASE0)
+                        .getAttestationSchema()
+                        .getJsonTypeDefinition()))
             .response(SC_OK, "Attestations are stored in pool and broadcast on appropriate subnet")
             .response(SC_BAD_REQUEST, "Errors with one or more attestations", BAD_REQUEST_RESPONSE)
             .build());
