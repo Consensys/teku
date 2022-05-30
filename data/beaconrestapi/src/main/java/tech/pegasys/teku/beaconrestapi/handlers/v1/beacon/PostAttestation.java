@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SUBMIT_DATA_ERROR_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -61,8 +62,7 @@ public class PostAttestation extends MigratingEndpointAdapter {
           .name("PostDataFailureResponse")
           .withField("code", INTEGER_TYPE, (__) -> SC_BAD_REQUEST)
           .withField("message", STRING_TYPE, (__) -> PARTIAL_PUBLISH_FAILURE_MESSAGE)
-          .withField(
-              "failures", listOf(SubmitDataError.getJsonTypeDefinition()), Function.identity())
+          .withField("failures", listOf(SUBMIT_DATA_ERROR_TYPE), Function.identity())
           .build();
 
   public PostAttestation(final DataProvider provider, final Spec spec) {
