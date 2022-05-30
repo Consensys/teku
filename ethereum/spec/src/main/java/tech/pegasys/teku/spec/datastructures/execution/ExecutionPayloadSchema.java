@@ -135,4 +135,9 @@ public class ExecutionPayloadSchema
   public ExecutionPayload getDefault() {
     return defaultExecutionPayload;
   }
+
+  @Override
+  public boolean isStoredSeparately() {
+    return true;
+  }
 }

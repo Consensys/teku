@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import java.util.Optional;
+import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszContainerStorage;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -43,4 +46,7 @@ public interface BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   default Optional<BeaconBlockBodyBellatrix> toVersionBellatrix() {
     return Optional.of(this);
   }
+
+  SszContainerStorage<? extends BeaconBlockBodyBellatrix> toStorageVersion(
+      Consumer<SszData> separateStorage);
 }

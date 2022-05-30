@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszContainerTypeDefinition;
@@ -121,6 +122,23 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
+  }
+
+  public SszContainerStorageSchema<C> asStorageVersion() {
+    final IntList replacedChildren = new IntArrayList();
+    final List<NamedSchema<?>> namedStorageSchemas = new ArrayList<>();
+    for (int i = 0; i < childrenSchemas.size(); i++) {
+      final SszSchema<?> childSchema = childrenSchemas.get(i);
+      final String childName = childrenNames.get(i);
+      if (childSchema.isStoredSeparately()) {
+        namedStorageSchemas.add(new NamedSchema<>(childName, SszPrimitiveSchemas.BYTES32_SCHEMA));
+        replacedChildren.add(i);
+      } else {
+        namedStorageSchemas.add(new NamedSchema<>(childName, childSchema));
+      }
+    }
+    return new SszContainerStorageSchema<>(
+        containerName, this, namedStorageSchemas, replacedChildren);
   }
 
   @Override

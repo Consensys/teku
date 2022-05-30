@@ -13,19 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container10;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszContainerStorage;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -36,9 +29,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 /** A Beacon block body */
-class BeaconBlockBodyBellatrixImpl
+class BeaconBlockBodyBellatrixStorage
     extends Container10<
-        BeaconBlockBodyBellatrixImpl,
+        BeaconBlockBodyBellatrixStorage,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -48,19 +41,21 @@ class BeaconBlockBodyBellatrixImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload>
-    implements BeaconBlockBodyBellatrix {
+        SszBytes32> {
 
-  BeaconBlockBodyBellatrixImpl(BeaconBlockBodySchemaBellatrixImpl type) {
+  public static final int EXECUTION_PAYLOAD_INDEX = 9;
+
+  BeaconBlockBodyBellatrixStorage(BeaconBlockBodySchemaBellatrixStorage type) {
     super(type);
   }
 
-  BeaconBlockBodyBellatrixImpl(BeaconBlockBodySchemaBellatrixImpl type, TreeNode backingNode) {
+  BeaconBlockBodyBellatrixStorage(
+      BeaconBlockBodySchemaBellatrixStorage type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  BeaconBlockBodyBellatrixImpl(
-      BeaconBlockBodySchemaBellatrixImpl type,
+  BeaconBlockBodyBellatrixStorage(
+      BeaconBlockBodySchemaBellatrixStorage type,
       SszSignature randaoReveal,
       Eth1Data eth1Data,
       SszBytes32 graffiti,
@@ -70,7 +65,7 @@ class BeaconBlockBodyBellatrixImpl
       SszList<Deposit> deposits,
       SszList<SignedVoluntaryExit> voluntaryExits,
       SyncAggregate syncAggregate,
-      ExecutionPayload executionPayload) {
+      SszBytes32 executionPayloadRoot) {
     super(
         type,
         randaoReveal,
@@ -82,85 +77,23 @@ class BeaconBlockBodyBellatrixImpl
         deposits,
         voluntaryExits,
         syncAggregate,
-        executionPayload);
-  }
-
-  public static BeaconBlockBodyBellatrixImpl required(final BeaconBlockBody body) {
-    checkArgument(
-        body instanceof BeaconBlockBodyBellatrixImpl,
-        "Expected bellatrix block body but got %s",
-        body.getClass());
-    return (BeaconBlockBodyBellatrixImpl) body;
+        executionPayloadRoot);
   }
 
   @Override
-  public BLSSignature getRandaoReveal() {
-    return getField0().getSignature();
+  public BeaconBlockBodySchemaBellatrixStorage getSchema() {
+    return (BeaconBlockBodySchemaBellatrixStorage) super.getSchema();
   }
 
-  @Override
-  public SszSignature getRandaoRevealSsz() {
-    return getField0();
+  public Bytes32 getExecutionPayloadRoot() {
+    return getField9().get();
   }
 
-  @Override
-  public Eth1Data getEth1Data() {
-    return getField1();
-  }
-
-  @Override
-  public Bytes32 getGraffiti() {
-    return getField2().get();
-  }
-
-  @Override
-  public SszBytes32 getGraffitiSsz() {
-    return getField2();
-  }
-
-  @Override
-  public SszList<ProposerSlashing> getProposerSlashings() {
-    return getField3();
-  }
-
-  @Override
-  public SszList<AttesterSlashing> getAttesterSlashings() {
-    return getField4();
-  }
-
-  @Override
-  public SszList<Attestation> getAttestations() {
-    return getField5();
-  }
-
-  @Override
-  public SszList<Deposit> getDeposits() {
-    return getField6();
-  }
-
-  @Override
-  public SszList<SignedVoluntaryExit> getVoluntaryExits() {
-    return getField7();
-  }
-
-  @Override
-  public SyncAggregate getSyncAggregate() {
-    return getField8();
-  }
-
-  @Override
-  public ExecutionPayload getExecutionPayload() {
-    return getField9();
-  }
-
-  @Override
-  public BeaconBlockBodySchemaBellatrixImpl getSchema() {
-    return (BeaconBlockBodySchemaBellatrixImpl) super.getSchema();
-  }
-
-  @Override
-  public SszContainerStorage<? extends BeaconBlockBodyBellatrix> toStorageVersion(
-      final Consumer<SszData> separateStorage) {
-    return getSchema().asStorageVersion().createFromFullVersion(this, separateStorage);
+  public BeaconBlockBodyBellatrix withExecutionPayload(
+      final BeaconBlockBodySchemaBellatrix<?> newSchema, final ExecutionPayload payload) {
+    final BeaconBlockBodySchemaBellatrixStorage schema = getSchema();
+    final long payloadIndex = schema.getChildGeneralizedIndex(EXECUTION_PAYLOAD_INDEX);
+    final TreeNode fullTree = getBackingNode().updated(payloadIndex, payload.getBackingNode());
+    return newSchema.createFromBackingNode(fullTree);
   }
 }

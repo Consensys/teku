@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszContainerStorageSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
@@ -59,6 +60,8 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
       }
     };
   }
+
+  SszContainerStorageSchema<C> asStorageVersion();
 
   /**
    * Get the index of a field by name

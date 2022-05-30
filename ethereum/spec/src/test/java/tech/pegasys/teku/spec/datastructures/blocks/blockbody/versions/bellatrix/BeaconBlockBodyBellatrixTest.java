@@ -13,13 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszContainerStorage;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
@@ -65,5 +71,19 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                 builder
                     .syncAggregate(() -> syncAggregate)
                     .executionPayload(() -> SafeFuture.completedFuture(executionPayload)));
+  }
+
+  @Test
+  void shouldRoundTripStorageVersion() {
+    final Map<Bytes32, Bytes> separateStorage = new HashMap<>();
+    final BeaconBlockBodyBellatrix fullBody = safeJoin(createBlockBody());
+    final SszContainerStorage<? extends BeaconBlockBodyBellatrix> storageBody =
+        fullBody.toStorageVersion(
+            data -> separateStorage.put(data.hashTreeRoot(), data.sszSerialize()));
+    assertThat(fullBody.hashTreeRoot()).isEqualTo(storageBody.hashTreeRoot());
+    assertThat(separateStorage).hasSize(1);
+
+    final BeaconBlockBodyBellatrix reloaded = storageBody.loadFully(separateStorage::get);
+    assertThat(reloaded.sszSerialize()).isEqualTo(fullBody.sszSerialize());
   }
 }
