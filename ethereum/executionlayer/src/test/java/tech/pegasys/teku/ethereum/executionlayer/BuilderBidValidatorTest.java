@@ -81,7 +81,9 @@ public class BuilderBidValidatorTest {
     BLSConstants.enableBLSVerification();
 
     assertThatThrownBy(
-            () -> VALIDATOR.validate(spec, signedBuilderBid, validatorRegistration, state))
+            () ->
+                VALIDATOR.validateAndGetPayloadHeader(
+                    spec, signedBuilderBid, validatorRegistration, state))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage("Invalid Bid Signature");
   }
@@ -92,7 +94,9 @@ public class BuilderBidValidatorTest {
     prepareValidSignedBuilderBid();
 
     assertThatThrownBy(
-            () -> VALIDATOR.validate(spec, signedBuilderBid, validatorRegistration, state))
+            () ->
+                VALIDATOR.validateAndGetPayloadHeader(
+                    spec, signedBuilderBid, validatorRegistration, state))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage("Invalid proposed payload with respect to consensus.")
         .hasCauseInstanceOf(BlockProcessingException.class);
@@ -105,7 +109,7 @@ public class BuilderBidValidatorTest {
 
     // allowed increase is 1000 (1024_000/1024)
 
-    VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state);
+    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
   }
 
   @Test
@@ -115,7 +119,7 @@ public class BuilderBidValidatorTest {
 
     // allowed increase is 1000 (1024_000/1024)
 
-    VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state);
+    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
   }
 
   @Test
@@ -125,7 +129,7 @@ public class BuilderBidValidatorTest {
 
     // allowed decrease is 1000 (1024_000/1024)
 
-    VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state);
+    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
   }
 
   @Test
@@ -135,7 +139,7 @@ public class BuilderBidValidatorTest {
 
     // allowed decrease is 1000 (1024_000/1024)
 
-    VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state);
+    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
   }
 
   @Test
@@ -145,7 +149,7 @@ public class BuilderBidValidatorTest {
 
     // allowed decrease is 0 (1000/1024)
 
-    VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state);
+    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
   }
 
   @Test
@@ -153,7 +157,7 @@ public class BuilderBidValidatorTest {
 
     prepareGasLimit(UInt64.valueOf(1021_111), UInt64.valueOf(1021_111), UInt64.valueOf(1021_111));
 
-    VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state);
+    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
   }
 
   @Test
@@ -164,7 +168,9 @@ public class BuilderBidValidatorTest {
     // allowed increase is 1000 (1024_000/1024)
 
     assertThatThrownBy(
-            () -> VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state))
+            () ->
+                VALIDATOR.validateAndGetPayloadHeader(
+                    specMock, signedBuilderBid, validatorRegistration, state))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessageStartingWith("Proposed gasLimit not honouring validator preference.");
   }
@@ -177,7 +183,9 @@ public class BuilderBidValidatorTest {
     // allowed increase is 1000 (1024_000/1024)
 
     assertThatThrownBy(
-            () -> VALIDATOR.validate(specMock, signedBuilderBid, validatorRegistration, state))
+            () ->
+                VALIDATOR.validateAndGetPayloadHeader(
+                    specMock, signedBuilderBid, validatorRegistration, state))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessageStartingWith("Proposed gasLimit not honouring validator preference.");
   }

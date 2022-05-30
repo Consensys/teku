@@ -328,7 +328,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     signedBuilderBid))
         .thenApplyChecked(
             signedBuilderBid ->
-                builderBidValidator.validate(
+                builderBidValidator.validateAndGetPayloadHeader(
                     spec, signedBuilderBid, validatorRegistration.get(), state))
         .exceptionallyCompose(
             error -> {

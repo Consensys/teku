@@ -99,7 +99,7 @@ public interface BuilderBidValidator {
         return executionPayloadHeader;
       };
 
-  ExecutionPayloadHeader validate(
+  ExecutionPayloadHeader validateAndGetPayloadHeader(
       final Spec spec,
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
