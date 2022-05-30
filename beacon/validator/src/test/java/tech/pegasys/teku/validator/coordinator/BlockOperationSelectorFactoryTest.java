@@ -334,7 +334,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, slot, false))
+    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, false))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory
@@ -379,7 +379,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, slot, true))
+    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, true))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory

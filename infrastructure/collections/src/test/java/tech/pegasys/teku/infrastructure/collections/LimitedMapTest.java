@@ -22,7 +22,7 @@ public class LimitedMapTest {
 
   @Test
   public void create_evictLeastRecentlyAccessed() {
-    final Map<Integer, Integer> map = LimitedMap.create(2);
+    final Map<Integer, Integer> map = LimitedMap.createSynchronized(2);
     map.put(1, 1);
     assertThat(map.size()).isEqualTo(1);
     map.put(2, 2);
