@@ -51,7 +51,7 @@ import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
-      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
+      LimitedSet.createSynchronized(VALID_AGGREGATE_SET_SIZE);
   private final SeenAggregatesCache<Bytes32> seenAggregationBits =
       new SeenAggregatesCache<>(VALID_ATTESTATION_DATA_SET_SIZE);
   private final AttestationValidator attestationValidator;

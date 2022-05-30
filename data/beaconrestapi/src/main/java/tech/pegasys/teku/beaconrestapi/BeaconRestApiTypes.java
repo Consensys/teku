@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
@@ -34,9 +35,11 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALID
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -121,4 +124,16 @@ public class BeaconRestApiTypes {
           ATTESTATION_DATA_ROOT,
           BYTES32_TYPE.withDescription(
               "`String` HashTreeRoot of AttestationData that validator wants aggregated."));
+
+  public static final ParameterMetadata<Integer> SUBCOMMITTEE_INDEX_PARAMETER =
+      new ParameterMetadata<>(
+          SUBCOMMITTEE_INDEX,
+          INTEGER_TYPE.withDescription(
+              "`Integer` The subcommittee index for which to produce the contribution."));
+
+  public static final ParameterMetadata<Bytes32> BEACON_BLOCK_ROOT_PARAMETER =
+      new ParameterMetadata<>(
+          BEACON_BLOCK_ROOT,
+          BYTES32_TYPE.withDescription(
+              "`bytes32` The block root for which to produce the contribution."));
 }

@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 public class LRUCache<K, V> implements Cache<K, V> {
 
   public static <K, V> LRUCache<K, V> create(int capacity) {
-    return new LRUCache<>(LimitedMap.create(capacity));
+    return new LRUCache<>(LimitedMap.createSynchronized(capacity));
   }
 
   private final LimitedMap<K, V> cacheData;

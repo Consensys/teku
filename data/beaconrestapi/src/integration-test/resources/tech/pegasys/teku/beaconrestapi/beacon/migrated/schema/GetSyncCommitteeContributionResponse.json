@@ -1,0 +1,10 @@
+{
+  "title" : "GetSyncCommitteeContributionResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "$ref" : "#/components/schemas/SyncCommitteeContribution"
+    }
+  }
+}
