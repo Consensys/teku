@@ -16,7 +16,7 @@
         }
       },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Corresponding state not found"
       },
       "500" : {
         "description" : "Server Error"

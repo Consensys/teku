@@ -15,6 +15,10 @@
           }
         }
       },
+      "404" : {
+        "description" : "Corresponding state not found",
+        "content" : { }
+      },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
         "content" : {
