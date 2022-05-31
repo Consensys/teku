@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetEth1DataTest extends AbstractMigratedBeaconHandlerTest {
   private static final Eth1Data ETH1_DATA =
@@ -48,19 +48,19 @@ public class GetEth1DataTest extends AbstractMigratedBeaconHandlerTest {
           Bytes32.fromHexString(
               "0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d"));
   private final DataProvider dataProvider = mock(DataProvider.class);
-  private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
   private GetEth1Data handler;
 
   @BeforeEach
   void setUp() {
     when(dataProvider.getChainDataProvider()).thenReturn(chainDataProvider);
-    handler = new GetEth1Data(dataProvider, eth1DataCache);
+    handler = new GetEth1Data(dataProvider, eth1DataProvider);
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     when(chainDataProvider.getBeaconStateAtHead())
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(new StateAndMetaData(beaconState, SpecMilestone.PHASE0, false, true))));
-    when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
+    when(eth1DataProvider.getEth1Vote(any())).thenReturn(ETH1_DATA);
   }
 
   @Test
