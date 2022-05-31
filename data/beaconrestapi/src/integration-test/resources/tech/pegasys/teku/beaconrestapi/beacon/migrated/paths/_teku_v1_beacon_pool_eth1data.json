@@ -3,7 +3,7 @@
     "tags" : [ "Teku" ],
     "operationId" : "getEth1Data",
     "summary" : "Get new Eth1Data",
-    "description" : "Eth1Data we'd include in a new block if we are a proposer.",
+    "description" : "Eth1Data that would be used in a new block created based on the current head.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
@@ -14,6 +14,10 @@
             }
           }
         }
+      },
+      "404" : {
+        "description" : "Corresponding state not found",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

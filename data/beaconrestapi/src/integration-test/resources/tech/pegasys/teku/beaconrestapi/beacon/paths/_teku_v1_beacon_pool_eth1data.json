@@ -2,8 +2,8 @@
   "get" : {
     "tags" : [ "Teku" ],
     "summary" : "Get new Eth1Data",
-    "description" : "Eth1Data we'd include in a new block if we are a proposer.",
-    "operationId" : "getTekuV1BeaconStateEth1data",
+    "description" : "Eth1Data that would be used in a new block created based on the current head.",
+    "operationId" : "getTekuV1BeaconPoolEth1data",
     "responses" : {
       "200" : {
         "description" : "OK",
@@ -16,7 +16,7 @@
         }
       },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Corresponding state not found"
       },
       "500" : {
         "description" : "Server Error"

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
@@ -40,7 +41,8 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetEth1Data extends MigratingEndpointAdapter {
 
-  public static final String ROUTE = "/teku/v1/beacon/state/eth1data";
+  public static final String ROUTE = "/teku/v1/beacon/pool/eth1data";
+  public static final String NOT_FOUND_MESSAGE = "Corresponding state not found";
 
   private static final SerializableTypeDefinition<Eth1Data> ETH1DATA_RESPONSE_TYPE =
       SerializableTypeDefinition.<Eth1Data>object()
@@ -56,9 +58,11 @@ public class GetEth1Data extends MigratingEndpointAdapter {
         EndpointMetadata.get(ROUTE)
             .operationId("getEth1Data")
             .summary("Get new Eth1Data")
-            .description("Eth1Data we'd include in a new block if we are a proposer.")
+            .description(
+                "Eth1Data that would be used in a new block created based on the current head.")
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", ETH1DATA_RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, NOT_FOUND_MESSAGE)
             .build());
     this.chainDataProvider = dataProvider.getChainDataProvider();
     this.eth1DataProvider = eth1DataProvider;
@@ -68,13 +72,13 @@ public class GetEth1Data extends MigratingEndpointAdapter {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get new Eth1Data",
-      description = "Eth1Data we'd include in a new block if we are a proposer.",
+      description = "Eth1Data that would be used in a new block created based on the current head.",
       tags = {TAG_TEKU},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = GetEth1DataResponse.class)),
-        @OpenApiResponse(status = RES_NOT_FOUND),
+        @OpenApiResponse(status = RES_NOT_FOUND, description = NOT_FOUND_MESSAGE),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
@@ -90,7 +94,7 @@ public class GetEth1Data extends MigratingEndpointAdapter {
             .thenApply(
                 maybeStateAndMetadata -> {
                   if (maybeStateAndMetadata.isEmpty()) {
-                    return AsyncApiResponse.respondNotFound();
+                    return AsyncApiResponse.respondWithError(SC_NOT_FOUND, NOT_FOUND_MESSAGE);
                   } else {
                     return AsyncApiResponse.respondOk(
                         eth1DataProvider.getEth1Vote(maybeStateAndMetadata.get()));
