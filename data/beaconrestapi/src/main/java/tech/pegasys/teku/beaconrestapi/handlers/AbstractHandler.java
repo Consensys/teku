@@ -192,6 +192,6 @@ public abstract class AbstractHandler implements Handler {
 
   public static String getContentType(
       final List<String> types, final Optional<String> maybeContentType) {
-    return ContentTypes.getContentType(types, maybeContentType).orElse(JSON);
+    return ContentTypes.getResponseContentType(types, maybeContentType).orElse(JSON);
   }
 }

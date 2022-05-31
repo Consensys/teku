@@ -19,6 +19,9 @@ import java.util.Map;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
 public interface ResponseContentTypeDefinition<T> extends OpenApiTypeDefinition {
+
+  String getContentType();
+
   void serialize(T value, OutputStream out) throws IOException;
 
   Map<String, String> getAdditionalHeaders(T value);

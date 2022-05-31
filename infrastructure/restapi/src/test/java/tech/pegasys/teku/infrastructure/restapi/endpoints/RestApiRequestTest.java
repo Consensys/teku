@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class RestApiRequestTest {
@@ -94,9 +96,8 @@ public class RestApiRequestTest {
   @MethodSource("getContentTypeAndExpectedResponseType")
   void shouldReturnExpectedResponseType(
       final String contentType, final String expectedResponseType) {
-    @SuppressWarnings("unchecked")
     final ResponseContentTypeDefinition<Bytes32> responseContentTypeDefinition =
-        mock(ResponseContentTypeDefinition.class);
+        new CustomResponseTypeDefinition<>(ContentTypes.OCTET_STREAM, BYTES32_TYPE);
 
     when(context.header(eq(HEADER_ACCEPT))).thenReturn(contentType);
     EndpointMetadata metadata =
