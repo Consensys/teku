@@ -137,30 +137,7 @@ public interface SszPrimitiveSchemas {
       };
 
   AbstractSszPrimitiveSchema<Byte, SszByte> BYTE_SCHEMA =
-      new AbstractSszPrimitiveSchema<>(8) {
-        @Override
-        public Byte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return node.getData().get(internalIndex);
-        }
-
-        @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
-          byte aByte = ((SszByte) newValue).get();
-          Bytes curVal = ((LeafNode) srcNode).getData();
-          Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
-          return LeafNode.create(newBytes);
-        }
-
-        @Override
-        public SszByte boxed(Byte rawValue) {
-          return SszByte.of(rawValue);
-        }
-
-        @Override
-        public TreeNode getDefaultTree() {
-          return LeafNode.ZERO_LEAVES[1];
-        }
-
+      new SszByteSchema() {
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
           return SszPrimitiveTypeDefinitions.SSZ_BYTE_TYPE_DEFINITION;
@@ -168,7 +145,20 @@ public interface SszPrimitiveSchemas {
 
         @Override
         public String toString() {
-          return "Byte";
+          return "Bytes";
+        }
+      };
+
+  AbstractSszPrimitiveSchema<Byte, SszByte> UINT8_SCHEMA =
+      new SszByteSchema() {
+        @Override
+        public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
+          return SszPrimitiveTypeDefinitions.SSZ_UINT8_TYPE_DEFINITION;
+        }
+
+        @Override
+        public String toString() {
+          return "UInt8";
         }
       };
 
@@ -372,6 +362,36 @@ public interface SszPrimitiveSchemas {
       }
       newBytes.copyTo(dest, origOff);
       return dest;
+    }
+  }
+
+  abstract class SszByteSchema extends AbstractSszPrimitiveSchema<Byte, SszByte> {
+
+    private SszByteSchema() {
+      super(8);
+    }
+
+    @Override
+    public Byte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+      return node.getData().get(internalIndex);
+    }
+
+    @Override
+    public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
+      byte aByte = ((SszByte) newValue).get();
+      Bytes curVal = ((LeafNode) srcNode).getData();
+      Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
+      return LeafNode.create(newBytes);
+    }
+
+    @Override
+    public SszByte boxed(Byte rawValue) {
+      return SszByte.of(rawValue);
+    }
+
+    @Override
+    public TreeNode getDefaultTree() {
+      return LeafNode.ZERO_LEAVES[1];
     }
   }
 }

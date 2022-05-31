@@ -18,16 +18,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes;
 
-class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
-
-  public static final int RADIX = 16;
+class UInt8TypeDefinition extends PrimitiveTypeDefinition<Byte> {
 
   @Override
   public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "string");
-    gen.writeStringField("format", "byte");
+    gen.writeStringField("example", "1");
+    gen.writeStringField("description", "unsigned 8 bit integer, max value 255");
+    gen.writeStringField("format", "uint8");
   }
 
   @Override
@@ -42,16 +41,13 @@ class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
 
   @Override
   public String serializeToString(final Byte value) {
-    return value != null ? Bytes.of(value).toHexString() : null;
+    return value != null ? Integer.toString(Byte.toUnsignedInt(value)) : null;
   }
 
   @Override
   public Byte deserializeFromString(final String valueAsString) {
-    final String valueToParse =
-        valueAsString.startsWith("0x") ? valueAsString.substring("0x".length()) : valueAsString;
-    final int value = Integer.parseUnsignedInt(valueToParse, RADIX);
-    checkArgument(
-        value < Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for unsigned byte", value);
+    final int value = Integer.parseUnsignedInt(valueAsString, 10);
+    checkArgument(value < Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for uint8", value);
     return (byte) value;
   }
 }

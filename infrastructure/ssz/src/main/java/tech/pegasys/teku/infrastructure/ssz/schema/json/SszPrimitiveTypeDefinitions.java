@@ -52,6 +52,9 @@ public interface SszPrimitiveTypeDefinitions {
   DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTE_SCHEMA, CoreTypes.BYTE_TYPE);
 
+  DeserializableTypeDefinition<SszByte> SSZ_UINT8_TYPE_DEFINITION =
+      new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT8_SCHEMA, CoreTypes.UINT8_TYPE);
+
   DeserializableTypeDefinition<SszBytes32> SSZ_BYTES32_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTES32_SCHEMA, CoreTypes.BYTES32_TYPE);
 

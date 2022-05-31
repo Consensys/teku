@@ -42,6 +42,10 @@ public interface SszPrimitiveListSchema<
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBitlistSchema.create(maxLength);
     } else if (elementSchema == SszPrimitiveSchemas.UINT64_SCHEMA) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszUInt64ListSchema.create(maxLength);
+    } else if (elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA) {
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.create(maxLength);
+    } else if (elementSchema == SszPrimitiveSchemas.UINT8_SCHEMA) {
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.createUInt8(maxLength);
     } else {
       return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);
     }

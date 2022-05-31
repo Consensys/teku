@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.type;
 
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -24,7 +25,7 @@ public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
   public static final SszPublicKeySchema INSTANCE = new SszPublicKeySchema();
 
   private SszPublicKeySchema() {
-    super(BLS_COMPRESSED_PUBLIC_KEY_SIZE);
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, BLS_COMPRESSED_PUBLIC_KEY_SIZE);
   }
 
   @Override
