@@ -11,34 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.openapi.response;
+package tech.pegasys.teku.infrastructure.restapi;
 
 import static java.util.Collections.emptyMap;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
-import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
-public class JsonResponseContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
+public class CustomResponseTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
     implements ResponseContentTypeDefinition<T> {
+
+  private final String contentType;
   private final SerializableTypeDefinition<T> typeDefinition;
 
-  public JsonResponseContentTypeDefinition(final SerializableTypeDefinition<T> typeDefinition) {
+  public CustomResponseTypeDefinition(
+      final String contentType, final SerializableTypeDefinition<T> typeDefinition) {
     super(typeDefinition);
+    this.contentType = contentType;
     this.typeDefinition = typeDefinition;
   }
 
   @Override
   public String getContentType() {
-    return ContentTypes.JSON;
+    return contentType;
   }
 
   @Override
   public void serialize(final T value, final OutputStream out) throws IOException {
+
     JsonUtil.serializeToBytes(value, typeDefinition, out);
   }
 

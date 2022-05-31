@@ -127,5 +127,12 @@ public interface BlockProcessor {
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
+  void validateExecutionPayload(
+      BeaconState state,
+      ExecutionPayloadHeader executionPayloadHeader,
+      Optional<ExecutionPayload> executionPayload,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException;
+
   boolean isOptimistic();
 }

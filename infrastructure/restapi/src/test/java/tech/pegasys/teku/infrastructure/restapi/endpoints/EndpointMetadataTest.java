@@ -36,13 +36,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
-import tech.pegasys.teku.infrastructure.json.exceptions.ContentTypeNotSupportedException;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -50,8 +50,10 @@ import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TestObjA;
 import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TestType;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 class EndpointMetadataTest {
@@ -84,9 +86,9 @@ class EndpointMetadataTest {
             .response(
                 500,
                 "foo",
-                Map.of(
-                    "application/json", json(objectType1),
-                    "application/ssz", json(objectType3)))
+                List.of(
+                    json(objectType1),
+                    new CustomResponseTypeDefinition<>("application/octet-stream", objectType3)))
             .build();
 
     assertThat(metadata.getReferencedTypeDefinitions())
@@ -102,10 +104,10 @@ class EndpointMetadataTest {
 
   @Test
   void selectResponseContentType_shouldUseDefaultContentTypeWhenRequestedType() {
-    final String contentType = "application/foo";
+    final String contentType = ContentTypes.OCTET_STREAM;
     final EndpointMetadata metadata =
         validBuilder()
-            .response(SC_OK, "Success", Map.of(contentType, json(STRING_TYPE)))
+            .response(SC_OK, "Success", List.of(octetStream(STRING_TYPE)))
             .defaultResponseType(contentType)
             .build();
     assertThat(metadata.createResponseMetadata(SC_OK, Optional.empty(), "foo"))
@@ -126,7 +128,10 @@ class EndpointMetadataTest {
     final String contentType = "application/foo";
     final EndpointMetadata metadata =
         validBuilder()
-            .response(SC_OK, "Success", Map.of(contentType, json(STRING_TYPE)))
+            .response(
+                SC_OK,
+                "Success",
+                List.of(new CustomResponseTypeDefinition<>(contentType, STRING_TYPE)))
             .defaultResponseType(contentType)
             .build();
     assertThat(metadata.createResponseMetadata(SC_OK, Optional.of("foo"), "bar"))
@@ -137,18 +142,28 @@ class EndpointMetadataTest {
   void selectResponseContentType_shouldReturnRequestedTypeWhenAvailable() {
     final EndpointMetadata metadata =
         validBuilder()
-            .response(
-                SC_OK,
-                "Success",
-                Map.of(
-                    ContentTypes.JSON,
-                    json(STRING_TYPE),
-                    ContentTypes.OCTET_STREAM,
-                    json(STRING_TYPE)))
+            .response(SC_OK, "Success", List.of(json(STRING_TYPE), octetStream(STRING_TYPE)))
             .build();
     assertThat(
             metadata.createResponseMetadata(SC_OK, Optional.of(ContentTypes.OCTET_STREAM), "foo"))
         .isEqualTo(new ResponseMetadata(ContentTypes.OCTET_STREAM, emptyMap()));
+  }
+
+  @Test
+  void selectResponseContentType_shouldReturnFirstTypeWhenAcceptAnythingSpecified() {
+    final String contentType = "zz/zz";
+    final EndpointMetadata metadata =
+        validBuilder()
+            .response(
+                SC_OK,
+                "Success",
+                List.of(
+                    new CustomResponseTypeDefinition<>(contentType, STRING_TYPE),
+                    json(STRING_TYPE),
+                    octetStream(STRING_TYPE)))
+            .build();
+    assertThat(metadata.createResponseMetadata(SC_OK, Optional.of("*/*"), "foo"))
+        .isEqualTo(new ResponseMetadata(contentType, emptyMap()));
   }
 
   @Test
@@ -418,5 +433,12 @@ class EndpointMetadataTest {
 
   static <T> ResponseContentTypeDefinition<T> json(final SerializableTypeDefinition<T> type) {
     return new JsonResponseContentTypeDefinition<>(type);
+  }
+
+  /** Actually still writing json for convenience but declaring it as application/octet-stream */
+  static <T> ResponseContentTypeDefinition<T> octetStream(
+      final SerializableTypeDefinition<T> type) {
+    return new OctetStreamResponseContentTypeDefinition<>(
+        (data, out) -> JsonUtil.serializeToBytes(data, type, out), t -> emptyMap());
   }
 }

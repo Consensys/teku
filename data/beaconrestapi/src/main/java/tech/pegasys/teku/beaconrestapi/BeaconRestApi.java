@@ -110,7 +110,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.json.exceptions.ContentTypeNotSupportedException;
+import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -398,7 +398,7 @@ public class BeaconRestApi {
 
   private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
-    app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
+    addMigratedEndpoint(new GetProposerDuties(dataProvider));
     addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, schemaCache));
@@ -446,7 +446,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));
-    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostAttestation(dataProvider, schemaCache));
 
     addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
     app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));

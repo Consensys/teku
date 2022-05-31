@@ -1,0 +1,16 @@
+{
+  "title" : "SubmitDataError",
+  "type" : "object",
+  "required" : [ "index", "message" ],
+  "properties" : {
+    "index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "message" : {
+      "type" : "string"
+    }
+  }
+}

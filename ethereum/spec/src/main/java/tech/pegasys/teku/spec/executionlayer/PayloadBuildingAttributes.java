@@ -60,6 +60,11 @@ public class PayloadBuildingAttributes {
         signedValidatorRegistration -> signedValidatorRegistration.getMessage().getPublicKey());
   }
 
+  public Optional<UInt64> getValidatorRegistrationGasLimit() {
+    return validatorRegistration.map(
+        signedValidatorRegistration -> signedValidatorRegistration.getMessage().getGasLimit());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

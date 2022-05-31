@@ -118,12 +118,8 @@ public class LocalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration,
-      final UInt64 epoch,
-      final ForkInfo forkInfo) {
-    return sign(
-        signingRootUtil.signingRootForValidatorRegistration(
-            validatorRegistration, epoch, forkInfo));
+      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
+    return sign(signingRootUtil.signingRootForValidatorRegistration(validatorRegistration, epoch));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

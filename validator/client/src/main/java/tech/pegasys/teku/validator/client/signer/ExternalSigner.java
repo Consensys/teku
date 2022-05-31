@@ -256,9 +256,7 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration,
-      final UInt64 epoch,
-      final ForkInfo forkInfo) {
+      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
   }
 

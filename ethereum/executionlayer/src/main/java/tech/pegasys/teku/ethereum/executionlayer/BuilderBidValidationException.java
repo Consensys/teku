@@ -11,18 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.openapi.response;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Map;
-import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
+public class BuilderBidValidationException extends Exception {
+  public BuilderBidValidationException(String message) {
+    super(message);
+  }
 
-public interface ResponseContentTypeDefinition<T> extends OpenApiTypeDefinition {
-
-  String getContentType();
-
-  void serialize(T value, OutputStream out) throws IOException;
-
-  Map<String, String> getAdditionalHeaders(T value);
+  public BuilderBidValidationException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

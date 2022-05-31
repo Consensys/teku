@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
@@ -52,13 +51,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -89,19 +87,23 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final Spec spec;
 
   private final EventLogger eventLogger;
+  private final BuilderBidValidator builderBidValidator;
 
   public static ExecutionLayerManagerImpl create(
       final Web3JClient engineWeb3JClient,
       final Optional<RestClient> builderRestClient,
       final Version version,
       final Spec spec,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final BuilderBidValidator builderBidValidator) {
     checkNotNull(version);
+
     return new ExecutionLayerManagerImpl(
         createEngineClient(version, engineWeb3JClient, metricsSystem),
         createBuilderClient(builderRestClient, spec, metricsSystem),
         spec,
-        EVENT_LOG);
+        EVENT_LOG,
+        builderBidValidator);
   }
 
   private static ExecutionEngineClient createEngineClient(
@@ -130,12 +132,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final ExecutionEngineClient executionEngineClient,
       final Optional<ExecutionBuilderClient> executionBuilderClient,
       final Spec spec,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final BuilderBidValidator builderBidValidator) {
     this.executionEngineClient = executionEngineClient;
     this.executionBuilderClient = executionBuilderClient;
     this.latestBuilderAvailability = new AtomicBoolean(executionBuilderClient.isPresent());
     this.spec = spec;
     this.eventLogger = eventLogger;
+    this.builderBidValidator = builderBidValidator;
   }
 
   @Override
@@ -287,48 +291,49 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
+      final BeaconState state,
       final boolean forceLocalFallback) {
+    final UInt64 slot = state.getSlot();
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
         engineGetPayload(executionPayloadContext, slot, true);
 
-    final Optional<BLSPublicKey> registeredValidatorPublicKey =
-        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistrationPublicKey();
+    final Optional<SignedValidatorRegistration> validatorRegistration =
+        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
-    if (forceLocalFallback || !isBuilderAvailable() || registeredValidatorPublicKey.isEmpty()) {
+    if (forceLocalFallback || !isBuilderAvailable() || validatorRegistration.isEmpty()) {
       // fallback to local execution engine
       return doFallbackToLocal(localExecutionPayload, slot);
     }
 
+    final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
+
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
         slot,
-        registeredValidatorPublicKey.get(),
+        validatorPublicKey,
         executionPayloadContext.getParentHash());
 
     return executionBuilderClient
         .orElseThrow()
-        .getHeader(
-            slot, registeredValidatorPublicKey.get(), executionPayloadContext.getParentHash())
+        .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
-        .thenApply(SignedBuilderBid::getMessage)
-        .thenApply(BuilderBid::getExecutionPayloadHeader)
         .thenPeek(
-            executionPayloadHeader -> {
-              // store that we haven't fallen back for this slot
-              slotToLocalElFallbackPayload.put(slot, Optional.empty());
-              LOG.trace(
-                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                  slot,
-                  Bytes48.ZERO,
-                  executionPayloadContext.getParentHash(),
-                  executionPayloadHeader);
-            })
+            signedBuilderBid ->
+                LOG.trace(
+                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                    slot,
+                    validatorPublicKey,
+                    executionPayloadContext.getParentHash(),
+                    signedBuilderBid))
+        .thenApplyChecked(
+            signedBuilderBid ->
+                builderBidValidator.validateAndGetPayloadHeader(
+                    spec, signedBuilderBid, validatorRegistration.get(), state))
         .exceptionallyCompose(
             error -> {
               LOG.error(
-                  "builderGetHeader returned an error. Falling back to local execution engine",
+                  "Unable to obtain a valid payload from builder. Falling back to local execution engine.",
                   error);
               return doFallbackToLocal(localExecutionPayload, slot);
             });
