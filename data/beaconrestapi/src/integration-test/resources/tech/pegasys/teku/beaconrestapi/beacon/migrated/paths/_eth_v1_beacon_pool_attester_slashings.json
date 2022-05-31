@@ -36,5 +36,46 @@
         }
       }
     }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "postAttesterSlashing",
+    "summary" : "Submit attester slashing object",
+    "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/AttesterSlashing"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Success",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid attester slashing, it will never pass validation so it's rejected",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }

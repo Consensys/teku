@@ -25,14 +25,13 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 
 public class NodeDataProvider {
 
-  private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
       attesterSlashingPool;
@@ -61,7 +59,6 @@ public class NodeDataProvider {
   private final ProposersDataManager proposersDataManager;
 
   public NodeDataProvider(
-      final Spec spec,
       final AggregatingAttestationPool attestationPool,
       final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
           attesterSlashingsPool,
@@ -75,7 +72,6 @@ public class NodeDataProvider {
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
       final ProposersDataManager proposersDataManager) {
-    this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -113,7 +109,7 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
-    return attesterSlashingPool.addLocal(slashing.asInternalAttesterSlashing(spec));
+    return attesterSlashingPool.addLocal(slashing);
   }
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {

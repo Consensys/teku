@@ -15,68 +15,71 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.schema.AttesterSlashing;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class PostAttesterSlashingTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-  private Context context = mock(Context.class);
-  private NodeDataProvider provider = mock(NodeDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private PostAttesterSlashing handler;
-
-  @BeforeEach
-  public void setup() {
-    handler = new PostAttesterSlashing(provider, jsonProvider);
-  }
+public class PostAttesterSlashingTest extends AbstractMigratedBeaconHandlerTest {
+  private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
+  private final PostAttesterSlashing handler = new PostAttesterSlashing(nodeDataProvider, spec);
 
   @Test
   void shouldBeAbleToSubmitSlashing() throws Exception {
-    final AttesterSlashing slashing =
-        new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postAttesterSlashing(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    handler.handle(context);
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
+    request.setRequestBody(slashing);
 
-    verify(provider).postAttesterSlashing(slashing);
-    verify(context).status(SC_OK);
+    when(nodeDataProvider.postAttesterSlashing(slashing))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   void shouldReturnBadRequestIfAttesterSlashingIsInvalid() throws Exception {
-    final AttesterSlashing slashing =
-        new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postAttesterSlashing(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
-    handler.handle(context);
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
+    request.setRequestBody(slashing);
 
-    verify(provider).postAttesterSlashing(slashing);
-    verify(context).status(SC_BAD_REQUEST);
+    when(nodeDataProvider.postAttesterSlashing(slashing))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
+
+    handler.handleRequest(request);
+
+    final HttpErrorResponse expectedBody =
+        new HttpErrorResponse(
+            SC_BAD_REQUEST,
+            "Invalid attester slashing, it will never pass validation so it's rejected.");
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
 
   @Test
-  void shouldReturnBadRequestIfAttestationInvalid() throws Exception {
-    when(context.body()).thenReturn("{\"a\": \"field\"}");
-    handler.handle(context);
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
 
-    verify(provider, never()).postAttesterSlashing(any());
-    verify(context).status(SC_BAD_REQUEST);
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    verifyMetadataEmptyResponse(handler, SC_OK);
   }
 }
