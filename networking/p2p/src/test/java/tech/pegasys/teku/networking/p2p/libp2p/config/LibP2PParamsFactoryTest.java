@@ -11,18 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.openapi.response;
+package tech.pegasys.teku.networking.p2p.libp2p.config;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Map;
-import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public interface ResponseContentTypeDefinition<T> extends OpenApiTypeDefinition {
+import io.libp2p.pubsub.gossip.GossipParams;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 
-  String getContentType();
+public class LibP2PParamsFactoryTest {
 
-  void serialize(T value, OutputStream out) throws IOException;
+  @Test
+  void createGossipParams_checkZeroDsSucceed() {
+    GossipConfig gossipConfig = GossipConfig.builder().d(0).dLow(0).dHigh(0).build();
 
-  Map<String, String> getAdditionalHeaders(T value);
+    GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
+
+    assertThat(gossipParams.getDOut()).isEqualTo(0);
+  }
 }

@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
@@ -39,6 +40,11 @@ public class OctetStreamResponseContentTypeDefinition<T> extends DelegatingOpenA
     super(OCTET_STREAM_BYTES_TYPE);
     this.serializer = serializer;
     this.toAdditionalHeaders = toAdditionalHeaders;
+  }
+
+  @Override
+  public String getContentType() {
+    return ContentTypes.OCTET_STREAM;
   }
 
   @Override

@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.validator.api;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SubmitDataError {
@@ -48,5 +52,13 @@ public class SubmitDataError {
 
   public String getMessage() {
     return message;
+  }
+
+  public static SerializableTypeDefinition<SubmitDataError> getJsonTypeDefinition() {
+    return SerializableTypeDefinition.object(SubmitDataError.class)
+        .name("SubmitDataError")
+        .withField("index", UINT64_TYPE, SubmitDataError::getIndex)
+        .withField("message", STRING_TYPE, SubmitDataError::getMessage)
+        .build();
   }
 }

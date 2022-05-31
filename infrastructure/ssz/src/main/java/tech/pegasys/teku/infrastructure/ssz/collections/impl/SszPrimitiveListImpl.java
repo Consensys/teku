@@ -13,31 +13,50 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.CachingTreeAccessor;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
     extends SszListImpl<SszElementT> implements SszPrimitiveList<ElementT, SszElementT> {
 
-  public SszPrimitiveListImpl(
-      SszPrimitiveListSchema<ElementT, SszElementT, ?> schema, Supplier<TreeNode> lazyBackingNode) {
-    super(schema, lazyBackingNode);
-  }
+  protected final int elementsPerChunk;
+  protected final SszPrimitiveSchema<ElementT, SszElementT> elementType;
+  private final CachingTreeAccessor cachingTreeAccessor;
 
+  @SuppressWarnings("unchecked")
   public SszPrimitiveListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
+    this.elementsPerChunk = schema.getElementsPerChunk();
+    this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
+    this.cachingTreeAccessor =
+        new CachingTreeAccessor(backingNode, schema::getChildGeneralizedIndex);
   }
 
+  @SuppressWarnings("unchecked")
   public SszPrimitiveListImpl(
       SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
+    this.elementsPerChunk = schema.getElementsPerChunk();
+    this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
+    this.cachingTreeAccessor =
+        new CachingTreeAccessor(backingNode, schema::getChildGeneralizedIndex);
+  }
+
+  @Override
+  protected SszElementT getImpl(int index) {
+    return elementType.createFromPackedNode(getTreeNode(index), index % elementsPerChunk);
+  }
+
+  protected TreeNode getTreeNode(int index) {
+    int nodeIndex = index / elementsPerChunk;
+    return cachingTreeAccessor.getNodeByVectorIndex(nodeIndex);
   }
 
   @Override
