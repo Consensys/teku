@@ -19,8 +19,9 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQ
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -29,23 +30,38 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.schema.ProposerSlashing;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
-public class PostProposerSlashing extends AbstractHandler {
+public class PostProposerSlashing extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/proposer_slashings";
   private final NodeDataProvider nodeDataProvider;
 
-  public PostProposerSlashing(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getNodeDataProvider(), jsonProvider);
+  public PostProposerSlashing(final DataProvider dataProvider) {
+    this(dataProvider.getNodeDataProvider());
   }
 
-  public PostProposerSlashing(final NodeDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public PostProposerSlashing(final NodeDataProvider provider) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postProposerSlashing")
+            .summary("Submit proposer slashing object")
+            .description(
+                "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.")
+            .tags(TAG_BEACON)
+            .requestBodyType(ProposerSlashing.SSZ_SCHEMA.getJsonTypeDefinition())
+            .response(
+                SC_OK,
+                "Proposer Slashing has been successfully validated, added to the pool, and broadcast.")
+            .response(
+                SC_BAD_REQUEST,
+                "Invalid proposer slashing, it will never pass validation so it's rejected",
+                HTTP_ERROR_RESPONSE_TYPE)
+            .build());
     this.nodeDataProvider = provider;
   }
 
@@ -56,7 +72,7 @@ public class PostProposerSlashing extends AbstractHandler {
       tags = {TAG_BEACON},
       description =
           "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = ProposerSlashing.class)}),
+      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = tech.pegasys.teku.api.schema.ProposerSlashing.class)}),
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -70,24 +86,22 @@ public class PostProposerSlashing extends AbstractHandler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    try {
-      final ProposerSlashing proposerSlashing =
-          parseRequestBody(ctx.body(), ProposerSlashing.class);
-      InternalValidationResult result =
-          nodeDataProvider.postProposerSlashing(proposerSlashing).join();
-      if (result.code().equals(ValidationResultCode.IGNORE)
-          || result.code().equals(ValidationResultCode.REJECT)) {
-        ctx.status(SC_BAD_REQUEST);
-        ctx.json(
-            BadRequest.badRequest(
-                jsonProvider,
-                "Invalid proposer slashing, it will never pass validation so it's rejected"));
-      } else {
-        ctx.status(SC_OK);
-      }
-    } catch (final IllegalArgumentException | JsonMappingException e) {
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(SC_BAD_REQUEST);
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final ProposerSlashing proposerSlashing = request.getRequestBody();
+    final InternalValidationResult result =
+        nodeDataProvider.postProposerSlashing(proposerSlashing).join();
+
+    if (result.code().equals(ValidationResultCode.IGNORE)
+        || result.code().equals(ValidationResultCode.REJECT)) {
+      request.respondError(
+          SC_BAD_REQUEST,
+          "Invalid proposer slashing, it will never pass validation so it's rejected");
+    } else {
+      request.respondWithCode(SC_OK);
     }
   }
 }

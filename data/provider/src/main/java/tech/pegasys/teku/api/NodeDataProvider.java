@@ -26,13 +26,13 @@ import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
-import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -117,7 +117,7 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
-    return proposerSlashingPool.addLocal(slashing.asInternalProposerSlashing());
+    return proposerSlashingPool.addLocal(slashing);
   }
 
   public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
