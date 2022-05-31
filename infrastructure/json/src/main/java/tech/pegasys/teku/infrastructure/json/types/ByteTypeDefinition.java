@@ -50,7 +50,7 @@ class ByteTypeDefinition extends PrimitiveTypeDefinition<Byte> {
     final String valueToParse =
         valueAsString.startsWith("0x") ? valueAsString.substring("0x".length()) : valueAsString;
     final int value = Integer.parseUnsignedInt(valueToParse, RADIX);
-    checkArgument(0 <= value && value <= 255, "byte value %s should be between 0 and 255", value);
+    checkArgument(0 <= value && value <= 255, "value %s is outside range for unsigned byte", value);
     return (byte) value;
   }
 }
