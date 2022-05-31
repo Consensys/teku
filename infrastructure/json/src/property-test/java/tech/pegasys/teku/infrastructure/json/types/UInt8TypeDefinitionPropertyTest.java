@@ -33,7 +33,7 @@ public class UInt8TypeDefinitionPropertyTest {
     try {
       final String serialized = Integer.toUnsignedString(value, 10);
       JsonUtil.parse(serialized, CoreTypes.UINT8_TYPE);
-      assertThat(value).isBetween(-127, 255);
+      assertThat(value).isBetween(0, 255);
     } catch (JsonProcessingException e) {
     } catch (IllegalArgumentException e) {
     }
