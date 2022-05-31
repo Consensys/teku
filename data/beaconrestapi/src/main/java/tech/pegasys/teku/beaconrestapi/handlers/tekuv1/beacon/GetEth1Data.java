@@ -57,7 +57,8 @@ public class GetEth1Data extends MigratingEndpointAdapter {
         EndpointMetadata.get(ROUTE)
             .operationId("getEth1Data")
             .summary("Get new Eth1Data")
-            .description("Eth1Data we'd include in a new block if we are a proposer.")
+            .description(
+                "Eth1Data that would be used in a new block created based on the current head.")
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", ETH1DATA_RESPONSE_TYPE)
             .build());
@@ -69,7 +70,7 @@ public class GetEth1Data extends MigratingEndpointAdapter {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get new Eth1Data",
-      description = "Eth1Data we'd include in a new block if we are a proposer.",
+      description = "Eth1Data that would be used in a new block created based on the current head.",
       tags = {TAG_TEKU},
       responses = {
         @OpenApiResponse(

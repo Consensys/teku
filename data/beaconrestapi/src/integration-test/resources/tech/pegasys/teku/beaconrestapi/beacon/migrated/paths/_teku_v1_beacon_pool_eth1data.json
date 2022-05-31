@@ -3,7 +3,7 @@
     "tags" : [ "Teku" ],
     "operationId" : "getEth1Data",
     "summary" : "Get new Eth1Data",
-    "description" : "Eth1Data that would be used in a new block created based on the current head",
+    "description" : "Eth1Data that would be used in a new block created based on the current head.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
