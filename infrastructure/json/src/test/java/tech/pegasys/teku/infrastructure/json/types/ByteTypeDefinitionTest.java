@@ -14,8 +14,10 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -38,6 +40,13 @@ class ByteTypeDefinitionTest {
   void shouldDeserializeFromHexWithoutPrefix(final byte value, final String serialized) {
     assertThat(CoreTypes.BYTE_TYPE.deserializeFromString(serialized.substring("0x".length())))
         .isEqualTo(value);
+  }
+
+  @Test
+  void shouldRejectNegativeIntegerHexStrings() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> CoreTypes.BYTE_TYPE.deserializeFromString(Integer.toHexString(-1)));
   }
 
   static Stream<Arguments> testValues() {
