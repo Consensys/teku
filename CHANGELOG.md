@@ -19,3 +19,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Reduced memory requirements for storing the deposit merkle tree.
 
 ### Bug Fixes
+- Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.

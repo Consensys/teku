@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.http;
 
+import com.google.common.collect.Lists;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,13 +27,36 @@ public class ContentTypes {
   public static final String OCTET_STREAM = "application/octet-stream";
   private static final Logger LOG = LogManager.getLogger();
 
-  public static Optional<String> getContentType(
-      final Collection<String> types, final Optional<String> maybeContentType) {
+  public static String getRequestContentType(
+      final Optional<String> specifiedContentType,
+      final Collection<String> supportedTypes,
+      final String defaultContentType) {
+    if (specifiedContentType.isEmpty()) {
+      return defaultContentType;
+    }
+    return findBestMatch(supportedTypes, specifiedContentType.get())
+        .orElseThrow(
+            () ->
+                new ContentTypeNotSupportedException(
+                    "Request content type "
+                        + specifiedContentType.get()
+                        + " is not supported. Must be one of: "
+                        + supportedTypes));
+  }
+
+  public static Optional<String> getResponseContentType(
+      final List<String> types, final Optional<String> maybeContentType) {
     if (maybeContentType.isEmpty()) {
       return Optional.empty();
     }
+    final String contentType = maybeContentType.get();
+    // Reverse the list because MIMEParse treats the last item as the most preferred.
+    return findBestMatch(Lists.reverse(types), contentType);
+  }
+
+  private static Optional<String> findBestMatch(
+      final Collection<String> types, final String contentType) {
     try {
-      final String contentType = maybeContentType.get();
       final String bestMatch = MIMEParse.bestMatch(types, contentType);
       return bestMatch.isEmpty() ? Optional.empty() : Optional.of(bestMatch);
     } catch (Exception e) {

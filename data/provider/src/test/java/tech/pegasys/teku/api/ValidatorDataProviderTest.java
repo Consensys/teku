@@ -25,7 +25,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -43,10 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -253,23 +249,18 @@ public class ValidatorDataProviderTest {
 
   @TestTemplate
   void submitAttestation_shouldSubmitAnInternalAttestationStructure() {
-    tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
+    tech.pegasys.teku.spec.datastructures.operations.Attestation attestation =
         dataStructureUtil.randomAttestation();
-    Attestation attestation = new Attestation(internalAttestation);
     final List<SubmitDataError> errors = List.of(new SubmitDataError(ZERO, "Nope"));
-    final SafeFuture<List<SubmitDataError>> result = SafeFuture.completedFuture(errors);
-    when(validatorApiChannel.sendSignedAttestations(any())).thenReturn(result);
+    when(validatorApiChannel.sendSignedAttestations(any()))
+        .thenReturn(SafeFuture.completedFuture(errors));
 
     assertThatSafeFuture(provider.submitAttestations(List.of(attestation)))
-        .isCompletedWithOptionalContaining(
-            new PostDataFailureResponse(
-                SC_BAD_REQUEST,
-                ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE,
-                List.of(new PostDataFailure(ZERO, "Nope"))));
+        .isCompletedWithValue(errors);
 
     verify(validatorApiChannel).sendSignedAttestations(args.capture());
     assertThat(args.getValue()).hasSize(1);
-    assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(internalAttestation);
+    assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(attestation);
   }
 
   @TestTemplate

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.json.exceptions;
+package tech.pegasys.teku.infrastructure.http;
 
 public class ContentTypeNotSupportedException extends RuntimeException {
   public ContentTypeNotSupportedException(String message) {
