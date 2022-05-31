@@ -43,7 +43,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
@@ -63,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -230,14 +230,9 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
   }
 
-  public SafeFuture<Optional<PostDataFailureResponse>> submitCommitteeSignatures(
+  public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
-    return validatorApiChannel
-        .sendSyncCommitteeMessages(
-            messages.stream()
-                .flatMap(message -> message.asInternalCommitteeSignature(spec).stream())
-                .collect(Collectors.toList()))
-        .thenApply(this::convertToPostDataFailureResponse);
+    return validatorApiChannel.sendSyncCommitteeMessages(messages);
   }
 
   private Optional<PostDataFailureResponse> convertToPostDataFailureResponse(
