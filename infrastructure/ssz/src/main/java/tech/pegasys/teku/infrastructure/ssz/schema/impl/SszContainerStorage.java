@@ -30,6 +30,7 @@ public class SszContainerStorage<C extends SszContainer> extends AbstractSszImmu
     super(schema, node);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public SszContainerStorageSchema<C> getSchema() {
     return (SszContainerStorageSchema<C>) super.getSchema();
