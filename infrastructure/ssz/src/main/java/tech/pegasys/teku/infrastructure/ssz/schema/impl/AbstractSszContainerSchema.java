@@ -131,11 +131,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     final List<NamedSchema<?>> namedStorageSchemas = new ArrayList<>();
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final SszSchema<?> childSchema = childrenSchemas.get(i);
+      final String childName = childrenNames.get(i);
       if (!(childSchema instanceof SszContainerSchema<?>)) {
+        namedStorageSchemas.add(new NamedSchema<>(childName, childSchema));
         continue;
       }
       final SszContainerSchema<?> childContainerSchema = (SszContainerSchema<?>) childSchema;
-      final String childName = childrenNames.get(i);
       if (childContainerSchema.isStoredSeparately()) {
         namedStorageSchemas.add(new NamedSchema<>(childName, SszPrimitiveSchemas.BYTES32_SCHEMA));
         replacedChildren.add(i);
