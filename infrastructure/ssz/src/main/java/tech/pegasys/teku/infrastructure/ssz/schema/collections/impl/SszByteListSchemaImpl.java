@@ -17,10 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
@@ -30,8 +32,16 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
     extends SszPrimitiveListSchemaImpl<Byte, SszByte, SszListT>
     implements SszByteListSchema<SszListT> {
 
-  public SszByteListSchemaImpl(long maxLength) {
-    super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
+  private final DeserializableTypeDefinition<SszListT> jsonTypeDefinition;
+
+  public SszByteListSchemaImpl(
+      final SszPrimitiveSchema<Byte, SszByte> elementSchema, final long maxLength) {
+    super(elementSchema, maxLength);
+    this.jsonTypeDefinition =
+        elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA
+            ? SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ encoded byte list")
+            : new DeserializableArrayTypeDefinition<>(
+                getElementSchema().getJsonTypeDefinition(), this::createFromElements);
   }
 
   @Override
@@ -56,6 +66,6 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
 
   @Override
   public DeserializableTypeDefinition<SszListT> getJsonTypeDefinition() {
-    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ encoded byte list");
+    return jsonTypeDefinition;
   }
 }

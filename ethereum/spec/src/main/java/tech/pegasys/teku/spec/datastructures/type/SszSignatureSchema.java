@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -22,7 +23,7 @@ public class SszSignatureSchema extends SszByteVectorSchemaImpl<SszSignature> {
   public static final SszSignatureSchema INSTANCE = new SszSignatureSchema();
 
   private SszSignatureSchema() {
-    super(BLS_COMPRESSED_SIGNATURE_SIZE);
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, BLS_COMPRESSED_SIGNATURE_SIZE);
   }
 
   @Override

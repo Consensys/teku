@@ -24,16 +24,19 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT8_TYPE;
 
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -47,6 +50,8 @@ public class RestApiRequestTest {
       new ParameterMetadata<>("bool", BOOLEAN_TYPE);
   private static final ParameterMetadata<Byte> BYTE_PARAM =
       new ParameterMetadata<>("byte", BYTE_TYPE);
+  private static final ParameterMetadata<Byte> UINT8_PARAM =
+      new ParameterMetadata<>("uint8", UINT8_TYPE);
   private static final EndpointMetadata METADATA =
       EndpointMetadata.get("/foo/:bool/:int/:str/:byte")
           .operationId("foo")
@@ -121,15 +126,26 @@ public class RestApiRequestTest {
         Arguments.of(null, "application/json"));
   }
 
-  @Test
-  void shouldDeserializeByteFromParameters() throws Exception {
-    final byte b1 = 127;
-    final byte b2 = 1;
-    when(context.pathParamMap()).thenReturn(Map.of("byte", "0x7f"));
-    when(context.queryParamMap()).thenReturn(Map.of("byte", List.of("0x01")));
+  @ParameterizedTest
+  @ValueSource(bytes = {Byte.MIN_VALUE, -5, -1, 0, 1, 5, Byte.MAX_VALUE})
+  void shouldDeserializeByteFromParameters(final byte value) {
+    final String stringValue = Bytes.of(value).toHexString();
+    when(context.pathParamMap()).thenReturn(Map.of("byte", stringValue));
+    when(context.queryParamMap()).thenReturn(Map.of("byte", List.of(stringValue)));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
-    assertThat(request.getPathParameter(BYTE_PARAM)).isEqualTo(b1);
-    assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(b2);
+    assertThat(request.getPathParameter(BYTE_PARAM)).isEqualTo(value);
+    assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(value);
+  }
+
+  @ParameterizedTest
+  @ValueSource(bytes = {Byte.MIN_VALUE, -5, -1, 0, 1, 5, Byte.MAX_VALUE})
+  void shouldDeserializeUInt8FromParameters(final byte value) {
+    final String stringValue = Integer.toUnsignedString(value, 10);
+    when(context.pathParamMap()).thenReturn(Map.of("uint8", stringValue));
+    when(context.queryParamMap()).thenReturn(Map.of("uint8", List.of(stringValue)));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getPathParameter(UINT8_PARAM)).isEqualTo(value);
+    assertThat(request.getQueryParameter(UINT8_PARAM)).isEqualTo(value);
   }
 
   @Test
