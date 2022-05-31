@@ -86,12 +86,12 @@ public class BeaconStateBuilderBellatrix
     previousEpochParticipation =
         dataStructureUtil.randomSszList(
             schema.getPreviousEpochParticipationSchema(),
-            defaultItemsInSSZLists,
+            defaultValidatorCount,
             dataStructureUtil::randomSszByte);
     currentEpochParticipation =
         dataStructureUtil.randomSszList(
             schema.getCurrentEpochParticipationSchema(),
-            defaultItemsInSSZLists,
+            defaultValidatorCount,
             dataStructureUtil::randomSszByte);
     inactivityScores =
         dataStructureUtil.randomSszUInt64List(
