@@ -41,7 +41,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 public class GetEth1Data extends MigratingEndpointAdapter {
 
-  public static final String ROUTE = "/teku/v1/beacon/state/eth1data";
+  public static final String ROUTE = "/teku/v1/beacon/pool/eth1data";
 
   private static final SerializableTypeDefinition<Eth1Data> ETH1DATA_RESPONSE_TYPE =
       SerializableTypeDefinition.<Eth1Data>object()
