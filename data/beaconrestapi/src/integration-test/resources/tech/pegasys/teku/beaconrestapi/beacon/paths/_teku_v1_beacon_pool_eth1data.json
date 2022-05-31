@@ -1,0 +1,26 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get new Eth1Data",
+    "description" : "Eth1Data that would be used in a new block created based on the current head.",
+    "operationId" : "getTekuV1BeaconPoolEth1data",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetEth1DataResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Corresponding state not found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}
