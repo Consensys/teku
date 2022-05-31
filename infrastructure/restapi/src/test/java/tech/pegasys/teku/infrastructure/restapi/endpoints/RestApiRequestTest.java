@@ -30,13 +30,11 @@ import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -127,9 +125,8 @@ public class RestApiRequestTest {
   }
 
   @ParameterizedTest
-  @ValueSource(bytes = {Byte.MIN_VALUE, -5, -1, 0, 1, 5, Byte.MAX_VALUE})
-  void shouldDeserializeByteFromParameters(final byte value) {
-    final String stringValue = Bytes.of(value).toHexString();
+  @MethodSource("unsignedBytesToHex")
+  void shouldDeserializeByteFromParameters(final byte value, final String stringValue) {
     when(context.pathParamMap()).thenReturn(Map.of("byte", stringValue));
     when(context.queryParamMap()).thenReturn(Map.of("byte", List.of(stringValue)));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
@@ -137,15 +134,32 @@ public class RestApiRequestTest {
     assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(value);
   }
 
+  static Stream<Arguments> unsignedBytesToHex() {
+    return Stream.of(
+        Arguments.of(Byte.MIN_VALUE, "0x80"),
+        Arguments.of((byte) -1, "0xff"),
+        Arguments.of((byte) 0, "0x00"),
+        Arguments.of((byte) 1, "0x01"),
+        Arguments.of(Byte.MAX_VALUE, "0x7f"));
+  }
+
   @ParameterizedTest
-  @ValueSource(bytes = {Byte.MIN_VALUE, -5, -1, 0, 1, 5, Byte.MAX_VALUE})
-  void shouldDeserializeUInt8FromParameters(final byte value) {
-    final String stringValue = Integer.toString(Byte.toUnsignedInt(value));
+  @MethodSource("unsignedBytesToDecimal")
+  void shouldDeserializeUInt8FromParameters(final byte value, final String stringValue) {
     when(context.pathParamMap()).thenReturn(Map.of("uint8", stringValue));
     when(context.queryParamMap()).thenReturn(Map.of("uint8", List.of(stringValue)));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(UINT8_PARAM)).isEqualTo(value);
     assertThat(request.getQueryParameter(UINT8_PARAM)).isEqualTo(value);
+  }
+
+  static Stream<Arguments> unsignedBytesToDecimal() {
+    return Stream.of(
+        Arguments.of(Byte.MIN_VALUE, "128"),
+        Arguments.of((byte) -1, "255"),
+        Arguments.of((byte) 0, "0"),
+        Arguments.of((byte) 1, "1"),
+        Arguments.of(Byte.MAX_VALUE, "127"));
   }
 
   @Test

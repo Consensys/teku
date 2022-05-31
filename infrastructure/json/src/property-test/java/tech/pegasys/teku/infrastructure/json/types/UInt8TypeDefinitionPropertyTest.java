@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,13 +30,13 @@ public class UInt8TypeDefinitionPropertyTest {
 
   @Property
   @SuppressWarnings("EmptyCatch")
-  void shouldRejectInvalidRange(@ForAll int value) {
-    try {
-      final String serialized = Integer.toUnsignedString(value, 10);
-      JsonUtil.parse(serialized, CoreTypes.UINT8_TYPE);
-      assertThat(value).isBetween(0, 255);
-    } catch (JsonProcessingException e) {
-    } catch (IllegalArgumentException e) {
+  void shouldRejectInvalidRange(@ForAll int value) throws JsonProcessingException {
+    final String serialized = "\"" + value + "\"";
+    if (value >= 0 && value <= 255) {
+      assertThat(JsonUtil.parse(serialized, CoreTypes.UINT8_TYPE)).isEqualTo((byte) value);
+    } else {
+      assertThatThrownBy(() -> JsonUtil.parse(serialized, CoreTypes.UINT8_TYPE))
+          .isInstanceOfAny(JsonProcessingException.class, IllegalArgumentException.class);
     }
   }
 }
