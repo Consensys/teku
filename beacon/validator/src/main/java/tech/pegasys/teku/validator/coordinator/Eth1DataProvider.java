@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -86,6 +87,25 @@ public class Eth1DataProvider {
 
     public UInt64 getVotingSlotsLeft() {
       return votingSlotsLeft;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      VotingPeriodInfo that = (VotingPeriodInfo) o;
+      return Objects.equals(winVotesRequired, that.winVotesRequired)
+          && Objects.equals(votingSlots, that.votingSlots)
+          && Objects.equals(votingSlotsLeft, that.votingSlotsLeft);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(winVotesRequired, votingSlots, votingSlotsLeft);
     }
   }
 }

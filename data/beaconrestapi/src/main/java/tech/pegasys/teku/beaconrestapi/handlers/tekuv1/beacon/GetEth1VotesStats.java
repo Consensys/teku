@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -32,6 +33,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +55,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
 
   public static final String OAPI_ROUTE = "/teku/v1/beacon/state/:state_id/eth1stats";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String NOT_FOUND_MESSAGE = "Corresponding state not found";
 
   private static final SerializableTypeDefinition<Pair<Eth1Data, UInt64>> ETH1DATA_WITH_VOTES_TYPE =
       SerializableTypeDefinition.<Pair<Eth1Data, UInt64>>object()
@@ -105,6 +108,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_STATE_ID)
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", ETH1VOTES_STATS_RESPONSE_TYPE)
+            .response(SC_NOT_FOUND, NOT_FOUND_MESSAGE)
             .build());
     this.chainDataProvider = dataProvider.getChainDataProvider();
     this.eth1DataProvider = eth1DataProvider;
@@ -122,7 +126,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = GetEth1VotesStatsResponse.class)),
-        @OpenApiResponse(status = RES_NOT_FOUND),
+        @OpenApiResponse(status = RES_NOT_FOUND, description = NOT_FOUND_MESSAGE),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
@@ -138,7 +142,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
             .thenApply(
                 maybeStateAndMetadata -> {
                   if (maybeStateAndMetadata.isEmpty()) {
-                    return AsyncApiResponse.respondNotFound();
+                    return AsyncApiResponse.respondWithError(SC_NOT_FOUND, NOT_FOUND_MESSAGE);
                   } else {
                     List<Pair<Eth1Data, UInt64>> votesBreakDown =
                         eth1DataProvider.getEth1DataVotesBreakdown(maybeStateAndMetadata.get());
@@ -185,6 +189,25 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
 
     public UInt64 getWinVotesRequired() {
       return votingPeriodInfo.getWinVotesRequired();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      Eth1DataVotesStats that = (Eth1DataVotesStats) o;
+      return Objects.equals(eth1Data, that.eth1Data)
+          && Objects.equals(votesBreakDown, that.votesBreakDown)
+          && Objects.equals(votingPeriodInfo, that.votingPeriodInfo);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(eth1Data, votesBreakDown, votingPeriodInfo);
     }
   }
 }
