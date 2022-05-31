@@ -39,6 +39,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -102,7 +104,8 @@ class BlockProductionDutyTest {
     performAndReportDuty();
 
     verify(validatorApiChannel).sendSignedBlock(signedBlock);
-    verify(validatorLogger).dutyCompleted(TYPE, SLOT, 1, Set.of(unsignedBlock.hashTreeRoot()));
+    verify(validatorLogger)
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(unsignedBlock.hashTreeRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -113,6 +116,22 @@ class BlockProductionDutyTest {
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
+  }
+
+  @Test
+  public void bellatrixBlockSummary() {
+    final BeaconBlockBody block = mock(BeaconBlockBody.class);
+    when(block.getOptionalExecutionPayloadSummary())
+        .thenReturn(
+            Optional.of(
+                new PayloadSummary(
+                    UInt64.valueOf(1024000),
+                    UInt64.valueOf(102400),
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomUInt64())));
+    assertThat(BlockProductionDuty.getBlockSummary(block))
+        .contains(
+            "102400 (10%) gas, EL block:  499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
   }
 
   @Test
@@ -171,5 +190,43 @@ class BlockProductionDutyTest {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
     result.join().report(TYPE, SLOT, validatorLogger);
+  }
+
+  static class PayloadSummary implements ExecutionPayloadSummary {
+    private final UInt64 gasLimit;
+    private final UInt64 gasUsed;
+    private final Bytes32 blockHash;
+    private final UInt64 blockNumber;
+
+    public PayloadSummary(
+        final UInt64 gasLimit,
+        final UInt64 gasUsed,
+        final Bytes32 blockHash,
+        final UInt64 blockNumber) {
+      this.gasLimit = gasLimit;
+      this.gasUsed = gasUsed;
+      this.blockHash = blockHash;
+      this.blockNumber = blockNumber;
+    }
+
+    @Override
+    public UInt64 getGasLimit() {
+      return gasLimit;
+    }
+
+    @Override
+    public UInt64 getGasUsed() {
+      return gasUsed;
+    }
+
+    @Override
+    public UInt64 getBlockNumber() {
+      return blockNumber;
+    }
+
+    @Override
+    public Bytes32 getBlockHash() {
+      return blockHash;
+    }
   }
 }

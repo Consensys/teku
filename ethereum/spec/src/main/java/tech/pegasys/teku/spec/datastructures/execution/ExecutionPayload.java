@@ -44,7 +44,8 @@ public class ExecutionPayload
         SszByteList,
         SszUInt256,
         SszBytes32,
-        SszList<Transaction>> {
+        SszList<Transaction>>
+    implements ExecutionPayloadSummary {
 
   ExecutionPayload(
       ContainerSchema14<
@@ -131,14 +132,17 @@ public class ExecutionPayload
     return getField5().get();
   }
 
+  @Override
   public UInt64 getBlockNumber() {
     return getField6().get();
   }
 
+  @Override
   public UInt64 getGasLimit() {
     return getField7().get();
   }
 
+  @Override
   public UInt64 getGasUsed() {
     return getField8().get();
   }
@@ -155,6 +159,7 @@ public class ExecutionPayload
     return getField11().get();
   }
 
+  @Override
   public Bytes32 getBlockHash() {
     return getField12().get();
   }
