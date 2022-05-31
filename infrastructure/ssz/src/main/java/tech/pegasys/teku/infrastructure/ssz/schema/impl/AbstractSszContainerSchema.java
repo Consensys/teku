@@ -124,6 +124,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
+  @Override
   public SszContainerStorageSchema<C> asStorageVersion() {
     final IntList replacedChildren = new IntArrayList();
     final IntList partlyReplacedChildren = new IntArrayList();
