@@ -76,7 +76,11 @@ public class PostAttesterSlashing extends MigratingEndpointAdapter {
       tags = {TAG_BEACON},
       description =
           "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = tech.pegasys.teku.api.schema.AttesterSlashing.class)}),
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(from = tech.pegasys.teku.api.schema.AttesterSlashing.class)
+              }),
       responses = {
         @OpenApiResponse(
             status = RES_OK,
