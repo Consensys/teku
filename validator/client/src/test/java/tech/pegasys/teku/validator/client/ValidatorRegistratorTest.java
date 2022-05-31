@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -116,9 +115,6 @@ class ValidatorRegistratorTest {
     // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // Make sure all the futures have completed before next call
-    verify(validatorApiChannel, timeout(1000)).registerValidators(any());
-
     // WHEN onSlot called again next epoch, registrations will be cached
     validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
 
@@ -142,9 +138,6 @@ class ValidatorRegistratorTest {
 
     // Registering only validator1
     validatorRegistrator.onSlot(UInt64.ZERO);
-
-    // Make sure all the futures have completed before next call
-    verify(validatorApiChannel, timeout(1000)).registerValidators(any());
 
     // WHEN new validators are added
     when(ownedValidators.getActiveValidators())
@@ -222,8 +215,7 @@ class ValidatorRegistratorTest {
     ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
         ArgumentCaptor.forClass(SszList.class);
 
-    verify(validatorApiChannel, timeout(1000).times(times))
-        .registerValidators(argumentCaptor.capture());
+    verify(validatorApiChannel, times(times)).registerValidators(argumentCaptor.capture());
 
     return argumentCaptor.getAllValues();
   }
