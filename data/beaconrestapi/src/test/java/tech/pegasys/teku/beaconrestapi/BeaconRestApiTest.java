@@ -48,6 +48,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
+import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
