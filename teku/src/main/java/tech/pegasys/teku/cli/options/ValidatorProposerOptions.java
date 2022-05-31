@@ -17,7 +17,9 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.UInt64Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorProposerOptions {
@@ -59,6 +61,17 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
 
   @Option(
+      names = {"--Xvalidators-registration-default-gas-limit"},
+      paramLabel = "<uint64>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable MEV boost when proposing blocks.",
+      arity = "0..1",
+      hidden = true,
+      converter = UInt64Converter.class)
+  private UInt64 registrationDefaultGasLimit =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
+
+  @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -76,6 +89,7 @@ public class ValidatorProposerOptions {
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
                 .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
-                .blindedBeaconBlocksEnabled(blindedBlocksEnabled));
+                .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
+                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit));
   }
 }

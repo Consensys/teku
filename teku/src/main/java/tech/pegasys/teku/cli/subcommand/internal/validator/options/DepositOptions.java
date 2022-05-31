@@ -22,13 +22,13 @@ import java.util.function.IntConsumer;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
-import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.TypeConversionException;
+import tech.pegasys.teku.cli.converter.Eth1AddressConverter;
+import tech.pegasys.teku.cli.converter.UInt64Converter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -155,29 +155,6 @@ public class DepositOptions {
           commandSpec.commandLine(),
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
-    }
-  }
-
-  private static class UInt64Converter implements CommandLine.ITypeConverter<UInt64> {
-    @Override
-    public UInt64 convert(final String value) {
-      try {
-        return UInt64.valueOf(value);
-      } catch (final NumberFormatException e) {
-        throw new TypeConversionException(
-            "Invalid format: must be a numeric value but was " + value);
-      }
-    }
-  }
-
-  private static class Eth1AddressConverter implements CommandLine.ITypeConverter<Eth1Address> {
-    @Override
-    public Eth1Address convert(final String value) throws Exception {
-      try {
-        return Eth1Address.fromHexString(value);
-      } catch (Exception e) {
-        throw new TypeConversionException("Invalid format: " + e.getMessage());
-      }
     }
   }
 }
