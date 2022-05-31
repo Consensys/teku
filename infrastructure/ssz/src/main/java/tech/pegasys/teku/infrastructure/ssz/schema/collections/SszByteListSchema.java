@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
 
 public interface SszByteListSchema<SszListT extends SszByteList>
@@ -24,6 +25,10 @@ public interface SszByteListSchema<SszListT extends SszByteList>
   SszListT fromBytes(Bytes bytes);
 
   static SszByteListSchema<SszByteList> create(long maxLength) {
-    return new SszByteListSchemaImpl<>(maxLength);
+    return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
+  }
+
+  static SszByteListSchema<SszByteList> createUInt8(long maxLength) {
+    return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.UINT8_SCHEMA, maxLength);
   }
 }

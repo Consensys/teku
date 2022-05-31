@@ -86,12 +86,12 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
-  public final SszDataT createFromPackedNode(TreeNode node, int internalIndex) {
+  public final DataT createFromPackedNodeUnboxed(TreeNode node, int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
   }
 
-  public abstract SszDataT createFromLeafBackingNode(LeafDataNode node, int internalIndex);
+  protected abstract DataT createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
   public TreeNode createBackingNode(SszDataT newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);

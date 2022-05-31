@@ -106,14 +106,18 @@
       "type" : "array",
       "items" : {
         "type" : "string",
-        "format" : "byte"
+        "example" : "1",
+        "description" : "unsigned 8 bit integer, max value 255",
+        "format" : "uint8"
       }
     },
     "current_epoch_participation" : {
       "type" : "array",
       "items" : {
         "type" : "string",
-        "format" : "byte"
+        "example" : "1",
+        "description" : "unsigned 8 bit integer, max value 255",
+        "format" : "uint8"
       }
     },
     "justification_bits" : {

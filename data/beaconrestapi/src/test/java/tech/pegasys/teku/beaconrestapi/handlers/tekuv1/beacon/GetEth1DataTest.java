@@ -71,7 +71,7 @@ public class GetEth1DataTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Corresponding state not found"));
+        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, GetEth1Data.NOT_FOUND_MESSAGE));
   }
 
   @Test

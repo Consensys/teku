@@ -32,8 +32,13 @@ public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> impleme
   @Override
   public Bytes getBytes() {
     MutableBytes bytes = MutableBytes.create(size());
-    IntStream.range(0, size()).forEach(idx -> bytes.set(idx, get(idx).get()));
+    IntStream.range(0, size()).forEach(idx -> bytes.set(idx, getElement(idx)));
     return bytes;
+  }
+
+  @Override
+  public Byte getElement(int index) {
+    return elementType.createFromPackedNodeUnboxed(getTreeNode(index), index % elementsPerChunk);
   }
 
   @Override

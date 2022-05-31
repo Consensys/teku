@@ -43,6 +43,9 @@ public interface SszPrimitiveVectorSchema<
     } else if (elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA) {
       return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
           SszByteVectorSchema.create((int) length);
+    } else if (elementSchema == SszPrimitiveSchemas.UINT8_SCHEMA) {
+      return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
+          SszByteVectorSchema.createUInt8((int) length);
     } else if (elementSchema == SszPrimitiveSchemas.BYTES32_SCHEMA) {
       return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
           SszBytes32VectorSchema.create((int) length);
