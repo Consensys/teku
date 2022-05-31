@@ -52,8 +52,8 @@ public interface SszPrimitiveSchemas {
   AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
       new AbstractSszPrimitiveSchema<>(0) {
         @Override
-        public SszNone createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return SszNone.INSTANCE;
+        public Void createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return null;
         }
 
         @Override
@@ -86,8 +86,8 @@ public interface SszPrimitiveSchemas {
   AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override
-        public SszBit createFromLeafBackingNode(LeafDataNode node, int idx) {
-          return SszBit.of((node.getData().get(idx / 8) & (1 << (idx % 8))) != 0);
+        public Boolean createFromLeafBackingNode(LeafDataNode node, int idx) {
+          return (node.getData().get(idx / 8) & (1 << (idx % 8))) != 0;
         }
 
         @Override
@@ -165,11 +165,11 @@ public interface SszPrimitiveSchemas {
   AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
       new AbstractSszPrimitiveSchema<>(64) {
         @Override
-        public SszUInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public UInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           Bytes leafNodeBytes = node.getData();
           try {
             Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
-            return SszUInt64.of(UInt64.fromLongBits(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN)));
+            return UInt64.fromLongBits(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN));
           } catch (Exception e) {
             // additional info to track down the bug https://github.com/PegaSysEng/teku/issues/2579
             String info =
@@ -246,9 +246,9 @@ public interface SszPrimitiveSchemas {
   AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
-        public SszUInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public UInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           // reverse() is due to LE -> BE conversion
-          return SszUInt256.of(UInt256.fromBytes(node.getData().reverse()));
+          return UInt256.fromBytes(node.getData().reverse());
         }
 
         @Override
@@ -281,8 +281,8 @@ public interface SszPrimitiveSchemas {
   AbstractSszPrimitiveSchema<Bytes4, SszBytes4> BYTES4_SCHEMA =
       new AbstractSszPrimitiveSchema<>(32) {
         @Override
-        public SszBytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return SszBytes4.of(new Bytes4(node.getData().slice(internalIndex * 4, 4)));
+        public Bytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return new Bytes4(node.getData().slice(internalIndex * 4, 4));
         }
 
         @Override
@@ -319,8 +319,8 @@ public interface SszPrimitiveSchemas {
   AbstractSszPrimitiveSchema<Bytes32, SszBytes32> BYTES32_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
-        public SszBytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return SszBytes32.of(node.hashTreeRoot());
+        public Bytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return node.hashTreeRoot();
         }
 
         @Override
@@ -372,8 +372,8 @@ public interface SszPrimitiveSchemas {
     }
 
     @Override
-    public SszByte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-      return SszByte.of(node.getData().get(internalIndex));
+    public Byte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+      return node.getData().get(internalIndex);
     }
 
     @Override
