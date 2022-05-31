@@ -93,7 +93,9 @@ public class PostAttesterSlashing extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {}
+  public void handle(@NotNull final Context ctx) throws Exception {
+    adapt(ctx);
+  }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
