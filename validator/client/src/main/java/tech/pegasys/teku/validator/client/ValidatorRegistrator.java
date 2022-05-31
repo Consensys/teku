@@ -174,10 +174,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private ValidatorRegistrationIdentity createValidatorRegistrationIdentity(
-      final Validator validator, final Eth1Address eth1Address) {
+      final Validator validator, final Eth1Address feeRecipient) {
     // hardcoding gas_limit to ZERO for now. The real value will be
     // taken from the proposer config in a future PR.
-    return new ValidatorRegistrationIdentity(eth1Address, UInt64.ZERO, validator.getPublicKey());
+    return new ValidatorRegistrationIdentity(feeRecipient, UInt64.ZERO, validator.getPublicKey());
   }
 
   private ValidatorRegistration createValidatorRegistration(
