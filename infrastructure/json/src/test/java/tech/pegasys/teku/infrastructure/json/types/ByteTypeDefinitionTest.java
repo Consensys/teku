@@ -43,7 +43,7 @@ class ByteTypeDefinitionTest {
   }
 
   @Test
-  void shouldRejectNegativeIntegerHexStrings() {
+  void shouldRejectNegativeInteger() {
     assertThrows(
         IllegalArgumentException.class,
         () -> CoreTypes.BYTE_TYPE.deserializeFromString(Integer.toHexString(-1)));

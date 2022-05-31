@@ -47,7 +47,7 @@ class UInt8TypeDefinition extends PrimitiveTypeDefinition<Byte> {
   @Override
   public Byte deserializeFromString(final String valueAsString) {
     final int value = Integer.parseUnsignedInt(valueAsString, 10);
-    checkArgument(value < Math.pow(2, Byte.SIZE), "Value %s exceeds maximum for uint8", value);
+    checkArgument(0 <= value && value <= 255, "uint8 value %s should be between 0 and 255", value);
     return (byte) value;
   }
 }
