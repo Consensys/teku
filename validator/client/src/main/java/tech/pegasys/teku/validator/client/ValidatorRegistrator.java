@@ -39,8 +39,8 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class ValidatorRegistrator implements ValidatorTimingChannel {
 
-  private final Map<ValidatorIdentity, SignedValidatorRegistration> cachedValidatorRegistrations =
-      Maps.newConcurrentMap();
+  private final Map<ValidatorRegistrationIdentity, SignedValidatorRegistration>
+      cachedValidatorRegistrations = Maps.newConcurrentMap();
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicReference<UInt64> lastProcessedEpoch = new AtomicReference<>();
@@ -91,8 +91,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         ownedValidators.getActiveValidators().stream()
             .filter(
                 validator -> {
-                  final ValidatorIdentity validatorIdentity = createValidatorIdentity(validator);
-                  return !cachedValidatorRegistrations.containsKey(validatorIdentity);
+                  final ValidatorRegistrationIdentity validatorRegistrationIdentity =
+                      createValidatorRegistrationIdentity(validator);
+                  return !cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity);
                 })
             .collect(Collectors.toList());
 
@@ -123,21 +124,22 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         validators.stream()
             .map(
                 validator -> {
-                  final ValidatorIdentity validatorIdentity = createValidatorIdentity(validator);
+                  final ValidatorRegistrationIdentity validatorRegistrationIdentity =
+                      createValidatorRegistrationIdentity(validator);
 
-                  if (cachedValidatorRegistrations.containsKey(validatorIdentity)) {
+                  if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
                     return SafeFuture.completedFuture(
-                        cachedValidatorRegistrations.get(validatorIdentity));
+                        cachedValidatorRegistrations.get(validatorRegistrationIdentity));
                   }
 
                   final ValidatorRegistration validatorRegistration =
-                      createValidatorRegistration(validatorIdentity);
+                      createValidatorRegistration(validatorRegistrationIdentity);
                   final Signer signer = validator.getSigner();
                   return signValidatorRegistration(validatorRegistration, signer, epoch)
                       .thenPeek(
                           signedValidatorRegistration ->
                               cachedValidatorRegistrations.put(
-                                  validatorIdentity, signedValidatorRegistration));
+                                  validatorRegistrationIdentity, signedValidatorRegistration));
                 });
 
     return SafeFuture.collectAll(validatorRegistrationsFutures)
@@ -148,19 +150,20 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .thenCompose(validatorApiChannel::registerValidators);
   }
 
-  private ValidatorIdentity createValidatorIdentity(final Validator validator) {
+  private ValidatorRegistrationIdentity createValidatorRegistrationIdentity(
+      final Validator validator) {
     // hardcoding fee_recipient and gas_limit to ZERO for now. The real values will be
     // taken from the proposer config in a future PR.
-    return new ValidatorIdentity(Bytes20.ZERO, UInt64.ZERO, validator.getPublicKey());
+    return new ValidatorRegistrationIdentity(Bytes20.ZERO, UInt64.ZERO, validator.getPublicKey());
   }
 
   private ValidatorRegistration createValidatorRegistration(
-      final ValidatorIdentity validatorIdentity) {
+      final ValidatorRegistrationIdentity validatorRegistrationIdentity) {
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
-        validatorIdentity.getFeeRecipient(),
-        validatorIdentity.getGasLimit(),
+        validatorRegistrationIdentity.getFeeRecipient(),
+        validatorRegistrationIdentity.getGasLimit(),
         timeProvider.getTimeInSeconds(),
-        validatorIdentity.getPublicKey());
+        validatorRegistrationIdentity.getPublicKey());
   }
 
   private SafeFuture<SignedValidatorRegistration> signValidatorRegistration(

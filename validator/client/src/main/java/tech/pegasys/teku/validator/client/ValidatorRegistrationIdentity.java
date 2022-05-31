@@ -18,13 +18,13 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ValidatorIdentity {
+public class ValidatorRegistrationIdentity {
 
   private final Bytes20 feeRecipient;
   private final UInt64 gasLimit;
   private final BLSPublicKey publicKey;
 
-  public ValidatorIdentity(
+  public ValidatorRegistrationIdentity(
       final Bytes20 feeRecipient, final UInt64 gasLimit, final BLSPublicKey publicKey) {
     this.feeRecipient = feeRecipient;
     this.gasLimit = gasLimit;
@@ -51,7 +51,7 @@ public class ValidatorIdentity {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ValidatorIdentity that = (ValidatorIdentity) o;
+    ValidatorRegistrationIdentity that = (ValidatorRegistrationIdentity) o;
     return Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(gasLimit, that.gasLimit)
         && Objects.equals(publicKey, that.publicKey);
