@@ -140,7 +140,7 @@ public class RestApiRequestTest {
   @ParameterizedTest
   @ValueSource(bytes = {Byte.MIN_VALUE, -5, -1, 0, 1, 5, Byte.MAX_VALUE})
   void shouldDeserializeUInt8FromParameters(final byte value) {
-    final String stringValue = Integer.toUnsignedString(value, 10);
+    final String stringValue = Integer.toString(Byte.toUnsignedInt(value));
     when(context.pathParamMap()).thenReturn(Map.of("uint8", stringValue));
     when(context.queryParamMap()).thenReturn(Map.of("uint8", List.of(stringValue)));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);

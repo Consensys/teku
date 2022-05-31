@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.json.types;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.math.BigInteger;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,7 +40,7 @@ class UInt8TypeDefinitionTest {
   void shouldRejectNegativeInteger() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> CoreTypes.UINT8_TYPE.deserializeFromString(BigInteger.ONE.toString(10)));
+        () -> CoreTypes.UINT8_TYPE.deserializeFromString(Integer.toUnsignedString(-1, 10)));
   }
 
   static Stream<Arguments> testValues() {

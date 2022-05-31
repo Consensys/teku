@@ -17,14 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.math.BigInteger;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class UInt8TypeDefinitionPropertyTest {
-  private static final BigInteger UINT8_MAX_VALUE = new BigInteger("255");
-
   @Property
   void roundTrip(@ForAll Byte value) throws JsonProcessingException {
     assertRoundTrip(value, CoreTypes.UINT8_TYPE);
@@ -32,11 +29,11 @@ public class UInt8TypeDefinitionPropertyTest {
 
   @Property
   @SuppressWarnings("EmptyCatch")
-  void shouldRejectInvalidRange(@ForAll BigInteger value) {
+  void shouldRejectInvalidRange(@ForAll int value) {
     try {
-      final String serialized = value.toString(10);
+      final String serialized = Integer.toUnsignedString(value, 10);
       JsonUtil.parse(serialized, CoreTypes.UINT8_TYPE);
-      assertThat(value).isBetween(BigInteger.ZERO, UINT8_MAX_VALUE);
+      assertThat(value).isBetween(-127, 255);
     } catch (JsonProcessingException e) {
     } catch (IllegalArgumentException e) {
     }
