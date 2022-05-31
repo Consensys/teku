@@ -72,7 +72,11 @@ public class PostProposerSlashing extends MigratingEndpointAdapter {
       tags = {TAG_BEACON},
       description =
           "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = tech.pegasys.teku.api.schema.ProposerSlashing.class)}),
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(from = tech.pegasys.teku.api.schema.ProposerSlashing.class)
+              }),
       responses = {
         @OpenApiResponse(
             status = RES_OK,
