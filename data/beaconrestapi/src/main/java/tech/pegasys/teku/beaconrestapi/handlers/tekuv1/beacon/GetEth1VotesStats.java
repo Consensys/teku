@@ -101,8 +101,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
             .operationId("getEth1VotesStats")
             .summary("Get Eth1DataVotes stats")
             .description(
-                "Eth1Data from the state, Eth1Data statistics breakdown by votes for provided state id plus "
-                    + "voting period information (slots length, slots left, Eth1Data votes required to win).")
+                "Returns information about the current state of voting for Eth1Data from the specified state.")
             .pathParam(PARAMETER_STATE_ID)
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", ETH1VOTES_STATS_RESPONSE_TYPE)
@@ -116,8 +115,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
       method = HttpMethod.GET,
       summary = "Get Eth1DataVotes stats",
       description =
-          "Eth1Data from the state, Eth1Data statistics breakdown by votes for provided state id plus "
-              + "voting period information (slots length, slots left, Eth1Data votes required to win).",
+          "Returns information about the current state of voting for Eth1Data from the specified state.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       tags = {TAG_TEKU},
       responses = {
