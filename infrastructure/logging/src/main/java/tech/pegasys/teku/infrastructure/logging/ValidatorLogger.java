@@ -170,6 +170,12 @@ public class ValidatorLogger {
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
 
+  public void registeringValidatorsFailed(final Throwable error) {
+    final String errorString =
+        String.format("%sFailed to send validator registrations to Beacon Node", PREFIX);
+    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+  }
+
   public void executionPayloadPreparedUsingBeaconDefaultFeeRecipient(final UInt64 slot) {
     log.warn(
         ColorConsolePrinter.print(
