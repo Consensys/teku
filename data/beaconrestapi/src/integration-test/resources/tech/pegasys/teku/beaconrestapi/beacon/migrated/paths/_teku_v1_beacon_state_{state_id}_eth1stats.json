@@ -3,7 +3,7 @@
     "tags" : [ "Teku" ],
     "operationId" : "getEth1VotesStats",
     "summary" : "Get Eth1DataVotes stats",
-    "description" : "Eth1Data from the state, Eth1Data statistics breakdown by votes for provided state id plus voting period information (slots length, slots left, Eth1Data votes required to win).",
+    "description" : "Returns information about the current state of voting for Eth1Data from the specified state.",
     "parameters" : [ {
       "name" : "state_id",
       "required" : true,
