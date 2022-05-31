@@ -130,19 +130,67 @@ class ValidatorRegistratorTest {
     verifyRegistrations(argumentCaptor.getValue());
   }
 
+  @TestTemplate
+  void registersNewlyAddedValidators() {
+    // GIVEN
+    when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator1));
+
+    doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
+        .when(signer)
+        .signValidatorRegistration(any(ValidatorRegistration.class), any(UInt64.class));
+
+    // Registering only validator1
+    validatorRegistrator.onSlot(UInt64.ZERO);
+
+    // WHEN new validators are added
+    when(ownedValidators.getActiveValidators())
+        .thenReturn(List.of(validator1, validator2, validator3));
+
+    // THEN only validator2 and validator3 should be registered
+    validatorRegistrator.onValidatorsAdded();
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
+        ArgumentCaptor.forClass(SszList.class);
+
+    verify(validatorApiChannel, timeout(1000).times(2))
+        .registerValidators(argumentCaptor.capture());
+
+    List<SszList<SignedValidatorRegistration>> registrationCalls = argumentCaptor.getAllValues();
+
+    assertThat(registrationCalls).hasSize(2);
+
+    // first call only has validator1
+    SszList<SignedValidatorRegistration> firstRegistrations = registrationCalls.get(0);
+    assertThat(firstRegistrations).hasSize(1);
+    Stream<BLSPublicKey> firstValidatorsPublicKeys = getPublicKeys(firstRegistrations);
+    assertThat(firstValidatorsPublicKeys).containsExactly(validator1.getPublicKey());
+
+    // second call should have processed validator2 and validator3
+    SszList<SignedValidatorRegistration> secondRegistrations = registrationCalls.get(1);
+    assertThat(secondRegistrations).hasSize(2);
+    Stream<BLSPublicKey> secondValidatorsPublicKeys = getPublicKeys(secondRegistrations);
+    assertThat(secondValidatorsPublicKeys)
+        .containsExactlyInAnyOrder(validator2.getPublicKey(), validator3.getPublicKey());
+  }
+
   private void verifyRegistrations(SszList<SignedValidatorRegistration> validatorRegistrations) {
 
     assertThat(validatorRegistrations).hasSize(3);
     assertThat(validatorRegistrations)
         .allSatisfy(registration -> assertThat(registration.getSignature().isValid()).isTrue());
 
-    Stream<BLSPublicKey> validatorsPublicKeys =
-        validatorRegistrations.stream()
-            .map(SignedValidatorRegistration::getMessage)
-            .map(ValidatorRegistration::getPublicKey);
+    Stream<BLSPublicKey> validatorsPublicKeys = getPublicKeys(validatorRegistrations);
 
     assertThat(validatorsPublicKeys)
         .containsExactlyInAnyOrder(
             validator1.getPublicKey(), validator2.getPublicKey(), validator3.getPublicKey());
+  }
+
+  private Stream<BLSPublicKey> getPublicKeys(
+      SszList<SignedValidatorRegistration> validatorRegistrations) {
+    return validatorRegistrations.stream()
+        .map(SignedValidatorRegistration::getMessage)
+        .map(ValidatorRegistration::getPublicKey);
   }
 }

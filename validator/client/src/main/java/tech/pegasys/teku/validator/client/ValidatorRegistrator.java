@@ -19,6 +19,8 @@ import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -41,6 +43,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       Maps.newConcurrentMap();
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
+  private final AtomicReference<UInt64> lastProcessedEpoch = new AtomicReference<>();
 
   private final Spec spec;
   private final TimeProvider timeProvider;
@@ -62,7 +65,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onSlot(UInt64 slot) {
     if (isBeginningOfEpoch(slot) || firstCallDone.compareAndSet(false, true)) {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
-      registerValidators(epoch).finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+      lastProcessedEpoch.set(epoch);
+      registerValidators(ownedValidators.getActiveValidators(), epoch)
+          .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
   }
 
@@ -77,7 +82,23 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onPossibleMissedEvents() {}
 
   @Override
-  public void onValidatorsAdded() {}
+  public void onValidatorsAdded() {
+    if (lastProcessedEpoch.get() == null) {
+      return;
+    }
+
+    final List<Validator> newlyAddedValidators =
+        ownedValidators.getActiveValidators().stream()
+            .filter(
+                validator -> {
+                  final ValidatorIdentity validatorIdentity = createValidatorIdentity(validator);
+                  return !cachedValidatorRegistrations.containsKey(validatorIdentity);
+                })
+            .collect(Collectors.toList());
+
+    registerValidators(newlyAddedValidators, lastProcessedEpoch.get())
+        .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+  }
 
   @Override
   public void onBlockProductionDue(UInt64 slot) {}
@@ -92,21 +113,17 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
   }
 
-  private SafeFuture<Void> registerValidators(final UInt64 epoch) {
-    final List<Validator> activeValidators = ownedValidators.getActiveValidators();
-
-    if (activeValidators.isEmpty()) {
+  private SafeFuture<Void> registerValidators(
+      final List<Validator> validators, final UInt64 epoch) {
+    if (validators.isEmpty()) {
       return SafeFuture.completedFuture(null);
     }
 
     final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
-        activeValidators.stream()
+        validators.stream()
             .map(
                 validator -> {
-                  // hardcoding fee_recipient and gas_limit to ZERO for now. The real values will be
-                  // taken from the proposer config in a future PR.
-                  final ValidatorIdentity validatorIdentity =
-                      new ValidatorIdentity(Bytes20.ZERO, UInt64.ZERO, validator.getPublicKey());
+                  final ValidatorIdentity validatorIdentity = createValidatorIdentity(validator);
 
                   if (cachedValidatorRegistrations.containsKey(validatorIdentity)) {
                     return SafeFuture.completedFuture(
@@ -129,6 +146,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 SszUtils.toSszList(
                     ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA, validatorRegistrations))
         .thenCompose(validatorApiChannel::registerValidators);
+  }
+
+  private ValidatorIdentity createValidatorIdentity(final Validator validator) {
+    // hardcoding fee_recipient and gas_limit to ZERO for now. The real values will be
+    // taken from the proposer config in a future PR.
+    return new ValidatorIdentity(Bytes20.ZERO, UInt64.ZERO, validator.getPublicKey());
   }
 
   private ValidatorRegistration createValidatorRegistration(
