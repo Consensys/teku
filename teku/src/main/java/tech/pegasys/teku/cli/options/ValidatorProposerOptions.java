@@ -50,15 +50,15 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-proposer-mev-boost-enabled"},
+      names = {"--Xvalidators-registration-default-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enable MEV boost when proposing blocks.",
+      description = "Enable validators registration to builder infrastructure.",
       arity = "0..1",
       fallbackValue = "true",
       hidden = true)
-  private boolean proposerMevBoostEnabled =
-      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
+  private boolean validatorsRegistrationDefaultEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
 
   @Option(
       names = {"--Xvalidators-registration-default-gas-limit"},
@@ -88,7 +88,7 @@ public class ValidatorProposerOptions {
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
-                .proposerMevBoostEnabled(proposerMevBoostEnabled)
+                .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit));
   }
