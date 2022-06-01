@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
@@ -89,7 +90,7 @@ public class PostProposerSlashing extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
-  public void handle(final Context ctx) throws Exception {
+  public void handle(@NotNull final Context ctx) throws Exception {
     adapt(ctx);
   }
 
