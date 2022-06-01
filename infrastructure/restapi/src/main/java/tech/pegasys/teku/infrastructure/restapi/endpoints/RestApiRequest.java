@@ -32,6 +32,12 @@ public interface RestApiRequest {
 
   void respondWithCode(int statusCode);
 
+  /**
+   * Respond with a status code that may not be declared in the endpoint metadata. This is very
+   * rarely the right option and only applies in cases where the user supplies the response code.
+   */
+  void respondWithUndocumentedCode(int statusCode);
+
   void respondWithCode(int statusCode, CacheLength cacheLength);
 
   <T> T getPathParameter(ParameterMetadata<T> parameterMetadata);

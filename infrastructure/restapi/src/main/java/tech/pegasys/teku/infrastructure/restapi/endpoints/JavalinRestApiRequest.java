@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
@@ -129,6 +130,15 @@ public class JavalinRestApiRequest implements RestApiRequest {
   /** This is only used when intending to return status code without a response body */
   @Override
   public void respondWithCode(final int statusCode) {
+    checkState(
+        metadata.isNoContentResponse(statusCode),
+        "Content required for status code %s but not provided",
+        statusCode);
+    respondWithUndocumentedCode(statusCode);
+  }
+  /** This is only used when intending to return status code without a response body */
+  @Override
+  public void respondWithUndocumentedCode(final int statusCode) {
     context.status(statusCode);
   }
 

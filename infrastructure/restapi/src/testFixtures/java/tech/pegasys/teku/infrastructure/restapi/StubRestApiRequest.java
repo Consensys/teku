@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -54,6 +56,12 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
   private final Map<Integer, String> contentTypeMap = new HashMap<>();
   private final Map<String, String> headers = new HashMap<>();
+
+  private final EndpointMetadata metadata;
+
+  public StubRestApiRequest(final EndpointMetadata metadata) {
+    this.metadata = metadata;
+  }
 
   public boolean responseCodeSet() {
     return responseCode != CODE_NOT_SET;
@@ -84,6 +92,17 @@ public class StubRestApiRequest implements RestApiRequest {
     assertThat(this.responseObject).isNull();
     this.responseCode = SC_OK;
     this.responseObject = response;
+    verifyResponseMatchesMetadata();
+  }
+
+  private void verifyResponseMatchesMetadata() {
+    if (responseObject == null) {
+      assertThat(metadata.isNoContentResponse(responseCode))
+          .withFailMessage("No content provided for " + responseCode + " when content is required.")
+          .isTrue();
+    } else {
+      metadata.createResponseMetadata(responseCode, Optional.empty(), responseObject);
+    }
   }
 
   @Override
@@ -104,6 +123,7 @@ public class StubRestApiRequest implements RestApiRequest {
       LOG.warn("Response body was empty on async response");
     }
     responseObject = response.getResponseBody().orElse(null);
+    verifyResponseMatchesMetadata();
   }
 
   @Override
@@ -120,10 +140,18 @@ public class StubRestApiRequest implements RestApiRequest {
     assertThat(this.responseObject).isNull();
     responseObject = new HttpErrorResponse(statusCode, message);
     this.responseCode = statusCode;
+    verifyResponseMatchesMetadata();
   }
 
   @Override
   public void respondWithCode(final int statusCode) {
+    assertThat(this.responseCode).isEqualTo(CODE_NOT_SET);
+    this.responseCode = statusCode;
+    verifyResponseMatchesMetadata();
+  }
+
+  @Override
+  public void respondWithUndocumentedCode(final int statusCode) {
     assertThat(this.responseCode).isEqualTo(CODE_NOT_SET);
     this.responseCode = statusCode;
   }
@@ -236,8 +264,14 @@ public class StubRestApiRequest implements RestApiRequest {
     private final Map<String, String> queryParameters = new HashMap<>();
     private final Map<String, String> optionalQueryParameters = new HashMap<>();
     private final Map<String, List<String>> listQueryParameters = new HashMap<>();
+    private EndpointMetadata metadata;
 
     Builder() {}
+
+    public Builder metadata(final EndpointMetadata metadata) {
+      this.metadata = metadata;
+      return this;
+    }
 
     public Builder pathParameter(final String param, final String value) {
       assertThat(pathParameters.containsKey(param)).isFalse();
@@ -264,7 +298,8 @@ public class StubRestApiRequest implements RestApiRequest {
     }
 
     public StubRestApiRequest build() {
-      final StubRestApiRequest request = new StubRestApiRequest();
+      checkNotNull(metadata, "Must specify metadata");
+      final StubRestApiRequest request = new StubRestApiRequest(metadata);
       for (String k : pathParameters.keySet()) {
         request.setPathParameter(k, pathParameters.get(k));
       }

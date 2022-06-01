@@ -36,8 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 class GetBlockHeaderTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetBlockHeader handler;
-
   private final BeaconBlock message = dataStructureUtil.randomBeaconBlock(1);
   private final BLSSignature signature = dataStructureUtil.randomSignature();
   private final SignedBeaconBlock signedBeaconBlock =
@@ -49,8 +47,8 @@ class GetBlockHeaderTest extends AbstractMigratedBeaconHandlerWithChainDataProvi
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
+    setHandler(new GetBlockHeader(chainDataProvider));
     request.setPathParameter("block_id", "head");
-    handler = new GetBlockHeader(chainDataProvider);
   }
 
   @Test

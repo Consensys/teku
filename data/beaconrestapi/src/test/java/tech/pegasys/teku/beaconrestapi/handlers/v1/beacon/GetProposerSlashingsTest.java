@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -34,10 +35,14 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 class GetProposerSlashingsTest extends AbstractMigratedBeaconHandlerTest {
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
-  private final GetProposerSlashings handler = new GetProposerSlashings(nodeDataProvider);
   private final List<ProposerSlashing> responseData =
       List.of(
           dataStructureUtil.randomProposerSlashing(), dataStructureUtil.randomProposerSlashing());
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetProposerSlashings(nodeDataProvider));
+  }
 
   @Test
   void shouldReturnProposerSlashingsInformation() throws JsonProcessingException {

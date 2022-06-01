@@ -208,6 +208,11 @@ public class EndpointMetadata {
     return responseType;
   }
 
+  public boolean isNoContentResponse(final int statusCode) {
+    final OpenApiResponse response = responses.get(Integer.toString(statusCode));
+    return response != null && response.getSupportedContentTypes().isEmpty();
+  }
+
   @SuppressWarnings("unchecked")
   public <T> ResponseMetadata createResponseMetadata(
       final int statusCode, final Optional<String> acceptHeader, final T response) {
@@ -232,7 +237,10 @@ public class EndpointMetadata {
     final String selectedType =
         ContentTypes.getResponseContentType(supportedTypes, acceptHeader)
             .orElse(defaultResponseContentType);
-    checkState(supportedTypes.contains(selectedType), "Default content type is not supported.");
+    checkState(
+        supportedTypes.contains(selectedType),
+        "Response content type %s was selected but is not supported.",
+        selectedType);
     return selectedType;
   }
 

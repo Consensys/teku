@@ -35,13 +35,12 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 
 class GetAttesterSlashingsTest extends AbstractMigratedBeaconHandlerTest {
-  private GetAttesterSlashings handler;
   private NodeDataProvider nodeDataProvider;
 
   @BeforeEach
   void setup() {
     nodeDataProvider = mock(NodeDataProvider.class);
-    handler = new GetAttesterSlashings(nodeDataProvider, spec);
+    setHandler(new GetAttesterSlashings(nodeDataProvider, spec));
   }
 
   @Test

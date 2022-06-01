@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetBlockAttestations handler = new GetBlockAttestations(chainDataProvider, spec);
   private final List<Attestation> attestations =
       List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
   private final ObjectAndMetaData<List<Attestation>> responseData =
@@ -43,6 +42,7 @@ class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
+    setHandler(new GetBlockAttestations(chainDataProvider, spec));
     request.setPathParameter("block_id", "head");
   }
 
