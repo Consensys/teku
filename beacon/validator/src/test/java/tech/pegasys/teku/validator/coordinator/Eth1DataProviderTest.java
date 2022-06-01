@@ -81,7 +81,7 @@ public class Eth1DataProviderTest {
   public void whenSlotInTheMiddle_VotingInfoIsCorrect() {
     VotingPeriodInfo votingPeriodInfo = eth1DataProvider.getVotingPeriodInfo(stateAndMetaData);
     assertThat(votingPeriodInfo.getVotingSlots()).isEqualTo(UInt64.valueOf(32));
-    assertThat(votingPeriodInfo.getWinVotesRequired()).isEqualTo(UInt64.valueOf(16));
+    assertThat(votingPeriodInfo.getVotesRequired()).isEqualTo(UInt64.valueOf(16));
     assertThat(votingPeriodInfo.getVotingSlotsLeft()).isEqualTo(UInt64.valueOf(31));
   }
 
@@ -91,7 +91,7 @@ public class Eth1DataProviderTest {
     final VotingPeriodInfo votingPeriodInfo =
         eth1DataProvider.getVotingPeriodInfo(stateAndMetaData);
     assertThat(votingPeriodInfo.getVotingSlots()).isEqualTo(UInt64.valueOf(32));
-    assertThat(votingPeriodInfo.getWinVotesRequired()).isEqualTo(UInt64.valueOf(16));
+    assertThat(votingPeriodInfo.getVotesRequired()).isEqualTo(UInt64.valueOf(16));
     assertThat(votingPeriodInfo.getVotingSlotsLeft()).isEqualTo(UInt64.valueOf(32));
   }
 
@@ -101,14 +101,14 @@ public class Eth1DataProviderTest {
     final VotingPeriodInfo votingPeriodInfo =
         eth1DataProvider.getVotingPeriodInfo(stateAndMetaData);
     assertThat(votingPeriodInfo.getVotingSlots()).isEqualTo(UInt64.valueOf(32));
-    assertThat(votingPeriodInfo.getWinVotesRequired()).isEqualTo(UInt64.valueOf(16));
+    assertThat(votingPeriodInfo.getVotesRequired()).isEqualTo(UInt64.valueOf(16));
     assertThat(votingPeriodInfo.getVotingSlotsLeft()).isEqualTo(UInt64.valueOf(1));
   }
 
   @Test
   public void whenNoVotes_eth1VotesBreakdownNotFails() {
     final List<Pair<Eth1Data, UInt64>> votesBreakdown =
-        eth1DataProvider.getEth1DataVotesBreakdown(stateAndMetaData);
+        eth1DataProvider.getEth1DataVotes(stateAndMetaData);
     assertThat(votesBreakdown.isEmpty()).isTrue();
   }
 
@@ -121,7 +121,7 @@ public class Eth1DataProviderTest {
     when(state.getEth1DataVotes()).thenReturn(eth1DataSszList);
 
     final List<Pair<Eth1Data, UInt64>> votesBreakdown =
-        eth1DataProvider.getEth1DataVotesBreakdown(stateAndMetaData);
+        eth1DataProvider.getEth1DataVotes(stateAndMetaData);
     assertThat(votesBreakdown.size()).isEqualTo(2);
     final Set<UInt64> votes =
         votesBreakdown.stream().map(Pair::getRight).collect(Collectors.toSet());
@@ -143,7 +143,7 @@ public class Eth1DataProviderTest {
     when(state.getEth1DataVotes()).thenReturn(eth1DataSszList);
 
     final List<Pair<Eth1Data, UInt64>> votesBreakdown =
-        eth1DataProvider.getEth1DataVotesBreakdown(stateAndMetaData);
+        eth1DataProvider.getEth1DataVotes(stateAndMetaData);
     assertThat(votesBreakdown.size()).isEqualTo(3);
     assertThat(votesBreakdown.get(0).getRight()).isEqualTo(UInt64.valueOf(2));
     assertThat(votesBreakdown.get(0).getLeft()).isEqualTo(eth1Data1);

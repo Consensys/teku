@@ -16,12 +16,12 @@ package tech.pegasys.teku.api.response.v1.teku;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class GetEth1VotesStatsResponse {
+public class GetEth1VotingSummaryResponse {
 
-  public Eth1VotesStatsSchema data;
+  public Eth1VotingSummarySchema data;
 
   @JsonCreator
-  public GetEth1VotesStatsResponse(@JsonProperty("data") final Eth1VotesStatsSchema data) {
+  public GetEth1VotingSummaryResponse(@JsonProperty("data") final Eth1VotingSummarySchema data) {
     this.data = data;
   }
 }

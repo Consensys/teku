@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotesStats.Eth1DataVotesStats;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary.Eth1VotingSummary;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.util.BeaconStateBuilderPhase0;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider.VotingPeriodInfo;
 
-public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
+public class GetEth1VotingSummaryTest extends AbstractMigratedBeaconHandlerTest {
   private static final Eth1Data ETH1_DATA =
       new Eth1Data(
           Bytes32.fromHexString("d543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22"),
@@ -58,12 +58,12 @@ public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
 
   private final DataProvider dataProvider = mock(DataProvider.class);
   private final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
-  private GetEth1VotesStats.Eth1DataVotesStats eth1DataVotesStats;
+  private Eth1VotingSummary eth1VotingSummary;
 
   @BeforeEach
   void setUp() {
     when(dataProvider.getChainDataProvider()).thenReturn(chainDataProvider);
-    setHandler(new GetEth1VotesStats(dataProvider, eth1DataProvider));
+    setHandler(new GetEth1VotingSummary(dataProvider, eth1DataProvider));
     request.setPathParameter("state_id", "head");
     BeaconState beaconState =
         BeaconStateBuilderPhase0.create(dataStructureUtil, spec, 16, 16)
@@ -76,8 +76,8 @@ public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
     when(eth1DataProvider.getVotingPeriodInfo(any())).thenReturn(VOTING_PERIOD_INFO);
     List<Pair<Eth1Data, UInt64>> eth1Votes = new ArrayList<>();
     eth1Votes.add(Pair.of(ETH1_DATA, UInt64.valueOf(20)));
-    when(eth1DataProvider.getEth1DataVotesBreakdown(any())).thenReturn(eth1Votes);
-    eth1DataVotesStats = new Eth1DataVotesStats(ETH1_DATA, eth1Votes, VOTING_PERIOD_INFO);
+    when(eth1DataProvider.getEth1DataVotes(any())).thenReturn(eth1Votes);
+    eth1VotingSummary = new Eth1VotingSummary(ETH1_DATA, eth1Votes, VOTING_PERIOD_INFO);
   }
 
   @Test
@@ -92,10 +92,10 @@ public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnVoteStatsIfEverythingIsOk() throws Exception {
+  public void shouldReturnVotingSummaryIfEverythingIsOk() throws Exception {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(eth1DataVotesStats);
+    assertThat(request.getResponseBody()).isEqualTo(eth1VotingSummary);
   }
 
   @Test
@@ -110,7 +110,7 @@ public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, eth1DataVotesStats);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, eth1VotingSummary);
     assertThat(data)
         .isEqualTo(
             "{\"data\":{\"eth1_data\":{\"deposit_root\":\"0xd543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22\",\"deposit_count\":\"20\",\"block_hash\":\"0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d\"},\"eth1_data_votes\":[{\"eth1_data\":{\"deposit_root\":\"0xd543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22\",\"deposit_count\":\"20\",\"block_hash\":\"0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d\"},\"votes\":\"20\"}],\"win_votes_required\":\"50\",\"voting_period_slots\":\"100\",\"voting_period_slots_left\":\"30\"}}");

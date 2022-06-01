@@ -48,7 +48,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotesStats;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
@@ -382,7 +382,7 @@ public class BeaconRestApi {
     app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
-    addMigratedEndpoint(new GetEth1VotesStats(provider, eth1DataProvider));
+    addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

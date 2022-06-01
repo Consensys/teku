@@ -45,8 +45,7 @@ public class Eth1DataProvider {
     return eth1DataCache.getEth1Vote(stateAndMetaData.getData());
   }
 
-  public List<Pair<Eth1Data, UInt64>> getEth1DataVotesBreakdown(
-      final StateAndMetaData stateAndMetaData) {
+  public List<Pair<Eth1Data, UInt64>> getEth1DataVotes(final StateAndMetaData stateAndMetaData) {
     final Map<Eth1Data, Eth1Vote> votes = eth1DataCache.countVotes(stateAndMetaData.getData());
     return votes.entrySet().stream()
         .sorted(Entry.comparingByValue(REVERSE_VOTE_COMPARATOR))
@@ -57,28 +56,28 @@ public class Eth1DataProvider {
   public VotingPeriodInfo getVotingPeriodInfo(final StateAndMetaData stateAndMetaData) {
     final BeaconState beaconState = stateAndMetaData.getData();
     final Eth1VotingPeriod eth1VotingPeriod = eth1DataCache.getEth1VotingPeriod();
-    final UInt64 totalSlots =
+    final UInt64 votingSlots =
         UInt64.valueOf(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot()));
     final UInt64 startSlot = eth1VotingPeriod.computeVotingPeriodStartSlot(beaconState.getSlot());
-    final UInt64 slotsLeft = startSlot.plus(totalSlots).minus(beaconState.getSlot());
-    final UInt64 votesRequired = totalSlots.dividedBy(2);
-    return new VotingPeriodInfo(votesRequired, totalSlots, slotsLeft);
+    final UInt64 slotsLeft = startSlot.plus(votingSlots).minus(beaconState.getSlot());
+    final UInt64 votesRequired = votingSlots.dividedBy(2);
+    return new VotingPeriodInfo(votesRequired, votingSlots, slotsLeft);
   }
 
   public static class VotingPeriodInfo {
-    private final UInt64 winVotesRequired;
+    private final UInt64 votesRequired;
     private final UInt64 votingSlots;
     private final UInt64 votingSlotsLeft;
 
     public VotingPeriodInfo(
-        final UInt64 winVotesRequired, final UInt64 votingSlots, final UInt64 votingSlotsLeft) {
-      this.winVotesRequired = winVotesRequired;
+        final UInt64 votesRequired, final UInt64 votingSlots, final UInt64 votingSlotsLeft) {
+      this.votesRequired = votesRequired;
       this.votingSlots = votingSlots;
       this.votingSlotsLeft = votingSlotsLeft;
     }
 
-    public UInt64 getWinVotesRequired() {
-      return winVotesRequired;
+    public UInt64 getVotesRequired() {
+      return votesRequired;
     }
 
     public UInt64 getVotingSlots() {
@@ -98,14 +97,14 @@ public class Eth1DataProvider {
         return false;
       }
       VotingPeriodInfo that = (VotingPeriodInfo) o;
-      return Objects.equals(winVotesRequired, that.winVotesRequired)
+      return Objects.equals(votesRequired, that.votesRequired)
           && Objects.equals(votingSlots, that.votingSlots)
           && Objects.equals(votingSlotsLeft, that.votingSlotsLeft);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(winVotesRequired, votingSlots, votingSlotsLeft);
+      return Objects.hash(votesRequired, votingSlots, votingSlotsLeft);
     }
   }
 }

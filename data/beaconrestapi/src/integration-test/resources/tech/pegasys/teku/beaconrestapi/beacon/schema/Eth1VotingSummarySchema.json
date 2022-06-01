@@ -10,7 +10,7 @@
         "$ref" : "#/components/schemas/Eth1DataWithVotesSchema"
       }
     },
-    "win_votes_required" : {
+    "votes_required" : {
       "type" : "string",
       "format" : "uint64"
     },

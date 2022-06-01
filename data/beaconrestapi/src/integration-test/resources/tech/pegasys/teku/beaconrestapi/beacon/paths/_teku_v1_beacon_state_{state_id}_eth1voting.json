@@ -1,9 +1,9 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
-    "summary" : "Get Eth1DataVotes stats",
+    "summary" : "Get Eth1 voting summary",
     "description" : "Returns information about the current state of voting for Eth1Data from the specified state.",
-    "operationId" : "getTekuV1BeaconStateWithState_idEth1stats",
+    "operationId" : "getTekuV1BeaconStateWithState_idEth1voting",
     "parameters" : [ {
       "name" : "state_id",
       "in" : "path",
@@ -19,7 +19,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetEth1VotesStatsResponse"
+              "$ref" : "#/components/schemas/GetEth1VotingSummaryResponse"
             }
           }
         }

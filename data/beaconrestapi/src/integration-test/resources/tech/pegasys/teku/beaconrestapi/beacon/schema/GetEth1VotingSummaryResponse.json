@@ -2,7 +2,7 @@
   "type" : "object",
   "properties" : {
     "data" : {
-      "$ref" : "#/components/schemas/Eth1VotesStatsSchema"
+      "$ref" : "#/components/schemas/Eth1VotingSummarySchema"
     }
   }
 }

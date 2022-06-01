@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
-    "operationId" : "getEth1VotesStats",
-    "summary" : "Get Eth1DataVotes stats",
+    "operationId" : "getEth1VotingSummary",
+    "summary" : "Get Eth1 voting summary",
     "description" : "Returns information about the current state of voting for Eth1Data from the specified state.",
     "parameters" : [ {
       "name" : "state_id",
@@ -20,7 +20,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetEth1VotesStatsResponse"
+              "$ref" : "#/components/schemas/GetEth1VotingSummaryResponse"
             }
           }
         }

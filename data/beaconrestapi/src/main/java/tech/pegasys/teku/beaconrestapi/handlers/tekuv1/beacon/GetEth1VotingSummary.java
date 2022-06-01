@@ -38,7 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.teku.GetEth1VotesStatsResponse;
+import tech.pegasys.teku.api.response.v1.teku.GetEth1VotingSummaryResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -50,9 +50,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider.VotingPeriodInfo;
 
-public class GetEth1VotesStats extends MigratingEndpointAdapter {
+public class GetEth1VotingSummary extends MigratingEndpointAdapter {
 
-  public static final String OAPI_ROUTE = "/teku/v1/beacon/state/:state_id/eth1stats";
+  public static final String OAPI_ROUTE = "/teku/v1/beacon/state/:state_id/eth1voting";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
 
   private static final SerializableTypeDefinition<Pair<Eth1Data, UInt64>> ETH1DATA_WITH_VOTES_TYPE =
@@ -62,50 +62,47 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
           .withField("votes", CoreTypes.UINT64_TYPE, Pair::getRight)
           .build();
 
-  private static final SerializableTypeDefinition<Eth1DataVotesStats> ETH1VOTES_STATS_TYPE =
-      SerializableTypeDefinition.<Eth1DataVotesStats>object()
-          .name("Eth1VotesStats")
+  private static final SerializableTypeDefinition<Eth1VotingSummary> ETH1VOTING_SUMMARY_TYPE =
+      SerializableTypeDefinition.<Eth1VotingSummary>object()
+          .name("Eth1VotingSummary")
           .withField(
               "eth1_data",
               Eth1Data.SSZ_SCHEMA.getJsonTypeDefinition(),
-              Eth1DataVotesStats::getEth1Data)
+              Eth1VotingSummary::getEth1Data)
           .withField(
               "eth1_data_votes",
               listOf(ETH1DATA_WITH_VOTES_TYPE),
-              Eth1DataVotesStats::getVotesBreakdown)
+              Eth1VotingSummary::getEth1DataVotes)
+          .withField("votes_required", CoreTypes.UINT64_TYPE, Eth1VotingSummary::getVotesRequired)
           .withField(
-              "win_votes_required", CoreTypes.UINT64_TYPE, Eth1DataVotesStats::getWinVotesRequired)
-          .withField(
-              "voting_period_slots",
-              CoreTypes.UINT64_TYPE,
-              Eth1DataVotesStats::getVotingPeriodSlots)
+              "voting_period_slots", CoreTypes.UINT64_TYPE, Eth1VotingSummary::getVotingPeriodSlots)
           .withField(
               "voting_period_slots_left",
               CoreTypes.UINT64_TYPE,
-              Eth1DataVotesStats::getVotingPeriodSlotsLeft)
+              Eth1VotingSummary::getVotingPeriodSlotsLeft)
           .build();
 
-  private static final SerializableTypeDefinition<Eth1DataVotesStats>
-      ETH1VOTES_STATS_RESPONSE_TYPE =
-          SerializableTypeDefinition.<Eth1DataVotesStats>object()
-              .name("GetEth1VotesStatsResponse")
-              .withField("data", ETH1VOTES_STATS_TYPE, Function.identity())
+  private static final SerializableTypeDefinition<Eth1VotingSummary>
+      ETH1VOTING_SUMMARY_RESPONSE_TYPE =
+          SerializableTypeDefinition.<Eth1VotingSummary>object()
+              .name("GetEth1VotingSummaryResponse")
+              .withField("data", ETH1VOTING_SUMMARY_TYPE, Function.identity())
               .build();
 
   private final ChainDataProvider chainDataProvider;
   private final Eth1DataProvider eth1DataProvider;
 
-  public GetEth1VotesStats(
+  public GetEth1VotingSummary(
       final DataProvider dataProvider, final Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getEth1VotesStats")
-            .summary("Get Eth1DataVotes stats")
+            .operationId("getEth1VotingSummary")
+            .summary("Get Eth1 voting summary")
             .description(
                 "Returns information about the current state of voting for Eth1Data from the specified state.")
             .pathParam(PARAMETER_STATE_ID)
             .tags(TAG_TEKU)
-            .response(SC_OK, "Request successful", ETH1VOTES_STATS_RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", ETH1VOTING_SUMMARY_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = dataProvider.getChainDataProvider();
@@ -115,7 +112,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
   @OpenApi(
       path = OAPI_ROUTE,
       method = HttpMethod.GET,
-      summary = "Get Eth1DataVotes stats",
+      summary = "Get Eth1 voting summary",
       description =
           "Returns information about the current state of voting for Eth1Data from the specified state.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
@@ -123,7 +120,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetEth1VotesStatsResponse.class)),
+            content = @OpenApiContent(from = GetEth1VotingSummaryResponse.class)),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
@@ -142,30 +139,30 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
                   if (maybeStateAndMetadata.isEmpty()) {
                     return AsyncApiResponse.respondNotFound();
                   } else {
-                    List<Pair<Eth1Data, UInt64>> votesBreakDown =
-                        eth1DataProvider.getEth1DataVotesBreakdown(maybeStateAndMetadata.get());
+                    List<Pair<Eth1Data, UInt64>> eth1DataVotes =
+                        eth1DataProvider.getEth1DataVotes(maybeStateAndMetadata.get());
                     VotingPeriodInfo votingPeriodInfo =
                         eth1DataProvider.getVotingPeriodInfo(maybeStateAndMetadata.get());
                     return AsyncApiResponse.respondOk(
-                        new Eth1DataVotesStats(
+                        new Eth1VotingSummary(
                             maybeStateAndMetadata.get().getData().getEth1Data(),
-                            votesBreakDown,
+                            eth1DataVotes,
                             votingPeriodInfo));
                   }
                 }));
   }
 
-  static class Eth1DataVotesStats {
+  static class Eth1VotingSummary {
     private final Eth1Data eth1Data;
-    private final List<Pair<Eth1Data, UInt64>> votesBreakDown;
+    private final List<Pair<Eth1Data, UInt64>> eth1DataVotes;
     private final VotingPeriodInfo votingPeriodInfo;
 
-    public Eth1DataVotesStats(
+    public Eth1VotingSummary(
         final Eth1Data eth1Data,
-        final List<Pair<Eth1Data, UInt64>> votesBreakDown,
+        final List<Pair<Eth1Data, UInt64>> eth1DataVotes,
         final VotingPeriodInfo votingPeriodInfo) {
       this.eth1Data = eth1Data;
-      this.votesBreakDown = votesBreakDown;
+      this.eth1DataVotes = eth1DataVotes;
       this.votingPeriodInfo = votingPeriodInfo;
     }
 
@@ -173,8 +170,8 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
       return eth1Data;
     }
 
-    public List<Pair<Eth1Data, UInt64>> getVotesBreakdown() {
-      return votesBreakDown;
+    public List<Pair<Eth1Data, UInt64>> getEth1DataVotes() {
+      return eth1DataVotes;
     }
 
     public UInt64 getVotingPeriodSlots() {
@@ -185,8 +182,8 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
       return votingPeriodInfo.getVotingSlotsLeft();
     }
 
-    public UInt64 getWinVotesRequired() {
-      return votingPeriodInfo.getWinVotesRequired();
+    public UInt64 getVotesRequired() {
+      return votingPeriodInfo.getVotesRequired();
     }
 
     @Override
@@ -197,15 +194,15 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      Eth1DataVotesStats that = (Eth1DataVotesStats) o;
+      Eth1VotingSummary that = (Eth1VotingSummary) o;
       return Objects.equals(eth1Data, that.eth1Data)
-          && Objects.equals(votesBreakDown, that.votesBreakDown)
+          && Objects.equals(eth1DataVotes, that.eth1DataVotes)
           && Objects.equals(votingPeriodInfo, that.votingPeriodInfo);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(eth1Data, votesBreakDown, votingPeriodInfo);
+      return Objects.hash(eth1Data, eth1DataVotes, votingPeriodInfo);
     }
   }
 }
