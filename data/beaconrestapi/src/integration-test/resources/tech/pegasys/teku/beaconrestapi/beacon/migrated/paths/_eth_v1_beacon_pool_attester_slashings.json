@@ -36,5 +36,46 @@
         }
       }
     }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "postAttesterSlashing",
+    "summary" : "Submit attester slashing object",
+    "description" : "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/AttesterSlashing"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Success",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }
