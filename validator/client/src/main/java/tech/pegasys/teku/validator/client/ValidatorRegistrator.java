@@ -143,7 +143,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .thenCompose(
             maybeProposerConfig -> {
               final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
-                  getValidatorRegistrations(maybeProposerConfig, validators, epoch);
+                  validators.stream()
+                      .map(
+                          validator ->
+                              createSignedValidatorRegistration(
+                                  maybeProposerConfig, validator, epoch))
+                      .flatMap(Optional::stream);
 
               return SafeFuture.collectAll(validatorRegistrationsFutures)
                   .thenApply(
@@ -155,49 +160,44 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             });
   }
 
-  private Stream<SafeFuture<SignedValidatorRegistration>> getValidatorRegistrations(
+  private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
       final Optional<ProposerConfig> maybeProposerConfig,
-      final List<Validator> validators,
+      final Validator validator,
       final UInt64 epoch) {
-    return validators.stream()
-        .flatMap(
-            validator -> {
-              final BLSPublicKey publicKey = validator.getPublicKey();
+    final BLSPublicKey publicKey = validator.getPublicKey();
 
-              if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
-                return Stream.empty();
-              }
+    if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
+      return Optional.empty();
+    }
 
-              final Optional<Eth1Address> maybeFeeRecipient =
-                  feeRecipientProvider.getFeeRecipient(publicKey);
+    final Optional<Eth1Address> maybeFeeRecipient = feeRecipientProvider.getFeeRecipient(publicKey);
 
-              if (maybeFeeRecipient.isEmpty()) {
-                LOG.warn("There is no fee recipient configured for {}. Can't register.", validator);
-                return Stream.empty();
-              }
+    if (maybeFeeRecipient.isEmpty()) {
+      LOG.warn("There is no fee recipient configured for {}. Can't register.", validator);
+      return Optional.empty();
+    }
 
-              final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
+    final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
 
-              final ValidatorRegistrationIdentity validatorRegistrationIdentity =
-                  createValidatorRegistrationIdentity(validator, maybeFeeRecipient.get(), gasLimit);
+    final ValidatorRegistrationIdentity validatorRegistrationIdentity =
+        createValidatorRegistrationIdentity(validator, maybeFeeRecipient.get(), gasLimit);
 
-              if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
-                final SignedValidatorRegistration cachedRegistration =
-                    cachedValidatorRegistrations.get(validatorRegistrationIdentity);
-                return Stream.of(SafeFuture.completedFuture(cachedRegistration));
-              }
+    if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
+      final SignedValidatorRegistration cachedRegistration =
+          cachedValidatorRegistrations.get(validatorRegistrationIdentity);
+      return Optional.of(SafeFuture.completedFuture(cachedRegistration));
+    }
 
-              final ValidatorRegistration validatorRegistration =
-                  createValidatorRegistration(validatorRegistrationIdentity);
-              final Signer signer = validator.getSigner();
-              final SafeFuture<SignedValidatorRegistration> registrationFuture =
-                  signValidatorRegistration(validatorRegistration, signer, epoch)
-                      .thenPeek(
-                          signedValidatorRegistration ->
-                              cachedValidatorRegistrations.put(
-                                  validatorRegistrationIdentity, signedValidatorRegistration));
-              return Stream.of(registrationFuture);
-            });
+    final ValidatorRegistration validatorRegistration =
+        createValidatorRegistration(validatorRegistrationIdentity);
+    final Signer signer = validator.getSigner();
+    final SafeFuture<SignedValidatorRegistration> registrationFuture =
+        signValidatorRegistration(validatorRegistration, signer, epoch)
+            .thenPeek(
+                signedValidatorRegistration ->
+                    cachedValidatorRegistrations.put(
+                        validatorRegistrationIdentity, signedValidatorRegistration));
+    return Optional.of(registrationFuture);
   }
 
   private boolean registrationIsEnabled(
