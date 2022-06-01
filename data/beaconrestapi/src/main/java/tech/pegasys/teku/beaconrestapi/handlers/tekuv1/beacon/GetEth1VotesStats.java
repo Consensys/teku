@@ -142,7 +142,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
             .thenApply(
                 maybeStateAndMetadata -> {
                   if (maybeStateAndMetadata.isEmpty()) {
-                    return AsyncApiResponse.respondWithError(SC_NOT_FOUND, NOT_FOUND_MESSAGE);
+                    return AsyncApiResponse.respondNotFound();
                   } else {
                     List<Pair<Eth1Data, UInt64>> votesBreakDown =
                         eth1DataProvider.getEth1DataVotesBreakdown(maybeStateAndMetadata.get());
