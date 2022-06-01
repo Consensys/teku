@@ -14,8 +14,10 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,6 +34,13 @@ class UInt8TypeDefinitionTest {
   @MethodSource("testValues")
   void shouldDeserializeFromDecimal(final byte value, final String serialized) {
     assertThat(CoreTypes.UINT8_TYPE.deserializeFromString(serialized)).isEqualTo(value);
+  }
+
+  @Test
+  void shouldRejectNegativeInteger() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> CoreTypes.UINT8_TYPE.deserializeFromString(Integer.toUnsignedString(-1)));
   }
 
   static Stream<Arguments> testValues() {
