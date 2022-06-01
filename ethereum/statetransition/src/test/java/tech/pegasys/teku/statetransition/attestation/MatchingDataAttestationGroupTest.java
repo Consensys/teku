@@ -229,7 +229,7 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
-  void onReorg_shouldAllowReaddingAttestationsThatAreNoLongerRedundant() {
+  void onReorg_shouldAllowReadingAttestationsThatAreNoLongerRedundant() {
     final ValidateableAttestation attestation = createAttestation(3, 4);
 
     group.onAttestationIncludedInBlock(
@@ -248,7 +248,7 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
-  void onReorg_shouldNotAllowReaddingAttestationsThatAreStillRedundant() {
+  void onReorg_shouldNotAllowReadingAttestationsThatAreStillRedundant() {
     final ValidateableAttestation attestation1 = createAttestation(3, 4);
     final ValidateableAttestation attestation2 = createAttestation(1, 2, 3, 4);
 

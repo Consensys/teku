@@ -293,13 +293,13 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
         signedContributionsRestSchema =
             signedContributionAndProofs.stream()
-                .map(this::asSignedContributionandProofs)
+                .map(this::asSignedContributionAndProofs)
                 .collect(toList());
     return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
   }
 
   private tech.pegasys.teku.api.schema.altair.SignedContributionAndProof
-      asSignedContributionandProofs(final SignedContributionAndProof signedContributionAndProof) {
+      asSignedContributionAndProofs(final SignedContributionAndProof signedContributionAndProof) {
     return new tech.pegasys.teku.api.schema.altair.SignedContributionAndProof(
         asContributionAndProof(signedContributionAndProof.getMessage()),
         new tech.pegasys.teku.api.schema.BLSSignature(signedContributionAndProof.getSignature()));

@@ -168,7 +168,7 @@ public class StatusLogger {
   }
 
   public void fatalErrorInitialisingStorage(Throwable err) {
-    log.debug("Failed to intiailize storage", err);
+    log.debug("Failed to initialize storage", err);
     log.fatal(
         "Failed to initialize storage. "
             + "Check the existing database matches the current network configuration. "
