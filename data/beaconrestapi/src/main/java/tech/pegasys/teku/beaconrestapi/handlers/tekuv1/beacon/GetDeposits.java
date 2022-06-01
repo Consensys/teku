@@ -31,21 +31,29 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.response.v1.teku.GetDepositsResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 
 public class GetDeposits extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/teku/v1/beacon/pool/deposits";
 
-  private static final SerializableTypeDefinition<List<Deposit>> DEPOSITS_RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<Deposit>>object()
-          .name("GetDepositsResponse")
+  private static final SerializableTypeDefinition<DepositWithIndex> DEPOSIT_WITH_INDEX_TYPE =
+      SerializableTypeDefinition.object(DepositWithIndex.class)
+          .withField("index", CoreTypes.UINT64_TYPE, DepositWithIndex::getIndex)
           .withField(
-              "data", listOf(Deposit.SSZ_SCHEMA.getJsonTypeDefinition()), Function.identity())
+              "data", DepositData.SSZ_SCHEMA.getJsonTypeDefinition(), DepositWithIndex::getData)
+          .build();
+
+  public static final SerializableTypeDefinition<List<DepositWithIndex>> DEPOSITS_RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<DepositWithIndex>>object()
+          .name("GetDepositsResponse")
+          .withField("data", listOf(DEPOSIT_WITH_INDEX_TYPE), Function.identity())
           .build();
 
   private final DepositProvider depositProvider;
