@@ -39,17 +39,6 @@ public class DepositOptions {
   private int eth1LogsMaxBlockRange = PowchainConfiguration.DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
 
   @Option(
-      names = {"--Xeth1-time-based-head-tracking-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable experimental time based Eth1 head tracking",
-      hidden = true,
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean useTimeBasedHeadTracking =
-      PowchainConfiguration.DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
-
-  @Option(
       names = {"--Xeth1-missing-deposits-event-logging-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable logging an event on each slot whenever deposits are missing",
@@ -65,7 +54,6 @@ public class DepositOptions {
         b ->
             b.eth1Endpoints(eth1Endpoints)
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
-                .useTimeBasedHeadTracking(useTimeBasedHeadTracking)
                 .useMissingDepositEventLogging(useMissingDepositEventLogging));
   }
 }
