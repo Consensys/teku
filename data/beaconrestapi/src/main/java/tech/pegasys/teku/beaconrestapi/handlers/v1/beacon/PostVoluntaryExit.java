@@ -63,8 +63,6 @@ public class PostVoluntaryExit extends MigratingEndpointAdapter {
             .response(
                 SC_OK,
                 "Signed voluntary exit has been successfully validated, added to the pool, and broadcast.")
-            .response(
-                SC_BAD_REQUEST, "Errors with one or more attestations", HTTP_ERROR_RESPONSE_TYPE)
             .build());
     this.nodeDataProvider = provider;
   }

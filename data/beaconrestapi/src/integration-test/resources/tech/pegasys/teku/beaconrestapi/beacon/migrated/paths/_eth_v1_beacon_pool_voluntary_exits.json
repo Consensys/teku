@@ -57,7 +57,7 @@
         "content" : { }
       },
       "400" : {
-        "description" : "Errors with one or more attestations",
+        "description" : "The request could not be processed, check the response for more information.",
         "content" : {
           "application/json" : {
             "schema" : {
