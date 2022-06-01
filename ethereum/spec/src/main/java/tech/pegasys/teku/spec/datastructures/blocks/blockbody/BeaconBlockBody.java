@@ -68,7 +68,7 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<ExecutionPayloadSummary> getOptionalExecutionPayloadSummary() {
-    return getOptionalExecutionPayload().or(getOptionalExecutionPayloadHeader());
+    return Optional.empty();
   }
 
   default boolean isBlinded() {

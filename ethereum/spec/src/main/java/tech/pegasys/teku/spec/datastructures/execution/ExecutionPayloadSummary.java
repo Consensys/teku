@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ExecutionPayloadSummary {
@@ -25,4 +28,22 @@ public interface ExecutionPayloadSummary {
   UInt64 getBlockNumber();
 
   Bytes32 getBlockHash();
+
+  UInt256 getBaseFeePerGas();
+
+  UInt64 getTimestamp();
+
+  Bytes32 getPrevRandao();
+
+  Bytes32 getReceiptsRoot();
+
+  Bytes32 getStateRoot();
+
+  Bytes20 getFeeRecipient();
+
+  Bytes32 getParentHash();
+
+  Bytes getLogsBloom();
+
+  Bytes getExtraData();
 }

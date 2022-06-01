@@ -25,7 +25,9 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,6 +35,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -227,6 +230,51 @@ class BlockProductionDutyTest {
     @Override
     public Bytes32 getBlockHash() {
       return blockHash;
+    }
+
+    @Override
+    public UInt256 getBaseFeePerGas() {
+      return null;
+    }
+
+    @Override
+    public UInt64 getTimestamp() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getPrevRandao() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getReceiptsRoot() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getStateRoot() {
+      return null;
+    }
+
+    @Override
+    public Bytes20 getFeeRecipient() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getParentHash() {
+      return null;
+    }
+
+    @Override
+    public Bytes getLogsBloom() {
+      return null;
+    }
+
+    @Override
+    public Bytes getExtraData() {
+      return null;
     }
   }
 }

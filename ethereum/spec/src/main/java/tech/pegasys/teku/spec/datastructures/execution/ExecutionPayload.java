@@ -108,26 +108,32 @@ public class ExecutionPayload
     return (ExecutionPayloadSchema) super.getSchema();
   }
 
+  @Override
   public Bytes32 getParentHash() {
     return getField0().get();
   }
 
+  @Override
   public Bytes20 getFeeRecipient() {
     return Bytes20.leftPad(getField1().getBytes());
   }
 
+  @Override
   public Bytes32 getStateRoot() {
     return getField2().get();
   }
 
+  @Override
   public Bytes32 getReceiptsRoot() {
     return getField3().get();
   }
 
+  @Override
   public Bytes getLogsBloom() {
     return getField4().getBytes();
   }
 
+  @Override
   public Bytes32 getPrevRandao() {
     return getField5().get();
   }
@@ -147,14 +153,17 @@ public class ExecutionPayload
     return getField8().get();
   }
 
+  @Override
   public UInt64 getTimestamp() {
     return getField9().get();
   }
 
+  @Override
   public Bytes getExtraData() {
     return getField10().getBytes();
   }
 
+  @Override
   public UInt256 getBaseFeePerGas() {
     return getField11().get();
   }
