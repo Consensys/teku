@@ -31,6 +31,7 @@ import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import java.io.EOFException;
 import java.net.BindException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -234,15 +235,18 @@ public class BeaconRestApi {
     app.exception(BadRequestException.class, this::badRequest);
     app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
-    // Add catch-all handler
-    app.exception(
-        Exception.class,
-        (e, ctx) -> {
-          LOG.error("Failed to process request to URL {}", ctx.url(), e);
-          ctx.status(SC_INTERNAL_SERVER_ERROR);
-          setErrorBody(
-              ctx, () -> BadRequest.internalError(jsonProvider, "An unexpected error occurred"));
-        });
+    app.exception(Exception.class, this::catchAllExceptionHandler);
+  }
+
+  private void catchAllExceptionHandler(final Throwable throwable, final Context context) {
+    if (throwable.getCause() instanceof EOFException) {
+      LOG.trace("Connection closed before response could be completed.", throwable);
+      return;
+    }
+    LOG.error("Failed to process request to URL {}", context.url(), throwable);
+    context.status(SC_INTERNAL_SERVER_ERROR);
+    setErrorBody(
+        context, () -> BadRequest.internalError(jsonProvider, "An unexpected error occurred"));
   }
 
   private void unsupportedContentType(final Throwable throwable, final Context context) {
