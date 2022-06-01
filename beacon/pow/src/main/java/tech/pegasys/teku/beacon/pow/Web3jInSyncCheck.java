@@ -38,7 +38,7 @@ public class Web3jInSyncCheck {
         // If we're close to the chain head, consider the node in sync
         // Avoids marking the node as invalid while it imports the latest block
         LOG.debug(
-            "Eth1 endpiont {} syncing but close to head so considering it valid. Current block {} Highest block: {}",
+            "Eth1 endpoint {} syncing but close to head so considering it valid. Current block {} Highest block: {}",
             id,
             currentBlock,
             highestBlock);

@@ -73,7 +73,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MesssageIdCalculatorPhase0(messageBytes);
+        new MessageIdCalculatorPhase0(messageBytes);
     final Bytes expected = expectedMessageIdCalculator.getValidMessageId(messageBytes);
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -87,7 +87,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MesssageIdCalculatorPhase0(messageBytes);
+        new MessageIdCalculatorPhase0(messageBytes);
     final Bytes expected = expectedMessageIdCalculator.getInvalidMessageId();
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -101,7 +101,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MesssageIdCalculatorAltair(messageBytes, topic);
+        new MessageIdCalculatorAltair(messageBytes, topic);
     final Bytes expected = expectedMessageIdCalculator.getValidMessageId(messageBytes);
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -115,7 +115,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MesssageIdCalculatorAltair(messageBytes, topic);
+        new MessageIdCalculatorAltair(messageBytes, topic);
     final Bytes expected = expectedMessageIdCalculator.getInvalidMessageId();
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);

@@ -63,7 +63,7 @@ public class MetricsHistogram {
   }
 
   /**
-   * Create a new histogram metric which autoresizes to fit any values supplied and maintains at
+   * Create a new histogram metric which auto-resizes to fit any values supplied and maintains at
    * least {@code numberOfSignificantValueDigits} of precision.
    *
    * @param category the metrics category

@@ -346,13 +346,13 @@ public class SignedContributionAndProofValidator {
   private static class TargetUniquenessKey {
     private final UInt64 slot;
     private final Bytes32 blockRoot;
-    private final UInt64 subcommiteeIndex;
+    private final UInt64 subcommitteeIndex;
 
     private TargetUniquenessKey(
-        final UInt64 slot, final Bytes32 blockRoot, final UInt64 subcommiteeIndex) {
+        final UInt64 slot, final Bytes32 blockRoot, final UInt64 subcommitteeIndex) {
       this.slot = slot;
       this.blockRoot = blockRoot;
-      this.subcommiteeIndex = subcommiteeIndex;
+      this.subcommitteeIndex = subcommitteeIndex;
     }
 
     @Override
@@ -366,12 +366,12 @@ public class SignedContributionAndProofValidator {
       final TargetUniquenessKey that = (TargetUniquenessKey) o;
       return Objects.equals(slot, that.slot)
           && Objects.equals(blockRoot, that.blockRoot)
-          && Objects.equals(subcommiteeIndex, that.subcommiteeIndex);
+          && Objects.equals(subcommitteeIndex, that.subcommitteeIndex);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(slot, blockRoot, subcommiteeIndex);
+      return Objects.hash(slot, blockRoot, subcommitteeIndex);
     }
   }
 }

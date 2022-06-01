@@ -1074,8 +1074,8 @@ public abstract class AbstractDatabaseTest {
     addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
     // And finalize them
     final SignedBlockAndState newFinalizedBlockAndState = chainBuilder.getLatestBlockAndState();
-    final UInt64 newFinalizedEpock = anchorEpoch.plus(1);
-    justifyAndFinalizeEpoch(newFinalizedEpock, newFinalizedBlockAndState);
+    final UInt64 newFinalizedEpoch = anchorEpoch.plus(1);
+    justifyAndFinalizeEpoch(newFinalizedEpoch, newFinalizedBlockAndState);
 
     // Restart and check data is what we expect
     final UpdatableStore originalStore = recentChainData.getStore();
@@ -1083,7 +1083,7 @@ public abstract class AbstractDatabaseTest {
 
     StoreAssertions.assertStoresMatch(recentChainData.getStore(), originalStore);
     assertThat(recentChainData.getFinalizedCheckpoint())
-        .contains(new Checkpoint(newFinalizedEpock, newFinalizedBlockAndState.getRoot()));
+        .contains(new Checkpoint(newFinalizedEpoch, newFinalizedBlockAndState.getRoot()));
   }
 
   protected Bytes32 insertRandomSlotAndBlock(

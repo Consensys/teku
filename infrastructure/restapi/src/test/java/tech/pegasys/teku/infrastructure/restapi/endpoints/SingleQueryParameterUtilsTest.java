@@ -120,7 +120,7 @@ public class SingleQueryParameterUtilsTest {
   }
 
   @Test
-  public void getParameterAsBytes32IfPresent_houldReturnEmptyIfNotPresent() {
+  public void getParameterAsBytes32IfPresent_shouldReturnEmptyIfNotPresent() {
     assertThat(getParameterValueAsBytes32IfPresent(Map.of(), "t")).isEmpty();
   }
 

@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public interface ValidatorApiChannel extends ChannelInterface {
-  int UKNOWN_VALIDATOR_ID = -1;
+  int UNKNOWN_VALIDATOR_ID = -1;
 
   SafeFuture<Optional<GenesisData>> getGenesisData();
 

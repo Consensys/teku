@@ -98,7 +98,7 @@ class LocalValidatorSourceTest {
 
     final List<ValidatorProvider> availableValidators = validatorSource.getAvailableValidators();
     assertThat(availableValidators).hasSize(2);
-    // Both keystores encyrpt the same key.
+    // Both keystores encrypt the same key.
     assertProviderMatchesKey(availableValidators.get(0), EXPECTED_BLS_KEY_PAIR);
     assertProviderMatchesKey(availableValidators.get(1), EXPECTED_BLS_KEY_PAIR);
   }

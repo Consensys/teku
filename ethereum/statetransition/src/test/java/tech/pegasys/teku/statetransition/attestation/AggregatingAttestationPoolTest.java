@@ -506,7 +506,7 @@ class AggregatingAttestationPoolTest {
   }
 
   @Test
-  void onReorg_shouldBeAbleToReaddAttestations() {
+  void onReorg_shouldBeAbleToReadAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     // Included in block before we see any attestations with this data
     aggregatingPool.onAttestationsIncludedInBlock(

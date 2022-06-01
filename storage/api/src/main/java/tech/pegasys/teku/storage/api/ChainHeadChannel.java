@@ -32,7 +32,7 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
    * @param executionOptimistic if the block was optimistically imported
    * @param previousDutyDependentRoot the duty dependent root from the previous epoch
    * @param currentDutyDependentRoot the duty dependent root from the current epoch
-   * @param optionalReorgContext Roots and common ancestor if a re-org occured
+   * @param optionalReorgContext Roots and common ancestor if a re-org occurred
    */
   void chainHeadUpdated(
       final UInt64 slot,

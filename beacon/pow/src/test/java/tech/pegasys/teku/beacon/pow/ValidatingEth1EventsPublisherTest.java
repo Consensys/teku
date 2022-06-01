@@ -110,7 +110,7 @@ public class ValidatingEth1EventsPublisherTest {
   }
 
   @Test
-  public void setLastestPublishedDeposit_afterEventProcessed() {
+  public void setLatestPublishedDeposit_afterEventProcessed() {
     final DepositsFromBlockEvent event1 = dataStructureUtil.randomDepositsFromBlockEvent(1, 0, 10);
 
     publisher.onDepositsFromBlock(event1);
@@ -120,7 +120,7 @@ public class ValidatingEth1EventsPublisherTest {
   }
 
   @Test
-  public void setLastestPublishedDeposit_setTwice() {
+  public void setLatestPublishedDeposit_setTwice() {
     publisher.setLatestPublishedDeposit(UInt64.ZERO);
     assertThatThrownBy(() -> publisher.setLatestPublishedDeposit(UInt64.ONE))
         .isInstanceOf(IllegalStateException.class)

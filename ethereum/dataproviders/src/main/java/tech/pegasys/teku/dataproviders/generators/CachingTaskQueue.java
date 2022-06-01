@@ -227,7 +227,7 @@ public class CachingTaskQueue<K, V> {
 
     /**
      * Return the keys for intermediate steps that this task can be rebased on top of, in order of
-     * desireability (ie the best starting point first).
+     * desirability (ie the best starting point first).
      *
      * @return stream of intermediate step keys.
      */

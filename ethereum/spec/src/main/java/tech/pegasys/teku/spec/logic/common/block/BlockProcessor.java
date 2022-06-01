@@ -54,7 +54,7 @@ public interface BlockProcessor {
    * Processes the given block on top of {@code blockSlotState} and optionally validates the block
    *
    * @param signedBlock The block to be processed
-   * @param blockSlotState The preState on which this block should be procssed, this preState must
+   * @param blockSlotState The preState on which this block should be processed, this preState must
    *     already be advanced to the block's slot
    * @param indexedAttestationCache A cache of indexed attestations
    * @param signatureVerifier The signature verifier to use

@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-/** A section of a particular target chain that can be downloded in parallel. */
+/** A section of a particular target chain that can be downloaded in parallel. */
 public interface Batch {
   UInt64 getFirstSlot();
 
