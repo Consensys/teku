@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ProposerConfig {
@@ -54,8 +55,8 @@ public class ProposerConfig {
     return Optional.ofNullable(proposerConfig.get(pubKey));
   }
 
-  public Optional<Config> getDefaultConfig() {
-    return Optional.ofNullable(defaultConfig);
+  public Config getDefaultConfig() {
+    return defaultConfig;
   }
 
   @Override
@@ -81,14 +82,25 @@ public class ProposerConfig {
     @JsonProperty(value = "fee_recipient")
     private Eth1Address feeRecipient;
 
+    @JsonProperty(value = "validator_registration")
+    private ValidatorRegistration validatorRegistration;
+
     @JsonCreator
-    public Config(@JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient) {
+    public Config(
+        @JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient,
+        @JsonProperty(value = "validator_registration")
+            final ValidatorRegistration validatorRegistration) {
       checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
+      this.validatorRegistration = validatorRegistration;
     }
 
     public Eth1Address getFeeRecipient() {
       return feeRecipient;
+    }
+
+    public Optional<ValidatorRegistration> getValidatorRegistration() {
+      return Optional.ofNullable(validatorRegistration);
     }
 
     @Override
@@ -100,12 +112,56 @@ public class ProposerConfig {
         return false;
       }
       final Config that = (Config) o;
-      return Objects.equals(feeRecipient, that.feeRecipient);
+      return Objects.equals(feeRecipient, that.feeRecipient)
+          && Objects.equals(validatorRegistration, that.validatorRegistration);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(feeRecipient);
+      return Objects.hash(feeRecipient, validatorRegistration);
+    }
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class ValidatorRegistration {
+    @JsonProperty(value = "enabled")
+    private Boolean enabled;
+
+    @JsonProperty(value = "gas_limit")
+    private UInt64 gasLimit;
+
+    @JsonCreator
+    public ValidatorRegistration(
+        @JsonProperty(value = "enabled") final Boolean enabled,
+        @JsonProperty(value = "gas_limit") final UInt64 gasLimit) {
+      checkNotNull(enabled, "enabled is required");
+      this.enabled = enabled;
+      this.gasLimit = gasLimit;
+    }
+
+    public Boolean isEnabled() {
+      return enabled;
+    }
+
+    public Optional<UInt64> getGasLimit() {
+      return Optional.ofNullable(gasLimit);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ValidatorRegistration that = (ValidatorRegistration) o;
+      return Objects.equals(enabled, that.enabled) && Objects.equals(gasLimit, that.gasLimit);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(enabled, gasLimit);
     }
   }
 }

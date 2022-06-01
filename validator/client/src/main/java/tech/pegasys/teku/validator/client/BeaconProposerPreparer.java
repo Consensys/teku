@@ -116,8 +116,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     }
 
     return maybeProposerConfig
-        .map(proposerConfig -> proposerConfig.getDefaultConfig().map(Config::getFeeRecipient))
-        .orElse(defaultFeeRecipient);
+        .map(proposerConfig -> proposerConfig.getDefaultConfig().getFeeRecipient())
+        .or(() -> defaultFeeRecipient);
   }
 
   // Cannot set a fee recipient if the key is specified in the configuration file
