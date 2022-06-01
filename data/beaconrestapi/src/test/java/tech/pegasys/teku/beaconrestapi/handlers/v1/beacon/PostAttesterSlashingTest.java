@@ -15,9 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,15 +66,6 @@ public class PostAttesterSlashingTest {
     handler.handle(context);
 
     verify(provider).postAttesterSlashing(slashing);
-    verify(context).status(SC_BAD_REQUEST);
-  }
-
-  @Test
-  void shouldReturnBadRequestIfAttestationInvalid() throws Exception {
-    when(context.body()).thenReturn("{\"a\": \"field\"}");
-    handler.handle(context);
-
-    verify(provider, never()).postAttesterSlashing(any());
     verify(context).status(SC_BAD_REQUEST);
   }
 }
