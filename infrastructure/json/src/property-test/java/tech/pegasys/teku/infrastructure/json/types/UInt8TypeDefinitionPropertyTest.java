@@ -29,7 +29,6 @@ public class UInt8TypeDefinitionPropertyTest {
   }
 
   @Property
-  @SuppressWarnings("EmptyCatch")
   void shouldRejectInvalidRange(@ForAll int value) throws JsonProcessingException {
     final String serialized = "\"" + value + "\"";
     if (value >= 0 && value <= 255) {
