@@ -71,7 +71,7 @@ public class GetPeerById extends MigratingEndpointAdapter {
             .pathParam(PEER_ID_PARAMETER)
             .tags(TAG_NODE)
             .response(SC_OK, "Request successful", PEERS_BY_ID_RESPONSE_TYPE)
-            .response(SC_NOT_FOUND, "Peer not found")
+            .withNotFoundResponse()
             .build());
     this.network = network;
   }

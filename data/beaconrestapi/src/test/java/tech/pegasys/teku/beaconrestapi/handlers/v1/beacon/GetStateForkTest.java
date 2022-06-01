@@ -34,15 +34,14 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateFork handler;
   private StateAndMetaData responseData;
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
-    request.setPathParameter("state_id", "head");
     initialise(SpecMilestone.PHASE0);
     genesis();
-    handler = new GetStateFork(chainDataProvider);
+    setHandler(new GetStateFork(chainDataProvider));
+    request.setPathParameter("state_id", "head");
 
     final BeaconState beaconState = recentChainData.getBestState().orElseThrow().get();
     responseData =
@@ -62,6 +61,7 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
   public void shouldReturnNotFound() throws Exception {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", dataStructureUtil.randomBytes32().toHexString())
             .build();
 

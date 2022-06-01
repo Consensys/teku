@@ -20,21 +20,24 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.GetSpecResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 
 class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
   private final ConfigProvider configProvider = new ConfigProvider(spec);
-  private final GetSpec handler = new GetSpec(configProvider);
   private final GetSpecResponse response =
       new GetSpecResponse(configProvider.getGenesisSpecConfig());
 
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetSpec(configProvider));
+  }
+
   @Test
   void shouldGetSuccessfulResponse() throws JsonProcessingException {
-    final StubRestApiRequest request = new StubRestApiRequest();
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(response.getConfigMap());

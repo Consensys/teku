@@ -34,14 +34,13 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetBlockRoot handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
 
-    handler = new GetBlockRoot(chainDataProvider);
+    setHandler(new GetBlockRoot(chainDataProvider));
     request.setPathParameter("block_id", "head");
   }
 

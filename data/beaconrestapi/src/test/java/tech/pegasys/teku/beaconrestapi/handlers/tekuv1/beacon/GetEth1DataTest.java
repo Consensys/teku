@@ -49,12 +49,11 @@ public class GetEth1DataTest extends AbstractMigratedBeaconHandlerTest {
               "0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d"));
   private final DataProvider dataProvider = mock(DataProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  private GetEth1Data handler;
 
   @BeforeEach
   void setUp() {
     when(dataProvider.getChainDataProvider()).thenReturn(chainDataProvider);
-    handler = new GetEth1Data(dataProvider, eth1DataCache);
+    setHandler(new GetEth1Data(dataProvider, eth1DataCache));
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     when(chainDataProvider.getBeaconStateAtHead())
         .thenReturn(
@@ -71,7 +70,7 @@ public class GetEth1DataTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, GetEth1Data.NOT_FOUND_MESSAGE));
+        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Not found"));
   }
 
   @Test

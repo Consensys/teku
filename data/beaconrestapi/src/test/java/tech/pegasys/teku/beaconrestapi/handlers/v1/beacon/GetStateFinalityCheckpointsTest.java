@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class GetStateFinalityCheckpointsTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
-  private GetStateFinalityCheckpoints handler;
   private StateAndMetaData responseData;
 
   @BeforeEach
@@ -51,13 +50,16 @@ public class GetStateFinalityCheckpointsTest
     responseData =
         new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, true);
 
-    handler = new GetStateFinalityCheckpoints(chainDataProvider);
+    setHandler(new GetStateFinalityCheckpoints(chainDataProvider));
   }
 
   @Test
   public void shouldReturnFinalityCheckpointsInfo() throws JsonProcessingException {
     final StubRestApiRequest request =
-        StubRestApiRequest.builder().pathParameter("state_id", "head").build();
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("state_id", "head")
+            .build();
 
     handler.handleRequest(request);
 
