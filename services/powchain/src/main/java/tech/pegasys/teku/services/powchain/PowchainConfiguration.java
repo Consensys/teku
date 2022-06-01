@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class PowchainConfiguration {
   public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
-  public static final boolean DEFAULT_USE_TIME_BASED_HEAD_TRACKING = true;
   public static final boolean DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING = false;
 
   private final Spec spec;
@@ -34,7 +33,6 @@ public class PowchainConfiguration {
   private final Eth1Address depositContract;
   private final Optional<UInt64> depositContractDeployBlock;
   private final int eth1LogsMaxBlockRange;
-  private final boolean useTimeBasedHeadTracking;
   private final boolean useMissingDepositEventLogging;
 
   private PowchainConfiguration(
@@ -43,14 +41,12 @@ public class PowchainConfiguration {
       final Eth1Address depositContract,
       final Optional<UInt64> depositContractDeployBlock,
       final int eth1LogsMaxBlockRange,
-      final boolean useTimeBasedHeadTracking,
       final boolean useMissingDepositEventLogging) {
     this.spec = spec;
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    this.useTimeBasedHeadTracking = useTimeBasedHeadTracking;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
   }
 
@@ -82,10 +78,6 @@ public class PowchainConfiguration {
     return eth1LogsMaxBlockRange;
   }
 
-  public boolean useTimeBasedHeadTracking() {
-    return useTimeBasedHeadTracking;
-  }
-
   public boolean useMissingDepositEventLogging() {
     return useMissingDepositEventLogging;
   }
@@ -96,7 +88,6 @@ public class PowchainConfiguration {
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
-    private boolean useTimeBasedHeadTracking = DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
 
     private Builder() {}
@@ -109,7 +100,6 @@ public class PowchainConfiguration {
           depositContract,
           depositContractDeployBlock,
           eth1LogsMaxBlockRange,
-          useTimeBasedHeadTracking,
           useMissingDepositEventLogging);
     }
 
@@ -174,11 +164,6 @@ public class PowchainConfiguration {
 
     public Builder specProvider(final Spec spec) {
       this.spec = spec;
-      return this;
-    }
-
-    public Builder useTimeBasedHeadTracking(final boolean useTimeBasedHeadTracking) {
-      this.useTimeBasedHeadTracking = useTimeBasedHeadTracking;
       return this;
     }
 
