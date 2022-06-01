@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -88,7 +89,8 @@ class ProductionResultTest {
     final DutyResult dutyResult = result.join();
     dutyResult.report(PRODUCED_TYPE, SLOT, validatorLogger);
 
-    verify(validatorLogger).dutyCompleted(PRODUCED_TYPE, SLOT, 2, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyCompleted(PRODUCED_TYPE, SLOT, 2, Set.of(blockRoot), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(
             eq(PRODUCED_TYPE),
@@ -115,7 +117,8 @@ class ProductionResultTest {
     final DutyResult dutyResult = result.join();
     dutyResult.report(PRODUCED_TYPE, SLOT, validatorLogger);
 
-    verify(validatorLogger).dutyCompleted(PRODUCED_TYPE, SLOT, 1, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyCompleted(PRODUCED_TYPE, SLOT, 1, Set.of(blockRoot), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(PRODUCED_TYPE, SLOT, formatKeys(prodResult1.getValidatorPublicKeys()), error);
   }

@@ -24,11 +24,9 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 
 public class LivenessTest extends AbstractMigratedBeaconHandlerTest {
 
-  private Liveness handler;
-
   @BeforeEach
   public void setup() {
-    handler = new Liveness(syncDataProvider);
+    setHandler(new Liveness(syncDataProvider));
   }
 
   @Test

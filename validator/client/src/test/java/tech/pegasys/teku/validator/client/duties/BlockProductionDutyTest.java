@@ -25,7 +25,9 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,12 +35,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -102,7 +107,8 @@ class BlockProductionDutyTest {
     performAndReportDuty();
 
     verify(validatorApiChannel).sendSignedBlock(signedBlock);
-    verify(validatorLogger).dutyCompleted(TYPE, SLOT, 1, Set.of(unsignedBlock.hashTreeRoot()));
+    verify(validatorLogger)
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(unsignedBlock.hashTreeRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -113,6 +119,22 @@ class BlockProductionDutyTest {
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
+  }
+
+  @Test
+  public void bellatrixBlockSummary() {
+    final BeaconBlockBody block = mock(BeaconBlockBody.class);
+    when(block.getOptionalExecutionPayloadSummary())
+        .thenReturn(
+            Optional.of(
+                new PayloadSummary(
+                    UInt64.valueOf(1024000),
+                    UInt64.valueOf(102400),
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomUInt64())));
+    assertThat(BlockProductionDuty.getBlockSummary(block))
+        .contains(
+            "102400 (10%) gas, EL block:  499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
   }
 
   @Test
@@ -171,5 +193,88 @@ class BlockProductionDutyTest {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
     result.join().report(TYPE, SLOT, validatorLogger);
+  }
+
+  static class PayloadSummary implements ExecutionPayloadSummary {
+    private final UInt64 gasLimit;
+    private final UInt64 gasUsed;
+    private final Bytes32 blockHash;
+    private final UInt64 blockNumber;
+
+    public PayloadSummary(
+        final UInt64 gasLimit,
+        final UInt64 gasUsed,
+        final Bytes32 blockHash,
+        final UInt64 blockNumber) {
+      this.gasLimit = gasLimit;
+      this.gasUsed = gasUsed;
+      this.blockHash = blockHash;
+      this.blockNumber = blockNumber;
+    }
+
+    @Override
+    public UInt64 getGasLimit() {
+      return gasLimit;
+    }
+
+    @Override
+    public UInt64 getGasUsed() {
+      return gasUsed;
+    }
+
+    @Override
+    public UInt64 getBlockNumber() {
+      return blockNumber;
+    }
+
+    @Override
+    public Bytes32 getBlockHash() {
+      return blockHash;
+    }
+
+    @Override
+    public UInt256 getBaseFeePerGas() {
+      return null;
+    }
+
+    @Override
+    public UInt64 getTimestamp() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getPrevRandao() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getReceiptsRoot() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getStateRoot() {
+      return null;
+    }
+
+    @Override
+    public Bytes20 getFeeRecipient() {
+      return null;
+    }
+
+    @Override
+    public Bytes32 getParentHash() {
+      return null;
+    }
+
+    @Override
+    public Bytes getLogsBloom() {
+      return null;
+    }
+
+    @Override
+    public Bytes getExtraData() {
+      return null;
+    }
   }
 }

@@ -25,9 +25,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SignerNotActiveException;
@@ -37,7 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
-  public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap());
+  public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap(), List.of());
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
@@ -47,23 +49,33 @@ public class DutyResult {
    */
   private final Map<Class<?>, FailureRecord> failures;
 
+  // list
+  private final List<String> context;
+
   private DutyResult(
       final int successCount,
       final int nodeSyncingCount,
       final Set<Bytes32> roots,
-      final Map<Class<?>, FailureRecord> failures) {
+      final Map<Class<?>, FailureRecord> failures,
+      final List<String> context) {
     this.successCount = successCount;
     this.nodeSyncingCount = nodeSyncingCount;
     this.roots = roots;
     this.failures = failures;
+    this.context = context;
   }
 
   public static DutyResult success(final Bytes32 result) {
     return success(result, 1);
   }
 
+  public static DutyResult success(final Bytes32 result, final Optional<String> summary) {
+    return new DutyResult(
+        1, 0, singleton(result), emptyMap(), summary.map(List::of).orElse(List.of()));
+  }
+
   public static DutyResult success(final Bytes32 result, final int count) {
-    return new DutyResult(count, 0, singleton(result), emptyMap());
+    return new DutyResult(count, 0, singleton(result), emptyMap(), List.of());
   }
 
   public static DutyResult forError(final Throwable error) {
@@ -81,10 +93,14 @@ public class DutyResult {
       cause = cause.getCause();
     }
     if (cause instanceof NodeSyncingException) {
-      return new DutyResult(0, 1, emptySet(), emptyMap());
+      return new DutyResult(0, 1, emptySet(), emptyMap(), List.of());
     } else {
       return new DutyResult(
-          0, 0, emptySet(), Map.of(cause.getClass(), new FailureRecord(cause, validatorKeys)));
+          0,
+          0,
+          emptySet(),
+          Map.of(cause.getClass(), new FailureRecord(cause, validatorKeys)),
+          List.of());
     }
   }
 
@@ -110,7 +126,11 @@ public class DutyResult {
         (cause, validators) -> combinedErrors.merge(cause, validators, FailureRecord::merge));
 
     return new DutyResult(
-        combinedSuccessCount, combinedSyncingCount, combinedRoots, combinedErrors);
+        combinedSuccessCount,
+        combinedSyncingCount,
+        combinedRoots,
+        combinedErrors,
+        Stream.concat(context.stream(), other.context.stream()).collect(Collectors.toList()));
   }
 
   public int getSuccessCount() {
@@ -123,7 +143,14 @@ public class DutyResult {
 
   public void report(final String producedType, final UInt64 slot, final ValidatorLogger logger) {
     if (successCount > 0) {
-      logger.dutyCompleted(producedType, slot, successCount, roots);
+      logger.dutyCompleted(
+          producedType,
+          slot,
+          successCount,
+          roots,
+          context.size() > 0
+              ? Optional.of(context.stream().collect(Collectors.joining(", ")))
+              : Optional.empty());
     }
     if (nodeSyncingCount > 0) {
       logger.dutySkippedWhileSyncing(producedType, slot, nodeSyncingCount);

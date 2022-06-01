@@ -22,12 +22,17 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 
 public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetSyncing handler = new GetSyncing(syncDataProvider);
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetSyncing(syncDataProvider));
+  }
 
   @Test
   public void shouldGetSyncingStatusSyncing() throws Exception {

@@ -36,13 +36,12 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
-  private GetAttestations handler;
   private NodeDataProvider nodeDataProvider;
 
   @BeforeEach
   void setup() {
     nodeDataProvider = mock(NodeDataProvider.class);
-    handler = new GetAttestations(nodeDataProvider, spec);
+    setHandler(new GetAttestations(nodeDataProvider, spec));
   }
 
   @Test

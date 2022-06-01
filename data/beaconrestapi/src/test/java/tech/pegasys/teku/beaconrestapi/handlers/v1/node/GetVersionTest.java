@@ -21,12 +21,17 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class GetVersionTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetVersion handler = new GetVersion();
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetVersion());
+  }
 
   @Test
   public void shouldReturnVersionString() throws Exception {

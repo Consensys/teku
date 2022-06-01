@@ -35,13 +35,12 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDat
 import tech.pegasys.teku.spec.SpecMilestone;
 
 class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetBlockHeaders handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
-    handler = new GetBlockHeaders(chainDataProvider);
+    setHandler(new GetBlockHeaders(chainDataProvider));
   }
 
   @Test

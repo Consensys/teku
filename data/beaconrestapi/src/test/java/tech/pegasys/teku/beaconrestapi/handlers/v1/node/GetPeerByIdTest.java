@@ -37,10 +37,10 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
   private final MockNodeId peerId = new MockNodeId(123456);
   private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final GetPeerById handler = new GetPeerById(network);
 
   @BeforeEach
   void setUp() {
+    setHandler(new GetPeerById(network));
     request.setPathParameter("peer_id", peerId.toBase58());
     when(peer.getId()).thenReturn(peerId);
     when(peer.getAddress()).thenReturn(new PeerAddress(peerId));

@@ -33,11 +33,11 @@ public class UInt16PrimitiveSchema extends AbstractSszPrimitiveSchema<Integer, S
   }
 
   @Override
-  public SszUInt16 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+  public Integer createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
     // reverse() is due to LE -> BE conversion
     Bytes leafNodeBytes = node.getData();
     Bytes elementBytes = leafNodeBytes.slice(internalIndex * 2, 2);
-    return SszUInt16.of(elementBytes.toInt(ByteOrder.LITTLE_ENDIAN));
+    return elementBytes.toInt(ByteOrder.LITTLE_ENDIAN);
   }
 
   @Override

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -41,12 +42,15 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 
 public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetProposerDuties handler =
-      new GetProposerDuties(syncDataProvider, validatorDataProvider);
   private final ProposerDuties duties =
       new ProposerDuties(
           Bytes32.fromHexString("0x1234"),
           List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetProposerDuties(syncDataProvider, validatorDataProvider));
+  }
 
   @Test
   public void shouldGetProposerDuties() throws Exception {

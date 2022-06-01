@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -63,6 +64,10 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<ExecutionPayloadHeader> getOptionalExecutionPayloadHeader() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionPayloadSummary> getOptionalExecutionPayloadSummary() {
     return Optional.empty();
   }
 

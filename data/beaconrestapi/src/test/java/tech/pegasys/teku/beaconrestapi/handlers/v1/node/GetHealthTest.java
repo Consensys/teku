@@ -26,12 +26,17 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 
 public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetHealth(syncDataProvider, chainDataProvider));
+  }
 
   @Test
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {

@@ -35,14 +35,13 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetStateSyncCommitteesTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateSyncCommittees handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    handler = new GetStateSyncCommittees(chainDataProvider);
+    setHandler(new GetStateSyncCommittees(chainDataProvider));
   }
 
   @Test
@@ -50,6 +49,7 @@ class GetStateSyncCommitteesTest extends AbstractMigratedBeaconHandlerWithChainD
       throws JsonProcessingException, ExecutionException, InterruptedException {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .optionalQueryParameter("epoch", "1")
             .build();
