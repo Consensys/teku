@@ -45,7 +45,6 @@ public class PostVoluntaryExitTest extends AbstractMigratedBeaconHandlerTest {
   void shouldBeAbleToSubmitSlashing() throws Exception {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     request.setRequestBody(exit);
-
     when(provider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
@@ -59,7 +58,6 @@ public class PostVoluntaryExitTest extends AbstractMigratedBeaconHandlerTest {
   void shouldReturnBadRequest_ifVoluntaryExitInvalid() throws Exception {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     request.setRequestBody(exit);
-
     when(provider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Oh dear")));
 
