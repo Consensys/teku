@@ -52,7 +52,7 @@ public class PostProposerSlashing extends MigratingEndpointAdapter {
             .operationId("postProposerSlashing")
             .summary("Submit proposer slashing object")
             .description(
-                "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.")
+                "Submits proposer slashing object to node's pool and, if it passes validation, the node MUST broadcast it to network.")
             .tags(TAG_BEACON)
             .requestBodyType(ProposerSlashing.SSZ_SCHEMA.getJsonTypeDefinition())
             .response(
