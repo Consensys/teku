@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -34,12 +35,16 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 class GetVoluntaryExitsTest extends AbstractMigratedBeaconHandlerTest {
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
-  private final GetVoluntaryExits handler = new GetVoluntaryExits(nodeDataProvider);
 
   List<SignedVoluntaryExit> responseData =
       List.of(
           dataStructureUtil.randomSignedVoluntaryExit(),
           dataStructureUtil.randomSignedVoluntaryExit());
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetVoluntaryExits(nodeDataProvider));
+  }
 
   @Test
   public void shouldReturnVoluntaryExitsInformation() throws JsonProcessingException {

@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 
 /** A Beacon block body */
 public interface BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
@@ -33,6 +34,11 @@ public interface BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
   @Override
   default Optional<ExecutionPayload> getOptionalExecutionPayload() {
+    return Optional.of(getExecutionPayload());
+  }
+
+  @Override
+  default Optional<ExecutionPayloadSummary> getOptionalExecutionPayloadSummary() {
     return Optional.of(getExecutionPayload());
   }
 

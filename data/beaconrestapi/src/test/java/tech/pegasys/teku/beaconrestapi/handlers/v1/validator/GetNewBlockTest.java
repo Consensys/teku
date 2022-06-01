@@ -32,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -39,7 +40,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
 public class GetNewBlockTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetNewBlock handler = new GetNewBlock(validatorDataProvider, schemaDefinitionCache);
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetNewBlock(validatorDataProvider, schemaDefinitionCache));
+  }
 
   @Test
   public void shouldReturnAttestationInformation() throws JsonProcessingException {

@@ -46,20 +46,20 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateValidators handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    handler = new GetStateValidators(chainDataProvider);
+    setHandler(new GetStateValidators(chainDataProvider));
   }
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .listQueryParameter("id", List.of("1", "2", "3,4"))
             .build();
@@ -80,6 +80,7 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
   public void shouldGetValidatorFromStateWithList() throws Exception {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .listQueryParameter("id", List.of("1", "2"))
             .listQueryParameter(
@@ -103,6 +104,7 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
   public void shouldGetBadRequestForInvalidState() {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "invalid")
             .listQueryParameter("id", List.of("1"))
             .build();

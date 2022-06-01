@@ -36,14 +36,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetBlock handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.PHASE0);
     genesis();
+    setHandler(new GetBlock(chainDataProvider, schemaDefinitionCache));
     request.setPathParameter("block_id", "head");
-    handler = new GetBlock(chainDataProvider, schemaDefinitionCache);
   }
 
   @Test
