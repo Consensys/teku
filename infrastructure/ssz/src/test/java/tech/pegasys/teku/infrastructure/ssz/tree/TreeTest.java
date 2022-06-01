@@ -133,8 +133,8 @@ public class TreeTest {
     // since the hash can be calculated lazily and cached inside TreeNode there are
     // potential threading issues
     TreeNode tree = TreeUtil.createDefaultTree(32 * 1024, newTestLeaf(111));
-    List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(tree::hashTreeRoot, 512);
-    assertThat(TestUtil.waitAll(hasheFuts)).containsOnly(tree.hashTreeRoot());
+    List<Future<Bytes32>> hashFuts = TestUtil.executeParallel(tree::hashTreeRoot, 512);
+    assertThat(TestUtil.waitAll(hashFuts)).containsOnly(tree.hashTreeRoot());
   }
 
   @Test

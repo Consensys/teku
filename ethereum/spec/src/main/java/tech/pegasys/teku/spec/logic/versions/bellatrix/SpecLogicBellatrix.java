@@ -101,7 +101,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
     final BeaconStateMutatorsBellatrix beaconStateMutators =
         new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
 
-    // Operation validaton
+    // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 

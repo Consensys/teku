@@ -295,12 +295,12 @@ public class PeerChainValidator {
   }
 
   private boolean validateBlockRootsMatch(
-      final Eth2Peer peer, final Optional<SignedBeaconBlock> mabyeBlock, final Bytes32 root) {
-    if (mabyeBlock.isEmpty()) {
+      final Eth2Peer peer, final Optional<SignedBeaconBlock> maybeBlock, final Bytes32 root) {
+    if (maybeBlock.isEmpty()) {
       LOG.debug("Peer validation failed because it did not provide requested finalized block");
       return false;
     }
-    return validateBlockRootsMatch(peer, mabyeBlock.get(), root);
+    return validateBlockRootsMatch(peer, maybeBlock.get(), root);
   }
 
   private boolean validateBlockRootsMatch(

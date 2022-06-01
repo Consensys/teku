@@ -1,0 +1,12 @@
+{
+  "type" : "object",
+  "properties" : {
+    "index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/DepositData"
+    }
+  }
+}

@@ -4,7 +4,7 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/Deposit"
+        "$ref" : "#/components/schemas/DepositWithIndex"
       }
     }
   }

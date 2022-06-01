@@ -41,7 +41,7 @@ public class BellatrixTransitionHelpers {
    * what that payload uses as the PoW chain head (the PoW chain block it uses as parentRoot).
    *
    * <p>Specifically we need to check that the PoW chain head block is above TTD and it's parent
-   * (second last PoW chian block) is below TTD.
+   * (second last PoW chain block) is below TTD.
    *
    * <p>That is, the PoW chain stops as soon as one block has exceeded TTD and from that point on
    * merges into the beacon chain.

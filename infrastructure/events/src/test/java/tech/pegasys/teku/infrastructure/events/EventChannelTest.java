@@ -209,7 +209,7 @@ class EventChannelTest {
         Executors.newCachedThreadPool(
             new ThreadFactoryBuilder()
                 .setDaemon(true)
-                .setNameFormat("shoudlDeliverAsyncEventsOnMultipleThreads-%d")
+                .setNameFormat("shouldDeliverAsyncEventsOnMultipleThreads-%d")
                 .build());
     final EventChannel<WaitOnLatch> channel =
         EventChannel.createAsync(WaitOnLatch.class, executor, metricsSystem);

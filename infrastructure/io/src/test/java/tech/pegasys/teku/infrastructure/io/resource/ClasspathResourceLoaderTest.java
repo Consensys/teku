@@ -52,7 +52,7 @@ class ClasspathResourceLoaderTest {
   }
 
   @Test
-  public void shouldNotLoadUnkownResources() throws Exception {
+  public void shouldNotLoadUnknownResources() throws Exception {
     final ResourceLoader loader =
         new ClasspathResourceLoader(
             ClasspathResourceLoaderTest.class, List.of("other.txt"), RESOURCE_FILTER);

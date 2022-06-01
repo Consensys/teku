@@ -105,8 +105,8 @@ public class BeaconProposerPreparerTest {
         new ProposerConfig(
             Map.of(
                 validator1.getPublicKey().toBytesCompressed(),
-                new ProposerConfig.Config(validator1FeeRecipientConfig)),
-            new ProposerConfig.Config(defaultFeeRecipientConfig));
+                new ProposerConfig.Config(validator1FeeRecipientConfig, null)),
+            new ProposerConfig.Config(defaultFeeRecipientConfig, null));
 
     beaconProposerPreparer =
         new BeaconProposerPreparer(
@@ -166,7 +166,7 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
-  void getFeeRecipent_shouldReturnDefaultFeeRecipientWhenProposerConfigMissing() {
+  void getFeeRecipient_shouldReturnDefaultFeeRecipientWhenProposerConfigMissing() {
     assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey()))
         .contains(defaultFeeRecipient);
   }

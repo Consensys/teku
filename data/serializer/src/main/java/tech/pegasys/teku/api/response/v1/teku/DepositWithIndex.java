@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,33 +13,20 @@
 
 package tech.pegasys.teku.api.response.v1.teku;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-import java.util.Objects;
+import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.api.schema.DepositData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetDepositsResponse {
-  public final List<DepositWithIndex> data;
+public class DepositWithIndex {
+  @Schema(type = "string", format = "uint64")
+  public final UInt64 index;
 
-  @JsonCreator
-  public GetDepositsResponse(@JsonProperty("data") final List<DepositWithIndex> data) {
+  public final DepositData data;
+
+  public DepositWithIndex(
+      @JsonProperty("index") final UInt64 index, @JsonProperty("data") final DepositData data) {
+    this.index = index;
     this.data = data;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    GetDepositsResponse that = (GetDepositsResponse) o;
-    return Objects.equals(data, that.data);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(data);
   }
 }
