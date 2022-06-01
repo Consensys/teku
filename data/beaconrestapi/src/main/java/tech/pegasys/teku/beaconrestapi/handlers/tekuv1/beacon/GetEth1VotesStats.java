@@ -108,7 +108,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
             .pathParam(PARAMETER_STATE_ID)
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", ETH1VOTES_STATS_RESPONSE_TYPE)
-            .response(SC_NOT_FOUND, NOT_FOUND_MESSAGE)
+            .withNotFoundResponse()
             .build());
     this.chainDataProvider = dataProvider.getChainDataProvider();
     this.eth1DataProvider = eth1DataProvider;
