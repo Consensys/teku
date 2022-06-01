@@ -35,20 +35,16 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostSyncCommitteesTest extends AbstractMigratedBeaconHandlerTest {
-  @SuppressWarnings("HidingField")
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
-
-  @SuppressWarnings("HidingField")
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @BeforeEach
   void setup() {
+    spec = TestSpecFactory.createMinimalAltair();
+    dataStructureUtil = new DataStructureUtil(spec);
     setHandler(new PostSyncCommittees(validatorDataProvider));
   }
 
