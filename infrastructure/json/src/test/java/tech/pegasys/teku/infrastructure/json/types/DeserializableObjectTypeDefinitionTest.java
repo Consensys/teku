@@ -105,6 +105,43 @@ class DeserializableObjectTypeDefinitionTest {
     assertThat(result.optional).isEmpty();
   }
 
+  @Test
+  void shouldIgnoreUnknownFieldWithSimpleValue() throws Exception {
+    final ImmutableValue result =
+        JsonUtil.parse(
+            "{\"required\":\"value\", \"unknown\":\"ignored\"}", IMMUTABLE_TYPE_DEFINITION);
+    assertThat(result.required).isEqualTo("value");
+  }
+
+  @Test
+  void shouldIgnoreUnknownFieldWithObjectValue() throws Exception {
+    final ImmutableValue result =
+        JsonUtil.parse(
+            "{\"unknown\":{\"optional\":\"ignored\"}, \"required\":\"value\"}",
+            IMMUTABLE_TYPE_DEFINITION);
+    assertThat(result.required).isEqualTo("value");
+    assertThat(result.optional).isEmpty();
+  }
+
+  @Test
+  void shouldIgnoreUnknownFieldWithArrayValue() throws Exception {
+    final ImmutableValue result =
+        JsonUtil.parse(
+            "{\"unknown\":[\"optional\"], \"required\":\"value\"}", IMMUTABLE_TYPE_DEFINITION);
+    assertThat(result.required).isEqualTo("value");
+    assertThat(result.optional).isEmpty();
+  }
+
+  @Test
+  void shouldIgnoreUnknownFieldWithArrayOfObjectValue() throws Exception {
+    final ImmutableValue result =
+        JsonUtil.parse(
+            "{\"unknown\":[{\"optional\":\"ignored\"}], \"required\":\"value\"}",
+            IMMUTABLE_TYPE_DEFINITION);
+    assertThat(result.required).isEqualTo("value");
+    assertThat(result.optional).isEmpty();
+  }
+
   private static class MutableValue {
     private String required;
     private Optional<String> optional = Optional.empty();
