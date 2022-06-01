@@ -117,7 +117,6 @@ public class PostVoluntaryExit extends MigratingEndpointAdapter {
                         .orElse(
                             "Invalid voluntary exit, it will never pass validation so it's rejected"));
               }
-
               return AsyncApiResponse.respondWithCode(SC_OK);
             }));
   }
