@@ -40,7 +40,7 @@ class UInt8TypeDefinitionTest {
   void shouldRejectNegativeInteger() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> CoreTypes.UINT8_TYPE.deserializeFromString(Integer.toUnsignedString(-1, 10)));
+        () -> CoreTypes.UINT8_TYPE.deserializeFromString(Integer.toUnsignedString(-1)));
   }
 
   static Stream<Arguments> testValues() {
