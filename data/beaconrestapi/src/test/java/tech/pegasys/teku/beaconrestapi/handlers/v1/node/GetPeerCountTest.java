@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -33,9 +34,13 @@ class GetPeerCountTest extends AbstractMigratedBeaconHandlerTest {
   private final Eth2Peer peer1 = mock(Eth2Peer.class);
   private final Eth2Peer peer2 = mock(Eth2Peer.class);
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
-  private final GetPeerCount handler = new GetPeerCount(networkDataProvider);
   private final List<Eth2Peer> data = List.of(peer1, peer2);
   private final GetPeerCount.ResponseData peerCountData = new GetPeerCount.ResponseData(data);
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetPeerCount(networkDataProvider));
+  }
 
   @Test
   public void shouldReturnListOfPeers() throws Exception {

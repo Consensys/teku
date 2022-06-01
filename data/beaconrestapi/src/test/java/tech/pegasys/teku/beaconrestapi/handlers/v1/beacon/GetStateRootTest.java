@@ -30,14 +30,13 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateRoot handler;
 
   @BeforeEach
   public void setup() {
-    request.setPathParameter("state_id", "head");
     initialise(SpecMilestone.PHASE0);
     genesis();
-    handler = new GetStateRoot(chainDataProvider);
+    setHandler(new GetStateRoot(chainDataProvider));
+    request.setPathParameter("state_id", "head");
   }
 
   @Test

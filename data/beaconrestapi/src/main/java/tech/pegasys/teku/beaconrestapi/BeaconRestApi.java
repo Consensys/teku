@@ -47,6 +47,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
@@ -121,6 +122,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
+import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 public class BeaconRestApi {
 
@@ -135,6 +137,7 @@ public class BeaconRestApi {
   private void initialize(
       final DataProvider dataProvider,
       final DepositProvider depositProvider,
+      final Eth1DataCache eth1DataCache,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -173,7 +176,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, depositProvider);
+    addTekuSpecificHandlers(dataProvider, depositProvider, eth1DataCache);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -271,6 +274,7 @@ public class BeaconRestApi {
   public BeaconRestApi(
       final DataProvider dataProvider,
       final DepositProvider depositProvider,
+      final Eth1DataCache eth1DataCache,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -296,6 +300,7 @@ public class BeaconRestApi {
     initialize(
         dataProvider,
         depositProvider,
+        eth1DataCache,
         configuration,
         eventChannels,
         asyncRunner,
@@ -306,6 +311,7 @@ public class BeaconRestApi {
   BeaconRestApi(
       final DataProvider dataProvider,
       final DepositProvider depositProvider,
+      final Eth1DataCache eth1DataCache,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -316,6 +322,7 @@ public class BeaconRestApi {
     initialize(
         dataProvider,
         depositProvider,
+        eth1DataCache,
         configuration,
         eventChannels,
         asyncRunner,
@@ -369,7 +376,9 @@ public class BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider, final DepositProvider depositProvider) {
+      final DataProvider provider,
+      final DepositProvider depositProvider,
+      final Eth1DataCache eth1DataCache) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
@@ -379,6 +388,7 @@ public class BeaconRestApi {
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
     app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
     addMigratedEndpoint(new GetDeposits(depositProvider));
+    addMigratedEndpoint(new GetEth1Data(provider, eth1DataCache));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

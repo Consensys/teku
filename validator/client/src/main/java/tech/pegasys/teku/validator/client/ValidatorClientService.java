@@ -72,6 +72,7 @@ public class ValidatorClientService extends Service {
   private ValidatorIndexProvider validatorIndexProvider;
   private final Optional<ProposerConfigProvider> proposerConfigProvider;
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  private final Optional<ValidatorRegistrator> validatorRegistrator;
 
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
@@ -85,6 +86,7 @@ public class ValidatorClientService extends Service {
       final ForkProvider forkProvider,
       final Optional<ProposerConfigProvider> proposerConfigProvider,
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,
+      final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
       final MetricsSystem metricsSystem) {
     this.eventChannels = eventChannels;
@@ -94,6 +96,7 @@ public class ValidatorClientService extends Service {
     this.forkProvider = forkProvider;
     this.proposerConfigProvider = proposerConfigProvider;
     this.beaconProposerPreparer = beaconProposerPreparer;
+    this.validatorRegistrator = validatorRegistrator;
     this.spec = spec;
     this.metricsSystem = metricsSystem;
   }
@@ -135,6 +138,7 @@ public class ValidatorClientService extends Service {
     Optional<RestApi> validatorRestApi = Optional.empty();
     Optional<ProposerConfigProvider> proposerConfigProvider = Optional.empty();
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
+    Optional<ValidatorRegistrator> validatorRegistrator = Optional.empty();
     if (config.getSpec().isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       proposerConfigProvider =
           Optional.of(
@@ -178,6 +182,7 @@ public class ValidatorClientService extends Service {
             forkProvider,
             proposerConfigProvider,
             beaconProposerPreparer,
+            validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem());
 
@@ -283,6 +288,7 @@ public class ValidatorClientService extends Service {
             preparer.initialize(Optional.of(validatorIndexProvider));
             validatorTimingChannels.add(preparer);
           });
+      validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
