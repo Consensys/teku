@@ -57,6 +57,8 @@ public class CoreTypes {
           .format("byte")
           .build();
 
+  public static final UInt8TypeDefinition UINT8_TYPE = new UInt8TypeDefinition();
+
   public static final StringValueTypeDefinition<UInt64> UINT64_TYPE =
       DeserializableTypeDefinition.string(UInt64.class)
           .formatter(UInt64::toString)

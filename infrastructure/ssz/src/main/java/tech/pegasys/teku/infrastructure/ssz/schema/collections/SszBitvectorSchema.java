@@ -28,8 +28,8 @@ public interface SszBitvectorSchema<SszBitvectorT extends SszBitvector>
 
   SszBitvectorT ofBits(int... setBitIndices);
 
-  default SszBitvectorT fromBytes(Bytes bivectorBytes) {
-    return sszDeserialize(bivectorBytes);
+  default SszBitvectorT fromBytes(Bytes bitvectorBytes) {
+    return sszDeserialize(bitvectorBytes);
   }
 
   default SszBitvectorT ofBits(Iterable<Integer> setBitIndices) {
