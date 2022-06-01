@@ -99,7 +99,6 @@ public class PostVoluntaryExit extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final SignedVoluntaryExit exit = request.getRequestBody();
-
     final SafeFuture<InternalValidationResult> future = nodeDataProvider.postVoluntaryExit(exit);
 
     request.respondAsync(
