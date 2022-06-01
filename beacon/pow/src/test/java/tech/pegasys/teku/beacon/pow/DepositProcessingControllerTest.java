@@ -47,7 +47,7 @@ public class DepositProcessingControllerTest {
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
   private final DepositFetcher depositFetcher = mock(DepositFetcher.class);
   private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
-  private final Eth1HeadTracker headTracker = Mockito.mock(BlockBasedEth1HeadTracker.class);
+  private final Eth1HeadTracker headTracker = Mockito.mock(Eth1HeadTracker.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private DepositProcessingController depositProcessingController;
