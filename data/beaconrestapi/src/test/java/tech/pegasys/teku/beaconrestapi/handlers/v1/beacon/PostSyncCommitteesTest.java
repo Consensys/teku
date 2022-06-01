@@ -29,6 +29,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -46,7 +47,10 @@ class PostSyncCommitteesTest extends AbstractMigratedBeaconHandlerTest {
   @SuppressWarnings("HidingField")
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final PostSyncCommittees handler = new PostSyncCommittees(validatorDataProvider);
+  @BeforeEach
+  void setup() {
+    setHandler(new PostSyncCommittees(validatorDataProvider));
+  }
 
   @Test
   void shouldBeAbleToSubmitSyncCommittees() throws Exception {
