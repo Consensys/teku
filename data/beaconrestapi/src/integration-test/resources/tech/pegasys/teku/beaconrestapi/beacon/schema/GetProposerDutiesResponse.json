@@ -12,6 +12,9 @@
       "items" : {
         "$ref" : "#/components/schemas/ProposerDuty"
       }
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
     }
   }
 }

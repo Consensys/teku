@@ -113,7 +113,7 @@ public class AttesterDuty {
         .add("validatorIndex", validatorIndex)
         .add("committeeLength", committeeLength)
         .add("committeeIndex", committeeIndex)
-        .add("commiteesAtSlot", committeesAtSlot)
+        .add("committeesAtSlot", committeesAtSlot)
         .add("validatorCommitteeIndex", validatorCommitteeIndex)
         .add("slot", slot)
         .toString();

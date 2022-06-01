@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.async.OccuranceCounter;
+import tech.pegasys.teku.infrastructure.async.OccurrenceCounter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -49,7 +49,7 @@ public abstract class AbstractNode implements Node {
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
-  private final OccuranceCounter rejectedExecutionCounter = new OccuranceCounter(120);
+  private final OccurrenceCounter rejectedExecutionCounter = new OccurrenceCounter(120);
 
   private Optional<Cancellable> counterMaintainer = Optional.empty();
 

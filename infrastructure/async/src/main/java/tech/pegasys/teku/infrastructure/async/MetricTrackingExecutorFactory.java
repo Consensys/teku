@@ -31,14 +31,14 @@ public class MetricTrackingExecutorFactory {
   private final LabelledGauge labelledGaugeQueueSize;
   private final LabelledMetric<Counter> labelledGaugeRejectedExecutions;
 
-  private final OccuranceCounter rejectedExecutionCounter;
+  private final OccurrenceCounter rejectedExecutionCounter;
 
   public MetricTrackingExecutorFactory(final MetricsSystem metricsSystem) {
-    this(metricsSystem, new OccuranceCounter(1));
+    this(metricsSystem, new OccurrenceCounter(1));
   }
 
   public MetricTrackingExecutorFactory(
-      final MetricsSystem metricsSystem, final OccuranceCounter rejectedExecutionCounter) {
+      final MetricsSystem metricsSystem, final OccurrenceCounter rejectedExecutionCounter) {
     this.metricsSystem = metricsSystem;
     this.labelledGaugeQueueSize =
         metricsSystem.createLabelledGauge(

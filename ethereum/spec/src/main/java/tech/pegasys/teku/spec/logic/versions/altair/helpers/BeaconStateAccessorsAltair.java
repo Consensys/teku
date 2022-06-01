@@ -158,7 +158,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   }
 
   /**
-   * Return the flag indices that are satisifed by an attestation.
+   * Return the flag indices that are satisfied by an attestation.
    *
    * @param state the current state
    * @param data the attestation to check

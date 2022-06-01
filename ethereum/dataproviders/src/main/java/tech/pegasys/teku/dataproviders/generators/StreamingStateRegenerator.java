@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 
 /**
  * This class is only suitable for regenerating states we have previously performed full validation
- * on. It assumes that the pre state and supplied blocks are valid and does not recheck state roots
+ * on. It assumes that the pre-state and supplied blocks are valid and does not recheck state roots
  * or signatures.
  */
 public class StreamingStateRegenerator {

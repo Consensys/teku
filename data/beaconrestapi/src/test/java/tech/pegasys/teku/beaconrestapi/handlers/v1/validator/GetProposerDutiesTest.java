@@ -45,7 +45,8 @@ public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
   private final ProposerDuties duties =
       new ProposerDuties(
           Bytes32.fromHexString("0x1234"),
-          List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
+          List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))),
+          false);
 
   @BeforeEach
   void setUp() {

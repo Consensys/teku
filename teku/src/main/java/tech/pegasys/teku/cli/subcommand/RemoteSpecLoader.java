@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
+import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingInterceptor;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 class RemoteSpecLoader {
@@ -85,7 +85,7 @@ class RemoteSpecLoader {
     HttpUrl apiEndpoint = HttpUrl.get(baseEndpoint);
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
-    OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
+    OkHttpClientAuthLoggingInterceptor.addAuthenticator(apiEndpoint, httpClientBuilder);
     // Strip any authentication info from the URL to ensure it doesn't get logged.
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
