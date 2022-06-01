@@ -106,7 +106,10 @@ public class PostAttesterSlashing extends MigratingEndpointAdapter {
                   || internalValidationResult.code().equals(ValidationResultCode.REJECT)) {
                 return AsyncApiResponse.respondWithError(
                     SC_BAD_REQUEST,
-                    "Invalid attester slashing, it will never pass validation so it's rejected.");
+                    internalValidationResult
+                        .getDescription()
+                        .orElse(
+                            "Invalid attester slashing, it will never pass validation so it's rejected."));
               } else {
                 return AsyncApiResponse.respondWithCode(SC_OK);
               }
