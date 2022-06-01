@@ -41,7 +41,7 @@
     "tags" : [ "Beacon" ],
     "operationId" : "postProposerSlashing",
     "summary" : "Submit proposer slashing object",
-    "description" : "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
+    "description" : "Submits proposer slashing object to node's pool and, if it passes validation, the node MUST broadcast it to network.",
     "requestBody" : {
       "content" : {
         "application/json" : {
