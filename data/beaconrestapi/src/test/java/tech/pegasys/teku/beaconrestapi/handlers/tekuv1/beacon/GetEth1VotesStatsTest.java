@@ -58,14 +58,13 @@ public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
 
   private final DataProvider dataProvider = mock(DataProvider.class);
   private final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
-  private GetEth1VotesStats handler;
   private GetEth1VotesStats.Eth1DataVotesStats eth1DataVotesStats;
 
   @BeforeEach
   void setUp() {
-    request.setPathParameter("state_id", "head");
     when(dataProvider.getChainDataProvider()).thenReturn(chainDataProvider);
-    handler = new GetEth1VotesStats(dataProvider, eth1DataProvider);
+    setHandler(new GetEth1VotesStats(dataProvider, eth1DataProvider));
+    request.setPathParameter("state_id", "head");
     BeaconState beaconState =
         BeaconStateBuilderPhase0.create(dataStructureUtil, spec, 16, 16)
             .eth1Data(ETH1_DATA)
@@ -89,7 +88,7 @@ public class GetEth1VotesStatsTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, GetEth1VotesStats.NOT_FOUND_MESSAGE));
+        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Not found"));
   }
 
   @Test

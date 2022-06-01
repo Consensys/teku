@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -55,7 +54,6 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
 
   public static final String OAPI_ROUTE = "/teku/v1/beacon/state/:state_id/eth1stats";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
-  public static final String NOT_FOUND_MESSAGE = "Corresponding state not found";
 
   private static final SerializableTypeDefinition<Pair<Eth1Data, UInt64>> ETH1DATA_WITH_VOTES_TYPE =
       SerializableTypeDefinition.<Pair<Eth1Data, UInt64>>object()
