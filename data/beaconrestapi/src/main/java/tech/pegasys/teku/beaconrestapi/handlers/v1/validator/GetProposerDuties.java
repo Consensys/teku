@@ -71,7 +71,8 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
           .withOptionalField(
               "execution_optimistic",
               BOOLEAN_TYPE,
-              (proposerDuties) -> Optional.of(proposerDuties.isExecutionOptimistic()))
+              (proposerDuties) ->
+                  proposerDuties.isExecutionOptimistic() ? Optional.of(true) : Optional.empty())
           .withField("dependent_root", BYTES32_TYPE, ProposerDuties::getDependentRoot)
           .withField("data", listOf(PROPOSER_DUTY_TYPE), ProposerDuties::getDuties)
           .build();
