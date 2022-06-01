@@ -114,7 +114,8 @@ class SyncCommitteeProductionDutyTest {
 
     assertSentMessages(createMessage(slot, blockRoot, validatorIndex1, signature1));
 
-    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(
             MESSAGE_TYPE, slot, Set.of(validator2.getPublicKey().toAbbreviatedString()), exception);
@@ -148,7 +149,8 @@ class SyncCommitteeProductionDutyTest {
         createMessage(slot, blockRoot, validatorIndex1, signature1),
         createMessage(slot, blockRoot, validatorIndex2, signature2));
 
-    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(
             eq(MESSAGE_TYPE),
@@ -173,7 +175,8 @@ class SyncCommitteeProductionDutyTest {
     verify(validatorApiChannel)
         .sendSyncCommitteeMessages(
             List.of(createMessage(slot, blockRoot, validatorIndex, signature)));
-    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot), Optional.empty());
   }
 
   @Test
@@ -200,7 +203,8 @@ class SyncCommitteeProductionDutyTest {
         createMessage(slot, blockRoot, validatorIndex1, signature1),
         createMessage(slot, blockRoot, validatorIndex2, signature2));
 
-    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 2, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyCompleted(MESSAGE_TYPE, slot, 2, Set.of(blockRoot), Optional.empty());
   }
 
   @SuppressWarnings("unchecked")
