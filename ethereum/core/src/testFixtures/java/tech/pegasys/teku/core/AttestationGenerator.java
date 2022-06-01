@@ -316,11 +316,11 @@ public class AttestationGenerator {
         int indexIntoCommittee,
         Committee committee,
         AttestationData attestationData) {
-      int committeSize = committee.getCommitteeSize();
+      int committeeSize = committee.getCommitteeSize();
       final AttestationSchema attestationSchema =
           spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
       SszBitlist aggregationBitfield =
-          getAggregationBits(attestationSchema, committeSize, indexIntoCommittee);
+          getAggregationBits(attestationSchema, committeeSize, indexIntoCommittee);
 
       BLSSignature signature =
           new LocalSigner(spec, attesterKeyPair, SYNC_RUNNER)

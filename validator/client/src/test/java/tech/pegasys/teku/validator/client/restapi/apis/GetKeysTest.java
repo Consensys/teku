@@ -45,7 +45,7 @@ class GetKeysTest {
   }
 
   @Test
-  void shouldListEmpytValidatorKeys() throws Exception {
+  void shouldListEmptyValidatorKeys() throws Exception {
     final List<Validator> activeValidatorList = Collections.emptyList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);

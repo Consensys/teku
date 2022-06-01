@@ -41,7 +41,7 @@ public interface SecretKey {
    * Generates a Signature from this private key and message using a custom DST.
    *
    * @param message The message to sign, not null
-   * @param dst Domain seperation tag/cipher suite to use
+   * @param dst Domain separation tag/cipher suite to use
    * @return The Signature, not null
    */
   Signature sign(Bytes message, String dst);

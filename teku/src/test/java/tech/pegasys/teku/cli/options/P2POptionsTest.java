@@ -237,7 +237,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void minimumRandomlySelectedPeerCount_canBeOverriden() {
+  public void minimumRandomlySelectedPeerCount_canBeOverridden() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(
             "--p2p-peer-lower-bound", "100",

@@ -17,11 +17,11 @@ import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
-class MesssageIdCalculatorAltair extends MessageIdCalculator {
+class MessageIdCalculatorAltair extends MessageIdCalculator {
   private final Bytes rawMessageData;
   private final String topic;
 
-  public MesssageIdCalculatorAltair(final Bytes rawMessageData, final String topic) {
+  public MessageIdCalculatorAltair(final Bytes rawMessageData, final String topic) {
     this.rawMessageData = rawMessageData;
     this.topic = topic;
   }

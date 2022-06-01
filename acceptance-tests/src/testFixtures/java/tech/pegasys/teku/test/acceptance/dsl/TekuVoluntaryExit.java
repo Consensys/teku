@@ -54,15 +54,15 @@ public class TekuVoluntaryExit extends Node {
     return node;
   }
 
-  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeytores)
+  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeystores)
       throws Exception {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
-            + validatorKeytores.getKeysDirectoryName()
+            + validatorKeystores.getKeysDirectoryName()
             + ":"
             + WORKING_DIRECTORY
-            + validatorKeytores.getPasswordsDirectoryName());
-    this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
+            + validatorKeystores.getPasswordsDirectoryName());
+    this.copyContentsToWorkingDirectory(validatorKeystores.getTarball());
     return this;
   }
 

@@ -85,7 +85,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
   }
 
   @Test
-  void isForCurrentSlot_shouldRecjectOutsideUpperBound() {
+  void isForCurrentSlot_shouldRejectOutsideUpperBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 nextSlotStartTimeMillis =
         spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);

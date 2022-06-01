@@ -347,15 +347,15 @@ class AggregateAttestationValidatorTest {
   void shouldAcceptAggregateWhenNoSupersetOfValidatorsSeen() {
     disableSignatureVerification();
     final StateAndBlockSummary chainHead = storageSystem.getChainHead();
-    final AggregateAndProof validAggreagte =
+    final AggregateAndProof validAggregate =
         generator.validAggregateAndProof(chainHead).getMessage();
-    final AttestationData attestationData = validAggreagte.getAggregate().getData();
+    final AttestationData attestationData = validAggregate.getAggregate().getData();
     final ValidateableAttestation smallAttestation1 =
         createValidAggregate(ONE, attestationData, true, false, true);
     final ValidateableAttestation smallAttestation2 =
         createValidAggregate(UInt64.valueOf(2), attestationData, false, true, true);
     final ValidateableAttestation attestation =
-        createValidAggregate(validAggreagte.getIndex(), attestationData, true, true, false);
+        createValidAggregate(validAggregate.getIndex(), attestationData, true, true, false);
 
     validator.addSeenAggregate(smallAttestation1);
     validator.addSeenAggregate(smallAttestation2);

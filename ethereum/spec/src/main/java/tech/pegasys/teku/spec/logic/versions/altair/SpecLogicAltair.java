@@ -95,7 +95,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final BeaconStateMutatorsAltair beaconStateMutators =
         new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
 
-    // Operation validaton
+    // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 

@@ -166,7 +166,7 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
-  void getFeeRecipent_shouldReturnDefaultFeeRecipientWhenProposerConfigMissing() {
+  void getFeeRecipient_shouldReturnDefaultFeeRecipientWhenProposerConfigMissing() {
     assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey()))
         .contains(defaultFeeRecipient);
   }

@@ -105,7 +105,7 @@ public class DelayedExecutorAsyncRunnerTest {
   }
 
   @Test
-  void runAsyc_shouldCompleteExceptionallyWhenSupplierThrowsException() {
+  void runAsync_shouldCompleteExceptionallyWhenSupplierThrowsException() {
     final RuntimeException exception = new RuntimeException("My bad...");
     final AtomicReference<Throwable> executorException = new AtomicReference<>();
     // Real executors use a different thread so exceptions don't propagate back out of execute
