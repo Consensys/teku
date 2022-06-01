@@ -68,7 +68,10 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<ProposerDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(ProposerDuties.class)
           .name("GetProposerDutiesResponse")
-          .withOptionalField("execution_optimistic", BOOLEAN_TYPE, (__) -> Optional.empty())
+          .withOptionalField(
+              "execution_optimistic",
+              BOOLEAN_TYPE,
+              (proposerDuties) -> Optional.of(proposerDuties.isExecutionOptimistic()))
           .withField("dependent_root", BYTES32_TYPE, ProposerDuties::getDependentRoot)
           .withField("data", listOf(PROPOSER_DUTY_TYPE), ProposerDuties::getDuties)
           .build();

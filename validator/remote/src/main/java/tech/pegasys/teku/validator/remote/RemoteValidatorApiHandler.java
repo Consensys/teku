@@ -203,9 +203,8 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                     response ->
                         new ProposerDuties(
                             response.dependentRoot,
-                            response.data.stream()
-                                .map(this::mapToProposerDuties)
-                                .collect(toList()))));
+                            response.data.stream().map(this::mapToProposerDuties).collect(toList()),
+                            response.executionOptimistic)));
   }
 
   private ProposerDuty mapToProposerDuties(
