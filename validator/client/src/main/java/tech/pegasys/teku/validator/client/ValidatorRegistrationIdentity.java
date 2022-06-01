@@ -15,23 +15,23 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Objects;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorRegistrationIdentity {
 
-  private final Bytes20 feeRecipient;
+  private final Eth1Address feeRecipient;
   private final UInt64 gasLimit;
   private final BLSPublicKey publicKey;
 
   public ValidatorRegistrationIdentity(
-      final Bytes20 feeRecipient, final UInt64 gasLimit, final BLSPublicKey publicKey) {
+      final Eth1Address feeRecipient, final UInt64 gasLimit, final BLSPublicKey publicKey) {
     this.feeRecipient = feeRecipient;
     this.gasLimit = gasLimit;
     this.publicKey = publicKey;
   }
 
-  public Bytes20 getFeeRecipient() {
+  public Eth1Address getFeeRecipient() {
     return feeRecipient;
   }
 

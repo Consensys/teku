@@ -293,7 +293,7 @@ public class DepositProviderTest {
     setup(5);
     mockStateEth1DepositIndex(10);
     mockDepositsFromEth1Block(0, 10);
-    List<Deposit> deposits = depositProvider.getAvailableDeposits();
+    List<DepositWithIndex> deposits = depositProvider.getAvailableDeposits();
     assertThat(deposits.size()).isEqualTo(10);
   }
 
@@ -305,7 +305,7 @@ public class DepositProviderTest {
     mockEth1DataDepositCount(10);
     SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits.size()).isEqualTo(8);
-    List<Deposit> availableDeposits = depositProvider.getAvailableDeposits();
+    List<DepositWithIndex> availableDeposits = depositProvider.getAvailableDeposits();
     assertThat(availableDeposits.size()).isEqualTo(10);
   }
 
@@ -327,7 +327,7 @@ public class DepositProviderTest {
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
-    List<Deposit> availableDeposits = depositProvider.getAvailableDeposits();
+    List<DepositWithIndex> availableDeposits = depositProvider.getAvailableDeposits();
     assertThat(availableDeposits.size()).isEqualTo(10);
   }
 

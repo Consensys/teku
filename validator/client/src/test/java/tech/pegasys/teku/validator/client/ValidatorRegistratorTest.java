@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
@@ -44,15 +44,22 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
+import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 class ValidatorRegistratorTest {
 
+  private static final UInt64 CUSTOM_GAS_LIMIT = UInt64.valueOf(29_000_000);
+
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
+  private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
+  private final ProposerConfig proposerConfig = mock(ProposerConfig.class);
+  private final ValidatorConfig validatorConfig = mock(ValidatorConfig.class);
   private final FeeRecipientProvider feeRecipientProvider = mock(FeeRecipientProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(500);
+  private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(12);
   private final Signer signer = mock(Signer.class);
 
   private DataStructureUtil dataStructureUtil;
@@ -79,11 +86,24 @@ class ValidatorRegistratorTest {
             specContext.getSpec(),
             stubTimeProvider,
             ownedValidators,
+            proposerConfigProvider,
+            validatorConfig,
             feeRecipientProvider,
             validatorApiChannel);
     when(validatorApiChannel.registerValidators(any()))
         .thenReturn(SafeFuture.completedFuture(null));
-    // random signature for all signing
+
+    when(proposerConfigProvider.getProposerConfig())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
+
+    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(any()))
+        .thenReturn(Optional.of(true));
+    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(any()))
+        .thenReturn(Optional.of(CUSTOM_GAS_LIMIT));
+
+    when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
+
+    // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
         .signValidatorRegistration(any(ValidatorRegistration.class), any(UInt64.class));
@@ -110,8 +130,6 @@ class ValidatorRegistratorTest {
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
-    when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
-
     // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
@@ -122,7 +140,14 @@ class ValidatorRegistratorTest {
     List<SszList<SignedValidatorRegistration>> registrationCalls =
         captureValidatorApiChannelCalls(2);
 
-    registrationCalls.forEach(this::verifyRegistrations);
+    registrationCalls.forEach(
+        registrationCall ->
+            verifyRegistrations(
+                registrationCall,
+                List.of(
+                    validator1.getPublicKey(),
+                    validator2.getPublicKey(),
+                    validator3.getPublicKey())));
 
     // signer will be called in total 3 times, since from the 2nd run the signed registrations will
     // be cached
@@ -133,8 +158,6 @@ class ValidatorRegistratorTest {
   void registersNewlyAddedValidators() {
     // GIVEN
     when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator1));
-
-    when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
 
     // Registering only validator1
     validatorRegistrator.onSlot(UInt64.ZERO);
@@ -152,17 +175,80 @@ class ValidatorRegistratorTest {
     assertThat(registrationCalls).hasSize(2);
 
     // first call only has validator1
-    SszList<SignedValidatorRegistration> firstRegistrations = registrationCalls.get(0);
-    assertThat(firstRegistrations).hasSize(1);
-    Stream<BLSPublicKey> firstValidatorsPublicKeys = getPublicKeys(firstRegistrations);
-    assertThat(firstValidatorsPublicKeys).containsExactly(validator1.getPublicKey());
+    verifyRegistrations(registrationCalls.get(0), List.of(validator1.getPublicKey()));
 
     // second call should have processed validator2 and validator3
-    SszList<SignedValidatorRegistration> secondRegistrations = registrationCalls.get(1);
-    assertThat(secondRegistrations).hasSize(2);
-    Stream<BLSPublicKey> secondValidatorsPublicKeys = getPublicKeys(secondRegistrations);
-    assertThat(secondValidatorsPublicKeys)
-        .containsExactlyInAnyOrder(validator2.getPublicKey(), validator3.getPublicKey());
+    verifyRegistrations(
+        registrationCalls.get(1), List.of(validator2.getPublicKey(), validator3.getPublicKey()));
+  }
+
+  @TestTemplate
+  void skipsValidatorRegistrationIfRegistrationNotEnabled() {
+    // GIVEN
+    when(ownedValidators.getActiveValidators())
+        .thenReturn(List.of(validator1, validator2, validator3));
+
+    // validator registration is disabled for validator2
+    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(validator2.getPublicKey()))
+        .thenReturn(Optional.of(false));
+    // validator registration enabled flag is not present for validator 3, so will fall back to
+    // false
+    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(validator3.getPublicKey()))
+        .thenReturn(Optional.empty());
+    when(validatorConfig.isValidatorsRegistrationDefaultEnabled()).thenReturn(false);
+
+    // WHEN
+    validatorRegistrator.onSlot(UInt64.ZERO);
+
+    // THEN
+    SszList<SignedValidatorRegistration> registrations = captureValidatorApiChannelCall();
+
+    verifyRegistrations(registrations, List.of(validator1.getPublicKey()));
+  }
+
+  @TestTemplate
+  void retrievesCorrectGasLimitForValidators() {
+    // GIVEN
+    when(ownedValidators.getActiveValidators())
+        .thenReturn(List.of(validator1, validator2, validator3));
+
+    UInt64 validator2GasLimit = UInt64.valueOf(28_000_000);
+    UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
+
+    // validator2 will have custom gas limit
+    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator2.getPublicKey()))
+        .thenReturn(Optional.of(validator2GasLimit));
+    // validator3 gas limit will fall back to a default
+    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator3.getPublicKey()))
+        .thenReturn(Optional.empty());
+    when(validatorConfig.getValidatorsRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
+
+    // WHEN
+    validatorRegistrator.onSlot(UInt64.ZERO);
+
+    // THEN
+    SszList<SignedValidatorRegistration> registrations = captureValidatorApiChannelCall();
+
+    Consumer<ValidatorRegistration> gasLimitRequirements =
+        (validatorRegistration) -> {
+          BLSPublicKey publicKey = validatorRegistration.getPublicKey();
+          UInt64 gasLimit = validatorRegistration.getGasLimit();
+          if (publicKey.equals(validator1.getPublicKey())) {
+            // validator1 gas limit hasn't been changed
+            assertThat(gasLimit).isEqualTo(CUSTOM_GAS_LIMIT);
+          }
+          if (publicKey.equals(validator2.getPublicKey())) {
+            assertThat(gasLimit).isEqualTo(validator2GasLimit);
+          }
+          if (publicKey.equals(validator3.getPublicKey())) {
+            assertThat(gasLimit).isEqualTo(defaultGasLimit);
+          }
+        };
+
+    verifyRegistrations(
+        registrations,
+        List.of(validator1.getPublicKey(), validator2.getPublicKey(), validator3.getPublicKey()),
+        Optional.of(gasLimitRequirements));
   }
 
   @TestTemplate
@@ -182,28 +268,36 @@ class ValidatorRegistratorTest {
     // THEN
     SszList<SignedValidatorRegistration> registrations = captureValidatorApiChannelCall();
 
-    assertThat(registrations).hasSize(1);
-    assertThat(getPublicKeys(registrations)).containsExactly(validator1.getPublicKey());
+    verifyRegistrations(registrations, List.of(validator1.getPublicKey()));
   }
 
-  private void verifyRegistrations(SszList<SignedValidatorRegistration> validatorRegistrations) {
+  private void verifyRegistrations(
+      SszList<SignedValidatorRegistration> validatorRegistrations,
+      List<BLSPublicKey> expectedValidatorPublicKeys) {
+    verifyRegistrations(validatorRegistrations, expectedValidatorPublicKeys, Optional.empty());
+  }
 
-    assertThat(validatorRegistrations).hasSize(3);
+  private void verifyRegistrations(
+      SszList<SignedValidatorRegistration> validatorRegistrations,
+      List<BLSPublicKey> expectedValidatorPublicKeys,
+      Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
 
     assertThat(validatorRegistrations)
+        .hasSize(expectedValidatorPublicKeys.size())
+        .allSatisfy(registration -> assertThat(registration.getSignature().isValid()).isTrue())
+        .map(SignedValidatorRegistration::getMessage)
         .allSatisfy(
             registration -> {
-              ValidatorRegistration message = registration.getMessage();
-              assertThat(message.getFeeRecipient()).isEqualTo(eth1Address);
-              assertThat(message.getGasLimit()).isEqualTo(UInt64.ZERO);
-              assertThat(registration.getSignature().isValid()).isTrue();
-            });
-
-    Stream<BLSPublicKey> validatorsPublicKeys = getPublicKeys(validatorRegistrations);
-
-    assertThat(validatorsPublicKeys)
-        .containsExactlyInAnyOrder(
-            validator1.getPublicKey(), validator2.getPublicKey(), validator3.getPublicKey());
+              if (alternativeRegistrationRequirements.isPresent()) {
+                alternativeRegistrationRequirements.get().accept(registration);
+              } else {
+                assertThat(registration.getFeeRecipient()).isEqualTo(eth1Address);
+                assertThat(registration.getTimestamp()).isEqualTo(UInt64.valueOf(12));
+                assertThat(registration.getGasLimit()).isEqualTo(CUSTOM_GAS_LIMIT);
+              }
+            })
+        .map(ValidatorRegistration::getPublicKey)
+        .containsExactlyInAnyOrderElementsOf(expectedValidatorPublicKeys);
   }
 
   private SszList<SignedValidatorRegistration> captureValidatorApiChannelCall() {
@@ -218,12 +312,5 @@ class ValidatorRegistratorTest {
     verify(validatorApiChannel, times(times)).registerValidators(argumentCaptor.capture());
 
     return argumentCaptor.getAllValues();
-  }
-
-  private Stream<BLSPublicKey> getPublicKeys(
-      SszList<SignedValidatorRegistration> validatorRegistrations) {
-    return validatorRegistrations.stream()
-        .map(SignedValidatorRegistration::getMessage)
-        .map(ValidatorRegistration::getPublicKey);
   }
 }
