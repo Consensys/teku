@@ -247,6 +247,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 optionalState.map(state -> getProposerDutiesFromIndicesAndState(state, epoch)));
   }
 
+  public Optional<ProposerDuties> getProposerDuties(final BeaconState state, final UInt64 epoch) {
+    return Optional.of(getProposerDutiesFromIndicesAndState(state, epoch));
+  }
+
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       Collection<BLSPublicKey> validatorIdentifiers) {
@@ -646,7 +650,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
     return new ProposerDuties(
-        spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state), result);
+        spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
+        result,
+        combinedChainDataClient.isChainHeadOptimistic());
   }
 
   private AttesterDuties getAttesterDutiesFromIndicesAndState(
