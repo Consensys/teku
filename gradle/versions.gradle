@@ -1,8 +1,9 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.2.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.3'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3'
 
     // Temporary version overrides to fix issues with 2.13.2.1 release not including
     // a 2.13.2.1 version for jackson-bom
@@ -11,7 +12,7 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.13.1') {
+    dependencySet(group: 'com.google.errorprone', version: '2.14.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -24,7 +25,7 @@ dependencyManagement {
     dependency 'com.google.code.gson:gson:2.9.0'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
-    dependency 'org.jsoup:jsoup:1.14.3'
+    dependency 'org.jsoup:jsoup:1.15.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:2.5.0'
 
@@ -64,7 +65,7 @@ dependencyManagement {
       entry 'swagger-annotations'
     }
     dependency 'org.webjars:swagger-ui:3.43.0'
-    dependency 'io.github.classgraph:classgraph:4.8.146'
+    dependency 'io.github.classgraph:classgraph:4.8.147'
     dependency 'com.github.oshi:oshi-core-java11:6.1.6'
 
     dependencySet(group: 'io.netty', version: '4.1.71.Final') {
@@ -74,13 +75,13 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '4.2.7') {
+    dependencySet(group: 'io.vertx', version: '4.3.1') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.4.17'
+    dependency 'io.projectreactor:reactor-core:3.4.18'
 
     dependency 'it.unimi.dsi:fastutil:8.5.8'
 
@@ -122,7 +123,7 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '4.5.1') {
+    dependencySet(group: 'org.mockito', version: '4.6.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -147,15 +148,15 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-      dependencySet(group: 'org.hyperledger.besu.internal', version: '22.4.1') {
+      dependencySet(group: 'org.hyperledger.besu.internal', version: '22.4.2') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
     }
-    dependency 'org.hyperledger.besu:plugin-api:22.4.1'
+    dependency 'org.hyperledger.besu:plugin-api:22.4.2'
 
-    dependencySet(group: 'org.testcontainers', version: '1.17.1') {
+    dependencySet(group: 'org.testcontainers', version: '1.17.2') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -168,10 +169,10 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.1'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.2'
 
-    dependency 'org.jupnp:org.jupnp.support:2.6.0'
-    dependency 'org.jupnp:org.jupnp:2.6.0'
+    dependency 'org.jupnp:org.jupnp.support:2.6.1'
+    dependency 'org.jupnp:org.jupnp:2.6.1'
 
     dependencySet(group: 'io.jsonwebtoken', version: '0.11.5') {
       entry 'jjwt-api'
