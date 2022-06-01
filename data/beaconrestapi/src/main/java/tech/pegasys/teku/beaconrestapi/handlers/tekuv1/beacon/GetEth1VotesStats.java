@@ -126,7 +126,7 @@ public class GetEth1VotesStats extends MigratingEndpointAdapter {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = GetEth1VotesStatsResponse.class)),
-        @OpenApiResponse(status = RES_NOT_FOUND, description = NOT_FOUND_MESSAGE),
+        @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override

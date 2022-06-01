@@ -194,7 +194,7 @@ public class DepositProvider
     return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, maxDeposits);
   }
 
-  public synchronized List<DepositWithIndex> getAvailableDeposits() {
+  protected synchronized List<DepositWithIndex> getAvailableDeposits() {
     return new ArrayList<>(depositNavigableMap.values());
   }
 

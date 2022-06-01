@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class Eth1DataProvider {
@@ -37,7 +38,7 @@ public class Eth1DataProvider {
     this.depositProvider = depositProvider;
   }
 
-  public List<Deposit> getAvailableDeposits() {
+  public List<DepositWithIndex> getAvailableDeposits() {
     return depositProvider.getAvailableDeposits();
   }
 
