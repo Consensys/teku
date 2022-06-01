@@ -56,8 +56,7 @@ public class PostAttesterSlashing extends MigratingEndpointAdapter {
             .operationId("postAttesterSlashing")
             .summary("Submit attester slashing object")
             .description(
-                "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\n"
-                    + "This endpoint does not protected against slashing.")
+                "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.")
             .tags(TAG_BEACON)
             .requestBodyType(getRequestType(spec.getGenesisSpecConfig()))
             .response(SC_OK, "Success")
