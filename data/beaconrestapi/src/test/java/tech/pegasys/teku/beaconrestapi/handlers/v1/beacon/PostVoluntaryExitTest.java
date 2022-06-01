@@ -17,55 +17,71 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class PostVoluntaryExitTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-  private Context context = mock(Context.class);
-  private NodeDataProvider provider = mock(NodeDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private PostVoluntaryExit handler;
+public class PostVoluntaryExitTest extends AbstractMigratedBeaconHandlerTest {
+  private final NodeDataProvider provider = mock(NodeDataProvider.class);
 
   @BeforeEach
   public void setup() {
-    handler = new PostVoluntaryExit(provider, jsonProvider);
+    setHandler(new PostVoluntaryExit(provider));
   }
 
   @Test
   void shouldBeAbleToSubmitSlashing() throws Exception {
-    final SignedVoluntaryExit exit =
-        new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
+    final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
+    request.setRequestBody(exit);
     when(provider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    handler.handle(context);
 
-    verify(provider).postVoluntaryExit(exit);
-    verify(context).status(SC_OK);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   void shouldReturnBadRequest_ifVoluntaryExitInvalid() throws Exception {
-    final SignedVoluntaryExit exit =
-        new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
+    final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
+    request.setRequestBody(exit);
     when(provider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Oh dear")));
-    handler.handle(context);
 
-    verify(provider).postVoluntaryExit(exit);
-    verify(context).status(SC_BAD_REQUEST);
+    handler.handleRequest(request);
+
+    final HttpErrorResponse expectedBody = new HttpErrorResponse(SC_BAD_REQUEST, "Oh dear");
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody()).isEqualTo(expectedBody);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    verifyMetadataEmptyResponse(handler, SC_OK);
   }
 }
