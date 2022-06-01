@@ -60,10 +60,6 @@ public class PostAttesterSlashing extends MigratingEndpointAdapter {
             .tags(TAG_BEACON)
             .requestBodyType(getRequestType(spec.getGenesisSpecConfig()))
             .response(SC_OK, "Success")
-            .response(
-                SC_BAD_REQUEST,
-                "Invalid attester slashing, it will never pass validation so it's rejected",
-                HTTP_ERROR_RESPONSE_TYPE)
             .build());
     this.nodeDataProvider = provider;
   }

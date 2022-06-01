@@ -41,7 +41,7 @@
     "tags" : [ "Beacon" ],
     "operationId" : "postAttesterSlashing",
     "summary" : "Submit attester slashing object",
-    "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
+    "description" : "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
     "requestBody" : {
       "content" : {
         "application/json" : {
@@ -57,7 +57,7 @@
         "content" : { }
       },
       "400" : {
-        "description" : "Invalid attester slashing, it will never pass validation so it's rejected",
+        "description" : "The request could not be processed, check the response for more information.",
         "content" : {
           "application/json" : {
             "schema" : {
