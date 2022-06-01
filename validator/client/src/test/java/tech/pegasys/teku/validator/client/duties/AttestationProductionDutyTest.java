@@ -144,7 +144,8 @@ class AttestationProductionDutyTest {
 
     verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
     verify(validatorLogger)
-        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()));
+        .dutyCompleted(
+            TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(
             eq(TYPE),
@@ -191,7 +192,8 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
 
     verify(validatorLogger)
-        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()));
+        .dutyCompleted(
+            TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), failure);
     verifyNoMoreInteractions(validatorLogger);
@@ -228,7 +230,8 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
 
     verify(validatorLogger)
-        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()));
+        .dutyCompleted(
+            TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verify(validatorLogger)
         .dutyFailed(
             TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), signingFailure);
@@ -253,7 +256,8 @@ class AttestationProductionDutyTest {
 
     verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
     verify(validatorLogger)
-        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()));
+        .dutyCompleted(
+            TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -337,7 +341,8 @@ class AttestationProductionDutyTest {
     // Should have only needed to create one unsigned attestation and reused it for each validator
     verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
     verify(validatorLogger)
-        .dutyCompleted(TYPE, SLOT, 3, Set.of(attestationData.getBeaconBlockRoot()));
+        .dutyCompleted(
+            TYPE, SLOT, 3, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -397,7 +402,8 @@ class AttestationProductionDutyTest {
             3,
             Set.of(
                 unsignedAttestation1.getBeaconBlockRoot(),
-                unsignedAttestation2.getBeaconBlockRoot()));
+                unsignedAttestation2.getBeaconBlockRoot()),
+            Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }
 

@@ -29,6 +29,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,8 +38,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
-  private final PostAttestation handler =
-      new PostAttestation(validatorDataProvider, schemaDefinitionCache);
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new PostAttestation(validatorDataProvider, schemaDefinitionCache));
+  }
 
   @Test
   void shouldBeAbleToSubmitAttestation() throws Exception {

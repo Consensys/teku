@@ -73,6 +73,7 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
         presentFields.add(fieldName);
       } else {
         LOG.debug("Unknown field: {}", fieldName);
+        p.skipChildren();
       }
     }
 
