@@ -41,11 +41,11 @@ public class SignedValidatorRegistrationPropertyTest {
     final SignedValidatorRegistration registration =
         dataStructureUtil.randomSignedValidatorRegistration();
 
-    final ValidatorRegistrationSchema unsignedSchema = new ValidatorRegistrationSchema();
-    final SignedValidatorRegistrationSchema schema =
-        new SignedValidatorRegistrationSchema(unsignedSchema);
+    final ValidatorRegistrationSchema schema = new ValidatorRegistrationSchema();
+    final SignedValidatorRegistrationSchema signedSchema =
+        new SignedValidatorRegistrationSchema(schema);
     final DeserializableTypeDefinition<SignedValidatorRegistration> typeDefinition =
-        schema.getJsonTypeDefinition();
+        signedSchema.getJsonTypeDefinition();
     final String json = JsonUtil.serialize(registration, typeDefinition);
     final SignedValidatorRegistration result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(registration);

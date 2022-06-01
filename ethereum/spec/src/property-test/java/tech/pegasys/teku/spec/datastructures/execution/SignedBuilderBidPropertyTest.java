@@ -41,10 +41,10 @@ public class SignedBuilderBidPropertyTest {
     final SignedBuilderBid bid = dataStructureUtil.randomSignedBuilderBid();
 
     final ExecutionPayloadHeader header = dataStructureUtil.randomExecutionPayloadHeader();
-    final BuilderBidSchema unsignedSchema = new BuilderBidSchema(header.getSchema());
-    final SignedBuilderBidSchema schema = new SignedBuilderBidSchema(unsignedSchema);
+    final BuilderBidSchema schema = new BuilderBidSchema(header.getSchema());
+    final SignedBuilderBidSchema signedSchema = new SignedBuilderBidSchema(schema);
     final DeserializableTypeDefinition<SignedBuilderBid> typeDefinition =
-        schema.getJsonTypeDefinition();
+        signedSchema.getJsonTypeDefinition();
     final String json = JsonUtil.serialize(bid, typeDefinition);
     final SignedBuilderBid result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(bid);

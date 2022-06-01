@@ -34,8 +34,7 @@ public class TransactionPropertyTest {
   void roundTrip(
       @ForAll final int seed,
       @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final byte[] bytes)
+      @ForAll final Eth2Network network)
       throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
