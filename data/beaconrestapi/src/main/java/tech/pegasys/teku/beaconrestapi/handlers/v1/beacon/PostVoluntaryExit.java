@@ -19,7 +19,9 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQ
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -28,26 +30,42 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
-public class PostVoluntaryExit extends AbstractHandler {
+public class PostVoluntaryExit extends MigratingEndpointAdapter {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/pool/voluntary_exits";
   private final NodeDataProvider nodeDataProvider;
 
-  public PostVoluntaryExit(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getNodeDataProvider(), jsonProvider);
+  public PostVoluntaryExit(final DataProvider dataProvider) {
+    this(dataProvider.getNodeDataProvider());
   }
 
-  public PostVoluntaryExit(final NodeDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public PostVoluntaryExit(final NodeDataProvider provider) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postVoluntaryExit")
+            .summary("Submit signed voluntary exit")
+            .description(
+                "Submits signed voluntary exit object to node's pool and if it passes validation node MUST broadcast it to network.")
+            .tags(TAG_BEACON)
+            .requestBodyType(SignedVoluntaryExit.SSZ_SCHEMA.getJsonTypeDefinition())
+            .response(
+                SC_OK,
+                "Signed voluntary exit has been successfully validated, added to the pool, and broadcast.")
+            .response(
+                SC_BAD_REQUEST, "Errors with one or more attestations", HTTP_ERROR_RESPONSE_TYPE)
+            .build());
     this.nodeDataProvider = provider;
   }
 
@@ -59,7 +77,10 @@ public class PostVoluntaryExit extends AbstractHandler {
       description =
           "Submits signed voluntary exit object to node's pool and if it passes validation node MUST broadcast it to network.",
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedVoluntaryExit.class)}),
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(from = tech.pegasys.teku.api.schema.SignedVoluntaryExit.class)
+              }),
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -71,35 +92,34 @@ public class PostVoluntaryExit extends AbstractHandler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
-  public void handle(final Context ctx) throws Exception {
-    try {
-      final SignedVoluntaryExit exit = parseRequestBody(ctx.body(), SignedVoluntaryExit.class);
-      ctx.future(
-          nodeDataProvider
-              .postVoluntaryExit(exit)
-              .thenApplyChecked(result -> handleResponseContext(ctx, result)));
-
-    } catch (final IllegalArgumentException e) {
-      LOG.debug("Voluntary exit failed", e);
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(SC_BAD_REQUEST);
-    }
+  public void handle(@NotNull final Context ctx) throws Exception {
+    adapt(ctx);
   }
 
-  private String handleResponseContext(final Context ctx, final InternalValidationResult result) {
-    if (result.code().equals(ValidationResultCode.IGNORE)
-        || result.code().equals(ValidationResultCode.REJECT)) {
-      LOG.debug(
-          "Voluntary exit failed status {} {}", result.code(), result.getDescription().orElse(""));
-      ctx.status(SC_BAD_REQUEST);
-      return BadRequest.serialize(
-          jsonProvider,
-          SC_BAD_REQUEST,
-          result
-              .getDescription()
-              .orElse("Invalid voluntary exit, it will never pass validation so it's rejected"));
-    }
-    ctx.status(SC_OK);
-    return "";
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final SignedVoluntaryExit exit = request.getRequestBody();
+
+    final SafeFuture<InternalValidationResult> future = nodeDataProvider.postVoluntaryExit(exit);
+
+    request.respondAsync(
+        future.thenApply(
+            internalValidationResult -> {
+              if (internalValidationResult.code().equals(ValidationResultCode.IGNORE)
+                  || internalValidationResult.code().equals(ValidationResultCode.REJECT)) {
+                LOG.debug(
+                    "Voluntary exit failed status {} {}",
+                    internalValidationResult.code(),
+                    internalValidationResult.getDescription().orElse(""));
+                return AsyncApiResponse.respondWithError(
+                    SC_BAD_REQUEST,
+                    internalValidationResult
+                        .getDescription()
+                        .orElse(
+                            "Invalid voluntary exit, it will never pass validation so it's rejected"));
+              }
+
+              return AsyncApiResponse.respondWithCode(SC_OK);
+            }));
   }
 }
