@@ -14,9 +14,9 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema.MAX_LIST_MAX_LENGTH;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -194,13 +194,8 @@ public class DepositProvider
     return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, maxDeposits);
   }
 
-  protected synchronized List<Deposit> getAvailableDeposits() {
-    final UInt64 fromDepositIndex = depositNavigableMap.firstEntry().getKey();
-    final UInt64 eth1DepositCount = depositNavigableMap.lastKey().plus(ONE);
-    final UInt64 toDepositIndex = eth1DepositCount;
-    final long maxDeposits = MAX_LIST_MAX_LENGTH;
-    return getDepositsWithProof(fromDepositIndex, toDepositIndex, eth1DepositCount, maxDeposits)
-        .asList();
+  public synchronized List<DepositWithIndex> getAvailableDeposits() {
+    return new ArrayList<>(depositNavigableMap.values());
   }
 
   private void checkRequiredDepositsAvailable(

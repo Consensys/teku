@@ -35,11 +35,9 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHandlerTest {
   protected final BLSSignature signature = BLSTestUtil.randomSignature(1234);
 
-  protected MigratingEndpointAdapter handler;
-
   @BeforeEach
   public void setup() {
-    handler = getHandler();
+    setHandler(getHandler());
     request.setPathParameter(SLOT, "1");
     request.setQueryParameter(RANDAO_REVEAL, signature.toBytesCompressed().toHexString());
     when(validatorDataProvider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);

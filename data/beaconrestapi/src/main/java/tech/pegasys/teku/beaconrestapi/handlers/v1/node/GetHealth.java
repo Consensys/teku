@@ -98,7 +98,7 @@ public class GetHealth extends MigratingEndpointAdapter {
     if (!chainDataProvider.isStoreAvailable() || syncProvider.getRejectedExecutionCount() > 0) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else if (syncProvider.isSyncing()) {
-      request.respondWithCode(getResponseCodeFromQueryParams(request));
+      request.respondWithUndocumentedCode(getResponseCodeFromQueryParams(request));
     } else {
       request.respondWithCode(SC_OK);
     }

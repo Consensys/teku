@@ -29,6 +29,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,7 +37,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
-  final GetAggregateAttestation handler = new GetAggregateAttestation(validatorDataProvider, spec);
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetAggregateAttestation(validatorDataProvider, spec));
+  }
 
   @Test
   public void shouldReturnAttestationInformation() throws JsonProcessingException {

@@ -21,15 +21,15 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.teku.GetDepositsResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -42,7 +42,7 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
   }
 
   @Test
-  public void shouldBeGoodWithNoDeposits() throws IOException {
+  public void shouldReturnEmptyListWhenNoDeposits() throws IOException {
     when(eth1DataProvider.getAvailableDeposits()).thenReturn(new ArrayList<>());
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -53,27 +53,22 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
   }
 
   @Test
-  public void shouldBeGoodWithSomeDeposits() throws IOException {
-    Deposit deposit1 = dataStructureUtil.randomDeposit();
-    Deposit deposit2 = dataStructureUtil.randomDeposit();
-    List<Deposit> deposits = new ArrayList<>();
+  public void shouldReturnAllAvailableDeposits() throws IOException {
+    DepositWithIndex deposit1 = dataStructureUtil.randomDepositWithIndex();
+    DepositWithIndex deposit2 = dataStructureUtil.randomDepositWithIndex();
+    List<DepositWithIndex> deposits = new ArrayList<>();
     deposits.add(deposit1);
     deposits.add(deposit2);
     when(eth1DataProvider.getAvailableDeposits()).thenReturn(deposits);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
-    GetDepositsResponse getDepositsResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetDepositsResponse.class);
-    assertThat(getDepositsResponse).isNotNull();
-    assertThat(
-            getDepositsResponse.data.stream()
-                .map(tech.pegasys.teku.api.schema.Deposit::asInternalDeposit)
-                .collect(Collectors.toList()))
-        .isEqualTo(deposits);
+    final String actualResponse = response.body().string();
+    assertThat(actualResponse)
+        .isEqualTo(JsonUtil.serialize(deposits, GetDeposits.DEPOSITS_RESPONSE_TYPE));
   }
 
   @Test
-  public void shouldBeServerErrorWhenProviderFails() throws IOException {
+  public void shouldReturnServerErrorWhenProviderFails() throws IOException {
     when(eth1DataProvider.getAvailableDeposits()).thenThrow(new RuntimeException(""));
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);

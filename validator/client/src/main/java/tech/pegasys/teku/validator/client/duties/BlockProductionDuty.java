@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +25,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -73,7 +76,8 @@ public class BlockProductionDuty implements Duty {
         .thenApply(
             result -> {
               if (result.isPublished()) {
-                return DutyResult.success(signedBlock.getRoot());
+                return DutyResult.success(
+                    signedBlock.getRoot(), getBlockSummary(signedBlock.getMessage().getBody()));
               }
               return DutyResult.forError(
                   validator.getPublicKey(),
@@ -118,5 +122,30 @@ public class BlockProductionDuty implements Duty {
         + ", forkProvider="
         + forkProvider
         + '}';
+  }
+
+  static Optional<String> getBlockSummary(final BeaconBlockBody blockBody) {
+    return blockBody
+        .getOptionalExecutionPayloadSummary()
+        .map(BlockProductionDuty::getSummaryString);
+  }
+
+  private static String getSummaryString(final ExecutionPayloadSummary summary) {
+    UInt64 gasPercentage;
+    try {
+      gasPercentage =
+          summary.getGasLimit().isGreaterThan(0L)
+              ? summary.getGasUsed().times(100).dividedBy(summary.getGasLimit())
+              : ZERO;
+    } catch (ArithmeticException e) {
+      gasPercentage = UInt64.ZERO;
+      LOG.debug("Failed to compute percentage", e);
+    }
+    return String.format(
+        "%s (%s%%) gas, EL block:  %s (%s)",
+        summary.getGasUsed(),
+        gasPercentage,
+        summary.getBlockHash().toUnprefixedHexString(),
+        summary.getBlockNumber());
   }
 }

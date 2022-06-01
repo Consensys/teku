@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
@@ -43,8 +44,9 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
-  public static final boolean DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
+  public static final UInt64 DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -65,8 +67,9 @@ public class ValidatorConfig {
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
   private final boolean blindedBeaconBlocksEnabled;
-  private final boolean proposerMevBoostEnabled;
+  private final boolean validatorsRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
+  private final UInt64 validatorsRegistrationDefaultGasLimit;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -87,9 +90,10 @@ public class ValidatorConfig {
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final Optional<String> proposerConfigSource,
       final boolean refreshProposerConfigFromSource,
-      final boolean proposerMevBoostEnabled,
+      final boolean validatorsRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
-      final boolean validatorClientUseSszBlocksEnabled) {
+      final boolean validatorClientUseSszBlocksEnabled,
+      final UInt64 validatorsRegistrationDefaultGasLimit) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -112,8 +116,9 @@ public class ValidatorConfig {
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
-    this.proposerMevBoostEnabled = proposerMevBoostEnabled;
+    this.validatorsRegistrationDefaultEnabled = validatorsRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
+    this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
   }
 
   public static Builder builder() {
@@ -183,6 +188,10 @@ public class ValidatorConfig {
     return proposerConfigSource;
   }
 
+  public UInt64 getValidatorsRegistrationDefaultGasLimit() {
+    return validatorsRegistrationDefaultGasLimit;
+  }
+
   public boolean getRefreshProposerConfigFromSource() {
     return refreshProposerConfigFromSource;
   }
@@ -195,8 +204,8 @@ public class ValidatorConfig {
     return validatorClientUseSszBlocksEnabled;
   }
 
-  public boolean isProposerMevBoostEnabled() {
-    return proposerMevBoostEnabled;
+  public boolean isValidatorsRegistrationDefaultEnabled() {
+    return validatorsRegistrationDefaultEnabled;
   }
 
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
@@ -232,9 +241,11 @@ public class ValidatorConfig {
     private Optional<String> proposerConfigSource = Optional.empty();
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
-    private boolean proposerMevBoostEnabled = DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
+    private boolean validatorsRegistrationDefaultEnabled =
+        DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+    private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
 
     private Builder() {}
 
@@ -360,8 +371,9 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder proposerMevBoostEnabled(final boolean proposerMevBoostEnabled) {
-      this.proposerMevBoostEnabled = proposerMevBoostEnabled;
+    public Builder validatorsRegistrationDefaultEnabled(
+        final boolean validatorsRegistrationDefaultEnabled) {
+      this.validatorsRegistrationDefaultEnabled = validatorsRegistrationDefaultEnabled;
       return this;
     }
 
@@ -376,12 +388,19 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorsRegistrationDefaultGasLimit(
+        final UInt64 validatorsRegistrationDefaultGasLimit) {
+      this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
       validateExternalSignerTruststoreAndPasswordFileConfig();
       validateExternalSignerURLScheme();
-      validateMevBoostAndBlindedBlocks();
+      validateValidatorsRegistrationAndBlindedBlocks();
+      validatorsRegistrationDefaultEnabledOrProposerConfigSource();
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
@@ -401,9 +420,10 @@ public class ValidatorConfig {
           proposerDefaultFeeRecipient,
           proposerConfigSource,
           refreshProposerConfigFromSource,
-          proposerMevBoostEnabled,
+          validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
-          validatorClientSszBlocksEnabled);
+          validatorClientSszBlocksEnabled,
+          validatorsRegistrationDefaultGasLimit);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
@@ -452,11 +472,18 @@ public class ValidatorConfig {
       }
     }
 
-    private void validateMevBoostAndBlindedBlocks() {
-      if (proposerMevBoostEnabled && !blindedBlocksEnabled) {
+    private void validateValidatorsRegistrationAndBlindedBlocks() {
+      if (validatorsRegistrationDefaultEnabled && !blindedBlocksEnabled) {
         LOG.info(
-            "'--Xvalidators-proposer-mev-boost-enabled' requires '--Xvalidators-proposer-blinded-blocks-enabled', enabling it");
+            "'--Xvalidators-registration-default-enabled' requires '--Xvalidators-proposer-blinded-blocks-enabled', enabling it");
         blindedBlocksEnabled = true;
+      }
+    }
+
+    private void validatorsRegistrationDefaultEnabledOrProposerConfigSource() {
+      if (validatorsRegistrationDefaultEnabled && proposerConfigSource.isPresent()) {
+        throw new InvalidConfigurationException(
+            "Invalid configuration. --Xvalidators-registration-default-enabled cannot be specified when --validators-proposer-config is used");
       }
     }
 

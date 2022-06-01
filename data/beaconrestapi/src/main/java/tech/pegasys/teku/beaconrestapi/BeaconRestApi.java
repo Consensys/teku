@@ -453,9 +453,9 @@ public class BeaconRestApi {
     addMigratedEndpoint(new PostAttestation(dataProvider, schemaCache));
 
     addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
-    app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostAttesterSlashing(dataProvider, spec));
     addMigratedEndpoint(new GetProposerSlashings(dataProvider));
-    app.post(PostProposerSlashing.ROUTE, new PostProposerSlashing(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostProposerSlashing(dataProvider));
     addMigratedEndpoint(new GetVoluntaryExits(dataProvider));
     app.post(PostVoluntaryExit.ROUTE, new PostVoluntaryExit(dataProvider, jsonProvider));
     app.post(PostSyncCommittees.ROUTE, new PostSyncCommittees(dataProvider, jsonProvider));

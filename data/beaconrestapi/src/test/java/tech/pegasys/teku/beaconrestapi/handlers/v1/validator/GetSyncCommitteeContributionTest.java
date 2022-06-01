@@ -31,6 +31,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,8 +48,10 @@ class GetSyncCommitteeContributionTest extends AbstractMigratedBeaconHandlerTest
   @SuppressWarnings("HidingField")
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final GetSyncCommitteeContribution handler =
-      new GetSyncCommitteeContribution(validatorDataProvider, schemaDefinitionCache);
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetSyncCommitteeContribution(validatorDataProvider, schemaDefinitionCache));
+  }
 
   @Test
   void shouldReturnSyncCommitteeContributionInformation() throws Exception {

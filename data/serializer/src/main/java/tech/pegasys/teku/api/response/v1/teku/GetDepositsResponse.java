@@ -17,13 +17,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
-import tech.pegasys.teku.api.schema.Deposit;
 
 public class GetDepositsResponse {
-  public final List<Deposit> data;
+  public final List<DepositWithIndex> data;
 
   @JsonCreator
-  public GetDepositsResponse(@JsonProperty("data") final List<Deposit> data) {
+  public GetDepositsResponse(@JsonProperty("data") final List<DepositWithIndex> data) {
     this.data = data;
   }
 
