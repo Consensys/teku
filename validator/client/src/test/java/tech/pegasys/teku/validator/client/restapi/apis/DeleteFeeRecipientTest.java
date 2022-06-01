@@ -43,6 +43,7 @@ class DeleteFeeRecipientTest {
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final StubRestApiRequest request =
       StubRestApiRequest.builder()
+          .metadata(handler.getMetadata())
           .pathParameter("pubkey", publicKey.toBytesCompressed().toHexString())
           .build();
 

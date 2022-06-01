@@ -22,19 +22,22 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 class GetForkScheduleTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetForkSchedule handler = new GetForkSchedule(new ConfigProvider(spec));
   private final List<Fork> forks = spec.getForkSchedule().getForks();
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetForkSchedule(new ConfigProvider(spec)));
+  }
 
   @Test
   void shouldGetSuccessfulResponse() throws JsonProcessingException {
-    final StubRestApiRequest request = new StubRestApiRequest();
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(forks);

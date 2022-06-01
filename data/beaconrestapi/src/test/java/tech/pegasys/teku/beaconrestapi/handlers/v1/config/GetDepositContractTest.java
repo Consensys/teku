@@ -21,23 +21,25 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 class GetDepositContractTest extends AbstractMigratedBeaconHandlerTest {
   final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
   final int chainId = spec.getGenesisSpecConfig().getDepositChainId();
-  private final GetDepositContract handler =
-      new GetDepositContract(eth1Address, new ConfigProvider(spec));
   private final GetDepositContract.DepositContractData contractData =
       new GetDepositContract.DepositContractData(chainId, eth1Address);
 
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetDepositContract(eth1Address, new ConfigProvider(spec)));
+  }
+
   @Test
   void shouldGetSuccessfulResponse() throws JsonProcessingException {
-    final StubRestApiRequest request = new StubRestApiRequest();
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(contractData);

@@ -61,7 +61,6 @@ public class DeleteFeeRecipient extends RestApiEndpoint {
       request.respondError(SC_FORBIDDEN, "Fee recipient for public key could not be removed.");
       return;
     }
-    ;
     request.respondWithCode(SC_NO_CONTENT);
   }
 }
