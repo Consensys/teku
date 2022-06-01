@@ -66,7 +66,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getProposerDuties(any()))
         .thenReturn(
             completedFuture(
-                Optional.of(new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList()))));
+                Optional.of(
+                    new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList(), false))));
 
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
 
@@ -88,7 +89,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                         List.of(
                             validator1Duties,
                             new ProposerDuty(
-                                dataStructureUtil.randomPublicKey(), 6, UInt64.valueOf(4)))))));
+                                dataStructureUtil.randomPublicKey(), 6, UInt64.valueOf(4))),
+                        false))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -118,7 +120,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new ProposerDuties(
-                        dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
+                        dataStructureUtil.randomBytes32(), List.of(validator1Duties), false))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -147,7 +149,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(scheduledDuties, never()).performProductionDuty(ZERO);
 
     epoch0Duties.complete(
-        Optional.of(new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList())));
+        Optional.of(new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList(), false)));
 
     verify(scheduledDuties).performProductionDuty(ZERO);
     verify(validatorApiChannel).getProposerDuties(ZERO);
@@ -164,7 +166,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getProposerDuties(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new ProposerDuties(currentDependentRoot, emptyList()))));
+                Optional.of(new ProposerDuties(currentDependentRoot, emptyList(), false))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getProposerDuties(currentEpoch);
@@ -189,7 +191,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getProposerDuties(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new ProposerDuties(currentDependentRoot, emptyList()))));
+                Optional.of(new ProposerDuties(currentDependentRoot, emptyList(), false))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getProposerDuties(currentEpoch);
@@ -258,7 +260,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getProposerDuties(ZERO))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList()))));
+                Optional.of(
+                    new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList(), false))));
 
     dutyScheduler.onSlot(ZERO); // epoch 0
     dutyScheduler.onBlockProductionDue(slot);
