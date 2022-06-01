@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -39,7 +40,10 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -85,7 +89,7 @@ public class PostSyncCommittees extends MigratingEndpointAdapter {
             .response(
                 SC_BAD_REQUEST,
                 "Errors with one or more sync committee signatures",
-                BAD_REQUEST_RESPONSE)
+                getBadRequestResponseTypes())
             .build());
     this.provider = provider;
   }
@@ -135,5 +139,13 @@ public class PostSyncCommittees extends MigratingEndpointAdapter {
               }
               return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, submitDataErrorList);
             }));
+  }
+
+  private static SerializableOneOfTypeDefinition<Object> getBadRequestResponseTypes() {
+    final SerializableOneOfTypeDefinitionBuilder<Object> builder =
+        new SerializableOneOfTypeDefinitionBuilder<>().title("BadRequestResponses");
+    builder.withType(value -> value instanceof List, BAD_REQUEST_RESPONSE);
+    builder.withType(value -> value instanceof HttpErrorResponse, HTTP_ERROR_RESPONSE_TYPE);
+    return builder.build();
   }
 }

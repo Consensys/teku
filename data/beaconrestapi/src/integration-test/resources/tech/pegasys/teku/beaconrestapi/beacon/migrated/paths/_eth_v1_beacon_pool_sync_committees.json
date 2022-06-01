@@ -26,7 +26,13 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/PostDataFailureResponse"
+              "title" : "BadRequestResponses",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/PostDataFailureResponse"
+              }, {
+                "$ref" : "#/components/schemas/HttpErrorResponse"
+              } ]
             }
           }
         }
