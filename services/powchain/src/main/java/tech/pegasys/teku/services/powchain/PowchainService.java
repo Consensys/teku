@@ -30,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
-import tech.pegasys.teku.beacon.pow.BlockBasedEth1HeadTracker;
 import tech.pegasys.teku.beacon.pow.DepositEventsAccessor;
 import tech.pegasys.teku.beacon.pow.DepositFetcher;
 import tech.pegasys.teku.beacon.pow.DepositProcessingController;
@@ -144,13 +143,9 @@ public class PowchainService extends Service {
             asyncRunner,
             powConfig.getEth1LogsMaxBlockRange());
 
-    if (powConfig.useTimeBasedHeadTracking()) {
-      headTracker =
-          new TimeBasedEth1HeadTracker(
-              powConfig.getSpec(), serviceConfig.getTimeProvider(), asyncRunner, eth1Provider);
-    } else {
-      headTracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider, config);
-    }
+    headTracker =
+        new TimeBasedEth1HeadTracker(
+            powConfig.getSpec(), serviceConfig.getTimeProvider(), asyncRunner, eth1Provider);
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
             config,
