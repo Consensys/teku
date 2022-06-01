@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -34,7 +35,11 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class PostAttesterSlashingTest extends AbstractMigratedBeaconHandlerTest {
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
-  private final PostAttesterSlashing handler = new PostAttesterSlashing(nodeDataProvider, spec);
+
+  @BeforeEach
+  void setup() {
+    setHandler(new PostAttesterSlashing(nodeDataProvider, spec));
+  }
 
   @Test
   void shouldBeAbleToSubmitSlashing() throws Exception {

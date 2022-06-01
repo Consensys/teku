@@ -31,7 +31,9 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
@@ -94,27 +96,29 @@ public class PostAttesterSlashing extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final AttesterSlashing attesterSlashing = request.getRequestBody();
-    final InternalValidationResult result =
-        nodeDataProvider.postAttesterSlashing(attesterSlashing).join();
+    final SafeFuture<InternalValidationResult> future =
+        nodeDataProvider.postAttesterSlashing(attesterSlashing);
 
-    if (result.code().equals(ValidationResultCode.IGNORE)
-        || result.code().equals(ValidationResultCode.REJECT)) {
-      request.respondError(
-          SC_BAD_REQUEST,
-          "Invalid attester slashing, it will never pass validation so it's rejected.");
-    } else {
-      request.respondWithCode(SC_OK);
-    }
+    request.respondAsync(
+        future.thenApply(
+            internalValidationResult -> {
+              if (internalValidationResult.code().equals(ValidationResultCode.IGNORE)
+                  || internalValidationResult.code().equals(ValidationResultCode.REJECT)) {
+                return AsyncApiResponse.respondWithError(
+                    SC_BAD_REQUEST,
+                    "Invalid attester slashing, it will never pass validation so it's rejected.");
+              } else {
+                return AsyncApiResponse.respondWithCode(SC_OK);
+              }
+            }));
   }
 
   private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(
       SpecConfig specConfig) {
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
         new IndexedAttestation.IndexedAttestationSchema(specConfig);
-    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema
-        attesterSlashingSchema =
-            new tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
-                .AttesterSlashingSchema(indexedAttestationSchema);
+    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
+        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
 
     return attesterSlashingSchema.getJsonTypeDefinition();
   }
