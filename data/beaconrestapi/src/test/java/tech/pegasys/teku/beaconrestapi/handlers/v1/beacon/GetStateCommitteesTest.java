@@ -42,20 +42,20 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 
 public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateCommittees handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    handler = new GetStateCommittees(chainDataProvider);
+    setHandler(new GetStateCommittees(chainDataProvider));
   }
 
   @Test
   public void shouldGetCommitteesFromState() throws Exception {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .optionalQueryParameter("epoch", "0")
             .optionalQueryParameter("index", "0")
@@ -83,6 +83,7 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
   public void shouldFailIfEpochInvalid(String queryParam) {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .optionalQueryParameter(queryParam, "a")
             .build();

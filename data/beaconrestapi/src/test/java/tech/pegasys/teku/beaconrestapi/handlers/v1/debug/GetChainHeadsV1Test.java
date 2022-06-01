@@ -26,19 +26,17 @@ import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 
 class GetChainHeadsV1Test extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetChainHeadsV1 handler;
   private List<ProtoNodeData> protoNodeDataList;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
-    handler = new GetChainHeadsV1(chainDataProvider);
+    setHandler(new GetChainHeadsV1(chainDataProvider));
     protoNodeDataList = chainDataProvider.getChainHeads();
   }
 
@@ -64,7 +62,6 @@ class GetChainHeadsV1Test extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @Test
   void shouldGetSuccessfulResponse() throws JsonProcessingException {
-    final StubRestApiRequest request = new StubRestApiRequest();
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(protoNodeDataList);

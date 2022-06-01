@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandlerTest {
-  protected MigratingEndpointAdapter handler;
 
   public abstract MigratingEndpointAdapter getHandler();
 
@@ -43,7 +42,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
 
   @BeforeEach
   public void setup() {
-    handler = getHandler();
+    setHandler(getHandler());
   }
 
   @Test

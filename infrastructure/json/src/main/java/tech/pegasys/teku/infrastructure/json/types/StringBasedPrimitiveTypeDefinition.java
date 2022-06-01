@@ -111,6 +111,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("name", name)
+        .add("title", title)
         .add("description", description)
         .add("example", example)
         .add("format", format)

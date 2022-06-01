@@ -192,6 +192,10 @@ public class ChainDataProvider {
     return fromState(stateIdParam, beaconState -> beaconState);
   }
 
+  public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAtHead() {
+    return defaultStateSelectorFactory.headSelector().getState();
+  }
+
   public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAndMetadata(
       final String stateIdParam) {
     return defaultStateSelectorFactory.defaultStateSelector(stateIdParam).getState();

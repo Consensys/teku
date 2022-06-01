@@ -56,9 +56,10 @@ public class ValidatorLogger {
       final String producedType,
       final UInt64 slot,
       final int successCount,
-      final Set<Bytes32> blockRoots) {
+      final Set<Bytes32> blockRoots,
+      final Optional<String> context) {
     final String paddedType = Strings.padEnd(producedType, LONGEST_TYPE_LENGTH, ' ');
-    logDuty(paddedType, slot, successCount, blockRoots);
+    logDuty(paddedType, slot, successCount, blockRoots, context);
   }
 
   public void dutySkippedWhileSyncing(
@@ -101,12 +102,21 @@ public class ValidatorLogger {
   }
 
   private void logDuty(
-      final String type, final UInt64 slot, final int count, final Set<Bytes32> roots) {
+      final String type,
+      final UInt64 slot,
+      final int count,
+      final Set<Bytes32> roots,
+      final Optional<String> context) {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPublished %s  Count: %s, Slot: %s, Root: %s",
-                PREFIX, type, count, slot, formatBlockRoots(roots)),
+                "%sPublished %s  Count: %s, Slot: %s, Root: %s%s",
+                PREFIX,
+                type,
+                count,
+                slot,
+                formatBlockRoots(roots),
+                context.map(s -> ", " + s).orElse("")),
             Color.BLUE));
   }
 
@@ -157,6 +167,12 @@ public class ValidatorLogger {
 
   public void beaconProposerPreparationFailed(final Throwable error) {
     final String errorString = String.format("%sFailed to send proposers to Beacon Node", PREFIX);
+    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+  }
+
+  public void registeringValidatorsFailed(final Throwable error) {
+    final String errorString =
+        String.format("%sFailed to send validator registrations to Beacon Node", PREFIX);
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
 

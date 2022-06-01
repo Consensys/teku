@@ -39,20 +39,20 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateValidatorBalancesTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-  private GetStateValidatorBalances handler;
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    handler = new GetStateValidatorBalances(chainDataProvider);
+    setHandler(new GetStateValidatorBalances(chainDataProvider));
   }
 
   @Test
   public void shouldGetSpecifiedValidatorBalancesFromState() throws Exception {
     StubRestApiRequest request =
         StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .listQueryParameter("id", List.of("1", "2"))
             .build();
@@ -69,7 +69,10 @@ public class GetStateValidatorBalancesTest
   @Test
   public void shouldGetAllValidatorBalancesFromState() throws Exception {
     StubRestApiRequest request =
-        StubRestApiRequest.builder().pathParameter("state_id", "head").build();
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("state_id", "head")
+            .build();
 
     final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> stateValidatorBalancesData =
         chainDataProvider.getStateValidatorBalances("head", List.of()).get();

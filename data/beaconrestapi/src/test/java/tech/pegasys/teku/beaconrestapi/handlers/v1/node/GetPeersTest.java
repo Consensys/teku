@@ -42,12 +42,12 @@ public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
   private final Eth2Peer peer2 = mock(Eth2Peer.class);
 
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
-  private final GetPeers handler = new GetPeers(networkDataProvider);
   private final List<Eth2Peer> data = List.of(peer1, peer2);
   private final GetPeers.PeersData peersData = new PeersData(data);
 
   @BeforeEach
   void setup() {
+    setHandler(new GetPeers(networkDataProvider));
     when(peer1.getId()).thenReturn(peerId1);
     when(peer1.getAddress()).thenReturn(new PeerAddress(peerId1));
     when(peer1.isConnected()).thenReturn(true);

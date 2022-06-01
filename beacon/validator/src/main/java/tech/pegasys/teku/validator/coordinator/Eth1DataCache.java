@@ -165,7 +165,8 @@ public class Eth1DataCache {
             true,
             eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
             true),
-        eth1Data -> eth1Data.getDepositCount().compareTo(dataFromState.getDepositCount()) >= 0);
+        eth1Data ->
+            eth1Data.getDepositCount().isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
   }
 
   private void prune(final UInt64 latestBlockTimestamp) {

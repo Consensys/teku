@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -51,7 +52,10 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
               stateAndMetaData -> stateAndMetaData.getData().hashTreeRoot())
           .build();
 
-  private final TestHandler handler = new TestHandler(chainDataProvider);
+  @BeforeEach
+  void setUp() {
+    setHandler(new TestHandler(chainDataProvider));
+  }
 
   @Test
   void shouldReturnNotFound()

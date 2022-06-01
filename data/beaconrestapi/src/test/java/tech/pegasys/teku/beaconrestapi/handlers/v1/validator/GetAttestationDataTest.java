@@ -29,6 +29,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,8 +38,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
-  private final GetAttestationData handler = new GetAttestationData(validatorDataProvider);
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetAttestationData(validatorDataProvider));
+  }
 
   @Test
   void shouldReturnAttestationDataInformation() throws Exception {

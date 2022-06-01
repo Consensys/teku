@@ -30,11 +30,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
 public class PostRegisterValidatorTest extends AbstractMigratedBeaconHandlerTest {
-  private PostRegisterValidator handler;
 
   @BeforeEach
   void setup() {
-    handler = new PostRegisterValidator(validatorDataProvider);
+    setHandler(new PostRegisterValidator(validatorDataProvider));
   }
 
   @Test

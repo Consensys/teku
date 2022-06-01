@@ -17,7 +17,9 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.UInt64Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorProposerOptions {
@@ -48,15 +50,26 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-proposer-mev-boost-enabled"},
+      names = {"--Xvalidators-registration-default-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enable MEV boost when proposing blocks.",
+      description = "Enable validators registration to builder infrastructure.",
       arity = "0..1",
       fallbackValue = "true",
       hidden = true)
-  private boolean proposerMevBoostEnabled =
-      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_MEV_BOOST_ENABLED;
+  private boolean validatorsRegistrationDefaultEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
+
+  @Option(
+      names = {"--Xvalidators-registration-default-gas-limit"},
+      paramLabel = "<uint64>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable MEV boost when proposing blocks.",
+      arity = "0..1",
+      hidden = true,
+      converter = UInt64Converter.class)
+  private UInt64 registrationDefaultGasLimit =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
 
   @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
@@ -75,7 +88,8 @@ public class ValidatorProposerOptions {
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
-                .proposerMevBoostEnabled(proposerMevBoostEnabled)
-                .blindedBeaconBlocksEnabled(blindedBlocksEnabled));
+                .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
+                .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
+                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit));
   }
 }
