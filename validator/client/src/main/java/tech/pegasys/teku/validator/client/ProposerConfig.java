@@ -55,6 +55,22 @@ public class ProposerConfig {
     return Optional.ofNullable(proposerConfig.get(pubKey));
   }
 
+  public Config getConfigForPubKeyOrDefault(final BLSPublicKey pubKey) {
+    return getConfigForPubKey(pubKey).orElse(defaultConfig);
+  }
+
+  public Optional<Boolean> isValidatorRegistrationEnabledForPubKey(final BLSPublicKey pubKey) {
+    return getConfigForPubKeyOrDefault(pubKey)
+        .getValidatorRegistration()
+        .map(ValidatorRegistration::isEnabled);
+  }
+
+  public Optional<UInt64> getValidatorRegistrationGasLimitForPubKey(final BLSPublicKey pubKey) {
+    return getConfigForPubKeyOrDefault(pubKey)
+        .getValidatorRegistration()
+        .flatMap(ValidatorRegistration::getGasLimit);
+  }
+
   public Config getDefaultConfig() {
     return defaultConfig;
   }
