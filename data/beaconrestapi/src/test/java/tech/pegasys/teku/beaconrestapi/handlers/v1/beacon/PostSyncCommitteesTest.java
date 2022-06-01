@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
-class PostSyncCommitteesTest extends AbstractMigratedBeaconHandlerTest {
+public class PostSyncCommitteesTest extends AbstractMigratedBeaconHandlerTest {
   @SuppressWarnings("HidingField")
   private final Spec spec = TestSpecFactory.createMinimalAltair();
 
