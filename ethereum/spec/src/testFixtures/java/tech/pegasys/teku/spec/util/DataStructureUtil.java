@@ -92,6 +92,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -509,6 +511,16 @@ public final class DataStructureUtil {
             UInt256.ZERO,
             Bytes32.ZERO,
             List.of());
+  }
+
+  public Transaction randomExecutionPayloadTransaction() {
+    final TransactionSchema schema =
+        new TransactionSchema(
+            spec.forMilestone(SpecMilestone.BELLATRIX)
+                .getConfig()
+                .toVersionBellatrix()
+                .orElseThrow());
+    return schema.fromBytes(Bytes.wrap(randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE))));
   }
 
   public List<Bytes> randomExecutionPayloadTransactions() {
