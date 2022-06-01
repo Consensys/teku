@@ -65,10 +65,7 @@ public class PostProposerSlashingTest extends AbstractMigratedBeaconHandlerTest 
 
     handler.handleRequest(request);
 
-    final HttpErrorResponse expectedBody =
-        new HttpErrorResponse(
-            SC_BAD_REQUEST,
-            "Invalid proposer slashing, it will never pass validation so it's rejected");
+    final HttpErrorResponse expectedBody = new HttpErrorResponse(SC_BAD_REQUEST, "Oops");
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
