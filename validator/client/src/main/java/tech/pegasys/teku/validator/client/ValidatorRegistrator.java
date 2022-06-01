@@ -39,8 +39,10 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
+import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 public class ValidatorRegistrator implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -54,6 +56,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final Spec spec;
   private final TimeProvider timeProvider;
   private final OwnedValidators ownedValidators;
+  private final ProposerConfigProvider proposerConfigProvider;
+  private final ValidatorConfig validatorConfig;
   private final FeeRecipientProvider feeRecipientProvider;
   private final ValidatorApiChannel validatorApiChannel;
 
@@ -61,13 +65,17 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Spec spec,
       final TimeProvider timeProvider,
       final OwnedValidators ownedValidators,
+      final ProposerConfigProvider proposerConfigProvider,
+      final ValidatorConfig validatorConfig,
       final FeeRecipientProvider feeRecipientProvider,
       final ValidatorApiChannel validatorApiChannel) {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
+    this.proposerConfigProvider = proposerConfigProvider;
     this.feeRecipientProvider = feeRecipientProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.validatorConfig = validatorConfig;
   }
 
   @Override
@@ -130,54 +138,85 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return SafeFuture.completedFuture(null);
     }
 
-    final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
-        validators.stream()
-            .flatMap(
-                validator -> {
-                  final BLSPublicKey publicKey = validator.getPublicKey();
-                  final Optional<Eth1Address> maybeFeeRecipient =
-                      feeRecipientProvider.getFeeRecipient(publicKey);
+    return proposerConfigProvider
+        .getProposerConfig()
+        .thenCompose(
+            maybeProposerConfig -> {
+              final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
+                  validators.stream()
+                      .flatMap(
+                          validator -> {
+                            final BLSPublicKey publicKey = validator.getPublicKey();
 
-                  if (maybeFeeRecipient.isEmpty()) {
-                    LOG.warn(
-                        "There is no fee recipient configured for {}. Can't register.", validator);
-                    return Stream.empty();
-                  }
+                            if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
+                              return Stream.empty();
+                            }
 
-                  final ValidatorRegistrationIdentity validatorRegistrationIdentity =
-                      createValidatorRegistrationIdentity(validator, maybeFeeRecipient.get());
+                            final Optional<Eth1Address> maybeFeeRecipient =
+                                feeRecipientProvider.getFeeRecipient(publicKey);
 
-                  if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
-                    final SignedValidatorRegistration cachedRegistration =
-                        cachedValidatorRegistrations.get(validatorRegistrationIdentity);
-                    return Stream.of(SafeFuture.completedFuture(cachedRegistration));
-                  }
+                            if (maybeFeeRecipient.isEmpty()) {
+                              LOG.warn(
+                                  "There is no fee recipient configured for {}. Can't register.",
+                                  validator);
+                              return Stream.empty();
+                            }
 
-                  final ValidatorRegistration validatorRegistration =
-                      createValidatorRegistration(validatorRegistrationIdentity);
-                  final Signer signer = validator.getSigner();
-                  final SafeFuture<SignedValidatorRegistration> registrationFuture =
-                      signValidatorRegistration(validatorRegistration, signer, epoch)
-                          .thenPeek(
-                              signedValidatorRegistration ->
-                                  cachedValidatorRegistrations.put(
-                                      validatorRegistrationIdentity, signedValidatorRegistration));
-                  return Stream.of(registrationFuture);
-                });
+                            final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
 
-    return SafeFuture.collectAll(validatorRegistrationsFutures)
-        .thenApply(
-            validatorRegistrations ->
-                SszUtils.toSszList(
-                    ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA, validatorRegistrations))
-        .thenCompose(validatorApiChannel::registerValidators);
+                            final ValidatorRegistrationIdentity validatorRegistrationIdentity =
+                                createValidatorRegistrationIdentity(
+                                    validator, maybeFeeRecipient.get(), gasLimit);
+
+                            if (cachedValidatorRegistrations.containsKey(
+                                validatorRegistrationIdentity)) {
+                              final SignedValidatorRegistration cachedRegistration =
+                                  cachedValidatorRegistrations.get(validatorRegistrationIdentity);
+                              return Stream.of(SafeFuture.completedFuture(cachedRegistration));
+                            }
+
+                            final ValidatorRegistration validatorRegistration =
+                                createValidatorRegistration(validatorRegistrationIdentity);
+                            final Signer signer = validator.getSigner();
+                            final SafeFuture<SignedValidatorRegistration> registrationFuture =
+                                signValidatorRegistration(validatorRegistration, signer, epoch)
+                                    .thenPeek(
+                                        signedValidatorRegistration ->
+                                            cachedValidatorRegistrations.put(
+                                                validatorRegistrationIdentity,
+                                                signedValidatorRegistration));
+                            return Stream.of(registrationFuture);
+                          });
+
+              return SafeFuture.collectAll(validatorRegistrationsFutures)
+                  .thenApply(
+                      validatorRegistrations ->
+                          SszUtils.toSszList(
+                              ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA,
+                              validatorRegistrations))
+                  .thenCompose(validatorApiChannel::registerValidators);
+            });
+  }
+
+  private boolean registrationIsEnabled(
+      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
+    return maybeProposerConfig
+        .flatMap(
+            proposerConfig -> proposerConfig.isValidatorRegistrationEnabledForPubKey(publicKey))
+        .orElse(validatorConfig.isValidatorsRegistrationDefaultEnabled());
+  }
+
+  private UInt64 getGasLimit(
+      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
+    return maybeProposerConfig
+        .flatMap(
+            proposerConfig -> proposerConfig.getValidatorRegistrationGasLimitForPubKey(publicKey))
+        .orElse(validatorConfig.getValidatorsRegistrationDefaultGasLimit());
   }
 
   private ValidatorRegistrationIdentity createValidatorRegistrationIdentity(
-      final Validator validator, final Eth1Address feeRecipient) {
-    // hardcoding gas_limit to ZERO for now. The real value will be
-    // taken from the proposer config in a future PR.
-    return new ValidatorRegistrationIdentity(feeRecipient, UInt64.ZERO, validator.getPublicKey());
+      final Validator validator, final Eth1Address feeRecipient, final UInt64 gasLimit) {
+    return new ValidatorRegistrationIdentity(feeRecipient, gasLimit, validator.getPublicKey());
   }
 
   private ValidatorRegistration createValidatorRegistration(
