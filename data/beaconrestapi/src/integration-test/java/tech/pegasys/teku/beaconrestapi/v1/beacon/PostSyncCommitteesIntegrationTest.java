@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  private final String errorString = "The Error Description";
+  private static final String errorMessage = "The Error Description";
 
   @Test
   void shouldSubmitSyncCommitteesAndGetResponse() throws IOException {
@@ -53,7 +53,7 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
                 dataStructureUtil.randomUInt64(),
                 new BLSSignature(dataStructureUtil.randomSignature())));
     final SafeFuture<List<SubmitDataError>> future =
-        SafeFuture.completedFuture(List.of(new SubmitDataError(UInt64.ZERO, errorString)));
+        SafeFuture.completedFuture(List.of(new SubmitDataError(UInt64.ZERO, errorMessage)));
     when(validatorApiChannel.sendSyncCommitteeMessages(
             requestBody.get(0).asInternalCommitteeSignature(spec).stream()
                 .collect(Collectors.toList())))
@@ -64,7 +64,7 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
     final PostDataFailureResponse responseBody =
         jsonProvider.jsonToObject(response.body().string(), PostDataFailureResponse.class);
 
-    assertThat(responseBody.failures.get(0).message).isEqualTo(errorString);
+    assertThat(responseBody.failures.get(0).message).isEqualTo(errorMessage);
   }
 
   @Test

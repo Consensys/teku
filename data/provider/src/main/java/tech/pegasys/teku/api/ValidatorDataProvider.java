@@ -232,7 +232,24 @@ public class ValidatorDataProvider {
 
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
-    return validatorApiChannel.sendSyncCommitteeMessages(messages);
+    return validatorApiChannel.sendSyncCommitteeMessages(
+        messages.stream()
+            .flatMap(message -> checkInternalCommitteeSignature(message).stream())
+            .collect(Collectors.toList()));
+  }
+
+  private Optional<SyncCommitteeMessage> checkInternalCommitteeSignature(
+      final SyncCommitteeMessage message) {
+    final Optional<SchemaDefinitionsAltair> schema =
+        spec.atSlot(message.getSlot()).getSchemaDefinitions().toVersionAltair();
+    if (schema.isEmpty()) {
+      final String errorMessage =
+          String.format(
+              "Could not create sync committee signature at phase0 slot %s for validator %s",
+              message.getSlot(), message.getValidatorIndex());
+      throw new IllegalArgumentException(errorMessage);
+    }
+    return Optional.of(message);
   }
 
   private Optional<PostDataFailureResponse> convertToPostDataFailureResponse(
