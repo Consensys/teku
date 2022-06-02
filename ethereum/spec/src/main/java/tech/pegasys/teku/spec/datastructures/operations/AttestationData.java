@@ -93,4 +93,9 @@ public class AttestationData
   public Checkpoint getTarget() {
     return getField4();
   }
+
+  @Override
+  public AttestationDataSchema getSchema() {
+    return (AttestationDataSchema) super.getSchema();
+  }
 }

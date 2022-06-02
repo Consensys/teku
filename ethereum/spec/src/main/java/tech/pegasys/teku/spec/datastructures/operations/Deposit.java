@@ -66,4 +66,9 @@ public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> 
   public DepositData getData() {
     return getField1();
   }
+
+  @Override
+  public DepositSchema getSchema() {
+    return (DepositSchema) super.getSchema();
+  }
 }
