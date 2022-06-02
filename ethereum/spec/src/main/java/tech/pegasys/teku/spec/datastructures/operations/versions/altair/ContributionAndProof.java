@@ -46,4 +46,9 @@ public class ContributionAndProof
   public BLSSignature getSelectionProof() {
     return getField2().getSignature();
   }
+
+  @Override
+  public ContributionAndProofSchema getSchema() {
+    return (ContributionAndProofSchema) super.getSchema();
+  }
 }

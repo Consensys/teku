@@ -113,6 +113,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -399,6 +400,17 @@ public final class DataStructureUtil {
         .toVersionAltair()
         .orElseThrow()
         .getSyncAggregateSchema();
+  }
+
+  public SyncAggregatorSelectionData randomSyncAggregatorSelectionData() {
+    SpecVersion specVersionAltair =
+        Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
+    return specVersionAltair
+        .getSchemaDefinitions()
+        .toVersionAltair()
+        .orElseThrow()
+        .getSyncAggregatorSelectionDataSchema()
+        .create(randomUInt64(), randomUInt64());
   }
 
   public SyncCommittee randomSyncCommittee() {
@@ -996,13 +1008,20 @@ public final class DataStructureUtil {
     return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
   }
 
-  public DepositData randomDepositData() {
-    BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
+  public DepositMessage randomDepositMessage(BLSKeyPair keyPair) {
     BLSPublicKey pubkey = keyPair.getPublicKey();
     Bytes32 withdrawalCredentials = randomBytes32();
+    return new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
+  }
 
-    DepositMessage proofOfPossessionData =
-        new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
+  public DepositMessage randomDepositMessage() {
+    BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
+    return randomDepositMessage(keyPair);
+  }
+
+  public DepositData randomDepositData() {
+    BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
+    DepositMessage proofOfPossessionData = randomDepositMessage(keyPair);
 
     final Bytes32 domain = computeDomain();
     final Bytes signingRoot = getSigningRoot(proofOfPossessionData, domain);
@@ -1354,7 +1373,7 @@ public final class DataStructureUtil {
         .create(contributionAndProof, randomSignature());
   }
 
-  private ContributionAndProof randomContributionAndProof(
+  public ContributionAndProof randomContributionAndProof(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(slot)
         .getContributionAndProofSchema()

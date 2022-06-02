@@ -65,4 +65,9 @@ public class SignedVoluntaryExit
         .add("signature", getSignature())
         .toString();
   }
+
+  @Override
+  public SignedVoluntaryExitSchema getSchema() {
+    return (SignedVoluntaryExitSchema) super.getSchema();
+  }
 }
