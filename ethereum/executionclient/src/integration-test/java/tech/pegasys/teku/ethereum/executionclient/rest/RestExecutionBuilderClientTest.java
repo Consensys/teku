@@ -163,6 +163,23 @@ class RestExecutionBuilderClientTest {
   }
 
   @TestTemplate
+  void registerValidator_zeroRegistrationsDoesNotMakeRequest() {
+
+    SszList<SignedValidatorRegistration> zeroRegistrations =
+        SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getDefault();
+
+    assertThat(restExecutionBuilderClient.registerValidators(SLOT, zeroRegistrations))
+        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+        .satisfies(
+            response -> {
+              assertThat(response.isSuccess()).isTrue();
+              assertThat(response.getPayload()).isNull();
+            });
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
+  }
+
+  @TestTemplate
   void registerValidator_failures() {
 
     String unknownValidatorError = "{\"code\":400,\"message\":\"unknown validator\"}";
