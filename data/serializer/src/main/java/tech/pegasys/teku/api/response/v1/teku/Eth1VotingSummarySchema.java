@@ -21,8 +21,8 @@ import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Eth1VotingSummarySchema {
-  @JsonProperty("eth1_data")
-  public Eth1Data eth1Data;
+  @JsonProperty("current_eth1_data")
+  public Eth1Data currentEth1Data;
 
   @JsonProperty("eth1_data_votes")
   public List<Eth1DataWithVotesSchema> eth1DataVotes;
@@ -41,12 +41,12 @@ public class Eth1VotingSummarySchema {
 
   @JsonCreator
   public Eth1VotingSummarySchema(
-      @JsonProperty("eth1_data") Eth1Data eth1Data,
+      @JsonProperty("current_eth1_data") Eth1Data currentEth1Data,
       @JsonProperty("eth1_data_votes") List<Eth1DataWithVotesSchema> eth1DataVotes,
       @JsonProperty("votes_required") UInt64 votesRequired,
       @JsonProperty("voting_period_slots") UInt64 votingPeriodSlots,
       @JsonProperty("voting_period_slots_left") UInt64 votingPeriodSlotsLeft) {
-    this.eth1Data = eth1Data;
+    this.currentEth1Data = currentEth1Data;
     this.eth1DataVotes = eth1DataVotes;
     this.votesRequired = votesRequired;
     this.votingPeriodSlots = votingPeriodSlots;

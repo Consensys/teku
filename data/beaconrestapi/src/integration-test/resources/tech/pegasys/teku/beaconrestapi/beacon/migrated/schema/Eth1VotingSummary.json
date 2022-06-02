@@ -1,9 +1,9 @@
 {
   "title" : "Eth1VotingSummary",
   "type" : "object",
-  "required" : [ "eth1_data", "eth1_data_votes", "votes_required", "voting_period_slots", "voting_period_slots_left" ],
+  "required" : [ "current_eth1_data", "eth1_data_votes", "votes_required", "voting_period_slots", "voting_period_slots_left" ],
   "properties" : {
-    "eth1_data" : {
+    "current_eth1_data" : {
       "$ref" : "#/components/schemas/Eth1Data"
     },
     "eth1_data_votes" : {

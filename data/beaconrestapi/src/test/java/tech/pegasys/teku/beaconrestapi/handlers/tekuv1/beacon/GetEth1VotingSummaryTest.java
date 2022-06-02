@@ -113,6 +113,6 @@ public class GetEth1VotingSummaryTest extends AbstractMigratedBeaconHandlerTest 
     final String data = getResponseStringFromMetadata(handler, SC_OK, eth1VotingSummary);
     assertThat(data)
         .isEqualTo(
-            "{\"data\":{\"eth1_data\":{\"deposit_root\":\"0xd543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22\",\"deposit_count\":\"20\",\"block_hash\":\"0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d\"},\"eth1_data_votes\":[{\"eth1_data\":{\"deposit_root\":\"0xd543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22\",\"deposit_count\":\"20\",\"block_hash\":\"0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d\"},\"votes\":\"20\"}],\"votes_required\":\"50\",\"voting_period_slots\":\"100\",\"voting_period_slots_left\":\"30\"}}");
+            "{\"data\":{\"current_eth1_data\":{\"deposit_root\":\"0xd543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22\",\"deposit_count\":\"20\",\"block_hash\":\"0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d\"},\"eth1_data_votes\":[{\"eth1_data\":{\"deposit_root\":\"0xd543a5c171f43007ec7a6871885a3faeb3fd8c4f5a810097508ffd301459aa22\",\"deposit_count\":\"20\",\"block_hash\":\"0xaf01b1c1315d727d01f5991ae1481614a7f78e2beeefae22f48c76a05f973b0d\"},\"votes\":\"20\"}],\"votes_required\":\"50\",\"voting_period_slots\":\"100\",\"voting_period_slots_left\":\"30\"}}");
   }
 }
