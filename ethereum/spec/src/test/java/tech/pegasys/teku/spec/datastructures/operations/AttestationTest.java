@@ -116,7 +116,7 @@ class AttestationTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
+  void equalsReturnsFalseWhenAggregateSignaturesAreDifferent() {
     BLSSignature differentAggregateSignature = BLSTestUtil.randomSignature(99);
     Attestation testAttestation =
         schema.create(aggregationBitfield, data, differentAggregateSignature);

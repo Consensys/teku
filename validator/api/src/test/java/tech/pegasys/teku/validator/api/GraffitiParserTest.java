@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 class GraffitiParserTest {
   @Test
-  void testGraffitiParserLoadsAFileSucessfully() throws Exception {
+  void testGraffitiParserLoadsAFileSuccessfully() throws Exception {
     assertThat(GraffitiParser.loadFromFile(Path.of("src/test/resources/graffitiSample.txt")))
         .isEqualTo(Bytes32.rightPad(Bytes.wrap("123456789".getBytes(UTF_8))));
     assertThat(GraffitiParser.loadFromFile(Path.of("src/test/resources/32NullBytes.txt")))
@@ -41,7 +41,7 @@ class GraffitiParserTest {
   }
 
   @Test
-  void testGraffitiParserLoadsEmptyFileSucessfully() throws Exception {
+  void testGraffitiParserLoadsEmptyFileSuccessfully() throws Exception {
     assertThat(GraffitiParser.loadFromFile(Path.of("src/test/resources/emptyGraffitiSample.txt")))
         .isEqualTo(Bytes32.ZERO);
   }

@@ -20,11 +20,17 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class ProposerDuties {
   private final Bytes32 dependentRoot;
+
+  private final boolean executionOptimistic;
   private final List<ProposerDuty> duties;
 
-  public ProposerDuties(final Bytes32 dependentRoot, final List<ProposerDuty> duties) {
+  public ProposerDuties(
+      final Bytes32 dependentRoot,
+      final List<ProposerDuty> duties,
+      final boolean executionOptimistic) {
     this.dependentRoot = dependentRoot;
     this.duties = duties;
+    this.executionOptimistic = executionOptimistic;
   }
 
   public Bytes32 getDependentRoot() {
@@ -33,6 +39,10 @@ public class ProposerDuties {
 
   public List<ProposerDuty> getDuties() {
     return duties;
+  }
+
+  public boolean isExecutionOptimistic() {
+    return executionOptimistic;
   }
 
   @Override

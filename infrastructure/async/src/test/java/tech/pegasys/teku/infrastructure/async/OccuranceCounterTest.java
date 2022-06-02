@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-class OccuranceCounterTest {
-  private final OccuranceCounter counter = new OccuranceCounter(10);
+class OccurrenceCounterTest {
+  private final OccurrenceCounter counter = new OccurrenceCounter(10);
 
   @Test
   void startsAtZero() {
