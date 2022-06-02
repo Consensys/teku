@@ -48,6 +48,11 @@ public class SszPublicKey extends SszByteVectorImpl {
   }
 
   @Override
+  public SszPublicKeySchema getSchema() {
+    return (SszPublicKeySchema) super.getSchema();
+  }
+
+  @Override
   public Bytes48 getBytes() {
     return Bytes48.wrap(super.getBytes());
   }

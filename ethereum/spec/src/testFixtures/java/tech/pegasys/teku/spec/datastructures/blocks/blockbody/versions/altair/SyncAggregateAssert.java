@@ -45,8 +45,7 @@ public class SyncAggregateAssert extends AbstractAssert<SyncAggregateAssert, Syn
 
   public SyncAggregateAssert hasSyncCommitteeBits(final int... bits) {
     assertThat(actual.getSyncCommitteeBits())
-        .isEqualTo(
-            ((SyncAggregateSchema) actual.getSchema()).getSyncCommitteeBitsSchema().ofBits(bits));
+        .isEqualTo(actual.getSchema().getSyncCommitteeBitsSchema().ofBits(bits));
     return this;
   }
 

@@ -31,6 +31,11 @@ public class SyncAggregate extends Container2<SyncAggregate, SszBitvector, SszSi
     super(type, syncCommitteeBits, syncCommitteeSignature);
   }
 
+  @Override
+  public SyncAggregateSchema getSchema() {
+    return (SyncAggregateSchema) super.getSchema();
+  }
+
   public SszBitvector getSyncCommitteeBits() {
     return getField0();
   }

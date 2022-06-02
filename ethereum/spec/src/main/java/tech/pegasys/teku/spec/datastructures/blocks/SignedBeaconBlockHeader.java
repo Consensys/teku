@@ -50,6 +50,11 @@ public class SignedBeaconBlockHeader
     super(SSZ_SCHEMA, message, new SszSignature(signature));
   }
 
+  @Override
+  public SignedBeaconBlockHeaderSchema getSchema() {
+    return (SignedBeaconBlockHeaderSchema) super.getSchema();
+  }
+
   public BeaconBlockHeader getMessage() {
     return getField0();
   }

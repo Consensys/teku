@@ -106,6 +106,11 @@ public class BeaconBlockHeader
   }
 
   @Override
+  public BeaconBlockHeaderSchema getSchema() {
+    return (BeaconBlockHeaderSchema) super.getSchema();
+  }
+
+  @Override
   public UInt64 getSlot() {
     return getField0().get();
   }
