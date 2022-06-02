@@ -113,7 +113,7 @@ public class ExecutionPayloadSchema
   }
 
   @SuppressWarnings("unchecked")
-  private TransactionSchema getTransactionSchema() {
+  public TransactionSchema getTransactionSchema() {
     return (TransactionSchema) getTransactionsSchema().getElementSchema();
   }
 
