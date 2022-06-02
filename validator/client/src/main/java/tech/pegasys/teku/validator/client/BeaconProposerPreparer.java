@@ -34,7 +34,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
-public class BeaconProposerPreparer implements ValidatorTimingChannel {
+public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipientProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
@@ -98,6 +98,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   // - proposer set via the SET api (runtime configuration)
   // - default set in --validator-proposer-config file
   // - default set by --validators-proposer-default-fee-recipient
+  @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
     if (validatorIndexProvider.isEmpty()
         || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
@@ -115,8 +116,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     }
 
     return maybeProposerConfig
-        .map(proposerConfig -> proposerConfig.getDefaultConfig().map(Config::getFeeRecipient))
-        .orElse(defaultFeeRecipient);
+        .map(proposerConfig -> proposerConfig.getDefaultConfig().getFeeRecipient())
+        .or(() -> defaultFeeRecipient);
   }
 
   // Cannot set a fee recipient if the key is specified in the configuration file

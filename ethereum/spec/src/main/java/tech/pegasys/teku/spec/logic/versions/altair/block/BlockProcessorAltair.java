@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
@@ -254,6 +255,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState state,
       final ExecutionPayloadHeader payloadHeader,
       final Optional<ExecutionPayload> payload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayload in Altair");
+  }
+
+  @Override
+  public void validateExecutionPayload(
+      final BeaconState state,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> executionPayload,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");

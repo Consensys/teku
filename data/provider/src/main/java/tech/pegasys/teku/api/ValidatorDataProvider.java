@@ -35,17 +35,14 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
-import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
@@ -60,17 +57,19 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuty;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
@@ -164,14 +163,8 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<Optional<PostDataFailureResponse>> submitAttestations(
-      List<Attestation> attestations) {
-    return validatorApiChannel
-        .sendSignedAttestations(
-            attestations.stream()
-                .map(attestation -> attestation.asInternalAttestation(spec))
-                .collect(toList()))
-        .thenApply(this::convertToPostDataFailureResponse);
+  public SafeFuture<List<SubmitDataError>> submitAttestations(List<Attestation> attestations) {
+    return validatorApiChannel.sendSignedAttestations(attestations);
   }
 
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
@@ -237,14 +230,26 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
   }
 
-  public SafeFuture<Optional<PostDataFailureResponse>> submitCommitteeSignatures(
+  public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
-    return validatorApiChannel
-        .sendSyncCommitteeMessages(
-            messages.stream()
-                .flatMap(message -> message.asInternalCommitteeSignature(spec).stream())
-                .collect(Collectors.toList()))
-        .thenApply(this::convertToPostDataFailureResponse);
+    return validatorApiChannel.sendSyncCommitteeMessages(
+        messages.stream()
+            .flatMap(message -> checkInternalCommitteeSignature(message).stream())
+            .collect(Collectors.toList()));
+  }
+
+  private Optional<SyncCommitteeMessage> checkInternalCommitteeSignature(
+      final SyncCommitteeMessage message) {
+    final Optional<SchemaDefinitionsAltair> schema =
+        spec.atSlot(message.getSlot()).getSchemaDefinitions().toVersionAltair();
+    if (schema.isEmpty()) {
+      final String errorMessage =
+          String.format(
+              "Could not create sync committee signature at phase0 slot %s for validator %s",
+              message.getSlot(), message.getValidatorIndex());
+      throw new IllegalArgumentException(errorMessage);
+    }
+    return Optional.of(message);
   }
 
   private Optional<PostDataFailureResponse> convertToPostDataFailureResponse(
@@ -319,29 +324,13 @@ public class ValidatorDataProvider {
                                 .collect(toList()))));
   }
 
-  public SafeFuture<Optional<GetProposerDutiesResponse>> getProposerDuties(final UInt64 epoch) {
-    return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch))
-        .thenApply(
-            res ->
-                res.map(
-                    duties ->
-                        new GetProposerDutiesResponse(
-                            duties.getDependentRoot(),
-                            duties.getDuties().stream()
-                                .filter(duty -> duty.getPublicKey() != null)
-                                .map(this::mapToProposerDuties)
-                                .collect(toList()))));
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+    return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch));
   }
 
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 blockRoot) {
     return validatorApiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
-  }
-
-  private tech.pegasys.teku.api.response.v1.validator.ProposerDuty mapToProposerDuties(
-      final ProposerDuty duties) {
-    return new tech.pegasys.teku.api.response.v1.validator.ProposerDuty(
-        new BLSPubKey(duties.getPublicKey()), duties.getValidatorIndex(), duties.getSlot());
   }
 
   private tech.pegasys.teku.api.response.v1.validator.AttesterDuty mapToAttesterDuties(

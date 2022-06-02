@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszVectorSchema;
@@ -32,13 +33,16 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
     extends AbstractSszVectorSchema<SszByte, SszVectorT>
     implements SszByteVectorSchema<SszVectorT> {
 
-  public SszByteVectorSchemaImpl(long vectorLength) {
-    super(SszPrimitiveSchemas.BYTE_SCHEMA, vectorLength);
+  public SszByteVectorSchemaImpl(
+      final SszPrimitiveSchema<Byte, SszByte> elementSchema, final long vectorLength) {
+    super(elementSchema, vectorLength);
   }
 
   @Override
   protected DeserializableTypeDefinition<SszVectorT> createTypeDefinition() {
-    return sszSerializedType(this, "SSZ hexadecimal");
+    return getElementSchema() == SszPrimitiveSchemas.BYTE_SCHEMA
+        ? sszSerializedType(this, "SSZ hexadecimal")
+        : super.createTypeDefinition();
   }
 
   @Override

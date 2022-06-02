@@ -16,14 +16,14 @@ package tech.pegasys.teku.infrastructure.async;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class OccuranceCounter {
+public class OccurrenceCounter {
   private final int[] snapshots;
 
   private int position = 0;
 
   private final AtomicInteger counter = new AtomicInteger(0);
 
-  public OccuranceCounter(final int snapshotCount) {
+  public OccurrenceCounter(final int snapshotCount) {
     this.snapshots = new int[snapshotCount];
     Arrays.fill(snapshots, 0);
   }

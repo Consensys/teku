@@ -58,6 +58,11 @@ public class AsyncApiResponse {
     return new AsyncApiResponse(SC_OK, responseBody);
   }
 
+  public static AsyncApiResponse respondWithObject(
+      final int responseCode, final Object responseBody) {
+    return new AsyncApiResponse(responseCode, responseBody);
+  }
+
   public static AsyncApiResponse respondNotFound() {
     return new AsyncApiResponse(SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Not found"));
   }

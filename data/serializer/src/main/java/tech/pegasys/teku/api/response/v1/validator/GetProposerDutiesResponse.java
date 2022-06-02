@@ -35,12 +35,17 @@ public class GetProposerDutiesResponse {
 
   public final List<ProposerDuty> data;
 
+  @JsonProperty("execution_optimistic")
+  public final boolean executionOptimistic;
+
   @JsonCreator
   public GetProposerDutiesResponse(
       @JsonProperty("dependent_root") final Bytes32 dependentRoot,
-      @JsonProperty("data") final List<ProposerDuty> data) {
+      @JsonProperty("data") final List<ProposerDuty> data,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic) {
     this.dependentRoot = dependentRoot;
     this.data = data;
+    this.executionOptimistic = executionOptimistic;
   }
 
   @Override
@@ -52,12 +57,14 @@ public class GetProposerDutiesResponse {
       return false;
     }
     final GetProposerDutiesResponse that = (GetProposerDutiesResponse) o;
-    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(data, that.data);
+    return executionOptimistic == that.executionOptimistic
+        && Objects.equals(dependentRoot, that.dependentRoot)
+        && Objects.equals(data, that.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(dependentRoot, data);
+    return Objects.hash(dependentRoot, data, executionOptimistic);
   }
 
   @Override
@@ -65,6 +72,7 @@ public class GetProposerDutiesResponse {
     return MoreObjects.toStringHelper(this)
         .add("dependentRoot", dependentRoot)
         .add("data", data)
+        .add("execution_optimistic", executionOptimistic)
         .toString();
   }
 }

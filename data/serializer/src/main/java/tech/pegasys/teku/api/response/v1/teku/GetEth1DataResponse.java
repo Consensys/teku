@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,10 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.json.exceptions;
+package tech.pegasys.teku.api.response.v1.teku;
 
-public class ContentTypeNotSupportedException extends RuntimeException {
-  public ContentTypeNotSupportedException(String message) {
-    super(message);
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.pegasys.teku.api.schema.Eth1Data;
+
+public class GetEth1DataResponse {
+
+  public final Eth1Data data;
+
+  @JsonCreator
+  public GetEth1DataResponse(@JsonProperty("data") final Eth1Data data) {
+    this.data = data;
   }
 }

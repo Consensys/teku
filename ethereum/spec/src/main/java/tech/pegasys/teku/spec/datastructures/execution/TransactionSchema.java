@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -20,7 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 public class TransactionSchema extends SszByteListSchemaImpl<Transaction> {
 
   public TransactionSchema(final SpecConfigBellatrix specConfig) {
-    super(specConfig.getMaxBytesPerTransaction());
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getMaxBytesPerTransaction());
   }
 
   @Override

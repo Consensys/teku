@@ -36,7 +36,6 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
 
-  protected final StubRestApiRequest request = new StubRestApiRequest();
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
 
@@ -46,10 +45,19 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final SyncDataProvider syncDataProvider =
       new SyncDataProvider(syncService, rejectedExecutionSupplier);
   protected final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
-  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
+
+  // Getting a NullPointerException from this? Call setHandler as the first thing you do. :)
+  protected StubRestApiRequest request;
+  protected MigratingEndpointAdapter handler;
+
+  protected void setHandler(final MigratingEndpointAdapter handler) {
+    this.handler = handler;
+    this.request = new StubRestApiRequest(handler.getMetadata());
+  }
 
   protected SyncingStatus getSyncStatus(
       final boolean isSyncing,

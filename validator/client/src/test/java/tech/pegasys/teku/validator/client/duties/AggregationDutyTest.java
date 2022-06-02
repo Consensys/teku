@@ -232,7 +232,8 @@ class AggregationDutyTest {
     // Only one proof should be sent.
     verify(validatorApiChannel, times(1)).sendAggregateAndProofs(anyList());
     verify(validatorLogger)
-        .dutyCompleted(TYPE, SLOT, 1, Set.of(aggregate.getData().getBeaconBlockRoot()));
+        .dutyCompleted(
+            TYPE, SLOT, 1, Set.of(aggregate.getData().getBeaconBlockRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }
 

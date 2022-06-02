@@ -18,7 +18,7 @@ import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 
-public class OkHttpClientAuthLoggingIntercepter {
+public class OkHttpClientAuthLoggingInterceptor {
   public static void addAuthenticator(
       final HttpUrl apiEndpoint, final OkHttpClient.Builder httpClientBuilder) {
     final String username = apiEndpoint.username();

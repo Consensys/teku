@@ -21,7 +21,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -113,7 +115,22 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
+
+    validateExecutionPayload(
+        genericState, executionPayloadHeader, maybeExecutionPayload, payloadExecutor);
+
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
+    state.setLatestExecutionPayloadHeader(executionPayloadHeader);
+  }
+
+  @Override
+  public void validateExecutionPayload(
+      final BeaconState genericState,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
     if (miscHelpersBellatrix.isMergeTransitionComplete(state)) {
       if (!executionPayloadHeader
           .getParentHash()
@@ -148,8 +165,6 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
         throw new BlockProcessingException("Execution payload was not optimistically accepted");
       }
     }
-
-    state.setLatestExecutionPayloadHeader(executionPayloadHeader);
   }
 
   @Override

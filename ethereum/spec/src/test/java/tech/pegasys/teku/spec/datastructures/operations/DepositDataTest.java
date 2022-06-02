@@ -69,7 +69,7 @@ class DepositDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
+  void equalsReturnsFalseWhenProofsOfPossessionAreDifferent() {
     BLSSignature differentSignature = dataStructureUtil.randomSignature();
     DepositData testDepositInput =
         new DepositData(pubkey, withdrawalCredentials, amount, differentSignature);

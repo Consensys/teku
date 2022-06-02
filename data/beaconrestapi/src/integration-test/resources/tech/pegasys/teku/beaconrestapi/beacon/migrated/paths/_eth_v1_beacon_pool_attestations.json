@@ -55,5 +55,49 @@
         }
       }
     }
+  },
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "postAttestation",
+    "summary" : "Submit signed attestations",
+    "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Attestation"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Attestations are stored in pool and broadcast on appropriate subnet",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Errors with one or more attestations",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostDataFailureResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }

@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
   String STUB_ENDPOINT_IDENTIFIER = "stub";
@@ -75,7 +76,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         @Override
         public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
-            final UInt64 slot,
+            final BeaconState state,
             final boolean forceLocalFallback) {
           return SafeFuture.completedFuture(null);
         }
@@ -110,7 +111,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, UInt64 slot, boolean forceLocalFallback);
+      ExecutionPayloadContext executionPayloadContext,
+      BeaconState state,
+      boolean forceLocalFallback);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 

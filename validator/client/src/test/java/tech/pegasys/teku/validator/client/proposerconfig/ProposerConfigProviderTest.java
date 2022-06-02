@@ -36,13 +36,13 @@ public class ProposerConfigProviderTest {
   private final ProposerConfigLoader proposerConfigLoader = mock(ProposerConfigLoader.class);
 
   private final ProposerConfig proposerConfigA =
-      new ProposerConfig(ImmutableMap.of(), new ProposerConfig.Config(Eth1Address.ZERO));
+      new ProposerConfig(ImmutableMap.of(), new ProposerConfig.Config(Eth1Address.ZERO, null));
 
   private final ProposerConfig proposerConfigB =
       new ProposerConfig(
           ImmutableMap.of(),
           new ProposerConfig.Config(
-              Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
+              Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"), null));
 
   private final ProposerConfigProvider proposerConfigProvider =
       ProposerConfigProvider.create(asyncRunner, true, proposerConfigLoader, Optional.of(SOURCE));

@@ -52,44 +52,12 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
         executionPayload -> {
           final BlindedBeaconBlockBodyBellatrix blindedBody =
               BlindedBeaconBlockBodyBellatrix.required(blindedBeaconBlock.getBody());
-
           checkState(
               executionPayload
                   .hashTreeRoot()
                   .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
               "executionPayloadHeader root in blinded block do not match provided executionPayload root");
-
-          final BeaconBlockBodyBellatrix unblindedBody =
-              new BeaconBlockBodyBellatrixImpl(
-                  (BeaconBlockBodySchemaBellatrixImpl) schemaDefinitions.getBeaconBlockBodySchema(),
-                  blindedBody.getRandaoRevealSsz(),
-                  blindedBody.getEth1Data(),
-                  blindedBody.getGraffitiSsz(),
-                  blindedBody.getProposerSlashings(),
-                  blindedBody.getAttesterSlashings(),
-                  blindedBody.getAttestations(),
-                  blindedBody.getDeposits(),
-                  blindedBody.getVoluntaryExits(),
-                  blindedBody.getSyncAggregate(),
-                  executionPayload);
-
-          final BeaconBlock unblindedBeaconBlock =
-              schemaDefinitions
-                  .getBeaconBlockSchema()
-                  .create(
-                      blindedBeaconBlock.getSlot(),
-                      blindedBeaconBlock.getProposerIndex(),
-                      blindedBeaconBlock.getParentRoot(),
-                      blindedBeaconBlock.getStateRoot(),
-                      unblindedBody);
-
-          checkState(
-              unblindedBeaconBlock.hashTreeRoot().equals(blindedBeaconBlock.hashTreeRoot()),
-              "unblinded block root do not match original blinded block root");
-
-          return schemaDefinitions
-              .getSignedBeaconBlockSchema()
-              .create(unblindedBeaconBlock, signedBlindedBeaconBlock.getSignature());
+          return signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload);
         });
   }
 }

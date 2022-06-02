@@ -129,7 +129,7 @@ public class BeaconStateUtil {
    *   <li>The current dependent root is the block root from the last slot of the previous epoch
    *   <li>The justified block can be at most the first block of the current epoch
    *   <li>The finalized block must be at least one epoch older than the justified block
-   *   <li>ForkChoiceStrategy has all blocks from the finalized block onwardss
+   *   <li>ForkChoiceStrategy has all blocks from the finalized block onwards
    * </ul>
    */
   public Optional<Bytes32> getCurrentDutyDependentRoot(

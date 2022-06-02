@@ -70,14 +70,13 @@ public class ValidatorRestApi {
         .hostAllowlist(config.getRestApiHostAllowlist())
         .exceptionHandler(
             ServiceUnavailableException.class,
-            (throwable, url) ->
-                new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Service unavailable"))
+            (throwable) -> new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Service unavailable"))
         .exceptionHandler(
             BadRequestException.class,
-            (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .exceptionHandler(
             JsonProcessingException.class,
-            (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))
         .endpoint(new DeleteKeys(keyManager, slashingProtectionPath))
         .endpoint(new PostKeys(keyManager, slashingProtectionPath))

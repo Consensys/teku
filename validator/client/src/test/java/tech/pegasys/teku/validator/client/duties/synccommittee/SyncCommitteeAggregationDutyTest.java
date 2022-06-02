@@ -173,7 +173,7 @@ class SyncCommitteeAggregationDutyTest {
         List.of(
             syncCommitteeUtil.createSignedContributionAndProof(
                 contributionAndProof, contributionSignature));
-    verify(validatorLogger).dutyCompleted(TYPE, slot, 1, Set.of(beaconBlockRoot));
+    verify(validatorLogger).dutyCompleted(TYPE, slot, 1, Set.of(beaconBlockRoot), Optional.empty());
     verify(validatorApiChannel).sendSignedContributionAndProofs(expectedSignedContributions);
   }
 
@@ -197,7 +197,7 @@ class SyncCommitteeAggregationDutyTest {
             syncCommitteeUtil.createSignedContributionAndProof(
                 contributionAndProof, contributionSignature));
     // Successfully complete for validator1
-    verify(validatorLogger).dutyCompleted(TYPE, slot, 1, Set.of(beaconBlockRoot));
+    verify(validatorLogger).dutyCompleted(TYPE, slot, 1, Set.of(beaconBlockRoot), Optional.empty());
     verify(validatorApiChannel).sendSignedContributionAndProofs(expectedSignedContributions);
 
     // Validator 2 fails

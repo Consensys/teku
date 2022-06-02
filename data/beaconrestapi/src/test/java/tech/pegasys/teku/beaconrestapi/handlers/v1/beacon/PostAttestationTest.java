@@ -13,91 +13,84 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
-public class PostAttestationTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-  private Context context = mock(Context.class);
-  private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private PostAttestation handler;
-  final Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
+public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
-  public void setup() {
-    handler = new PostAttestation(provider, jsonProvider);
+  void setUp() {
+    setHandler(new PostAttestation(validatorDataProvider, schemaDefinitionCache));
   }
 
   @Test
   void shouldBeAbleToSubmitAttestation() throws Exception {
-    when(provider.submitAttestations(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
-    handler.handle(context);
+    request.setRequestBody(List.of(dataStructureUtil.randomAttestation()));
+    when(validatorDataProvider.submitAttestations(any()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
 
-    verify(context).status(SC_OK);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   void shouldReportInvalidAttestations() throws Exception {
-    final PostDataFailureResponse failureResponse =
-        new PostDataFailureResponse(
-            SC_BAD_REQUEST,
-            "Some attestations failed to publish, refer to errors for details",
-            List.of(new PostDataFailure(UInt64.ZERO, "Darn")));
-    when(provider.submitAttestations(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(failureResponse)));
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
-    handler.handle(context);
+    final List<SubmitDataError> errors = List.of(new SubmitDataError(UInt64.ZERO, "Darn"));
 
-    @SuppressWarnings("unchecked")
-    final ArgumentCaptor<CompletableFuture<Object>> captor =
-        ArgumentCaptor.forClass(SafeFuture.class);
+    request.setRequestBody(List.of(dataStructureUtil.randomAttestation()));
+    when(validatorDataProvider.submitAttestations(any()))
+        .thenReturn(SafeFuture.completedFuture(errors));
 
-    verify(context).future(captor.capture());
-    verify(context).status(SC_BAD_REQUEST);
-    final CompletableFuture<Object> bodyResult = captor.getValue();
-    final String value = jsonProvider.objectToJSON(failureResponse);
-    assertThat(bodyResult).isCompletedWithValue(value);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody()).isEqualTo(errors);
   }
 
   @Test
-  void shouldReturnBadRequestIfAttestationCanNotBeParsed() throws Exception {
-    when(context.body()).thenReturn("{\"a\": \"field\"}");
-    handler.handle(context);
+  void metadata_shouldHandle400() throws IOException {
+    List<SubmitDataError> responseData =
+        List.of(
+            new SubmitDataError(UInt64.ZERO, "Darn"), new SubmitDataError(UInt64.ONE, "Incorrect"));
 
-    verify(context).status(SC_BAD_REQUEST);
+    final String data =
+        getResponseStringFromMetadata(handler, HttpStatusCodes.SC_BAD_REQUEST, responseData);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(PostAttestationTest.class, "postAttestation.json"), UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 
   @Test
-  void shouldReturnBadRequestIfSingleAttestationPassed() throws Exception {
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(attestation));
-    handler.handle(context);
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
 
-    verify(context).status(SC_BAD_REQUEST);
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    verifyMetadataEmptyResponse(handler, SC_OK);
   }
 }

@@ -106,10 +106,8 @@ public class DeletableSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration,
-      final UInt64 epoch,
-      final ForkInfo forkInfo) {
-    return sign(() -> delegate.signValidatorRegistration(validatorRegistration, epoch, forkInfo));
+      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
+    return sign(() -> delegate.signValidatorRegistration(validatorRegistration, epoch));
   }
 
   @Override

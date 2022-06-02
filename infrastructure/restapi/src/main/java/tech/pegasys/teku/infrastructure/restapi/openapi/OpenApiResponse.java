@@ -18,34 +18,36 @@ import static java.util.stream.Collectors.toSet;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class OpenApiResponse {
   private final String description;
-  private final Map<String, ? extends ResponseContentTypeDefinition<?>> content;
+  private final List<? extends ResponseContentTypeDefinition<?>> content;
 
   public OpenApiResponse(
-      final String description,
-      final Map<String, ? extends ResponseContentTypeDefinition<?>> content) {
+      final String description, final List<? extends ResponseContentTypeDefinition<?>> content) {
     this.description = description;
     this.content = content;
   }
 
   public ResponseContentTypeDefinition<?> getType(final String contentType) {
-    return content.get(contentType);
+    return content.stream()
+        .filter(type -> type.getContentType().equals(contentType))
+        .findFirst()
+        .orElse(null);
   }
 
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("description", description);
     gen.writeObjectFieldStart("content");
-    for (Entry<String, ? extends OpenApiTypeDefinition> contentEntry : content.entrySet()) {
-      gen.writeObjectFieldStart(contentEntry.getKey());
+    for (ResponseContentTypeDefinition<?> contentEntry : content) {
+      gen.writeObjectFieldStart(contentEntry.getContentType());
       gen.writeFieldName("schema");
-      contentEntry.getValue().serializeOpenApiTypeOrReference(gen);
+      contentEntry.serializeOpenApiTypeOrReference(gen);
       gen.writeEndObject();
     }
 
@@ -54,12 +56,14 @@ public class OpenApiResponse {
   }
 
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-    return content.values().stream()
+    return content.stream()
         .flatMap(type -> type.getSelfAndReferencedTypeDefinitions().stream())
         .collect(toSet());
   }
 
-  public Collection<String> getSupportedContentTypes() {
-    return content.keySet();
+  public List<String> getSupportedContentTypes() {
+    return content.stream()
+        .map(ResponseContentTypeDefinition::getContentType)
+        .collect(Collectors.toList());
   }
 }

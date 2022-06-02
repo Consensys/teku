@@ -18,6 +18,7 @@ import static java.util.Collections.emptyMap;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DelegatingOpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -29,6 +30,11 @@ public class JsonResponseContentTypeDefinition<T> extends DelegatingOpenApiTypeD
   public JsonResponseContentTypeDefinition(final SerializableTypeDefinition<T> typeDefinition) {
     super(typeDefinition);
     this.typeDefinition = typeDefinition;
+  }
+
+  @Override
+  public String getContentType() {
+    return ContentTypes.JSON;
   }
 
   @Override

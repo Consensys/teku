@@ -84,7 +84,6 @@ class BlockFactoryTest {
   final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   ExecutionPayload executionPayload = null;
   ExecutionPayloadHeader executionPayloadHeader = null;
-  ;
 
   @BeforeAll
   public static void initSession() {

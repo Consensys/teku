@@ -24,7 +24,7 @@ public class Domain {
   public static final Bytes4 VOLUNTARY_EXIT = Bytes4.fromHexString("0x04000000");
   public static final Bytes4 SELECTION_PROOF = Bytes4.fromHexString("0x05000000");
   public static final Bytes4 AGGREGATE_AND_PROOF = Bytes4.fromHexString("0x06000000");
-  public static final Bytes4 APPLICATION_BUILDER = Bytes4.fromHexString("0x10000001");
+  public static final Bytes4 APPLICATION_BUILDER = Bytes4.fromHexString("0x00000001");
 
   // Altair
   public static final Bytes4 SYNC_COMMITTEE = Bytes4.fromHexString("0x07000000");

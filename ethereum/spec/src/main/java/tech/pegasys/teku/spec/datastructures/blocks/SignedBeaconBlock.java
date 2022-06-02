@@ -13,14 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
     implements BeaconBlockSummary {
@@ -43,6 +48,54 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
                 .getSignedBlindedBeaconBlockSchema()
             : spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema();
     return new SignedBeaconBlock(signedBeaconBlockSchema, message, signature);
+  }
+
+  public SignedBeaconBlock blind(final SchemaDefinitions schemaDefinitions) {
+    if (getMessage().getBody().isBlinded()) {
+      return this;
+    }
+
+    final TreeNode blindedTree = getBlindedTree();
+    return schemaDefinitions.getSignedBlindedBeaconBlockSchema().createFromBackingNode(blindedTree);
+  }
+
+  private TreeNode getBlindedTree() {
+    final SignedBeaconBlockSchema schema = getSchema();
+    final Optional<Long> maybeNodeIndexToBlind = schema.getBlindedNodeGeneralizedIndex();
+    final TreeNode backingNode = getBackingNode();
+    if (maybeNodeIndexToBlind.isEmpty()) {
+      return backingNode;
+    }
+    final long nodeIndexToBlind = maybeNodeIndexToBlind.get();
+    final Bytes32 blindedNodeRoot = backingNode.get(nodeIndexToBlind).hashTreeRoot();
+    final TreeNode blindedNode = SszBytes32.of(blindedNodeRoot).getBackingNode();
+    return backingNode.updated(nodeIndexToBlind, blindedNode);
+  }
+
+  public SignedBeaconBlock unblind(
+      final SchemaDefinitions schemaDefinitions, final ExecutionPayload payload) {
+    if (!getMessage().getBody().isBlinded()) {
+      return this;
+    }
+
+    final TreeNode unblindedTree = getUnblindedTree(payload);
+    return schemaDefinitions.getSignedBeaconBlockSchema().createFromBackingNode(unblindedTree);
+  }
+
+  private TreeNode getUnblindedTree(final ExecutionPayload payload) {
+    final SignedBeaconBlockSchema schema = getSchema();
+    final Optional<Long> maybeBlindedNodeIndex = schema.getBlindedNodeGeneralizedIndex();
+    final TreeNode backingNode = getBackingNode();
+    if (maybeBlindedNodeIndex.isEmpty()) {
+      return backingNode;
+    }
+    final long blindedNodeIndex = maybeBlindedNodeIndex.get();
+    final Bytes32 expectedRoot = backingNode.get(blindedNodeIndex).hashTreeRoot();
+    final TreeNode replacement = payload.getUnblindedNode();
+    checkState(
+        expectedRoot.equals(replacement.hashTreeRoot()),
+        "Root in blinded block does not match provided replacement root");
+    return backingNode.updated(blindedNodeIndex, replacement);
   }
 
   @Override

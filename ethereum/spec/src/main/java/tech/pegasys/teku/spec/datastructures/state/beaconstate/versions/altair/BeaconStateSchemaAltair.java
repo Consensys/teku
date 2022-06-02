@@ -56,14 +56,14 @@ public class BeaconStateSchemaAltair
             BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
             () ->
                 SszListSchema.create(
-                    SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getValidatorRegistryLimit()));
+                    SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
     final SszField currentEpochAttestationsField =
         new SszField(
             CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
             () ->
                 SszListSchema.create(
-                    SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getValidatorRegistryLimit()));
+                    SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
 
     final SszField inactivityScores =
         new SszField(
