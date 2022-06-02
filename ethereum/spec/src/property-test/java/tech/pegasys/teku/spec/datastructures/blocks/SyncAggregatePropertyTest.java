@@ -41,7 +41,13 @@ public class SyncAggregatePropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SyncAggregate syncAggregate = dataStructureUtil.randomSyncAggregate();
     final DeserializableTypeDefinition<SyncAggregate> typeDefinition =
-        syncAggregate.getSchema().getJsonTypeDefinition();
+        spec.forMilestone(specMilestone)
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .toVersionAltair()
+            .orElseThrow()
+            .getSyncAggregateSchema()
+            .getJsonTypeDefinition();
     final String json = JsonUtil.serialize(syncAggregate, typeDefinition);
     final SyncAggregate result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(syncAggregate);
