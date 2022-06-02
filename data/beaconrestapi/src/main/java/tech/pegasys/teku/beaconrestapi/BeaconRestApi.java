@@ -234,7 +234,7 @@ public class BeaconRestApi {
     app.exception(BadRequestException.class, this::badRequest);
     app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
-    app.exception(Exception.class, (t, ctx) -> new DefaultExceptionHandler<>().handle(t, ctx));
+    app.exception(Exception.class, new DefaultExceptionHandler<>());
   }
 
   private void unsupportedContentType(final Throwable throwable, final Context context) {

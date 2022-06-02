@@ -153,7 +153,7 @@ public class RestApiBuilder {
     exceptionHandlers.forEach(
         (exceptionType, handler) -> addExceptionHandler(app, exceptionType, handler));
     // Always register a catch-all exception handler
-    app.exception(Exception.class, (t, ctx) -> new DefaultExceptionHandler<>().handle(t, ctx));
+    app.exception(Exception.class, new DefaultExceptionHandler<>());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"}) // builder API guarantees types match up
