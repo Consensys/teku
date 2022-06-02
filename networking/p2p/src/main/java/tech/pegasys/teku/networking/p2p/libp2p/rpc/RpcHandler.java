@@ -121,7 +121,7 @@ public class RpcHandler<
             })
         .catchAndRethrow(
             err -> {
-              if (ExceptionUtil.getCause(err, ConnectionClosedException.class).isPresent()) {
+              if (ExceptionUtil.hasCause(err, ConnectionClosedException.class)) {
                 throw new PeerDisconnectedException(err);
               }
             });
