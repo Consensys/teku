@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -111,5 +112,29 @@ public class BeaconBlock
   @Override
   public Optional<BeaconBlock> getBeaconBlock() {
     return Optional.of(this);
+  }
+
+  public TreeNode getBlindedTree() {
+    if (getBody().isBlinded()) {
+      return getBackingNode();
+    }
+    final BeaconBlockSchema schema = getSchema();
+    final TreeNode blindedBody = getBody().getBlindedTree();
+    return getBackingNode()
+        .updated(
+            schema.getChildGeneralizedIndex(schema.getFieldIndex(BeaconBlockFields.BODY)),
+            blindedBody);
+  }
+
+  public TreeNode getUnblindedTree(final ExecutionPayload payload) {
+    if (!getBody().isBlinded()) {
+      return getBackingNode();
+    }
+    final BeaconBlockSchema schema = getSchema();
+    final TreeNode unblindedBody = getBody().getUnblindedTree(payload);
+    return getBackingNode()
+        .updated(
+            schema.getChildGeneralizedIndex(schema.getFieldIndex(BeaconBlockFields.BODY)),
+            unblindedBody);
   }
 }

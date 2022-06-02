@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -73,6 +74,14 @@ public interface BeaconBlockBody extends SszContainer {
 
   default boolean isBlinded() {
     return false;
+  }
+
+  default TreeNode getBlindedTree() {
+    return getBackingNode();
+  }
+
+  default TreeNode getUnblindedTree(ExecutionPayload payload) {
+    return getBackingNode();
   }
 
   @Override

@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -148,6 +149,15 @@ class BeaconBlockBodyBellatrixImpl
   @Override
   public ExecutionPayload getExecutionPayload() {
     return getField9();
+  }
+
+  @Override
+  public TreeNode getBlindedTree() {
+    final BeaconBlockBodySchemaBellatrixImpl schema = getSchema();
+    final long childGeneralizedIndex =
+        schema.getChildGeneralizedIndex(schema.getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
+    final TreeNode payloadHeaderTree = getExecutionPayload().getPayloadHeaderTree();
+    return getBackingNode().updated(childGeneralizedIndex, payloadHeaderTree);
   }
 
   @Override

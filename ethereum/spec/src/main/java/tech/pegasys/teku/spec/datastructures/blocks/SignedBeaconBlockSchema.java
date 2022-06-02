@@ -26,8 +26,8 @@ public class SignedBeaconBlockSchema
       final BeaconBlockSchema beaconBlockSchema, final String containerName) {
     super(
         containerName,
-        namedSchema("message", beaconBlockSchema),
-        namedSchema("signature", SszSignatureSchema.INSTANCE));
+        namedSchema(SignedBeaconBlockFields.MESSAGE, beaconBlockSchema),
+        namedSchema(SignedBeaconBlockFields.SIGNATURE, SszSignatureSchema.INSTANCE));
   }
 
   public SignedBeaconBlock create(final BeaconBlock message, final BLSSignature signature) {

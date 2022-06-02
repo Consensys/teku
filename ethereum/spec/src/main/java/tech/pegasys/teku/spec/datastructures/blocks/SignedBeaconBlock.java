@@ -20,7 +20,9 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
     implements BeaconBlockSummary {
@@ -43,6 +45,45 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
                 .getSignedBlindedBeaconBlockSchema()
             : spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema();
     return new SignedBeaconBlock(signedBeaconBlockSchema, message, signature);
+  }
+
+  public SignedBeaconBlock blind(final SchemaDefinitions schemaDefinitions) {
+    if (getMessage().getBody().isBlinded()) {
+      return this;
+    }
+
+    final TreeNode unblindedTree = getBlindedTree();
+    return schemaDefinitions
+        .getSignedBlindedBeaconBlockSchema()
+        .createFromBackingNode(unblindedTree);
+  }
+
+  private TreeNode getBlindedTree() {
+    final SignedBeaconBlockSchema schema = getSchema();
+    final TreeNode blindedBlockTree = getMessage().getBlindedTree();
+    return getBackingNode()
+        .updated(
+            schema.getChildGeneralizedIndex(schema.getFieldIndex(SignedBeaconBlockFields.MESSAGE)),
+            blindedBlockTree);
+  }
+
+  public SignedBeaconBlock unblind(
+      final SchemaDefinitions schemaDefinitions, final ExecutionPayload payload) {
+    if (!getMessage().getBody().isBlinded()) {
+      return this;
+    }
+
+    final TreeNode unblindedTree = getUnblindedTree(payload);
+    return schemaDefinitions.getSignedBeaconBlockSchema().createFromBackingNode(unblindedTree);
+  }
+
+  private TreeNode getUnblindedTree(final ExecutionPayload payload) {
+    final SignedBeaconBlockSchema schema = getSchema();
+    final TreeNode unblindedBlockTree = getMessage().getUnblindedTree(payload);
+    return getBackingNode()
+        .updated(
+            schema.getChildGeneralizedIndex(schema.getFieldIndex(SignedBeaconBlockFields.MESSAGE)),
+            unblindedBlockTree);
   }
 
   @Override

@@ -32,11 +32,11 @@ public class BeaconBlockSchema
       final BeaconBlockBodySchema<?> blockBodySchema, final String containerName) {
     super(
         containerName,
-        namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("body", SszSchema.as(BeaconBlockBody.class, blockBodySchema)));
+        namedSchema(BeaconBlockFields.SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(BeaconBlockFields.PROPOSER_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(BeaconBlockFields.PARENT_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(BeaconBlockFields.STATE_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(BeaconBlockFields.BODY, SszSchema.as(BeaconBlockBody.class, blockBodySchema)));
   }
 
   @Override
