@@ -40,10 +40,8 @@ public class TransactionPropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Transaction transaction = dataStructureUtil.randomExecutionPayloadTransaction();
 
-    final TransactionSchema schema =
-        new TransactionSchema(
-            spec.forMilestone(specMilestone).getConfig().toVersionBellatrix().orElseThrow());
-    final DeserializableTypeDefinition<Transaction> typeDefinition = schema.getJsonTypeDefinition();
+    final DeserializableTypeDefinition<Transaction> typeDefinition =
+        transaction.getSchema().getJsonTypeDefinition();
     final String json = JsonUtil.serialize(transaction, typeDefinition);
     final Transaction result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(transaction);

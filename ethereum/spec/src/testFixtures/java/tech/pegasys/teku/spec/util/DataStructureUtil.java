@@ -515,11 +515,9 @@ public final class DataStructureUtil {
 
   public Transaction randomExecutionPayloadTransaction() {
     final TransactionSchema schema =
-        new TransactionSchema(
-            spec.forMilestone(SpecMilestone.BELLATRIX)
-                .getConfig()
-                .toVersionBellatrix()
-                .orElseThrow());
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+            .getExecutionPayloadSchema()
+            .getTransactionSchema();
     return schema.fromBytes(Bytes.wrap(randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE))));
   }
 
