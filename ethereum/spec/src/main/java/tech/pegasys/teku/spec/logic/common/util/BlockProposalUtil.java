@@ -103,7 +103,7 @@ public class BlockProposalUtil {
             })
         .exceptionallyCompose(
             error -> {
-              if (ExceptionUtil.getCause(error, BlockProcessingException.class).isPresent()) {
+              if (ExceptionUtil.hasCause(error, BlockProcessingException.class)) {
                 return SafeFuture.failedFuture(new StateTransitionException(error));
               }
               return SafeFuture.failedFuture(error);

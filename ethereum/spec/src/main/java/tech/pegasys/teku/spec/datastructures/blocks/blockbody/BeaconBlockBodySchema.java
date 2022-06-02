@@ -58,4 +58,8 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   default Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
     return Optional.empty();
   }
+
+  default Optional<Long> getBlindedNodeGeneralizedIndex() {
+    return Optional.empty();
+  }
 }

@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -151,12 +152,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                       .flatMap(Optional::stream);
 
               return SafeFuture.collectAll(validatorRegistrationsFutures)
-                  .thenApply(
-                      validatorRegistrations ->
-                          SszUtils.toSszList(
-                              ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA,
-                              validatorRegistrations))
-                  .thenCompose(validatorApiChannel::registerValidators);
+                  .thenCompose(this::sendValidatorRegistrations);
             });
   }
 
@@ -198,6 +194,22 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                     cachedValidatorRegistrations.put(
                         validatorRegistrationIdentity, signedValidatorRegistration));
     return Optional.of(registrationFuture);
+  }
+
+  private SafeFuture<Void> sendValidatorRegistrations(
+      final List<SignedValidatorRegistration> validatorRegistrations) {
+    if (validatorRegistrations.isEmpty()) {
+      return SafeFuture.completedFuture(null);
+    }
+
+    final SszList<SignedValidatorRegistration> sszValidatorRegistrations =
+        SszUtils.toSszList(
+            ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA, validatorRegistrations);
+
+    LOG.info(
+        "Sending {} validator registration(s) to Beacon Node", sszValidatorRegistrations.size());
+
+    return validatorApiChannel.registerValidators(sszValidatorRegistrations);
   }
 
   private boolean registrationIsEnabled(
