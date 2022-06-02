@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -42,9 +41,6 @@ public interface BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   default Optional<ExecutionPayloadSummary> getOptionalExecutionPayloadSummary() {
     return Optional.of(getExecutionPayload());
   }
-
-  @Override
-  TreeNode getBlindedTree();
 
   @Override
   BeaconBlockBodySchemaBellatrix<?> getSchema();

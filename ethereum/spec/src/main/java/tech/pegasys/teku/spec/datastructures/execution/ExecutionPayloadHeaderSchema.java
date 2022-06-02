@@ -163,4 +163,8 @@ public class ExecutionPayloadHeaderSchema
   public ExecutionPayloadHeader getHeaderOfDefaultPayload() {
     return executionPayloadHeaderOfDefaultPayload;
   }
+
+  public long getBlindedNodeGeneralizedIndex() {
+    return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT));
+  }
 }

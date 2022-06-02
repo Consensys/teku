@@ -177,11 +177,7 @@ public class ExecutionPayload
     return getField13();
   }
 
-  public TreeNode getPayloadHeaderTree() {
-    final ExecutionPayloadSchema schema = getSchema();
-    final long childGeneralizedIndex =
-        schema.getChildGeneralizedIndex(schema.getFieldIndex(ExecutionPayloadFields.TRANSACTIONS));
-    final SszBytes32 transactionsRoot = SszBytes32.of(getTransactions().hashTreeRoot());
-    return getBackingNode().updated(childGeneralizedIndex, transactionsRoot.getBackingNode());
+  public TreeNode getUnblindedNode() {
+    return getTransactions().getBackingNode();
   }
 }

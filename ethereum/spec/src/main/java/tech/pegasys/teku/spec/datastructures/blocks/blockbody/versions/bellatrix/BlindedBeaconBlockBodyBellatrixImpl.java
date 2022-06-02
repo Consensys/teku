@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -24,9 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -152,18 +149,6 @@ class BlindedBeaconBlockBodyBellatrixImpl
   @Override
   public ExecutionPayloadHeader getExecutionPayloadHeader() {
     return getField9();
-  }
-
-  @Override
-  public TreeNode getUnblindedTree(ExecutionPayload payload) {
-    checkState(
-        payload.hashTreeRoot().equals(getExecutionPayloadHeader().hashTreeRoot()),
-        "executionPayloadHeader root in blinded block do not match provided executionPayload root");
-    final BlindedBeaconBlockBodySchemaBellatrixImpl schema = getSchema();
-    final long childGeneralizedIndex =
-        schema.getChildGeneralizedIndex(
-            schema.getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
-    return getBackingNode().updated(childGeneralizedIndex, payload.getBackingNode());
   }
 
   @Override

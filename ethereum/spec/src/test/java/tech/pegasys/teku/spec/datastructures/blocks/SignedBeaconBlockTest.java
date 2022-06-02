@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +61,9 @@ class SignedBeaconBlockTest {
               spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX))
           .isFalse();
     } else {
+      // Check the blinded block actually matches the schema by serializing it
+      assertThatNoException().isThrownBy(blinded::sszSerialize);
+
       // Otherwise, we should be able to unblind it again
       final SignedBeaconBlock unblinded =
           blinded.unblind(

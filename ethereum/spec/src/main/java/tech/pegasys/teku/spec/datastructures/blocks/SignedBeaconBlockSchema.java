@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -37,5 +39,20 @@ public class SignedBeaconBlockSchema
   @Override
   public SignedBeaconBlock createFromBackingNode(TreeNode node) {
     return new SignedBeaconBlock(this, node);
+  }
+
+  public Optional<Long> getBlindedNodeGeneralizedIndex() {
+    return getBlockSchema()
+        .getBlindedNodeGeneralizedIndex()
+        .map(
+            relativeIndex -> {
+              final long childGeneralizedIndex =
+                  getChildGeneralizedIndex(getFieldIndex(SignedBeaconBlockFields.MESSAGE));
+              return GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex);
+            });
+  }
+
+  public BeaconBlockSchema getBlockSchema() {
+    return (BeaconBlockSchema) getChildSchema(getFieldIndex(SignedBeaconBlockFields.MESSAGE));
   }
 }

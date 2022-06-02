@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema10;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -179,5 +180,13 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   @Override
   public Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
     return Optional.of(this);
+  }
+
+  @Override
+  public Optional<Long> getBlindedNodeGeneralizedIndex() {
+    final long childGeneralizedIndex =
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
+    final long relativeIndex = getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndex();
+    return Optional.of(GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
   }
 }
