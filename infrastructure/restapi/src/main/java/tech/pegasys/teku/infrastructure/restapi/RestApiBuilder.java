@@ -164,7 +164,7 @@ public class RestApiBuilder {
         (exception, ctx) -> {
           try {
             final HttpErrorResponse response =
-                ((RestApiExceptionHandler) handler).handleException(exception, ctx.url());
+                ((RestApiExceptionHandler) handler).handleException(exception);
             ctx.status(response.getCode());
             ctx.json(JsonUtil.serialize(response, HTTP_ERROR_RESPONSE_TYPE));
           } catch (final Throwable t) {
@@ -232,6 +232,6 @@ public class RestApiBuilder {
   }
 
   public interface RestApiExceptionHandler<T extends Exception> {
-    HttpErrorResponse handleException(T t, String url);
+    HttpErrorResponse handleException(T t);
   }
 }
