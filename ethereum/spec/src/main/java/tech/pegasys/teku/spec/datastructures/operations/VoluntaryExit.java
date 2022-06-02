@@ -55,4 +55,9 @@ public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt6
   public UInt64 getValidatorIndex() {
     return getField1().get();
   }
+
+  @Override
+  public VoluntaryExitSchema getSchema() {
+    return (VoluntaryExitSchema) super.getSchema();
+  }
 }

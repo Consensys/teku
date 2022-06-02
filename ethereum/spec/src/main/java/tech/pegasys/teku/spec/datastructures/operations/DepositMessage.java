@@ -71,4 +71,9 @@ public class DepositMessage
   public UInt64 getAmount() {
     return getField2().get();
   }
+
+  @Override
+  public DepositMessageSchema getSchema() {
+    return (DepositMessageSchema) super.getSchema();
+  }
 }
