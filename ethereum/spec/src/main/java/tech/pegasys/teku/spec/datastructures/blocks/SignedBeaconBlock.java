@@ -55,10 +55,8 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
       return this;
     }
 
-    final TreeNode unblindedTree = getBlindedTree();
-    return schemaDefinitions
-        .getSignedBlindedBeaconBlockSchema()
-        .createFromBackingNode(unblindedTree);
+    final TreeNode blindedTree = getBlindedTree();
+    return schemaDefinitions.getSignedBlindedBeaconBlockSchema().createFromBackingNode(blindedTree);
   }
 
   private TreeNode getBlindedTree() {
