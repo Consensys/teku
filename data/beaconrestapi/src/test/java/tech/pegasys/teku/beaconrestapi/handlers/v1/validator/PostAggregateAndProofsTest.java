@@ -42,7 +42,8 @@ class PostAggregateAndProofsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    setHandler(new PostAggregateAndProofs(validatorDataProvider, spec));
+    setHandler(
+        new PostAggregateAndProofs(validatorDataProvider, spec.getGenesisSchemaDefinitions()));
   }
 
   @Test

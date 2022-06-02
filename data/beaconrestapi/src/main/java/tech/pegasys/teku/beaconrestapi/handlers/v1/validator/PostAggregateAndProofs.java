@@ -43,9 +43,8 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAggregateAndProofs extends MigratingEndpointAdapter {
@@ -68,11 +67,13 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
                       .collect(Collectors.toList()))
           .build();
 
-  public PostAggregateAndProofs(final DataProvider provider, final Spec spec) {
-    this(provider.getValidatorDataProvider(), spec);
+  public PostAggregateAndProofs(
+      final DataProvider provider, final SchemaDefinitions schemaDefinitions) {
+    this(provider.getValidatorDataProvider(), schemaDefinitions);
   }
 
-  public PostAggregateAndProofs(final ValidatorDataProvider provider, final Spec spec) {
+  public PostAggregateAndProofs(
+      final ValidatorDataProvider provider, final SchemaDefinitions schemaDefinitions) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("postAggregateAndProofs")
@@ -82,7 +83,7 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(
-                    getRequestBodyType(spec.getGenesisSpecConfig())))
+                    schemaDefinitions.getSignedAggregateAndProofSchema().getJsonTypeDefinition()))
             .response(SC_OK, "Successfully published aggregate.")
             .response(SC_BAD_REQUEST, "Invalid request syntax", BAD_REQUEST_RESPONSE)
             .build());
@@ -130,11 +131,5 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
                   ErrorListBadRequest.convert(PARTIAL_PUBLISH_FAILURE_MESSAGE, errors);
               return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, data);
             }));
-  }
-
-  private static DeserializableTypeDefinition<SignedAggregateAndProof> getRequestBodyType(
-      final SpecConfig specConfig) {
-    return new SignedAggregateAndProof.SignedAggregateAndProofSchema(specConfig)
-        .getJsonTypeDefinition();
   }
 }
