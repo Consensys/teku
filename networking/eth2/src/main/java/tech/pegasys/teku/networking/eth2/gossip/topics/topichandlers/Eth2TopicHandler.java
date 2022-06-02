@@ -144,14 +144,14 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   protected ValidationResult handleMessageProcessingError(
       final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
-    if (ExceptionUtil.getCause(err, DecodingException.class).isPresent()) {
+    if (ExceptionUtil.hasCause(err, DecodingException.class)) {
       P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
-    } else if (ExceptionUtil.getCause(err, RejectedExecutionException.class).isPresent()) {
+    } else if (ExceptionUtil.hasCause(err, RejectedExecutionException.class)) {
       LOG.warn(
           "Discarding gossip message for topic {} because the executor queue is full", getTopic());
       response = ValidationResult.Ignore;
-    } else if (ExceptionUtil.getCause(err, ServiceCapacityExceededException.class).isPresent()) {
+    } else if (ExceptionUtil.hasCause(err, ServiceCapacityExceededException.class)) {
       LOG.warn(
           "Discarding gossip message for topic {} because the signature verification queue is full",
           getTopic());

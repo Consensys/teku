@@ -153,13 +153,7 @@ public class RestApiBuilder {
     exceptionHandlers.forEach(
         (exceptionType, handler) -> addExceptionHandler(app, exceptionType, handler));
     // Always register a catch-all exception handler
-    addExceptionHandler(
-        app,
-        Exception.class,
-        (e, url) -> {
-          LOG.error("Failed to process request to URL {}", url, e);
-          return new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, "An unexpected error occurred");
-        });
+    app.exception(Exception.class, new DefaultExceptionHandler<>());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"}) // builder API guarantees types match up
@@ -170,7 +164,7 @@ public class RestApiBuilder {
         (exception, ctx) -> {
           try {
             final HttpErrorResponse response =
-                ((RestApiExceptionHandler) handler).handleException(exception, ctx.url());
+                ((RestApiExceptionHandler) handler).handleException(exception);
             ctx.status(response.getCode());
             ctx.json(JsonUtil.serialize(response, HTTP_ERROR_RESPONSE_TYPE));
           } catch (final Throwable t) {
@@ -238,6 +232,6 @@ public class RestApiBuilder {
   }
 
   public interface RestApiExceptionHandler<T extends Exception> {
-    HttpErrorResponse handleException(T t, String url);
+    HttpErrorResponse handleException(T t);
   }
 }

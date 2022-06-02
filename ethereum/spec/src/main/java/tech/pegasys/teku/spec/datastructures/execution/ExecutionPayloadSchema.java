@@ -13,6 +13,21 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_USED;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.LOGS_BLOOM;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_HASH;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PREV_RANDAO;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.RECEIPTS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.STATE_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
+
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -56,21 +71,21 @@ public class ExecutionPayloadSchema
   public ExecutionPayloadSchema(final SpecConfigBellatrix specConfig) {
     super(
         "ExecutionPayload",
-        namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("fee_recipient", SszByteVectorSchema.create(Bytes20.SIZE)),
-        namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("receipts_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("logs_bloom", SszByteVectorSchema.create(specConfig.getBytesPerLogsBloom())),
-        namedSchema("prev_randao", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("block_number", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("extra_data", SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
-        namedSchema("base_fee_per_gas", SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(FEE_RECIPIENT, SszByteVectorSchema.create(Bytes20.SIZE)),
+        namedSchema(STATE_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(RECEIPTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(LOGS_BLOOM, SszByteVectorSchema.create(specConfig.getBytesPerLogsBloom())),
+        namedSchema(PREV_RANDAO, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(BLOCK_NUMBER, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(GAS_LIMIT, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
+        namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
+        namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
-            "transactions",
+            TRANSACTIONS,
             SszListSchema.create(
                 new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())));
 
@@ -134,5 +149,9 @@ public class ExecutionPayloadSchema
   @Override
   public ExecutionPayload getDefault() {
     return defaultExecutionPayload;
+  }
+
+  public long getBlindedNodeGeneralizedIndex() {
+    return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS));
   }
 }
