@@ -39,7 +39,11 @@ public class BeaconBlockBodyPropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
     final DeserializableTypeDefinition<BeaconBlockBody> typeDefinition =
-        (DeserializableTypeDefinition<BeaconBlockBody>) body.getSchema().getJsonTypeDefinition();
+        (DeserializableTypeDefinition<BeaconBlockBody>)
+            spec.forMilestone(specMilestone)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getJsonTypeDefinition();
     final String json = JsonUtil.serialize(body, typeDefinition);
     final BeaconBlockBody result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(body);
