@@ -200,8 +200,8 @@ public class OkHttpRestClient implements RestClient {
     if (responseBody == null) {
       return errorCodeAndStatusMessage;
     }
-    final String failureBody = Strings.nullToEmpty(responseBody.string());
-    if (failureBody.isBlank() || failureBody.equals("null")) {
+    final String failureBody = responseBody.string();
+    if (Strings.nullToEmpty(failureBody).isBlank()) {
       return errorCodeAndStatusMessage;
     } else {
       return failureBody;
