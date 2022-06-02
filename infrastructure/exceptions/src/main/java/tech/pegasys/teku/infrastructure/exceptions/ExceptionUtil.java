@@ -26,4 +26,9 @@ public class ExceptionUtil {
         .map(e -> (T) e)
         .findFirst();
   }
+
+  public static <T extends Throwable> boolean hasCause(
+      final Throwable err, Class<? extends T> targetType) {
+    return getCause(err, targetType).isPresent();
+  }
 }
