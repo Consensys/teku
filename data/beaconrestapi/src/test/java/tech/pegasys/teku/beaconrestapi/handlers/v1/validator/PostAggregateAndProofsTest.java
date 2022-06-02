@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
-class PostAggregateAndProofsTest extends AbstractMigratedBeaconHandlerTest {
+public class PostAggregateAndProofsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
