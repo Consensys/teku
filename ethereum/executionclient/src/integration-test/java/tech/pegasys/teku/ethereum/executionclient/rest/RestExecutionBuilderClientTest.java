@@ -144,7 +144,7 @@ class RestExecutionBuilderClientTest {
   }
 
   @TestTemplate
-  void registerValidator_success() {
+  void registerValidators_success() {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
@@ -163,7 +163,7 @@ class RestExecutionBuilderClientTest {
   }
 
   @TestTemplate
-  void registerValidator_zeroRegistrationsDoesNotMakeRequest() {
+  void registerValidators_zeroRegistrationsDoesNotMakeRequest() {
 
     SszList<SignedValidatorRegistration> zeroRegistrations =
         SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getDefault();
@@ -180,7 +180,7 @@ class RestExecutionBuilderClientTest {
   }
 
   @TestTemplate
-  void registerValidator_failures() {
+  void registerValidators_failures() {
 
     String unknownValidatorError = "{\"code\":400,\"message\":\"unknown validator\"}";
 
