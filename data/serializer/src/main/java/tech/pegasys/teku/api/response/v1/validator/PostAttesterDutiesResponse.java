@@ -35,12 +35,17 @@ public class PostAttesterDutiesResponse {
 
   public final List<AttesterDuty> data;
 
+  @JsonProperty("execution_optimistic")
+  public final boolean executionOptimistic;
+
   @JsonCreator
   public PostAttesterDutiesResponse(
       @JsonProperty("dependent_root") final Bytes32 dependentRoot,
-      @JsonProperty("data") final List<AttesterDuty> data) {
+      @JsonProperty("data") final List<AttesterDuty> data,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic) {
     this.dependentRoot = dependentRoot;
     this.data = data;
+    this.executionOptimistic = executionOptimistic;
   }
 
   @Override
