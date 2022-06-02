@@ -266,7 +266,14 @@ public class PeerChainValidator {
         .thenApply(
             maybeBlock ->
                 maybeBlock
-                    .map(block -> validateBlockRootsMatch(peer, block, status.getFinalizedRoot()))
+                    .map(
+                        block ->
+                            validateBlockRootsMatch(
+                                peer,
+                                remoteFinalizedCheckpoint.getEpoch(),
+                                block.getSlot(),
+                                block.getRoot(),
+                                status.getFinalizedRoot()))
                     .orElseGet(
                         () -> {
                           LOG.trace(
@@ -291,31 +298,43 @@ public class PeerChainValidator {
       return SafeFuture.completedFuture(true);
     }
     return peer.requestBlockBySlot(finalized.getBlockSlot())
-        .thenApply(block -> validateBlockRootsMatch(peer, block, finalized.getRoot()));
+        .thenApply(block -> validateRemoteBlockRootMatches(peer, block, finalized.getCheckpoint()));
   }
 
-  private boolean validateBlockRootsMatch(
-      final Eth2Peer peer, final Optional<SignedBeaconBlock> maybeBlock, final Bytes32 root) {
-    if (maybeBlock.isEmpty()) {
+  private boolean validateRemoteBlockRootMatches(
+      final Eth2Peer peer,
+      final Optional<SignedBeaconBlock> maybeRemoteBlock,
+      final Checkpoint localCheckpoint) {
+    if (maybeRemoteBlock.isEmpty()) {
       LOG.debug("Peer validation failed because it did not provide requested finalized block");
       return false;
     }
-    return validateBlockRootsMatch(peer, maybeBlock.get(), root);
+    final SignedBeaconBlock remoteBlock = maybeRemoteBlock.get();
+    return validateBlockRootsMatch(
+        peer,
+        localCheckpoint.getEpoch(),
+        remoteBlock.getSlot(),
+        localCheckpoint.getRoot(),
+        remoteBlock.getRoot());
   }
 
   private boolean validateBlockRootsMatch(
-      final Eth2Peer peer, final SignedBeaconBlock block, final Bytes32 root) {
-    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
-    final boolean rootsMatch = Objects.equals(blockRoot, root);
+      final Eth2Peer peer,
+      final UInt64 finalizedEpoch,
+      final UInt64 slot,
+      final Bytes32 localRoot,
+      final Bytes32 remoteRoot) {
+    final boolean rootsMatch = Objects.equals(localRoot, remoteRoot);
     if (rootsMatch) {
       LOG.trace("Verified finalized blocks match for peer: {}", peer.getId());
     } else {
       LOG.warn(
-          "Detected peer with inconsistent finalized block at slot {} for peer {}.  Block roots {} and {} do not match",
-          block.getSlot(),
+          "Detected peer with inconsistent finalized epoch {};  block at slot {} for peer {}. Local root: {}; remote root: {}",
+          finalizedEpoch,
+          slot,
           peer.getId(),
-          blockRoot,
-          root);
+          localRoot,
+          remoteRoot);
     }
     return rootsMatch;
   }
