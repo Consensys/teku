@@ -94,7 +94,7 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void loadBackingNodes_shouldRestoreTree_noramlBranchSkipLevel(SszSchema<?> schema) {
+  void loadBackingNodes_shouldRestoreTree_normalBranchSkipLevel(SszSchema<?> schema) {
     final int maxBranchLevelsSkipped = 5;
     assertTreeRoundtrip(schema, maxBranchLevelsSkipped);
   }

@@ -26,7 +26,7 @@ class MessageDeliveriesOptions {
   // A multiplier (between 0 and 1) which is applied to the expected message rate
   // If a peer's message rate drops below the scaled message rate, it will be penalized
   private final double messageRateFactor;
-  // The peer must be in the mesh for longer than the activiation window before penalties start to
+  // The peer must be in the mesh for longer than the activation window before penalties start to
   // be applied
   private final Duration activationWindow;
   // A message must be delivered first or within {@code deliveriesWindow} of the first delivered

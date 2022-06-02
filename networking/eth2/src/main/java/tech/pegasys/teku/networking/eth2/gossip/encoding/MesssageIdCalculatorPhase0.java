@@ -15,10 +15,10 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 
-class MesssageIdCalculatorPhase0 extends MessageIdCalculator {
+class MessageIdCalculatorPhase0 extends MessageIdCalculator {
   private final Bytes rawMessageData;
 
-  public MesssageIdCalculatorPhase0(final Bytes rawMessageData) {
+  public MessageIdCalculatorPhase0(final Bytes rawMessageData) {
     this.rawMessageData = rawMessageData;
   }
 

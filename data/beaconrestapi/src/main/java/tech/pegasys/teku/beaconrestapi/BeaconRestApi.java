@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.isHostAuthorized;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
@@ -113,6 +112,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
+import tech.pegasys.teku.infrastructure.restapi.DefaultExceptionHandler;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -233,15 +233,7 @@ public class BeaconRestApi {
     app.exception(BadRequestException.class, this::badRequest);
     app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
-    // Add catch-all handler
-    app.exception(
-        Exception.class,
-        (e, ctx) -> {
-          LOG.error("Failed to process request to URL {}", ctx.url(), e);
-          ctx.status(SC_INTERNAL_SERVER_ERROR);
-          setErrorBody(
-              ctx, () -> BadRequest.internalError(jsonProvider, "An unexpected error occurred"));
-        });
+    app.exception(Exception.class, new DefaultExceptionHandler<>());
   }
 
   private void unsupportedContentType(final Throwable throwable, final Context context) {
@@ -458,7 +450,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new PostProposerSlashing(dataProvider));
     addMigratedEndpoint(new GetVoluntaryExits(dataProvider));
     addMigratedEndpoint(new PostVoluntaryExit(dataProvider));
-    app.post(PostSyncCommittees.ROUTE, new PostSyncCommittees(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostSyncCommittees(dataProvider));
     app.post(PostValidatorLiveness.ROUTE, new PostValidatorLiveness(dataProvider, jsonProvider));
   }
 

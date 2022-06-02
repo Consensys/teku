@@ -83,7 +83,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     final BeaconStateMutators beaconStateMutators =
         new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
 
-    // Operation validaton
+    // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
