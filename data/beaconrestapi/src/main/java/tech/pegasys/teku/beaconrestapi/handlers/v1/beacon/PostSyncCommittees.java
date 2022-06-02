@@ -14,40 +14,83 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
-public class PostSyncCommittees extends AbstractHandler {
+public class PostSyncCommittees extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/sync_committees";
   private final ValidatorDataProvider provider;
 
-  public PostSyncCommittees(final DataProvider provider, final JsonProvider jsonProvider) {
-    this(provider.getValidatorDataProvider(), jsonProvider);
+  private static final SerializableTypeDefinition<List<SubmitDataError>> BAD_REQUEST_RESPONSE =
+      SerializableTypeDefinition.<List<SubmitDataError>>object()
+          .name("PostDataFailureResponse")
+          .withField("code", INTEGER_TYPE, (__) -> SC_BAD_REQUEST)
+          .withField("message", STRING_TYPE, (__) -> "some failures")
+          .withField(
+              "failures", listOf(SubmitDataError.getJsonTypeDefinition()), Function.identity())
+          .build();
+
+  public PostSyncCommittees(final DataProvider provider) {
+    this(provider.getValidatorDataProvider());
   }
 
-  public PostSyncCommittees(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public PostSyncCommittees(final ValidatorDataProvider provider) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postSyncCommittees")
+            .summary("Submit sync committee messages to node")
+            .description(
+                "Submits sync committee message objects to the node.\n\n"
+                    + "Sync committee messages are not present in phase0, but are required for Altair networks.\n\n"
+                    + "If a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.\n\n"
+                    + "If one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.")
+            .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(
+                    SyncCommitteeMessageSchema.INSTANCE.getJsonTypeDefinition()))
+            .response(
+                SC_OK,
+                "Sync committee signatures are stored in pool and broadcast on appropriate subnet")
+            .response(
+                SC_BAD_REQUEST,
+                "Errors with one or more sync committee signatures",
+                getBadRequestResponseTypes())
+            .build());
     this.provider = provider;
   }
 
@@ -58,7 +101,11 @@ public class PostSyncCommittees extends AbstractHandler {
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = SyncCommitteeMessage.class, isArray = true)}),
+              content = {
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage.class,
+                    isArray = true)
+              }),
       description =
           "Submits sync committee message objects to the node.\n\n"
               + "Sync committee messages are not present in phase0, but are required for Altair networks.\n\n"
@@ -75,18 +122,30 @@ public class PostSyncCommittees extends AbstractHandler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(final Context ctx) throws Exception {
-    try {
-      final List<SyncCommitteeMessage> messages =
-          Arrays.asList(parseRequestBody(ctx.body(), SyncCommitteeMessage[].class));
-      final SafeFuture<Optional<PostDataFailureResponse>> future =
-          provider.submitCommitteeSignatures(messages);
+  public void handle(@NotNull final Context ctx) throws Exception {
+    adapt(ctx);
+  }
 
-      handlePostDataResult(ctx, future);
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final List<SyncCommitteeMessage> messages = request.getRequestBody();
+    final SafeFuture<List<SubmitDataError>> future = provider.submitCommitteeSignatures(messages);
 
-    } catch (final IllegalArgumentException e) {
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(SC_BAD_REQUEST);
-    }
+    request.respondAsync(
+        future.thenApply(
+            submitDataErrorList -> {
+              if (submitDataErrorList.isEmpty()) {
+                return AsyncApiResponse.respondWithCode(SC_OK);
+              }
+              return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, submitDataErrorList);
+            }));
+  }
+
+  private static SerializableOneOfTypeDefinition<Object> getBadRequestResponseTypes() {
+    final SerializableOneOfTypeDefinitionBuilder<Object> builder =
+        new SerializableOneOfTypeDefinitionBuilder<>().title("BadRequestResponses");
+    builder.withType(value -> value instanceof List, BAD_REQUEST_RESPONSE);
+    builder.withType(value -> value instanceof HttpErrorResponse, HTTP_ERROR_RESPONSE_TYPE);
+    return builder.build();
   }
 }

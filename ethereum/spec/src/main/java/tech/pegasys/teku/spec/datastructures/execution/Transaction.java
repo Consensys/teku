@@ -21,4 +21,9 @@ public class Transaction extends SszByteListImpl {
   Transaction(TransactionSchema schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
+
+  @Override
+  public TransactionSchema getSchema() {
+    return (TransactionSchema) super.getSchema();
+  }
 }

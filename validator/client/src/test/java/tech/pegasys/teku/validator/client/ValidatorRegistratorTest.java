@@ -207,6 +207,22 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void validatorRegistrationsNotSentIfEmpty() {
+    // GIVEN
+    when(ownedValidators.getActiveValidators())
+        .thenReturn(List.of(validator1, validator2, validator3));
+
+    // all validator registrations disabled
+    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(any()))
+        .thenReturn(Optional.of(false));
+
+    // WHEN
+    validatorRegistrator.onSlot(UInt64.ZERO);
+
+    verifyNoInteractions(validatorApiChannel);
+  }
+
+  @TestTemplate
   void retrievesCorrectGasLimitForValidators() {
     // GIVEN
     when(ownedValidators.getActiveValidators())

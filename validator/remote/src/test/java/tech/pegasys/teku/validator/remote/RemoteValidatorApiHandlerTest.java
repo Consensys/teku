@@ -278,7 +278,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(
             Optional.of(
                 new GetProposerDutiesResponse(
-                    Bytes32.fromHexString("0x1234"), Collections.emptyList())));
+                    Bytes32.fromHexString("0x1234"), Collections.emptyList(), false)));
 
     SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
 
@@ -296,7 +296,7 @@ class RemoteValidatorApiHandlerTest {
         new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
     final GetProposerDutiesResponse response =
         new GetProposerDutiesResponse(
-            Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties));
+            Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
 
     when(apiClient.getProposerDuties(UInt64.ONE)).thenReturn(Optional.of(response));
 

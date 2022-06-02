@@ -413,7 +413,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
     checkArgument(response.isSuccess(), "Invalid remote response: %s", response.getErrorMessage());
-    return checkNotNull(response.getPayload(), "No payload content found");
+    return response.getPayload();
   }
 
   private void updateBuilderAvailability() {

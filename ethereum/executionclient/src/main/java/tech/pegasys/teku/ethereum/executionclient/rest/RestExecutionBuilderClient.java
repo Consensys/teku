@@ -72,6 +72,10 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   public SafeFuture<Response<Void>> registerValidators(
       final UInt64 slot, final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
 
+    if (signedValidatorRegistrations.isEmpty()) {
+      return SafeFuture.completedFuture(Response.withNullPayload());
+    }
+
     final DeserializableTypeDefinition<SszList<SignedValidatorRegistration>> requestType =
         SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition();
     return restClient

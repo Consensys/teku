@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +48,9 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       final String name,
       final SerializableTypeDefinition<TField> type,
       final Function<TObject, TField> getter) {
+    checkArgument(
+        !this.fields.containsKey(name),
+        "Field " + name + " was already defined, attempting to add twice.");
     this.fields.put(name, new RequiredSerializableFieldDefinition<>(name, getter, type));
     return this;
   }
@@ -54,6 +59,9 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       final String name,
       final SerializableTypeDefinition<TField> type,
       final Function<TObject, Optional<TField>> getter) {
+    checkArgument(
+        !this.fields.containsKey(name),
+        "Field " + name + " was already defined, attempting to add twice.");
     this.fields.put(name, new OptionalSerializableFieldDefinition<>(name, getter, type));
     return this;
   }

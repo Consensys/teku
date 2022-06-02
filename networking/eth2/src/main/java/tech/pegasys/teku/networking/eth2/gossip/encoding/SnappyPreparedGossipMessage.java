@@ -88,10 +88,10 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
 
     switch (milestone) {
       case PHASE0:
-        return new MesssageIdCalculatorPhase0(compressedData);
+        return new MessageIdCalculatorPhase0(compressedData);
       case ALTAIR:
       default:
-        return new MesssageIdCalculatorAltair(compressedData, topic);
+        return new MessageIdCalculatorAltair(compressedData, topic);
     }
   }
 

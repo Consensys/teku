@@ -38,7 +38,7 @@ public abstract class BLSSecretKeyTest {
         "0xe7db4ea6533afa906673b0101343b00aa77b4805fffcb7fdfffffffe00000003",
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
       })
-  void secretKeyFromBytes_shouldThrowWhenInvaidBytes(String skString) {
+  void secretKeyFromBytes_shouldThrowWhenInvalidBytes(String skString) {
     Bytes32 sk1 = Bytes32.fromHexString(skString);
     Assertions.assertThatThrownBy(() -> BLSSecretKey.fromBytes(sk1))
         .isInstanceOf(IllegalArgumentException.class);
@@ -46,7 +46,7 @@ public abstract class BLSSecretKeyTest {
 
   @ParameterizedTest
   @MethodSource("getSecretKeysToPubKeys")
-  void secretKeyFromBytes_shouldYielCorrectPublicKey(String skString, String compressedPubKey) {
+  void secretKeyFromBytes_shouldYieldCorrectPublicKey(String skString, String compressedPubKey) {
     BLSSecretKey sk = BLSSecretKey.fromBytes(Bytes32.fromHexString(skString));
     Assertions.assertThat(sk.toPublicKey().toBytesCompressed())
         .isEqualTo(Bytes48.fromHexString(compressedPubKey));

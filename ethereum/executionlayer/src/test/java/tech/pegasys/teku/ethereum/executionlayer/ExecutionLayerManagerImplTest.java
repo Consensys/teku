@@ -308,7 +308,7 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void
-      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfForceLocalFallbacl() {
+      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfForceLocalFallback() {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
