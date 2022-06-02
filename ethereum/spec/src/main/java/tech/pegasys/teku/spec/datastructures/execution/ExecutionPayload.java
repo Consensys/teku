@@ -176,4 +176,8 @@ public class ExecutionPayload
   public SszList<Transaction> getTransactions() {
     return getField13();
   }
+
+  public TreeNode getUnblindedNode() {
+    return getTransactions().getBackingNode();
+  }
 }

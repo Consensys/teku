@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -32,11 +34,11 @@ public class BeaconBlockSchema
       final BeaconBlockBodySchema<?> blockBodySchema, final String containerName) {
     super(
         containerName,
-        namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("body", SszSchema.as(BeaconBlockBody.class, blockBodySchema)));
+        namedSchema(BeaconBlockFields.SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(BeaconBlockFields.PROPOSER_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(BeaconBlockFields.PARENT_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(BeaconBlockFields.STATE_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(BeaconBlockFields.BODY, SszSchema.as(BeaconBlockBody.class, blockBodySchema)));
   }
 
   @Override
@@ -51,5 +53,20 @@ public class BeaconBlockSchema
       final Bytes32 stateRoot,
       final BeaconBlockBody body) {
     return new BeaconBlock(this, slot, proposerIndex, parentRoot, stateRoot, body);
+  }
+
+  public Optional<Long> getBlindedNodeGeneralizedIndex() {
+    return getBodySchema()
+        .getBlindedNodeGeneralizedIndex()
+        .map(
+            childIndex -> {
+              final long childGeneralizedIndex =
+                  getChildGeneralizedIndex(getFieldIndex(BeaconBlockFields.BODY));
+              return GIndexUtil.gIdxCompose(childGeneralizedIndex, childIndex);
+            });
+  }
+
+  public BeaconBlockBodySchema<?> getBodySchema() {
+    return (BeaconBlockBodySchema<?>) getChildSchema(getFieldIndex(BeaconBlockFields.BODY));
   }
 }
