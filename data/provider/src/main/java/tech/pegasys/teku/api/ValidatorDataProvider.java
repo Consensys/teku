@@ -33,12 +33,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -48,7 +45,6 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -252,33 +249,14 @@ public class ValidatorDataProvider {
     return Optional.of(message);
   }
 
-  private Optional<PostDataFailureResponse> convertToPostDataFailureResponse(
-      final List<SubmitDataError> errors) {
-    if (errors.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(
-        new PostDataFailureResponse(
-            HttpStatusCodes.SC_BAD_REQUEST,
-            PARTIAL_PUBLISH_FAILURE_MESSAGE,
-            errors.stream()
-                .map(e -> new PostDataFailure(e.getIndex(), e.getMessage()))
-                .collect(Collectors.toList())));
-  }
-
   public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.operations.Attestation>>
       createAggregate(final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot);
   }
 
-  public SafeFuture<Optional<PostDataFailureResponse>> sendAggregateAndProofs(
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       List<SignedAggregateAndProof> aggregateAndProofs) {
-    return validatorApiChannel
-        .sendAggregateAndProofs(
-            aggregateAndProofs.stream()
-                .map(proof -> proof.asInternalSignedAggregateAndProof(spec))
-                .collect(toList()))
-        .thenApply(this::convertToPostDataFailureResponse);
+    return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
   }
 
   public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
