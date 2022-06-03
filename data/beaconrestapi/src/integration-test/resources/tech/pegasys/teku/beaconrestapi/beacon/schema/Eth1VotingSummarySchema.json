@@ -1,7 +1,7 @@
 {
   "type" : "object",
   "properties" : {
-    "current_eth1_data" : {
+    "state_eth1_data" : {
       "$ref" : "#/components/schemas/Eth1Data"
     },
     "eth1_data_votes" : {

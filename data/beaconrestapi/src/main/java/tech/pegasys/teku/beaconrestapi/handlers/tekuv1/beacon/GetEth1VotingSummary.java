@@ -66,9 +66,9 @@ public class GetEth1VotingSummary extends MigratingEndpointAdapter {
       SerializableTypeDefinition.<Eth1VotingSummary>object()
           .name("Eth1VotingSummary")
           .withField(
-              "current_eth1_data",
+              "state_eth1_data",
               Eth1Data.SSZ_SCHEMA.getJsonTypeDefinition(),
-              Eth1VotingSummary::getCurrentEth1Data)
+              Eth1VotingSummary::getStateEth1Data)
           .withField(
               "eth1_data_votes",
               listOf(ETH1DATA_WITH_VOTES_TYPE),
@@ -153,21 +153,21 @@ public class GetEth1VotingSummary extends MigratingEndpointAdapter {
   }
 
   static class Eth1VotingSummary {
-    private final Eth1Data currentEth1Data;
+    private final Eth1Data stateEth1Data;
     private final List<Pair<Eth1Data, UInt64>> eth1DataVotes;
     private final VotingPeriodInfo votingPeriodInfo;
 
     public Eth1VotingSummary(
-        final Eth1Data currentEth1Data,
+        final Eth1Data stateEth1Data,
         final List<Pair<Eth1Data, UInt64>> eth1DataVotes,
         final VotingPeriodInfo votingPeriodInfo) {
-      this.currentEth1Data = currentEth1Data;
+      this.stateEth1Data = stateEth1Data;
       this.eth1DataVotes = eth1DataVotes;
       this.votingPeriodInfo = votingPeriodInfo;
     }
 
-    public Eth1Data getCurrentEth1Data() {
-      return currentEth1Data;
+    public Eth1Data getStateEth1Data() {
+      return stateEth1Data;
     }
 
     public List<Pair<Eth1Data, UInt64>> getEth1DataVotes() {
@@ -195,14 +195,14 @@ public class GetEth1VotingSummary extends MigratingEndpointAdapter {
         return false;
       }
       Eth1VotingSummary that = (Eth1VotingSummary) o;
-      return Objects.equals(currentEth1Data, that.currentEth1Data)
+      return Objects.equals(stateEth1Data, that.stateEth1Data)
           && Objects.equals(eth1DataVotes, that.eth1DataVotes)
           && Objects.equals(votingPeriodInfo, that.votingPeriodInfo);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(currentEth1Data, eth1DataVotes, votingPeriodInfo);
+      return Objects.hash(stateEth1Data, eth1DataVotes, votingPeriodInfo);
     }
   }
 }
