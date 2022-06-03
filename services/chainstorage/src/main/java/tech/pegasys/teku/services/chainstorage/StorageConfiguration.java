@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.chainstorage;
 
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -23,7 +24,6 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 public class StorageConfiguration {
 
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
-  public static final boolean DEFAULT_STORE_VOTES_EQUIVOCATION = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
 
   private final Eth1Address eth1DepositContract;
@@ -97,7 +97,8 @@ public class StorageConfiguration {
     private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
     private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
-    private boolean storeVotesEquivocation = DEFAULT_STORE_VOTES_EQUIVOCATION;
+    private boolean storeVotesEquivocation =
+        Eth2NetworkConfiguration.DEFAULT_EQUIVOCATING_INDICES_ENABLED;
     private Spec spec;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
