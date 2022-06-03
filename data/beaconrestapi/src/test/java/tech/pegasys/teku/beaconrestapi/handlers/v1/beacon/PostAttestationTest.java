@@ -32,6 +32,7 @@ import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,6 +60,9 @@ public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   void shouldReportInvalidAttestations() throws Exception {
     final List<SubmitDataError> errors = List.of(new SubmitDataError(UInt64.ZERO, "Darn"));
+    final ErrorListBadRequest response =
+        new ErrorListBadRequest(
+            "Some items failed to publish, refer to errors for details", errors);
 
     request.setRequestBody(List.of(dataStructureUtil.randomAttestation()));
     when(validatorDataProvider.submitAttestations(any()))
@@ -67,14 +71,17 @@ public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(request.getResponseBody()).isEqualTo(errors);
+    assertThat(request.getResponseBody()).isEqualTo(response);
   }
 
   @Test
   void metadata_shouldHandle400() throws IOException {
-    List<SubmitDataError> responseData =
+    final List<SubmitDataError> errors =
         List.of(
             new SubmitDataError(UInt64.ZERO, "Darn"), new SubmitDataError(UInt64.ONE, "Incorrect"));
+    final ErrorListBadRequest responseData =
+        new ErrorListBadRequest(
+            "Some items failed to publish, refer to errors for details", errors);
 
     final String data =
         getResponseStringFromMetadata(handler, HttpStatusCodes.SC_BAD_REQUEST, responseData);

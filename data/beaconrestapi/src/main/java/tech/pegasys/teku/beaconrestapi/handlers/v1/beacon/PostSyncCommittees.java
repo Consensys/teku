@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -21,9 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -33,18 +31,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -55,15 +52,6 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 public class PostSyncCommittees extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/beacon/pool/sync_committees";
   private final ValidatorDataProvider provider;
-
-  private static final SerializableTypeDefinition<List<SubmitDataError>> BAD_REQUEST_RESPONSE =
-      SerializableTypeDefinition.<List<SubmitDataError>>object()
-          .name("PostDataFailureResponse")
-          .withField("code", INTEGER_TYPE, (__) -> SC_BAD_REQUEST)
-          .withField("message", STRING_TYPE, (__) -> "some failures")
-          .withField(
-              "failures", listOf(SubmitDataError.getJsonTypeDefinition()), Function.identity())
-          .build();
 
   public PostSyncCommittees(final DataProvider provider) {
     this(provider.getValidatorDataProvider());
@@ -133,18 +121,21 @@ public class PostSyncCommittees extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            submitDataErrorList -> {
-              if (submitDataErrorList.isEmpty()) {
+            errors -> {
+              if (errors.isEmpty()) {
                 return AsyncApiResponse.respondWithCode(SC_OK);
               }
-              return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, submitDataErrorList);
+              final ErrorListBadRequest data =
+                  ErrorListBadRequest.convert(PARTIAL_PUBLISH_FAILURE_MESSAGE, errors);
+              return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, data);
             }));
   }
 
   private static SerializableOneOfTypeDefinition<Object> getBadRequestResponseTypes() {
     final SerializableOneOfTypeDefinitionBuilder<Object> builder =
         new SerializableOneOfTypeDefinitionBuilder<>().title("BadRequestResponses");
-    builder.withType(value -> value instanceof List, BAD_REQUEST_RESPONSE);
+    builder.withType(
+        value -> value instanceof ErrorListBadRequest, ErrorListBadRequest.getJsonTypeDefinition());
     builder.withType(value -> value instanceof HttpErrorResponse, HTTP_ERROR_RESPONSE_TYPE);
     return builder.build();
   }

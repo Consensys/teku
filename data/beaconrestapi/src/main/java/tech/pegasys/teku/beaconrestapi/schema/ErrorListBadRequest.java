@@ -14,9 +14,13 @@
 package tech.pegasys.teku.beaconrestapi.schema;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import java.util.List;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class ErrorListBadRequest {
@@ -66,5 +70,17 @@ public class ErrorListBadRequest {
   @Override
   public String toString() {
     return "ErrorListBadRequest{" + "message='" + message + '\'' + ", errors=" + errors + '}';
+  }
+
+  public static SerializableTypeDefinition<ErrorListBadRequest> getJsonTypeDefinition() {
+    return SerializableTypeDefinition.object(ErrorListBadRequest.class)
+        .name("ErrorListBadRequest")
+        .withField("code", INTEGER_TYPE, ErrorListBadRequest::getCode)
+        .withField("message", STRING_TYPE, ErrorListBadRequest::getMessage)
+        .withField(
+            "failures",
+            listOf(SubmitDataError.getJsonTypeDefinition()),
+            ErrorListBadRequest::getErrors)
+        .build();
   }
 }

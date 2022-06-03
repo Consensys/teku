@@ -29,7 +29,7 @@
               "title" : "BadRequestResponses",
               "type" : "object",
               "oneOf" : [ {
-                "$ref" : "#/components/schemas/PostDataFailureResponse"
+                "$ref" : "#/components/schemas/ErrorListBadRequest"
               }, {
                 "$ref" : "#/components/schemas/HttpErrorResponse"
               } ]
