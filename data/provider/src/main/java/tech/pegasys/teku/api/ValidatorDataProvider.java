@@ -33,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -64,7 +63,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.validator.api.AttesterDuty;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -287,19 +286,9 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
-  public SafeFuture<Optional<PostAttesterDutiesResponse>> getAttesterDuties(
+  public SafeFuture<Optional<AttesterDuties>> getAttesterDuties(
       final UInt64 epoch, final IntList indices) {
-    return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indices))
-        .thenApply(
-            res ->
-                res.map(
-                    duties ->
-                        new PostAttesterDutiesResponse(
-                            duties.getDependentRoot(),
-                            duties.getDuties().stream()
-                                .filter(duty -> duty.getPublicKey() != null)
-                                .map(this::mapToAttesterDuties)
-                                .collect(toList()))));
+    return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indices));
   }
 
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
@@ -309,18 +298,6 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 blockRoot) {
     return validatorApiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
-  }
-
-  private tech.pegasys.teku.api.response.v1.validator.AttesterDuty mapToAttesterDuties(
-      final AttesterDuty duties) {
-    return new tech.pegasys.teku.api.response.v1.validator.AttesterDuty(
-        new BLSPubKey(duties.getPublicKey()),
-        UInt64.valueOf(duties.getValidatorIndex()),
-        UInt64.valueOf(duties.getCommitteeIndex()),
-        UInt64.valueOf(duties.getCommitteeLength()),
-        UInt64.valueOf(duties.getCommitteesAtSlot()),
-        UInt64.valueOf(duties.getValidatorCommitteeIndex()),
-        duties.getSlot());
   }
 
   public SafeFuture<Optional<PostSyncDutiesResponse>> getSyncDuties(

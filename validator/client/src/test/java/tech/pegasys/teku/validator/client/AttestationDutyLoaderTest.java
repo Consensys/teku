@@ -104,7 +104,8 @@ class AttestationDutyLoaderTest {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(duty)))));
+                Optional.of(
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty)))));
 
     when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
     when(signer.signAggregationSlot(slot, forkInfo))
@@ -140,7 +141,8 @@ class AttestationDutyLoaderTest {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(duty)))));
+                Optional.of(
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty)))));
 
     when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
     when(signer.signAggregationSlot(slot, forkInfo))
@@ -162,7 +164,8 @@ class AttestationDutyLoaderTest {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
+                Optional.of(
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
     final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 

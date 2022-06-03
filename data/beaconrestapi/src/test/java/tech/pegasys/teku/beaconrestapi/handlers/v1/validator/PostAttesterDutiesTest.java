@@ -13,99 +13,99 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import it.unimi.dsi.fastutil.ints.IntList;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 
-public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
+public class PostAttesterDutiesTest extends AbstractMigratedBeaconHandlerTest {
+  final AttesterDuty duty =
+      new AttesterDuty(dataStructureUtil.randomPublicKey(), 1, 2, 0, 2, 1, UInt64.ONE);
+  final AttesterDuties attesterDuties =
+      new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty));
 
   @BeforeEach
   public void setup() {
-    handler = new PostAttesterDuties(syncDataProvider, validatorDataProvider, jsonProvider);
+    setHandler(new PostAttesterDuties(syncDataProvider, validatorDataProvider));
+    request.setPathParameter("epoch", "1");
+    request.setRequestBody(List.of(1));
   }
 
   @Test
-  public void shouldReturnServiceUnavailableWhenResultIsEmpty() throws Exception {
+  public void shouldReturnServiceUnavailableWhenResultIsEmpty() throws JsonProcessingException {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(context.body()).thenReturn("[\"2\"]");
-    when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
+    when(validatorDataProvider.getAttesterDuties(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    handler.handle(context);
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody())
+        .isEqualTo(
+            new HttpErrorResponse(
+                SC_SERVICE_UNAVAILABLE,
+                "Beacon node is currently syncing and not serving request on that endpoint"));
   }
 
   @Test
-  public void shouldGetAttesterDuties() throws Exception {
+  public void shouldGetAttesterDuties() throws JsonProcessingException {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(context.body()).thenReturn("[\"2\"]");
+    when(validatorDataProvider.getAttesterDuties(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attesterDuties)));
 
-    final UInt64 epoch = UInt64.valueOf(100);
-    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
-    PostAttesterDutiesResponse duties =
-        new PostAttesterDutiesResponse(
-            Bytes32.fromHexString("0x1234"), List.of(getDuty(2, 1, 2, 10, 3, startSlot)));
-    when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
+    handler.handleRequest(request);
 
-    handler.handle(context);
-    PostAttesterDutiesResponse response = getResponseFromFuture(PostAttesterDutiesResponse.class);
-    assertThat(response).isEqualTo(duties);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(attesterDuties);
   }
 
   @Test
-  public void shouldReturnBadRequestWhenIllegalArgumentExceptionThrown() throws Exception {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(context.body()).thenReturn("[\"2\"]");
-    when(validatorDataProvider.getAttesterDuties(UInt64.valueOf(100), IntList.of(2)))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));
-
-    handler.handle(context);
-    verifyStatusCode(SC_BAD_REQUEST);
-    final BadRequest badRequest = getBadRequestFromFuture();
-    assertThat(badRequest).usingRecursiveComparison().isEqualTo(new BadRequest(400, "Bad epoch"));
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }
 
-  AttesterDuty getDuty(
-      final long validatorIndex,
-      final long committeeIndex,
-      final long committeeLength,
-      final int committeesAtSlot,
-      final long validatorCommitteeIndex,
-      final UInt64 slot) {
-    return new AttesterDuty(
-        new BLSPubKey(BLSTestUtil.randomPublicKey(1)),
-        UInt64.valueOf(validatorIndex),
-        UInt64.valueOf(committeeIndex),
-        UInt64.valueOf(committeeLength),
-        UInt64.valueOf(committeesAtSlot),
-        UInt64.valueOf(validatorCommitteeIndex),
-        slot);
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final String data =
+        getResponseStringFromMetadata(handler, HttpStatusCodes.SC_OK, attesterDuties);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(PostAttesterDutiesTest.class, "postAttesterDuties.json"), UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }

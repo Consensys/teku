@@ -164,6 +164,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                 .map(
                     response ->
                         new AttesterDuties(
+                            response.executionOptimistic,
                             response.dependentRoot,
                             response.data.stream()
                                 .map(this::mapToApiAttesterDuties)

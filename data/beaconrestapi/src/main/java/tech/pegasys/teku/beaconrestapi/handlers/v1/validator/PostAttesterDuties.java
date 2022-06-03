@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.PUBLIC_KEY_TYPE;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -24,50 +25,105 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import java.util.Arrays;
-import java.util.Map;
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 
-public class PostAttesterDuties extends AbstractHandler implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
+public class PostAttesterDuties extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/eth/v1/validator/duties/attester/:epoch";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
-  public PostAttesterDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.validatorDataProvider = dataProvider.getValidatorDataProvider();
-    this.syncDataProvider = dataProvider.getSyncDataProvider();
+  private static final SerializableTypeDefinition<AttesterDuty> ATTESTER_DUTY_TYPE =
+      SerializableTypeDefinition.object(AttesterDuty.class)
+          .name("AttesterDuty")
+          .withField("pubkey", PUBLIC_KEY_TYPE, AttesterDuty::getPublicKey)
+          .withField("validator_index", INTEGER_TYPE, AttesterDuty::getValidatorIndex)
+          .withField("committee_index", INTEGER_TYPE, AttesterDuty::getCommitteeIndex)
+          .withField("committee_length", INTEGER_TYPE, AttesterDuty::getCommitteeLength)
+          .withField("committees_at_slot", INTEGER_TYPE, AttesterDuty::getCommitteesAtSlot)
+          .withField(
+              "validator_committee_index", INTEGER_TYPE, AttesterDuty::getValidatorCommitteeIndex)
+          .withField("slot", UINT64_TYPE, AttesterDuty::getSlot)
+          .build();
+
+  private static final SerializableTypeDefinition<AttesterDuties> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(AttesterDuties.class)
+          .name("GetAttesterDutiesResponse")
+          .withOptionalField(
+              "execution_optimistic",
+              BOOLEAN_TYPE,
+              attesterDuties ->
+                  attesterDuties.isExecutionOptimistic() ? Optional.of(true) : Optional.empty())
+          .withField("dependent_root", BYTES32_TYPE, AttesterDuties::getDependentRoot)
+          .withField(
+              "data",
+              SerializableTypeDefinition.listOf(ATTESTER_DUTY_TYPE),
+              AttesterDuties::getDuties)
+          .build();
+
+  public PostAttesterDuties(final DataProvider dataProvider) {
+    this(dataProvider.getSyncDataProvider(), dataProvider.getValidatorDataProvider());
   }
 
   PostAttesterDuties(
-      final SyncDataProvider syncDataProvider,
-      final ValidatorDataProvider validatorDataProvider,
-      final JsonProvider jsonProvider) {
-    super(jsonProvider);
+      final SyncDataProvider syncDataProvider, final ValidatorDataProvider validatorDataProvider) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postAttesterDuties")
+            .summary("Get attester duties")
+            .description(
+                "Requests the beacon node to provide a set of attestation duties, "
+                    + "which should be performed by validators, for a particular epoch. "
+                    + "Duties should only need to be checked once per epoch, however a chain "
+                    + "reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
+                    + "resulting in a change of duties. "
+                    + "For full safety, you should monitor head events and confirm the dependent root in "
+                    + "this response matches:\n"
+                    + "- event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
+                    + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n"
+                    + "- event.block otherwise\n\n"
+                    + "The dependent_root value is "
+                    + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
+                    + "or the genesis block root in the case of underflow.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
+            .pathParam(EPOCH_PARAMETER)
+            .response(SC_OK, "Success response", RESPONSE_TYPE)
+            .response(
+                SC_SERVICE_UNAVAILABLE,
+                "Beacon node is currently syncing, try again later.",
+                HTTP_ERROR_RESPONSE_TYPE)
+            .build());
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
@@ -107,46 +163,34 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
-      ctx.status(SC_SERVICE_UNAVAILABLE);
+      request.respondError(
+          SC_SERVICE_UNAVAILABLE,
+          "Beacon node is currently syncing and not serving request on that endpoint");
       return;
     }
-    final Map<String, String> parameters = ctx.pathParamMap();
-    try {
-      final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final UInt64[] indices = parseRequestBody(ctx.body(), UInt64[].class);
 
-      SafeFuture<Optional<PostAttesterDutiesResponse>> future =
-          validatorDataProvider.getAttesterDuties(
-              epoch, IntArrayList.toList(Arrays.stream(indices).mapToInt(UInt64::intValue)));
+    final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
+    final List<Integer> requestBody = request.getRequestBody();
+    final IntList indices = IntArrayList.toList(requestBody.stream().mapToInt(Integer::intValue));
 
-      handleOptionalResult(
-          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
+    SafeFuture<Optional<AttesterDuties>> future =
+        validatorDataProvider.getAttesterDuties(epoch, indices);
 
-    } catch (NumberFormatException ex) {
-      LOG.trace("Error parsing", ex);
-      ctx.status(SC_BAD_REQUEST);
-      final String message = "Invalid epoch " + parameters.get(EPOCH) + " or index specified";
-      ctx.json(BadRequest.badRequest(jsonProvider, message));
-    } catch (IllegalArgumentException ex) {
-      LOG.trace("Illegal argument in PostAttesterDuties", ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    }
-  }
-
-  private Optional<String> handleResult(Context ctx, final PostAttesterDutiesResponse response)
-      throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(response));
-  }
-
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    } else {
-      return failedFuture(error);
-    }
+    request.respondAsync(
+        future.thenApply(
+            attesterDuties -> {
+              if (attesterDuties.isEmpty()) {
+                return AsyncApiResponse.respondWithError(
+                    SC_SERVICE_UNAVAILABLE,
+                    "Beacon node is currently syncing and not serving request on that endpoint");
+              }
+              return AsyncApiResponse.respondOk(attesterDuties.get());
+            }));
   }
 }
