@@ -12,6 +12,9 @@
       "items" : {
         "$ref" : "#/components/schemas/AttesterDuty"
       }
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
     }
   }
 }

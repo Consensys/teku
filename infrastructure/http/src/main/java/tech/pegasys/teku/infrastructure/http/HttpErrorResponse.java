@@ -60,6 +60,11 @@ public class HttpErrorResponse {
     return Objects.hash(code, message);
   }
 
+  @Override
+  public String toString() {
+    return "HttpErrorResponse{" + "code=" + code + ", message='" + message + '\'' + '}';
+  }
+
   public static class Builder {
     private int code;
     private String message;
