@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
-import it.unimi.dsi.fastutil.ints.IntIterable;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.Collection;
@@ -29,7 +28,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
@@ -38,14 +36,12 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -55,9 +51,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -323,11 +317,11 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Void> sendContributionAndProofs(
-      final List<SignedContributionAndProof> contributionAndProofs) {
-    return validatorApiChannel.sendSignedContributionAndProofs(
-        contributionAndProofs.stream()
-            .map(this::asInternalContributionAndProofs)
-            .collect(toList()));
+      final List<
+              tech.pegasys.teku.spec.datastructures.operations.versions.altair
+                  .SignedContributionAndProof>
+          contributionAndProofs) {
+    return validatorApiChannel.sendSignedContributionAndProofs(contributionAndProofs);
   }
 
   public void prepareBeaconProposer(
@@ -345,45 +339,6 @@ public class ValidatorDataProvider {
 
   public boolean isPhase0Slot(final UInt64 slot) {
     return spec.atSlot(slot).getMilestone() == SpecMilestone.PHASE0;
-  }
-
-  private tech.pegasys.teku.spec.datastructures.operations.versions.altair
-          .SignedContributionAndProof
-      asInternalContributionAndProofs(final SignedContributionAndProof signedContributionAndProof) {
-    final UInt64 slot = signedContributionAndProof.message.contribution.slot;
-    final Bytes32 root = signedContributionAndProof.message.contribution.beaconBlockRoot;
-    final UInt64 subcommitteeIndex =
-        signedContributionAndProof.message.contribution.subcommitteeIndex;
-    final IntIterable indices =
-        getAggregationBits(signedContributionAndProof.message.contribution.aggregationBits, slot);
-
-    final tech.pegasys.teku.bls.BLSSignature signature =
-        signedContributionAndProof.message.contribution.signature.asInternalBLSSignature();
-    final SyncCommitteeContribution contribution =
-        spec.getSyncCommitteeUtilRequired(slot)
-            .createSyncCommitteeContribution(slot, root, subcommitteeIndex, indices, signature);
-
-    final ContributionAndProof message =
-        spec.getSyncCommitteeUtilRequired(slot)
-            .createContributionAndProof(
-                signedContributionAndProof.message.aggregatorIndex,
-                contribution,
-                signedContributionAndProof.message.selectionProof.asInternalBLSSignature());
-
-    return spec.getSyncCommitteeUtilRequired(slot)
-        .createSignedContributionAndProof(
-            message, signedContributionAndProof.signature.asInternalBLSSignature());
-  }
-
-  private IntIterable getAggregationBits(final Bytes aggregationBits, final UInt64 slot) {
-    final SchemaDefinitionsAltair altairDefinitions =
-        SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
-    final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
-        altairDefinitions.getSyncCommitteeContributionSchema();
-    final SszBitvector aggregationBitsVector =
-        syncCommitteeContributionSchema.getAggregationBitsSchema().fromBytes(aggregationBits);
-
-    return aggregationBitsVector.getAllSetBits();
   }
 
   private static ValidatorBlockResult generateSubmitSignedBlockResponse(

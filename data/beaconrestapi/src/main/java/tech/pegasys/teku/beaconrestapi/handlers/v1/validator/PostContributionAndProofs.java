@@ -13,45 +13,60 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static java.util.Arrays.asList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
-public class PostContributionAndProofs extends AbstractHandler implements Handler {
-
+public class PostContributionAndProofs extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/contribution_and_proofs";
-
   private final ValidatorDataProvider provider;
 
-  public PostContributionAndProofs(final DataProvider provider, final JsonProvider jsonProvider) {
-    this(provider.getValidatorDataProvider(), jsonProvider);
+  public PostContributionAndProofs(
+      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
   public PostContributionAndProofs(
-      final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postContributionAndProofs")
+            .summary("Publish contribution and proofs")
+            .description(
+                "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(getResponseType(schemaDefinitionCache)))
+            .response(SC_OK, "Successful response")
+            .build());
     this.provider = provider;
   }
 
@@ -62,7 +77,11 @@ public class PostContributionAndProofs extends AbstractHandler implements Handle
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = SignedContributionAndProof.class, isArray = true)}),
+              content = {
+                @OpenApiContent(
+                    from = tech.pegasys.teku.api.schema.altair.SignedContributionAndProof.class,
+                    isArray = true)
+              }),
       description =
           "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.",
       responses = {
@@ -74,31 +93,39 @@ public class PostContributionAndProofs extends AbstractHandler implements Handle
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final SignedContributionAndProof[] signedContributionAndProofs;
-    try {
-      signedContributionAndProofs =
-          parseRequestBody(ctx.body(), SignedContributionAndProof[].class);
-    } catch (IllegalArgumentException e) {
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
-      return;
-    }
-    final SafeFuture<Void> future =
-        provider.sendContributionAndProofs(asList(signedContributionAndProofs));
-
-    ctx.future(
-        future
-            .thenApplyChecked(result -> "")
-            .exceptionallyCompose(error -> handleError(ctx, error)));
+    adapt(ctx);
   }
 
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    }
-    return SafeFuture.of(
-        () -> BadRequest.badRequest(jsonProvider, "Failed to submit contribution and proofs"));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final List<SignedContributionAndProof> signedContributionAndProofs = request.getRequestBody();
+    final SafeFuture<Void> future = provider.sendContributionAndProofs(signedContributionAndProofs);
+
+    request.respondAsync(
+        future
+            .thenApply(v -> AsyncApiResponse.respondWithCode(SC_OK))
+            .exceptionallyCompose(
+                error -> {
+                  final Throwable rootCause = Throwables.getRootCause(error);
+                  if (rootCause instanceof IllegalArgumentException) {
+                    return SafeFuture.of(
+                        () ->
+                            AsyncApiResponse.respondWithError(SC_BAD_REQUEST, error.getMessage()));
+                  }
+                  return SafeFuture.of(
+                      () ->
+                          AsyncApiResponse.respondWithError(
+                              SC_BAD_REQUEST, "Failed to submit contribution and proofs"));
+                }));
+  }
+
+  private static DeserializableTypeDefinition<SignedContributionAndProof> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SignedContributionAndProofSchema typeDefinition =
+        SchemaDefinitionsAltair.required(
+                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))
+            .getSignedContributionAndProofSchema();
+
+    return typeDefinition.getJsonTypeDefinition();
   }
 }
