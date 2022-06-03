@@ -242,6 +242,7 @@ class SyncCommitteeScheduledDutiesTest {
         chainHeadTracker,
         validatorApiChannel,
         validatorAndCommitteeIndices,
+        validatorLogger,
         UInt64.ZERO);
   }
 

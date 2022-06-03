@@ -47,7 +47,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   private final ValidatorApiChannel validatorApiChannel;
   private final SyncCommitteeProductionDuty productionDuty;
   private final SyncCommitteeAggregationDuty aggregationDuty;
-
+  private final ValidatorLogger validatorLogger;
   private Optional<Bytes32> lastSignatureBlockRoot = Optional.empty();
   private Optional<UInt64> lastSignatureSlot = Optional.empty();
 
@@ -58,12 +58,14 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
       final ChainHeadTracker chainHeadTracker,
       final ValidatorApiChannel validatorApiChannel,
       final Collection<ValidatorAndCommitteeIndices> assignments,
+      final ValidatorLogger validatorLogger,
       final UInt64 lastEpochInCommitteePeriod) {
     this.aggregationDuty = aggregationDuty;
     this.chainHeadTracker = chainHeadTracker;
     this.validatorApiChannel = validatorApiChannel;
     this.productionDuty = productionDuty;
     this.assignments = assignments;
+    this.validatorLogger = validatorLogger;
     this.lastEpochInCommitteePeriod = lastEpochInCommitteePeriod;
   }
 
@@ -117,11 +119,8 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     if (lastSignatureSlot.isEmpty()
         || lastSignatureBlockRoot.isEmpty()
         || !lastSignatureSlot.get().equals(slot)) {
-      return SafeFuture.completedFuture(
-          DutyResult.forError(
-              getAllValidatorKeys(),
-              new IllegalStateException(
-                  "Unable to perform aggregation for sync committees because no signatures were produced")));
+      validatorLogger.syncCommitteeAggregationFailed(slot);
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     return aggregationDuty.produceAggregates(slot, lastSignatureBlockRoot.get());
   }
@@ -228,6 +227,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
           chainHeadTracker,
           validatorApiChannel,
           assignments.values(),
+          validatorLogger,
           lastEpochInCommitteePeriod);
     }
   }

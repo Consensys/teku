@@ -136,13 +136,11 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void syncSubcommitteeAggregationSkipped(final UInt64 slot, final int subcommitteeIndex) {
+  public void syncCommitteeAggregationFailed(final UInt64 slot) {
     log.warn(
         ColorConsolePrinter.print(
             PREFIX
-                + "Skipped aggregation for sync subcommittee "
-                + subcommitteeIndex
-                + " at slot "
+                + "Skipped aggregation at slot "
                 + slot
                 + " because there was nothing to aggregate",
             Color.YELLOW));
