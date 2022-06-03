@@ -162,7 +162,7 @@ public class SyncCommitteeAggregationDuty {
         .thenCompose(
             maybeContribution -> {
               if (maybeContribution.isEmpty()) {
-                validatorLogger.syncSubcommitteeAggregationSkipped(slot, subcommitteeIndex);
+                validatorLogger.syncCommitteeAggregationSkipped(slot);
                 return SafeFuture.completedFuture(
                     new AggregationResult(validatorPublicKey, DutyResult.NO_OP));
               }
