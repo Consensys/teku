@@ -149,8 +149,7 @@ public class Eth2NetworkOptions {
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       hidden = true)
-  private Boolean forkChoiceBeforeProposingEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
+  private Boolean forkChoiceBeforeProposingEnabled = null;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
@@ -195,10 +194,12 @@ public class Eth2NetworkOptions {
     if (terminalBlockHashEpochOverride != null) {
       builder.terminalBlockHashEpochOverride(terminalBlockHashEpochOverride);
     }
+    if (forkChoiceBeforeProposingEnabled != null) {
+      builder.forkChoiceBeforeProposingEnabled(forkChoiceBeforeProposingEnabled);
+    }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
-        .forkChoiceBeforeProposingEnabled(forkChoiceBeforeProposingEnabled)
         .proposerBoostEnabled(proposerBoostEnabled);
   }
 
