@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
@@ -73,7 +74,7 @@ public class VoluntaryExitCommand implements Runnable {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   private OkHttpValidatorRestApiClient apiClient;
-  private tech.pegasys.teku.spec.datastructures.state.Fork fork;
+  private Fork fork;
   private Bytes32 genesisRoot;
   private OwnedValidators validators;
   private TekuConfiguration config;

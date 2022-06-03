@@ -18,6 +18,7 @@ import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -36,7 +37,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BeaconBlocksByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> {
-  private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final RecentChainData storageClient;

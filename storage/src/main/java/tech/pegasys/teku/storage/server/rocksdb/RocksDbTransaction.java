@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.Transaction;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteOptions;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 public class RocksDbTransaction implements KvStoreTransaction {
   private final ColumnFamilyHandle defaultHandle;
   private final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles;
-  private final org.rocksdb.Transaction rocksDbTx;
+  private final Transaction rocksDbTx;
   private final WriteOptions writeOptions;
 
   private final ReentrantLock lock = new ReentrantLock();

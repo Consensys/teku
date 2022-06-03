@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.response.v1.node.Direction;
+import tech.pegasys.teku.api.response.v1.node.Peer;
 import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.api.response.v1.teku.PeerScore;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
@@ -80,7 +81,7 @@ public class NetworkDataProvider {
     return network.getMetadata();
   }
 
-  public List<tech.pegasys.teku.api.response.v1.node.Peer> getPeers() {
+  public List<Peer> getPeers() {
     return network.streamPeers().map(this::toPeer).collect(Collectors.toList());
   }
 
@@ -92,7 +93,7 @@ public class NetworkDataProvider {
     return network.streamPeers().map(this::toPeerScore).collect(Collectors.toList());
   }
 
-  public Optional<tech.pegasys.teku.api.response.v1.node.Peer> getPeerById(final String peerId) {
+  public Optional<Peer> getPeerById(final String peerId) {
     final NodeId nodeId = network.parseNodeId(peerId);
     return network.getPeer(nodeId).map(this::toPeer);
   }
@@ -102,14 +103,14 @@ public class NetworkDataProvider {
     return network.getPeer(nodeId);
   }
 
-  private <R> tech.pegasys.teku.api.response.v1.node.Peer toPeer(final Eth2Peer eth2Peer) {
+  private <R> Peer toPeer(final Eth2Peer eth2Peer) {
     final String peerId = eth2Peer.getId().toBase58();
     final String address = eth2Peer.getAddress().toExternalForm();
     final State state = eth2Peer.isConnected() ? State.connected : State.disconnected;
     final Direction direction =
         eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound;
 
-    return new tech.pegasys.teku.api.response.v1.node.Peer(peerId, null, address, state, direction);
+    return new Peer(peerId, null, address, state, direction);
   }
 
   private <R> PeerScore toPeerScore(final Eth2Peer eth2Peer) {

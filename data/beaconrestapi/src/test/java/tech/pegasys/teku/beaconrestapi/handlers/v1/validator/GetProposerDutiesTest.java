@@ -68,8 +68,7 @@ public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseBody()).isEqualTo(duties);
   }
 
-  private tech.pegasys.teku.validator.api.ProposerDuty getProposerDuty(
-      final int validatorIndex, final UInt64 slot) {
+  private ProposerDuty getProposerDuty(final int validatorIndex, final UInt64 slot) {
     return new ProposerDuty(BLSTestUtil.randomPublicKey(1), validatorIndex, slot);
   }
 

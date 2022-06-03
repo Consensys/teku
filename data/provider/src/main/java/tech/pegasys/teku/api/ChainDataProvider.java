@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -165,11 +166,8 @@ public class ChainDataProvider {
     return fromBlock(slotParameter, SignedBeaconBlock::getRoot);
   }
 
-  public SafeFuture<
-          Optional<
-              ObjectAndMetaData<
-                  List<tech.pegasys.teku.spec.datastructures.operations.Attestation>>>>
-      getBlockAttestations(final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
+      final String slotParameter) {
     return fromBlock(
         slotParameter,
         block -> block.getMessage().getBody().getAttestations().stream().collect(toList()));
@@ -526,8 +524,7 @@ public class ChainDataProvider {
   }
 
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
-      final String slotParameter,
-      final Function<tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock, T> mapper) {
+      final String slotParameter, final Function<SignedBeaconBlock, T> mapper) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getBlock()

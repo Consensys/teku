@@ -37,8 +37,7 @@ public class StateValidatorData {
       return Optional.empty();
     }
 
-    tech.pegasys.teku.spec.datastructures.state.Validator validatorInternal =
-        state.getValidators().get(index);
+    Validator validatorInternal = state.getValidators().get(index);
 
     final StateValidatorData data =
         new StateValidatorData(
