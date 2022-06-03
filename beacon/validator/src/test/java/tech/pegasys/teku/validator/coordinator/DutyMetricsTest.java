@@ -16,11 +16,12 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -35,15 +36,17 @@ class DutyMetricsTest {
   private final StubTimeProvider timeProvider =
       StubTimeProvider.withTimeInSeconds(GENESIS_TIME.longValue());
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final MetricsHistogram attestationHistogram = mock(MetricsHistogram.class);
+  private final MetricsCountersByIntervals attestationTimings =
+      mock(MetricsCountersByIntervals.class);
+  private final MetricsCountersByIntervals blockTimings = mock(MetricsCountersByIntervals.class);
 
   private DutyMetrics createMetrics(Spec spec) {
-    return new DutyMetrics(timeProvider, recentChainData, attestationHistogram, spec);
+    return new DutyMetrics(timeProvider, recentChainData, attestationTimings, blockTimings, spec);
   }
 
   @BeforeEach
   void setUp() {
-    when(recentChainData.getGenesisTime()).thenReturn(GENESIS_TIME);
+    when(recentChainData.getGenesisTimeMillis()).thenReturn(secondsToMillis(GENESIS_TIME));
   }
 
   @ParameterizedTest
@@ -61,7 +64,7 @@ class DutyMetricsTest {
 
     metrics.onAttestationPublished(UInt64.valueOf(30));
 
-    verify(attestationHistogram).recordValue(publicationDelay);
+    verify(attestationTimings).recordValue(publicationDelay);
   }
 
   @ParameterizedTest
@@ -78,7 +81,42 @@ class DutyMetricsTest {
 
     metrics.onAttestationPublished(UInt64.valueOf(30));
 
-    verify(attestationHistogram).recordValue(0);
+    verify(attestationTimings).recordValue(0);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = Eth2Network.class,
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
+  void shouldRecordDelayWhenBlockIsPublishedLate(Eth2Network eth2Network) {
+    Spec spec = getSpec(eth2Network);
+    DutyMetrics metrics = createMetrics(spec);
+
+    final UInt64 slotNumber = UInt64.valueOf(30);
+    final UInt64 expectedAttestationTime = expectedBlockTime(slotNumber, spec);
+    final int publicationDelay = 575;
+    timeProvider.advanceTimeByMillis(expectedAttestationTime.plus(publicationDelay).longValue());
+
+    metrics.onBlockPublished(UInt64.valueOf(30));
+
+    verify(blockTimings).recordValue(publicationDelay);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = Eth2Network.class,
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
+  void shouldRecordZeroDelayWhenBlockIsPublishedEarly(Eth2Network eth2Network) {
+    Spec spec = getSpec(eth2Network);
+    DutyMetrics metrics = createMetrics(spec);
+
+    final UInt64 slotNumber = UInt64.valueOf(30);
+    final UInt64 expectedBlockTime = expectedBlockTime(slotNumber, spec);
+    timeProvider.advanceTimeByMillis(expectedBlockTime.minus(50).longValue());
+
+    metrics.onBlockPublished(UInt64.valueOf(30));
+
+    verify(blockTimings).recordValue(0);
   }
 
   private Spec getSpec(Eth2Network eth2Network) {
@@ -88,5 +126,10 @@ class DutyMetricsTest {
   private UInt64 expectedAttestationTime(final UInt64 slot, final Spec spec) {
     UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
     return slot.times(millisPerSlot).plus(millisPerSlot.dividedBy(3));
+  }
+
+  private UInt64 expectedBlockTime(final UInt64 slot, final Spec spec) {
+    UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
+    return slot.times(millisPerSlot);
   }
 }
