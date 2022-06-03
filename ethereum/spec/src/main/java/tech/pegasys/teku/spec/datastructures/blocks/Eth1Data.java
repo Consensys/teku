@@ -82,4 +82,9 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
   public Bytes32 getBlockHash() {
     return getField2().get();
   }
+
+  @Override
+  public Eth1DataSchema getSchema() {
+    return (Eth1DataSchema) super.getSchema();
+  }
 }

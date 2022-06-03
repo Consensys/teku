@@ -134,4 +134,9 @@ public class BeaconBlockHeader
   public Bytes32 getRoot() {
     return hashTreeRoot();
   }
+
+  @Override
+  public BeaconBlockHeaderSchema getSchema() {
+    return (BeaconBlockHeaderSchema) super.getSchema();
+  }
 }

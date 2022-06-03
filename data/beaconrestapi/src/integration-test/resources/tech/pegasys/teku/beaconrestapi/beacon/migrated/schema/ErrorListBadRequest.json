@@ -1,5 +1,5 @@
 {
-  "title" : "PostDataFailureResponse",
+  "title" : "ErrorListBadRequest",
   "type" : "object",
   "required" : [ "code", "message", "failures" ],
   "properties" : {

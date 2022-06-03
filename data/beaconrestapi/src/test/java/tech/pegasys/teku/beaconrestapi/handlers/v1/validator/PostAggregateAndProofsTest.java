@@ -17,76 +17,77 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
-class PostAggregateAndProofsTest {
-
-  @SuppressWarnings({"unchecked", "unused"})
-  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
-
-  @SuppressWarnings("unused")
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-
-  private final Context context = mock(Context.class);
-  private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-
-  private PostAggregateAndProofs handler;
+public class PostAggregateAndProofsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    handler = new PostAggregateAndProofs(provider, jsonProvider);
+    setHandler(
+        new PostAggregateAndProofs(validatorDataProvider, spec.getGenesisSchemaDefinitions()));
   }
 
-  @Test
-  public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
-    when(context.body()).thenReturn("{\"foo\": \"bar\"}");
-
-    handler.handle(context);
-    verify(context).status(SC_BAD_REQUEST);
-  }
-
-  @SuppressWarnings("unchecked")
   @Test
   public void shouldReturnSuccessWhenSendAggregateAndProofSucceeds() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof =
         dataStructureUtil.randomSignedAggregateAndProof();
+    request.setRequestBody(List.of(signedAggregateAndProof));
 
-    final tech.pegasys.teku.api.schema.SignedAggregateAndProof[] schemaSignedAggregateAndProof = {
-      new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof)
-    };
+    when(validatorDataProvider.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
 
-    when(provider.sendAggregateAndProofs(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    handler.handleRequest(request);
 
-    String signedAggregateAndProofAsJson = jsonProvider.objectToJSON(schemaSignedAggregateAndProof);
-    when(context.body()).thenReturn(signedAggregateAndProofAsJson);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
+  }
 
-    handler.handle(context);
+  @Test
+  public void shouldReturnBadRequestWhenErrorsReturned() throws Exception {
+    final SignedAggregateAndProof signedAggregateAndProof =
+        dataStructureUtil.randomSignedAggregateAndProof();
+    request.setRequestBody(List.of(signedAggregateAndProof));
 
-    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> captor =
-        ArgumentCaptor.forClass(List.class);
+    final List<SubmitDataError> errors = List.of(new SubmitDataError(UInt64.ZERO, "Failed"));
+    when(validatorDataProvider.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(errors));
 
-    verify(provider).sendAggregateAndProofs(captor.capture());
-    verify(context).status(SC_OK);
+    handler.handleRequest(request);
 
-    assertThat(jsonProvider.objectToJSON(captor.getValue()))
-        .isEqualTo(signedAggregateAndProofAsJson);
+    final HttpErrorResponse expected =
+        new HttpErrorResponse(
+            SC_BAD_REQUEST, "Some items failed to publish, refer to errors for details");
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody()).isEqualTo(expected);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws IOException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() {
+    verifyMetadataEmptyResponse(handler, SC_OK);
   }
 }

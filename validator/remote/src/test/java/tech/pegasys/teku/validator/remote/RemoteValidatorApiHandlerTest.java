@@ -216,7 +216,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(
             Optional.of(
                 new PostAttesterDutiesResponse(
-                    dataStructureUtil.randomBytes32(), Collections.emptyList())));
+                    dataStructureUtil.randomBytes32(), Collections.emptyList(), false)));
 
     SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, IntList.of(1234));
@@ -255,7 +255,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(
             Optional.of(
                 new PostAttesterDutiesResponse(
-                    dataStructureUtil.randomBytes32(), List.of(schemaValidatorDuties))));
+                    dataStructureUtil.randomBytes32(), List.of(schemaValidatorDuties), false)));
 
     SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, IntList.of(validatorIndex));

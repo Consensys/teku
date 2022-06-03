@@ -19,12 +19,21 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class AttesterDuties {
+  private final boolean executionOptimistic;
   private final Bytes32 dependentRoot;
   private final List<AttesterDuty> duties;
 
-  public AttesterDuties(final Bytes32 dependentRoot, final List<AttesterDuty> duties) {
+  public AttesterDuties(
+      final boolean executionOptimistic,
+      final Bytes32 dependentRoot,
+      final List<AttesterDuty> duties) {
+    this.executionOptimistic = executionOptimistic;
     this.dependentRoot = dependentRoot;
     this.duties = duties;
+  }
+
+  public boolean isExecutionOptimistic() {
+    return executionOptimistic;
   }
 
   public Bytes32 getDependentRoot() {

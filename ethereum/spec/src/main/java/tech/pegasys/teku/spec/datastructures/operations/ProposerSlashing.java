@@ -54,4 +54,9 @@ public class ProposerSlashing
   public SignedBeaconBlockHeader getHeader2() {
     return getField1();
   }
+
+  @Override
+  public ProposerSlashingSchema getSchema() {
+    return (ProposerSlashingSchema) super.getSchema();
+  }
 }
