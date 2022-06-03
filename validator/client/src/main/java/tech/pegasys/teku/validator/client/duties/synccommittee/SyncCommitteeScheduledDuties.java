@@ -119,7 +119,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     if (lastSignatureSlot.isEmpty()
         || lastSignatureBlockRoot.isEmpty()
         || !lastSignatureSlot.get().equals(slot)) {
-      validatorLogger.syncCommitteeAggregationFailed(slot);
+      validatorLogger.syncCommitteeAggregationSkipped(slot);
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     return aggregationDuty.produceAggregates(slot, lastSignatureBlockRoot.get());

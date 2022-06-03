@@ -174,12 +174,7 @@ class SyncCommitteeScheduledDutiesTest {
     final SafeFuture<DutyResult> result = duties.performAggregationDuty(UInt64.ZERO);
     reportDutyResult(UInt64.ZERO, result);
 
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(TYPE),
-            eq(UInt64.ZERO),
-            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
-            any(IllegalStateException.class));
+    verify(validatorLogger).syncCommitteeAggregationSkipped(eq(UInt64.ZERO));
   }
 
   @Test
@@ -193,12 +188,7 @@ class SyncCommitteeScheduledDutiesTest {
     final SafeFuture<DutyResult> result = duties.performAggregationDuty(UInt64.ONE);
     reportDutyResult(UInt64.ZERO, result);
 
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(TYPE),
-            eq(UInt64.ZERO),
-            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
-            any(IllegalStateException.class));
+    verify(validatorLogger).syncCommitteeAggregationSkipped(eq(UInt64.ONE));
   }
 
   @Test
@@ -212,12 +202,7 @@ class SyncCommitteeScheduledDutiesTest {
     final SafeFuture<DutyResult> result = duties.performAggregationDuty(UInt64.ZERO);
     reportDutyResult(UInt64.ZERO, result);
 
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(TYPE),
-            eq(UInt64.ZERO),
-            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
-            any(IllegalStateException.class));
+    verify(validatorLogger).syncCommitteeAggregationSkipped(eq(UInt64.ZERO));
   }
 
   public SyncCommitteeScheduledDuties.Builder validBuilder() {

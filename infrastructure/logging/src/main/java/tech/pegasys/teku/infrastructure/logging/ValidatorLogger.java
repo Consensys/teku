@@ -136,7 +136,7 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void syncCommitteeAggregationFailed(final UInt64 slot) {
+  public void syncCommitteeAggregationSkipped(final UInt64 slot) {
     log.warn(
         ColorConsolePrinter.print(
             PREFIX
