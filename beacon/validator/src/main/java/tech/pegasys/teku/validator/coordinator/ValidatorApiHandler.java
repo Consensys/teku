@@ -543,11 +543,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 LOG.trace(
                     "Successfully imported proposed block: {}",
                     () -> formatBlock(block.getSlot(), block.getRoot()));
+                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
                 return SendSignedBlockResult.success(block.getRoot());
               } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
                 LOG.debug(
                     "Delayed processing proposed block {} because it is from the future",
                     formatBlock(block.getSlot(), block.getRoot()));
+                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               } else {
                 VALIDATOR_LOGGER.proposedBlockImportFailed(
