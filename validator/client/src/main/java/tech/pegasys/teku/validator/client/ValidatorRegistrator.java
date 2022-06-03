@@ -165,6 +165,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final BLSPublicKey publicKey = validator.getPublicKey();
 
     if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
+      LOG.trace("Validator registration is disabled for {}", publicKey);
       return Optional.empty();
     }
 
@@ -178,8 +179,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
 
     final ValidatorRegistrationIdentity validatorRegistrationIdentity =
-        new ValidatorRegistrationIdentity(
-            maybeFeeRecipient.get(), gasLimit, validator.getPublicKey());
+        new ValidatorRegistrationIdentity(maybeFeeRecipient.get(), gasLimit, publicKey);
 
     if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
       final SignedValidatorRegistration cachedRegistration =
@@ -204,6 +204,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private SafeFuture<Void> sendValidatorRegistrations(
       final List<SignedValidatorRegistration> validatorRegistrations) {
     if (validatorRegistrations.isEmpty()) {
+      LOG.info("No validator(s) require registering.");
       return SafeFuture.completedFuture(null);
     }
 
