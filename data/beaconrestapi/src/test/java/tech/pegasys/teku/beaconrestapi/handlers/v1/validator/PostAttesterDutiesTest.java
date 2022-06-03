@@ -51,7 +51,7 @@ public class PostAttesterDutiesTest extends AbstractMigratedBeaconHandlerTest {
   public void setup() {
     setHandler(new PostAttesterDuties(syncDataProvider, validatorDataProvider));
     request.setPathParameter("epoch", "1");
-    request.setRequestBody(List.of(UInt64.valueOf(1)));
+    request.setRequestBody(List.of(1));
   }
 
   @Test

@@ -1,7 +1,7 @@
 {
   "title" : "GetAttesterDutiesResponse",
   "type" : "object",
-  "required" : [ "execution_optimistic", "dependent_root", "data" ],
+  "required" : [ "dependent_root", "data" ],
   "properties" : {
     "execution_optimistic" : {
       "type" : "boolean"

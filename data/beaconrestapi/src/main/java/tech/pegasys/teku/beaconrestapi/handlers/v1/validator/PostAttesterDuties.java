@@ -39,7 +39,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import java.util.Arrays;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -80,7 +80,11 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<AttesterDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(AttesterDuties.class)
           .name("GetAttesterDutiesResponse")
-          .withField("execution_optimistic", BOOLEAN_TYPE, AttesterDuties::isExecutionOptimistic)
+          .withOptionalField(
+              "execution_optimistic",
+              BOOLEAN_TYPE,
+              attesterDuties ->
+                  attesterDuties.isExecutionOptimistic() ? Optional.of(true) : Optional.empty())
           .withField("dependent_root", BYTES32_TYPE, AttesterDuties::getDependentRoot)
           .withField(
               "data",
@@ -113,7 +117,7 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
                     + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE))
+            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .response(
@@ -159,27 +163,25 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
+  public void handle(Context ctx) throws Exception {
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
-      AsyncApiResponse.respondWithError(
+      request.respondError(
           SC_SERVICE_UNAVAILABLE,
           "Beacon node is currently syncing and not serving request on that endpoint");
       return;
     }
 
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    final List<UInt64> indices = request.getRequestBody();
+    final List<Integer> requestBody = request.getRequestBody();
+    final IntList indices = IntArrayList.toList(requestBody.stream().mapToInt(Integer::intValue));
 
     SafeFuture<Optional<AttesterDuties>> future =
-        validatorDataProvider.getAttesterDuties(
-            epoch,
-            IntArrayList.toList(
-                Arrays.stream(indices.stream().mapToInt(UInt64::intValue).toArray())));
+        validatorDataProvider.getAttesterDuties(epoch, indices);
 
     request.respondAsync(
         future.thenApply(
