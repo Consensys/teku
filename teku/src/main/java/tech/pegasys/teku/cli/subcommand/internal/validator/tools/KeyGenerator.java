@@ -89,14 +89,13 @@ public class KeyGenerator {
   }
 
   private KeysWriter getKeysWriter(final SecureRandom secureRandom) {
-    final KeysWriter keysWriter;
     final String validatorKeystorePassword =
         readKeystorePassword(validatorPasswordOptions, VALIDATOR_PASSWORD_PROMPT);
     final String withdrawalKeystorePassword =
         readKeystorePassword(withdrawalPasswordOptions, WITHDRAWAL_PASSWORD_PROMPT);
 
     final Path keystoreDir = getKeystoreOutputDir();
-    keysWriter =
+    final KeysWriter keysWriter =
         new EncryptedKeystoreWriter(
             secureRandom,
             validatorKeystorePassword,
