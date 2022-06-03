@@ -204,7 +204,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private SafeFuture<Void> sendValidatorRegistrations(
       final List<SignedValidatorRegistration> validatorRegistrations) {
     if (validatorRegistrations.isEmpty()) {
-      LOG.info("No validator(s) require registering.");
+      LOG.debug("No validator(s) require registering.");
       return SafeFuture.completedFuture(null);
     }
 
