@@ -57,4 +57,9 @@ public class SignedBeaconBlockHeader
   public BLSSignature getSignature() {
     return getField1().getSignature();
   }
+
+  @Override
+  public SignedBeaconBlockHeaderSchema getSchema() {
+    return (SignedBeaconBlockHeaderSchema) super.getSchema();
+  }
 }

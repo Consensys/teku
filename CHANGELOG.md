@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Reduced memory requirements for storing the deposit merkle tree.
+- Enable spec change to ignore weightings from attestations from equivocating validators.
 
 ### Bug Fixes
 - Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.
