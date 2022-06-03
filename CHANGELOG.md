@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.
+- Fixed issue where sync committee aggregations were skipped, but reported failed because there were no signatures to aggregate.
