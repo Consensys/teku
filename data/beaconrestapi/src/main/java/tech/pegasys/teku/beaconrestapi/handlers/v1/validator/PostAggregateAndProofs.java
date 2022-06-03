@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -20,8 +21,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -31,15 +30,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -50,22 +46,6 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 public class PostAggregateAndProofs extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/aggregate_and_proofs";
   private final ValidatorDataProvider provider;
-
-  static final String PARTIAL_PUBLISH_FAILURE_MESSAGE =
-      "Some items failed to publish, refer to errors for details";
-
-  private static final SerializableTypeDefinition<ErrorListBadRequest> BAD_REQUEST_RESPONSE =
-      SerializableTypeDefinition.object(ErrorListBadRequest.class)
-          .withField("code", INTEGER_TYPE, ErrorListBadRequest::getCode)
-          .withField("message", STRING_TYPE, ErrorListBadRequest::getMessage)
-          .withField(
-              "stacktraces",
-              SerializableTypeDefinition.listOf(STRING_TYPE),
-              data ->
-                  data.getErrors().stream()
-                      .map(SubmitDataError::getMessage)
-                      .collect(Collectors.toList()))
-          .build();
 
   public PostAggregateAndProofs(
       final DataProvider provider, final SchemaDefinitions schemaDefinitions) {
@@ -85,7 +65,6 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
                 DeserializableTypeDefinition.listOf(
                     schemaDefinitions.getSignedAggregateAndProofSchema().getJsonTypeDefinition()))
             .response(SC_OK, "Successfully published aggregate.")
-            .response(SC_BAD_REQUEST, "Invalid request syntax", BAD_REQUEST_RESPONSE)
             .build());
     this.provider = provider;
   }
@@ -126,10 +105,8 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
               if (errors.isEmpty()) {
                 return AsyncApiResponse.respondWithCode(SC_OK);
               }
-
-              final ErrorListBadRequest data =
-                  ErrorListBadRequest.convert(PARTIAL_PUBLISH_FAILURE_MESSAGE, errors);
-              return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, data);
+              return AsyncApiResponse.respondWithError(
+                  SC_BAD_REQUEST, PARTIAL_PUBLISH_FAILURE_MESSAGE);
             }));
   }
 }

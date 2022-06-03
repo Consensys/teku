@@ -13,27 +13,23 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -73,26 +69,16 @@ public class PostAggregateAndProofsTest extends AbstractMigratedBeaconHandlerTes
 
     handler.handleRequest(request);
 
-    final ErrorListBadRequest expected =
-        new ErrorListBadRequest(
-            "Some items failed to publish, refer to errors for details", errors);
+    final HttpErrorResponse expected =
+        new HttpErrorResponse(
+            SC_BAD_REQUEST, "Some items failed to publish, refer to errors for details");
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(expected);
   }
 
   @Test
   void metadata_shouldHandle400() throws IOException {
-    final List<SubmitDataError> errors =
-        List.of(
-            new SubmitDataError(UInt64.ZERO, "Darn"), new SubmitDataError(UInt64.ONE, "Incorrect"));
-    final ErrorListBadRequest responseData = new ErrorListBadRequest("Message", errors);
-
-    final String data = getResponseStringFromMetadata(handler, SC_BAD_REQUEST, responseData);
-    final String expected =
-        Resources.toString(
-            Resources.getResource(PostAggregateAndProofsTest.class, "postAggregateAndProofs.json"),
-            UTF_8);
-    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }
 
   @Test

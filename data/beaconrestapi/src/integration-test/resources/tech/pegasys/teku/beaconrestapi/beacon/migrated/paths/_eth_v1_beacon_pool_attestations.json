@@ -83,7 +83,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/PostDataFailureResponse"
+              "$ref" : "#/components/schemas/ErrorListBadRequest"
             }
           }
         }
