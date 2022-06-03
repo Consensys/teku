@@ -43,7 +43,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
-  public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = false;
+  public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
   public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = false;
 
   private final Spec spec;
