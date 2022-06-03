@@ -419,6 +419,7 @@ public class Eth2NetworkConfiguration {
       discoveryBootnodes = new ArrayList<>();
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
+      forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
 
       return this;
     }
