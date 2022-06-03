@@ -85,7 +85,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastProcessedEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
-      LOG.debug("Registering {} validator(s) at epoch {}", activeValidators.size(), epoch);
+      LOG.debug(
+          "Checking registration of {} validator(s) at epoch {}", activeValidators.size(), epoch);
       registerValidators(activeValidators, epoch)
           .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
