@@ -35,7 +35,7 @@ public class MetricsCountersByIntervals {
   private final List<Integer> labelValuesListSizes;
   private final LabelledMetric<Counter> labelledMetricCounter;
 
-  public MetricsCountersByIntervals(
+  private MetricsCountersByIntervals(
       final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels,
       final List<Integer> labelValuesListSizes,
       final LabelledMetric<Counter> labelledMetricCounter) {

@@ -36,6 +36,6 @@ public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPI
     Response response = post(PostAttesterDuties.ROUTE.replace("{epoch}", "1"), "");
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.body().string()).contains("Could read request body to get required data.");
+    assertThat(response.body().string()).contains("Array expected but got null");
   }
 }

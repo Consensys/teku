@@ -1,0 +1,61 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "postAggregateAndProofs",
+    "summary" : "Publish aggregate and proofs",
+    "description" : "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SignedAggregateAndProof"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Successfully published aggregate.",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid request syntax",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "type" : "object",
+              "required" : [ "code", "message", "stacktraces" ],
+              "properties" : {
+                "code" : {
+                  "type" : "number"
+                },
+                "message" : {
+                  "type" : "string"
+                },
+                "stacktraces" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
