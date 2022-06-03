@@ -40,4 +40,9 @@ public class SszSignature extends SszByteVectorImpl {
   private BLSSignature createBLSSignature() {
     return BLSSignature.fromBytesCompressed(getBytes());
   }
+
+  @Override
+  public SszSignatureSchema getSchema() {
+    return (SszSignatureSchema) super.getSchema();
+  }
 }
