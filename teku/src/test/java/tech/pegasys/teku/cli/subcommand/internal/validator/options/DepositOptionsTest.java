@@ -66,8 +66,7 @@ class DepositOptionsTest {
         WalletUtils.generateWalletFile(PASSWORD, EXPECTED_EC_KEYPAIR, tempDir.toFile(), true);
     final File keystoreFile = tempDir.resolve(keystoreFileName).toFile();
     // create password file
-    final File passwordFile =
-        Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
+    final File passwordFile = Files.writeString(tempDir.resolve("password.txt"), PASSWORD).toFile();
 
     final Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions keystoreOptions =
         new Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions();
@@ -110,7 +109,7 @@ class DepositOptionsTest {
     keystoreOptions.eth1KeystoreFile =
         Files.writeString(tempDir.resolve("v3.json"), "{test:123}").toFile();
     keystoreOptions.eth1KeystorePasswordFile =
-        Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
+        Files.writeString(tempDir.resolve("password.txt"), PASSWORD).toFile();
 
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
@@ -133,7 +132,7 @@ class DepositOptionsTest {
     keystoreOptions.eth1KeystoreFile =
         Files.writeString(tempDir.resolve("v3.json"), "invalidfilecontents").toFile();
     keystoreOptions.eth1KeystorePasswordFile =
-        Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
+        Files.writeString(tempDir.resolve("password.txt"), PASSWORD).toFile();
 
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
