@@ -135,8 +135,7 @@ public class PostSyncCommittees extends MigratingEndpointAdapter {
     final SerializableOneOfTypeDefinitionBuilder<Object> builder =
         new SerializableOneOfTypeDefinitionBuilder<>().title("BadRequestResponses");
     builder.withType(
-        value -> value instanceof ErrorListBadRequest,
-        ErrorListBadRequest.getFailuresTypeDefinition());
+        value -> value instanceof ErrorListBadRequest, ErrorListBadRequest.getJsonTypeDefinition());
     builder.withType(value -> value instanceof HttpErrorResponse, HTTP_ERROR_RESPONSE_TYPE);
     return builder.build();
   }

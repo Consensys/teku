@@ -75,7 +75,7 @@ public class PostAttestation extends MigratingEndpointAdapter {
             .response(
                 SC_BAD_REQUEST,
                 "Errors with one or more attestations",
-                ErrorListBadRequest.getFailuresTypeDefinition())
+                ErrorListBadRequest.getJsonTypeDefinition())
             .build());
     this.provider = provider;
   }

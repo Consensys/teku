@@ -34,7 +34,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -66,10 +65,6 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
                 DeserializableTypeDefinition.listOf(
                     schemaDefinitions.getSignedAggregateAndProofSchema().getJsonTypeDefinition()))
             .response(SC_OK, "Successfully published aggregate.")
-            .response(
-                SC_BAD_REQUEST,
-                "Invalid request syntax",
-                ErrorListBadRequest.getStacktraceTypeDefinition())
             .build());
     this.provider = provider;
   }
@@ -110,9 +105,8 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
               if (errors.isEmpty()) {
                 return AsyncApiResponse.respondWithCode(SC_OK);
               }
-              final ErrorListBadRequest data =
-                  ErrorListBadRequest.convert(PARTIAL_PUBLISH_FAILURE_MESSAGE, errors);
-              return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, data);
+              return AsyncApiResponse.respondWithError(
+                  SC_BAD_REQUEST, PARTIAL_PUBLISH_FAILURE_MESSAGE);
             }));
   }
 }

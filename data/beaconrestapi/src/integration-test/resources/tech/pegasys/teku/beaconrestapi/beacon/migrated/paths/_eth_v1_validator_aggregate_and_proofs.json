@@ -22,11 +22,11 @@
         "content" : { }
       },
       "400" : {
-        "description" : "Invalid request syntax",
+        "description" : "The request could not be processed, check the response for more information.",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/StacktraceErrorListBadRequest"
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
