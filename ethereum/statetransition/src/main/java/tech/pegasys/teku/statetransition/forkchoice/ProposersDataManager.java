@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -243,43 +244,25 @@ public class ProposersDataManager {
             "registered_validators",
             validatorRegistrationInfoByValidatorIndex.entrySet().stream()
                 .map(
-                    registeredValidatorInfoEntry ->
-                        ImmutableMap.<String, Object>builder()
-                            // changing the following attributes require a change to
-                            // tech.pegasys.teku.api.response.v1.teku.RegisteredValidatorInfoSchema
-                            .put("proposer_index", registeredValidatorInfoEntry.getKey())
-                            .put(
-                                "pubkey",
-                                registeredValidatorInfoEntry
-                                    .getValue()
-                                    .getSignedValidatorRegistration()
-                                    .getMessage()
-                                    .getPublicKey())
-                            .put(
-                                "fee_recipient",
-                                registeredValidatorInfoEntry
-                                    .getValue()
-                                    .getSignedValidatorRegistration()
-                                    .getMessage()
-                                    .getFeeRecipient())
-                            .put(
-                                "gas_limit",
-                                registeredValidatorInfoEntry
-                                    .getValue()
-                                    .getSignedValidatorRegistration()
-                                    .getMessage()
-                                    .getGasLimit())
-                            .put(
-                                "timestamp",
-                                registeredValidatorInfoEntry
-                                    .getValue()
-                                    .getSignedValidatorRegistration()
-                                    .getMessage()
-                                    .getTimestamp())
-                            .put(
-                                "expiry_slot",
-                                registeredValidatorInfoEntry.getValue().getExpirySlot())
-                            .build())
+                    registeredValidatorInfoEntry -> {
+                      final ValidatorRegistration validatorRegistration =
+                          registeredValidatorInfoEntry
+                              .getValue()
+                              .getSignedValidatorRegistration()
+                              .getMessage();
+                      return ImmutableMap.<String, Object>builder()
+                          // changing the following attributes require a change to
+                          // tech.pegasys.teku.api.response.v1.teku.RegisteredValidatorInfoSchema
+                          .put("proposer_index", registeredValidatorInfoEntry.getKey())
+                          .put("pubkey", validatorRegistration.getPublicKey().toString())
+                          .put("fee_recipient", validatorRegistration.getFeeRecipient())
+                          .put("gas_limit", validatorRegistration.getGasLimit())
+                          .put("timestamp", validatorRegistration.getTimestamp())
+                          .put(
+                              "expiry_slot",
+                              registeredValidatorInfoEntry.getValue().getExpirySlot())
+                          .build();
+                    })
                 .collect(Collectors.toList()))
         .build();
   }
