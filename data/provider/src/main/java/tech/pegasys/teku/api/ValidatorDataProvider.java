@@ -79,7 +79,7 @@ public class ValidatorDataProvider {
       "Cannot produce a block for a historic slot.";
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
-  static final String PARTIAL_PUBLISH_FAILURE_MESSAGE =
+  public static final String PARTIAL_PUBLISH_FAILURE_MESSAGE =
       "Some items failed to publish, refer to errors for details";
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;

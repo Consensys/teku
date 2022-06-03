@@ -1,7 +1,7 @@
 {
-  "title" : "PostDataFailureResponse",
+  "title" : "StacktraceErrorListBadRequest",
   "type" : "object",
-  "required" : [ "code", "message", "failures" ],
+  "required" : [ "code", "message", "stacktraces" ],
   "properties" : {
     "code" : {
       "type" : "number"
@@ -9,10 +9,10 @@
     "message" : {
       "type" : "string"
     },
-    "failures" : {
+    "stacktraces" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/SubmitDataError"
+        "type" : "string"
       }
     }
   }

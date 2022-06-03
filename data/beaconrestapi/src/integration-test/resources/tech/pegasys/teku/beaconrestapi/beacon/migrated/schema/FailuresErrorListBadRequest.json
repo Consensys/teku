@@ -1,0 +1,19 @@
+{
+  "title" : "FailuresErrorListBadRequest",
+  "type" : "object",
+  "required" : [ "code", "message", "failures" ],
+  "properties" : {
+    "code" : {
+      "type" : "number"
+    },
+    "message" : {
+      "type" : "string"
+    },
+    "failures" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/SubmitDataError"
+      }
+    }
+  }
+}

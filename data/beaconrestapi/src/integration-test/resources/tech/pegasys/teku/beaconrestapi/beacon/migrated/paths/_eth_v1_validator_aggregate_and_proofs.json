@@ -26,22 +26,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "type" : "object",
-              "required" : [ "code", "message", "stacktraces" ],
-              "properties" : {
-                "code" : {
-                  "type" : "number"
-                },
-                "message" : {
-                  "type" : "string"
-                },
-                "stacktraces" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                }
-              }
+              "$ref" : "#/components/schemas/StacktraceErrorListBadRequest"
             }
           }
         }
