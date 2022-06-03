@@ -1,0 +1,34 @@
+{
+  "title" : "Eth1VotingSummary",
+  "type" : "object",
+  "required" : [ "state_eth1_data", "eth1_data_votes", "votes_required", "voting_period_slots", "voting_period_slots_left" ],
+  "properties" : {
+    "state_eth1_data" : {
+      "$ref" : "#/components/schemas/Eth1Data"
+    },
+    "eth1_data_votes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Eth1DataWithVotes"
+      }
+    },
+    "votes_required" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "voting_period_slots" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "voting_period_slots_left" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}

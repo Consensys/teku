@@ -144,6 +144,7 @@ import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -806,6 +807,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initRestAPI() {
     LOG.debug("BeaconChainController.initRestAPI()");
+    if (!beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
+      LOG.info("rest-api-enabled is false, not starting rest api.");
+      return;
+    }
     final DataProvider dataProvider =
         DataProvider.builder()
             .spec(spec)
@@ -829,29 +834,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .proposersDataManager(proposersDataManager)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .build();
+    final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
-    if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
+    beaconRestAPI =
+        Optional.of(
+            new BeaconRestApi(
+                dataProvider,
+                eth1DataProvider,
+                beaconConfig.beaconRestApiConfig(),
+                eventChannels,
+                eventAsyncRunner,
+                timeProvider,
+                spec));
 
-      beaconRestAPI =
-          Optional.of(
-              new BeaconRestApi(
-                  dataProvider,
-                  depositProvider,
-                  eth1DataCache,
-                  beaconConfig.beaconRestApiConfig(),
-                  eventChannels,
-                  eventAsyncRunner,
-                  timeProvider,
-                  spec));
-
-      if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
-        final int initialValidatorsCount =
-            spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount();
-        eventChannels.subscribe(
-            ActiveValidatorChannel.class, new ActiveValidatorCache(spec, initialValidatorsCount));
-      }
-    } else {
-      LOG.info("rest-api-enabled is false, not starting rest api.");
+    if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
+      final int initialValidatorsCount =
+          spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount();
+      eventChannels.subscribe(
+          ActiveValidatorChannel.class, new ActiveValidatorCache(spec, initialValidatorsCount));
     }
   }
 

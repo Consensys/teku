@@ -41,7 +41,7 @@ public class GetEth1DataIntegrationTest extends AbstractDataBackedRestAPIIntegra
   @Test
   public void shouldPassVoteToResponse() throws IOException {
     final Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
-    when(eth1DataCache.getEth1Vote(any())).thenReturn(eth1Data);
+    when(eth1DataProvider.getEth1Vote(any())).thenReturn(eth1Data);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     GetEth1DataResponse getEth1DataResponse =

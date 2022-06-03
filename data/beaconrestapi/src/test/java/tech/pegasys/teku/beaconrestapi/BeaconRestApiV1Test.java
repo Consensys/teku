@@ -103,6 +103,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
@@ -157,10 +158,10 @@ public class BeaconRestApiV1Test {
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
             .build();
+    final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
     new BeaconRestApi(
         dataProvider,
-        depositProvider,
-        eth1DataCache,
+        eth1DataProvider,
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
