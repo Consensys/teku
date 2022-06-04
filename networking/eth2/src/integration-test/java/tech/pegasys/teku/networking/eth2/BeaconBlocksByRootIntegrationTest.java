@@ -264,8 +264,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   }
 
   private List<SignedBeaconBlock> requestBlocks(final Eth2Peer peer, final List<Bytes32> blockRoots)
-      throws InterruptedException, java.util.concurrent.ExecutionException,
-          java.util.concurrent.TimeoutException, RpcException {
+      throws InterruptedException, ExecutionException, TimeoutException, RpcException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(peer.requestBlocksByRoot(blockRoots, RpcResponseListener.from(blocks::add)));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
