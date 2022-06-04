@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
@@ -22,8 +21,7 @@ import java.io.IOException;
 public class DoubleDeserializer extends JsonDeserializer<Double> {
 
   @Override
-  public Double deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
+  public Double deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     return Double.valueOf(p.getValueAsString());
   }
 }
