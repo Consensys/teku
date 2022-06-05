@@ -70,8 +70,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState addNewBestBlock() {
-    final SignedBlockAndState nextBlock;
-    nextBlock = chainBuilder.generateNextBlock();
+    final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
     updateBestBlock(nextBlock);
     return nextBlock;
   }
