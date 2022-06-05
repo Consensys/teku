@@ -214,6 +214,7 @@ allprojects {
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
     }
     options.encoding = 'UTF-8'
