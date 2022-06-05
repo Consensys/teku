@@ -330,6 +330,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             signedBuilderBid ->
                 builderBidValidator.validateAndGetPayloadHeader(
                     spec, signedBuilderBid, validatorRegistration.get(), state))
+        .thenPeek(__ -> slotToLocalElFallbackPayload.put(slot, Optional.empty()))
         .exceptionallyCompose(
             error -> {
               LOG.error(
@@ -376,19 +377,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private SafeFuture<ExecutionPayloadHeader> doFallbackToLocal(
       final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
 
-    return localExecutionPayload
-        .thenPeek(
-            executionPayload ->
-                // store the fallback payload for this slot
-                slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload)))
-        .thenApply(
-            executionPayload ->
-                spec.atSlot(slot)
-                    .getSchemaDefinitions()
-                    .toVersionBellatrix()
-                    .orElseThrow()
-                    .getExecutionPayloadHeaderSchema()
-                    .createFromExecutionPayload(executionPayload));
+    return localExecutionPayload.thenApply(
+        executionPayload -> {
+          // store the fallback payload for this slot
+          slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload));
+
+          return spec.atSlot(slot)
+              .getSchemaDefinitions()
+              .toVersionBellatrix()
+              .orElseThrow()
+              .getExecutionPayloadHeaderSchema()
+              .createFromExecutionPayload(executionPayload);
+        });
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
