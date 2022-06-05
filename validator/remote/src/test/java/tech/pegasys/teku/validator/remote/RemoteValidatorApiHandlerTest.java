@@ -105,8 +105,7 @@ class RemoteValidatorApiHandlerTest {
     when(typeDefClient.getGenesis())
         .thenReturn(Optional.of(new GenesisData(genesisTime, dataStructureUtil.randomBytes32())));
 
-    SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> future =
-        apiHandler.getGenesisData();
+    SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
 
     assertThat(unwrapToValue(future).getGenesisTime()).isEqualTo(genesisTime);
   }
@@ -115,8 +114,7 @@ class RemoteValidatorApiHandlerTest {
   public void getGenesisTime_WhenNotPresent_ReturnsEmpty() {
     when(apiClient.getGenesis()).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> future =
-        apiHandler.getGenesisData();
+    SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
   }
@@ -508,8 +506,7 @@ class RemoteValidatorApiHandlerTest {
   void shouldRetryAfterDelayWhenRequestRateLimited() {
     when(typeDefClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
 
-    final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> result =
-        apiHandler.getGenesisData();
+    final SafeFuture<Optional<GenesisData>> result = apiHandler.getGenesisData();
 
     for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
       asyncRunner.executeQueuedActions();

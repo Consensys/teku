@@ -32,6 +32,7 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -555,8 +556,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {
-    final Path file = java.nio.file.Files.createTempFile("config", "yaml");
-    java.nio.file.Files.write(file, contents);
+    final Path file = Files.createTempFile("config", "yaml");
+    Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;
   }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -45,12 +46,9 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 public class NodeDataProvider {
 
   private final AggregatingAttestationPool attestationPool;
-  private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
-      attesterSlashingPool;
-  private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
-      proposerSlashingPool;
-  private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
-      voluntaryExitPool;
+  private final OperationPool<AttesterSlashing> attesterSlashingPool;
+  private final OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final BlockManager blockManager;
   private final AttestationManager attestationManager;
@@ -60,12 +58,9 @@ public class NodeDataProvider {
 
   public NodeDataProvider(
       final AggregatingAttestationPool attestationPool,
-      final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
-          attesterSlashingsPool,
-      final OperationPool<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
-          proposerSlashingPool,
-      final OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
-          voluntaryExitPool,
+      final OperationPool<AttesterSlashing> attesterSlashingsPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final BlockManager blockManager,
       final AttestationManager attestationManager,
@@ -84,23 +79,20 @@ public class NodeDataProvider {
     this.proposersDataManager = proposersDataManager;
   }
 
-  public List<tech.pegasys.teku.spec.datastructures.operations.Attestation> getAttestations(
+  public List<Attestation> getAttestations(
       Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
-  public List<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
-      getAttesterSlashings() {
+  public List<AttesterSlashing> getAttesterSlashings() {
     return new ArrayList<>(attesterSlashingPool.getAll());
   }
 
-  public List<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
-      getProposerSlashings() {
+  public List<ProposerSlashing> getProposerSlashings() {
     return proposerSlashingPool.getAll().stream().collect(Collectors.toList());
   }
 
-  public List<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
-      getVoluntaryExits() {
+  public List<SignedVoluntaryExit> getVoluntaryExits() {
     return new ArrayList<>(voluntaryExitPool.getAll());
   }
 
@@ -125,9 +117,7 @@ public class NodeDataProvider {
   }
 
   public void subscribeToNewVoluntaryExits(
-      OperationPool.OperationAddedSubscriber<
-              tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
-          listener) {
+      OperationPool.OperationAddedSubscriber<SignedVoluntaryExit> listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 
