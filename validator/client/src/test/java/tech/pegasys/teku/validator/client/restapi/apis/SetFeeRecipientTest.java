@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -26,12 +27,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 
 public class SetFeeRecipientTest {
   private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
   private final SetFeeRecipient handler = new SetFeeRecipient(Optional.of(beaconProposerPreparer));
+
+  private final RestApiRequest request = mock(RestApiRequest.class);
 
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
@@ -41,6 +45,16 @@ public class SetFeeRecipientTest {
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void shouldShareContextIfBellatrixNotEnabled() {
+    assertThatThrownBy(
+            () -> {
+              SetFeeRecipient handler = new SetFeeRecipient(Optional.empty());
+              handler.handleRequest(request);
+            })
+        .hasMessageContaining("Bellatrix is not currently scheduled");
   }
 
   @Test
