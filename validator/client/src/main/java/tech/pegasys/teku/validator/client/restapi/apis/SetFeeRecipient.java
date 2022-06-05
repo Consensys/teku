@@ -79,7 +79,12 @@ public class SetFeeRecipient extends RestApiEndpoint {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final SetFeeRecipientBody body = request.getRequestBody();
     try {
-      beaconProposerPreparer.orElseThrow().setFeeRecipient(publicKey, body.getEth1Address());
+      beaconProposerPreparer
+          .orElseThrow(
+              () ->
+                  new IllegalArgumentException(
+                      "Bellatrix is not currently scheduled on this network, unable to set fee recipient."))
+          .setFeeRecipient(publicKey, body.getEth1Address());
     } catch (SetFeeRecipientException e) {
       request.respondError(SC_BAD_REQUEST, e.getMessage());
       return;
