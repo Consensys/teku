@@ -146,6 +146,7 @@ public class ValidatorClientService extends Service {
                   asyncRunner,
                   config.getValidatorConfig().getRefreshProposerConfigFromSource(),
                   new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
+                  services.getTimeProvider(),
                   config.getValidatorConfig().getProposerConfigSource()));
 
       beaconProposerPreparer =

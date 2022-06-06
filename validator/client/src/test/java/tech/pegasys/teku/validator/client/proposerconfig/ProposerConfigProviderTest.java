@@ -15,7 +15,10 @@ package tech.pegasys.teku.validator.client.proposerconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.validator.client.proposerconfig.AbstractProposerConfigProvider.LAST_PROPOSER_CONFIG_VALIDITY_PERIOD;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -25,6 +28,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
@@ -44,8 +48,11 @@ public class ProposerConfigProviderTest {
           new ProposerConfig.Config(
               Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"), null));
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
+
   private final ProposerConfigProvider proposerConfigProvider =
-      ProposerConfigProvider.create(asyncRunner, true, proposerConfigLoader, Optional.of(SOURCE));
+      ProposerConfigProvider.create(
+          asyncRunner, true, proposerConfigLoader, timeProvider, Optional.of(SOURCE));
   private final URL sourceUrl;
 
   public ProposerConfigProviderTest() throws MalformedURLException {
@@ -97,6 +104,45 @@ public class ProposerConfigProviderTest {
   }
 
   @Test
+  void getProposerConfig_shouldReturnLastConfigWhenLastConfigAvailableAndNotExpired() {
+    SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
+        proposerConfigProvider.getProposerConfig();
+
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
+
+    timeProvider.advanceTimeBySeconds(LAST_PROPOSER_CONFIG_VALIDITY_PERIOD - 10);
+    futureMaybeConfig = proposerConfigProvider.getProposerConfig();
+
+    asyncRunner.executeQueuedActions();
+
+    verify(proposerConfigLoader, times(1)).getProposerConfig(sourceUrl);
+    assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
+  }
+
+  @Test
+  void getProposerConfig_shouldRefreshWhenLastConfigAvailableButExpired() {
+    SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
+        proposerConfigProvider.getProposerConfig();
+
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
+
+    timeProvider.advanceTimeBySeconds(LAST_PROPOSER_CONFIG_VALIDITY_PERIOD + 10);
+    futureMaybeConfig = proposerConfigProvider.getProposerConfig();
+
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigB);
+    asyncRunner.executeQueuedActions();
+
+    verify(proposerConfigLoader, times(2)).getProposerConfig(sourceUrl);
+    assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigB));
+  }
+
+  @Test
   void getProposerConfig_onConcurrentCallsShouldMergeFutures() {
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
@@ -116,7 +162,7 @@ public class ProposerConfigProviderTest {
   void getProposerConfig_shouldAlwaysReturnFirstValidConfigWhenRefreshIsFalse() {
     final ProposerConfigProvider proposerConfigProvider =
         ProposerConfigProvider.create(
-            asyncRunner, false, proposerConfigLoader, Optional.of(SOURCE));
+            asyncRunner, false, proposerConfigLoader, timeProvider, Optional.of(SOURCE));
 
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
