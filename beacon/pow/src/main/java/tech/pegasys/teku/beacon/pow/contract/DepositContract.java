@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.RemoteFunctionCall;
@@ -71,13 +72,13 @@ public class DepositContract extends Contract {
       byte[] signature,
       byte[] depositDataRoot,
       BigInteger weiValue) {
-    final org.web3j.abi.datatypes.Function function =
-        new org.web3j.abi.datatypes.Function(
+    final Function function =
+        new Function(
             FUNC_DEPOSIT,
             Arrays.<Type>asList(
-                new org.web3j.abi.datatypes.DynamicBytes(pubkey),
-                new org.web3j.abi.datatypes.DynamicBytes(withdrawalCredentials),
-                new org.web3j.abi.datatypes.DynamicBytes(signature),
+                new DynamicBytes(pubkey),
+                new DynamicBytes(withdrawalCredentials),
+                new DynamicBytes(signature),
                 new org.web3j.abi.datatypes.generated.Bytes32(depositDataRoot)),
             Collections.<TypeReference<?>>emptyList());
     return executeRemoteCallTransaction(function, weiValue);

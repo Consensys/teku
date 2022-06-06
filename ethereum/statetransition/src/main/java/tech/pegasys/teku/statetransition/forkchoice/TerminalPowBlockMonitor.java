@@ -302,7 +302,10 @@ public class TerminalPowBlockMonitor {
     final UInt256 timeFrameInSeconds =
         UInt256.valueOf(
             latestBlock.getBlockTimestamp().minus(oldestBlock.getBlockTimestamp()).longValue());
-
+    // Make sure we don't just have the same block multiple times.
+    if (timeFrameInSeconds.isZero()) {
+      return;
+    }
     final UInt256 averageTdPerSeconds =
         lastPowBlocks
             .getFirst()

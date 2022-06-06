@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -83,8 +84,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Spec spec;
   protected SpecConfig specConfig;
 
-  private static final okhttp3.MediaType JSON =
-      okhttp3.MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =
       BeaconRestApiConfig.builder()
           .restApiPort(0)

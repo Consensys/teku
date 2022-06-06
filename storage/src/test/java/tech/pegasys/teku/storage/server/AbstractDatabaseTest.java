@@ -94,8 +94,7 @@ public abstract class AbstractDatabaseTest {
   protected RecentChainData recentChainData;
   protected UpdatableStore store;
 
-  protected List<tech.pegasys.teku.storage.storageSystem.StorageSystem> storageSystems =
-      new ArrayList<>();
+  protected List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
   public void setup() {

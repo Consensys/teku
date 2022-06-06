@@ -88,8 +88,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   private Bytes encodeMessageWithLength(final Bytes payload) {
     final Bytes header = ProtobufEncoder.encodeVarInt(payload.size());
-    final Bytes compressedPayload;
-    compressedPayload = compressor.compress(payload);
+    final Bytes compressedPayload = compressor.compress(payload);
     return Bytes.concatenate(header, compressedPayload);
   }
 
