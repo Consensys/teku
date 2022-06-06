@@ -39,6 +39,9 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtil
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -137,7 +140,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   protected void onNewVoluntaryExit(
-      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit,
+      final SignedVoluntaryExit exit,
       final InternalValidationResult result,
       final boolean fromNetwork) {
     final VoluntaryExitEvent voluntaryExitEvent = new VoluntaryExitEvent(exit);
@@ -145,9 +148,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   protected void onSyncCommitteeContribution(
-      final tech.pegasys.teku.spec.datastructures.operations.versions.altair
-              .SignedContributionAndProof
-          proof,
+      final SignedContributionAndProof proof,
       final InternalValidationResult result,
       final boolean fromNetwork) {
     if (result.isAccept()) {
@@ -162,9 +163,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     notifySubscribersOfEvent(EventType.attestation, attestationEvent);
   }
 
-  protected void onNewBlock(
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block,
-      final boolean executionOptimistic) {
+  protected void onNewBlock(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final BlockEvent blockEvent = new BlockEvent(block, executionOptimistic);
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }

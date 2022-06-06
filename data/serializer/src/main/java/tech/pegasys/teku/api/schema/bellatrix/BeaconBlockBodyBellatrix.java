@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
@@ -80,8 +81,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   @Override
-  public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
-      asInternalBeaconBlockBody(final SpecVersion spec) {
+  public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
     final ExecutionPayloadSchema executionPayloadSchema =
         getBeaconBlockBodySchema(spec).getExecutionPayloadSchema();
 

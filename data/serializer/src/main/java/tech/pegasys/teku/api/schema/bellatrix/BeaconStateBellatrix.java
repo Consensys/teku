@@ -30,6 +30,8 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
@@ -100,11 +102,9 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
         .toMutableVersionBellatrix()
         .ifPresent(
             beaconStateBellatrix -> {
-              final tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema
-                  syncCommitteeSchema =
-                      BeaconStateSchemaBellatrix.required(
-                              beaconStateBellatrix.getBeaconStateSchema())
-                          .getCurrentSyncCommitteeSchema();
+              final SyncCommitteeSchema syncCommitteeSchema =
+                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
+                      .getCurrentSyncCommitteeSchema();
               final SszList<SszByte> previousEpochParticipation =
                   beaconStateBellatrix
                       .getPreviousEpochParticipation()
@@ -125,11 +125,9 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
               beaconStateBellatrix.setNextSyncCommittee(
                   next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
 
-              final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema
-                  executionPayloadHeaderSchema =
-                      BeaconStateSchemaBellatrix.required(
-                              beaconStateBellatrix.getBeaconStateSchema())
-                          .getLastExecutionPayloadHeaderSchema();
+              final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
+                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
+                      .getLastExecutionPayloadHeaderSchema();
               beaconStateBellatrix.setLatestExecutionPayloadHeader(
                   executionPayloadHeaderSchema.create(
                       latestExecutionPayloadHeader.parentHash,

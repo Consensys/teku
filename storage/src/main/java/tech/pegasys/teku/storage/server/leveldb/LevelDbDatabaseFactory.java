@@ -70,12 +70,13 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
-    final KvStoreAccessor db;
+
     final V4SchemaHot schemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
     final V6SnapshotSchemaFinalized schemaFinalized = new V6SnapshotSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
-    db = LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+    final KvStoreAccessor db =
+        LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
 
     return KvStoreDatabase.createWithStateSnapshots(
         db,

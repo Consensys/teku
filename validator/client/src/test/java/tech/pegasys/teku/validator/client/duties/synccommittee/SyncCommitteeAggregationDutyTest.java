@@ -218,7 +218,7 @@ class SyncCommitteeAggregationDutyTest {
     final SafeFuture<DutyResult> result = duty.produceAggregates(slot, beaconBlockRoot);
     assertThat(result).isCompletedWithValue(DutyResult.NO_OP);
 
-    verify(validatorLogger).syncSubcommitteeAggregationSkipped(slot, 0);
+    verify(validatorLogger).syncCommitteeAggregationSkipped(slot);
   }
 
   @Test

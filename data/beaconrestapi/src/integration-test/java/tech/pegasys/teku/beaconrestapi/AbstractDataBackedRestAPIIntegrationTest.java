@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -74,8 +75,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.coordinator.DepositProvider;
-import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
@@ -84,8 +84,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Spec spec;
   protected SpecConfig specConfig;
 
-  private static final okhttp3.MediaType JSON =
-      okhttp3.MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =
       BeaconRestApiConfig.builder()
           .restApiPort(0)
@@ -114,8 +113,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
-  protected final DepositProvider depositProvider = mock(DepositProvider.class);
-  protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
 
   private StorageSystem storageSystem;
 
@@ -196,8 +194,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     beaconRestApi =
         new BeaconRestApi(
             dataProvider,
-            depositProvider,
-            eth1DataCache,
+            eth1DataProvider,
             config,
             eventChannels,
             SyncAsyncRunner.SYNC_RUNNER,

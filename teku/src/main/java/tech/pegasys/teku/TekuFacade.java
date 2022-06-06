@@ -22,7 +22,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
  * <p>CAUTION: this API is unstable and primarily intended for debugging and testing purposes this
  * API might be changed in any version in backward incompatible way
  */
-public interface TekuFacade {
+public final class TekuFacade {
 
   /**
    * Starts Teku node from CLI args
@@ -31,15 +31,15 @@ public interface TekuFacade {
    *     start a Node (e.g. <code>--help</code> command)
    * @throws RuntimeException if invalid args supplied or an internal error while starting a Node
    */
-  static Optional<? extends NodeFacade> startFromCLIArgs(String[] cliArgs) {
+  public static Optional<? extends NodeFacade> startFromCLIArgs(String[] cliArgs) {
     return Teku.startFromCLIArgs(cliArgs);
   }
 
-  static BeaconNodeFacade startBeaconNode(TekuConfiguration config) {
+  public static BeaconNodeFacade startBeaconNode(TekuConfiguration config) {
     return Teku.startBeaconNode(config);
   }
 
-  static ValidatorNodeFacade startValidatorNode(TekuConfiguration config) {
+  public static ValidatorNodeFacade startValidatorNode(TekuConfiguration config) {
     return Teku.startValidatorNode(config);
   }
 }

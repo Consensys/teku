@@ -32,12 +32,10 @@ public class TrustingSimpleHttpsClient extends SimpleHttpClient {
       new TrustManager[] {
         new X509TrustManager() {
           @Override
-          public void checkClientTrusted(
-              java.security.cert.X509Certificate[] chain, String authType) {}
+          public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
           @Override
-          public void checkServerTrusted(
-              java.security.cert.X509Certificate[] chain, String authType)
+          public void checkServerTrusted(X509Certificate[] chain, String authType)
               throws CertificateException {
 
             for (X509Certificate certificate : chain) {
@@ -56,24 +54,22 @@ public class TrustingSimpleHttpsClient extends SimpleHttpClient {
           }
 
           @Override
-          public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return new java.security.cert.X509Certificate[] {};
+          public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[] {};
           }
         }
       };
   private static final X509TrustManager TRUST_MANAGER =
       new X509TrustManager() {
         @Override
-        public void checkClientTrusted(
-            java.security.cert.X509Certificate[] chain, String authType) {}
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
         @Override
-        public void checkServerTrusted(
-            java.security.cert.X509Certificate[] chain, String authType) {}
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {}
 
         @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-          return new java.security.cert.X509Certificate[] {};
+        public X509Certificate[] getAcceptedIssuers() {
+          return new X509Certificate[] {};
         }
       };
 

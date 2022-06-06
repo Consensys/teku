@@ -84,7 +84,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     if (isBeginningOfEpoch(slot) || firstCallDone.compareAndSet(false, true)) {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastProcessedEpoch.set(epoch);
-      registerValidators(ownedValidators.getActiveValidators(), epoch)
+      final List<Validator> activeValidators = ownedValidators.getActiveValidators();
+      LOG.debug(
+          "Checking registration of {} validator(s) at epoch {}", activeValidators.size(), epoch);
+      registerValidators(activeValidators, epoch)
           .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
   }
@@ -163,6 +166,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final BLSPublicKey publicKey = validator.getPublicKey();
 
     if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
+      LOG.trace("Validator registration is disabled for {}", publicKey);
       return Optional.empty();
     }
 
@@ -176,7 +180,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
 
     final ValidatorRegistrationIdentity validatorRegistrationIdentity =
-        createValidatorRegistrationIdentity(validator, maybeFeeRecipient.get(), gasLimit);
+        new ValidatorRegistrationIdentity(maybeFeeRecipient.get(), gasLimit, publicKey);
 
     if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
       final SignedValidatorRegistration cachedRegistration =
@@ -190,15 +194,18 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final SafeFuture<SignedValidatorRegistration> registrationFuture =
         signValidatorRegistration(validatorRegistration, signer, epoch)
             .thenPeek(
-                signedValidatorRegistration ->
-                    cachedValidatorRegistrations.put(
-                        validatorRegistrationIdentity, signedValidatorRegistration));
+                signedValidatorRegistration -> {
+                  LOG.debug("Validator registration signed for {}", publicKey);
+                  cachedValidatorRegistrations.put(
+                      validatorRegistrationIdentity, signedValidatorRegistration);
+                });
     return Optional.of(registrationFuture);
   }
 
   private SafeFuture<Void> sendValidatorRegistrations(
       final List<SignedValidatorRegistration> validatorRegistrations) {
     if (validatorRegistrations.isEmpty()) {
+      LOG.debug("No validator(s) require registering.");
       return SafeFuture.completedFuture(null);
     }
 
@@ -206,10 +213,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         SszUtils.toSszList(
             ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA, validatorRegistrations);
 
-    LOG.info(
-        "Sending {} validator registration(s) to Beacon Node", sszValidatorRegistrations.size());
-
-    return validatorApiChannel.registerValidators(sszValidatorRegistrations);
+    return validatorApiChannel
+        .registerValidators(sszValidatorRegistrations)
+        .thenPeek(__ -> LOG.info("{} validator(s) registered.", sszValidatorRegistrations.size()));
   }
 
   private boolean registrationIsEnabled(
@@ -226,11 +232,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .flatMap(
             proposerConfig -> proposerConfig.getValidatorRegistrationGasLimitForPubKey(publicKey))
         .orElse(validatorConfig.getValidatorsRegistrationDefaultGasLimit());
-  }
-
-  private ValidatorRegistrationIdentity createValidatorRegistrationIdentity(
-      final Validator validator, final Eth1Address feeRecipient, final UInt64 gasLimit) {
-    return new ValidatorRegistrationIdentity(feeRecipient, gasLimit, validator.getPublicKey());
   }
 
   private ValidatorRegistration createValidatorRegistration(

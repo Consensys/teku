@@ -75,6 +75,10 @@ public class ProposerConfig {
     return defaultConfig;
   }
 
+  public int getNumberOfProposerConfigs() {
+    return proposerConfig.size();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

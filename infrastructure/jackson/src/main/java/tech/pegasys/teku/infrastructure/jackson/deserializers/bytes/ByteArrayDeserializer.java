@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -27,7 +26,7 @@ public class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
 
   @Override
   public byte[] deserialize(final JsonParser p, final DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
+      throws IOException {
     ObjectCodec oc = p.getCodec();
     JsonNode node = oc.readTree(p);
     checkArgument(node.isArray(), "Expected array but did not appear to be one!");
