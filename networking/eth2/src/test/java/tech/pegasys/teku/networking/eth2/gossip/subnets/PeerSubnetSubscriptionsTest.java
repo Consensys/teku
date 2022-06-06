@@ -68,7 +68,7 @@ class PeerSubnetSubscriptionsTest {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
-    final Map<String, Collection<NodeId>> subscribersByTopic =
+    final ImmutableMap<String, Collection<NodeId>> subscribersByTopic =
         ImmutableMap.<String, Collection<NodeId>>builder()
             .put("attnet_0", Set.of(PEER1, PEER2, PEER3))
             .put("attnet_1", Set.of(PEER1))

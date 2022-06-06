@@ -19,9 +19,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -39,7 +37,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public abstract class AbstractDutySchedulerTest {
   static final BLSPublicKey VALIDATOR1_KEY = BLSTestUtil.randomPublicKey(100);
   static final BLSPublicKey VALIDATOR2_KEY = BLSTestUtil.randomPublicKey(200);
-  static final Collection<BLSPublicKey> VALIDATOR_KEYS = Set.of(VALIDATOR1_KEY, VALIDATOR2_KEY);
   static final IntList VALIDATOR_INDICES = IntList.of(123, 559);
   final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   final Signer validator1Signer = mock(Signer.class);

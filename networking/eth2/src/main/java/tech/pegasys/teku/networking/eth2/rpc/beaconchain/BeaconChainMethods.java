@@ -67,7 +67,7 @@ public class BeaconChainMethods {
   private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
   private final Eth2RpcMethod<PingMessage, PingMessage> ping;
 
-  private final Collection<Eth2RpcMethod<?, ?>> allMethods;
+  private final List<Eth2RpcMethod<?, ?>> allMethods;
 
   private BeaconChainMethods(
       final Eth2RpcMethod<StatusMessage, StatusMessage> status,

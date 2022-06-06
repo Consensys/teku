@@ -14,10 +14,11 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DefaultAsyncRunnerFactory implements AsyncRunnerFactory {
-  private final Collection<AsyncRunner> asyncRunners = new CopyOnWriteArrayList<>();
+  private final List<AsyncRunner> asyncRunners = new CopyOnWriteArrayList<>();
 
   private final MetricTrackingExecutorFactory executorFactory;
 

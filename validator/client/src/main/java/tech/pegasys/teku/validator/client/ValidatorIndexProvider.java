@@ -19,8 +19,8 @@ import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,7 +56,7 @@ public class ValidatorIndexProvider {
   }
 
   public void lookupValidators() {
-    final Collection<BLSPublicKey> unknownValidators = getUnknownValidators();
+    final Set<BLSPublicKey> unknownValidators = getUnknownValidators();
     if (unknownValidators.isEmpty()) {
       return;
     }
@@ -82,7 +82,7 @@ public class ValidatorIndexProvider {
             });
   }
 
-  private Collection<BLSPublicKey> getUnknownValidators() {
+  private Set<BLSPublicKey> getUnknownValidators() {
     return Sets.difference(ownedValidators.getPublicKeys(), validatorIndicesByPublicKey.keySet());
   }
 

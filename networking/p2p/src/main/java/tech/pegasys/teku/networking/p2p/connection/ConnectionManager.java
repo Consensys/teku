@@ -56,7 +56,7 @@ public class ConnectionManager extends Service {
   private final Counter successfulConnectionCounter;
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
-  private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
+  private final List<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;

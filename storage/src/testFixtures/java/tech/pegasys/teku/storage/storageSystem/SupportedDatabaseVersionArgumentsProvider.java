@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.storageSystem;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -26,7 +25,7 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 public class SupportedDatabaseVersionArgumentsProvider implements ArgumentsProvider {
 
-  public static Collection<DatabaseVersion> supportedDatabaseVersions() {
+  public static List<DatabaseVersion> supportedDatabaseVersions() {
     final List<DatabaseVersion> supportedVersions = new ArrayList<>();
     if (DatabaseVersion.isRocksDbSupported()) {
       supportedVersions.add(DatabaseVersion.V4);

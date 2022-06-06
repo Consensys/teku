@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +42,7 @@ public class DefaultValidatorStatusLoggerTest {
   public static final String VALIDATOR_COUNTS_METRIC = "local_validator_counts";
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final BLSPublicKey validatorKey = BLSTestUtil.randomPublicKey(0);
-  private final Collection<BLSPublicKey> validatorKeys = Set.of(validatorKey);
+  private final Set<BLSPublicKey> validatorKeys = Set.of(validatorKey);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 

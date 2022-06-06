@@ -75,7 +75,7 @@ public class OpenApiTestUtil<TObject> {
    */
   public void compareToKnownDefinitions(
       final Path tempDir, final String path, final JsonNode parentNode) throws IOException {
-    List<String> fieldNames = ImmutableList.copyOf(parentNode.fieldNames());
+    ImmutableList<String> fieldNames = ImmutableList.copyOf(parentNode.fieldNames());
     for (String current : fieldNames) {
       checkStructureIsConsistent(path, tempDir, current, parentNode.path(current));
     }

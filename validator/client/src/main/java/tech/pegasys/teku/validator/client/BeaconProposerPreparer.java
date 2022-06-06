@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.nio.file.Path;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -182,7 +182,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
         .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 
-  private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
+  private List<BeaconPreparableProposer> buildBeaconPreparableProposerList(
       Optional<ProposerConfig> maybeProposerConfig,
       Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
     this.maybeProposerConfig = maybeProposerConfig;

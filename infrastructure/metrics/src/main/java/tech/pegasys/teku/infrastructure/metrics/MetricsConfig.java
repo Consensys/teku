@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.metrics;
 import com.google.common.collect.ImmutableSet;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -27,11 +28,13 @@ import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class MetricsConfig {
 
-  public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
-      ImmutableSet.<MetricCategory>builder()
-          .addAll(EnumSet.allOf(StandardMetricCategory.class))
-          .addAll(EnumSet.allOf(TekuMetricCategory.class))
-          .build();
+  public static final Set<MetricCategory> DEFAULT_METRICS_CATEGORIES =
+      Collections.unmodifiableSet(
+          ImmutableSet.<MetricCategory>builder()
+              .addAll(EnumSet.allOf(StandardMetricCategory.class))
+              .addAll(EnumSet.allOf(TekuMetricCategory.class))
+              .build());
+
   public static final int DEFAULT_METRICS_PORT = 8008;
   public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
   public static final List<String> DEFAULT_METRICS_HOST_ALLOWLIST =
