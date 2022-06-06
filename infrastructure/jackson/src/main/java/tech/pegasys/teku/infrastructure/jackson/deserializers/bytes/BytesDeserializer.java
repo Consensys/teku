@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
@@ -23,8 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 public class BytesDeserializer extends JsonDeserializer<Bytes> {
 
   @Override
-  public Bytes deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
+  public Bytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     return Bytes.fromHexString(p.getValueAsString());
   }
 }
