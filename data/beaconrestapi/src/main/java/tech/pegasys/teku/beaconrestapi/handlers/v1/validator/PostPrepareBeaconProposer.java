@@ -85,7 +85,7 @@ public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Provide beacon node with proposals for the given validators.",
+      summary = "Submit proposals for validators",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(

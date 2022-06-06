@@ -56,6 +56,7 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
+  // TODO #5707 add execution_optimistic
   public PostSyncDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
