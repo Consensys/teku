@@ -91,7 +91,7 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
                 .thenPeek(
                     proposerConfig ->
                         LOG.info(
-                            "proposer config successfully loaded. It contains the default configuration and {} specific configuration(s).",
+                            "Proposer config successfully loaded. It contains the default configuration and {} specific configuration(s).",
                             proposerConfig.orElseThrow().getNumberOfProposerConfigs()))
                 .alwaysRun(
                     () -> {
