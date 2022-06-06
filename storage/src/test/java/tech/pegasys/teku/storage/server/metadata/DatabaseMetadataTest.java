@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -103,7 +104,7 @@ class DatabaseMetadataTest {
     assertThat(reloadedData).usingRecursiveComparison().isEqualTo(expectedMetadata);
   }
 
-  private Map<String, Object> loadMetaData(final File metadataFile) throws java.io.IOException {
+  private Map<String, Object> loadMetaData(final File metadataFile) throws IOException {
     return new ObjectMapper(new YAMLFactory())
         .readValue(
             metadataFile,
@@ -111,7 +112,7 @@ class DatabaseMetadataTest {
   }
 
   private void writeMetaData(final Map<String, Object> metadata, final File metadataFile)
-      throws java.io.IOException {
+      throws IOException {
     new ObjectMapper(new YAMLFactory()).writeValue(metadataFile, metadata);
   }
 

@@ -25,6 +25,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,7 +45,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BeaconBlocksByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
-  private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;

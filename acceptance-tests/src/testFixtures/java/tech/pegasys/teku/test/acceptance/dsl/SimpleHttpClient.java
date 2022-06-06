@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -32,8 +33,7 @@ import org.apache.tuweni.bytes.Bytes;
 public class SimpleHttpClient {
   private static final Logger LOG = LogManager.getLogger();
   protected OkHttpClient httpClient;
-  private static final okhttp3.MediaType JSON =
-      okhttp3.MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
   public SimpleHttpClient() {
     httpClient = new OkHttpClient();

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 
 public class Committee {
   @Schema(type = "string", format = "uint64")
@@ -28,8 +29,7 @@ public class Committee {
 
   public final List<Integer> committee;
 
-  public Committee(
-      tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment committeeAssignment) {
+  public Committee(CommitteeAssignment committeeAssignment) {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
     this.committee = committeeAssignment.getCommittee();

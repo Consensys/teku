@@ -79,11 +79,8 @@ public class SpecFactoryTest {
       names = {"BELLATRIX"},
       mode = EnumSource.Mode.EXCLUDE)
   public void shouldCreateTheRightAttestationWorthinessChecker(SpecMilestone milestone) {
-    final Spec spec;
-    final DataStructureUtil dataStructureUtil;
-
-    spec = TestSpecFactory.createMainnet(milestone);
-    dataStructureUtil = new DataStructureUtil(spec);
+    final Spec spec = TestSpecFactory.createMainnet(milestone);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     if (milestone.isGreaterThanOrEqualTo(ALTAIR)) {
       assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
