@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64Util;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 
 public class EpochCommitteeResponse {
   @JsonProperty("index")
@@ -40,8 +41,7 @@ public class EpochCommitteeResponse {
   @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT64))
   public final List<UInt64> validators;
 
-  public EpochCommitteeResponse(
-      tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment committeeAssignment) {
+  public EpochCommitteeResponse(CommitteeAssignment committeeAssignment) {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
     this.validators = UInt64Util.intToUInt64List(committeeAssignment.getCommittee());

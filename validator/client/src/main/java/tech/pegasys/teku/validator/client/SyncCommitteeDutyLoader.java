@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -72,8 +73,7 @@ public class SyncCommitteeDutyLoader
   }
 
   private void scheduleDuty(
-      final SyncCommitteeScheduledDuties.Builder dutyBuilder,
-      final tech.pegasys.teku.validator.api.SyncCommitteeDuty duty) {
+      final SyncCommitteeScheduledDuties.Builder dutyBuilder, final SyncCommitteeDuty duty) {
     validators
         .getValidator(duty.getPublicKey())
         .ifPresent(

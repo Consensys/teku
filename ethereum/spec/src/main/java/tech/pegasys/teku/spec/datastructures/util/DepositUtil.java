@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import tech.pegasys.teku.ethereum.pow.api.Deposit;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
@@ -26,8 +27,7 @@ public class DepositUtil {
     this.spec = spec;
   }
 
-  public DepositWithIndex convertDepositEventToOperationDeposit(
-      tech.pegasys.teku.ethereum.pow.api.Deposit event) {
+  public DepositWithIndex convertDepositEventToOperationDeposit(Deposit event) {
     checkArgument(
         event.getAmount().isGreaterThanOrEqualTo(spec.getGenesisSpecConfig().getMinDepositAmount()),
         "Deposit amount too low");

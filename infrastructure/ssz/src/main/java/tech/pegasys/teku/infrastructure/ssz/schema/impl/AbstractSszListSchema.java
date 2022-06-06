@@ -336,11 +336,6 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public int hashCode() {
-    return super.hashCode();
-  }
-
-  @Override
   public String toString() {
     return "List[" + getElementSchema() + ", " + getMaxLength() + "]" + getHints();
   }

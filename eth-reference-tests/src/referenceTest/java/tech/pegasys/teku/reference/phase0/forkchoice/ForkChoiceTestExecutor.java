@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +139,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final ExecutionLayerChannelStub executionLayer)
-      throws java.io.IOException {
+      throws IOException {
     final List<Map<String, Object>> steps = loadSteps(testDefinition);
     for (Map<String, Object> step : steps) {
       LOG.info("Executing step {}", step);
@@ -251,7 +252,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   @SuppressWarnings("unchecked")
   private List<Map<String, Object>> loadSteps(final TestDefinition testDefinition)
-      throws java.io.IOException {
+      throws IOException {
     return TestDataUtils.loadYaml(testDefinition, "steps.yaml", List.class);
   }
 
