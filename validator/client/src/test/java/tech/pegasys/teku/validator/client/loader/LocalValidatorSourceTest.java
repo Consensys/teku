@@ -220,7 +220,7 @@ class LocalValidatorSourceTest {
   void shouldAddValidatorIfNotReadOnlySource(@TempDir Path tempDir) throws IOException {
     final AddValidatorResult result =
         getResultFromAddingValidator(
-            tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
+            tempDir, "pbkdf2TestVector.json", EXPECTED_PASSWORD, PBKDF2_PUBKEY);
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(result.getSigner()).isNotEmpty();
   }
@@ -229,12 +229,12 @@ class LocalValidatorSourceTest {
   void shouldDetectDuplicatesOnAddValidator(@TempDir Path tempDir) throws IOException {
     final AddValidatorResult result =
         getResultFromAddingValidator(
-            tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
+            tempDir, "pbkdf2TestVector.json", EXPECTED_PASSWORD, PBKDF2_PUBKEY);
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(result.getSigner()).isNotEmpty();
     final AddValidatorResult result2 =
         getResultFromAddingValidator(
-            tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
+            tempDir, "pbkdf2TestVector.json", EXPECTED_PASSWORD, PBKDF2_PUBKEY);
     assertThat(result2.getResult().getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
     assertThat(result2.getSigner()).isEmpty();
   }
