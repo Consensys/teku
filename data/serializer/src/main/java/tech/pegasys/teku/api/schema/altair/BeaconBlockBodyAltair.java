@@ -67,8 +67,7 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
               .BeaconBlockBodyAltair
           message) {
     super(message);
-    this.syncAggregate =
-        new tech.pegasys.teku.api.schema.altair.SyncAggregate(message.getSyncAggregate());
+    this.syncAggregate = new SyncAggregate(message.getSyncAggregate());
     checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
   }
 

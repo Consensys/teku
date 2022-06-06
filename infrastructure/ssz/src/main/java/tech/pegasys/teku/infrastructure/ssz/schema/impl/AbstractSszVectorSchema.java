@@ -239,11 +239,6 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public int hashCode() {
-    return super.hashCode();
-  }
-
-  @Override
   public String toString() {
     return "Vector[" + getElementSchema() + ", " + getLength() + "]";
   }

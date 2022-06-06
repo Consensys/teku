@@ -141,7 +141,7 @@ public class RpcHandler<
   @Override
   public SafeFuture<Controller<TOutgoingHandler>> initChannel(
       final P2PChannel channel, final String selectedProtocol) {
-    final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
+    final Connection connection = ((Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
 
     final Controller<TOutgoingHandler> controller = new Controller<>(nodeId, channel);

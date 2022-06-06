@@ -324,17 +324,14 @@ public class TerminalPowBlockMonitorTest {
 
   @Test
   public void shouldNotSelectTTDBlockWithTimestampInFuture() {
-    Bytes32 headBlockHash;
-    Bytes32 headBlockParentHash;
-
     setUpTTDConfig();
 
     terminalPowBlockMonitor.start();
 
     // AT BELLATRIX FORK, TTD reached but block in future - should not notify
     goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-    headBlockHash = dataStructureUtil.randomBytes32();
-    headBlockParentHash = dataStructureUtil.randomBytes32();
+    Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
+    Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
     final UInt64 timeInFuture = timeProvider.getTimeInSeconds().plus(1);
     when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
