@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
-public interface SszPrimitiveTypeDefinitions {
-  DeserializableTypeDefinition<SszNone> SSZ_NONE_TYPE_DEFINITION =
+public final class SszPrimitiveTypeDefinitions {
+  public static final DeserializableTypeDefinition<SszNone> SSZ_NONE_TYPE_DEFINITION =
       DeserializableTypeDefinition.string(SszNone.class)
           .formatter(Objects::toString)
           .parser(
@@ -46,28 +46,28 @@ public interface SszPrimitiveTypeDefinitions {
           .format("null")
           .build();
 
-  DeserializableTypeDefinition<SszBit> SSZ_BIT_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszBit> SSZ_BIT_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BIT_SCHEMA, new BooleanTypeDefinition());
 
-  DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTE_SCHEMA, CoreTypes.BYTE_TYPE);
 
-  DeserializableTypeDefinition<SszByte> SSZ_UINT8_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszByte> SSZ_UINT8_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT8_SCHEMA, CoreTypes.UINT8_TYPE);
 
-  DeserializableTypeDefinition<SszBytes32> SSZ_BYTES32_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszBytes32> SSZ_BYTES32_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTES32_SCHEMA, CoreTypes.BYTES32_TYPE);
 
-  DeserializableTypeDefinition<SszBytes4> SSZ_BYTES4_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszBytes4> SSZ_BYTES4_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTES4_SCHEMA, CoreTypes.BYTES4_TYPE);
 
-  DeserializableTypeDefinition<SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT64_SCHEMA, CoreTypes.UINT64_TYPE);
 
-  DeserializableTypeDefinition<SszUInt256> SSZ_UINT256_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<SszUInt256> SSZ_UINT256_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT256_SCHEMA, CoreTypes.UINT256_TYPE);
 
-  static <T extends SszData> DeserializableTypeDefinition<T> sszSerializedType(
+  public static <T extends SszData> DeserializableTypeDefinition<T> sszSerializedType(
       final SszSchema<T> schema, final String description) {
     return new StringTypeBuilder<T>()
         .formatter(value -> value.sszSerialize().toHexString())

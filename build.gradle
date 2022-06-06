@@ -218,6 +218,7 @@ allprojects {
       check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
     }
     options.encoding = 'UTF-8'
   }
