@@ -173,7 +173,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final Optional<Eth1Address> maybeFeeRecipient = feeRecipientProvider.getFeeRecipient(publicKey);
 
     if (maybeFeeRecipient.isEmpty()) {
-      LOG.warn("There is no fee recipient configured for {}. Can't register.", validator);
+      LOG.warn("There is no fee recipient configured for {}. Can't register.", publicKey);
       return Optional.empty();
     }
 

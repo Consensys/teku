@@ -100,10 +100,6 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   // - default set by --validators-proposer-default-fee-recipient
   @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    if (validatorIndexProvider.isEmpty()
-        || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
-      return Optional.empty();
-    }
     Optional<Eth1Address> maybeEth1Address =
         maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
     if (maybeEth1Address.isPresent()) {
@@ -127,8 +123,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (eth1Address.equals(Eth1Address.ZERO)) {
       throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
     }
-    if (validatorIndexProvider.isEmpty()
-        || !validatorIndexProvider.get().containsPublicKey(publicKey)) {
+    if (!checkValidatorIndexIsResolved(publicKey)) {
       throw new SetFeeRecipientException(
           "Validator public key not found when attempting to set fee recipient.");
     }
@@ -189,13 +184,24 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
             entry -> {
-              final Optional<Eth1Address> maybeFeeRecipient = getFeeRecipient(entry.getKey());
+              final BLSPublicKey publicKey = entry.getKey();
+              final Optional<Eth1Address> maybeFeeRecipient;
+              if (checkValidatorIndexIsResolved(publicKey)) {
+                maybeFeeRecipient = getFeeRecipient(publicKey);
+              } else {
+                maybeFeeRecipient = Optional.empty();
+              }
               return maybeFeeRecipient.map(
                   (eth1Address) ->
                       new BeaconPreparableProposer(UInt64.valueOf(entry.getValue()), eth1Address));
             })
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
+  }
+
+  private boolean checkValidatorIndexIsResolved(final BLSPublicKey publicKey) {
+    return validatorIndexProvider.isPresent()
+        && validatorIndexProvider.get().containsPublicKey(publicKey);
   }
 
   @Override
