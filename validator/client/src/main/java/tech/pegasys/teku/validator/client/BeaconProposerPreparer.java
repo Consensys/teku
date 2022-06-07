@@ -100,19 +100,13 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   // - default set by --validators-proposer-default-fee-recipient
   @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    Optional<Eth1Address> maybeEth1Address =
-        maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
-    if (maybeEth1Address.isPresent()) {
-      return maybeEth1Address;
-    }
-
-    maybeEth1Address = runtimeProposerConfig.getEth1AddressForPubKey(publicKey);
-    if (maybeEth1Address.isPresent()) {
-      return maybeEth1Address;
-    }
-
     return maybeProposerConfig
-        .map(proposerConfig -> proposerConfig.getDefaultConfig().getFeeRecipient())
+        .flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey))
+        .or(() -> runtimeProposerConfig.getEth1AddressForPubKey(publicKey))
+        .or(
+            () ->
+                maybeProposerConfig.map(
+                    proposerConfig -> proposerConfig.getDefaultConfig().getFeeRecipient()))
         .or(() -> defaultFeeRecipient);
   }
 
