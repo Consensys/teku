@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntIterable;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
@@ -71,6 +69,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
@@ -276,11 +275,10 @@ public class ValidatorDataProvider {
         subscriptions.stream()
             .map(
                 subscription ->
-                    new tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription(
-                        subscription.validatorIndex.intValue(),
-                        IntOpenHashSet.toSet(
-                            subscription.syncCommitteeIndices.stream().mapToInt(UInt64::intValue)),
-                        subscription.untilEpoch))
+                    new SyncCommitteeSubnetSubscription(
+                        subscription.getValidatorIndex(),
+                        subscription.getSyncCommitteeIndices(),
+                        subscription.getUntilEpoch()))
             .collect(toList()));
   }
 
