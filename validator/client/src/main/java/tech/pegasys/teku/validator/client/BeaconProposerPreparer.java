@@ -123,7 +123,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (eth1Address.equals(Eth1Address.ZERO)) {
       throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
     }
-    if (!checkValidatorIndexIsResolved(publicKey)) {
+    if (!validatorIndexCanBeResolved(publicKey)) {
       throw new SetFeeRecipientException(
           "Validator public key not found when attempting to set fee recipient.");
     }
@@ -186,7 +186,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
             entry -> {
               final BLSPublicKey publicKey = entry.getKey();
               final Optional<Eth1Address> maybeFeeRecipient;
-              if (checkValidatorIndexIsResolved(publicKey)) {
+              if (validatorIndexCanBeResolved(publicKey)) {
                 maybeFeeRecipient = getFeeRecipient(publicKey);
               } else {
                 maybeFeeRecipient = Optional.empty();
@@ -199,7 +199,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
         .collect(Collectors.toList());
   }
 
-  private boolean checkValidatorIndexIsResolved(final BLSPublicKey publicKey) {
+  private boolean validatorIndexCanBeResolved(final BLSPublicKey publicKey) {
     return validatorIndexProvider.isPresent()
         && validatorIndexProvider.get().containsPublicKey(publicKey);
   }
