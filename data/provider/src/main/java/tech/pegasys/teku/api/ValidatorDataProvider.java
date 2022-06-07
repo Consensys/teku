@@ -33,8 +33,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -70,7 +68,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
@@ -298,27 +296,27 @@ public class ValidatorDataProvider {
     return validatorApiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
   }
 
-  public SafeFuture<Optional<PostSyncDutiesResponse>> getSyncDuties(
+  public SafeFuture<Optional<SyncCommitteeDuties>> getSyncDuties(
       final UInt64 epoch, final IntList indices) {
-    return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices))
-        .thenApply(
-            res ->
-                res.map(
-                    duties ->
-                        new PostSyncDutiesResponse(
-                            duties.getDuties().stream()
-                                .filter(duty -> duty.getPublicKey() != null)
-                                .map(this::mapToSyncCommitteeDuty)
-                                .collect(toList()))));
+    return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices));
+    //        .thenApply(
+    //            res ->
+    //                res.map(
+    //                    duties ->
+    //                        new PostSyncDutiesResponse(
+    //                            duties.getDuties().stream()
+    //                                .filter(duty -> duty.getPublicKey() != null)
+    //                                .map(this::mapToSyncCommitteeDuty)
+    //                                .collect(toList()))));
   }
 
-  private tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty mapToSyncCommitteeDuty(
-      final SyncCommitteeDuty duty) {
-    return new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
-        new BLSPubKey(duty.getPublicKey().toBytesCompressed()),
-        UInt64.valueOf(duty.getValidatorIndex()),
-        duty.getValidatorSyncCommitteeIndices());
-  }
+  //  private tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty mapToSyncCommitteeDuty(
+  //      final SyncCommitteeDuty duty) {
+  //    return new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
+  //        new BLSPubKey(duty.getPublicKey().toBytesCompressed()),
+  //        UInt64.valueOf(duty.getValidatorIndex()),
+  //        duty.getValidatorSyncCommitteeIndices());
+  //  }
 
   public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> contributionAndProofs) {

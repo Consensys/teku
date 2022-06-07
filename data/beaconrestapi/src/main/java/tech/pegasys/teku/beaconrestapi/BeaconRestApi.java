@@ -407,7 +407,7 @@ public class BeaconRestApi {
     app.post(
         PostSubscribeToBeaconCommitteeSubnet.ROUTE,
         new PostSubscribeToBeaconCommitteeSubnet(dataProvider, jsonProvider));
-    app.post(PostSyncDuties.ROUTE, new PostSyncDuties(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostSyncDuties(dataProvider));
     addMigratedEndpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache));
     app.post(
         PostSyncCommitteeSubscriptions.ROUTE,
