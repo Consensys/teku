@@ -39,7 +39,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -69,9 +68,7 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
               "validator_sync_committee_indices",
               SerializableTypeDefinition.listOf(INTEGER_TYPE),
               syncCommitteeDuty ->
-                  syncCommitteeDuty.getValidatorSyncCommitteeIndices().stream()
-                      .parallel()
-                      .collect(Collectors.toList()))
+                  new IntArrayList(syncCommitteeDuty.getValidatorSyncCommitteeIndices()))
           .build();
 
   private static final SerializableTypeDefinition<SyncCommitteeDuties> RESPONSE_TYPE =
