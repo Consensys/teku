@@ -42,6 +42,7 @@ import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -100,12 +102,11 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock>>
-      getUnsignedBeaconBlockAtSlot(
-          final UInt64 slot,
-          final tech.pegasys.teku.bls.BLSSignature randao,
-          final Optional<Bytes32> graffiti,
-          final boolean isBlinded) {
+  public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
+      final UInt64 slot,
+      final BLSSignature randao,
+      final Optional<Bytes32> graffiti,
+      final boolean isBlinded) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
@@ -125,15 +126,12 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
-      UInt64 slot, tech.pegasys.teku.bls.BLSSignature randao, Optional<Bytes32> graffiti) {
+      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
     return getUnsignedBeaconBlockAtSlot(
-        slot,
-        tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.toSSZBytes()),
-        graffiti,
-        false);
+        slot, BLSSignature.fromBytesCompressed(randao.toSSZBytes()), graffiti, false);
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
@@ -247,8 +245,8 @@ public class ValidatorDataProvider {
     return Optional.of(message);
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.operations.Attestation>>
-      createAggregate(final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot);
   }
 
@@ -319,11 +317,7 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
-  public void prepareBeaconProposer(
-      List<
-              tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix
-                  .BeaconPreparableProposer>
-          beaconPreparableProposers) {
+  public void prepareBeaconProposer(List<BeaconPreparableProposer> beaconPreparableProposers) {
     validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
   }
 
@@ -346,7 +340,7 @@ public class ValidatorDataProvider {
     final IntIterable indices =
         getAggregationBits(signedContributionAndProof.message.contribution.aggregationBits, slot);
 
-    final tech.pegasys.teku.bls.BLSSignature signature =
+    final BLSSignature signature =
         signedContributionAndProof.message.contribution.signature.asInternalBLSSignature();
     final SyncCommitteeContribution contribution =
         spec.getSyncCommitteeUtilRequired(slot)

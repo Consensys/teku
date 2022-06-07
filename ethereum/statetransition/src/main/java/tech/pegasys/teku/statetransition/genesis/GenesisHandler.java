@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GenesisHandler implements Eth1EventsChannel {
@@ -84,8 +85,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
-    final tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil beaconStateUtil =
-        spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
+    final BeaconStateUtil beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
     if (beaconStateUtil.isValidGenesisState(
         genesisGenerator.getGenesisTime(), newActiveValidatorCount)) {
       eth2Genesis(genesisGenerator.getGenesisState());

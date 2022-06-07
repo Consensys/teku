@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
@@ -29,13 +30,15 @@ public interface ProposerConfigProvider {
       final AsyncRunner asyncRunner,
       final boolean refresh,
       final ProposerConfigLoader proposerConfigLoader,
+      final TimeProvider timeProvider,
       final Optional<String> source) {
 
     if (source.isPresent()) {
       URL sourceUrl;
       try {
         sourceUrl = new URL(source.get());
-        return new UrlProposerConfigProvider(asyncRunner, refresh, proposerConfigLoader, sourceUrl);
+        return new UrlProposerConfigProvider(
+            asyncRunner, refresh, proposerConfigLoader, timeProvider, sourceUrl);
       } catch (MalformedURLException e1) {
         try {
           sourceUrl = new File(source.get()).toURI().toURL();
@@ -43,7 +46,8 @@ public interface ProposerConfigProvider {
           throw new RuntimeException("Unable to translate file to URL", e2);
         }
       }
-      return new UrlProposerConfigProvider(asyncRunner, refresh, proposerConfigLoader, sourceUrl);
+      return new UrlProposerConfigProvider(
+          asyncRunner, refresh, proposerConfigLoader, timeProvider, sourceUrl);
     }
     return NOOP;
   }

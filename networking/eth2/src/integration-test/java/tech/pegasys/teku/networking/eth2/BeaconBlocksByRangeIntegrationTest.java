@@ -20,6 +20,8 @@ import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -223,8 +225,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   private List<SignedBeaconBlock> requestBlocks(final Eth2Peer peer)
-      throws InterruptedException, java.util.concurrent.ExecutionException,
-          java.util.concurrent.TimeoutException {
+      throws InterruptedException, ExecutionException, TimeoutException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer.requestBlocksByRange(

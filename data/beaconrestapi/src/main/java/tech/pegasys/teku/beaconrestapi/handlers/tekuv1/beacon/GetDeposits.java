@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.validator.coordinator.DepositProvider;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetDeposits extends MigratingEndpointAdapter {
 
@@ -56,9 +56,9 @@ public class GetDeposits extends MigratingEndpointAdapter {
           .withField("data", listOf(DEPOSIT_WITH_INDEX_TYPE), Function.identity())
           .build();
 
-  private final DepositProvider depositProvider;
+  private final Eth1DataProvider eth1DataProvider;
 
-  public GetDeposits(final DepositProvider depositProvider) {
+  public GetDeposits(final Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getDeposits")
@@ -67,7 +67,7 @@ public class GetDeposits extends MigratingEndpointAdapter {
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", DEPOSITS_RESPONSE_TYPE)
             .build());
-    this.depositProvider = depositProvider;
+    this.eth1DataProvider = eth1DataProvider;
   }
 
   @OpenApi(
@@ -90,6 +90,6 @@ public class GetDeposits extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(depositProvider.getAvailableDeposits());
+    request.respondOk(eth1DataProvider.getAvailableDeposits());
   }
 }

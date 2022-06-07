@@ -43,7 +43,7 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
 
   @Test
   public void shouldReturnEmptyListWhenNoDeposits() throws IOException {
-    when(depositProvider.getAvailableDeposits()).thenReturn(new ArrayList<>());
+    when(eth1DataProvider.getAvailableDeposits()).thenReturn(new ArrayList<>());
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     GetDepositsResponse getDepositsResponse =
@@ -59,7 +59,7 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
     List<DepositWithIndex> deposits = new ArrayList<>();
     deposits.add(deposit1);
     deposits.add(deposit2);
-    when(depositProvider.getAvailableDeposits()).thenReturn(deposits);
+    when(eth1DataProvider.getAvailableDeposits()).thenReturn(deposits);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     final String actualResponse = response.body().string();
@@ -69,7 +69,7 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
 
   @Test
   public void shouldReturnServerErrorWhenProviderFails() throws IOException {
-    when(depositProvider.getAvailableDeposits()).thenThrow(new RuntimeException(""));
+    when(eth1DataProvider.getAvailableDeposits()).thenThrow(new RuntimeException(""));
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }

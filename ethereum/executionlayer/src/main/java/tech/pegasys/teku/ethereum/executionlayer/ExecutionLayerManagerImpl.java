@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -319,17 +320,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
-            signedBuilderBid ->
-                LOG.trace(
-                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                    slot,
-                    validatorPublicKey,
-                    executionPayloadContext.getParentHash(),
-                    signedBuilderBid))
+            signedBuilderBid -> {
+              LOG.trace(
+                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                  slot,
+                  validatorPublicKey,
+                  executionPayloadContext.getParentHash(),
+                  signedBuilderBid);
+              final BuilderBid builderBid = signedBuilderBid.getMessage();
+              logReceivedBuilderBid(builderBid);
+            })
         .thenApplyChecked(
             signedBuilderBid ->
                 builderBidValidator.validateAndGetPayloadHeader(
                     spec, signedBuilderBid, validatorRegistration.get(), state))
+        .thenPeek(__ -> slotToLocalElFallbackPayload.put(slot, Optional.empty()))
         .exceptionallyCompose(
             error -> {
               LOG.error(
@@ -376,19 +381,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private SafeFuture<ExecutionPayloadHeader> doFallbackToLocal(
       final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
 
-    return localExecutionPayload
-        .thenPeek(
-            executionPayload ->
-                // store the fallback payload for this slot
-                slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload)))
-        .thenApply(
-            executionPayload ->
-                spec.atSlot(slot)
-                    .getSchemaDefinitions()
-                    .toVersionBellatrix()
-                    .orElseThrow()
-                    .getExecutionPayloadHeaderSchema()
-                    .createFromExecutionPayload(executionPayload));
+    return localExecutionPayload.thenApply(
+        executionPayload -> {
+          // store the fallback payload for this slot
+          slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload));
+
+          return spec.atSlot(slot)
+              .getSchemaDefinitions()
+              .toVersionBellatrix()
+              .orElseThrow()
+              .getExecutionPayloadHeaderSchema()
+              .createFromExecutionPayload(executionPayload);
+        });
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
@@ -439,5 +443,16 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private void markBuilderAsNotAvailable(String errorMessage) {
     latestBuilderAvailability.set(false);
     eventLogger.executionBuilderIsOffline(errorMessage);
+  }
+
+  private void logReceivedBuilderBid(final BuilderBid builderBid) {
+    final ExecutionPayloadHeader payloadHeader = builderBid.getExecutionPayloadHeader();
+    LOG.info(
+        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Rewards (wei) = {}, Gas Limit = {}, Gas Used = {})",
+        payloadHeader.getBlockNumber(),
+        payloadHeader.getBlockHash(),
+        builderBid.getValue(),
+        payloadHeader.getGasLimit(),
+        payloadHeader.getGasUsed());
   }
 }

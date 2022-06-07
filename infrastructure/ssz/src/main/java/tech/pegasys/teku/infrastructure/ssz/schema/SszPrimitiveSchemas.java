@@ -47,9 +47,9 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** The collection of commonly used basic types */
-public interface SszPrimitiveSchemas {
+public final class SszPrimitiveSchemas {
 
-  AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
       new AbstractSszPrimitiveSchema<>(0) {
         @Override
         public Void createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
@@ -83,7 +83,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override
         public Boolean createFromLeafBackingNode(LeafDataNode node, int idx) {
@@ -136,7 +136,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<Byte, SszByte> BYTE_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Byte, SszByte> BYTE_SCHEMA =
       new SszByteSchema() {
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
@@ -149,7 +149,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<Byte, SszByte> UINT8_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Byte, SszByte> UINT8_SCHEMA =
       new SszByteSchema() {
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
@@ -162,7 +162,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
       new AbstractSszPrimitiveSchema<>(64) {
         @Override
         public UInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
@@ -243,7 +243,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
         public UInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
@@ -278,7 +278,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<Bytes4, SszBytes4> BYTES4_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Bytes4, SszBytes4> BYTES4_SCHEMA =
       new AbstractSszPrimitiveSchema<>(32) {
         @Override
         public Bytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
@@ -316,7 +316,7 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<Bytes32, SszBytes32> BYTES32_SCHEMA =
+  public static final AbstractSszPrimitiveSchema<Bytes32, SszBytes32> BYTES32_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
         public Bytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
@@ -365,7 +365,7 @@ public interface SszPrimitiveSchemas {
     }
   }
 
-  abstract class SszByteSchema extends AbstractSszPrimitiveSchema<Byte, SszByte> {
+  abstract static class SszByteSchema extends AbstractSszPrimitiveSchema<Byte, SszByte> {
 
     private SszByteSchema() {
       super(8);

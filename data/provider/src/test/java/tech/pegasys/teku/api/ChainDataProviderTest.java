@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -59,8 +60,10 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -179,7 +182,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
+    final SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockAndMetaData result = provider.getBlockAndMetaData("head").get().orElseThrow();
 
@@ -191,7 +194,7 @@ public class ChainDataProviderTest {
   public void getBlockHeaders_shouldGetHeadBlockIfNoParameters() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
+    final SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.empty()));
@@ -405,9 +408,9 @@ public class ChainDataProviderTest {
     ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
     AttestationGenerator attestationGenerator =
         new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
-    tech.pegasys.teku.spec.datastructures.operations.Attestation attestation1 =
+    Attestation attestation1 =
         attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
-    tech.pegasys.teku.spec.datastructures.operations.Attestation attestation2 =
+    Attestation attestation2 =
         attestationGenerator.validAttestation(
             bestBlock.toUnsigned(), bestBlock.getSlot().increment());
     blockOptions.addAttestation(attestation1);
@@ -446,7 +449,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(altair, recentChainData, mockCombinedChainDataClient);
 
-    final SszList<tech.pegasys.teku.spec.datastructures.state.Validator> validators =
+    final SszList<Validator> validators =
         dataStructureUtil.randomSszList(
             dataStructureUtil.getBeaconStateSchema().getValidatorsSchema(),
             16,
@@ -459,9 +462,7 @@ public class ChainDataProviderTest {
             .validators(validators)
             .currentSyncCommittee(currentSyncCommittee)
             .build();
-    final tech.pegasys.teku.storage.client.ChainHead chainHead =
-        tech.pegasys.teku.storage.client.ChainHead.create(
-            StateAndBlockSummary.create(internalState));
+    final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(internalState));
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
     return provider;
   }

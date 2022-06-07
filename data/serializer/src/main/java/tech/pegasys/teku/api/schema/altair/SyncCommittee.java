@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class SyncCommittee {
@@ -52,7 +53,7 @@ public class SyncCommittee {
   }
 
   public tech.pegasys.teku.spec.datastructures.state.SyncCommittee asInternalSyncCommittee(
-      final tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema schema) {
+      final SyncCommitteeSchema schema) {
     SszPublicKey aggregate = new SszPublicKey(aggregatePubkey.asBLSPublicKey());
     List<SszPublicKey> committee =
         pubkeys.stream()

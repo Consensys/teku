@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -79,8 +80,8 @@ class MetricsDataFactoryTest {
     data.forEach(element -> assertThat(element).isInstanceOf(SystemMetricData.class));
   }
 
-  public static java.util.stream.Stream<Arguments> getValidatorParams() {
-    return java.util.stream.Stream.of(
+  public static Stream<Arguments> getValidatorParams() {
+    return Stream.of(
         Arguments.of(1, 2, true),
         Arguments.of(0, 1, true),
         Arguments.of(1, 0, true),
