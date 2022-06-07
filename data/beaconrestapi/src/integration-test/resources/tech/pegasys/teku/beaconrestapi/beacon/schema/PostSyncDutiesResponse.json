@@ -6,6 +6,9 @@
       "items" : {
         "$ref" : "#/components/schemas/SyncCommitteeDuty"
       }
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
     }
   }
 }

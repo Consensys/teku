@@ -77,8 +77,8 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<SyncCommitteeDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(SyncCommitteeDuties.class)
           .name("GetSyncCommitteeDutiesResponse")
-          .withOptionalField(
-              "execution_optimistic", BOOLEAN_TYPE, (__) -> Optional.empty()) // TODO fix
+          .withField(
+              "execution_optimistic", BOOLEAN_TYPE, SyncCommitteeDuties::isExecutionOptimistic)
           .withField(
               "data",
               SerializableTypeDefinition.listOf(SYNC_COMMITTEE_DUTY_TYPE),
