@@ -30,7 +30,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
@@ -88,7 +87,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
       path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Produce unsigned blinded block",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description =
           "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. "
               + "A blinded block is a block with only a transactions root, rather than a full transactions list.\n\n"
@@ -150,7 +149,7 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                 + "Metadata in the response indicates the type of block produced, and the supported types of block "
                 + "will be added to as forks progress.\n\n"
                 + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
-        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
+        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
