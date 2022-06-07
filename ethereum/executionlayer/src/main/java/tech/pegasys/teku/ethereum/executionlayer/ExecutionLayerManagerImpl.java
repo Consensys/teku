@@ -451,7 +451,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Rewards (wei) = {}, Gas Limit = {}, Gas Used = {})",
         payloadHeader.getBlockNumber(),
         payloadHeader.getBlockHash(),
-        builderBid.getValue(),
+        builderBid.getValue().toDecimalString(),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
   }
