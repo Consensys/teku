@@ -19,25 +19,33 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
 public abstract class AbstractProposerConfigProvider implements ProposerConfigProvider {
   private static final Logger LOG = LogManager.getLogger();
 
+  public static final int LAST_PROPOSER_CONFIG_VALIDITY_PERIOD = 300;
+
   private final boolean refresh;
   private final AsyncRunner asyncRunner;
   protected final ProposerConfigLoader proposerConfigLoader;
+  private final TimeProvider timeProvider;
   private Optional<ProposerConfig> lastProposerConfig = Optional.empty();
+  private UInt64 lastProposerConfigTimeStamp = UInt64.ZERO;
   private Optional<SafeFuture<Optional<ProposerConfig>>> futureProposerConfig = Optional.empty();
 
   AbstractProposerConfigProvider(
       final AsyncRunner asyncRunner,
       final boolean refresh,
-      final ProposerConfigLoader proposerConfigLoader) {
+      final ProposerConfigLoader proposerConfigLoader,
+      final TimeProvider timeProvider) {
     this.asyncRunner = asyncRunner;
     this.refresh = refresh;
     this.proposerConfigLoader = proposerConfigLoader;
+    this.timeProvider = timeProvider;
   }
 
   @Override
@@ -47,16 +55,24 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
     }
 
     if (futureProposerConfig.isPresent()) {
-      LOG.warn(
-          "A proposer config load is already progress, waiting it instead of generating a new request");
+      // a proposer config reload is in progress, use that as result
       return futureProposerConfig.get();
     }
+
+    if (lastProposerConfig.isPresent()
+        && lastProposerConfigTimeStamp.isGreaterThan(
+            timeProvider.getTimeInSeconds().minus(LAST_PROPOSER_CONFIG_VALIDITY_PERIOD))) {
+      // last proposer config is still valid
+      return SafeFuture.completedFuture(lastProposerConfig);
+    }
+
     futureProposerConfig =
         Optional.of(
             asyncRunner
                 .runAsync(
                     () -> {
                       lastProposerConfig = Optional.of(internalGetProposerConfig());
+                      lastProposerConfigTimeStamp = timeProvider.getTimeInSeconds();
                       return lastProposerConfig;
                     })
                 .orTimeout(30, TimeUnit.SECONDS)
@@ -72,7 +88,11 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
                           "An error occurred while obtaining config and there is no previously loaded config",
                           throwable);
                     })
-                .thenPeek(__ -> LOG.info("proposer config successfully loaded"))
+                .thenPeek(
+                    proposerConfig ->
+                        LOG.info(
+                            "Proposer config successfully loaded. It contains the default configuration and {} specific configuration(s).",
+                            proposerConfig.orElseThrow().getNumberOfProposerConfigs()))
                 .alwaysRun(
                     () -> {
                       synchronized (this) {

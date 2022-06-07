@@ -1163,4 +1163,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public Optional<BeaconRestApi> getBeaconRestAPI() {
     return beaconRestAPI;
   }
+
+  @Override
+  public SyncService getSyncService() {
+    return syncService;
+  }
 }
