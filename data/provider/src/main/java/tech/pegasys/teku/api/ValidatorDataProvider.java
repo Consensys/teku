@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
@@ -315,10 +316,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Void> sendContributionAndProofs(
-      final List<
-              tech.pegasys.teku.spec.datastructures.operations.versions.altair
-                  .SignedContributionAndProof>
-          contributionAndProofs) {
+      final List<SignedContributionAndProof> contributionAndProofs) {
     return validatorApiChannel.sendSignedContributionAndProofs(contributionAndProofs);
   }
 
