@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -23,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
@@ -102,10 +100,7 @@ public class PostSubscribeToBeaconCommitteeSubnet extends MigratingEndpointAdapt
             .response(
                 HttpStatusCodes.SC_OK,
                 "Slot signature is valid and beacon node has prepared the attestation subnet. Note that, there is no guarantee the node will find peers for the subnet")
-            .response(
-                SC_SERVICE_UNAVAILABLE,
-                "Beacon node is currently syncing and not serving request on that endpoint",
-                HTTP_ERROR_RESPONSE_TYPE) // TODO remove?
+            .withServiceUnavailableResponse()
             .build());
     this.provider = provider;
   }
