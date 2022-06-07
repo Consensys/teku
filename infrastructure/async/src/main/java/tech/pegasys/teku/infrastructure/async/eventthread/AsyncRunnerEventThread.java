@@ -65,6 +65,9 @@ public class AsyncRunnerEventThread implements EventThread {
 
   @Override
   public void executeLater(final Runnable task) {
+    if (!started.get()) {
+      throw new IllegalStateException("EventThread not started");
+    }
     thread.runAsync(() -> recordEventThreadIdAndExecute(asSupplier(task))).reportExceptions();
   }
 
@@ -92,7 +95,7 @@ public class AsyncRunnerEventThread implements EventThread {
   @Override
   public void execute(final Runnable task) {
     if (!started.get()) {
-      return;
+      throw new IllegalStateException("EventThread not started");
     }
     doExecute(asSupplier(task)).reportExceptions();
   }
