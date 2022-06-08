@@ -186,15 +186,12 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
-            entry -> {
-              final BLSPublicKey publicKey = entry.getKey();
-              final Integer validatorIndex = entry.getValue();
-              return getFeeRecipient(publicKey)
-                  .map(
-                      eth1Address ->
-                          new BeaconPreparableProposer(
-                              UInt64.valueOf(validatorIndex), eth1Address));
-            })
+            entry ->
+                getFeeRecipient(entry.getKey())
+                    .map(
+                        eth1Address ->
+                            new BeaconPreparableProposer(
+                                UInt64.valueOf(entry.getValue()), eth1Address)))
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
