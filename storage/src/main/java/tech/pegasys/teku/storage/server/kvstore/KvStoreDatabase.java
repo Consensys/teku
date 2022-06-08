@@ -103,26 +103,6 @@ public class KvStoreDatabase implements Database {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    return createWithStateSnapshots(
-        hotDb,
-        finalizedDb,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
-  }
-
-  public static Database createWithStateSnapshots(
-      final KvStoreAccessor hotDb,
-      final KvStoreAccessor finalizedDb,
-      final SchemaHotAdapter schemaHot,
-      final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
-      final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);

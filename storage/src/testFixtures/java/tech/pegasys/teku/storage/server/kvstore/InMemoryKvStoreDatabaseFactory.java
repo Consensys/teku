@@ -57,15 +57,8 @@ public class InMemoryKvStoreDatabaseFactory {
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
-    return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        db,
-        combinedSchema.asSchemaHot(),
-        combinedSchema.asSchemaFinalized(),
-        storageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+    return KvStoreCombinedDatabase.createWithStateSnapshots(
+        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createTree(
