@@ -95,7 +95,10 @@ public class AsyncRunnerEventThread implements EventThread {
   @Override
   public void execute(final Runnable task) {
     if (!started.get()) {
-      throw new IllegalStateException("EventThread not started");
+      // If we threw an exception here, it would cause a lot of noise at
+      // shutdown because started is set to false on shutdown. We may still be
+      // sending tasks to the executor which we deliberately want to ignore.
+      return;
     }
     doExecute(asSupplier(task)).reportExceptions();
   }
