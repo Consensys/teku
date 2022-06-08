@@ -30,8 +30,8 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 
-public class V4FinalizedStateTreeStorageLogic
-    implements V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> {
+public class V4FinalizedStateTreeStorageLogic<S extends SchemaFinalizedTreeState>
+    implements V4FinalizedStateStorageLogic<S> {
   private static final int MAX_BRANCH_LEVELS_SKIPPED = 5;
   private final LabelledMetric<Counter> branchNodeStoredCounter;
   private final Counter statesStoredCounter;
@@ -77,15 +77,16 @@ public class V4FinalizedStateTreeStorageLogic
   }
 
   @Override
-  public FinalizedStateUpdater<SchemaFinalizedTreeState> updater() {
-    return new StateTreeUpdater(
+  public FinalizedStateUpdater<S> updater() {
+    return new StateTreeUpdater<>(
         knownStoredBranchesCache,
         branchNodeStoredCounter,
         statesStoredCounter,
         leafNodeStoredCounter);
   }
 
-  private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaFinalizedTreeState> {
+  private static class StateTreeUpdater<S extends SchemaFinalizedTreeState>
+      implements FinalizedStateUpdater<S> {
 
     private final Set<Bytes32> knownStoredBranchesCache;
     private final LabelledMetric<Counter> branchNodeStoredCounter;

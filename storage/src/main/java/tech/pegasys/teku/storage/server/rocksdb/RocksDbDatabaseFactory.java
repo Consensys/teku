@@ -17,8 +17,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -26,9 +24,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 
@@ -68,23 +64,21 @@ public class RocksDbDatabaseFactory {
   public static Database createV6(
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
-      final SchemaHot schemaHot,
-      final SchemaFinalizedSnapshotState schemaFinalized,
+      final SchemaCombinedSnapshotState schema,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
 
-    final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-    allColumns.addAll(schemaFinalized.getAllColumns());
     final KvStoreAccessor db =
-        RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+        RocksDbInstanceFactory.create(
+            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
         db,
         db,
-        schemaHot,
-        schemaFinalized,
+        schema,
+        schema,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,

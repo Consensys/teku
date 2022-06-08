@@ -45,8 +45,8 @@ class V4FinalizedStateSnapshotStorageLogicTest {
   private final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
   private final SchemaFinalizedSnapshotState schema = new V6SnapshotSchemaFinalized(spec);
 
-  private final V4FinalizedStateSnapshotStorageLogic logic =
-      new V4FinalizedStateSnapshotStorageLogic(STATE_STORAGE_FREQUENCY);
+  private final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotState> logic =
+      new V4FinalizedStateSnapshotStorageLogic<>(STATE_STORAGE_FREQUENCY);
 
   @Test
   void getLatestAvailableFinalizedState_shouldGetFloorEntry() {

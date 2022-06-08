@@ -47,8 +47,11 @@ import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao.Eth1Updater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpdater;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -82,8 +85,12 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   public void createMemoryStore_priorToGenesisTime() {
     database.storeInitialAnchor(genesisAnchor);
 
-    final Optional<OnDiskStoreData> maybeData =
-        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
+    final Optional<OnDiskStoreData> maybeData;
+    if (database instanceof KvStoreDatabase) {
+      maybeData = ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
+    } else {
+      maybeData = ((KvStoreCombinedDatabase) database).createMemoryStore(() -> 0L);
+    }
     assertThat(maybeData).isNotEmpty();
 
     final OnDiskStoreData data = maybeData.get();
@@ -159,8 +166,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreHotDao.HotUpdater updater =
-        ((KvStoreDatabase) database).hotDao.hotUpdater()) {
+    try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(
@@ -169,17 +175,32 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     }
   }
 
+  private HotUpdater hotUpdater() {
+    if (database instanceof KvStoreDatabase) {
+      return ((KvStoreDatabase) database).hotDao.hotUpdater();
+    } else {
+      return ((KvStoreCombinedDatabase) database).dao.hotUpdater();
+    }
+  }
+
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreFinalizedDao.FinalizedUpdater updater =
-        ((KvStoreDatabase) database).finalizedDao.finalizedUpdater()) {
+    try (final KvStoreFinalizedDao.FinalizedUpdater updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedBlock(newBlock.getBlock()))
           .isInstanceOf(ShuttingDownException.class);
+    }
+  }
+
+  private FinalizedUpdater finalizedUpdater() {
+    if (database instanceof KvStoreDatabase) {
+      return ((KvStoreDatabase) database).finalizedDao.finalizedUpdater();
+    } else {
+      return ((KvStoreCombinedDatabase) database).dao.finalizedUpdater();
     }
   }
 
@@ -190,13 +211,20 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
 
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createDefault());
-    try (final KvStoreEth1Dao.Eth1Updater updater =
-        ((KvStoreDatabase) database).eth1Dao.eth1Updater()) {
+    try (final KvStoreEth1Dao.Eth1Updater updater = eth1Updater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
       assertThatThrownBy(() -> updater.addMinGenesisTimeBlock(genesisTimeBlockEvent))
           .isInstanceOf(ShuttingDownException.class);
+    }
+  }
+
+  private Eth1Updater eth1Updater() {
+    if (database instanceof KvStoreDatabase) {
+      return ((KvStoreDatabase) database).eth1Dao.eth1Updater();
+    } else {
+      return ((KvStoreCombinedDatabase) database).dao.eth1Updater();
     }
   }
 
@@ -229,8 +257,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
       createStorage(StateStorageMode.PRUNE);
       database.storeInitialAnchor(genesisAnchor);
 
-      try (final KvStoreHotDao.HotUpdater updater =
-          ((KvStoreDatabase) database).hotDao.hotUpdater()) {
+      try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
         SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
 
         final Thread dbCloserThread =
