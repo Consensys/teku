@@ -32,8 +32,6 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
