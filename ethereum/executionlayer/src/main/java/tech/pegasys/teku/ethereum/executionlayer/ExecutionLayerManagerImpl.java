@@ -448,10 +448,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private void logReceivedBuilderBid(final BuilderBid builderBid) {
     final ExecutionPayloadHeader payloadHeader = builderBid.getExecutionPayloadHeader();
     LOG.info(
-        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Rewards (wei) = {}, Gas Limit = {}, Gas Used = {})",
+        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (wei) = {}, Gas Limit = {}, Gas Used = {})",
         payloadHeader.getBlockNumber(),
         payloadHeader.getBlockHash(),
-        builderBid.getValue(),
+        builderBid.getValue().toDecimalString(),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
   }
