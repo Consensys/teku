@@ -29,6 +29,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
@@ -147,7 +148,7 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
     }
 
     public List<Integer> getSyncCommitteeIndices() {
-      return syncCommitteeIndices.stream().parallel().collect(Collectors.toList());
+      return new IntArrayList(syncCommitteeIndices);
     }
 
     public void setSyncCommitteeIndices(List<Integer> syncCommitteeIndices) {
