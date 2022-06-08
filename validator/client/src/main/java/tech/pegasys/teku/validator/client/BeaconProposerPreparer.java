@@ -93,10 +93,10 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   }
 
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    if (validatorIndexCanBeResolved(publicKey)) {
-      return getFeeRecipient(maybeProposerConfig, publicKey);
-    } else {
+    if (validatorIndexCannotBeResolved(publicKey)) {
       return Optional.empty();
+    } else {
+      return getFeeRecipient(maybeProposerConfig, publicKey);
     }
   }
 
@@ -126,7 +126,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (eth1Address.equals(Eth1Address.ZERO)) {
       throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
     }
-    if (!validatorIndexCanBeResolved(publicKey)) {
+    if (validatorIndexCannotBeResolved(publicKey)) {
       throw new SetFeeRecipientException(
           "Validator public key not found when attempting to set fee recipient.");
     }
@@ -186,19 +186,22 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
-            entry ->
-                getFeeRecipient(entry.getKey())
-                    .map(
-                        eth1Address ->
-                            new BeaconPreparableProposer(
-                                UInt64.valueOf(entry.getValue()), eth1Address)))
+            entry -> {
+              final BLSPublicKey publicKey = entry.getKey();
+              final Integer validatorIndex = entry.getValue();
+              return getFeeRecipient(publicKey)
+                  .map(
+                      eth1Address ->
+                          new BeaconPreparableProposer(
+                              UInt64.valueOf(validatorIndex), eth1Address));
+            })
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
 
-  private boolean validatorIndexCanBeResolved(final BLSPublicKey publicKey) {
-    return validatorIndexProvider.isPresent()
-        && validatorIndexProvider.get().containsPublicKey(publicKey);
+  private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
+    return validatorIndexProvider.isEmpty()
+        || !validatorIndexProvider.get().containsPublicKey(publicKey);
   }
 
   @Override
