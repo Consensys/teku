@@ -40,12 +40,12 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic.FinalizedStateUpdater;
+import tech.pegasys.teku.storage.server.kvstore.schema.FinalizedStateStorageLogicSchema;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 
-public class CombinedKvStoreDao<S extends SchemaCombined & SchemaFinalized>
+public class CombinedKvStoreDao<S extends SchemaCombined & FinalizedStateStorageLogicSchema>
     implements KvStoreCombinedDao {
   // Persistent data
   private final KvStoreAccessor db;
@@ -378,7 +378,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined & SchemaFinalized>
         .flatMap(this::getFinalizedBlockAtSlot);
   }
 
-  static class V4CombinedUpdater<S extends SchemaCombined & SchemaFinalized>
+  static class V4CombinedUpdater<S extends SchemaCombined & FinalizedStateStorageLogicSchema>
       implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 

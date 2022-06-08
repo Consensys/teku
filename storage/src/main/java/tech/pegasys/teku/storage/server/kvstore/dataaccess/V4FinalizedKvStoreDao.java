@@ -35,17 +35,17 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
 
-public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStoreFinalizedDao {
+public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   private final KvStoreAccessor db;
-  private final S schema;
-  private final V4FinalizedStateStorageLogic<S> stateStorageLogic;
+  private final SchemaFinalizedSnapshotStateAdapter schema;
+  private final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic;
 
   public V4FinalizedKvStoreDao(
       final KvStoreAccessor db,
-      final S schema,
-      final V4FinalizedStateStorageLogic<S> stateStorageLogic) {
+      final SchemaFinalizedSnapshotStateAdapter schema,
+      final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic) {
     this.db = db;
     this.schema = schema;
     this.stateStorageLogic = stateStorageLogic;
@@ -136,7 +136,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
     Preconditions.checkArgument(
         finalizedDao instanceof V4FinalizedKvStoreDao,
         "Expected instance of V4FinalizedKvStoreDao");
-    final V4FinalizedKvStoreDao<?> dao = (V4FinalizedKvStoreDao<?>) finalizedDao;
+    final V4FinalizedKvStoreDao dao = (V4FinalizedKvStoreDao) finalizedDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
     if (newVariables.size() > 0) {
@@ -167,7 +167,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   private Optional<UInt64> displayCopyColumnMessage(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final V4FinalizedKvStoreDao<?> dao,
+      final V4FinalizedKvStoreDao dao,
       final Consumer<String> logger) {
     final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
     maybeCount.ifPresentOrElse(
@@ -180,7 +180,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   private Optional<UInt64> getObjectCountForColumn(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final V4FinalizedKvStoreDao<?> dao) {
+      final V4FinalizedKvStoreDao dao) {
     switch (key) {
       case "FINALIZED_STATES_BY_SLOT":
       case "SLOTS_BY_FINALIZED_STATE_ROOT":
@@ -195,7 +195,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   }
 
   Optional<UInt64> getEntityCountFromColumn(
-      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao<?> dao) {
+      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao dao) {
     try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream = dao.streamRawColumn(column)) {
       return Optional.of(UInt64.valueOf(oldEntryStream.count()));
     }
@@ -220,19 +220,23 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   @Override
   @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
-    return new V4FinalizedKvStoreDao.V4FinalizedUpdater<>(db, schema, stateStorageLogic.updater());
+    return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageLogic.updater());
   }
 
-  static class V4FinalizedUpdater<S extends SchemaFinalized> implements FinalizedUpdater {
+  static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
-    private final S schema;
-    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageUpdater;
+    private final SchemaFinalizedSnapshotStateAdapter schema;
+    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<
+            SchemaFinalizedSnapshotStateAdapter>
+        stateStorageUpdater;
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,
-        final S schema,
-        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageUpdater) {
+        final SchemaFinalizedSnapshotStateAdapter schema,
+        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<
+                SchemaFinalizedSnapshotStateAdapter>
+            stateStorageUpdater) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;

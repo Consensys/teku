@@ -77,10 +77,10 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpda
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTreeStorageLogic;
+import tech.pegasys.teku.storage.server.kvstore.schema.FinalizedStateStorageLogicSchema;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 
 public class KvStoreCombinedDatabase implements Database {
@@ -123,13 +123,14 @@ public class KvStoreCombinedDatabase implements Database {
         db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
   }
 
-  private static <S extends SchemaCombined & SchemaFinalized> KvStoreCombinedDatabase create(
-      final KvStoreAccessor db,
-      final S schema,
-      final StateStorageMode stateStorageMode,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec,
-      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
+  private static <S extends SchemaCombined & FinalizedStateStorageLogicSchema>
+      KvStoreCombinedDatabase create(
+          final KvStoreAccessor db,
+          final S schema,
+          final StateStorageMode stateStorageMode,
+          final boolean storeNonCanonicalBlocks,
+          final Spec spec,
+          final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =
         new CombinedKvStoreDao<S>(db, schema, finalizedStateStorageLogic);
     return new KvStoreCombinedDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);

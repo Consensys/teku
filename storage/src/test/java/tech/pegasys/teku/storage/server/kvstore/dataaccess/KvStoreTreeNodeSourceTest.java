@@ -26,14 +26,13 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 class KvStoreTreeNodeSourceTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SchemaFinalizedTreeState schema = new V6SchemaCombinedTreeState(spec, true);
+  private final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec, true);
   private final KvStoreAccessor accessor =
       MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
 

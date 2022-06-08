@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -75,11 +74,8 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpda
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTreeStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 
@@ -141,40 +137,19 @@ public class KvStoreDatabase implements Database {
         finalizedStateStorageLogic);
   }
 
-  public static Database createWithStateTree(
-      final MetricsSystem metricsSystem,
-      final KvStoreAccessor db,
-      final SchemaHotAdapter schemaHot,
-      final SchemaFinalizedTreeState schemaFinalized,
-      final StateStorageMode stateStorageMode,
-      final boolean storeNonCanonicalBlocks,
-      final int maxKnownNodeCacheSize,
-      final Spec spec) {
-    final V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> finalizedStateStorageLogic =
-        new V4FinalizedStateTreeStorageLogic<>(metricsSystem, spec, maxKnownNodeCacheSize);
-    return create(
-        db,
-        db,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        storeNonCanonicalBlocks,
-        spec,
-        finalizedStateStorageLogic);
-  }
-
-  private static <S extends SchemaFinalized> KvStoreDatabase create(
+  private static KvStoreDatabase create(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final SchemaHotAdapter schemaHot,
-      final S schemaFinalized,
+      final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec,
-      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
+      final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter>
+          finalizedStateStorageLogic) {
     final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, schemaHot);
     final KvStoreFinalizedDao finalizedDbDao =
-        new V4FinalizedKvStoreDao<>(finalizedDb, schemaFinalized, finalizedStateStorageLogic);
+        new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic);
     return new KvStoreDatabase(
         dao, finalizedDbDao, dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
