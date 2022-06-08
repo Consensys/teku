@@ -18,12 +18,12 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -40,8 +40,8 @@ public class PostSyncCommitteeSubscriptionsIntegrationTest
 
   @Test
   void shouldPostSubscriptions() throws IOException {
-    final List<PostSyncCommitteeSubscriptions.PostSyncCommitteeData> validators =
-        List.of(new PostSyncCommitteeSubscriptions.PostSyncCommitteeData(1, IntSet.of(1), ONE));
+    final List<SyncCommitteeSubnetSubscription> validators =
+        List.of(new SyncCommitteeSubnetSubscription(ONE, List.of(ONE), ONE));
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     Response response =
         post(PostSyncCommitteeSubscriptions.ROUTE, jsonProvider.objectToJSON(validators));
