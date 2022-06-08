@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,19 +32,7 @@ public interface SchemaFinalized extends Schema {
 
   KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
 
-  @Override
-  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
-    return getColumnMap().values();
-  }
-
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
-  @Override
-  default Collection<KvStoreVariable<?>> getAllVariables() {
-    return List.of(getOptimisticTransitionBlockSlot());
-  }
-
-  default Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
-  }
+  Map<String, KvStoreVariable<?>> getVariableMap();
 }

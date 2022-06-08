@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import java.util.Collection;
 import java.util.Map;
 
 public interface SchemaCombinedSnapshotState extends SchemaCombined, SchemaFinalizedSnapshotState {
@@ -20,7 +21,20 @@ public interface SchemaCombinedSnapshotState extends SchemaCombined, SchemaFinal
   @Override
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
+  @Override
+  Map<String, KvStoreVariable<?>> getVariableMap();
+
   default SchemaFinalizedSnapshotStateAdapter asSchemaFinalized() {
     return new SchemaFinalizedSnapshotStateAdapter(this);
+  }
+
+  @Override
+  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
+  }
+
+  @Override
+  default Collection<KvStoreVariable<?>> getAllVariables() {
+    return getVariableMap().values();
   }
 }

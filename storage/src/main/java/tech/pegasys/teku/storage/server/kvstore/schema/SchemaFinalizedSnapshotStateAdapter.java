@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import java.util.Collection;
 import java.util.Map;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -41,5 +42,15 @@ public class SchemaFinalizedSnapshotStateAdapter extends SchemaFinalizedAdapter
         "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
         "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
         "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
+  }
+
+  @Override
+  public Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
+  }
+
+  @Override
+  public Collection<KvStoreVariable<?>> getAllVariables() {
+    return getVariableMap().values();
   }
 }

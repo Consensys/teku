@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -26,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface SchemaCombined extends SchemaFinalized {
+public interface SchemaCombined extends Schema {
   // Columns
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot();
 
@@ -42,6 +43,16 @@ public interface SchemaCombined extends SchemaFinalized {
   KvStoreColumn<Bytes32, SlotAndBlockRoot> getColumnStateRootToSlotAndBlockRoot();
 
   KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot();
+
+  KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
+
+  KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
+
+  KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
+
+  KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
+
+  KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
 
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
@@ -60,10 +71,10 @@ public interface SchemaCombined extends SchemaFinalized {
 
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
 
-  @Override
+  KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
+
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
-  @Override
   Map<String, KvStoreVariable<?>> getVariableMap();
 
   @Override
