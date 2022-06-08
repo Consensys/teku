@@ -26,8 +26,7 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.InMemoryKvStoreDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.Schema;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -196,13 +195,13 @@ public class InMemoryStorageSystemBuilder {
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
     if (hotDb == null) {
-      final SchemaHot v4SchemaHot = combinedSchema.asSchemaHot();
+      final Schema v4SchemaHot = combinedSchema.asSchemaHot();
       hotDb =
           MockKvStoreInstance.createEmpty(
               v4SchemaHot.getAllColumns(), v4SchemaHot.getAllVariables());
     }
     if (coldDb == null) {
-      final SchemaFinalized v4SchemaFinalized = combinedSchema.asSchemaFinalized();
+      final Schema v4SchemaFinalized = combinedSchema.asSchemaFinalized();
       coldDb =
           MockKvStoreInstance.createEmpty(
               v4SchemaFinalized.getAllColumns(), v4SchemaFinalized.getAllVariables());

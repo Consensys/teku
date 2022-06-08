@@ -31,8 +31,8 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic.FinalizedStateUpdater;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 
 class V4FinalizedStateSnapshotStorageLogicTest {
 
@@ -43,9 +43,10 @@ class V4FinalizedStateSnapshotStorageLogicTest {
 
   private final KvStoreAccessor db = mock(KvStoreAccessor.class);
   private final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
-  private final SchemaFinalizedSnapshotState schema = new V6SnapshotSchemaFinalized(spec);
+  private final SchemaFinalizedSnapshotStateAdapter schema =
+      V6SchemaCombinedSnapshot.createV6(spec, true).asSchemaFinalized();
 
-  private final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotState> logic =
+  private final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter> logic =
       new V4FinalizedStateSnapshotStorageLogic<>(STATE_STORAGE_FREQUENCY);
 
   @Test
@@ -64,7 +65,7 @@ class V4FinalizedStateSnapshotStorageLogicTest {
     when(db.getLastKey(schema.getColumnFinalizedStatesBySlot()))
         .thenReturn(Optional.of(UInt64.valueOf(100)));
 
-    final FinalizedStateUpdater<SchemaFinalizedSnapshotState> updater = logic.updater();
+    final FinalizedStateUpdater<SchemaFinalizedSnapshotStateAdapter> updater = logic.updater();
     updater.addFinalizedState(db, transaction, schema, state);
 
     verifyNoInteractions(transaction);
@@ -76,7 +77,7 @@ class V4FinalizedStateSnapshotStorageLogicTest {
     when(db.getLastKey(schema.getColumnFinalizedStatesBySlot()))
         .thenReturn(Optional.of(state.getSlot().minus(STATE_STORAGE_FREQUENCY)));
 
-    final FinalizedStateUpdater<SchemaFinalizedSnapshotState> updater = logic.updater();
+    final FinalizedStateUpdater<SchemaFinalizedSnapshotStateAdapter> updater = logic.updater();
     updater.addFinalizedState(db, transaction, schema, state);
 
     verify(transaction).put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
@@ -87,7 +88,7 @@ class V4FinalizedStateSnapshotStorageLogicTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(120));
     when(db.getLastKey(schema.getColumnFinalizedStatesBySlot())).thenReturn(Optional.empty());
 
-    final FinalizedStateUpdater<SchemaFinalizedSnapshotState> updater = logic.updater();
+    final FinalizedStateUpdater<SchemaFinalizedSnapshotStateAdapter> updater = logic.updater();
     updater.addFinalizedState(db, transaction, schema, state);
 
     verify(transaction).put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
@@ -100,7 +101,7 @@ class V4FinalizedStateSnapshotStorageLogicTest {
         dataStructureUtil.randomBeaconState(state1.getSlot().plus(STATE_STORAGE_FREQUENCY));
     when(db.getLastKey(schema.getColumnFinalizedStatesBySlot())).thenReturn(Optional.empty());
 
-    final FinalizedStateUpdater<SchemaFinalizedSnapshotState> updater = logic.updater();
+    final FinalizedStateUpdater<SchemaFinalizedSnapshotStateAdapter> updater = logic.updater();
     // Store first state
     updater.addFinalizedState(db, transaction, schema, state1);
     verify(transaction).put(schema.getColumnFinalizedStatesBySlot(), state1.getSlot(), state1);
@@ -117,7 +118,7 @@ class V4FinalizedStateSnapshotStorageLogicTest {
         dataStructureUtil.randomBeaconState(state1.getSlot().plus(STATE_STORAGE_FREQUENCY - 1));
     when(db.getLastKey(schema.getColumnFinalizedStatesBySlot())).thenReturn(Optional.empty());
 
-    final FinalizedStateUpdater<SchemaFinalizedSnapshotState> updater = logic.updater();
+    final FinalizedStateUpdater<SchemaFinalizedSnapshotStateAdapter> updater = logic.updater();
     // Store first state
     updater.addFinalizedState(db, transaction, schema, state1);
     verify(transaction).put(schema.getColumnFinalizedStatesBySlot(), state1.getSlot(), state1);

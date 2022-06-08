@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import java.util.Collection;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -25,89 +26,73 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class SchemaHotAdapter implements SchemaHot {
+public class SchemaHotAdapter implements Schema {
   private final SchemaCombined delegate;
 
   public SchemaHotAdapter(final SchemaCombined delegate) {
     this.delegate = delegate;
   }
 
-  @Override
   public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {
     return delegate.getColumnHotBlocksByRoot();
   }
 
-  @Override
   public KvStoreColumn<Bytes32, CheckpointEpochs> getColumnHotBlockCheckpointEpochsByRoot() {
     return delegate.getColumnHotBlockCheckpointEpochsByRoot();
   }
 
-  @Override
   public KvStoreColumn<Checkpoint, BeaconState> getColumnCheckpointStates() {
     return delegate.getColumnCheckpointStates();
   }
 
-  @Override
   public KvStoreColumn<UInt64, VoteTracker> getColumnVotes() {
     return delegate.getColumnVotes();
   }
 
-  @Override
   public KvStoreColumn<UInt64, DepositsFromBlockEvent> getColumnDepositsFromBlockEvents() {
     return delegate.getColumnDepositsFromBlockEvents();
   }
 
-  @Override
   public KvStoreColumn<Bytes32, SlotAndBlockRoot> getColumnStateRootToSlotAndBlockRoot() {
     return delegate.getColumnStateRootToSlotAndBlockRoot();
   }
 
-  @Override
   public KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot() {
     return delegate.getColumnHotStatesByRoot();
   }
 
-  @Override
   public KvStoreVariable<UInt64> getVariableGenesisTime() {
     return delegate.getVariableGenesisTime();
   }
 
-  @Override
   public KvStoreVariable<Checkpoint> getVariableJustifiedCheckpoint() {
     return delegate.getVariableJustifiedCheckpoint();
   }
 
-  @Override
   public KvStoreVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
     return delegate.getVariableBestJustifiedCheckpoint();
   }
 
-  @Override
   public KvStoreVariable<Checkpoint> getVariableFinalizedCheckpoint() {
     return delegate.getVariableFinalizedCheckpoint();
   }
 
-  @Override
   public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
     return delegate.getVariableLatestFinalizedState();
   }
 
-  @Override
   public KvStoreVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
     return delegate.getVariableMinGenesisTimeBlock();
   }
 
-  @Override
   public KvStoreVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return delegate.getVariableWeakSubjectivityCheckpoint();
   }
 
-  @Override
   public KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint() {
     return delegate.getVariableAnchorCheckpoint();
   }
 
-  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot(),
@@ -119,7 +104,6 @@ public class SchemaHotAdapter implements SchemaHot {
         "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot());
   }
 
-  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
         "GENESIS_TIME", getVariableGenesisTime(),
@@ -130,5 +114,15 @@ public class SchemaHotAdapter implements SchemaHot {
         "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
         "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
         "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint());
+  }
+
+  @Override
+  public Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
+  }
+
+  @Override
+  public Collection<KvStoreVariable<?>> getAllVariables() {
+    return getVariableMap().values();
   }
 }

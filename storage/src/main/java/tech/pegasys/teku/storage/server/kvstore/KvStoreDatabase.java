@@ -78,9 +78,9 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStora
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTreeStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 
 public class KvStoreDatabase implements Database {
@@ -101,8 +101,8 @@ public class KvStoreDatabase implements Database {
   public static Database createV4(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
-      final SchemaHot schemaHot,
-      final SchemaFinalizedSnapshotState schemaFinalized,
+      final SchemaHotAdapter schemaHot,
+      final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -121,13 +121,13 @@ public class KvStoreDatabase implements Database {
   public static Database createWithStateSnapshots(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
-      final SchemaHot schemaHot,
-      final SchemaFinalizedSnapshotState schemaFinalized,
+      final SchemaHotAdapter schemaHot,
+      final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotState>
+    final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
@@ -144,7 +144,7 @@ public class KvStoreDatabase implements Database {
   public static Database createWithStateTree(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
-      final SchemaHot schemaHot,
+      final SchemaHotAdapter schemaHot,
       final SchemaFinalizedTreeState schemaFinalized,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
@@ -166,7 +166,7 @@ public class KvStoreDatabase implements Database {
   private static <S extends SchemaFinalized> KvStoreDatabase create(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
-      final SchemaHot schemaHot,
+      final SchemaHotAdapter schemaHot,
       final S schemaFinalized,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,

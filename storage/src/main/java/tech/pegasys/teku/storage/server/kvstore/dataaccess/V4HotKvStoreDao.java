@@ -38,14 +38,14 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 
 public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao {
   // Persistent data
   private final KvStoreAccessor db;
-  private final SchemaHot schema;
+  private final SchemaHotAdapter schema;
 
-  public V4HotKvStoreDao(final KvStoreAccessor db, final SchemaHot schema) {
+  public V4HotKvStoreDao(final KvStoreAccessor db, final SchemaHotAdapter schema) {
     this.db = db;
     this.schema = schema;
   }
@@ -206,13 +206,13 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao {
   static class V4HotUpdater implements HotUpdater, Eth1Updater {
 
     private final KvStoreTransaction transaction;
-    private final SchemaHot schema;
+    private final SchemaHotAdapter schema;
 
     KvStoreTransaction getTransaction() {
       return transaction;
     }
 
-    V4HotUpdater(final KvStoreAccessor db, final SchemaHot schema) {
+    V4HotUpdater(final KvStoreAccessor db, final SchemaHotAdapter schema) {
       this.transaction = db.startTransaction();
       this.schema = schema;
     }

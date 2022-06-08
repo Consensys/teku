@@ -17,8 +17,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
@@ -35,8 +35,8 @@ public class InMemoryKvStoreDatabaseFactory {
 
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
-    final SchemaHot schemaHot = combinedSchema.asSchemaHot();
-    final SchemaFinalizedSnapshotState schemaFinalized = combinedSchema.asSchemaFinalized();
+    final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
+    final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     return KvStoreDatabase.createV4(
         hotDb,
         coldDb,
