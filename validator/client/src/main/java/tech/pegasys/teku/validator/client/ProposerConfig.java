@@ -101,9 +101,9 @@ public class ProposerConfig {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-            .add("proposerConfig", proposerConfig)
-            .add("defaultConfig", defaultConfig)
-            .toString();
+        .add("proposerConfig", proposerConfig)
+        .add("defaultConfig", defaultConfig)
+        .toString();
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -153,9 +153,9 @@ public class ProposerConfig {
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-              .add("feeRecipient", feeRecipient)
-              .add("validatorRegistration", validatorRegistration)
-              .toString();
+          .add("feeRecipient", feeRecipient)
+          .add("validatorRegistration", validatorRegistration)
+          .toString();
     }
   }
 
@@ -204,9 +204,9 @@ public class ProposerConfig {
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-              .add("enabled", enabled)
-              .add("gasLimit", gasLimit)
-              .toString();
+          .add("enabled", enabled)
+          .add("gasLimit", gasLimit)
+          .toString();
     }
   }
 }
