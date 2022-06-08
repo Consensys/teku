@@ -86,7 +86,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       lastProcessedEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
       LOG.debug(
-          "Checking registration of {} validator(s) at epoch {}", activeValidators.size(), epoch);
+          "Checking if registration is required for {} validator(s) at epoch {}",
+          activeValidators.size(),
+          epoch);
       registerValidators(activeValidators, epoch)
           .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
@@ -170,7 +172,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return Optional.empty();
     }
 
-    final Optional<Eth1Address> maybeFeeRecipient = feeRecipientProvider.getFeeRecipient(publicKey);
+    final Optional<Eth1Address> maybeFeeRecipient =
+        feeRecipientProvider.getFeeRecipient(maybeProposerConfig, publicKey);
 
     if (maybeFeeRecipient.isEmpty()) {
       LOG.warn("There is no fee recipient configured for {}. Can't register.", publicKey);

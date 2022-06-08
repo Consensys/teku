@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -101,7 +102,8 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(any()))
         .thenReturn(Optional.of(CUSTOM_GAS_LIMIT));
 
-    when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
+    when(feeRecipientProvider.getFeeRecipient(eq(Optional.of(proposerConfig)), any()))
+        .thenReturn(Optional.of(eth1Address));
 
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
@@ -272,10 +274,12 @@ class ValidatorRegistratorTest {
     // GIVEN
     when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator1, validator2));
 
-    when(feeRecipientProvider.getFeeRecipient(validator1.getPublicKey()))
+    when(feeRecipientProvider.getFeeRecipient(
+            Optional.of(proposerConfig), validator1.getPublicKey()))
         .thenReturn(Optional.of(eth1Address));
     // no fee recipient provided for validator2
-    when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
+    when(feeRecipientProvider.getFeeRecipient(
+            Optional.of(proposerConfig), validator2.getPublicKey()))
         .thenReturn(Optional.empty());
 
     // WHEN

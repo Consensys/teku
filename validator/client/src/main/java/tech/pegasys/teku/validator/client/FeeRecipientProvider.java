@@ -20,5 +20,6 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 @FunctionalInterface
 public interface FeeRecipientProvider {
 
-  Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
+  Optional<Eth1Address> getFeeRecipient(
+      Optional<ProposerConfig> maybeProposerConfig, BLSPublicKey publicKey);
 }

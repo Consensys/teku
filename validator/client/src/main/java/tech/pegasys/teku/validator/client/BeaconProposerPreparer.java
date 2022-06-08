@@ -92,6 +92,14 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     }
   }
 
+  public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
+    if (validatorIndexCanBeResolved(publicKey)) {
+      return getFeeRecipient(maybeProposerConfig, publicKey);
+    } else {
+      return Optional.empty();
+    }
+  }
+
   // 2 configurations, 2 defaults
   // Priority order
   // - Specifically configured key in --validator-proposer-config file
@@ -99,7 +107,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   // - default set in --validator-proposer-config file
   // - default set by --validators-proposer-default-fee-recipient
   @Override
-  public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
+  public Optional<Eth1Address> getFeeRecipient(
+      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
     return maybeProposerConfig
         .flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey))
         .or(() -> runtimeProposerConfig.getEth1AddressForPubKey(publicKey))
@@ -177,18 +186,12 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
-            entry -> {
-              final BLSPublicKey publicKey = entry.getKey();
-              final Optional<Eth1Address> maybeFeeRecipient;
-              if (validatorIndexCanBeResolved(publicKey)) {
-                maybeFeeRecipient = getFeeRecipient(publicKey);
-              } else {
-                maybeFeeRecipient = Optional.empty();
-              }
-              return maybeFeeRecipient.map(
-                  (eth1Address) ->
-                      new BeaconPreparableProposer(UInt64.valueOf(entry.getValue()), eth1Address));
-            })
+            entry ->
+                getFeeRecipient(entry.getKey())
+                    .map(
+                        eth1Address ->
+                            new BeaconPreparableProposer(
+                                UInt64.valueOf(entry.getValue()), eth1Address)))
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
