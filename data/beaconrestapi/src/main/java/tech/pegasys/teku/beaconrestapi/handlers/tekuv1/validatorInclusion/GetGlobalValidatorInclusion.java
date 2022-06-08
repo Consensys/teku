@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion;
 
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
@@ -126,14 +125,13 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
         chainDataProvider
             .getValidatorInclusionStateAtEpoch(epoch)
             .thenApply(
-                maybeStateAndMetadata -> {
-                  if (maybeStateAndMetadata.isEmpty()) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_SERVICE_UNAVAILABLE, "Server is currently syncing.");
-                  }
-                  final BeaconState state = maybeStateAndMetadata.get().getData();
-                  return AsyncApiResponse.respondOk(getResponseFromState(state));
-                }));
+                maybeStateAndMetadata ->
+                    maybeStateAndMetadata
+                        .map(
+                            stateAndMetadata ->
+                                AsyncApiResponse.respondOk(
+                                    getResponseFromState(stateAndMetadata.getData())))
+                        .orElse(AsyncApiResponse.respondServiceUnavailable())));
   }
 
   private GetGlobalValidatorResponseData getResponseFromState(final BeaconState state) {

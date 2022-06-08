@@ -70,6 +70,8 @@ public class AsyncApiResponse {
 
   public static AsyncApiResponse respondServiceUnavailable() {
     return new AsyncApiResponse(
-        SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing and not serving requests.");
+        SC_SERVICE_UNAVAILABLE,
+        new HttpErrorResponse(
+            SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing and not serving requests."));
   }
 }
