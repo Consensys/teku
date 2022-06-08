@@ -21,7 +21,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -128,22 +127,6 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
-  void shouldNotCallPrepareBeaconProposer_IfValidatorIndexProviderMissing() {
-    beaconProposerPreparer =
-        new BeaconProposerPreparer(
-            validatorApiChannel,
-            Optional.empty(),
-            proposerConfigProvider,
-            Optional.of(defaultFeeRecipient),
-            spec,
-            Optional.empty());
-
-    beaconProposerPreparer.onSlot(UInt64.valueOf(slotsPerEpoch * 2));
-
-    verifyNoInteractions(validatorApiChannel);
-  }
-
-  @TestTemplate
   void should_callPrepareBeaconProposerAtBeginningOfEpoch() {
     ArgumentCaptor<Collection<BeaconPreparableProposer>> captor = doCall();
 
@@ -153,19 +136,6 @@ public class BeaconProposerPreparerTest {
                 UInt64.valueOf(validator1Index), validator1FeeRecipientConfig),
             new BeaconPreparableProposer(
                 UInt64.valueOf(validator2Index), defaultFeeRecipientConfig));
-  }
-
-  @TestTemplate
-  void shouldNotPrepareBeaconProposer_IfValidatorIndexProviderMissingPubkey() {
-    when(validatorIndexProvider.containsPublicKey(eq(validator2.getPublicKey()))).thenReturn(false);
-
-    ArgumentCaptor<Collection<BeaconPreparableProposer>> captor = doCall();
-
-    // only validator1 is prepared
-    assertThat(captor.getValue())
-        .containsExactlyInAnyOrder(
-            new BeaconPreparableProposer(
-                UInt64.valueOf(validator1Index), validator1FeeRecipientConfig));
   }
 
   @TestTemplate
@@ -182,9 +152,29 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
+  void getFeeRecipient_shouldReturnEmptyIfValidatorIndexProviderMissing() {
+    beaconProposerPreparer =
+        new BeaconProposerPreparer(
+            validatorApiChannel,
+            Optional.empty(),
+            proposerConfigProvider,
+            Optional.of(defaultFeeRecipient),
+            spec,
+            Optional.empty());
+
+    assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey())).isEmpty();
+  }
+
+  @TestTemplate
   void getFeeRecipient_shouldReturnDefaultFeeRecipientWhenProposerConfigMissing() {
     assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey()))
         .contains(defaultFeeRecipient);
+  }
+
+  @TestTemplate
+  void getFeeRecipient_shouldReturnEmptyIfValidatorIndexProviderMissingPubkey() {
+    assertThat(beaconProposerPreparer.getFeeRecipient(dataStructureUtil.randomPublicKey()))
+        .isEmpty();
   }
 
   @TestTemplate
