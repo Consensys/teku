@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
@@ -356,7 +357,11 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<StateAndMetaData>> getValidatorInclusionStateAtEpoch(
       final UInt64 epoch) {
-    if (epoch.isGreaterThanOrEqualTo(getCurrentEpoch().orElse(UInt64.ZERO))) {
+    final Optional<UInt64> maybeCurrentEpoch = getCurrentEpoch();
+    if (maybeCurrentEpoch.isEmpty()) {
+      throw new ServiceUnavailableException();
+    }
+    if (epoch.isGreaterThanOrEqualTo(maybeCurrentEpoch.get())) {
       throw new IllegalArgumentException("Cannot query epoch until the epoch is completed.");
     }
     // 'current' epoch is requested, and computation is done on epoch transition to 'next' epoch

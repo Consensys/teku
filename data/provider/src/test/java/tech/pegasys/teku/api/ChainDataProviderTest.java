@@ -34,6 +34,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -441,6 +443,42 @@ public class ChainDataProviderTest {
     assertThat(provider.stateParameterMaySupportAltair("genesis")).isTrue();
     assertThat(provider.stateParameterMaySupportAltair("1")).isTrue();
     assertThat(provider.stateParameterMaySupportAltair("0x00")).isTrue();
+  }
+
+  @Test
+  void getValidatorInclusionStateAtEpoch_shouldThrowServiceUnavailableIfEpochNotFound() {
+    final RecentChainData recentChainData1 = mock(RecentChainData.class);
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData1, combinedChainDataClient);
+    when(recentChainData1.getCurrentEpoch()).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(data.randomEpoch()))
+        .isInstanceOf(ServiceUnavailableException.class);
+  }
+
+  @Test
+  void getValidatorInclusionStateAtEpoch_shouldThrowIllegalArgForCurrentOrFutureEpoch() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(UInt64.valueOf(3)))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(UInt64.valueOf(4)))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(UInt64.MAX_VALUE))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void getValidatorInclusionStateAtEpoch_shouldReturnStateForPreviousEpoch()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    final Optional<StateAndMetaData> maybeStateAndMetadata =
+        provider.getValidatorInclusionStateAtEpoch(UInt64.valueOf(2)).get();
+    assertThat(maybeStateAndMetadata).isPresent();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        maybeStateAndMetadata.orElseThrow().getData();
+    // expect to see the last slot of epoch requested, so 3 * 8 - 1 (23)
+    assertThat(state.getSlot().intValue()).isEqualTo(23);
   }
 
   private ChainDataProvider setupAltairState() {

@@ -72,6 +72,11 @@ public class GetValidatorInclusion extends MigratingEndpointAdapter {
 
   public GetValidatorInclusion(
       final DataProvider dataProvider, final Spec spec, final TimeProvider timeProvider) {
+    this(dataProvider.getChainDataProvider(), spec, timeProvider);
+  }
+
+  GetValidatorInclusion(
+      final ChainDataProvider chainDataProvider, final Spec spec, final TimeProvider timeProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getValidatorInclusion")
@@ -97,7 +102,7 @@ public class GetValidatorInclusion extends MigratingEndpointAdapter {
                 "Beacon node is currently syncing.",
                 HTTP_ERROR_RESPONSE_TYPE)
             .build());
-    this.chainDataProvider = dataProvider.getChainDataProvider();
+    this.chainDataProvider = chainDataProvider;
     this.spec = spec;
     this.timeProvider = timeProvider;
   }
