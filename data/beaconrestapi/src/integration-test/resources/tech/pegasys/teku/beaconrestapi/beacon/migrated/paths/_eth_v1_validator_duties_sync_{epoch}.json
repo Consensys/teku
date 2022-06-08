@@ -1,22 +1,27 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "registerValidator",
-    "summary" : "Register validators with builder",
-    "description" : "Prepares the beacon node for engaging with external builders. The information will be sent by the beacon node to the builder network. It is expected that the validator client will send this information periodically to ensure the beacon node has correct and timely registration information to provide to builders. The validator client should not sign blinded beacon blocks that do not adhere to their latest fee recipient and gas limit preferences.",
+    "operationId" : "postSyncDuties",
+    "summary" : "Get sync committee duties",
+    "description" : "Requests the beacon node to provide a set of sync committee duties",
+    "parameters" : [ {
+      "name" : "epoch",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Epoch number to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
     "requestBody" : {
       "content" : {
-        "application/octet-stream" : {
-          "schema" : {
-            "type" : "string",
-            "format" : "binary"
-          }
-        },
         "application/json" : {
           "schema" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/SignedValidatorRegistration"
+              "type" : "number"
             }
           }
         }
@@ -24,7 +29,17 @@
     },
     "responses" : {
       "200" : {
-        "description" : "Registration information has been received.",
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetSyncCommitteeDutiesResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving request on that endpoint",
         "content" : { }
       },
       "400" : {

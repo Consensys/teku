@@ -87,6 +87,7 @@ class SyncCommitteeDutyLoaderTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     new SyncCommitteeDuties(
+                        false,
                         List.of(
                             new SyncCommitteeDuty(
                                 validator1.getPublicKey(), validator1Index, IntSet.of(1, 6, 25)),
