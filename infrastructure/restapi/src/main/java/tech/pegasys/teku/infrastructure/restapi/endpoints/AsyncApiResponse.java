@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -65,5 +66,10 @@ public class AsyncApiResponse {
 
   public static AsyncApiResponse respondNotFound() {
     return new AsyncApiResponse(SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Not found"));
+  }
+
+  public static AsyncApiResponse respondServiceUnavailable() {
+    return new AsyncApiResponse(
+        SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing and not serving requests.");
   }
 }

@@ -37,7 +37,7 @@
         }
       },
       "503" : {
-        "description" : "Beacon node is currently syncing.",
+        "description" : "Beacon node is currently syncing and not serving requests.",
         "content" : {
           "application/json" : {
             "schema" : {

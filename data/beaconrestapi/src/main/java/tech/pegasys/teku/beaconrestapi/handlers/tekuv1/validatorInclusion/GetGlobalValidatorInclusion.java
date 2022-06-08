@@ -25,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -90,10 +89,7 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
                         "data", GetGlobalValidatorResponseData.RESPONSE_DATA, Function.identity())
                     .build())
             .withNotFoundResponse()
-            .response(
-                SC_SERVICE_UNAVAILABLE,
-                "Beacon node is currently syncing.",
-                HTTP_ERROR_RESPONSE_TYPE)
+            .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
     this.spec = spec;
