@@ -152,8 +152,7 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
     }
 
     public void setSyncCommitteeIndices(List<Integer> syncCommitteeIndices) {
-      this.syncCommitteeIndices =
-          IntOpenHashSet.toSet(syncCommitteeIndices.stream().mapToInt(Integer::intValue));
+      this.syncCommitteeIndices = new IntOpenHashSet(syncCommitteeIndices);
     }
 
     public UInt64 getUntilEpoch() {
