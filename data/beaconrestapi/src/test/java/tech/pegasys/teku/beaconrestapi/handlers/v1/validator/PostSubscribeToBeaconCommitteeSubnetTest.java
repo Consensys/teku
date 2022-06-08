@@ -13,59 +13,54 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 
-class PostSubscribeToBeaconCommitteeSubnetTest {
+class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHandlerTest {
 
-  private final Context context = mock(Context.class);
-  private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-
-  private final PostSubscribeToBeaconCommitteeSubnet handler =
-      new PostSubscribeToBeaconCommitteeSubnet(provider, jsonProvider);
-
-  @Test
-  public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
-    when(context.body()).thenReturn("{\"foo\": \"bar\"}");
-
-    handler.handle(context);
-    verify(context).status(SC_BAD_REQUEST);
+  @BeforeEach
+  void setup() {
+    setHandler(new PostSubscribeToBeaconCommitteeSubnet(validatorDataProvider));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
-  public void shouldReturnSuccessWhenSubscriptionToBeaconCommitteeIsSuccessful() throws Exception {
-    final BeaconCommitteeSubscriptionRequest request1 =
-        new BeaconCommitteeSubscriptionRequest(1, 2, UInt64.ZERO, UInt64.ONE, true);
-    final BeaconCommitteeSubscriptionRequest request2 =
-        new BeaconCommitteeSubscriptionRequest(3, 4, UInt64.ZERO, UInt64.ONE, false);
+  public void shouldReturnSuccessWhenSubscriptionToBeaconCommitteeIsSuccessful()
+      throws JsonProcessingException {
+    final PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData data =
+        new PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData(
+            1, 1, UInt64.ONE, UInt64.ONE, false);
 
-    final String requestJson = jsonProvider.objectToJSON(List.of(request1, request2));
-    when(context.body()).thenReturn(requestJson);
+    request.setRequestBody(List.of(data));
 
-    handler.handle(context);
+    handler.handleRequest(request);
 
-    ArgumentCaptor<List<BeaconCommitteeSubscriptionRequest>> captor =
-        ArgumentCaptor.forClass(List.class);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
+  }
 
-    verify(provider).subscribeToBeaconCommittee(captor.capture());
-    verify(context).status(SC_OK);
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
 
-    List<BeaconCommitteeSubscriptionRequest> receivedRequest = captor.getValue();
-    assertThat(receivedRequest).usingRecursiveComparison().isEqualTo(List.of(request1, request2));
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle200() {
+    verifyMetadataEmptyResponse(handler, SC_OK);
   }
 }

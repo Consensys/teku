@@ -18,10 +18,17 @@ import java.util.List;
 import java.util.Objects;
 
 public class SyncCommitteeDuties {
+  private final boolean executionOptimistic;
   private final List<SyncCommitteeDuty> duties;
 
-  public SyncCommitteeDuties(final List<SyncCommitteeDuty> duties) {
+  public SyncCommitteeDuties(
+      final boolean executionOptimistic, final List<SyncCommitteeDuty> duties) {
+    this.executionOptimistic = executionOptimistic;
     this.duties = duties;
+  }
+
+  public boolean isExecutionOptimistic() {
+    return executionOptimistic;
   }
 
   public List<SyncCommitteeDuty> getDuties() {

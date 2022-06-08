@@ -39,9 +39,7 @@ public class GetStateResponseV2Deserializer extends JsonDeserializer<GetStateRes
     JsonNode node = jp.getCodec().readTree(jp);
     final Version version =
         Version.valueOf(node.findValue("version").asText().toLowerCase(Locale.ROOT));
-    final JsonNode executionOptimisticNode = node.findValue("execution_optimistic");
-    final Boolean executionOptimistic =
-        executionOptimisticNode != null ? executionOptimisticNode.asBoolean() : null;
+    final boolean executionOptimistic = node.findValue("execution_optimistic").asBoolean();
     final BeaconState state;
     switch (version) {
       case altair:

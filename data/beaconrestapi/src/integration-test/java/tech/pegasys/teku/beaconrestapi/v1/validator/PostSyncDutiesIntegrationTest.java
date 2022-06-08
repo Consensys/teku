@@ -57,6 +57,7 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
         SafeFuture.completedFuture(
             Optional.of(
                 new SyncCommitteeDuties(
+                    false,
                     List.of(
                         new SyncCommitteeDuty(
                             VALIDATOR_KEYS.get(1).getPublicKey(), 1, IntSet.of(11))))));
