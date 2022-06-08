@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -22,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -101,22 +99,7 @@ public class PostContributionAndProofs extends MigratingEndpointAdapter {
     final List<SignedContributionAndProof> signedContributionAndProofs = request.getRequestBody();
     final SafeFuture<Void> future = provider.sendContributionAndProofs(signedContributionAndProofs);
 
-    request.respondAsync(
-        future
-            .thenApply(v -> AsyncApiResponse.respondWithCode(SC_OK))
-            .exceptionallyCompose(
-                error -> {
-                  final Throwable rootCause = Throwables.getRootCause(error);
-                  if (rootCause instanceof IllegalArgumentException) {
-                    return SafeFuture.of(
-                        () ->
-                            AsyncApiResponse.respondWithError(SC_BAD_REQUEST, error.getMessage()));
-                  }
-                  return SafeFuture.of(
-                      () ->
-                          AsyncApiResponse.respondWithError(
-                              SC_BAD_REQUEST, "Failed to submit contribution and proofs"));
-                }));
+    request.respondAsync(future.thenApply(v -> AsyncApiResponse.respondWithCode(SC_OK)));
   }
 
   private static DeserializableTypeDefinition<SignedContributionAndProof> getResponseType(
