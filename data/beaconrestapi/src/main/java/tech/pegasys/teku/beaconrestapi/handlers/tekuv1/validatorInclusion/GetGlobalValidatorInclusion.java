@@ -80,7 +80,7 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
                 SC_OK,
                 "Request successful",
                 SerializableTypeDefinition.<GetGlobalValidatorResponseData>object()
-                    .name("getGlobalValidatorInclusionResponse")
+                    .name("GetGlobalValidatorInclusionResponse")
                     .withField(
                         "data", GetGlobalValidatorResponseData.RESPONSE_DATA, Function.identity())
                     .build())

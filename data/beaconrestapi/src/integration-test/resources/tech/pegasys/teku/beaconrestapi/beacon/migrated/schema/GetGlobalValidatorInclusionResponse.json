@@ -1,5 +1,5 @@
 {
-  "title" : "getGlobalValidatorInclusionResponse",
+  "title" : "GetGlobalValidatorInclusionResponse",
   "type" : "object",
   "required" : [ "data" ],
   "properties" : {

@@ -21,7 +21,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/getGlobalValidatorInclusionResponse"
+              "$ref" : "#/components/schemas/GetGlobalValidatorInclusionResponse"
             }
           }
         }
