@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public abstract class SchemaFinalizedAdapter implements FinalizedStateStorageLogicSchema, Schema {
+public abstract class SchemaFinalizedAdapter implements Schema {
   private final SchemaCombined delegate;
 
   protected SchemaFinalizedAdapter(final SchemaCombined delegate) {

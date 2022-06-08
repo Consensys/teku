@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface SchemaFinalizedSnapshotState extends FinalizedStateStorageLogicSchema {
+public interface SchemaFinalizedSnapshotState {
 
   KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
 }

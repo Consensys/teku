@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SchemaFinalizedTreeState extends FinalizedStateStorageLogicSchema {
+public interface SchemaFinalizedTreeState {
 
   KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot();
 
