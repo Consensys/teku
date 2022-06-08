@@ -743,10 +743,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 epoch,
       final IntCollection validatorIndices) {
     if (maybeState.isEmpty()) {
-      return new SyncCommitteeDuties(List.of());
+      return new SyncCommitteeDuties(combinedChainDataClient.isChainHeadOptimistic(), List.of());
     }
     final BeaconState state = maybeState.get();
     return new SyncCommitteeDuties(
+        combinedChainDataClient.isChainHeadOptimistic(),
         validatorIndices
             .intStream()
             .mapToObj(validatorIndex -> getSyncCommitteeDuty(state, epoch, validatorIndex))

@@ -405,7 +405,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(
         new PostAggregateAndProofs(dataProvider, spec.getGenesisSchemaDefinitions()));
     addMigratedEndpoint(new PostSubscribeToBeaconCommitteeSubnet(dataProvider));
-    app.post(PostSyncDuties.ROUTE, new PostSyncDuties(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostSyncDuties(dataProvider));
     addMigratedEndpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache));
     app.post(
         PostSyncCommitteeSubscriptions.ROUTE,
