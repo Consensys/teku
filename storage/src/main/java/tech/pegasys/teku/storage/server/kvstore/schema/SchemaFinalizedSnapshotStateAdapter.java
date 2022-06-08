@@ -33,7 +33,6 @@ public class SchemaFinalizedSnapshotStateAdapter extends SchemaFinalizedAdapter
     return snapshotDelegate.getColumnFinalizedStatesBySlot();
   }
 
-  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
