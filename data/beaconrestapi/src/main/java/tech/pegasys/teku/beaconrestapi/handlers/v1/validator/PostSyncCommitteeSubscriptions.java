@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -70,6 +69,10 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
           .build();
 
   public PostSyncCommitteeSubscriptions(final DataProvider dataProvider) {
+    this(dataProvider.getValidatorDataProvider());
+  }
+
+  public PostSyncCommitteeSubscriptions(final ValidatorDataProvider validatorDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("postSyncCommitteeSubscriptions")
@@ -80,9 +83,9 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
                     + "Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(DeserializableTypeDefinition.listOf(REQUEST_TYPE))
-            .response(HttpStatusCodes.SC_OK, "Successful response")
+            .response(SC_OK, "Successful response")
             .build());
-    this.provider = dataProvider.getValidatorDataProvider();
+    this.provider = validatorDataProvider;
   }
 
   @OpenApi(
