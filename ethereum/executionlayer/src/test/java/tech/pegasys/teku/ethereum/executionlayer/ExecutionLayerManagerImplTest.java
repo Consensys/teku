@@ -489,7 +489,9 @@ class ExecutionLayerManagerImplTest {
         builderEnabled ? Optional.of(executionBuilderClient) : Optional.empty(),
         spec,
         eventLogger,
-        builderValidatorEnabled ? BuilderBidValidator.VALIDATOR : BuilderBidValidator.NOOP);
+        builderValidatorEnabled
+            ? new BuilderBidValidatorImpl(eventLogger)
+            : BuilderBidValidator.NOOP);
   }
 
   private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse) {
