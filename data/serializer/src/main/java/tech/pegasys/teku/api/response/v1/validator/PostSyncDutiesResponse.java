@@ -22,9 +22,15 @@ import java.util.Objects;
 public class PostSyncDutiesResponse {
   public final List<SyncCommitteeDuty> data;
 
+  @JsonProperty("execution_optimistic")
+  public final boolean executionOptimistic;
+
   @JsonCreator
-  public PostSyncDutiesResponse(@JsonProperty("data") final List<SyncCommitteeDuty> data) {
+  public PostSyncDutiesResponse(
+      @JsonProperty("data") final List<SyncCommitteeDuty> data,
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic) {
     this.data = data;
+    this.executionOptimistic = executionOptimistic;
   }
 
   @Override

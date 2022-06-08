@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
@@ -86,7 +85,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Publish a signed blinded block",
-      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL},
+      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
               content = {
@@ -155,7 +154,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
         .description(
             "Submit a signed blinded beacon block to the beacon node to be imported."
                 + " The beacon node performs the required validation.")
-        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
+        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             getSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,

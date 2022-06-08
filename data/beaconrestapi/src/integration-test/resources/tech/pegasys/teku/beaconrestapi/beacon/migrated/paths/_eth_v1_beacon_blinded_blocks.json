@@ -1,6 +1,6 @@
 {
   "post" : {
-    "tags" : [ "Validator", "Validator Required Api", "Experimental" ],
+    "tags" : [ "Validator", "Validator Required Api"],
     "operationId" : "publishBlindedBlock",
     "summary" : "Publish a signed blinded block",
     "description" : "Submit a signed blinded beacon block to the beacon node to be imported. The beacon node performs the required validation.",
