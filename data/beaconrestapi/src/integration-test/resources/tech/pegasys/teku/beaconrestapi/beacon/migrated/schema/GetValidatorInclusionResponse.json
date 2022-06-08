@@ -1,0 +1,40 @@
+{
+  "title" : "GetValidatorInclusionResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "is_slashed", "is_withdrawable_in_current_epoch", "is_active_unslashed_in_current_epoch", "is_active_unslashed_in_previous_epoch", "current_epoch_effective_balance_gwei", "is_current_epoch_target_attester", "is_previous_epoch_target_attester", "is_previous_epoch_head_attester" ],
+      "properties" : {
+        "is_slashed" : {
+          "type" : "boolean"
+        },
+        "is_withdrawable_in_current_epoch" : {
+          "type" : "boolean"
+        },
+        "is_active_unslashed_in_current_epoch" : {
+          "type" : "boolean"
+        },
+        "is_active_unslashed_in_previous_epoch" : {
+          "type" : "boolean"
+        },
+        "current_epoch_effective_balance_gwei" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "is_current_epoch_target_attester" : {
+          "type" : "boolean"
+        },
+        "is_previous_epoch_target_attester" : {
+          "type" : "boolean"
+        },
+        "is_previous_epoch_head_attester" : {
+          "type" : "boolean"
+        }
+      }
+    }
+  }
+}

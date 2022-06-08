@@ -52,6 +52,8 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetGlobalValidatorInclusion;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetValidatorInclusion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
@@ -175,7 +177,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, eth1DataProvider);
+    addTekuSpecificHandlers(dataProvider, eth1DataProvider, spec, timeProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -363,7 +365,10 @@ public class BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider, final Eth1DataProvider eth1DataProvider) {
+      final DataProvider provider,
+      final Eth1DataProvider eth1DataProvider,
+      final Spec spec,
+      final TimeProvider timeProvider) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
@@ -375,6 +380,8 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
     addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
+    addMigratedEndpoint(new GetGlobalValidatorInclusion(provider, spec, timeProvider));
+    addMigratedEndpoint(new GetValidatorInclusion(provider, spec, timeProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
