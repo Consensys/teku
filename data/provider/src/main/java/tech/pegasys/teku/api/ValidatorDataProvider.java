@@ -65,9 +65,8 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
