@@ -1,0 +1,28 @@
+{
+  "title" : "CommitteeSubscriptionData",
+  "type" : "object",
+  "required" : [ "validator_index", "committee_index", "committees_at_slot", "slot", "is_aggregator" ],
+  "properties" : {
+    "validator_index" : {
+      "type" : "number"
+    },
+    "committee_index" : {
+      "type" : "number"
+    },
+    "committees_at_slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "is_aggregator" : {
+      "type" : "boolean"
+    }
+  }
+}

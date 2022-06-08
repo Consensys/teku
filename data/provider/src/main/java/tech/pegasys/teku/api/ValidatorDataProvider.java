@@ -33,6 +33,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
+import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -254,18 +256,8 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
   }
 
-  public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
-    validatorApiChannel.subscribeToBeaconCommittee(
-        requests.stream()
-            .map(
-                request ->
-                    new CommitteeSubscriptionRequest(
-                        request.validator_index,
-                        request.committee_index,
-                        request.committees_at_slot,
-                        request.slot,
-                        request.is_aggregator))
-            .collect(toList()));
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+    validatorApiChannel.subscribeToBeaconCommittee(requests);
   }
 
   public void subscribeToSyncCommitteeSubnets(

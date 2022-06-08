@@ -51,8 +51,7 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("registerValidator")
-            .summary(
-                "Provide beacon node with registrations for the given validators to the external builder network.")
+            .summary("Register validators with builder")
             .description(
                 "Prepares the beacon node for engaging with external builders."
                     + " The information will be sent by the beacon node to the builder network."
@@ -76,8 +75,7 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary =
-          "Provide beacon node with registrations for the given validators to the external builder network.",
+      summary = "Register validators with builder",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
