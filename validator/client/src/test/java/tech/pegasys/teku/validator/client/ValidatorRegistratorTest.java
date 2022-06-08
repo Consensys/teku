@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -102,8 +101,7 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(any()))
         .thenReturn(Optional.of(CUSTOM_GAS_LIMIT));
 
-    when(feeRecipientProvider.getFeeRecipient(eq(Optional.of(proposerConfig)), any()))
-        .thenReturn(Optional.of(eth1Address));
+    when(feeRecipientProvider.getFeeRecipient(any(), any())).thenReturn(Optional.of(eth1Address));
 
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
