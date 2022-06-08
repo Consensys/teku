@@ -17,11 +17,13 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,10 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class PostSyncCommitteeSubscriptionsTest extends AbstractMigratedBeaconHandlerTest {
+  private final List<PostSyncCommitteeSubscriptions.PostSyncCommitteeData> requestBody =
+      List.of(
+          new PostSyncCommitteeSubscriptions.PostSyncCommitteeData(
+              1, new IntOpenHashSet(List.of(0, 1)), UInt64.ONE));
 
   @BeforeEach
   void setup() {
@@ -37,15 +43,19 @@ class PostSyncCommitteeSubscriptionsTest extends AbstractMigratedBeaconHandlerTe
 
   @Test
   void shouldBeAbleToSubmitSyncCommitteeSubscriptions() throws Exception {
-    final PostSyncCommitteeSubscriptions.PostSyncCommitteeData requestBody =
-        new PostSyncCommitteeSubscriptions.PostSyncCommitteeData(
-            1, new IntOpenHashSet(List.of(0, 1)), UInt64.ONE);
-    request.setRequestBody(List.of(requestBody));
+    request.setRequestBody(requestBody);
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data =
+        "[{\"validator_index\":\"1\",\"sync_committee_indices\":[\"0\",\"1\"],\"until_epoch\":\"1\"}]";
+    assertThat(getRequestBodyFromMetadata(handler, data)).isEqualTo(requestBody);
   }
 
   @Test

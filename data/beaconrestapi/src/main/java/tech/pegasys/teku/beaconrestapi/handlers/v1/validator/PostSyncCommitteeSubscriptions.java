@@ -19,7 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,6 +33,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -47,18 +48,18 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/sync_committee_subscriptions";
   private final ValidatorDataProvider provider;
 
-  private static final DeserializableTypeDefinition<PostSyncCommitteeData> REQUEST_TYPE =
+  static final DeserializableTypeDefinition<PostSyncCommitteeData> REQUEST_TYPE =
       DeserializableTypeDefinition.object(PostSyncCommitteeData.class)
           .name("PostSyncCommitteeData")
           .initializer(PostSyncCommitteeData::new)
           .withField(
               "validator_index",
-              INTEGER_TYPE,
+              INTEGER_STRING_TYPE,
               PostSyncCommitteeData::getValidatorIndex,
               PostSyncCommitteeData::setValidatorIndex)
           .withField(
               "sync_committee_indices",
-              DeserializableTypeDefinition.listOf(INTEGER_TYPE),
+              DeserializableTypeDefinition.listOf(INTEGER_STRING_TYPE),
               PostSyncCommitteeData::getSyncCommitteeIndices,
               PostSyncCommitteeData::setSyncCommitteeIndices)
           .withField(
@@ -164,6 +165,37 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
 
     public void setUntilEpoch(UInt64 untilEpoch) {
       this.untilEpoch = untilEpoch;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      PostSyncCommitteeData that = (PostSyncCommitteeData) o;
+      return validatorIndex == that.validatorIndex
+          && Objects.equals(syncCommitteeIndices, that.syncCommitteeIndices)
+          && Objects.equals(untilEpoch, that.untilEpoch);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(validatorIndex, syncCommitteeIndices, untilEpoch);
+    }
+
+    @Override
+    public String toString() {
+      return "PostSyncCommitteeData{"
+          + "validatorIndex="
+          + validatorIndex
+          + ", syncCommitteeIndices="
+          + syncCommitteeIndices
+          + ", untilEpoch="
+          + untilEpoch
+          + '}';
     }
   }
 }

@@ -4,12 +4,18 @@
   "required" : [ "validator_index", "sync_committee_indices", "until_epoch" ],
   "properties" : {
     "validator_index" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "sync_committee_indices" : {
       "type" : "array",
       "items" : {
-        "type" : "number"
+        "type" : "string",
+        "description" : "integer string",
+        "example" : "1",
+        "format" : "integer"
       }
     },
     "until_epoch" : {
