@@ -17,8 +17,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidator.VALIDATOR;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
@@ -33,6 +34,7 @@ import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -53,6 +55,10 @@ public class BuilderBidValidatorTest {
   private final SpecVersion specVersionMock = mock(SpecVersion.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockProcessor blockProcessor = mock(BlockProcessor.class);
+  private final EventLogger eventLogger = mock(EventLogger.class);
+
+  private final BuilderBidValidatorImpl builderBidValidator =
+      new BuilderBidValidatorImpl(eventLogger);
 
   private BeaconState state = dataStructureUtil.randomBeaconState();
   private SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid();
@@ -82,7 +88,7 @@ public class BuilderBidValidatorTest {
 
     assertThatThrownBy(
             () ->
-                VALIDATOR.validateAndGetPayloadHeader(
+                builderBidValidator.validateAndGetPayloadHeader(
                     spec, signedBuilderBid, validatorRegistration, state))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage("Invalid Bid Signature");
@@ -95,7 +101,7 @@ public class BuilderBidValidatorTest {
 
     assertThatThrownBy(
             () ->
-                VALIDATOR.validateAndGetPayloadHeader(
+                builderBidValidator.validateAndGetPayloadHeader(
                     spec, signedBuilderBid, validatorRegistration, state))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage("Invalid proposed payload with respect to consensus.")
@@ -103,91 +109,62 @@ public class BuilderBidValidatorTest {
   }
 
   @Test
-  void shouldNotThrowWhenGasLimitIncreasesByMax() throws BuilderBidValidationException {
+  void shouldNotLogEventIfGasLimitDecreases() throws BuilderBidValidationException {
+
+    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1022_000), UInt64.valueOf(1023_000));
+
+    builderBidValidator.validateAndGetPayloadHeader(
+        specMock, signedBuilderBid, validatorRegistration, state);
+
+    verifyNoInteractions(eventLogger);
+  }
+
+  @Test
+  void shouldNotLogEventIfGasLimitIncreases() throws BuilderBidValidationException {
 
     prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1025_000), UInt64.valueOf(2048_000));
 
-    // allowed increase is 1000 (1024_000/1024)
+    builderBidValidator.validateAndGetPayloadHeader(
+        specMock, signedBuilderBid, validatorRegistration, state);
 
-    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
+    verifyNoInteractions(eventLogger);
   }
 
   @Test
-  void shouldNotThrowWhenGasLimitIncreasesAsPerPreference() throws BuilderBidValidationException {
+  void shouldNotLogEventIfGasLimitStaysTheSame() throws BuilderBidValidationException {
 
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1024_500), UInt64.valueOf(1024_500));
+    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1024_000), UInt64.valueOf(1024_000));
 
-    // allowed increase is 1000 (1024_000/1024)
+    builderBidValidator.validateAndGetPayloadHeader(
+        specMock, signedBuilderBid, validatorRegistration, state);
 
-    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
+    verifyNoInteractions(eventLogger);
   }
 
   @Test
-  void shouldNotThrowWhenGasLimitDecreasesByMax() throws BuilderBidValidationException {
+  void shouldLogEventIfGasLimitDoesNotDecrease() throws BuilderBidValidationException {
 
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1023_000), UInt64.valueOf(2048));
+    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1024_000), UInt64.valueOf(1023_100));
 
-    // allowed decrease is 1000 (1024_000/1024)
+    builderBidValidator.validateAndGetPayloadHeader(
+        specMock, signedBuilderBid, validatorRegistration, state);
 
-    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
+    verify(eventLogger)
+        .builderBidNotHonouringGasLimit(
+            UInt64.valueOf(1024_000), UInt64.valueOf(1024_000), UInt64.valueOf(1023_100));
   }
 
   @Test
-  void shouldNotThrowWhenGasLimitDecreasesAsPerPreference() throws BuilderBidValidationException {
+  void shouldLogEventIfGasLimitDoesNotIncrease() throws BuilderBidValidationException {
 
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1023_100), UInt64.valueOf(1023_100));
+    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1020_000), UInt64.valueOf(1024_100));
 
-    // allowed decrease is 1000 (1024_000/1024)
+    builderBidValidator.validateAndGetPayloadHeader(
+        specMock, signedBuilderBid, validatorRegistration, state);
 
-    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
-  }
-
-  @Test
-  void shouldNotThrowWhenGasLimitCannotDecrease() throws BuilderBidValidationException {
-
-    prepareGasLimit(UInt64.valueOf(1000), UInt64.valueOf(1000), UInt64.valueOf(10));
-
-    // allowed decrease is 0 (1000/1024)
-
-    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
-  }
-
-  @Test
-  void shouldNotThrowWhenGasLimitDoNotNeedToChange() throws BuilderBidValidationException {
-
-    prepareGasLimit(UInt64.valueOf(1021_111), UInt64.valueOf(1021_111), UInt64.valueOf(1021_111));
-
-    VALIDATOR.validateAndGetPayloadHeader(specMock, signedBuilderBid, validatorRegistration, state);
-  }
-
-  @Test
-  void shouldThrowWithGasLimitMessageWhenGasLimitIncreasesMoreThanPossible() {
-
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1025_001), UInt64.valueOf(2048_000));
-
-    // allowed increase is 1000 (1024_000/1024)
-
-    assertThatThrownBy(
-            () ->
-                VALIDATOR.validateAndGetPayloadHeader(
-                    specMock, signedBuilderBid, validatorRegistration, state))
-        .isExactlyInstanceOf(BuilderBidValidationException.class)
-        .hasMessageStartingWith("Proposed gasLimit not honouring validator preference.");
-  }
-
-  @Test
-  void shouldThrowWithGasLimitMessageWhenGasLimitDecreasesMoreThanPossible() {
-
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1022_999), UInt64.valueOf(2048));
-
-    // allowed increase is 1000 (1024_000/1024)
-
-    assertThatThrownBy(
-            () ->
-                VALIDATOR.validateAndGetPayloadHeader(
-                    specMock, signedBuilderBid, validatorRegistration, state))
-        .isExactlyInstanceOf(BuilderBidValidationException.class)
-        .hasMessageStartingWith("Proposed gasLimit not honouring validator preference.");
+    verify(eventLogger)
+        .builderBidNotHonouringGasLimit(
+            UInt64.valueOf(1024_000), UInt64.valueOf(1020_000), UInt64.valueOf(1024_100));
   }
 
   private void prepareValidSignedBuilderBid() {

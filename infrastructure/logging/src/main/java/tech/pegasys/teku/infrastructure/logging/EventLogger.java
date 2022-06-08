@@ -268,6 +268,15 @@ public class EventLogger {
         Color.YELLOW);
   }
 
+  public void builderBidNotHonouringGasLimit(
+      final UInt64 parentGasLimit, final UInt64 proposedGasLimit, final UInt64 preferredGasLimit) {
+    String reorgEventLog =
+        String.format(
+            "Builder proposed a bid not honouring the validator gas limit preference. Parent: %s - Proposed: %s - Preferred: %s",
+            parentGasLimit, proposedGasLimit, preferredGasLimit);
+    warn(reorgEventLog, Color.YELLOW);
+  }
+
   private void info(final String message, final Color color) {
     log.info(print(message, color));
   }
