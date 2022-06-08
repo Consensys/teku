@@ -556,6 +556,14 @@ public class EndpointMetadata {
       return response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE);
     }
 
+    public EndpointMetaDataBuilder withServiceUnavailableResponse() {
+      response(
+          SC_SERVICE_UNAVAILABLE,
+          "Beacon node is currently syncing and not serving request on that endpoint",
+          HTTP_ERROR_RESPONSE_TYPE);
+      return this;
+    }
+
     public EndpointMetaDataBuilder withChainDataResponses() {
       return response(SC_SERVICE_UNAVAILABLE, "Service unavailable", HTTP_ERROR_RESPONSE_TYPE)
           .response(

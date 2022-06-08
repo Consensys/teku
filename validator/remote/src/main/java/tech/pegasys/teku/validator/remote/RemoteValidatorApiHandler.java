@@ -183,6 +183,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private SyncCommitteeDuties responseToSyncCommitteeDuties(final PostSyncDutiesResponse response) {
     return new SyncCommitteeDuties(
+        response.executionOptimistic,
         response.data.stream()
             .map(
                 duty ->

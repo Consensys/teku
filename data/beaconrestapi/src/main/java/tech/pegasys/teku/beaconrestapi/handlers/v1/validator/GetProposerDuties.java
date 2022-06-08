@@ -18,6 +18,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.PUBLIC_KEY_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -69,7 +70,7 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
       SerializableTypeDefinition.object(ProposerDuties.class)
           .name("GetProposerDutiesResponse")
           .withOptionalField(
-              "execution_optimistic",
+              EXECUTION_OPTIMISTIC,
               BOOLEAN_TYPE,
               (proposerDuties) ->
                   proposerDuties.isExecutionOptimistic() ? Optional.of(true) : Optional.empty())
