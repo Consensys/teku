@@ -287,24 +287,7 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncDuties(
       final UInt64 epoch, final IntList indices) {
     return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices));
-    //        .thenApply(
-    //            res ->
-    //                res.map(
-    //                    duties ->
-    //                        new PostSyncDutiesResponse(
-    //                            duties.getDuties().stream()
-    //                                .filter(duty -> duty.getPublicKey() != null)
-    //                                .map(this::mapToSyncCommitteeDuty)
-    //                                .collect(toList()))));
   }
-
-  //  private tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty mapToSyncCommitteeDuty(
-  //      final SyncCommitteeDuty duty) {
-  //    return new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
-  //        new BLSPubKey(duty.getPublicKey().toBytesCompressed()),
-  //        UInt64.valueOf(duty.getValidatorIndex()),
-  //        duty.getValidatorSyncCommitteeIndices());
-  //  }
 
   public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> contributionAndProofs) {
