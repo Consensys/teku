@@ -38,6 +38,10 @@
           }
         }
       },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving request on that endpoint",
+        "content" : { }
+      },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",
         "content" : {

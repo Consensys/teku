@@ -97,6 +97,9 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(
+                SC_SERVICE_UNAVAILABLE,
+                "Beacon node is currently syncing and not serving request on that endpoint")
             .build());
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
