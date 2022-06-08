@@ -34,6 +34,7 @@ public class ProposerConfigLoader {
 
   public ProposerConfig getProposerConfig(final URL source) {
     try {
+      System.out.println("getProposerConfig: " + source);
       return objectMapper.readValue(source, ProposerConfig.class);
     } catch (IOException ex) {
 

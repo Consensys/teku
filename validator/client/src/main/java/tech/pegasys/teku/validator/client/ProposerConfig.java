@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Objects;
@@ -97,6 +98,14 @@ public class ProposerConfig {
     return Objects.hash(proposerConfig, defaultConfig);
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+            .add("proposerConfig", proposerConfig)
+            .add("defaultConfig", defaultConfig)
+            .toString();
+  }
+
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class Config {
     @JsonProperty(value = "fee_recipient")
@@ -140,6 +149,14 @@ public class ProposerConfig {
     public int hashCode() {
       return Objects.hash(feeRecipient, validatorRegistration);
     }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+              .add("feeRecipient", feeRecipient)
+              .add("validatorRegistration", validatorRegistration)
+              .toString();
+    }
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -182,6 +199,14 @@ public class ProposerConfig {
     @Override
     public int hashCode() {
       return Objects.hash(enabled, gasLimit);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+              .add("enabled", enabled)
+              .add("gasLimit", gasLimit)
+              .toString();
     }
   }
 }

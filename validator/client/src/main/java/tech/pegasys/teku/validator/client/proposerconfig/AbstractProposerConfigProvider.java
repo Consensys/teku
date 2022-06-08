@@ -71,8 +71,10 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
             asyncRunner
                 .runAsync(
                     () -> {
+                      LOG.info("getProposerConfig: about to load");
                       lastProposerConfig = Optional.of(internalGetProposerConfig());
                       lastProposerConfigTimeStamp = timeProvider.getTimeInSeconds();
+                      LOG.info("getProposerConfig: loaded\n" + lastProposerConfig.orElseThrow());
                       return lastProposerConfig;
                     })
                 .orTimeout(30, TimeUnit.SECONDS)
