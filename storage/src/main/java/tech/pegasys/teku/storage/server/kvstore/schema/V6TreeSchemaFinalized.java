@@ -28,10 +28,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
-/**
- * The same as {@link V4SchemaFinalized} but with other column ids which are distinct from {@link
- * V4SchemaHot}
- */
 public class V6TreeSchemaFinalized implements SchemaFinalizedTreeState {
   // column ids should be distinct across different DAOs to make possible using
   // schemes both for a single and separated DBs

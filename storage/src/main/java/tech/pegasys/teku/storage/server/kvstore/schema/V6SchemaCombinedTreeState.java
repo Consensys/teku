@@ -31,49 +31,64 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
-/**
- * The same as {@link V4SchemaFinalized} but with other column ids which are distinct from {@link
- * V4SchemaHot}
- */
-public class V6SchemaCombinedTreeState extends V4SchemaHot implements SchemaCombinedTreeState {
-  // column ids should be distinct across different DAOs to make possible using
-  // schemes both for a single and separated DBs
-  private static final int ID_OFFSET = 128;
+public class V6SchemaCombinedTreeState extends V6SchemaCombined implements SchemaCombinedTreeState {
 
-  private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
-      KvStoreColumn.create(ID_OFFSET + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
-  private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
-      KvStoreColumn.create(ID_OFFSET + 2, BYTES32_SERIALIZER, UINT64_SERIALIZER);
-  private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
-      KvStoreColumn.create(ID_OFFSET + 3, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
-  private static final KvStoreColumn<UInt64, Bytes32> FINALIZED_STATE_ROOTS_BY_SLOT =
-      KvStoreColumn.create(ID_OFFSET + 4, UINT64_SERIALIZER, BYTES32_SERIALIZER);
-  private static final KvStoreColumn<Bytes32, Bytes> FINALIZED_STATE_TREE_LEAVES_BY_ROOT =
-      KvStoreColumn.create(ID_OFFSET + 5, BYTES32_SERIALIZER, BYTES_SERIALIZER);
-  private static final KvStoreColumn<Bytes32, CompressedBranchInfo>
-      FINALIZED_STATE_TREE_BRANCHES_BY_ROOT =
-          KvStoreColumn.create(
-              ID_OFFSET + 6, BYTES32_SERIALIZER, COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER);
-
-  private static final KvStoreVariable<UInt64> OPTIMISTIC_TRANSITION_BLOCK_SLOT =
-      KvStoreVariable.create(ID_OFFSET + 1, UINT64_SERIALIZER);
-
+  private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedRoot;
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
+  private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedStateRoot;
+  private final KvStoreColumn<UInt64, Set<Bytes32>> nonCanonicalBlockRootsBySlot;
+  private final KvStoreColumn<UInt64, Bytes32> finalizedStateRootsBySlot;
+  private final KvStoreColumn<Bytes32, Bytes> finalizedStateTreeLeavesByRoot;
+  private final KvStoreColumn<Bytes32, CompressedBranchInfo> finalizedStateTreeBranchesByRoot;
 
   public V6SchemaCombinedTreeState(final Spec spec, final boolean storeVotesEquivocation) {
-    super(spec, storeVotesEquivocation);
+    super(spec, storeVotesEquivocation, V6_FINALIZED_OFFSET);
+    slotsByFinalizedRoot =
+        KvStoreColumn.create(V6_FINALIZED_OFFSET + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+    slotsByFinalizedStateRoot =
+        KvStoreColumn.create(V6_FINALIZED_OFFSET + 2, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+    nonCanonicalBlockRootsBySlot =
+        KvStoreColumn.create(V6_FINALIZED_OFFSET + 3, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
+    finalizedStateRootsBySlot =
+        KvStoreColumn.create(V6_FINALIZED_OFFSET + 4, UINT64_SERIALIZER, BYTES32_SERIALIZER);
+    finalizedStateTreeLeavesByRoot =
+        KvStoreColumn.create(V6_FINALIZED_OFFSET + 5, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+    finalizedStateTreeBranchesByRoot =
+        KvStoreColumn.create(
+            V6_FINALIZED_OFFSET + 6,
+            BYTES32_SERIALIZER,
+            COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER);
     finalizedBlocksBySlot =
         KvStoreColumn.create(
-            ID_OFFSET + 7, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
+            V6_FINALIZED_OFFSET + 7,
+            UINT64_SERIALIZER,
+            KvStoreSerializer.createSignedBlockSerializer(spec));
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
-            ID_OFFSET + 8, BYTES32_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
+            V6_FINALIZED_OFFSET + 8,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlockSerializer(spec));
+  }
+
+  @Override
+  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot() {
+    return finalizedStateRootsBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTreeLeaves() {
+    return finalizedStateTreeLeavesByRoot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, CompressedBranchInfo> getColumnFinalizedStateMerkleTreeBranches() {
+    return finalizedStateTreeBranchesByRoot;
   }
 
   @Override
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {
-    return SLOTS_BY_FINALIZED_ROOT;
+    return slotsByFinalizedRoot;
   }
 
   @Override
@@ -83,7 +98,7 @@ public class V6SchemaCombinedTreeState extends V4SchemaHot implements SchemaComb
 
   @Override
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
-    return SLOTS_BY_FINALIZED_STATE_ROOT;
+    return slotsByFinalizedStateRoot;
   }
 
   @Override
@@ -93,27 +108,7 @@ public class V6SchemaCombinedTreeState extends V4SchemaHot implements SchemaComb
 
   @Override
   public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
-    return NON_CANONICAL_BLOCK_ROOTS_BY_SLOT;
-  }
-
-  @Override
-  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
-    return OPTIMISTIC_TRANSITION_BLOCK_SLOT;
-  }
-
-  @Override
-  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot() {
-    return FINALIZED_STATE_ROOTS_BY_SLOT;
-  }
-
-  @Override
-  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTreeLeaves() {
-    return FINALIZED_STATE_TREE_LEAVES_BY_ROOT;
-  }
-
-  @Override
-  public KvStoreColumn<Bytes32, CompressedBranchInfo> getColumnFinalizedStateMerkleTreeBranches() {
-    return FINALIZED_STATE_TREE_BRANCHES_BY_ROOT;
+    return nonCanonicalBlockRootsBySlot;
   }
 
   @Override

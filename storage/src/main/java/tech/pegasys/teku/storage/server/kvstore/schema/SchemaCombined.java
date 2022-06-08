@@ -29,4 +29,8 @@ public interface SchemaCombined extends SchemaHot, SchemaFinalized {
 
   @Override
   Collection<KvStoreVariable<?>> getAllVariables();
+
+  default SchemaHot asSchemaHot() {
+    return new SchemaHotAdapter(this);
+  }
 }

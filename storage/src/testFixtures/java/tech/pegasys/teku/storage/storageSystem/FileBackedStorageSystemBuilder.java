@@ -162,7 +162,7 @@ public class FileBackedStorageSystemBuilder {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
 
     final V6SchemaCombinedSnapshot schema =
-        new V6SchemaCombinedSnapshot(spec, storeVotesEquivocation);
+        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),

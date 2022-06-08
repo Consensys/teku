@@ -17,9 +17,10 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class InMemoryKvStoreDatabaseFactory {
 
@@ -31,13 +32,19 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
+
+    final V6SchemaCombinedSnapshot combinedSchema =
+        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final SchemaHot schemaHot = combinedSchema.asSchemaHot();
+    final SchemaFinalizedSnapshotState schemaFinalized = combinedSchema.asSchemaFinalized();
     return KvStoreDatabase.createV4(
         hotDb,
         coldDb,
+        schemaHot,
+        schemaFinalized,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeVotesEquivocation,
         spec);
   }
 
@@ -48,11 +55,13 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
+    final V6SchemaCombinedSnapshot combinedSchema =
+        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
     return KvStoreDatabase.createWithStateSnapshots(
         db,
         db,
-        new V4SchemaHot(spec, storeVotesEquivocation),
-        new V6SnapshotSchemaFinalized(spec),
+        combinedSchema.asSchemaHot(),
+        combinedSchema.asSchemaFinalized(),
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -62,18 +71,12 @@ public class InMemoryKvStoreDatabaseFactory {
   public static Database createTree(
       MockKvStoreInstance db,
       final StateStorageMode storageMode,
-      final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
-    return KvStoreDatabase.createWithStateTree(
-        new StubMetricsSystem(),
-        db,
-        new V4SchemaHot(spec, storeVotesEquivocation),
-        new V6TreeSchemaFinalized(spec),
-        storageMode,
-        storeNonCanonicalBlocks,
-        1000,
-        spec);
+    final V6SchemaCombinedTreeState schema =
+        new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
+    return KvStoreCombinedDatabase.createWithStateTree(
+        new StubMetricsSystem(), db, schema, storageMode, storeNonCanonicalBlocks, 1000, spec);
   }
 }

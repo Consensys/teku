@@ -25,8 +25,9 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 
 public class RocksDbDatabaseFactory {
 
@@ -39,25 +40,28 @@ public class RocksDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
+
+    final V6SchemaCombinedSnapshot combinedSchema =
+        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final SchemaHot schemaHot = combinedSchema.asSchemaHot();
+    final SchemaFinalizedSnapshotState schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_HOT_DB,
-            hotConfiguration,
-            new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns());
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
     final KvStoreAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
-            new V4SchemaFinalized(spec).getAllColumns());
+            schemaFinalized.getAllColumns());
     return KvStoreDatabase.createV4(
         hotDb,
         finalizedDb,
+        schemaHot,
+        schemaFinalized,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeVotesEquivocation,
         spec);
   }
 

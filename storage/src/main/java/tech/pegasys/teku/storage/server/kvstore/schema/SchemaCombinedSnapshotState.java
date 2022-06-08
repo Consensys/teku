@@ -19,4 +19,8 @@ public interface SchemaCombinedSnapshotState extends SchemaCombined, SchemaFinal
 
   @Override
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
+
+  default SchemaFinalizedSnapshotState asSchemaFinalized() {
+    return new SchemaFinalizedSnapshotStateAdapter(this);
+  }
 }

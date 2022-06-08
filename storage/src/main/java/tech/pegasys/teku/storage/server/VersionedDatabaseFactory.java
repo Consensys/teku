@@ -228,7 +228,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
       final V6SchemaCombinedSnapshot schema =
-          new V6SchemaCombinedSnapshot(spec, storeVotesEquivocation);
+          V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),

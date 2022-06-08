@@ -81,8 +81,6 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 
 public class KvStoreDatabase implements Database {
@@ -103,16 +101,17 @@ public class KvStoreDatabase implements Database {
   public static Database createV4(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
+      final SchemaHot schemaHot,
+      final SchemaFinalizedSnapshotState schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeVotesEquivocation,
       final Spec spec) {
     return createWithStateSnapshots(
         hotDb,
         finalizedDb,
-        new V4SchemaHot(spec, storeVotesEquivocation),
-        new V4SchemaFinalized(spec),
+        schemaHot,
+        schemaFinalized,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
