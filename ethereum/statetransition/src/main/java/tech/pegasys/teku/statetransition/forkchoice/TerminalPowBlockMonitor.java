@@ -335,7 +335,7 @@ public class TerminalPowBlockMonitor {
     if (secondsToTTD.greaterThan(timeDiff)) {
       secondsToTTDAdjusted = secondsToTTD.subtract(timeDiff).toLong();
     } else {
-      secondsToTTDAdjusted = secondsToTTD.toLong();
+      secondsToTTDAdjusted = 0L;
     }
 
     final Duration eta = Duration.ofSeconds(secondsToTTDAdjusted);

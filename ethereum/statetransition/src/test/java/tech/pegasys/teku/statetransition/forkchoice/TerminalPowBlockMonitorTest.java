@@ -459,7 +459,7 @@ public class TerminalPowBlockMonitorTest {
     for (int cnt = TD_MIN_SAMPLES; cnt > 0; cnt--) {
       lastTD = lastTD.plus(tdDiff);
       lastTime = timeProvider.getTimeInSeconds();
-      pollTtd(lastTD);
+      pollTtd(lastTD, lastTime);
       timeProvider.advanceTimeBySeconds(spec.getGenesisSpecConfig().getSecondsPerEth1Block());
     }
 
@@ -469,10 +469,25 @@ public class TerminalPowBlockMonitorTest {
 
     verify(eventLogger).terminalPowBlockTtdEta(lastTD, expectedETA, expectedInstant);
 
+    // check that if current time goes beyond the ETA we get an event with NOW values
+    timeProvider.advanceTimeBySeconds(eta + 100);
+
+    pollTtd(lastTD, lastTime);
+    pollTtd(lastTD, lastTime);
+    pollTtd(lastTD, lastTime);
+    pollTtd(lastTD, lastTime);
+    pollTtd(lastTD, lastTime);
+
+    verify(eventLogger)
+        .terminalPowBlockTtdEta(
+            lastTD,
+            Duration.ZERO,
+            Instant.ofEpochSecond(timeProvider.getTimeInSeconds().longValue()));
+
     verifyNoMoreInteractions(eventLogger);
   }
 
-  private void pollTtd(final UInt256 ttd) {
+  private void pollTtd(final UInt256 ttd, final UInt64 time) {
     when(executionLayer.eth1GetPowChainHead())
         .thenReturn(
             completedFuture(
@@ -480,7 +495,7 @@ public class TerminalPowBlockMonitorTest {
                     dataStructureUtil.randomBytes32(),
                     dataStructureUtil.randomBytes32(),
                     ttd,
-                    timeProvider.getTimeInSeconds())));
+                    time)));
     asyncRunner.executeQueuedActions();
   }
 }
