@@ -184,7 +184,7 @@ class ValidatorRegistratorTest {
     validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
 
     // THEN cache should be cleaned up
-    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(3);
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(2);
   }
 
   @TestTemplate

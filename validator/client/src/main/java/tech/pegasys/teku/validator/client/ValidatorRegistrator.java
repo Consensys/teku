@@ -161,13 +161,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
     cachedValidatorRegistrations
         .keySet()
-        .forEach(
+        .removeIf(
             cachedPublicKey -> {
-              if (!activeValidatorsPublicKeys.contains(cachedPublicKey)) {
+              boolean requiresRemoving = !activeValidatorsPublicKeys.contains(cachedPublicKey);
+              if (requiresRemoving) {
                 LOG.debug(
                     "Removing cached registration for {} because validator is no longer active.",
                     cachedPublicKey);
               }
+              return requiresRemoving;
             });
   }
 
