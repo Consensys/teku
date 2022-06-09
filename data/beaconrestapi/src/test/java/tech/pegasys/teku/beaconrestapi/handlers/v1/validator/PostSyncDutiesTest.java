@@ -21,6 +21,7 @@ import static tech.pegasys.teku.beacon.sync.events.SyncState.IN_SYNC;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -64,6 +65,12 @@ public class PostSyncDutiesTest extends AbstractMigratedBeaconHandlerTest {
 
     Assertions.assertThat(request.getResponseCode()).isEqualTo(HttpServletResponse.SC_OK);
     Assertions.assertThat(request.getResponseBody()).isEqualTo(responseData);
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data = "[\"1\"]";
+    Assertions.assertThat(getRequestBodyFromMetadata(handler, data)).isEqualTo(List.of(1));
   }
 
   @Test

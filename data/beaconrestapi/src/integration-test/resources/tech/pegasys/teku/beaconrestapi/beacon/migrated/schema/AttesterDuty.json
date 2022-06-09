@@ -10,19 +10,34 @@
       "format" : "string"
     },
     "validator_index" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "committee_index" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "committee_length" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "committees_at_slot" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "validator_committee_index" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "slot" : {
       "type" : "string",
