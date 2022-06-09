@@ -213,7 +213,7 @@ public class SyncSourceBatch implements Batch {
               return null;
             },
             eventThread)
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private void handleRequestErrors(final Throwable error) {

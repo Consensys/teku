@@ -416,7 +416,7 @@ public class BatchSync implements Sync {
                           progressSync();
                         }),
                 PAUSE_ON_SERVICE_OFFLINE)
-            .reportExceptions();
+            .ifExceptionGetsHereRaiseABug();
         scheduledProgressSync = true;
       }
       return;

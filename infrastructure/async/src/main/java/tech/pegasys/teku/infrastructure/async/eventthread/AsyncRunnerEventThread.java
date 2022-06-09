@@ -68,7 +68,9 @@ public class AsyncRunnerEventThread implements EventThread {
     if (!started.get()) {
       throw new IllegalStateException("EventThread not started");
     }
-    thread.runAsync(() -> recordEventThreadIdAndExecute(asSupplier(task))).reportExceptions();
+    thread
+        .runAsync(() -> recordEventThreadIdAndExecute(asSupplier(task)))
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @Override
@@ -100,7 +102,7 @@ public class AsyncRunnerEventThread implements EventThread {
       // sending tasks to the executor which we deliberately want to ignore.
       return;
     }
-    doExecute(asSupplier(task)).reportExceptions();
+    doExecute(asSupplier(task)).ifExceptionGetsHereRaiseABug();
   }
 
   private <T> SafeFuture<T> doExecute(final ExceptionThrowingSupplier<T> callable) {

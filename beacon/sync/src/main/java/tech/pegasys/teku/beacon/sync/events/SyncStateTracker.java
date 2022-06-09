@@ -154,7 +154,9 @@ public class SyncStateTracker extends Service
         startupTargetPeerCount,
         startupTimeout);
     peerConnectedSubscriptionId = network.subscribeConnect(peer -> onPeerConnected());
-    asyncRunner.runAfterDelay(this::onStartupTimeout, startupTimeout).reportExceptions();
+    asyncRunner
+        .runAfterDelay(this::onStartupTimeout, startupTimeout)
+        .ifExceptionGetsHereRaiseABug();
     syncSubscriptionId = syncService.subscribeToSyncChanges(this::onSyncingChanged);
     return SafeFuture.COMPLETE;
   }
