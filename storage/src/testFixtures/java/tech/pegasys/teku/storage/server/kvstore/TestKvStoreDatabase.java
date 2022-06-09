@@ -23,6 +23,6 @@ public class TestKvStoreDatabase {
   }
 
   public KvStoreHotDao getHotDao() {
-    return db.hotDao;
+    return db.dao;
   }
 }

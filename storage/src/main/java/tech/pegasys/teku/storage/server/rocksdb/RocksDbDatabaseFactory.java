@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
-import tech.pegasys.teku.storage.server.kvstore.KvStoreCombinedDatabase;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
@@ -79,7 +78,7 @@ public class RocksDbDatabaseFactory {
         RocksDbInstanceFactory.create(
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
-    return KvStoreCombinedDatabase.createWithStateSnapshots(
+    return KvStoreDatabase.createWithStateSnapshots(
         db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 }

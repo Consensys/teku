@@ -20,5 +20,5 @@ public interface KvStoreCombinedDao extends KvStoreHotDao, KvStoreFinalizedDao, 
   @MustBeClosed
   CombinedUpdater combinedUpdater();
 
-  interface CombinedUpdater extends HotUpdater, FinalizedUpdater, Eth1Updater {}
+  interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 }

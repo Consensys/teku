@@ -85,12 +85,8 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   public void createMemoryStore_priorToGenesisTime() {
     database.storeInitialAnchor(genesisAnchor);
 
-    final Optional<OnDiskStoreData> maybeData;
-    if (database instanceof KvStoreDatabase) {
-      maybeData = ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
-    } else {
-      maybeData = ((KvStoreCombinedDatabase) database).createMemoryStore(() -> 0L);
-    }
+    final Optional<OnDiskStoreData> maybeData =
+        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
     assertThat(maybeData).isNotEmpty();
 
     final OnDiskStoreData data = maybeData.get();
@@ -176,11 +172,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   }
 
   private HotUpdater hotUpdater() {
-    if (database instanceof KvStoreDatabase) {
-      return ((KvStoreDatabase) database).hotDao.hotUpdater();
-    } else {
-      return ((KvStoreCombinedDatabase) database).dao.hotUpdater();
-    }
+    return ((KvStoreDatabase) database).dao.hotUpdater();
   }
 
   @Test
@@ -197,11 +189,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   }
 
   private FinalizedUpdater finalizedUpdater() {
-    if (database instanceof KvStoreDatabase) {
-      return ((KvStoreDatabase) database).finalizedDao.finalizedUpdater();
-    } else {
-      return ((KvStoreCombinedDatabase) database).dao.finalizedUpdater();
-    }
+    return ((KvStoreDatabase) database).dao.finalizedUpdater();
   }
 
   @Test
@@ -221,11 +209,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   }
 
   private Eth1Updater eth1Updater() {
-    if (database instanceof KvStoreDatabase) {
-      return ((KvStoreDatabase) database).eth1Dao.eth1Updater();
-    } else {
-      return ((KvStoreCombinedDatabase) database).dao.eth1Updater();
-    }
+    return ((KvStoreDatabase) database).dao.eth1Updater();
   }
 
   @Test

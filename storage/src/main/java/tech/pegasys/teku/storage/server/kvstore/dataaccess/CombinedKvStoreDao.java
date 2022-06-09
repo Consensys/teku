@@ -217,7 +217,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
   @Override
   @MustBeClosed
   public Eth1Updater eth1Updater() {
-    return new V4CombinedUpdater<>(db, schema, stateStorageLogic.updater());
+    return new V4Eth1Updater(db, schema);
   }
 
   @Override
@@ -376,6 +376,44 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
         .flatMap(this::getFinalizedBlockAtSlot);
   }
 
+  static class V4Eth1Updater implements Eth1Updater {
+    private final KvStoreTransaction transaction;
+    private final SchemaCombined schema;
+
+    V4Eth1Updater(final KvStoreAccessor db, final SchemaCombined schema) {
+      this.transaction = db.startTransaction();
+      this.schema = schema;
+    }
+
+    @Override
+    public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
+      transaction.put(schema.getVariableMinGenesisTimeBlock(), event);
+    }
+
+    @Override
+    public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
+      transaction.put(schema.getColumnDepositsFromBlockEvents(), event.getBlockNumber(), event);
+    }
+
+    @Override
+    public void commit() {
+      // Commit db updates
+      transaction.commit();
+      close();
+    }
+
+    @Override
+    public void cancel() {
+      transaction.rollback();
+      close();
+    }
+
+    @Override
+    public void close() {
+      transaction.close();
+    }
+  }
+
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 
@@ -481,16 +519,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
     @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
-    }
-
-    @Override
-    public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-      transaction.put(schema.getVariableMinGenesisTimeBlock(), event);
-    }
-
-    @Override
-    public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-      transaction.put(schema.getColumnDepositsFromBlockEvents(), event.getBlockNumber(), event);
     }
 
     @Override
