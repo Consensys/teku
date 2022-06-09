@@ -150,29 +150,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
   }
 
-  private void cleanupCache(final List<Validator> activeValidators) {
-    if (cachedValidatorRegistrations.isEmpty()) {
-      return;
-    }
-    final Set<BLSPublicKey> activeValidatorsPublicKeys =
-        activeValidators.stream()
-            .map(Validator::getPublicKey)
-            .collect(Collectors.toCollection(HashSet::new));
-
-    cachedValidatorRegistrations
-        .keySet()
-        .removeIf(
-            cachedPublicKey -> {
-              boolean requiresRemoving = !activeValidatorsPublicKeys.contains(cachedPublicKey);
-              if (requiresRemoving) {
-                LOG.debug(
-                    "Removing cached registration for {} because validator is no longer active.",
-                    cachedPublicKey);
-              }
-              return requiresRemoving;
-            });
-  }
-
   private SafeFuture<Void> registerValidators(
       final List<Validator> validators, final UInt64 epoch) {
     if (validators.isEmpty()) {
@@ -303,5 +280,28 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
     return !validatorRegistration.getFeeRecipient().equals(feeRecipient)
         || !validatorRegistration.getGasLimit().equals(gasLimit);
+  }
+
+  private void cleanupCache(final List<Validator> activeValidators) {
+    if (cachedValidatorRegistrations.isEmpty()) {
+      return;
+    }
+    final Set<BLSPublicKey> activeValidatorsPublicKeys =
+        activeValidators.stream()
+            .map(Validator::getPublicKey)
+            .collect(Collectors.toCollection(HashSet::new));
+
+    cachedValidatorRegistrations
+        .keySet()
+        .removeIf(
+            cachedPublicKey -> {
+              boolean requiresRemoving = !activeValidatorsPublicKeys.contains(cachedPublicKey);
+              if (requiresRemoving) {
+                LOG.debug(
+                    "Removing cached registration for {} because validator is no longer active.",
+                    cachedPublicKey);
+              }
+              return requiresRemoving;
+            });
   }
 }
