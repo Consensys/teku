@@ -102,7 +102,7 @@ public class Eth2OutgoingRequestHandler<
     this.rpcStream = stream;
 
     // Close the write side of the stream
-    stream.closeWriteStream().reportExceptions();
+    stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
 
     if (shouldReceiveResponse) {
       // Start timer for first bytes
@@ -238,7 +238,7 @@ public class Eth2OutgoingRequestHandler<
               abortRequest(rpcStream, err, true);
               return null;
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private void abortRequest(final RpcStream rpcStream, Throwable error) {
@@ -256,7 +256,7 @@ public class Eth2OutgoingRequestHandler<
     // releasing any resources
     try {
       responseDecoder.close();
-      rpcStream.closeAbruptly().reportExceptions();
+      rpcStream.closeAbruptly().ifExceptionGetsHereRaiseABug();
     } finally {
       responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
     }
@@ -274,7 +274,7 @@ public class Eth2OutgoingRequestHandler<
                         "Timed out waiting for initial response", RpcTimeouts.TTFB_TIMEOUT));
               }
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private void ensureNextResponseArrivesInTime(
@@ -293,7 +293,7 @@ public class Eth2OutgoingRequestHandler<
                         "Timed out waiting for response chunk " + previousResponseCount, timeout));
               }
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
@@ -308,7 +308,7 @@ public class Eth2OutgoingRequestHandler<
                     new RpcTimeoutException("Timed out waiting for read channel close", timeout));
               }
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting

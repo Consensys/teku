@@ -140,7 +140,7 @@ public class AsyncResponseProcessorTest {
 
   @Test
   public void shouldThrowIfResponsesSubmittedAfterFinishedProcessing() {
-    asyncResponseProcessor.finishProcessing().reportExceptions();
+    asyncResponseProcessor.finishProcessing().ifExceptionGetsHereRaiseABug();
     assertThatThrownBy(() -> asyncResponseProcessor.processResponse("a"))
         .isInstanceOf(AdditionalDataReceivedException.class);
   }

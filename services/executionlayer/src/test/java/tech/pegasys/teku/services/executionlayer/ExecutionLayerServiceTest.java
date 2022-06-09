@@ -40,12 +40,12 @@ public class ExecutionLayerServiceTest {
   public void addsSubscribersToTheEventChannelOnServiceStart() {
     when(eventChannels.subscribe(any(), any())).thenReturn(eventChannels);
 
-    underTest.start().reportExceptions();
+    underTest.start().ifExceptionGetsHereRaiseABug();
 
     verify(eventChannels).subscribe(SlotEventsChannel.class, executionLayerManager);
     verify(eventChannels).subscribe(ExecutionLayerChannel.class, executionLayerManager);
 
-    underTest.stop().reportExceptions();
+    underTest.stop().ifExceptionGetsHereRaiseABug();
   }
 
   @Test

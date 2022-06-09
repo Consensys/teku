@@ -145,7 +145,7 @@ public class EventSubscriber {
               },
               Duration.ofSeconds(30))
           .alwaysRun(this::keepAlive)
-          .reportExceptions();
+          .ifExceptionGetsHereRaiseABug();
     }
   }
 }
