@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.util;
+package tech.pegasys.teku.spec.datastructures.interop;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 
 class MockStartValidatorKeyPairFactoryTest {
   private static final String[] EXPECTED_PRIVATE_KEYS = {
