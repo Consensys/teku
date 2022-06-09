@@ -89,13 +89,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastProcessedEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
-      cleanupCache(activeValidators);
       LOG.debug(
           "Checking if registration is required for {} validator(s) at epoch {}",
           activeValidators.size(),
           epoch);
       registerValidators(activeValidators, epoch)
-          .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+          .finish(
+              () -> cleanupCache(activeValidators), VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
   }
 
@@ -151,6 +151,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private void cleanupCache(final List<Validator> activeValidators) {
+    if (cachedValidatorRegistrations.isEmpty()) {
+      return;
+    }
     final Set<BLSPublicKey> activeValidatorsPublicKeys =
         activeValidators.stream()
             .map(Validator::getPublicKey)
