@@ -29,7 +29,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
@@ -62,7 +62,7 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<ProposerDuty> PROPOSER_DUTY_TYPE =
       SerializableTypeDefinition.object(ProposerDuty.class)
           .withField("pubkey", PUBLIC_KEY_TYPE, ProposerDuty::getPublicKey)
-          .withField("validator_index", RAW_INTEGER_TYPE, ProposerDuty::getValidatorIndex)
+          .withField("validator_index", STRING_INTEGER_TYPE, ProposerDuty::getValidatorIndex)
           .withField("slot", UINT64_TYPE, ProposerDuty::getSlot)
           .build();
 

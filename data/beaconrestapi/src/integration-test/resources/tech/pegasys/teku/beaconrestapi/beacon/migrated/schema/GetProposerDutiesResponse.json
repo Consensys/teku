@@ -25,7 +25,10 @@
             "format" : "string"
           },
           "validator_index" : {
-            "type" : "number"
+            "type" : "string",
+            "description" : "integer string",
+            "example" : "1",
+            "format" : "integer"
           },
           "slot" : {
             "type" : "string",
