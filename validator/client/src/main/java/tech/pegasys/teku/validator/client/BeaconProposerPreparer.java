@@ -89,11 +89,36 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (validatorIndexProvider.isEmpty()) {
       return;
     }
-    if (firstCallDone.compareAndSet(false, true)
-        || slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
+    if (firstCallDone.compareAndSet(false, true) || isBeginningOfEpoch(slot)) {
       sendPreparableProposerList();
     }
   }
+
+  @Override
+  public void onHeadUpdate(
+      UInt64 slot,
+      Bytes32 previousDutyDependentRoot,
+      Bytes32 currentDutyDependentRoot,
+      Bytes32 headBlockRoot) {}
+
+  @Override
+  public void onPossibleMissedEvents() {
+    sendPreparableProposerList();
+  }
+
+  @Override
+  public void onValidatorsAdded() {
+    sendPreparableProposerList();
+  }
+
+  @Override
+  public void onBlockProductionDue(UInt64 slot) {}
+
+  @Override
+  public void onAttestationCreationDue(UInt64 slot) {}
+
+  @Override
+  public void onAttestationAggregationDue(UInt64 slot) {}
 
   // 2 configurations, 2 defaults
   // Priority order
@@ -151,9 +176,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     return true;
   }
 
-  private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
-      final ProposerConfig config, final BLSPublicKey publicKey) {
-    return config.getConfigForPubKey(publicKey).map(Config::getFeeRecipient);
+  private boolean isBeginningOfEpoch(final UInt64 slot) {
+    return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
   }
 
   private void sendPreparableProposerList() {
@@ -200,34 +224,13 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
         .collect(Collectors.toList());
   }
 
+  private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
+      final ProposerConfig config, final BLSPublicKey publicKey) {
+    return config.getConfigForPubKey(publicKey).map(Config::getFeeRecipient);
+  }
+
   private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
     return validatorIndexProvider.isEmpty()
         || !validatorIndexProvider.get().containsPublicKey(publicKey);
   }
-
-  @Override
-  public void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot) {}
-
-  @Override
-  public void onPossibleMissedEvents() {
-    sendPreparableProposerList();
-  }
-
-  @Override
-  public void onValidatorsAdded() {
-    sendPreparableProposerList();
-  }
-
-  @Override
-  public void onBlockProductionDue(UInt64 slot) {}
-
-  @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
-
-  @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
 }
