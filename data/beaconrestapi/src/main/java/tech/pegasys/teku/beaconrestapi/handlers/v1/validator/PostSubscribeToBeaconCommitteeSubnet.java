@@ -22,7 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -56,12 +56,12 @@ public class PostSubscribeToBeaconCommitteeSubnet extends MigratingEndpointAdapt
               .initializer(CommitteeSubscriptionData::new)
               .withField(
                   "validator_index",
-                  INTEGER_TYPE,
+                  RAW_INTEGER_TYPE,
                   CommitteeSubscriptionData::getValidatorIndex,
                   CommitteeSubscriptionData::setValidatorIndex)
               .withField(
                   "committee_index",
-                  INTEGER_TYPE,
+                  RAW_INTEGER_TYPE,
                   CommitteeSubscriptionData::getCommitteeIndex,
                   CommitteeSubscriptionData::setCommitteeIndex)
               .withField(

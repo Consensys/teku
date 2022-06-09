@@ -19,7 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,12 +54,12 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
           .initializer(PostSyncCommitteeData::new)
           .withField(
               "validator_index",
-              INTEGER_STRING_TYPE,
+              STRING_INTEGER_TYPE,
               PostSyncCommitteeData::getValidatorIndex,
               PostSyncCommitteeData::setValidatorIndex)
           .withField(
               "sync_committee_indices",
-              DeserializableTypeDefinition.listOf(INTEGER_STRING_TYPE),
+              DeserializableTypeDefinition.listOf(STRING_INTEGER_TYPE),
               PostSyncCommitteeData::getSyncCommitteeIndices,
               PostSyncCommitteeData::setSyncCommitteeIndices)
           .withField(
