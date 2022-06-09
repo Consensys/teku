@@ -35,7 +35,11 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     eth1Node =
         createBesuNode(
-            config -> config.withMergeSupport(true).withGenesisFile("besu/preMergeGenesis.json"));
+            config ->
+                config
+                    .withMiningEnabled()
+                    .withMergeSupport(true)
+                    .withGenesisFile("besu/preMergeGenesis.json"));
     eth1Node.start();
 
     final int totalValidators = 4;

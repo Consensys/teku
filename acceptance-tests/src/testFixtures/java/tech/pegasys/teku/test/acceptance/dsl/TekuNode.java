@@ -395,6 +395,18 @@ public class TekuNode extends Node {
     return Optional.of(response.data.root);
   }
 
+  public Optional<GetBlockRootResponse> fetchBeaconRootHead() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head/root");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final GetBlockRootResponse response =
+        jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
+
+    return Optional.of(response);
+  }
+
   private FinalityCheckpointsResponse waitForChainHead() {
     LOG.debug("Waiting for chain head");
     final AtomicReference<FinalityCheckpointsResponse> chainHead = new AtomicReference<>(null);
@@ -744,6 +756,11 @@ public class TekuNode extends Node {
           Arrays.stream(nodes).map(TekuNode::getMultiAddr).collect(Collectors.joining(","));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
+      return this;
+    }
+
+    public Config withSafeSlotsToImportOptimistically(final Integer slots) {
+      configMap.put("Xnetwork-safe-slots-to-import-optimistically", slots);
       return this;
     }
 

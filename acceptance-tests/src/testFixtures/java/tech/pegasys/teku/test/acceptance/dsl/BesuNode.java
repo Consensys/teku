@@ -13,11 +13,18 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,8 +37,10 @@ public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final int JSON_RPC_PORT = 8545;
   private static final int ENGINE_JSON_RPC_PORT = 8550;
+  private static final int P2P_PORT = 30303;
   private static final String BESU_DOCKER_IMAGE_NAME = "hyperledger/besu";
   private static final String BESU_CONFIG_FILE_PATH = "/config.toml";
+  private static final String BESU_STATIC_NODES_FILE_PATH = "/static-nodes.json";
   private static final ObjectMapper TOML_MAPPER = new TomlMapper();
 
   private final Config config;
@@ -41,8 +50,7 @@ public class BesuNode extends Node {
     this.config = config;
 
     container
-        .withExposedPorts(JSON_RPC_PORT, ENGINE_JSON_RPC_PORT)
-        .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
+        .withExposedPorts(JSON_RPC_PORT, ENGINE_JSON_RPC_PORT, P2P_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(JSON_RPC_PORT).forPath("/liveness"))
         .withCommand("--config-file", BESU_CONFIG_FILE_PATH);
   }
@@ -89,22 +97,89 @@ public class BesuNode extends Node {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
+  private String getInternalP2pUrl(final String nodeId) {
+    return "enode://" + nodeId + "@" + getInternalIpAddress() + ":" + P2P_PORT;
+  }
+
+  private String getInternalIpAddress() {
+    return container.getContainerInfo().getNetworkSettings().getNetworks().values().stream()
+        .findFirst()
+        .get()
+        .getIpAddress();
+  }
+
+  public String fetchEnodeUrl() throws Exception {
+    final URI baseUri = new URI(getExternalJsonRpcUrl());
+    final String response =
+        httpClient.post(baseUri, "", jsonProvider.objectToJSON(new Request("admin_nodeInfo")));
+    final ObjectMapper objectMapper = jsonProvider.getObjectMapper();
+    final JavaType nodeInfoResponseType =
+        objectMapper
+            .getTypeFactory()
+            .constructParametricType(Response.class, NodeInfoResponse.class);
+    final Response<NodeInfoResponse> nodeInfoResponse =
+        objectMapper.readValue(response, nodeInfoResponseType);
+    return getInternalP2pUrl(nodeInfoResponse.result.id);
+  }
+
+  public Boolean removePeer(final String enode) throws Exception {
+    final URI baseUri = new URI(getExternalJsonRpcUrl());
+    final String response =
+        httpClient.post(
+            baseUri, "", jsonProvider.objectToJSON(new Request("admin_removePeer", enode)));
+    final ObjectMapper objectMapper = jsonProvider.getObjectMapper();
+    final JavaType removePeerResponseType =
+        objectMapper.getTypeFactory().constructParametricType(Response.class, Boolean.class);
+    final Response<Boolean> removePeerResponse =
+        objectMapper.readValue(response, removePeerResponseType);
+    return removePeerResponse.result;
+  }
+
   public String getRichBenefactorKey() {
     return "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63";
+  }
+
+  @SuppressWarnings("unused")
+  private static class Request {
+    public final String jsonrpc = "2.0";
+    public final String method;
+    public final String[] params;
+    private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
+    public final int id;
+
+    public Request(String method, String... params) {
+      this.method = method;
+      this.params = params;
+      this.id = ID_COUNTER.incrementAndGet();
+    }
+  }
+
+  private static class Response<T> {
+    public T result;
+  }
+
+  private static class NodeInfoResponse {
+    public String id;
   }
 
   public static class Config {
     private final Map<String, Object> configMap = new HashMap<>();
     private String genesisFilePath = "besu/depositContractGenesis.json";
+    private final List<String> staticNodes = new ArrayList<>();
 
     public Config() {
       configMap.put("rpc-http-enabled", true);
       configMap.put("rpc-http-port", Integer.toString(JSON_RPC_PORT));
       configMap.put("rpc-http-cors-origins", new String[] {"*"});
       configMap.put("host-allowlist", new String[] {"*"});
+      configMap.put("discovery-enabled", false);
+      configMap.put("genesis-file", "/genesis.json");
+    }
+
+    public BesuNode.Config withMiningEnabled() {
       configMap.put("miner-enabled", true);
       configMap.put("miner-coinbase", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
-      configMap.put("genesis-file", "/genesis.json");
+      return this;
     }
 
     public BesuNode.Config withGenesisFile(final String genesisFilePath) {
@@ -113,11 +188,22 @@ public class BesuNode extends Node {
     }
 
     public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
-      configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE"});
+      configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE,ADMIN"});
       configMap.put("Xmerge-support", Boolean.TRUE);
       configMap.put("engine-rpc-enabled", Boolean.TRUE);
       configMap.put("engine-rpc-port", Integer.toString(ENGINE_JSON_RPC_PORT));
       configMap.put("engine-host-allowlist", new String[] {"*"});
+      return this;
+    }
+
+    public BesuNode.Config withP2pEnabled() {
+      configMap.put("p2p-enabled", true);
+      return this;
+    }
+
+    public BesuNode.Config withStaticNodes(final String... staticNodes) {
+      configMap.put("static-nodes-file", BESU_STATIC_NODES_FILE_PATH);
+      this.staticNodes.addAll(Arrays.asList(staticNodes));
       return this;
     }
 
@@ -128,6 +214,13 @@ public class BesuNode extends Node {
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, BESU_CONFIG_FILE_PATH);
+      if (!staticNodes.isEmpty()) {
+        final File staticNodesFile = File.createTempFile("static-nodes", ".json");
+        staticNodesFile.deleteOnExit();
+        final ObjectMapper jsonMapper = new JsonMapper();
+        jsonMapper.writeValue(staticNodesFile, staticNodes);
+        configFiles.put(staticNodesFile, BESU_STATIC_NODES_FILE_PATH);
+      }
 
       return configFiles;
     }
