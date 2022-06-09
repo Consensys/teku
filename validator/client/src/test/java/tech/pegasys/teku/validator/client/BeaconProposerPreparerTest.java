@@ -128,6 +128,10 @@ public class BeaconProposerPreparerTest {
 
   @TestTemplate
   void should_callPrepareBeaconProposerAtBeginningOfEpoch() {
+    // not yet ready to provide a fee recipient to other consumers since the first sending hasn't
+    // been done
+    assertThat(beaconProposerPreparer.isReadyToProvideFeeRecipient()).isFalse();
+
     ArgumentCaptor<Collection<BeaconPreparableProposer>> captor = doCall();
 
     assertThat(captor.getValue())
@@ -136,6 +140,8 @@ public class BeaconProposerPreparerTest {
                 UInt64.valueOf(validator1Index), validator1FeeRecipientConfig),
             new BeaconPreparableProposer(
                 UInt64.valueOf(validator2Index), defaultFeeRecipientConfig));
+
+    assertThat(beaconProposerPreparer.isReadyToProvideFeeRecipient()).isTrue();
   }
 
   @TestTemplate

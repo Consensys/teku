@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,12 +41,14 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   private final ValidatorApiChannel validatorApiChannel;
   private Optional<ValidatorIndexProvider> validatorIndexProvider;
   private final ProposerConfigProvider proposerConfigProvider;
-  private final Spec spec;
   private final Optional<Eth1Address> defaultFeeRecipient;
-  private boolean firstCallDone = false;
+  private final Spec spec;
+  private final RuntimeProposerConfig runtimeProposerConfig;
 
   private Optional<ProposerConfig> maybeProposerConfig = Optional.empty();
-  private final RuntimeProposerConfig runtimeProposerConfig;
+
+  private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
+  private final AtomicBoolean sentProposersAtLeastOnce = new AtomicBoolean(false);
 
   BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
@@ -86,17 +89,9 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (validatorIndexProvider.isEmpty()) {
       return;
     }
-    if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
-      firstCallDone = true;
+    if (firstCallDone.compareAndSet(false, true)
+        || slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
       sendPreparableProposerList();
-    }
-  }
-
-  public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    if (validatorIndexCannotBeResolved(publicKey)) {
-      return Optional.empty();
-    } else {
-      return getFeeRecipient(maybeProposerConfig, publicKey);
     }
   }
 
@@ -106,9 +101,10 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   // - proposer set via the SET api (runtime configuration)
   // - default set in --validator-proposer-config file
   // - default set by --validators-proposer-default-fee-recipient
-  @Override
-  public Optional<Eth1Address> getFeeRecipient(
-      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
+  public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
+    if (validatorIndexCannotBeResolved(publicKey)) {
+      return Optional.empty();
+    }
     return maybeProposerConfig
         .flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey))
         .or(() -> runtimeProposerConfig.getEth1AddressForPubKey(publicKey))
@@ -117,6 +113,11 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
                 maybeProposerConfig.map(
                     proposerConfig -> proposerConfig.getDefaultConfig().getFeeRecipient()))
         .or(() -> defaultFeeRecipient);
+  }
+
+  @Override
+  public boolean isReadyToProvideFeeRecipient() {
+    return sentProposersAtLeastOnce.get();
   }
 
   // Cannot set a fee recipient if the key is specified in the configuration file
@@ -177,7 +178,9 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
                               Optional.empty(), publicKeyToIndex);
                         }))
         .thenAccept(validatorApiChannel::prepareBeaconProposer)
-        .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
+        .finish(
+            () -> sentProposersAtLeastOnce.compareAndSet(false, true),
+            VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 
   private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
