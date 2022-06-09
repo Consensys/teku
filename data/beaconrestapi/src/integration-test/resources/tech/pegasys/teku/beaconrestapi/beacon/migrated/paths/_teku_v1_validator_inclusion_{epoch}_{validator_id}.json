@@ -1,9 +1,9 @@
 {
-  "post" : {
-    "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "postSyncDuties",
-    "summary" : "Get sync committee duties",
-    "description" : "Requests the beacon node to provide a set of sync committee duties",
+  "get" : {
+    "tags" : [ "Teku", "Experimental" ],
+    "operationId" : "getValidatorInclusion",
+    "summary" : "Get Validator Inclusion",
+    "description" : "Returns a per-validator summary of how that validator performed during the current epoch.",
     "parameters" : [ {
       "name" : "epoch",
       "required" : true,
@@ -14,35 +14,40 @@
         "example" : "1",
         "format" : "uint64"
       }
-    } ],
-    "requestBody" : {
-      "content" : {
-        "application/json" : {
-          "schema" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "description" : "integer string",
-              "example" : "1",
-              "format" : "integer"
-            }
-          }
-        }
+    }, {
+      "name" : "validator_id",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "unsigned 64 bit integer",
+        "example" : "1",
+        "format" : "uint64"
       }
-    },
+    } ],
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetSyncCommitteeDutiesResponse"
+              "$ref" : "#/components/schemas/GetValidatorInclusionResponse"
             }
           }
         }
       },
       "503" : {
         "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
         "content" : {
           "application/json" : {
             "schema" : {

@@ -1,9 +1,9 @@
 {
-  "post" : {
-    "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "postSyncDuties",
-    "summary" : "Get sync committee duties",
-    "description" : "Requests the beacon node to provide a set of sync committee duties",
+  "get" : {
+    "tags" : [ "Teku", "Experimental" ],
+    "operationId" : "getGlobalValidatorInclusion",
+    "summary" : "Get Global Validator Inclusion",
+    "description" : "Returns a global count of votes for a given epoch.",
     "parameters" : [ {
       "name" : "epoch",
       "required" : true,
@@ -15,34 +15,29 @@
         "format" : "uint64"
       }
     } ],
-    "requestBody" : {
-      "content" : {
-        "application/json" : {
-          "schema" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "description" : "integer string",
-              "example" : "1",
-              "format" : "integer"
-            }
-          }
-        }
-      }
-    },
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetSyncCommitteeDutiesResponse"
+              "$ref" : "#/components/schemas/GetGlobalValidatorInclusionResponse"
             }
           }
         }
       },
       "503" : {
         "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
         "content" : {
           "application/json" : {
             "schema" : {

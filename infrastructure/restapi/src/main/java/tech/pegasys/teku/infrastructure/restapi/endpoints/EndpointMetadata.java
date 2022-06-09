@@ -559,7 +559,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder withServiceUnavailableResponse() {
       response(
           SC_SERVICE_UNAVAILABLE,
-          "Beacon node is currently syncing and not serving request on that endpoint",
+          "Beacon node is currently syncing and not serving requests.",
           HTTP_ERROR_RESPONSE_TYPE);
       return this;
     }
