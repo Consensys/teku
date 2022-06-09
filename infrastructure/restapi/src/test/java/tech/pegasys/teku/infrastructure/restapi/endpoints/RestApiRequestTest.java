@@ -22,7 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTE_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT8_TYPE;
 
@@ -43,7 +43,7 @@ public class RestApiRequestTest {
   private static final ParameterMetadata<String> STR_PARAM =
       new ParameterMetadata<>("str", STRING_TYPE);
   private static final ParameterMetadata<Integer> INT_PARAM =
-      new ParameterMetadata<>("int", INTEGER_TYPE);
+      new ParameterMetadata<>("int", RAW_INTEGER_TYPE);
   private static final ParameterMetadata<Boolean> BOOL_PARAM =
       new ParameterMetadata<>("bool", BOOLEAN_TYPE);
   private static final ParameterMetadata<Byte> BYTE_PARAM =

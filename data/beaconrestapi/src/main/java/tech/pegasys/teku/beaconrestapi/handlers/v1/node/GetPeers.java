@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
@@ -95,7 +95,9 @@ public class GetPeers extends MigratingEndpointAdapter {
       SerializableTypeDefinition.object(Integer.class)
           .name("Meta")
           .withField(
-              "count", INTEGER_TYPE.withDescription("Total number of items"), Function.identity())
+              "count",
+              RAW_INTEGER_TYPE.withDescription("Total number of items"),
+              Function.identity())
           .build();
 
   private static final SerializableTypeDefinition<PeersData> PEERS_RESPONSE_TYPE =

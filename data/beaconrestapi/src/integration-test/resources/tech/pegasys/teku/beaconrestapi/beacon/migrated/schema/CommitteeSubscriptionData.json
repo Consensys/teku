@@ -4,10 +4,16 @@
   "required" : [ "validator_index", "committee_index", "committees_at_slot", "slot", "is_aggregator" ],
   "properties" : {
     "validator_index" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "committee_index" : {
-      "type" : "number"
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
     },
     "committees_at_slot" : {
       "type" : "string",

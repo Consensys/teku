@@ -21,7 +21,10 @@
           "schema" : {
             "type" : "array",
             "items" : {
-              "type" : "number"
+              "type" : "string",
+              "description" : "integer string",
+              "example" : "1",
+              "format" : "integer"
             }
           }
         }

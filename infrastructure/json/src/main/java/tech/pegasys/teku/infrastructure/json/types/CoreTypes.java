@@ -77,9 +77,10 @@ public class CoreTypes {
           .format("uint256")
           .build();
 
-  public static final StringValueTypeDefinition<Integer> INTEGER_TYPE = new IntegerTypeDefinition();
+  public static final StringValueTypeDefinition<Integer> RAW_INTEGER_TYPE =
+      new IntegerTypeDefinition();
 
-  public static final StringValueTypeDefinition<Integer> INTEGER_STRING_TYPE =
+  public static final StringValueTypeDefinition<Integer> INTEGER_TYPE =
       DeserializableTypeDefinition.string(Integer.class)
           .formatter(Object::toString)
           .parser(Integer::valueOf)
@@ -94,7 +95,7 @@ public class CoreTypes {
           .initializer(HttpErrorResponse::builder)
           .finisher(HttpErrorResponse.Builder::build)
           .withField(
-              "code", INTEGER_TYPE, HttpErrorResponse::getCode, HttpErrorResponse.Builder::code)
+              "code", RAW_INTEGER_TYPE, HttpErrorResponse::getCode, HttpErrorResponse.Builder::code)
           .withField(
               "message",
               STRING_TYPE,
