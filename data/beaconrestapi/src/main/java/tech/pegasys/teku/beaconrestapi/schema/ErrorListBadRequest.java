@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.schema;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
@@ -75,7 +75,7 @@ public class ErrorListBadRequest {
   public static SerializableTypeDefinition<ErrorListBadRequest> getJsonTypeDefinition() {
     return SerializableTypeDefinition.object(ErrorListBadRequest.class)
         .name("ErrorListBadRequest")
-        .withField("code", INTEGER_TYPE, ErrorListBadRequest::getCode)
+        .withField("code", RAW_INTEGER_TYPE, ErrorListBadRequest::getCode)
         .withField("message", STRING_TYPE, ErrorListBadRequest::getMessage)
         .withField(
             "failures",

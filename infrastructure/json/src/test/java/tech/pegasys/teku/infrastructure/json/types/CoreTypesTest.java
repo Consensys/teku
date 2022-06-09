@@ -45,7 +45,7 @@ class CoreTypesTest {
 
   @Test
   void integer_shouldRoundTrip() throws Exception {
-    assertRoundTrip(458, CoreTypes.INTEGER_TYPE);
+    assertRoundTrip(458, CoreTypes.RAW_INTEGER_TYPE);
   }
 
   @Test

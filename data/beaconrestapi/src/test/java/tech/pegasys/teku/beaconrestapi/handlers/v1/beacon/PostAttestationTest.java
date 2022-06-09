@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
@@ -72,6 +74,17 @@ public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(response);
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data =
+        Resources.toString(
+            Resources.getResource(PostAttestationTest.class, "postAttestationRequestBody.json"),
+            UTF_8);
+    final Object requestBody = getRequestBodyFromMetadata(handler, data);
+    assertThat(requestBody).isInstanceOf(List.class);
+    assertThat(((List<?>) requestBody).get(0)).isInstanceOf(Attestation.class);
   }
 
   @Test
