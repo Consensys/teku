@@ -22,7 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,6 +33,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -56,12 +57,12 @@ public class PostSubscribeToBeaconCommitteeSubnet extends MigratingEndpointAdapt
               .initializer(CommitteeSubscriptionData::new)
               .withField(
                   "validator_index",
-                  RAW_INTEGER_TYPE,
+                  STRING_INTEGER_TYPE,
                   CommitteeSubscriptionData::getValidatorIndex,
                   CommitteeSubscriptionData::setValidatorIndex)
               .withField(
                   "committee_index",
-                  RAW_INTEGER_TYPE,
+                  STRING_INTEGER_TYPE,
                   CommitteeSubscriptionData::getCommitteeIndex,
                   CommitteeSubscriptionData::setCommitteeIndex)
               .withField(
@@ -207,6 +208,43 @@ public class PostSubscribeToBeaconCommitteeSubnet extends MigratingEndpointAdapt
 
     public void setAggregator(boolean aggregator) {
       isAggregator = aggregator;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      CommitteeSubscriptionData that = (CommitteeSubscriptionData) o;
+      return validatorIndex == that.validatorIndex
+          && committeeIndex == that.committeeIndex
+          && isAggregator == that.isAggregator
+          && Objects.equals(committeesAtSlot, that.committeesAtSlot)
+          && Objects.equals(slot, that.slot);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(validatorIndex, committeeIndex, committeesAtSlot, slot, isAggregator);
+    }
+
+    @Override
+    public String toString() {
+      return "CommitteeSubscriptionData{"
+          + "validatorIndex="
+          + validatorIndex
+          + ", committeeIndex="
+          + committeeIndex
+          + ", committeesAtSlot="
+          + committeesAtSlot
+          + ", slot="
+          + slot
+          + ", isAggregator="
+          + isAggregator
+          + '}';
     }
   }
 }
