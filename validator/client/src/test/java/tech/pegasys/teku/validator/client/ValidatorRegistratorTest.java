@@ -51,8 +51,6 @@ import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 class ValidatorRegistratorTest {
 
-  private static final UInt64 CUSTOM_GAS_LIMIT = UInt64.valueOf(29_000_000);
-
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
   private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
   private final ProposerConfig proposerConfig = mock(ProposerConfig.class);
@@ -69,7 +67,10 @@ class ValidatorRegistratorTest {
   private Validator validator2;
   private Validator validator3;
 
+  private List<BLSPublicKey> allValidatorsPublicKeys;
+
   private Eth1Address eth1Address;
+  private UInt64 gasLimit;
 
   private ValidatorRegistrator validatorRegistrator;
 
@@ -80,7 +81,13 @@ class ValidatorRegistratorTest {
     validator1 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
     validator2 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
     validator3 = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
+
+    allValidatorsPublicKeys =
+        List.of(validator1.getPublicKey(), validator2.getPublicKey(), validator3.getPublicKey());
+
     eth1Address = dataStructureUtil.randomEth1Address();
+    gasLimit = dataStructureUtil.randomUInt64();
+
     validatorRegistrator =
         new ValidatorRegistrator(
             specContext.getSpec(),
@@ -99,7 +106,7 @@ class ValidatorRegistratorTest {
     when(proposerConfig.isValidatorRegistrationEnabledForPubKey(any()))
         .thenReturn(Optional.of(true));
     when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(any()))
-        .thenReturn(Optional.of(CUSTOM_GAS_LIMIT));
+        .thenReturn(Optional.of(gasLimit));
 
     when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
     when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
@@ -151,17 +158,74 @@ class ValidatorRegistratorTest {
         captureValidatorApiChannelCalls(2);
 
     registrationCalls.forEach(
-        registrationCall ->
-            verifyRegistrations(
-                registrationCall,
-                List.of(
-                    validator1.getPublicKey(),
-                    validator2.getPublicKey(),
-                    validator3.getPublicKey())));
+        registrationCall -> verifyRegistrations(registrationCall, allValidatorsPublicKeys));
 
     // signer will be called in total 3 times, since from the 2nd run the signed registrations will
     // be cached
     verify(signer, times(3)).signValidatorRegistration(any(), any());
+  }
+
+  @TestTemplate
+  void doesNotUseCache_ifRegistrationsNeedUpdating() {
+    // GIVEN
+    when(ownedValidators.getActiveValidators())
+        .thenReturn(List.of(validator1, validator2, validator3));
+
+    // WHEN first invoked, registrations will be cached
+    validatorRegistrator.onSlot(UInt64.ZERO);
+
+    Eth1Address otherEth1Address = dataStructureUtil.randomEth1Address();
+    UInt64 otherGasLimit = dataStructureUtil.randomUInt64();
+
+    // fee recipient changed for validator2
+    when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
+        .thenReturn(Optional.of(otherEth1Address));
+
+    // gas limit changed for validator3
+    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator3.getPublicKey()))
+        .thenReturn(Optional.of(otherGasLimit));
+
+    // WHEN onSlot called again next epoch, validator1 registration will use the cache, others will
+    // require updating
+    validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
+
+    // THEN
+    List<SszList<SignedValidatorRegistration>> registrationCalls =
+        captureValidatorApiChannelCalls(2);
+
+    // first call should use the default fee recipient and gas limit
+    verifyRegistrations(registrationCalls.get(0), allValidatorsPublicKeys);
+
+    // second call should use the changed fee recipient and gas limit
+    Consumer<ValidatorRegistration> updatedRegistrationsRequirements =
+        (validatorRegistration) -> {
+          BLSPublicKey publicKey = validatorRegistration.getPublicKey();
+          Eth1Address feeRecipient = validatorRegistration.getFeeRecipient();
+          UInt64 gasLimit = validatorRegistration.getGasLimit();
+          if (publicKey.equals(validator1.getPublicKey())) {
+            // validator1 hasn't changed at all
+            assertThat(feeRecipient).isEqualTo(eth1Address);
+            assertThat(gasLimit).isEqualTo(gasLimit);
+          }
+          if (publicKey.equals(validator2.getPublicKey())) {
+            // validator2 fee recipient has changed
+            assertThat(feeRecipient).isEqualTo(otherEth1Address);
+            assertThat(gasLimit).isEqualTo(gasLimit);
+          }
+          if (publicKey.equals(validator3.getPublicKey())) {
+            // validator3 gas limit has changed
+            assertThat(feeRecipient).isEqualTo(eth1Address);
+            assertThat(gasLimit).isEqualTo(otherGasLimit);
+          }
+        };
+
+    verifyRegistrations(
+        registrationCalls.get(1),
+        allValidatorsPublicKeys,
+        Optional.of(updatedRegistrationsRequirements));
+
+    // signer will be called in total 5 times
+    verify(signer, times(5)).signValidatorRegistration(any(), any());
   }
 
   @TestTemplate
@@ -270,7 +334,7 @@ class ValidatorRegistratorTest {
           UInt64 gasLimit = validatorRegistration.getGasLimit();
           if (publicKey.equals(validator1.getPublicKey())) {
             // validator1 gas limit hasn't been changed
-            assertThat(gasLimit).isEqualTo(CUSTOM_GAS_LIMIT);
+            assertThat(gasLimit).isEqualTo(gasLimit);
           }
           if (publicKey.equals(validator2.getPublicKey())) {
             assertThat(gasLimit).isEqualTo(validator2GasLimit);
@@ -328,7 +392,7 @@ class ValidatorRegistratorTest {
               } else {
                 assertThat(registration.getFeeRecipient()).isEqualTo(eth1Address);
                 assertThat(registration.getTimestamp()).isEqualTo(UInt64.valueOf(12));
-                assertThat(registration.getGasLimit()).isEqualTo(CUSTOM_GAS_LIMIT);
+                assertThat(registration.getGasLimit()).isEqualTo(gasLimit);
               }
             })
         .map(ValidatorRegistration::getPublicKey)
