@@ -19,7 +19,10 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -59,7 +62,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -446,39 +448,39 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getValidatorInclusionStateAtEpoch_shouldThrowServiceUnavailableIfEpochNotFound() {
+  void getValidatorInclusionAtEpoch_shouldThrowServiceUnavailableIfEpochNotFound() {
     final RecentChainData recentChainData1 = mock(RecentChainData.class);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData1, combinedChainDataClient);
     when(recentChainData1.getCurrentEpoch()).thenReturn(Optional.empty());
-    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(data.randomEpoch()))
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(data.randomEpoch()))
         .isInstanceOf(ServiceUnavailableException.class);
   }
 
   @Test
-  void getValidatorInclusionStateAtEpoch_shouldThrowIllegalArgForCurrentOrFutureEpoch() {
+  void getValidatorInclusionAtEpoch_shouldThrowIllegalArgForCurrentOrFutureEpoch() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(UInt64.valueOf(3)))
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(3)))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(UInt64.valueOf(4)))
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(4)))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> provider.getValidatorInclusionStateAtEpoch(UInt64.MAX_VALUE))
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.MAX_VALUE))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  void getValidatorInclusionStateAtEpoch_shouldReturnStateForPreviousEpoch()
+  void getValidatorInclusionAtEpoch_shouldReturnStateForPreviousEpoch()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final Optional<StateAndMetaData> maybeStateAndMetadata =
-        provider.getValidatorInclusionStateAtEpoch(UInt64.valueOf(2)).get();
-    assertThat(maybeStateAndMetadata).isPresent();
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        maybeStateAndMetadata.orElseThrow().getData();
+        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
     // expect to see the last slot of epoch requested, so 3 * 8 - 1 (23)
-    assertThat(state.getSlot().intValue()).isEqualTo(23);
+    when(mockCombinedChainDataClient.getChainHead())
+        .thenReturn(combinedChainDataClient.getChainHead());
+    when(mockCombinedChainDataClient.getStateAtSlotExact(eq(UInt64.valueOf(23)), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    provider.getValidatorInclusionAtEpoch(UInt64.valueOf(2)).get();
+    verify(mockCombinedChainDataClient).getStateAtSlotExact(eq(UInt64.valueOf(23)), any());
   }
 
   private ChainDataProvider setupAltairState() {

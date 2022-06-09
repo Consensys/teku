@@ -38,8 +38,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -48,30 +46,20 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
 public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/teku/v1/validator_inclusion/:epoch/global";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
-  private static final Logger LOG = LogManager.getLogger();
 
   private final ChainDataProvider chainDataProvider;
-  private final TimeProvider timeProvider;
 
-  private final Spec spec;
-
-  public GetGlobalValidatorInclusion(
-      final DataProvider dataProvider, final Spec spec, final TimeProvider timeProvider) {
-    this(dataProvider.getChainDataProvider(), spec, timeProvider);
+  public GetGlobalValidatorInclusion(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  public GetGlobalValidatorInclusion(
-      final ChainDataProvider chainDataProvider, final Spec spec, final TimeProvider timeProvider) {
+  public GetGlobalValidatorInclusion(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getGlobalValidatorInclusion")
@@ -91,8 +79,6 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
             .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
-    this.spec = spec;
-    this.timeProvider = timeProvider;
   }
 
   @OpenApi(
@@ -123,25 +109,16 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     request.respondAsync(
         chainDataProvider
-            .getValidatorInclusionStateAtEpoch(epoch)
+            .getValidatorInclusionAtEpoch(epoch)
             .thenApply(
-                maybeStateAndMetadata ->
-                    maybeStateAndMetadata
+                maybeValidatorStatuses ->
+                    maybeValidatorStatuses
                         .map(
-                            stateAndMetadata ->
+                            validatorStatuses ->
                                 AsyncApiResponse.respondOk(
-                                    getResponseFromState(stateAndMetadata.getData())))
+                                    new GetGlobalValidatorResponseData(
+                                        validatorStatuses.getTotalBalances())))
                         .orElse(AsyncApiResponse.respondServiceUnavailable())));
-  }
-
-  private GetGlobalValidatorResponseData getResponseFromState(final BeaconState state) {
-    final UInt64 timeStart = timeProvider.getTimeInMillis();
-    final ValidatorStatuses validatorStatuses =
-        spec.atSlot(state.getSlot()).getValidatorStatusFactory().createValidatorStatuses(state);
-    final UInt64 timeEnd = timeProvider.getTimeInMillis();
-    LOG.debug(
-        "Time taken to compute validator statuses: " + timeEnd.minusMinZero(timeStart) + " ms");
-    return new GetGlobalValidatorResponseData(validatorStatuses.getTotalBalances());
   }
 
   public static class GetGlobalValidatorResponse {

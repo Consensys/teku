@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -355,8 +356,7 @@ public class ChainDataProvider {
         stateIdParameter, state -> getCommitteesFromState(state, epoch, committeeIndex, slot));
   }
 
-  public SafeFuture<Optional<StateAndMetaData>> getValidatorInclusionStateAtEpoch(
-      final UInt64 epoch) {
+  public SafeFuture<Optional<ValidatorStatuses>> getValidatorInclusionAtEpoch(final UInt64 epoch) {
     final Optional<UInt64> maybeCurrentEpoch = getCurrentEpoch();
     if (maybeCurrentEpoch.isEmpty()) {
       throw new ServiceUnavailableException();
@@ -370,7 +370,14 @@ public class ChainDataProvider {
     // For this reason, we can't process the actual current epoch, it will be a completed epoch
     // required
     final UInt64 slotRequired = spec.computeStartSlotAtEpoch(epoch.plus(1)).minus(1);
-    return getBeaconStateAndMetadata(slotRequired.toString());
+    return getBeaconStateAndMetadata(slotRequired.toString())
+        .thenApply(
+            maybeStateAndMetadata ->
+                maybeStateAndMetadata.map(
+                    stateAndMetadata ->
+                        spec.atSlot(stateAndMetadata.getData().getSlot())
+                            .getValidatorStatusFactory()
+                            .createValidatorStatuses(stateAndMetadata.getData())));
   }
 
   public Optional<UInt64> getCurrentEpoch() {

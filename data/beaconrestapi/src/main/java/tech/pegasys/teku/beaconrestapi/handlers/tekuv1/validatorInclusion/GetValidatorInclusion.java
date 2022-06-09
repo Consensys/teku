@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -39,8 +40,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -50,31 +49,22 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
 public class GetValidatorInclusion extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/teku/v1/validator_inclusion/:epoch/:validator_id";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
-  private static final Logger LOG = LogManager.getLogger();
   private final ChainDataProvider chainDataProvider;
 
-  private final Spec spec;
   public static final ParameterMetadata<UInt64> PARAMETER_VALIDATOR_ID =
       new ParameterMetadata<>("validator_id", UINT64_TYPE);
-  private final TimeProvider timeProvider;
 
-  public GetValidatorInclusion(
-      final DataProvider dataProvider, final Spec spec, final TimeProvider timeProvider) {
-    this(dataProvider.getChainDataProvider(), spec, timeProvider);
+  public GetValidatorInclusion(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  GetValidatorInclusion(
-      final ChainDataProvider chainDataProvider, final Spec spec, final TimeProvider timeProvider) {
+  GetValidatorInclusion(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getValidatorInclusion")
@@ -98,8 +88,6 @@ public class GetValidatorInclusion extends MigratingEndpointAdapter {
             .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
-    this.spec = spec;
-    this.timeProvider = timeProvider;
   }
 
   @OpenApi(
@@ -135,27 +123,24 @@ public class GetValidatorInclusion extends MigratingEndpointAdapter {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     request.respondAsync(
         chainDataProvider
-            .getValidatorInclusionStateAtEpoch(epoch)
+            .getValidatorInclusionAtEpoch(epoch)
             .thenApply(
-                maybeStateAndMetadata ->
-                    maybeStateAndMetadata
+                maybeValidatorStatuses ->
+                    maybeValidatorStatuses
                         .map(
-                            stateAndMetadata ->
-                                AsyncApiResponse.respondOk(
-                                    getBalanceFromState(stateAndMetadata.getData(), validator)))
+                            validatorStatuses -> {
+                              if (validator < 0
+                                  || validatorStatuses.getValidatorCount() <= validator) {
+                                return AsyncApiResponse.respondWithError(
+                                    SC_BAD_REQUEST,
+                                    "Expected validator index between 0 and "
+                                        + (validatorStatuses.getValidatorCount() - 1));
+                              }
+                              return AsyncApiResponse.respondOk(
+                                  new GetValidatorInclusionResponseData(
+                                      validatorStatuses.getStatuses().get(validator)));
+                            })
                         .orElse(AsyncApiResponse.respondServiceUnavailable())));
-  }
-
-  private GetValidatorInclusionResponseData getBalanceFromState(
-      final BeaconState state, final int validator) {
-
-    final UInt64 timeStart = timeProvider.getTimeInMillis();
-    final ValidatorStatuses validatorStatuses =
-        spec.atSlot(state.getSlot()).getValidatorStatusFactory().createValidatorStatuses(state);
-    final UInt64 timeEnd = timeProvider.getTimeInMillis();
-    LOG.debug(
-        "Time taken to compute validator statuses: " + timeEnd.minusMinZero(timeStart) + " ms");
-    return new GetValidatorInclusionResponseData(validatorStatuses.getStatuses().get(validator));
   }
 
   public static class GetValidatorResponse {

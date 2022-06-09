@@ -177,7 +177,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, eth1DataProvider, spec, timeProvider);
+    addTekuSpecificHandlers(dataProvider, eth1DataProvider);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -365,10 +365,7 @@ public class BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider,
-      final Eth1DataProvider eth1DataProvider,
-      final Spec spec,
-      final TimeProvider timeProvider) {
+      final DataProvider provider, final Eth1DataProvider eth1DataProvider) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
@@ -380,8 +377,8 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
     addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
-    addMigratedEndpoint(new GetGlobalValidatorInclusion(provider, spec, timeProvider));
-    addMigratedEndpoint(new GetValidatorInclusion(provider, spec, timeProvider));
+    addMigratedEndpoint(new GetGlobalValidatorInclusion(provider));
+    addMigratedEndpoint(new GetValidatorInclusion(provider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

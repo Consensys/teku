@@ -29,21 +29,17 @@ import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
 class GetGlobalValidatorInclusionTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
-
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10000);
-
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    setHandler(new GetGlobalValidatorInclusion(chainDataProvider, spec, timeProvider));
+    setHandler(new GetGlobalValidatorInclusion(chainDataProvider));
   }
 
   @Test
