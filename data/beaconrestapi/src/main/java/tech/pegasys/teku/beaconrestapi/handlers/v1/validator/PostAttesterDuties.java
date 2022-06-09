@@ -28,7 +28,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
@@ -120,10 +119,7 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
             .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", RESPONSE_TYPE)
-            .response(
-                SC_SERVICE_UNAVAILABLE,
-                "Beacon node is currently syncing, try again later.",
-                HTTP_ERROR_RESPONSE_TYPE)
+            .withServiceUnavailableResponse()
             .build());
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
@@ -171,8 +167,7 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       request.respondError(
-          SC_SERVICE_UNAVAILABLE,
-          "Beacon node is currently syncing and not serving request on that endpoint");
+          SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing and not serving requests.");
       return;
     }
 
@@ -187,9 +182,7 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
         future.thenApply(
             attesterDuties -> {
               if (attesterDuties.isEmpty()) {
-                return AsyncApiResponse.respondWithError(
-                    SC_SERVICE_UNAVAILABLE,
-                    "Beacon node is currently syncing and not serving request on that endpoint");
+                return AsyncApiResponse.respondServiceUnavailable();
               }
               return AsyncApiResponse.respondOk(attesterDuties.get());
             }));

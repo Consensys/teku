@@ -69,7 +69,7 @@ public class PostAttesterDutiesTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             new HttpErrorResponse(
                 SC_SERVICE_UNAVAILABLE,
-                "Beacon node is currently syncing and not serving request on that endpoint"));
+                "Beacon node is currently syncing and not serving requests."));
   }
 
   @Test

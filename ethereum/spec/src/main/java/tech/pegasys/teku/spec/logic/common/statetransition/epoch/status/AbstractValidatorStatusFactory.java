@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -68,13 +67,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
     processParticipation(statuses, state, previousEpoch, currentEpoch);
 
-    final TotalBalances totalBalances = createTotalBalances(statuses);
-    BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
-    BeaconStateCache.getTransitionCaches(state)
-        .getTotalActiveBalance()
-        .get(currentEpoch, __ -> totalBalances.getCurrentEpochActiveValidators());
-
-    return new ValidatorStatuses(statuses, totalBalances);
+    return new ValidatorStatuses(statuses, createTotalBalances(statuses));
   }
 
   @Override
