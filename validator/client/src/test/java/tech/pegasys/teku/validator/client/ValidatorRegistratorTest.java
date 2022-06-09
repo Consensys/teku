@@ -101,6 +101,7 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(any()))
         .thenReturn(Optional.of(CUSTOM_GAS_LIMIT));
 
+    when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
     when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
 
     // random signature for all signings
@@ -110,11 +111,20 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void doesNotRegisterValidators_ifNotReady() {
+    when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+
+    validatorRegistrator.onSlot(UInt64.ONE);
+
+    verifyNoInteractions(ownedValidators, validatorApiChannel, signer);
+  }
+
+  @TestTemplate
   void doesNotRegisterValidators_ifNotBeginningOfEpoch() {
     when(ownedValidators.getActiveValidators()).thenReturn(List.of());
 
-    // initially validators will be registered anyway since it's the first call
-    validatorRegistrator.onSlot(UInt64.ONE);
+    // initially validators will be registered since it's the first call
+    validatorRegistrator.onSlot(UInt64.ZERO);
     verify(ownedValidators).getActiveValidators();
 
     // after the initial call, registration should not occur if not beginning of epoch
@@ -152,6 +162,15 @@ class ValidatorRegistratorTest {
     // signer will be called in total 3 times, since from the 2nd run the signed registrations will
     // be cached
     verify(signer, times(3)).signValidatorRegistration(any(), any());
+  }
+
+  @TestTemplate
+  void doesNotRegisterNewlyAddedValidators_ifNotReady() {
+    when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+
+    validatorRegistrator.onValidatorsAdded();
+
+    verifyNoInteractions(ownedValidators, validatorApiChannel, signer);
   }
 
   @TestTemplate
