@@ -166,6 +166,28 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void cleanupsCache_ifValidatorIsNoLongerActive() {
+    // GIVEN
+    when(ownedValidators.getActiveValidators())
+        .thenReturn(List.of(validator1, validator2, validator3));
+
+    // WHEN first invoked, registrations will be cached
+    validatorRegistrator.onSlot(UInt64.ZERO);
+
+    // THEN registrations should be cached
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(3);
+
+    // GIVEN validator1 is not active anymore
+    when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator2, validator3));
+
+    // WHEN invoked again
+    validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
+
+    // THEN cache should be cleaned up
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(3);
+  }
+
+  @TestTemplate
   void doesNotUseCache_ifRegistrationsNeedUpdating() {
     // GIVEN
     when(ownedValidators.getActiveValidators())

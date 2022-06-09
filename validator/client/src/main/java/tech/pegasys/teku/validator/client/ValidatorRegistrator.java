@@ -16,9 +16,11 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import com.google.common.collect.Maps;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -87,6 +89,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastProcessedEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
+      cleanupCache(activeValidators);
       LOG.debug(
           "Checking if registration is required for {} validator(s) at epoch {}",
           activeValidators.size(),
@@ -131,6 +134,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   @Override
   public void onAttestationAggregationDue(UInt64 slot) {}
 
+  public int getNumberOfCachedRegistrations() {
+    return cachedValidatorRegistrations.size();
+  }
+
   private boolean isNotReadyToRegister() {
     if (!feeRecipientProvider.isReadyToProvideFeeRecipient()) {
       LOG.debug("Not ready to register validator(s).");
@@ -141,6 +148,24 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private boolean isBeginningOfEpoch(final UInt64 slot) {
     return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
+  }
+
+  private void cleanupCache(final List<Validator> activeValidators) {
+    final Set<BLSPublicKey> activeValidatorsPublicKeys =
+        activeValidators.stream()
+            .map(Validator::getPublicKey)
+            .collect(Collectors.toCollection(HashSet::new));
+
+    cachedValidatorRegistrations
+        .keySet()
+        .forEach(
+            cachedPublicKey -> {
+              if (!activeValidatorsPublicKeys.contains(cachedPublicKey)) {
+                LOG.debug(
+                    "Removing cached registration for {} because validator is no longer active.",
+                    cachedPublicKey);
+              }
+            });
   }
 
   private SafeFuture<Void> registerValidators(
@@ -198,7 +223,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 LOG.debug(
                     "The cached registration for {} needs updating. Will create a new one.",
                     publicKey);
-                cachedValidatorRegistrations.remove(publicKey);
               }
               return !needsUpdate;
             })
