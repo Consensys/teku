@@ -101,6 +101,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   // - proposer set via the SET api (runtime configuration)
   // - default set in --validator-proposer-config file
   // - default set by --validators-proposer-default-fee-recipient
+  @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
     if (validatorIndexCannotBeResolved(publicKey)) {
       return Optional.empty();
