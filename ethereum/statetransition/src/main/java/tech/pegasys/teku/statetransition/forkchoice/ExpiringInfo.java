@@ -23,7 +23,7 @@ public abstract class ExpiringInfo {
   }
 
   public boolean hasExpired(final UInt64 currentSlot) {
-    return currentSlot.isGreaterThanOrEqualTo(expirySlot);
+    return currentSlot.isGreaterThan(expirySlot);
   }
 
   public UInt64 getExpirySlot() {
