@@ -86,7 +86,7 @@ public class Eth1DepositManager {
             (err) -> {
               throw new FatalServiceFailureException(getClass(), err);
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   public void stop() {

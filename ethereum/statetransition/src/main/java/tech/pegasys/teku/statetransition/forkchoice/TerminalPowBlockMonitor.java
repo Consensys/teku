@@ -319,18 +319,27 @@ public class TerminalPowBlockMonitor {
 
     final long now = timeProvider.getTimeInSeconds().longValue();
 
-    final long timeDiff = now - latestBlock.getBlockTimestamp().longValue();
-
-    final long secondsToTTD =
+    final UInt256 secondsToTTD =
         specConfigBellatrix
             .getTerminalTotalDifficulty()
             .subtract(latestBlock.getTotalDifficulty())
-            .divide(averageTdPerSeconds)
-            .subtract(timeDiff)
-            .toLong();
+            .divide(averageTdPerSeconds);
 
-    final Duration eta = Duration.ofSeconds(secondsToTTD);
-    final Instant etaInstant = Instant.ofEpochSecond(now + secondsToTTD);
+    // avoid negative time diff due to time discrepancy with EL
+    final UInt256 timeDiff =
+        UInt256.valueOf(Math.max(0, now - latestBlock.getBlockTimestamp().longValue()));
+
+    final long secondsToTTDAdjusted;
+    // by subtracting timeDiff we could go after the merge and get negative result,
+    // let's avoid that.
+    if (secondsToTTD.greaterThan(timeDiff)) {
+      secondsToTTDAdjusted = secondsToTTD.subtract(timeDiff).toLong();
+    } else {
+      secondsToTTDAdjusted = 0L;
+    }
+
+    final Duration eta = Duration.ofSeconds(secondsToTTDAdjusted);
+    final Instant etaInstant = Instant.ofEpochSecond(now + secondsToTTDAdjusted);
 
     eventLogger.terminalPowBlockTtdEta(latestBlock.getTotalDifficulty(), eta, etaInstant);
   }

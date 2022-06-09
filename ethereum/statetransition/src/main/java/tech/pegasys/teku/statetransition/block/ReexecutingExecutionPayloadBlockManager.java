@@ -114,7 +114,7 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
                   .map(this::reexecuteExecutionPayload)
                   .toArray(SafeFuture[]::new))
           .alwaysRun(() -> reexecutingExecutionPayload.set(false))
-          .reportExceptions();
+          .ifExceptionGetsHereRaiseABug();
     }
   }
 

@@ -138,7 +138,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   public SafeFuture<Void> start() {
     // Don't wait for the genesis time to be available before considering startup complete
     // The beacon node may not be available or genesis may not yet be known.
-    genesisDataProvider.getGenesisTime().thenAccept(this::start).reportExceptions();
+    genesisDataProvider.getGenesisTime().thenAccept(this::start).ifExceptionGetsHereRaiseABug();
     return SafeFuture.COMPLETE;
   }
 

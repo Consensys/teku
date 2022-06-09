@@ -1,0 +1,41 @@
+{
+  "get" : {
+    "tags" : [ "Teku", "Experimental" ],
+    "summary" : "Get Global Validator Inclusion",
+    "description" : "Returns a global count of votes for a given epoch.",
+    "operationId" : "getTekuV1Validator_inclusionWithEpochGlobal",
+    "parameters" : [ {
+      "name" : "epoch",
+      "in" : "path",
+      "description" : "Epoch to get data for",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetGlobalValidatorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing."
+      }
+    }
+  }
+}

@@ -143,7 +143,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                 .getForkChoiceState()
                                 .getHeadBlockRoot(),
                             forkChoiceUpdatedResult.getPayloadStatus())))
-        .reportExceptions();
+        .finish(error -> LOG.error("Failed to update fork choice", error));
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -566,7 +566,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               transaction.commit();
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<Void> applyDeferredAttestations(
@@ -606,7 +606,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               storeEquivocatingIndices(slashing, transaction);
               transaction.commit();
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private void storeEquivocatingIndices(
@@ -625,7 +625,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     tickProcessor.onTick(currentTimeMillis).join();
     final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
     if (currentSlot.isGreaterThan(previousSlot)) {
-      applyDeferredAttestations(currentSlot).reportExceptions();
+      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
     }
   }
 

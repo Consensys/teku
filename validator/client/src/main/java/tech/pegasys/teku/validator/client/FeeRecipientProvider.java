@@ -17,8 +17,9 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
-@FunctionalInterface
 public interface FeeRecipientProvider {
 
   Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
+
+  boolean isReadyToProvideFeeRecipient();
 }

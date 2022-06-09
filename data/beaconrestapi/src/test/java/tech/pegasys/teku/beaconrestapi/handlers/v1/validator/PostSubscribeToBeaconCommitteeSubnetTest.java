@@ -17,10 +17,12 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +49,18 @@ class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHan
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data =
+        "[{\"validator_index\":\"1\",\"committee_index\":\"1\",\"committees_at_slot\":\"1\","
+            + "\"slot\":\"1\",\"is_aggregator\":true}]";
+    assertThat(getRequestBodyFromMetadata(handler, data))
+        .isEqualTo(
+            List.of(
+                new PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData(
+                    1, 1, UInt64.ONE, UInt64.ONE, true)));
   }
 
   @Test

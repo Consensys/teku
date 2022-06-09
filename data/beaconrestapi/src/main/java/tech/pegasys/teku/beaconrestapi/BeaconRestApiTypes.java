@@ -39,7 +39,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -108,7 +108,7 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<Integer> SYNCING_PARAMETER =
       new ParameterMetadata<>(
-          SYNCING_STATUS, CoreTypes.INTEGER_TYPE.withDescription(SYNCING_STATUS_DESCRIPTION));
+          SYNCING_STATUS, CoreTypes.RAW_INTEGER_TYPE.withDescription(SYNCING_STATUS_DESCRIPTION));
 
   public static final ParameterMetadata<String> PEER_ID_PARAMETER =
       new ParameterMetadata<>(
@@ -128,7 +128,7 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<Integer> SUBCOMMITTEE_INDEX_PARAMETER =
       new ParameterMetadata<>(
           SUBCOMMITTEE_INDEX,
-          INTEGER_TYPE.withDescription(
+          RAW_INTEGER_TYPE.withDescription(
               "`Integer` The subcommittee index for which to produce the contribution."));
 
   public static final ParameterMetadata<Bytes32> BEACON_BLOCK_ROOT_PARAMETER =

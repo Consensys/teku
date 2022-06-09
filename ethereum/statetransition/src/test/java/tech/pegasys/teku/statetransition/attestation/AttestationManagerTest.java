@@ -107,7 +107,7 @@ class AttestationManagerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.from(spec, dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
-    attestationManager.onAttestation(attestation).reportExceptions();
+    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
 
     verifyAttestationProcessed(attestation);
     verify(attestationPool).add(attestation);
@@ -121,7 +121,7 @@ class AttestationManagerTest {
         ValidateableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
-    attestationManager.onAttestation(aggregate).reportExceptions();
+    attestationManager.onAttestation(aggregate).ifExceptionGetsHereRaiseABug();
 
     verifyAttestationProcessed(aggregate);
     verify(attestationPool).add(aggregate);
@@ -139,7 +139,7 @@ class AttestationManagerTest {
         ValidateableAttestation.from(spec, attestationFromSlot(futureSlot));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
-    attestationManager.onAttestation(attestation).reportExceptions();
+    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
 
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
@@ -189,7 +189,7 @@ class AttestationManagerTest {
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(UNKNOWN_BLOCK))
         .thenReturn(completedFuture(SUCCESSFUL));
-    attestationManager.onAttestation(attestation).reportExceptions();
+    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
 
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
@@ -219,7 +219,7 @@ class AttestationManagerTest {
         ValidateableAttestation.from(spec, dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Didn't like it")));
-    attestationManager.onAttestation(attestation).reportExceptions();
+    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
 
     verifyAttestationProcessed(attestation);
     assertThat(pendingAttestations.size()).isZero();
@@ -234,7 +234,7 @@ class AttestationManagerTest {
             spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Don't wanna")));
-    attestationManager.onAttestation(aggregateAndProof).reportExceptions();
+    attestationManager.onAttestation(aggregateAndProof).ifExceptionGetsHereRaiseABug();
 
     verifyAttestationProcessed(aggregateAndProof);
     assertThat(pendingAttestations.size()).isZero();
