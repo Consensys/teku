@@ -1,0 +1,28 @@
+{
+  "title" : "PostSyncCommitteeData",
+  "type" : "object",
+  "required" : [ "validator_index", "sync_committee_indices", "until_epoch" ],
+  "properties" : {
+    "validator_index" : {
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
+    },
+    "sync_committee_indices" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "integer string",
+        "example" : "1",
+        "format" : "integer"
+      }
+    },
+    "until_epoch" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}

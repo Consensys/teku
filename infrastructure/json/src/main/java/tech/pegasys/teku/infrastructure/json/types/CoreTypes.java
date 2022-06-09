@@ -79,6 +79,15 @@ public class CoreTypes {
 
   public static final StringValueTypeDefinition<Integer> INTEGER_TYPE = new IntegerTypeDefinition();
 
+  public static final StringValueTypeDefinition<Integer> INTEGER_STRING_TYPE =
+      DeserializableTypeDefinition.string(Integer.class)
+          .formatter(Object::toString)
+          .parser(Integer::valueOf)
+          .example("1")
+          .description("integer string")
+          .format("integer")
+          .build();
+
   public static final DeserializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       DeserializableTypeDefinition.object(HttpErrorResponse.class, HttpErrorResponse.Builder.class)
           .name("HttpErrorResponse")
