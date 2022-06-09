@@ -286,6 +286,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     if (cachedValidatorRegistrations.isEmpty()) {
       return;
     }
+    if (cachedValidatorRegistrations.size() == activeValidators.size()) {
+      return;
+    }
+
     final Set<BLSPublicKey> activeValidatorsPublicKeys =
         activeValidators.stream()
             .map(Validator::getPublicKey)
