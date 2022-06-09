@@ -39,7 +39,7 @@ for testdir in $(find $TEKU_DIR | grep "/src/test$"); do
                     newtestfile=${newtestfile/%.java/Test.java}
                     printf "Maybe test should be here:\n"
                     printf "  Test: %s\n" $(realpath --canonicalize-missing \
-                        --relative-to=$TEKU_DIR $testfile)
+                        --relative-to=$TEKU_DIR $newtestfile)
                 fi
             done
         fi
