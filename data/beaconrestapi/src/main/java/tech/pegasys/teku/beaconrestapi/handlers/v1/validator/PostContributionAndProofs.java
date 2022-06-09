@@ -62,7 +62,7 @@ public class PostContributionAndProofs extends MigratingEndpointAdapter {
                 "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
-                DeserializableTypeDefinition.listOf(getResponseType(schemaDefinitionCache)))
+                DeserializableTypeDefinition.listOf(getRequestType(schemaDefinitionCache)))
             .response(SC_OK, "Successful response")
             .build());
     this.provider = provider;
@@ -102,7 +102,7 @@ public class PostContributionAndProofs extends MigratingEndpointAdapter {
     request.respondAsync(future.thenApply(v -> AsyncApiResponse.respondWithCode(SC_OK)));
   }
 
-  private static DeserializableTypeDefinition<SignedContributionAndProof> getResponseType(
+  private static DeserializableTypeDefinition<SignedContributionAndProof> getRequestType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     final SignedContributionAndProofSchema typeDefinition =
         SchemaDefinitionsAltair.required(
