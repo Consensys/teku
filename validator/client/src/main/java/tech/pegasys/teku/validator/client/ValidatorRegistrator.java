@@ -283,10 +283,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private void cleanupCache(final List<Validator> activeValidators) {
-    if (cachedValidatorRegistrations.isEmpty()) {
-      return;
-    }
-    if (cachedValidatorRegistrations.size() == activeValidators.size()) {
+    if (cachedValidatorRegistrations.isEmpty()
+        || cachedValidatorRegistrations.size() == activeValidators.size()) {
       return;
     }
 
