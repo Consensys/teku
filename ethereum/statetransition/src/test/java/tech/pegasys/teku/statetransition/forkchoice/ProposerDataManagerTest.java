@@ -14,11 +14,13 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,6 +56,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
   private final BeaconState state = dataStructureUtil.randomBeaconState();
 
   private boolean onValidatorRegistrationsUpdatedCalled = false;
+  private boolean onPreparedProposerUpdatedCalled = false;
 
   private final UInt64 slot = UInt64.ONE;
   private SszList<SignedValidatorRegistration> registrations;
@@ -97,6 +101,34 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     verifyNoMoreInteractions(executionLayerChannel);
   }
 
+  @Test
+  void shouldSignalAllDataUpdatedAndShouldExpireData() {
+
+    prepareRegistrations();
+    final SafeFuture<Void> updateCall =
+        proposersDataManager.updateValidatorRegistrations(registrations, slot);
+    response.complete(null);
+    assertThat(updateCall).isCompleted();
+
+    proposersDataManager.updatePreparedProposers(
+        List.of(
+            new BeaconPreparableProposer(
+                dataStructureUtil.randomUInt64(), dataStructureUtil.randomEth1Address())),
+        slot);
+
+    assertThat(proposersDataManager.getNumberOfPreparedProposers()).isEqualTo(1);
+    assertThat(proposersDataManager.getNumberOfRegisteredValidators()).isEqualTo(2);
+
+    assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
+    assertThat(onPreparedProposerUpdatedCalled).isTrue();
+
+    UInt64 futureSlot = UInt64.valueOf(spec.getSlotsPerEpoch(slot) * 3L).increment();
+    proposersDataManager.onSlot(futureSlot);
+
+    assertThat(proposersDataManager.getNumberOfRegisteredValidators()).isEqualTo(0);
+    assertThat(proposersDataManager.getNumberOfPreparedProposers()).isEqualTo(0);
+  }
+
   private void prepareRegistrations() {
     registrations = dataStructureUtil.randomSignedValidatorRegistrations(2);
 
@@ -106,12 +138,15 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
         .thenReturn(Optional.of(0));
     when(specMock.getValidatorIndex(state, registrations.get(1).getMessage().getPublicKey()))
         .thenReturn(Optional.of(1));
+    when(specMock.getSlotsPerEpoch(any())).thenReturn(spec.getSlotsPerEpoch(slot));
 
     proposersDataManager.subscribeToProposersDataChanges(this);
   }
 
   @Override
-  public void onPreparedProposersUpdated() {}
+  public void onPreparedProposersUpdated() {
+    onPreparedProposerUpdatedCalled = true;
+  }
 
   @Override
   public void onValidatorRegistrationsUpdated() {

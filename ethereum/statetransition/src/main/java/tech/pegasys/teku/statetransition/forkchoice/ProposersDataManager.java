@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ProposersDataManager {
+public class ProposersDataManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private static final long PROPOSER_PREPARATION_EXPIRATION_EPOCHS = 2;
   private static final long VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS = 2;
@@ -79,10 +80,22 @@ public class ProposersDataManager {
     return subscribers.unsubscribe(subscriberId);
   }
 
+  @Override
+  public void onSlot(UInt64 slot) {
+    // do clean up at second slot of each epoch
+    if (!slot.mod(spec.getSlotsPerEpoch(slot)).equals(UInt64.ONE)) {
+      return;
+    }
+
+    // Remove expired prepared proposers
+    preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(slot));
+
+    // Remove expired registered validators
+    validatorRegistrationInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(slot));
+  }
+
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
-    // Remove expired validators
-    preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
 
     // Update validators
     final UInt64 expirySlot =
@@ -166,6 +179,14 @@ public class ProposersDataManager {
             maybeState ->
                 calculatePayloadBuildingAttributes(blockSlot, epoch, maybeState, mandatory),
             eventThread);
+  }
+
+  public int getNumberOfPreparedProposers() {
+    return preparedProposerInfoByValidatorIndex.size();
+  }
+
+  public int getNumberOfRegisteredValidators() {
+    return validatorRegistrationInfoByValidatorIndex.size();
   }
 
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
@@ -271,7 +292,7 @@ public class ProposersDataManager {
     return proposerDefaultFeeRecipient.isPresent();
   }
 
-  public static interface ProposersDataManagerSubscriber {
+  public interface ProposersDataManagerSubscriber {
     void onPreparedProposersUpdated();
 
     void onValidatorRegistrationsUpdated();
