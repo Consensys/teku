@@ -31,16 +31,15 @@ for testdir in $(find $TEKU_DIR | grep "/src/test$"); do
                 # the test file is probably in the wrong directory.
                 #
                 if [ "$file_dircount" == "$testfile_dircount" ]; then
-                    rel_file=$(realpath --relative-to=$TEKU_DIR $file)
-                    rel_testfile=$(realpath --relative-to=$TEKU_DIR $testfile)
                     printf "\nTest may exist in the wrong directory:\n"
-                    printf "  Main: %s\n" $rel_file
-                    printf "  Test: %s\n" $rel_testfile
+                    printf "  Main: %s\n" $(realpath --relative-to=$TEKU_DIR $file)
+                    printf "  Test: %s\n" $(realpath --relative-to=$TEKU_DIR $testfile)
 
-                    rel_newtestfile=${rel_file/$maindir/$testdir}
-                    rel_newtestfile=${rel_newtestfile/%.java/Test.java}
+                    newtestfile=${file/$maindir/$testdir}
+                    newtestfile=${newtestfile/%.java/Test.java}
                     printf "Maybe test should be here:\n"
-                    printf "  Test: %s\n" $rel_newtestfile
+                    printf "  Test: %s\n" $(realpath --canonicalize-missing \
+                        --relative-to=$TEKU_DIR $testfile)
                 fi
             done
         fi
