@@ -15,8 +15,12 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SchemaCombinedTreeState extends SchemaCombined, SchemaFinalizedTreeState {
+public interface SchemaCombinedTreeState extends SchemaCombined {
 
   @Override
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
@@ -33,4 +37,10 @@ public interface SchemaCombinedTreeState extends SchemaCombined, SchemaFinalized
   default Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
+
+  KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot();
+
+  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTreeLeaves();
+
+  KvStoreColumn<Bytes32, CompressedBranchInfo> getColumnFinalizedStateMerkleTreeBranches();
 }

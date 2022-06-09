@@ -139,7 +139,7 @@ public class KvStoreDatabase implements Database {
       final int maxKnownNodeCacheSize,
       final Spec spec) {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
-        new V4FinalizedStateTreeStorageLogic<>(metricsSystem, spec, maxKnownNodeCacheSize);
+        new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
         db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
   }

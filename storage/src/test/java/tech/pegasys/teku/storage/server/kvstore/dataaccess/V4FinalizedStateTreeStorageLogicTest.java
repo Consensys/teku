@@ -27,7 +27,7 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic.FinalizedStateUpdater;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 class V4FinalizedStateTreeStorageLogicTest {
@@ -38,8 +38,8 @@ class V4FinalizedStateTreeStorageLogicTest {
   private final KvStoreAccessor db =
       MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
 
-  private final V4FinalizedStateTreeStorageLogic<SchemaFinalizedTreeState> logic =
-      new V4FinalizedStateTreeStorageLogic<>(new NoOpMetricsSystem(), spec, 1000);
+  private final V4FinalizedStateTreeStorageLogic logic =
+      new V4FinalizedStateTreeStorageLogic(new NoOpMetricsSystem(), spec, 1000);
 
   @Test
   void shouldRoundTripState() {
@@ -64,7 +64,7 @@ class V4FinalizedStateTreeStorageLogicTest {
     final BeaconState state3 = dataStructureUtil.randomBeaconState(UInt64.valueOf(7));
     final BeaconState state4 = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
     try (final KvStoreTransaction transaction = db.startTransaction()) {
-      final FinalizedStateUpdater<SchemaFinalizedTreeState> updater = logic.updater();
+      final FinalizedStateUpdater<SchemaCombinedTreeState> updater = logic.updater();
       updater.addFinalizedState(db, transaction, schema, state1);
       updater.addFinalizedState(db, transaction, schema, state2);
       updater.addFinalizedState(db, transaction, schema, state3);
