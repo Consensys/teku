@@ -40,6 +40,12 @@ class AsyncRunnerEventThreadTest {
   }
 
   @Test
+  void executeLater_shouldThrowWhenNotStarted() {
+    assertThatThrownBy(() -> eventThread.executeLater(eventThread::checkOnEventThread))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
   void checkOnEventThread_shouldNotBeOnEventThreadWhenNotStarted() {
     assertThatThrownBy(eventThread::checkOnEventThread).isInstanceOf(IllegalStateException.class);
   }

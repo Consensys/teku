@@ -143,7 +143,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                 .getForkChoiceState()
                                 .getHeadBlockRoot(),
                             forkChoiceUpdatedResult.getPayloadStatus())))
-        .reportExceptions();
+        .finish(error -> LOG.error("Failed to update fork choice", error));
   }
 
   private void initializeProtoArrayForkChoice() {
