@@ -98,7 +98,9 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     // Set same network name to the eth1Node3 that eth1Node2 had
     eth1Node3.setNodeAlias(eth1Node2Alias);
     eth1Node3.start();
+    eth1Node3.waitForLogMessageContaining("Ethereum main loop is up");
 
+    tekuNode2.waitForLogMessageContaining("Execution Client is back online");
     tekuNode2.waitForLogMessageContaining("Activating optimistic sync");
     tekuNode2.waitForNewFinalization();
     Optional<GetBlockRootResponse> getBlockRootResponse2 = tekuNode2.fetchBeaconRootHead();
