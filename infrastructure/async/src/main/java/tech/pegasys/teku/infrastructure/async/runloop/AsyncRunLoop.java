@@ -55,6 +55,6 @@ public class AsyncRunLoop {
     } else {
       logic.onError(error);
     }
-    asyncRunner.runAfterDelay(retryAction, retryDelay).reportExceptions();
+    asyncRunner.runAfterDelay(retryAction, retryDelay).ifExceptionGetsHereRaiseABug();
   }
 }

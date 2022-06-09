@@ -299,7 +299,7 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(newCheckpoint, false);
 
-    tx.commit().reportExceptions();
+    tx.commit().ifExceptionGetsHereRaiseABug();
 
     // Check that store was updated
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
@@ -313,7 +313,7 @@ class RecentChainDataTest {
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setTimeMillis(UInt64.valueOf(11000L));
-    tx.commit().reportExceptions();
+    tx.commit().ifExceptionGetsHereRaiseABug();
 
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
@@ -565,7 +565,7 @@ class RecentChainDataTest {
     assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
         .isEqualTo(genesis.getSlot());
     // Commit tx
-    tx.commit().reportExceptions();
+    tx.commit().ifExceptionGetsHereRaiseABug();
 
     assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
         .isEqualTo(finalizedBlockSlot);
@@ -899,7 +899,7 @@ class RecentChainDataTest {
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(1);
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     newBlocks.forEach(tx::putBlockAndState);
-    tx.commit().reportExceptions();
+    tx.commit().ifExceptionGetsHereRaiseABug();
 
     // Check that only recent, canonical blocks at or after the latest finalized block are left in
     // the store
@@ -981,7 +981,7 @@ class RecentChainDataTest {
   private void saveBlock(final RecentChainData recentChainData, final SignedBlockAndState block) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
-    tx.commit().reportExceptions();
+    tx.commit().ifExceptionGetsHereRaiseABug();
   }
 
   private void disableForkChoicePruneThreshold() {

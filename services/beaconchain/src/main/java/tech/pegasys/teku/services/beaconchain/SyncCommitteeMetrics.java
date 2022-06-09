@@ -81,7 +81,7 @@ public class SyncCommitteeMetrics implements SlotEventsChannel, ChainHeadChannel
                         body ->
                             headLiveSyncCommittee.set(
                                 body.getSyncAggregate().getSyncCommitteeBits().getBitCount())))
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @Override

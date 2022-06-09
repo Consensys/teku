@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -85,6 +86,13 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       throws EpochProcessingException {
     final ValidatorStatuses validatorStatuses =
         validatorStatusFactory.createValidatorStatuses(preState);
+
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+    final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
+    BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
+    BeaconStateCache.getTransitionCaches(state)
+        .getTotalActiveBalance()
+        .get(currentEpoch, __ -> totalBalances.getCurrentEpochActiveValidators());
     processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
     processInactivityUpdates(state, validatorStatuses);
     processRewardsAndPenalties(state, validatorStatuses);

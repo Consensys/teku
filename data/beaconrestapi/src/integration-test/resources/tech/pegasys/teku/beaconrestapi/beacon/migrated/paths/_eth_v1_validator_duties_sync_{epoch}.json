@@ -21,7 +21,10 @@
           "schema" : {
             "type" : "array",
             "items" : {
-              "type" : "number"
+              "type" : "string",
+              "description" : "integer string",
+              "example" : "1",
+              "format" : "integer"
             }
           }
         }
@@ -39,8 +42,14 @@
         }
       },
       "503" : {
-        "description" : "Beacon node is currently syncing and not serving request on that endpoint",
-        "content" : { }
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

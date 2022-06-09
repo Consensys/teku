@@ -230,7 +230,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT)
+                    .ifExceptionGetsHereRaiseABug();
               }
             },
             RpcTimeouts.RESP_TIMEOUT)
@@ -248,7 +249,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getUnansweredPingCount() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).reportExceptions();
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).ifExceptionGetsHereRaiseABug();
     } else {
       peer.sendPing()
           .finish(

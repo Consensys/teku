@@ -157,7 +157,7 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty()).reportExceptions();
+    doImportBlock(block, Optional.empty()).ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(

@@ -150,7 +150,7 @@ public class HistoricalBatchFetcher {
       // Nothing left to request but the batch is incomplete
       // It appears our peer is on a different chain
       LOG.warn("Received invalid blocks from a different chain. Disconnecting peer: " + peer);
-      peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).reportExceptions();
+      peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).ifExceptionGetsHereRaiseABug();
       throw new InvalidResponseException("Received invalid blocks from a different chain");
     } else {
       // We haven't completed the batch and we've hit our request limit
@@ -163,7 +163,7 @@ public class HistoricalBatchFetcher {
     if (rootCause instanceof InvalidResponseException) {
       // Disconnect misbehaving peer
       LOG.debug("Received invalid response from peer. Disconnecting: " + peer, throwable);
-      peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
+      peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();
       future.completeExceptionally(throwable);
     } else {
       future.completeExceptionally(throwable);

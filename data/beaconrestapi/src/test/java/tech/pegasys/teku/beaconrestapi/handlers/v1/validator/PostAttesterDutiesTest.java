@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -68,7 +69,7 @@ public class PostAttesterDutiesTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             new HttpErrorResponse(
                 SC_SERVICE_UNAVAILABLE,
-                "Beacon node is currently syncing and not serving request on that endpoint"));
+                "Beacon node is currently syncing and not serving requests."));
   }
 
   @Test
@@ -82,6 +83,12 @@ public class PostAttesterDutiesTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(attesterDuties);
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data = "[\"1\"]";
+    assertThat(getRequestBodyFromMetadata(handler, data)).isEqualTo(List.of(1));
   }
 
   @Test

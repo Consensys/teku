@@ -33,7 +33,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
 
-  public static void reportExceptions(final CompletionStage<?> future) {
+  public static void ifExceptionGetsHereRaiseABug(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {
           final Thread currentThread = Thread.currentThread();
@@ -42,9 +42,9 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
-  public static <T, X extends CompletionStage<?>> Consumer<T> reportExceptions(
+  public static <T, X extends CompletionStage<?>> Consumer<T> ifExceptionGetsHereRaiseABug(
       final Function<T, X> action) {
-    return value -> reportExceptions(action.apply(value));
+    return value -> ifExceptionGetsHereRaiseABug(action.apply(value));
   }
 
   public static <U> SafeFuture<U> completedFuture(U value) {
@@ -252,8 +252,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return new SafeFuture<>();
   }
 
-  public void reportExceptions() {
-    reportExceptions(this);
+  public void ifExceptionGetsHereRaiseABug() {
+    ifExceptionGetsHereRaiseABug(this);
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
@@ -266,9 +266,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
     finish(
-        result -> asyncRunner.runAsync(() -> target.complete(result)).reportExceptions(),
+        result ->
+            asyncRunner.runAsync(() -> target.complete(result)).ifExceptionGetsHereRaiseABug(),
         error ->
-            asyncRunner.runAsync(() -> target.completeExceptionally(error)).reportExceptions());
+            asyncRunner
+                .runAsync(() -> target.completeExceptionally(error))
+                .ifExceptionGetsHereRaiseABug());
   }
 
   /**
@@ -307,7 +310,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   public void finish(final Consumer<Throwable> onError) {
@@ -318,7 +321,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   public void finishAsync(final Consumer<Throwable> onError, final Executor executor) {
@@ -342,7 +345,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               return null;
             },
             executor)
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   /**

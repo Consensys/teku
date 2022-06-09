@@ -21,7 +21,10 @@
           "schema" : {
             "type" : "array",
             "items" : {
-              "type" : "number"
+              "type" : "string",
+              "description" : "integer string",
+              "example" : "1",
+              "format" : "integer"
             }
           }
         }
@@ -39,7 +42,7 @@
         }
       },
       "503" : {
-        "description" : "Beacon node is currently syncing, try again later.",
+        "description" : "Beacon node is currently syncing and not serving requests.",
         "content" : {
           "application/json" : {
             "schema" : {

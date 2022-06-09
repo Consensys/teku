@@ -14,38 +14,79 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Arrays;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 
-public class PostSyncCommitteeSubscriptions extends AbstractHandler {
+public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/sync_committee_subscriptions";
-
   private final ValidatorDataProvider provider;
 
-  public PostSyncCommitteeSubscriptions(
-      final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.provider = dataProvider.getValidatorDataProvider();
+  static final DeserializableTypeDefinition<PostSyncCommitteeData> REQUEST_TYPE =
+      DeserializableTypeDefinition.object(PostSyncCommitteeData.class)
+          .name("PostSyncCommitteeData")
+          .initializer(PostSyncCommitteeData::new)
+          .withField(
+              "validator_index",
+              INTEGER_TYPE,
+              PostSyncCommitteeData::getValidatorIndex,
+              PostSyncCommitteeData::setValidatorIndex)
+          .withField(
+              "sync_committee_indices",
+              DeserializableTypeDefinition.listOf(INTEGER_TYPE),
+              PostSyncCommitteeData::getSyncCommitteeIndices,
+              PostSyncCommitteeData::setSyncCommitteeIndices)
+          .withField(
+              "until_epoch",
+              UINT64_TYPE,
+              PostSyncCommitteeData::getUntilEpoch,
+              PostSyncCommitteeData::setUntilEpoch)
+          .build();
+
+  public PostSyncCommitteeSubscriptions(final DataProvider dataProvider) {
+    this(dataProvider.getValidatorDataProvider());
+  }
+
+  public PostSyncCommitteeSubscriptions(final ValidatorDataProvider validatorDataProvider) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postSyncCommitteeSubscriptions")
+            .summary("Subscribe to a Sync committee subnet")
+            .description(
+                "Subscribe to a number of sync committee subnets\n\n"
+                    + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"
+                    + "Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.")
+            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .requestBodyType(DeserializableTypeDefinition.listOf(REQUEST_TYPE))
+            .response(SC_OK, "Successful response")
+            .build());
+    this.provider = validatorDataProvider;
   }
 
   @OpenApi(
@@ -55,7 +96,11 @@ public class PostSyncCommitteeSubscriptions extends AbstractHandler {
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = SyncCommitteeSubnetSubscription[].class)}),
+              content = {
+                @OpenApiContent(
+                    from =
+                        tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription[].class)
+              }),
       description =
           "Subscribe to a number of sync committee subnets\n\n"
               + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"
@@ -66,15 +111,91 @@ public class PostSyncCommitteeSubscriptions extends AbstractHandler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final List<SyncCommitteeSubnetSubscription> subscriptions =
-          Arrays.asList(parseRequestBody(ctx.body(), SyncCommitteeSubnetSubscription[].class));
-      provider.subscribeToSyncCommitteeSubnets(subscriptions);
-      ctx.status(SC_OK);
-    } catch (final IllegalArgumentException e) {
-      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
-      ctx.status(SC_BAD_REQUEST);
+  public void handle(final Context ctx) throws Exception {
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final List<PostSyncCommitteeData> requestData = request.getRequestBody();
+    provider.subscribeToSyncCommitteeSubnets(
+        requestData.stream()
+            .map(PostSyncCommitteeData::toSyncCommitteeSubnetSubscription)
+            .collect(Collectors.toList()));
+    request.respondWithCode(SC_OK);
+  }
+
+  public static class PostSyncCommitteeData {
+    private int validatorIndex;
+    private IntSet syncCommitteeIndices;
+    private UInt64 untilEpoch;
+
+    public PostSyncCommitteeData() {}
+
+    public PostSyncCommitteeData(
+        final int validatorIndex, final IntSet syncCommitteeIndices, final UInt64 untilEpoch) {
+      this.validatorIndex = validatorIndex;
+      this.syncCommitteeIndices = syncCommitteeIndices;
+      this.untilEpoch = untilEpoch;
+    }
+
+    public SyncCommitteeSubnetSubscription toSyncCommitteeSubnetSubscription() {
+      return new SyncCommitteeSubnetSubscription(validatorIndex, syncCommitteeIndices, untilEpoch);
+    }
+
+    public int getValidatorIndex() {
+      return validatorIndex;
+    }
+
+    public void setValidatorIndex(int validatorIndex) {
+      this.validatorIndex = validatorIndex;
+    }
+
+    public List<Integer> getSyncCommitteeIndices() {
+      return new IntArrayList(syncCommitteeIndices);
+    }
+
+    public void setSyncCommitteeIndices(List<Integer> syncCommitteeIndices) {
+      this.syncCommitteeIndices = new IntOpenHashSet(syncCommitteeIndices);
+    }
+
+    public UInt64 getUntilEpoch() {
+      return untilEpoch;
+    }
+
+    public void setUntilEpoch(UInt64 untilEpoch) {
+      this.untilEpoch = untilEpoch;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      PostSyncCommitteeData that = (PostSyncCommitteeData) o;
+      return validatorIndex == that.validatorIndex
+          && Objects.equals(syncCommitteeIndices, that.syncCommitteeIndices)
+          && Objects.equals(untilEpoch, that.untilEpoch);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(validatorIndex, syncCommitteeIndices, untilEpoch);
+    }
+
+    @Override
+    public String toString() {
+      return "PostSyncCommitteeData{"
+          + "validatorIndex="
+          + validatorIndex
+          + ", syncCommitteeIndices="
+          + syncCommitteeIndices
+          + ", untilEpoch="
+          + untilEpoch
+          + '}';
     }
   }
 }

@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.SERIALIZABLE_ONE_OF_TYPE_DEFINITION;
 import static tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.TYPE_A;
@@ -99,7 +99,7 @@ class EndpointMetadataTest {
             objectType3,
             CoreTypes.HTTP_ERROR_RESPONSE_TYPE,
             STRING_TYPE,
-            CoreTypes.INTEGER_TYPE);
+            CoreTypes.RAW_INTEGER_TYPE);
   }
 
   @Test
@@ -181,7 +181,7 @@ class EndpointMetadataTest {
             .pathParam(new ParameterMetadata<>("test", STRING_TYPE.withDescription("test2")))
             .queryParam(new ParameterMetadata<>("qtest", STRING_TYPE))
             .queryParamRequired(
-                new ParameterMetadata<>("rq", INTEGER_TYPE.withDescription("testing")))
+                new ParameterMetadata<>("rq", RAW_INTEGER_TYPE.withDescription("testing")))
             .response(SC_OK, "Success", STRING_TYPE)
             .build();
     final JsonGenerator generator = mock(JsonGenerator.class);

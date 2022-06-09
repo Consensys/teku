@@ -1,0 +1,43 @@
+{
+  "title" : "GetGlobalValidatorInclusionResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "current_epoch_active_gwei", "previous_epoch_active_gwei", "current_epoch_target_attesting_gwei", "previous_epoch_target_attesting_gwei", "previous_epoch_head_attesting_gwei" ],
+      "properties" : {
+        "current_epoch_active_gwei" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "previous_epoch_active_gwei" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "current_epoch_target_attesting_gwei" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "previous_epoch_target_attesting_gwei" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "previous_epoch_head_attesting_gwei" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        }
+      }
+    }
+  }
+}

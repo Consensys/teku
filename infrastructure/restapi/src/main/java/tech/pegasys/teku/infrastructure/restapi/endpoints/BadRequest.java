@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -23,7 +23,7 @@ public class BadRequest {
   public static final SerializableTypeDefinition<BadRequest> BAD_REQUEST_TYPE =
       SerializableTypeDefinition.object(BadRequest.class)
           .name("BadRequest")
-          .withField("code", INTEGER_TYPE, BadRequest::getCode)
+          .withField("code", RAW_INTEGER_TYPE, BadRequest::getCode)
           .withField("message", STRING_TYPE, BadRequest::getMessage)
           .build();
 

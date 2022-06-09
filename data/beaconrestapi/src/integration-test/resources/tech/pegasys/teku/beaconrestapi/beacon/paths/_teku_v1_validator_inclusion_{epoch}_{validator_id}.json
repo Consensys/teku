@@ -1,0 +1,49 @@
+{
+  "get" : {
+    "tags" : [ "Teku", "Experimental" ],
+    "summary" : "Get Validator Inclusion",
+    "description" : "Returns a per-validator summary of how that validator performed during the current epoch.",
+    "operationId" : "getTekuV1Validator_inclusionWithEpochWithValidator_id",
+    "parameters" : [ {
+      "name" : "epoch",
+      "in" : "path",
+      "description" : "Epoch to get data for",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "validator_id",
+      "in" : "path",
+      "description" : "validator id",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetValidatorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing."
+      }
+    }
+  }
+}
