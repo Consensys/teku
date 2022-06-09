@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 
-public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao {
+public class V4HotKvStoreDao implements KvStoreHotDao {
   // Persistent data
   private final KvStoreAccessor db;
   private final SchemaHotAdapter schema;
@@ -153,12 +153,6 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao {
   }
 
   @Override
-  @MustBeClosed
-  public Eth1Updater eth1Updater() {
-    return new V4HotUpdater(db, schema);
-  }
-
-  @Override
   public void close() throws Exception {
     db.close();
   }
@@ -171,7 +165,7 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao {
     return schema.getVariableMap();
   }
 
-  static class V4HotUpdater implements HotUpdater, Eth1Updater {
+  static class V4HotUpdater implements HotUpdater {
 
     private final KvStoreTransaction transaction;
     private final SchemaHotAdapter schema;

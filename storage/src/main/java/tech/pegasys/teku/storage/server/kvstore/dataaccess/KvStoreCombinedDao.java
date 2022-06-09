@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.function.Consumer;
 
-public interface KvStoreCombinedDao extends KvStoreHotDao, KvStoreFinalizedDao, KvStoreEth1Dao {
+public interface KvStoreCombinedDao extends KvStoreHotDao, KvStoreFinalizedDao {
 
   void ingest(KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger);
 

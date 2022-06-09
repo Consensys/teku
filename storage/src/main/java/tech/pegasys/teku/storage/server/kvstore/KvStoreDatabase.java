@@ -70,7 +70,6 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoAdapter;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao.Eth1Updater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
@@ -473,7 +472,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-    try (final Eth1Updater updater = dao.eth1Updater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addMinGenesisTimeBlock(event);
       updater.commit();
     }
@@ -481,7 +480,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-    try (final Eth1Updater updater = dao.eth1Updater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addDepositsFromBlockEvent(event);
       updater.commit();
     }

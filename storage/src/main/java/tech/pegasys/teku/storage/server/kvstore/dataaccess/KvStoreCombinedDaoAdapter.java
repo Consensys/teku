@@ -216,12 +216,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  @MustBeClosed
-  public Eth1Updater eth1Updater() {
-    return hotDao.eth1Updater();
-  }
-
-  @Override
   public void close() throws Exception {
     hotDao.close();
     hotDao.close();
@@ -401,6 +395,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
       finalizedUpdater.setOptimisticTransitionBlockSlot(transitionBlockSlot);
+    }
+
+    @Override
+    public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
+      hotUpdater.addMinGenesisTimeBlock(event);
+    }
+
+    @Override
+    public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
+      hotUpdater.addDepositsFromBlockEvent(event);
     }
 
     @Override

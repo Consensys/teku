@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
@@ -65,6 +67,11 @@ public interface KvStoreHotDao extends AutoCloseable {
   Map<UInt64, VoteTracker> getVotes();
 
   HotUpdater hotUpdater();
+
+  @MustBeClosed
+  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
+
+  Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
   interface HotUpdater extends AutoCloseable {
 
@@ -114,5 +121,9 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     @Override
     void close();
+
+    void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
+
+    void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
   }
 }

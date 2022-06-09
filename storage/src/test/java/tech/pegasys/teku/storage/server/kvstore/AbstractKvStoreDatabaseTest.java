@@ -46,8 +46,6 @@ import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao.Eth1Updater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
@@ -199,17 +197,13 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
 
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createDefault());
-    try (final KvStoreEth1Dao.Eth1Updater updater = eth1Updater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
       assertThatThrownBy(() -> updater.addMinGenesisTimeBlock(genesisTimeBlockEvent))
           .isInstanceOf(ShuttingDownException.class);
     }
-  }
-
-  private Eth1Updater eth1Updater() {
-    return ((KvStoreDatabase) database).dao.eth1Updater();
   }
 
   @Test
