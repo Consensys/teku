@@ -15,16 +15,19 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class SchemaFinalizedSnapshotStateAdapter extends SchemaFinalizedAdapter
-    implements SchemaFinalizedSnapshotState {
+public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnapshotState {
 
   private final SchemaCombinedSnapshotState snapshotDelegate;
+  private final SchemaCombined delegate;
 
   public SchemaFinalizedSnapshotStateAdapter(final SchemaCombinedSnapshotState delegate) {
-    super(delegate);
+    this.delegate = delegate;
     this.snapshotDelegate = delegate;
   }
 
@@ -43,13 +46,39 @@ public class SchemaFinalizedSnapshotStateAdapter extends SchemaFinalizedAdapter
         "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
   }
 
-  @Override
   public Collection<KvStoreColumn<?, ?>> getAllColumns() {
     return getColumnMap().values();
   }
 
-  @Override
   public Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
+  }
+
+  public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {
+    return delegate.getColumnSlotsByFinalizedRoot();
+  }
+
+  public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
+    return delegate.getColumnFinalizedBlocksBySlot();
+  }
+
+  public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
+    return delegate.getColumnSlotsByFinalizedStateRoot();
+  }
+
+  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {
+    return delegate.getColumnNonCanonicalBlocksByRoot();
+  }
+
+  public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
+    return delegate.getColumnNonCanonicalRootsBySlot();
+  }
+
+  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+    return delegate.getOptimisticTransitionBlockSlot();
+  }
+
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
+    return Map.of("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
   }
 }
