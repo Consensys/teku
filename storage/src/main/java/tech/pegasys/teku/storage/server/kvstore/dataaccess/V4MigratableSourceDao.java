@@ -14,14 +14,21 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.util.function.Consumer;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
-public interface KvStoreCombinedDao extends KvStoreHotDao, KvStoreFinalizedDao, KvStoreEth1Dao {
+public interface V4MigratableSourceDao {
+  Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
-  void ingest(KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger);
+  Map<String, KvStoreVariable<?>> getVariableMap();
+
+  <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var);
 
   @MustBeClosed
-  CombinedUpdater combinedUpdater();
-
-  interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
+  <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(final KvStoreColumn<K, V> kvStoreColumn);
 }

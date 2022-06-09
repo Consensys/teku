@@ -17,7 +17,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -66,8 +65,6 @@ public interface KvStoreHotDao extends AutoCloseable {
   Map<UInt64, VoteTracker> getVotes();
 
   HotUpdater hotUpdater();
-
-  void ingest(KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger);
 
   interface HotUpdater extends AutoCloseable {
 

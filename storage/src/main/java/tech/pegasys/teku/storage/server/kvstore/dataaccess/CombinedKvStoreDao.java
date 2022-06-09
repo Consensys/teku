@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,7 +45,8 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 
-public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreCombinedDao {
+public class CombinedKvStoreDao<S extends SchemaCombined>
+    implements KvStoreCombinedDao, V4MigratableSourceDao {
   // Persistent data
   private final KvStoreAccessor db;
   private final S schema;
@@ -167,16 +169,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
 
   @Override
   public void ingest(
-      final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
-    Preconditions.checkArgument(batchSize > 0, "Batch size must be at least 1 (MB)");
-    // TODO: Need to support V4HOtKvStoreDao here
-    Preconditions.checkArgument(
-        hotDao instanceof CombinedKvStoreDao, "Expected instance of V4HotKvStoreDao");
-    final CombinedKvStoreDao<?> dao = (CombinedKvStoreDao<?>) hotDao;
+      final KvStoreCombinedDao sourceDao, final int batchSize, final Consumer<String> logger) {
+    checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
+    checkArgument(
+        sourceDao instanceof V4MigratableSourceDao, "Expected instance of V4FinalizedKvStoreDao");
+    final V4MigratableSourceDao dao = (V4MigratableSourceDao) sourceDao;
 
-    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
+    final Map<String, KvStoreVariable<?>> newVariables = getVariableMap();
     if (newVariables.size() > 0) {
-      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
+      final Map<String, KvStoreVariable<?>> oldVariables = dao.getVariableMap();
+      checkArgument(
+          oldVariables.keySet().equals(newVariables.keySet()),
+          "Cannot migrate database as source and target formats do not use the same variables");
       try (final KvStoreTransaction transaction = db.startTransaction()) {
         for (String key : newVariables.keySet()) {
           logger.accept(String.format("Copy variable %s", key));
@@ -185,31 +189,42 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
         }
         transaction.commit();
       }
-    } else {
-      logger.accept("No variables to copy from hot store.");
     }
     final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
     if (newColumns.size() > 0) {
-      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
+      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.getColumnMap();
+      checkArgument(
+          oldColumns.keySet().equals(newColumns.keySet()),
+          "Cannot migrate database as source and target formats do not use the same columns");
       for (String key : newColumns.keySet()) {
-        logger.accept(String.format("copy column %s", key));
+        final Optional<UInt64> maybeCount = displayCopyColumnMessage(key, oldColumns, dao, logger);
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
                 dao.streamRawColumn(oldColumns.get(key));
-            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db, maybeCount)) {
           oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
       }
-    } else {
-      logger.accept("No column data to copy from hot store.");
     }
   }
 
-  private <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  @Override
+  public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
+    return schema.getColumnMap();
+  }
+
+  @Override
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
+    return schema.getVariableMap();
+  }
+
+  @Override
+  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
     return db.getRaw(var);
   }
 
+  @Override
   @MustBeClosed
-  private <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {
     return db.streamRaw(kvStoreColumn);
   }
@@ -298,45 +313,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
 
-  @Override
-  public void ingest(
-      final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
-    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
-    // TODO: Need to support V4FinalizedKvStoreDao here
-    Preconditions.checkArgument(
-        finalizedDao instanceof CombinedKvStoreDao, "Expected instance of V4FinalizedKvStoreDao");
-    final CombinedKvStoreDao<?> dao = (CombinedKvStoreDao<?>) finalizedDao;
-
-    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
-    if (newVariables.size() > 0) {
-      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
-      try (final KvStoreTransaction transaction = db.startTransaction()) {
-        for (String key : newVariables.keySet()) {
-          logger.accept(String.format("Copy variable %s", key));
-          dao.getRawVariable(oldVariables.get(key))
-              .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
-        }
-        transaction.commit();
-      }
-    }
-    final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
-    if (newColumns.size() > 0) {
-      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
-      for (String key : newColumns.keySet()) {
-        final Optional<UInt64> maybeCount = displayCopyColumnMessage(key, oldColumns, dao, logger);
-        try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
-                dao.streamRawColumn(oldColumns.get(key));
-            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db, maybeCount)) {
-          oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
-        }
-      }
-    }
-  }
-
   private Optional<UInt64> displayCopyColumnMessage(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final CombinedKvStoreDao<?> dao,
+      final V4MigratableSourceDao dao,
       final Consumer<String> logger) {
     final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
     maybeCount.ifPresentOrElse(
@@ -349,7 +329,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
   private Optional<UInt64> getObjectCountForColumn(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final CombinedKvStoreDao<?> dao) {
+      final V4MigratableSourceDao dao) {
     switch (key) {
       case "FINALIZED_STATES_BY_SLOT":
       case "SLOTS_BY_FINALIZED_STATE_ROOT":
@@ -364,7 +344,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined> implements KvStoreComb
   }
 
   Optional<UInt64> getEntityCountFromColumn(
-      final KvStoreColumn<?, ?> column, final CombinedKvStoreDao<?> dao) {
+      final KvStoreColumn<?, ?> column, final V4MigratableSourceDao dao) {
     try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream = dao.streamRawColumn(column)) {
       return Optional.of(UInt64.valueOf(oldEntryStream.count()));
     }

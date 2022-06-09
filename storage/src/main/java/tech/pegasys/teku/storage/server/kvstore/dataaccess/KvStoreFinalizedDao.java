@@ -17,7 +17,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,8 +58,6 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
   Optional<UInt64> getOptimisticTransitionBlockSlot();
 
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
-
-  void ingest(KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger);
 
   interface FinalizedUpdater extends AutoCloseable {
 

@@ -14,12 +14,14 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -31,18 +33,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
-public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao {
-  private final KvStoreHotDao hotDao;
-  private final KvStoreEth1Dao eth1Dao;
-  private final KvStoreFinalizedDao finalizedDao;
+public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4MigratableSourceDao {
+  private final V4HotKvStoreDao hotDao;
+  private final V4FinalizedKvStoreDao finalizedDao;
 
   public KvStoreCombinedDaoAdapter(
-      final KvStoreHotDao hotDao,
-      final KvStoreEth1Dao eth1Dao,
-      final KvStoreFinalizedDao finalizedDao) {
+      final V4HotKvStoreDao hotDao, final V4FinalizedKvStoreDao finalizedDao) {
     this.hotDao = hotDao;
-    this.eth1Dao = eth1Dao;
     this.finalizedDao = finalizedDao;
   }
 
@@ -118,14 +119,9 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao {
   }
 
   @Override
+  @MustBeClosed
   public HotUpdater hotUpdater() {
     return hotDao.hotUpdater();
-  }
-
-  @Override
-  public void ingest(
-      final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
-    this.hotDao.ingest(hotDao, batchSize, logger);
   }
 
   @Override
@@ -134,6 +130,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao {
   }
 
   @Override
+  @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
     return finalizedDao.finalizedUpdater();
   }
@@ -203,36 +200,75 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao {
 
   @Override
   public void ingest(
-      final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
-    this.finalizedDao.ingest(finalizedDao, batchSize, logger);
+      final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
+    throw new UnsupportedOperationException("Cannot migrate to a split database format");
   }
 
   @Override
   @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return eth1Dao.streamDepositsFromBlocks();
+    return hotDao.streamDepositsFromBlocks();
   }
 
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
-    return eth1Dao.getMinGenesisTimeBlock();
+    return hotDao.getMinGenesisTimeBlock();
   }
 
   @Override
+  @MustBeClosed
   public Eth1Updater eth1Updater() {
-    return eth1Dao.eth1Updater();
+    return hotDao.eth1Updater();
   }
 
   @Override
   public void close() throws Exception {
     hotDao.close();
-    eth1Dao.close();
+    hotDao.close();
     finalizedDao.close();
   }
 
   @Override
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
   public CombinedUpdater combinedUpdater() {
     return new CombinedUpdaterAdapter(hotUpdater(), finalizedUpdater());
+  }
+
+  @Override
+  public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
+    final Map<String, KvStoreColumn<?, ?>> allColumns = new HashMap<>();
+    allColumns.putAll(hotDao.getColumnMap());
+    allColumns.putAll(finalizedDao.getColumnMap());
+    return allColumns;
+  }
+
+  @Override
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
+    final Map<String, KvStoreVariable<?>> allVariables = new HashMap<>();
+    allVariables.putAll(hotDao.getVariableMap());
+    allVariables.putAll(finalizedDao.getVariableMap());
+    return allVariables;
+  }
+
+  @Override
+  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+    if (hotDao.getVariableMap().containsValue(var)) {
+      return hotDao.getRawVariable(var);
+    } else {
+      return finalizedDao.getRawVariable(var);
+    }
+  }
+
+  @Override
+  @MustBeClosed
+  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+      final KvStoreColumn<K, V> kvStoreColumn) {
+    if (hotDao.getColumnMap().containsValue(kvStoreColumn)) {
+      return hotDao.streamRawColumn(kvStoreColumn);
+    } else {
+      return finalizedDao.streamRawColumn(kvStoreColumn);
+    }
   }
 
   private static class CombinedUpdaterAdapter implements CombinedUpdater {

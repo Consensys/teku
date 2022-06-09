@@ -71,9 +71,7 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoAdapter;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao.Eth1Updater;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
@@ -114,7 +112,6 @@ public class KvStoreDatabase implements Database {
     final V4HotKvStoreDao hotDao = new V4HotKvStoreDao(hotDb, schemaHot);
     final KvStoreCombinedDao dao =
         new KvStoreCombinedDaoAdapter(
-            hotDao,
             hotDao,
             new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
     return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
@@ -219,8 +216,7 @@ public class KvStoreDatabase implements Database {
 
   public void ingestDatabase(
       final KvStoreDatabase kvStoreDatabase, final int batchSize, final Consumer<String> logger) {
-    dao.ingest((KvStoreHotDao) kvStoreDatabase.dao, batchSize, logger);
-    dao.ingest((KvStoreFinalizedDao) kvStoreDatabase.dao, batchSize, logger);
+    dao.ingest(kvStoreDatabase.dao, batchSize, logger);
   }
 
   @Override
