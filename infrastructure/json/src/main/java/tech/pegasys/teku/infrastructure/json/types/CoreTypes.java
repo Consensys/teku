@@ -80,7 +80,7 @@ public class CoreTypes {
   public static final StringValueTypeDefinition<Integer> RAW_INTEGER_TYPE =
       new IntegerTypeDefinition();
 
-  public static final StringValueTypeDefinition<Integer> STRING_INTEGER_TYPE =
+  public static final StringValueTypeDefinition<Integer> INTEGER_TYPE =
       DeserializableTypeDefinition.string(Integer.class)
           .formatter(Object::toString)
           .parser(Integer::valueOf)

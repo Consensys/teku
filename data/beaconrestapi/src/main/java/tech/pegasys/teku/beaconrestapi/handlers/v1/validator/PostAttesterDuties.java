@@ -29,7 +29,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,14 +68,12 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
       SerializableTypeDefinition.object(AttesterDuty.class)
           .name("AttesterDuty")
           .withField("pubkey", PUBLIC_KEY_TYPE, AttesterDuty::getPublicKey)
-          .withField("validator_index", STRING_INTEGER_TYPE, AttesterDuty::getValidatorIndex)
-          .withField("committee_index", STRING_INTEGER_TYPE, AttesterDuty::getCommitteeIndex)
-          .withField("committee_length", STRING_INTEGER_TYPE, AttesterDuty::getCommitteeLength)
-          .withField("committees_at_slot", STRING_INTEGER_TYPE, AttesterDuty::getCommitteesAtSlot)
+          .withField("validator_index", INTEGER_TYPE, AttesterDuty::getValidatorIndex)
+          .withField("committee_index", INTEGER_TYPE, AttesterDuty::getCommitteeIndex)
+          .withField("committee_length", INTEGER_TYPE, AttesterDuty::getCommitteeLength)
+          .withField("committees_at_slot", INTEGER_TYPE, AttesterDuty::getCommitteesAtSlot)
           .withField(
-              "validator_committee_index",
-              STRING_INTEGER_TYPE,
-              AttesterDuty::getValidatorCommitteeIndex)
+              "validator_committee_index", INTEGER_TYPE, AttesterDuty::getValidatorCommitteeIndex)
           .withField("slot", UINT64_TYPE, AttesterDuty::getSlot)
           .build();
 
@@ -119,7 +117,7 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
                     + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_INTEGER_TYPE))
+            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .response(
