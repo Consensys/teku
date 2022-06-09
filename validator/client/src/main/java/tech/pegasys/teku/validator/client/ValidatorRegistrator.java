@@ -192,16 +192,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return Optional.ofNullable(cachedValidatorRegistrations.get(publicKey))
         .filter(
             cachedValidatorRegistration -> {
-              final boolean doesNotNeedUpdate =
-                  registrationDoesNotNeedUpdating(
-                      cachedValidatorRegistration, feeRecipient, gasLimit);
-              if (!doesNotNeedUpdate) {
+              final boolean needsUpdate =
+                  registrationNeedsUpdating(cachedValidatorRegistration, feeRecipient, gasLimit);
+              if (needsUpdate) {
                 LOG.debug(
                     "The cached registration for {} needs updating. Will create a new one.",
                     publicKey);
                 cachedValidatorRegistrations.remove(publicKey);
               }
-              return doesNotNeedUpdate;
+              return !needsUpdate;
             })
         .map(SafeFuture::completedFuture)
         .or(
@@ -268,12 +267,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             });
   }
 
-  public boolean registrationDoesNotNeedUpdating(
+  public boolean registrationNeedsUpdating(
       final SignedValidatorRegistration signedValidatorRegistration,
       final Eth1Address feeRecipient,
       final UInt64 gasLimit) {
     final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
-    return validatorRegistration.getFeeRecipient().equals(feeRecipient)
-        && validatorRegistration.getGasLimit().equals(gasLimit);
+    return !validatorRegistration.getFeeRecipient().equals(feeRecipient)
+        || !validatorRegistration.getGasLimit().equals(gasLimit);
   }
 }
