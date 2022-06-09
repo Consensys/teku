@@ -26,7 +26,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_INTEGER_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -63,10 +63,10 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<SyncCommitteeDuty> SYNC_COMMITTEE_DUTY_TYPE =
       SerializableTypeDefinition.object(SyncCommitteeDuty.class)
           .withField("pubkey", PUBLIC_KEY_TYPE, SyncCommitteeDuty::getPublicKey)
-          .withField("validator_index", RAW_INTEGER_TYPE, SyncCommitteeDuty::getValidatorIndex)
+          .withField("validator_index", STRING_INTEGER_TYPE, SyncCommitteeDuty::getValidatorIndex)
           .withField(
               "validator_sync_committee_indices",
-              SerializableTypeDefinition.listOf(RAW_INTEGER_TYPE),
+              SerializableTypeDefinition.listOf(STRING_INTEGER_TYPE),
               syncCommitteeDuty ->
                   new IntArrayList(syncCommitteeDuty.getValidatorSyncCommitteeIndices()))
           .build();
@@ -95,7 +95,7 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
             .description("Requests the beacon node to provide a set of sync committee duties")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(DeserializableTypeDefinition.listOf(RAW_INTEGER_TYPE))
+            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_INTEGER_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .response(
                 SC_SERVICE_UNAVAILABLE,
