@@ -151,6 +151,38 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   }
 
   @Test
+  public void onFailedExecutionPayloadExecution_shouldRetryForAtLeast2Slots() {
+    final SignedBeaconBlock nextBlock =
+        remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+
+    // communication error
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
+
+    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
+    asyncRunner.executeQueuedActions();
+
+    // Pass 2 slots
+    blockManager.onSlot(nextBlock.getSlot().plus(1));
+    blockManager.onSlot(nextBlock.getSlot().plus(2));
+    asyncRunner.executeQueuedActions();
+    verify(blockImporter, times(3)).importBlock(nextBlock, Optional.empty());
+
+    // successful imported now
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(nextBlock)));
+
+    asyncRunner.executeQueuedActions();
+    verify(blockImporter, times(4)).importBlock(nextBlock, Optional.empty());
+
+    // should be dequeued now, so no more interactions
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(blockImporter);
+  }
+
+  @Test
   public void onInvalidBlockImport_shouldNotRetry() {
     final SignedBeaconBlock nextBlock =
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
