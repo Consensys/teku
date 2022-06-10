@@ -3,7 +3,6 @@ dependencies {
   acceptanceTestImplementation project(':infrastructure:time')
   acceptanceTestImplementation project(':data:serializer')
   acceptanceTestImplementation project(':ethereum:spec')
-  acceptanceTestImplementation project(':networking:eth2')
 
   testFixturesImplementation project(':beacon:pow')
   testFixturesImplementation project(':data:provider')

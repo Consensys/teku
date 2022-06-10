@@ -14,7 +14,6 @@
 package tech.pegasys.teku.test.acceptance;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
 
 import com.google.common.io.Resources;
 import java.util.Optional;
@@ -85,20 +84,12 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
 
   @Test
   void shouldPassMergeOptimisticallyAndBeginFinalizationAfterSafeSlotsToImport() throws Exception {
-    UInt64 startTimeInSeconds = timeProvider.getTimeInSeconds();
     tekuNode2.waitForGenesis();
     // Disconnect eth1Node2 from eth1Node1 before the merge
     assertThat(eth1Node2.removePeer(eth1Node1Enode)).isTrue();
-
     tekuNode1.waitForLogMessageContaining("MERGE is completed");
 
-    // Sync will not resume until next StatusMessage exchange
-    UInt64 resumeAfter =
-        startTimeInSeconds.plus(DEFAULT_ETH2_STATUS_UPDATE_INTERVAL.minusMinutes(1).getSeconds());
-    while (timeProvider.getTimeInSeconds().isLessThan(resumeAfter)) {
-      Thread.sleep(500);
-    }
-    tekuNode2.waitForLogMessageContaining("proceeding with optimistic sync");
+    tekuNode2.waitForLogMessageContaining("optimistic sync");
     tekuNode2.waitForLogMessageContaining("MERGE is completed");
     tekuNode2.waitForNonDefaultExecutionPayload();
     tekuNode2.waitForNewFinalization();
