@@ -225,9 +225,11 @@ public class ProposersDataManager implements SlotEventsChannel {
     if (proposerDefaultFeeRecipient.isPresent()) {
       VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
       return proposerDefaultFeeRecipient.get();
-    }
-    else {
-      LOG.warn("Unable to determine proposer fee recipient address for slot " + blockSlot + ". Fee will be burned instead");
+    } else {
+      LOG.warn(
+          "Unable to determine proposer fee recipient address for slot "
+              + blockSlot
+              + ". Fee will be burned instead");
       return Eth1Address.ZERO;
     }
   }
