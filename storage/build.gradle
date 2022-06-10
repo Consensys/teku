@@ -41,6 +41,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':storage'))
 
+  integrationTestImplementation 'commons-io:commons-io'
 
   testFixturesApi project(':ethereum:networks')
   testFixturesApi project(':storage')
