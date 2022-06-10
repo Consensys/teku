@@ -165,12 +165,11 @@ public class OkHttpRestClient implements RestClient {
               handleFailure(response, futureResponse);
               return;
             }
-            final ResponseBody responseBody = response.body();
-            if (responseBody == null || responseTypeDefinitionMaybe.isEmpty()) {
-              futureResponse.complete(Response.withNullPayload());
-              return;
-            }
-            try {
+            try (final ResponseBody responseBody = response.body()) {
+              if (responseBody == null || responseTypeDefinitionMaybe.isEmpty()) {
+                futureResponse.complete(Response.withNullPayload());
+                return;
+              }
               final T payload =
                   JsonUtil.parse(responseBody.byteStream(), responseTypeDefinitionMaybe.get());
               futureResponse.complete(new Response<>(payload));
@@ -195,16 +194,17 @@ public class OkHttpRestClient implements RestClient {
 
   private String getErrorMessageForFailedResponse(final okhttp3.Response response)
       throws IOException {
-    final String errorCodeAndStatusMessage = response.code() + ": " + response.message();
-    final ResponseBody responseBody = response.body();
-    if (responseBody == null) {
-      return errorCodeAndStatusMessage;
-    }
-    final String failureBody = responseBody.string();
-    if (Strings.nullToEmpty(failureBody).isBlank()) {
-      return errorCodeAndStatusMessage;
-    } else {
-      return failureBody;
+    try (final ResponseBody responseBody = response.body()) {
+      final String errorCodeAndStatusMessage = response.code() + ": " + response.message();
+      if (responseBody == null) {
+        return errorCodeAndStatusMessage;
+      }
+      final String failureBody = responseBody.string();
+      if (Strings.nullToEmpty(failureBody).isBlank()) {
+        return errorCodeAndStatusMessage;
+      } else {
+        return failureBody;
+      }
     }
   }
 }
