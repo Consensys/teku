@@ -322,7 +322,7 @@ public class ExternalSigner implements Signer {
           getSigningServiceUrl().isEmpty() ? "UNKNOWN" : getSigningServiceUrl().get().toString();
       int statusCode = Optional.ofNullable(response).map(HttpResponse::statusCode).orElse(-1);
       throw new ExternalSignerException(
-          "External signer (" + url + ") failed to sign with response status code [" + statusCode + "] due to " + throwable.getMessage(),
+          "External signer (" + url + ") got response status code [" + statusCode + "] and failed to sign due to " + throwable.getMessage(),
           throwable);
     }
 
