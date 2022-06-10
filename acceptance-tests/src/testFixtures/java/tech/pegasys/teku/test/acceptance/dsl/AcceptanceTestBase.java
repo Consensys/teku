@@ -29,6 +29,7 @@ import org.testcontainers.containers.Network;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
+import tech.pegasys.teku.test.acceptance.dsl.BesuNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
@@ -90,7 +91,7 @@ public class AcceptanceTestBase {
   }
 
   protected BesuNode createBesuNode() {
-    return createBesuNode(config -> {});
+    return createBesuNode(Config::withMiningEnabled);
   }
 
   protected BesuNode createBesuNode(final Consumer<BesuNode.Config> configOptions) {
