@@ -226,8 +226,10 @@ public class ProposersDataManager implements SlotEventsChannel {
       VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
       return proposerDefaultFeeRecipient.get();
     }
-    throw new IllegalStateException(
-        "Unable to determine proposer fee recipient address for slot " + blockSlot);
+    else {
+      LOG.warn("Unable to determine proposer fee recipient address for slot " + blockSlot + ". Fee will be burned instead");
+      return Eth1Address.ZERO;
+    }
   }
 
   private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {

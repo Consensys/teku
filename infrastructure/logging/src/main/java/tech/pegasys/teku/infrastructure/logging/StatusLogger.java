@@ -84,7 +84,7 @@ public class StatusLogger {
     log.warn(
         print(
             "Remote Validator Client detected and no default proposer fee recipient configured! "
-                + "It is strongly recommended to configure fee recipient to avoid possible block production failures.",
+                + "It is strongly recommended to configure fee recipient to avoid burning fees.",
             Color.RED));
   }
 
