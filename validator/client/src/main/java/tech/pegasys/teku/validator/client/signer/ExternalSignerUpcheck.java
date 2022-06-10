@@ -49,7 +49,11 @@ public class ExternalSignerUpcheck {
       final HttpResponse<Void> response =
           httpClient.send(request, HttpResponse.BodyHandlers.discarding());
       if (response.statusCode() != 200) {
-        LOG.error("External signer is currently not reachable with status code [{}]; headers [{}]; body [{}]", response.statusCode(), response.headers(), response.body());
+        LOG.error(
+            "External signer is currently not reachable with status code [{}]; headers [{}]; body [{}]",
+            response.statusCode(),
+            response.headers(),
+            response.body());
       }
       return response.statusCode() == 200;
     } catch (final URISyntaxException e) {
