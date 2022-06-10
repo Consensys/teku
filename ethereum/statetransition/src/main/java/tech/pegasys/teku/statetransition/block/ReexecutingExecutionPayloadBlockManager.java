@@ -35,7 +35,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int EXPIRES_IN_SLOT = 20;
+  protected static final int EXPIRES_IN_SLOT = 20;
   private static final Duration RECHECK_INTERVAL = Duration.ofSeconds(2);
 
   private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);

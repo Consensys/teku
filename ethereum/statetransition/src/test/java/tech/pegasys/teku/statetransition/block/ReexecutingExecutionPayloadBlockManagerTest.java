@@ -21,7 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager.EXPIRES_IN_SLOT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
@@ -69,8 +69,6 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageSystem remoteStorageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-
-  private UInt64 currentSlot = GENESIS_SLOT;
 
   private void forwardBlockImportedNotificationsTo(final BlockManager blockManager) {
     doAnswer(
@@ -217,7 +215,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
 
     verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
-    blockManager.onSlot(currentSlot.plus(3));
+    blockManager.onSlot(nextBlock.getSlot().plus(EXPIRES_IN_SLOT + 1));
 
     // should be dequeued now, so no more interactions
     asyncRunner.executeQueuedActions();
