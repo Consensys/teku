@@ -143,57 +143,46 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersValidators_onBeginningOfEpoch() {
-    // GIVEN
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
-    // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // WHEN onSlot called again next epoch, registrations will be cached
     validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
 
-    // THEN
     List<SszList<SignedValidatorRegistration>> registrationCalls =
         captureValidatorApiChannelCalls(2);
 
     registrationCalls.forEach(
         registrationCall -> verifyRegistrations(registrationCall, allValidatorsPublicKeys));
 
-    // signer will be called in total 3 times, since from the 2nd run the signed registrations will
+    // signer will be called in total 3 times, since from the 2nd run the registrations will
     // be cached
     verify(signer, times(3)).signValidatorRegistration(any(), any());
   }
 
   @TestTemplate
   void cleanupsCache_ifValidatorIsNoLongerActive() {
-    // GIVEN
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
-    // WHEN first invoked, registrations will be cached
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // THEN registrations should be cached
     assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(3);
 
-    // GIVEN validator1 is not active anymore
+    // validator1 not active anymore
     when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator2, validator3));
 
-    // WHEN invoked again
     validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
 
-    // THEN cache should be cleaned up
     assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(2);
   }
 
   @TestTemplate
   void doesNotUseCache_ifRegistrationsNeedUpdating() {
-    // GIVEN
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
-    // WHEN first invoked, registrations will be cached
     validatorRegistrator.onSlot(UInt64.ZERO);
 
     Eth1Address otherEth1Address = dataStructureUtil.randomEth1Address();
@@ -207,11 +196,8 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.of(otherGasLimit));
 
-    // WHEN onSlot called again next epoch, validator1 registration will use the cache, others will
-    // require updating
     validatorRegistrator.onSlot(UInt64.valueOf(slotsPerEpoch));
 
-    // THEN
     List<SszList<SignedValidatorRegistration>> registrationCalls =
         captureValidatorApiChannelCalls(2);
 
@@ -225,17 +211,14 @@ class ValidatorRegistratorTest {
           Eth1Address feeRecipient = validatorRegistration.getFeeRecipient();
           UInt64 gasLimit = validatorRegistration.getGasLimit();
           if (publicKey.equals(validator1.getPublicKey())) {
-            // validator1 hasn't changed at all
             assertThat(feeRecipient).isEqualTo(eth1Address);
             assertThat(gasLimit).isEqualTo(gasLimit);
           }
           if (publicKey.equals(validator2.getPublicKey())) {
-            // validator2 fee recipient has changed
             assertThat(feeRecipient).isEqualTo(otherEth1Address);
             assertThat(gasLimit).isEqualTo(gasLimit);
           }
           if (publicKey.equals(validator3.getPublicKey())) {
-            // validator3 gas limit has changed
             assertThat(feeRecipient).isEqualTo(eth1Address);
             assertThat(gasLimit).isEqualTo(otherGasLimit);
           }
@@ -261,17 +244,14 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersNewlyAddedValidators() {
-    // GIVEN
     when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator1));
 
-    // Registering only validator1
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // WHEN new validators are added
+    // new validators are added
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
-    // THEN only validator2 and validator3 should be registered
     validatorRegistrator.onValidatorsAdded();
 
     List<SszList<SignedValidatorRegistration>> registrationCalls =
@@ -289,7 +269,6 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void skipsValidatorRegistrationIfRegistrationNotEnabled() {
-    // GIVEN
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
@@ -302,18 +281,14 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.empty());
     when(validatorConfig.isValidatorsRegistrationDefaultEnabled()).thenReturn(false);
 
-    // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // THEN
     SszList<SignedValidatorRegistration> registrations = captureValidatorApiChannelCall();
-
     verifyRegistrations(registrations, List.of(validator1.getPublicKey()));
   }
 
   @TestTemplate
   void validatorRegistrationsNotSentIfEmpty() {
-    // GIVEN
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
@@ -321,7 +296,6 @@ class ValidatorRegistratorTest {
     when(proposerConfig.isValidatorRegistrationEnabledForPubKey(any()))
         .thenReturn(Optional.of(false));
 
-    // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
     verifyNoInteractions(validatorApiChannel);
@@ -329,7 +303,6 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void retrievesCorrectGasLimitForValidators() {
-    // GIVEN
     when(ownedValidators.getActiveValidators())
         .thenReturn(List.of(validator1, validator2, validator3));
 
@@ -344,10 +317,8 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.empty());
     when(validatorConfig.getValidatorsRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
 
-    // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // THEN
     SszList<SignedValidatorRegistration> registrations = captureValidatorApiChannelCall();
 
     Consumer<ValidatorRegistration> gasLimitRequirements =
@@ -355,7 +326,6 @@ class ValidatorRegistratorTest {
           BLSPublicKey publicKey = validatorRegistration.getPublicKey();
           UInt64 gasLimit = validatorRegistration.getGasLimit();
           if (publicKey.equals(validator1.getPublicKey())) {
-            // validator1 gas limit hasn't been changed
             assertThat(gasLimit).isEqualTo(gasLimit);
           }
           if (publicKey.equals(validator2.getPublicKey())) {
@@ -374,21 +344,14 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void skipsValidatorRegistrationIfFeeRecipientNotSpecified() {
-    // GIVEN
     when(ownedValidators.getActiveValidators()).thenReturn(List.of(validator1, validator2));
-
-    when(feeRecipientProvider.getFeeRecipient(validator1.getPublicKey()))
-        .thenReturn(Optional.of(eth1Address));
     // no fee recipient provided for validator2
     when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
         .thenReturn(Optional.empty());
 
-    // WHEN
     validatorRegistrator.onSlot(UInt64.ZERO);
 
-    // THEN
     SszList<SignedValidatorRegistration> registrations = captureValidatorApiChannelCall();
-
     verifyRegistrations(registrations, List.of(validator1.getPublicKey()));
   }
 
