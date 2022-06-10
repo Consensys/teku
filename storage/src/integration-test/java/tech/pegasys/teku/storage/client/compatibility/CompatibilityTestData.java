@@ -176,6 +176,8 @@ public class CompatibilityTestData {
 
   public static void verifyDatabaseContentMatches(
       final StorageSystem expectedSystem, final StorageSystem actualSystem) {
+    final Database actualDatabase = actualSystem.database();
+    final Database expectedDatabase = expectedSystem.database();
     for (int slot = MAX_SLOT; slot >= 0; slot--) {
       final Optional<SignedBlockAndState> expected =
           safeJoin(
@@ -194,29 +196,26 @@ public class CompatibilityTestData {
         continue;
       }
       final SignedBlockAndState expectedBlockAndState = expected.get();
-      assertThat(actualSystem.database().getSignedBlock(expectedBlockAndState.getRoot()))
+      assertThat(actualDatabase.getSignedBlock(expectedBlockAndState.getRoot()))
           .contains(expectedBlockAndState.getBlock());
 
-      assertThat(
-              actualSystem
-                  .database()
-                  .getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()))
+      assertThat(actualDatabase.getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()))
           .isEqualTo(
-              expectedSystem
-                  .database()
-                  .getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()));
+              expectedDatabase.getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()));
+
+      assertThat(actualDatabase.getHotState(expectedBlockAndState.getRoot()))
+          .isEqualTo(expectedDatabase.getHotState(expectedBlockAndState.getRoot()));
     }
 
-    assertThat(actualSystem.database().getVotes()).isEqualTo(expectedSystem.database().getVotes());
+    assertThat(actualDatabase.getVotes()).isEqualTo(expectedDatabase.getVotes());
 
-    assertThat(actualSystem.database().getMinGenesisTimeBlock())
-        .contains(EXPECTED_MIN_GENESIS_EVENT);
+    assertThat(actualDatabase.getMinGenesisTimeBlock()).contains(EXPECTED_MIN_GENESIS_EVENT);
     try (final Stream<DepositsFromBlockEvent> actualDeposits =
-        actualSystem.database().streamDepositsFromBlocks()) {
+        actualDatabase.streamDepositsFromBlocks()) {
       assertThat(actualDeposits).containsExactlyElementsOf(EXPECTED_DEPOSITS);
     }
 
-    assertThat(actualSystem.database().getWeakSubjectivityState())
+    assertThat(actualDatabase.getWeakSubjectivityState())
         .isEqualTo(
             WeakSubjectivityState.create(Optional.of(EXPECTED_WEAK_SUBJECTIVITY_CHECKPOINT)));
   }
