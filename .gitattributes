@@ -9,3 +9,4 @@
 *.gz binary
 *.ssz binary
 *.ssz_snappy binary
+storage/src/integration-test/resources/** binary
