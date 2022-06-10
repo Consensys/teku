@@ -13,22 +13,42 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 
 public class PostContributionAndProofsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
     setHandler(new PostContributionAndProofs(validatorDataProvider, schemaDefinitionCache));
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data =
+        Resources.toString(
+            Resources.getResource(
+                PostContributionAndProofsTest.class,
+                "postContributionAndProofsTestRequestBody.json"),
+            UTF_8);
+    final Object requestBody = getRequestBodyFromMetadata(handler, data);
+    assertThat(requestBody).isInstanceOf(List.class);
+    assertThat(((List<?>) requestBody).get(0)).isInstanceOf(SignedContributionAndProof.class);
   }
 
   @Test

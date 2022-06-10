@@ -169,7 +169,7 @@ public class HistoricalBlockSyncService extends Service {
         .always(
             () -> {
               if (isSyncDone()) {
-                stop().reportExceptions();
+                stop().ifExceptionGetsHereRaiseABug();
               }
             });
   }

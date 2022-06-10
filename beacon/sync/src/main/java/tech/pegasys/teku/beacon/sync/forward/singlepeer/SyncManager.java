@@ -191,7 +191,7 @@ public class SyncManager extends Service {
               asyncRunner
                   .getDelayedFuture(LONG_DELAY)
                   .thenAccept((res) -> startOrScheduleSync())
-                  .reportExceptions();
+                  .ifExceptionGetsHereRaiseABug();
               return completedFuture(null);
             });
   }
@@ -234,7 +234,7 @@ public class SyncManager extends Service {
                         peersWithSyncErrors.remove(syncPeer.getId());
                         startOrScheduleSync();
                       })
-                  .reportExceptions();
+                  .ifExceptionGetsHereRaiseABug();
               return null;
             });
   }

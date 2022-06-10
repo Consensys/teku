@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -96,10 +98,6 @@ public class ChainDataProvider {
   public UInt64 getCurrentEpoch(
       tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     return spec.getCurrentEpoch(state);
-  }
-
-  public boolean isBellatrixEnabled() {
-    return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
   }
 
   public UInt64 getGenesisTime() {
@@ -146,22 +144,6 @@ public class ChainDataProvider {
     return fromBlock(slotParameter, block -> block);
   }
 
-  public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
-    return defaultBlockSelectorFactory
-        .defaultBlockSelector(slotParameter)
-        .getBlock()
-        .thenApply(
-            maybeBlock ->
-                maybeBlock
-                    .map(BlockAndMetaData::getData)
-                    .map(
-                        blockData ->
-                            new SszResponse(
-                                new ByteArrayInputStream(blockData.sszSerialize().toArrayUnsafe()),
-                                blockData.hashTreeRoot().toUnprefixedHexString(),
-                                spec.atSlot(blockData.getSlot()).getMilestone())));
-  }
-
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String slotParameter) {
     return fromBlock(slotParameter, SignedBeaconBlock::getRoot);
   }
@@ -182,14 +164,6 @@ public class ChainDataProvider {
     return fromState(stateIdParam, schemaObjectProvider::getBeaconState);
   }
 
-  public SafeFuture<
-          Optional<
-              ObjectAndMetaData<
-                  tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>>
-      getBeaconState(final String stateIdParam) {
-    return fromState(stateIdParam, beaconState -> beaconState);
-  }
-
   public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAtHead() {
     return defaultStateSelectorFactory.headSelector().getState();
   }
@@ -197,22 +171,6 @@ public class ChainDataProvider {
   public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAndMetadata(
       final String stateIdParam) {
     return defaultStateSelectorFactory.defaultStateSelector(stateIdParam).getState();
-  }
-
-  public SafeFuture<Optional<SszResponse>> getBeaconStateSsz(final String stateIdParam) {
-    return defaultStateSelectorFactory
-        .defaultStateSelector(stateIdParam)
-        .getState()
-        .thenApply(
-            maybeState ->
-                maybeState
-                    .map(ObjectAndMetaData::getData)
-                    .map(
-                        state ->
-                            new SszResponse(
-                                new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                                state.hashTreeRoot().toUnprefixedHexString(),
-                                spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public SafeFuture<GetAllBlocksAtSlotResponse> getAllBlocksAtSlot(final String slot) {
@@ -312,12 +270,6 @@ public class ChainDataProvider {
     return fromState(stateIdParam, state -> new Fork(state.getFork()));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<tech.pegasys.teku.spec.datastructures.state.Fork>>>
-      getFork(final String stateIdParam) {
-    return fromState(
-        stateIdParam, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState::getFork);
-  }
-
   public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>>
       getStateValidatorBalances(final String stateIdParam, final List<String> validators) {
     return fromState(stateIdParam, state -> getValidatorBalancesFromState(state, validators));
@@ -402,6 +354,30 @@ public class ChainDataProvider {
       final Optional<UInt64> slot) {
     return fromState(
         stateIdParameter, state -> getCommitteesFromState(state, epoch, committeeIndex, slot));
+  }
+
+  public SafeFuture<Optional<ValidatorStatuses>> getValidatorInclusionAtEpoch(final UInt64 epoch) {
+    final Optional<UInt64> maybeCurrentEpoch = getCurrentEpoch();
+    if (maybeCurrentEpoch.isEmpty()) {
+      throw new ServiceUnavailableException();
+    }
+    if (epoch.isGreaterThanOrEqualTo(maybeCurrentEpoch.get())) {
+      throw new IllegalArgumentException("Cannot query epoch until the epoch is completed.");
+    }
+    // 'current' epoch is requested, and computation is done on epoch transition to 'next' epoch
+    // so to get the correct values, we need to get validator statuses from the last slot of the
+    // epoch requested
+    // For this reason, we can't process the actual current epoch, it will be a completed epoch
+    // required
+    final UInt64 slotRequired = spec.computeStartSlotAtEpoch(epoch.plus(1)).minus(1);
+    return getBeaconStateAndMetadata(slotRequired.toString())
+        .thenApply(
+            maybeStateAndMetadata ->
+                maybeStateAndMetadata.map(
+                    stateAndMetadata ->
+                        spec.atSlot(stateAndMetadata.getData().getSlot())
+                            .getValidatorStatusFactory()
+                            .createValidatorStatuses(stateAndMetadata.getData())));
   }
 
   public Optional<UInt64> getCurrentEpoch() {

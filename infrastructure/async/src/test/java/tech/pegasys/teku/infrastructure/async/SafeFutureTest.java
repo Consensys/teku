@@ -398,7 +398,7 @@ public class SafeFutureTest {
     final List<Throwable> caughtExceptions = collectUncaughtExceptions();
 
     final SafeFuture<Object> safeFuture = new SafeFuture<>();
-    safeFuture.reportExceptions();
+    safeFuture.ifExceptionGetsHereRaiseABug();
     safeFuture.completeExceptionally(new RuntimeException("Oh no!"));
 
     assertThat(caughtExceptions).hasSize(1);

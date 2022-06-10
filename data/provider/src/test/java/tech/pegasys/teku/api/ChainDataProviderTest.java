@@ -19,7 +19,10 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -34,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
@@ -441,6 +445,42 @@ public class ChainDataProviderTest {
     assertThat(provider.stateParameterMaySupportAltair("genesis")).isTrue();
     assertThat(provider.stateParameterMaySupportAltair("1")).isTrue();
     assertThat(provider.stateParameterMaySupportAltair("0x00")).isTrue();
+  }
+
+  @Test
+  void getValidatorInclusionAtEpoch_shouldThrowServiceUnavailableIfEpochNotFound() {
+    final RecentChainData recentChainData1 = mock(RecentChainData.class);
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData1, combinedChainDataClient);
+    when(recentChainData1.getCurrentEpoch()).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(data.randomEpoch()))
+        .isInstanceOf(ServiceUnavailableException.class);
+  }
+
+  @Test
+  void getValidatorInclusionAtEpoch_shouldThrowIllegalArgForCurrentOrFutureEpoch() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(3)))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(4)))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.MAX_VALUE))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void getValidatorInclusionAtEpoch_shouldReturnStateForPreviousEpoch()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
+    // expect to see the last slot of epoch requested, so 3 * 8 - 1 (23)
+    when(mockCombinedChainDataClient.getChainHead())
+        .thenReturn(combinedChainDataClient.getChainHead());
+    when(mockCombinedChainDataClient.getStateAtSlotExact(eq(UInt64.valueOf(23)), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    provider.getValidatorInclusionAtEpoch(UInt64.valueOf(2)).get();
+    verify(mockCombinedChainDataClient).getStateAtSlotExact(eq(UInt64.valueOf(23)), any());
   }
 
   private ChainDataProvider setupAltairState() {

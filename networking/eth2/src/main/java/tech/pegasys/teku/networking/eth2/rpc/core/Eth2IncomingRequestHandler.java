@@ -125,10 +125,10 @@ public class Eth2IncomingRequestHandler<
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
                     timeout.getSeconds(),
                     protocolId);
-                stream.closeAbruptly().reportExceptions();
+                stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
               }
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting

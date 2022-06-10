@@ -40,7 +40,7 @@ public class DeserializableMapTypeDefinitionTest {
 
   private final DeserializableTypeDefinition<Map<Integer, String>> integerKeyedMapDefinition =
       DeserializableTypeDefinition.mapOf(
-          CoreTypes.INTEGER_TYPE, CoreTypes.STRING_TYPE, TreeMap::new);
+          CoreTypes.RAW_INTEGER_TYPE, CoreTypes.STRING_TYPE, TreeMap::new);
 
   private static final DeserializableTypeDefinition<TestObj> TESTOBJ_TYPE =
       DeserializableTypeDefinition.object(TestObj.class)

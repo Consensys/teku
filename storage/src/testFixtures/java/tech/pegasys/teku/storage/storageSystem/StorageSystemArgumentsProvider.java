@@ -18,7 +18,9 @@ import static tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionAr
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
@@ -30,35 +32,52 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageSystemArgumentsProvider implements ArgumentsProvider {
 
-  private final LongList stateStorageFrequencyOptions =
-      LongList.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
+  private final LongList stateStorageFrequencyOptions = getStateStorageFrequencies();
+
+  protected LongList getStateStorageFrequencies() {
+    return LongList.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
+  }
+
+  protected List<StateStorageMode> getStorageModes() {
+    return List.of(StateStorageMode.values());
+  }
+
+  protected boolean includeInMemory() {
+    return true;
+  }
 
   @Override
   public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
     final Map<String, StorageSystemSupplier> storageSystems = new HashMap<>();
-    for (StateStorageMode mode : StateStorageMode.values()) {
+    for (StateStorageMode mode : getStorageModes()) {
       for (long storageFrequency : stateStorageFrequencyOptions) {
         for (DatabaseVersion databaseVersion : supportedDatabaseVersions()) {
-          storageSystems.put(
-              describeStorage(databaseVersion.name() + " (in-memory)", storageFrequency),
-              (dataPath, spec) ->
-                  InMemoryStorageSystemBuilder.create()
-                      .specProvider(spec)
-                      .version(databaseVersion)
-                      .storageMode(mode)
-                      .stateStorageFrequency(storageFrequency)
-                      .build());
+          if (includeInMemory()) {
+            storageSystems.put(
+                describeStorage(databaseVersion.name() + " (in-memory)", storageFrequency),
+                new StorageSystemSupplier(
+                    databaseVersion,
+                    (dataPath, spec) ->
+                        InMemoryStorageSystemBuilder.create()
+                            .specProvider(spec)
+                            .version(databaseVersion)
+                            .storageMode(mode)
+                            .stateStorageFrequency(storageFrequency)
+                            .build()));
+          }
 
           storageSystems.put(
               describeStorage(databaseVersion.name() + " (file-backed)", storageFrequency),
-              (dataPath, spec) ->
-                  FileBackedStorageSystemBuilder.create()
-                      .specProvider(spec)
-                      .version(databaseVersion)
-                      .dataDir(dataPath)
-                      .storageMode(mode)
-                      .stateStorageFrequency(storageFrequency)
-                      .build());
+              new StorageSystemSupplier(
+                  databaseVersion,
+                  (dataPath, spec) ->
+                      FileBackedStorageSystemBuilder.create()
+                          .specProvider(spec)
+                          .version(databaseVersion)
+                          .dataDir(dataPath)
+                          .storageMode(mode)
+                          .stateStorageFrequency(storageFrequency)
+                          .build()));
         }
       }
     }
@@ -70,9 +89,23 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
     return String.format("%s (storage freq %s)", baseName, storageFrequency);
   }
 
-  @FunctionalInterface
-  public interface StorageSystemSupplier {
+  public static class StorageSystemSupplier {
+    private final DatabaseVersion version;
+    private final BiFunction<Path, Spec, StorageSystem> createStorageSystem;
 
-    StorageSystem get(final Path dataDirectory, final Spec spec);
+    public StorageSystemSupplier(
+        final DatabaseVersion version,
+        final BiFunction<Path, Spec, StorageSystem> createStorageSystem) {
+      this.version = version;
+      this.createStorageSystem = createStorageSystem;
+    }
+
+    public DatabaseVersion getDatabaseVersion() {
+      return version;
+    }
+
+    public StorageSystem get(final Path dataDirectory, final Spec spec) {
+      return createStorageSystem.apply(dataDirectory, spec);
+    }
   }
 }

@@ -34,7 +34,8 @@ public class SinglePeerSyncService extends Service implements ForwardSyncService
     // We shouldn't start syncing until we have reached genesis.
     // There are also no valid blocks until we've reached genesis so no point in gossipping and
     // queuing them
-    storageClient.subscribeStoreInitialized(() -> syncManager.start().reportExceptions());
+    storageClient.subscribeStoreInitialized(
+        () -> syncManager.start().ifExceptionGetsHereRaiseABug());
     return SafeFuture.COMPLETE;
   }
 

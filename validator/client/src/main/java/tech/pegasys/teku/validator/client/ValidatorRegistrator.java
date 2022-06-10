@@ -81,12 +81,17 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    if (isBeginningOfEpoch(slot) || firstCallDone.compareAndSet(false, true)) {
+    if (!isReadyToRegister()) {
+      return;
+    }
+    if (firstCallDone.compareAndSet(false, true) || isBeginningOfEpoch(slot)) {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastProcessedEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
       LOG.debug(
-          "Checking registration of {} validator(s) at epoch {}", activeValidators.size(), epoch);
+          "Checking if registration is required for {} validator(s) at epoch {}",
+          activeValidators.size(),
+          epoch);
       registerValidators(activeValidators, epoch)
           .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
@@ -104,7 +109,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onValidatorsAdded() {
-    if (lastProcessedEpoch.get() == null) {
+    if (!isReadyToRegister() || lastProcessedEpoch.get() == null) {
       return;
     }
 
@@ -131,6 +136,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onAttestationAggregationDue(UInt64 slot) {}
+
+  private boolean isReadyToRegister() {
+    if (feeRecipientProvider.isReadyToProvideFeeRecipient()) {
+      return true;
+    }
+    LOG.debug("Not ready to register validator(s).");
+    return false;
+  }
 
   private boolean isBeginningOfEpoch(final UInt64 slot) {
     return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
@@ -173,7 +186,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final Optional<Eth1Address> maybeFeeRecipient = feeRecipientProvider.getFeeRecipient(publicKey);
 
     if (maybeFeeRecipient.isEmpty()) {
-      LOG.warn("There is no fee recipient configured for {}. Can't register.", validator);
+      LOG.debug(
+          "Couldn't retrieve fee recipient for {}. Will skip registering this validator.",
+          publicKey);
       return Optional.empty();
     }
 

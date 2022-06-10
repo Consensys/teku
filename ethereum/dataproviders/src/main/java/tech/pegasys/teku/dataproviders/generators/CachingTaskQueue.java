@@ -184,7 +184,7 @@ public class CachingTaskQueue<K, V> {
               activeTasks.decrementAndGet();
               tryProcessNext();
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private synchronized void completePendingTask(
@@ -199,7 +199,7 @@ public class CachingTaskQueue<K, V> {
                 future.complete(result);
               }
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   public void cache(final K key, final V value) {

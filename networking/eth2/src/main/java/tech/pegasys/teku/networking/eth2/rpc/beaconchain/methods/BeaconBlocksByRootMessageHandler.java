@@ -57,7 +57,7 @@ public class BeaconBlocksByRootMessageHandler
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
       if (!peer.wantToMakeRequest() || !peer.wantToReceiveObjects(callback, message.size())) {
-        peer.disconnectCleanly(DisconnectReason.RATE_LIMITING).reportExceptions();
+        peer.disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
         return;
       }
 

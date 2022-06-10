@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.discovery;
+package tech.pegasys.teku.networking.p2p.connection;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -42,8 +42,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
-import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
-import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;

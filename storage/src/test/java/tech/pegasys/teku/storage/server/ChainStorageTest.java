@@ -135,10 +135,10 @@ public class ChainStorageTest {
           Lists.partition(missingHistoricalBlocks, batchSize);
       for (int i = batches.size() - 1; i >= 0; i--) {
         final List<SignedBeaconBlock> batch = batches.get(i);
-        chainStorage.onFinalizedBlocks(batch).reportExceptions();
+        chainStorage.onFinalizedBlocks(batch).ifExceptionGetsHereRaiseABug();
       }
     } else {
-      chainStorage.onFinalizedBlocks(missingHistoricalBlocks).reportExceptions();
+      chainStorage.onFinalizedBlocks(missingHistoricalBlocks).ifExceptionGetsHereRaiseABug();
     }
 
     // Verify blocks are now available

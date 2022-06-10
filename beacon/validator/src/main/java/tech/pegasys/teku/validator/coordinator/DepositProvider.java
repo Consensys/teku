@@ -162,7 +162,7 @@ public class DepositProvider
                     lastAvailableDepositIndex.plus(UInt64.ONE), eth1DepositCount);
               }
             })
-        .reportExceptions();
+        .ifExceptionGetsHereRaiseABug();
   }
 
   public void onSyncingStatusChanged(boolean inSync) {
