@@ -145,7 +145,8 @@ class ValidatorRegistratorTest {
     runRegistrationFlowForSlot(UInt64.ZERO);
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
 
-    List<SszList<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+    final List<SszList<SignedValidatorRegistration>> registrationCalls =
+        captureRegistrationCalls(2);
 
     registrationCalls.forEach(
         registrationCall ->
@@ -178,8 +179,8 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    Eth1Address otherEth1Address = dataStructureUtil.randomEth1Address();
-    UInt64 otherGasLimit = dataStructureUtil.randomUInt64();
+    final Eth1Address otherEth1Address = dataStructureUtil.randomEth1Address();
+    final UInt64 otherGasLimit = dataStructureUtil.randomUInt64();
 
     // fee recipient changed for validator2
     when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
@@ -191,12 +192,13 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
 
-    List<SszList<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+    final List<SszList<SignedValidatorRegistration>> registrationCalls =
+        captureRegistrationCalls(2);
 
     // first call should use the default fee recipient and gas limit
     verifyRegistrations(registrationCalls.get(0), List.of(validator1, validator2, validator3));
 
-    Consumer<ValidatorRegistration> updatedRegistrationsRequirements =
+    final Consumer<ValidatorRegistration> updatedRegistrationsRequirements =
         (validatorRegistration) -> {
           BLSPublicKey publicKey = validatorRegistration.getPublicKey();
           Eth1Address feeRecipient = validatorRegistration.getFeeRecipient();
@@ -245,7 +247,8 @@ class ValidatorRegistratorTest {
 
     validatorRegistrator.onValidatorsAdded();
 
-    List<SszList<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+    final List<SszList<SignedValidatorRegistration>> registrationCalls =
+        captureRegistrationCalls(2);
 
     assertThat(registrationCalls).hasSize(2);
 
@@ -271,7 +274,7 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
+    final SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
     verifyRegistrations(registrationCalls, List.of(validator1));
   }
 
@@ -292,8 +295,8 @@ class ValidatorRegistratorTest {
   void retrievesCorrectGasLimitForValidators() {
     setActiveValidators(validator1, validator2, validator3);
 
-    UInt64 validator2GasLimit = UInt64.valueOf(28_000_000);
-    UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
+    final UInt64 validator2GasLimit = UInt64.valueOf(28_000_000);
+    final UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
 
     // validator2 will have custom gas limit
     when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator2.getPublicKey()))
@@ -305,9 +308,9 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
+    final SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
 
-    Consumer<ValidatorRegistration> gasLimitRequirements =
+    final Consumer<ValidatorRegistration> gasLimitRequirements =
         (validatorRegistration) -> {
           BLSPublicKey publicKey = validatorRegistration.getPublicKey();
           UInt64 gasLimit = validatorRegistration.getGasLimit();
@@ -338,16 +341,16 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
+    final SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
     verifyRegistrations(registrationCalls, List.of(validator1));
   }
 
-  private void setActiveValidators(Validator... validators) {
-    List<Validator> validatorsAsList = Arrays.stream(validators).collect(Collectors.toList());
+  private void setActiveValidators(final Validator... validators) {
+    final List<Validator> validatorsAsList = Arrays.stream(validators).collect(Collectors.toList());
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsAsList);
   }
 
-  private void runRegistrationFlowForSlot(UInt64 slot) {
+  private void runRegistrationFlowForSlot(final UInt64 slot) {
     validatorRegistrator.onSlot(slot);
   }
 
@@ -355,9 +358,9 @@ class ValidatorRegistratorTest {
     return captureRegistrationCalls(1).get(0);
   }
 
-  private List<SszList<SignedValidatorRegistration>> captureRegistrationCalls(int times) {
+  private List<SszList<SignedValidatorRegistration>> captureRegistrationCalls(final int times) {
     @SuppressWarnings("unchecked")
-    ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
+    final ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
         ArgumentCaptor.forClass(SszList.class);
 
     verify(validatorApiChannel, times(times)).registerValidators(argumentCaptor.capture());
@@ -366,15 +369,15 @@ class ValidatorRegistratorTest {
   }
 
   private void verifyRegistrations(
-      SszList<SignedValidatorRegistration> validatorRegistrations,
-      List<Validator> expectedRegisteredValidators) {
+      final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final List<Validator> expectedRegisteredValidators) {
     verifyRegistrations(validatorRegistrations, expectedRegisteredValidators, Optional.empty());
   }
 
   private void verifyRegistrations(
-      SszList<SignedValidatorRegistration> validatorRegistrations,
-      List<Validator> expectedRegisteredValidators,
-      Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
+      final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final List<Validator> expectedRegisteredValidators,
+      final Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
 
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())
