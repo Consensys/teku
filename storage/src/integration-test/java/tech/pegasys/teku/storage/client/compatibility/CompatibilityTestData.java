@@ -191,11 +191,8 @@ public class CompatibilityTestData {
                   .getSignedBlockAndStateInEffectAtSlot(UInt64.valueOf(slot)));
       assertThat(actual).isEqualTo(expected);
 
+      final SignedBlockAndState expectedBlockAndState = expected.orElseThrow();
       // Check we can also get the block by root
-      if (expected.isEmpty()) {
-        continue;
-      }
-      final SignedBlockAndState expectedBlockAndState = expected.get();
       assertThat(actualDatabase.getSignedBlock(expectedBlockAndState.getRoot()))
           .contains(expectedBlockAndState.getBlock());
 
