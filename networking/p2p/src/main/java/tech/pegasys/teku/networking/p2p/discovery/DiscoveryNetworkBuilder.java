@@ -66,6 +66,13 @@ public class DiscoveryNetworkBuilder {
 
   public DiscoveryNetwork<?> build() {
     initMissingDefaults();
+
+    checkNotNull(p2pNetwork);
+    checkNotNull(discoveryService);
+    checkNotNull(connectionManager);
+    checkNotNull(spec);
+    checkNotNull(currentSchemaDefinitionsSupplier);
+
     return new DiscoveryNetwork<>(
         p2pNetwork, discoveryService, connectionManager, spec, currentSchemaDefinitionsSupplier);
   }
@@ -91,10 +98,11 @@ public class DiscoveryNetworkBuilder {
 
   protected DiscoveryService createDiscoveryService() {
     final DiscoveryService discoveryService;
+
+    checkNotNull(discoveryConfig);
     if (discoveryConfig.isDiscoveryEnabled()) {
       checkNotNull(metricsSystem);
       checkNotNull(asyncRunner);
-      checkNotNull(discoveryConfig);
       checkNotNull(p2pConfig);
       checkNotNull(kvStore);
       checkNotNull(p2pNetwork);
