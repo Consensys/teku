@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -165,12 +165,11 @@ public class OkHttpRestClient implements RestClient {
               handleFailure(response, futureResponse);
               return;
             }
-            final ResponseBody responseBody = response.body();
-            if (responseBody == null || responseTypeDefinitionMaybe.isEmpty()) {
-              futureResponse.complete(Response.withNullPayload());
-              return;
-            }
-            try {
+            try (final ResponseBody responseBody = response.body()) {
+              if (responseBody == null || responseTypeDefinitionMaybe.isEmpty()) {
+                futureResponse.complete(Response.withNullPayload());
+                return;
+              }
               final T payload =
                   JsonUtil.parse(responseBody.byteStream(), responseTypeDefinitionMaybe.get());
               futureResponse.complete(new Response<>(payload));
@@ -195,16 +194,17 @@ public class OkHttpRestClient implements RestClient {
 
   private String getErrorMessageForFailedResponse(final okhttp3.Response response)
       throws IOException {
-    final String errorCodeAndStatusMessage = response.code() + ": " + response.message();
-    final ResponseBody responseBody = response.body();
-    if (responseBody == null) {
-      return errorCodeAndStatusMessage;
-    }
-    final String failureBody = responseBody.string();
-    if (Strings.nullToEmpty(failureBody).isBlank()) {
-      return errorCodeAndStatusMessage;
-    } else {
-      return failureBody;
+    try (final ResponseBody responseBody = response.body()) {
+      final String errorCodeAndStatusMessage = response.code() + ": " + response.message();
+      if (responseBody == null) {
+        return errorCodeAndStatusMessage;
+      }
+      final String failureBody = responseBody.string();
+      if (Strings.nullToEmpty(failureBody).isBlank()) {
+        return errorCodeAndStatusMessage;
+      } else {
+        return failureBody;
+      }
     }
   }
 }
