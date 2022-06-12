@@ -59,7 +59,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       description = "Database version to create",
       arity = "1",
       hidden = true)
-  private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
+  private String createDbVersion = null;
 
   @CommandLine.Option(
       names = {"--data-storage-non-canonical-blocks-enabled"},
@@ -107,8 +107,10 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   }
 
   private DatabaseVersion parseDatabaseVersion() {
-    if (dataStorageFrequency == 1) {
-      return DatabaseVersion.LEVELDB_TREE;
+    if (createDbVersion == null) {
+      return dataStorageFrequency == 1
+          ? DatabaseVersion.LEVELDB_TREE
+          : DatabaseVersion.DEFAULT_VERSION;
     }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
   }
