@@ -17,14 +17,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 
 class KvStoreTreeNodeSource implements TreeNodeSource {
 
   private final KvStoreAccessor db;
-  private final SchemaFinalizedTreeState schema;
+  private final SchemaCombinedTreeState schema;
 
-  public KvStoreTreeNodeSource(final KvStoreAccessor db, final SchemaFinalizedTreeState schema) {
+  public KvStoreTreeNodeSource(final KvStoreAccessor db, final SchemaCombinedTreeState schema) {
     this.db = db;
     this.schema = schema;
   }

@@ -17,9 +17,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -27,11 +24,10 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class LevelDbDatabaseFactory {
 
@@ -44,21 +40,27 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
-    final V4SchemaFinalized schemaFinalized = new V4SchemaFinalized(spec);
-    final Collection<KvStoreColumn<?, ?>> v4FinalizedColumns = schemaFinalized.getAllColumns();
+    final V6SchemaCombinedSnapshot combinedSchema =
+        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
+    final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
         LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, v4FinalizedColumns);
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
     final KvStoreAccessor finalizedDb =
         LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, v4FinalizedColumns);
+            metricsSystem,
+            STORAGE_FINALIZED_DB,
+            finalizedConfiguration,
+            schemaFinalized.getAllColumns());
     return KvStoreDatabase.createV4(
         hotDb,
         finalizedDb,
+        schemaHot,
+        schemaFinalized,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeVotesEquivocation,
         spec);
   }
 
@@ -70,23 +72,14 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
-
-    final V4SchemaHot schemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
-    final V6SnapshotSchemaFinalized schemaFinalized = new V6SnapshotSchemaFinalized(spec);
-    final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-    allColumns.addAll(schemaFinalized.getAllColumns());
+    final V6SchemaCombinedSnapshot schema =
+        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
     final KvStoreAccessor db =
-        LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+        LevelDbInstanceFactory.create(
+            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        db,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createLevelDbTree(
@@ -98,18 +91,15 @@ public class LevelDbDatabaseFactory {
       final boolean storeVotesEquivocation,
       final Spec spec) {
 
-    final V4SchemaHot schemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
-    final V6TreeSchemaFinalized schemaFinalized = new V6TreeSchemaFinalized(spec);
-    final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-    allColumns.addAll(schemaFinalized.getAllColumns());
+    final V6SchemaCombinedTreeState schema =
+        new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
     final KvStoreAccessor db =
-        LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-
+        LevelDbInstanceFactory.create(
+            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
     return KvStoreDatabase.createWithStateTree(
         metricsSystem,
         db,
-        schemaHot,
-        schemaFinalized,
+        schema,
         stateStorageMode,
         storeNonCanonicalBlocks,
         maxKnownNodeCacheSize,

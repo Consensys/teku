@@ -24,8 +24,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -162,11 +161,12 @@ public class FileBackedStorageSystemBuilder {
   private Database createV6Database() {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
 
+    final V6SchemaCombinedSnapshot schema =
+        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
-        new V4SchemaHot(spec, storeVotesEquivocation),
-        new V6SnapshotSchemaFinalized(spec),
+        schema,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
