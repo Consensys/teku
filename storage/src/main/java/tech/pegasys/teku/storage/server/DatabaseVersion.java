@@ -34,7 +34,7 @@ public enum DatabaseVersion {
 
   static {
     if (isLevelDbSupported()) {
-      DEFAULT_VERSION = LEVELDB_TREE;
+      DEFAULT_VERSION = LEVELDB2;
     } else {
       DEFAULT_VERSION = V5;
     }

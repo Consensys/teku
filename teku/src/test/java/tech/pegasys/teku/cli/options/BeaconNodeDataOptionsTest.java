@@ -94,6 +94,16 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   public void dataStorageCreateDbVersion_shouldDefault() {
     final StorageConfiguration config = getTekuConfigurationFromArguments().storageConfiguration();
     final DatabaseVersion expectedDefault =
+        DatabaseVersion.isLevelDbSupported() ? DatabaseVersion.LEVELDB2 : DatabaseVersion.V5;
+    assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(expectedDefault);
+  }
+
+  @Test
+  public void dataStorageCreateDbVersion_shouldOverrideIfFrequencyIsLow() {
+    final StorageConfiguration config =
+        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1")
+            .storageConfiguration();
+    final DatabaseVersion expectedDefault =
         DatabaseVersion.isLevelDbSupported() ? DatabaseVersion.LEVELDB_TREE : DatabaseVersion.V5;
     assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(expectedDefault);
   }
