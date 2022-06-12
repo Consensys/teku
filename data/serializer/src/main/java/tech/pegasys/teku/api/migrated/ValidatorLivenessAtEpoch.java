@@ -69,4 +69,16 @@ public class ValidatorLivenessAtEpoch {
   public int hashCode() {
     return Objects.hash(index, epoch, isLive);
   }
+
+  @Override
+  public String toString() {
+    return "ValidatorLivenessAtEpoch{"
+        + "index="
+        + index
+        + ", epoch="
+        + epoch
+        + ", isLive="
+        + isLive
+        + '}';
+  }
 }
