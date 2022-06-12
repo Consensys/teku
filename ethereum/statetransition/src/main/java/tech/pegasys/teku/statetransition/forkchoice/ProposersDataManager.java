@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -226,8 +226,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
       return proposerDefaultFeeRecipient.get();
     }
-    throw new IllegalStateException(
-        "Unable to determine proposer fee recipient address for slot " + blockSlot);
+    VALIDATOR_LOGGER.executionPayloadPreparedUsingBurnAddressForFeeRecipient(blockSlot);
+    return Eth1Address.ZERO;
   }
 
   private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {

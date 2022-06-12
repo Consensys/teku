@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -35,10 +34,10 @@ import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.GetSpecResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
@@ -94,7 +93,7 @@ public class GetSpec extends MigratingEndpointAdapter {
       request.respondOk(responseContext.getConfigMap());
     } catch (JsonProcessingException e) {
       String message =
-          JsonUtil.serialize(new BadRequest(SC_BAD_REQUEST, "Not found"), BAD_REQUEST_TYPE);
+          JsonUtil.serialize(HttpErrorResponse.badRequest("Not found"), HTTP_ERROR_RESPONSE_TYPE);
       request.respondError(SC_INTERNAL_SERVER_ERROR, message);
     }
   }
