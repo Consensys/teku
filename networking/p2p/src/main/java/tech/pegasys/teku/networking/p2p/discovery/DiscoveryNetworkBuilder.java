@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -66,6 +66,13 @@ public class DiscoveryNetworkBuilder {
 
   public DiscoveryNetwork<?> build() {
     initMissingDefaults();
+
+    checkNotNull(p2pNetwork);
+    checkNotNull(discoveryService);
+    checkNotNull(connectionManager);
+    checkNotNull(spec);
+    checkNotNull(currentSchemaDefinitionsSupplier);
+
     return new DiscoveryNetwork<>(
         p2pNetwork, discoveryService, connectionManager, spec, currentSchemaDefinitionsSupplier);
   }
@@ -91,10 +98,11 @@ public class DiscoveryNetworkBuilder {
 
   protected DiscoveryService createDiscoveryService() {
     final DiscoveryService discoveryService;
+
+    checkNotNull(discoveryConfig);
     if (discoveryConfig.isDiscoveryEnabled()) {
       checkNotNull(metricsSystem);
       checkNotNull(asyncRunner);
-      checkNotNull(discoveryConfig);
       checkNotNull(p2pConfig);
       checkNotNull(kvStore);
       checkNotNull(p2pNetwork);

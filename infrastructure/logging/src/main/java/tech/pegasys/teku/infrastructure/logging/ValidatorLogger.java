@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -182,6 +182,15 @@ public class ValidatorLogger {
                 + " but proposer hasn't been prepared by any Validator Client. "
                 + "Using Beacon Node's default fee recipient.",
             Color.YELLOW));
+  }
+
+  public void executionPayloadPreparedUsingBurnAddressForFeeRecipient(final UInt64 slot) {
+    log.error(
+        ColorConsolePrinter.print(
+            "Producing block at slot "
+                + slot
+                + ", no proposer was prepared, and no default fee recipient defined, inclusion fees will be lost",
+            Color.RED));
   }
 
   public void proposedBlockImportFailed(

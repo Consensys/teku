@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -59,7 +59,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       description = "Database version to create",
       arity = "1",
       hidden = true)
-  private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
+  private String createDbVersion = null;
 
   @CommandLine.Option(
       names = {"--data-storage-non-canonical-blocks-enabled"},
@@ -107,6 +107,11 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   }
 
   private DatabaseVersion parseDatabaseVersion() {
+    if (createDbVersion == null) {
+      return dataStorageFrequency == 1
+          ? DatabaseVersion.LEVELDB_TREE
+          : DatabaseVersion.DEFAULT_VERSION;
+    }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
   }
 

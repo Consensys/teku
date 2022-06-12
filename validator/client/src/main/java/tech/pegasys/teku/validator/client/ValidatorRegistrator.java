@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import com.google.common.collect.Maps;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,8 +49,8 @@ import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 public class ValidatorRegistrator implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<ValidatorRegistrationIdentity, SignedValidatorRegistration>
-      cachedValidatorRegistrations = Maps.newConcurrentMap();
+  private final Map<BLSPublicKey, SignedValidatorRegistration> cachedValidatorRegistrations =
+      Maps.newConcurrentMap();
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicReference<UInt64> lastProcessedEpoch = new AtomicReference<>();
@@ -81,7 +82,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    if (!isReadyToRegister()) {
+    if (isNotReadyToRegister()) {
       return;
     }
     if (firstCallDone.compareAndSet(false, true) || isBeginningOfEpoch(slot)) {
@@ -93,7 +94,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
           activeValidators.size(),
           epoch);
       registerValidators(activeValidators, epoch)
-          .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+          .finish(
+              () -> cleanupCache(activeValidators), VALIDATOR_LOGGER::registeringValidatorsFailed);
     }
   }
 
@@ -109,19 +111,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onValidatorsAdded() {
-    if (!isReadyToRegister() || lastProcessedEpoch.get() == null) {
+    if (isNotReadyToRegister() || lastProcessedEpoch.get() == null) {
       return;
     }
-
-    final Set<BLSPublicKey> alreadyAddedValidatorsPublicKeys =
-        cachedValidatorRegistrations.keySet().stream()
-            .map(ValidatorRegistrationIdentity::getPublicKey)
-            .collect(Collectors.toSet());
 
     final List<Validator> newlyAddedValidators =
         ownedValidators.getActiveValidators().stream()
             .filter(
-                validator -> !alreadyAddedValidatorsPublicKeys.contains(validator.getPublicKey()))
+                validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
             .collect(Collectors.toList());
 
     registerValidators(newlyAddedValidators, lastProcessedEpoch.get())
@@ -137,11 +134,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   @Override
   public void onAttestationAggregationDue(UInt64 slot) {}
 
-  private boolean isReadyToRegister() {
-    if (feeRecipientProvider.isReadyToProvideFeeRecipient()) {
+  public int getNumberOfCachedRegistrations() {
+    return cachedValidatorRegistrations.size();
+  }
+
+  private boolean isNotReadyToRegister() {
+    if (!feeRecipientProvider.isReadyToProvideFeeRecipient()) {
+      LOG.debug("Not ready to register validator(s).");
       return true;
     }
-    LOG.debug("Not ready to register validator(s).");
     return false;
   }
 
@@ -192,29 +193,30 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return Optional.empty();
     }
 
+    final Eth1Address feeRecipient = maybeFeeRecipient.get();
     final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
 
-    final ValidatorRegistrationIdentity validatorRegistrationIdentity =
-        new ValidatorRegistrationIdentity(maybeFeeRecipient.get(), gasLimit, publicKey);
-
-    if (cachedValidatorRegistrations.containsKey(validatorRegistrationIdentity)) {
-      final SignedValidatorRegistration cachedRegistration =
-          cachedValidatorRegistrations.get(validatorRegistrationIdentity);
-      return Optional.of(SafeFuture.completedFuture(cachedRegistration));
-    }
-
-    final ValidatorRegistration validatorRegistration =
-        createValidatorRegistration(validatorRegistrationIdentity);
-    final Signer signer = validator.getSigner();
-    final SafeFuture<SignedValidatorRegistration> registrationFuture =
-        signValidatorRegistration(validatorRegistration, signer, epoch)
-            .thenPeek(
-                signedValidatorRegistration -> {
-                  LOG.debug("Validator registration signed for {}", publicKey);
-                  cachedValidatorRegistrations.put(
-                      validatorRegistrationIdentity, signedValidatorRegistration);
-                });
-    return Optional.of(registrationFuture);
+    return Optional.ofNullable(cachedValidatorRegistrations.get(publicKey))
+        .filter(
+            cachedValidatorRegistration -> {
+              final boolean needsUpdate =
+                  registrationNeedsUpdating(cachedValidatorRegistration, feeRecipient, gasLimit);
+              if (needsUpdate) {
+                LOG.debug(
+                    "The cached registration for {} needs updating. Will create a new one.",
+                    publicKey);
+              }
+              return !needsUpdate;
+            })
+        .map(SafeFuture::completedFuture)
+        .or(
+            () -> {
+              final ValidatorRegistration validatorRegistration =
+                  createValidatorRegistration(publicKey, feeRecipient, gasLimit);
+              final Signer signer = validator.getSigner();
+              return Optional.of(
+                  signAndCacheValidatorRegistration(validatorRegistration, signer, epoch));
+            });
   }
 
   private SafeFuture<Void> sendValidatorRegistrations(
@@ -250,21 +252,58 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private ValidatorRegistration createValidatorRegistration(
-      final ValidatorRegistrationIdentity validatorRegistrationIdentity) {
+      final BLSPublicKey publicKey, final Eth1Address feeRecipient, final UInt64 gasLimit) {
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
-        validatorRegistrationIdentity.getFeeRecipient(),
-        validatorRegistrationIdentity.getGasLimit(),
-        timeProvider.getTimeInSeconds(),
-        validatorRegistrationIdentity.getPublicKey());
+        feeRecipient, gasLimit, timeProvider.getTimeInSeconds(), publicKey);
   }
 
-  private SafeFuture<SignedValidatorRegistration> signValidatorRegistration(
+  private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
       final ValidatorRegistration validatorRegistration, final Signer signer, final UInt64 epoch) {
     return signer
         .signValidatorRegistration(validatorRegistration, epoch)
         .thenApply(
-            signature ->
-                ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
-                    validatorRegistration, signature));
+            signature -> {
+              final SignedValidatorRegistration signedValidatorRegistration =
+                  ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
+                      validatorRegistration, signature);
+              final BLSPublicKey publicKey = validatorRegistration.getPublicKey();
+              LOG.debug("Validator registration signed for {}", publicKey);
+              cachedValidatorRegistrations.put(publicKey, signedValidatorRegistration);
+              return signedValidatorRegistration;
+            });
+  }
+
+  public boolean registrationNeedsUpdating(
+      final SignedValidatorRegistration signedValidatorRegistration,
+      final Eth1Address feeRecipient,
+      final UInt64 gasLimit) {
+    final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
+    return !validatorRegistration.getFeeRecipient().equals(feeRecipient)
+        || !validatorRegistration.getGasLimit().equals(gasLimit);
+  }
+
+  private void cleanupCache(final List<Validator> activeValidators) {
+    if (cachedValidatorRegistrations.isEmpty()
+        || cachedValidatorRegistrations.size() == activeValidators.size()) {
+      return;
+    }
+
+    final Set<BLSPublicKey> activeValidatorsPublicKeys =
+        activeValidators.stream()
+            .map(Validator::getPublicKey)
+            .collect(Collectors.toCollection(HashSet::new));
+
+    cachedValidatorRegistrations
+        .keySet()
+        .removeIf(
+            cachedPublicKey -> {
+              boolean requiresRemoving = !activeValidatorsPublicKeys.contains(cachedPublicKey);
+              if (requiresRemoving) {
+                LOG.debug(
+                    "Removing cached registration for {} because validator is no longer active.",
+                    cachedPublicKey);
+              }
+              return requiresRemoving;
+            });
   }
 }
