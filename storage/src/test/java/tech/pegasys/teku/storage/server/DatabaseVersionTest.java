@@ -26,7 +26,7 @@ public class DatabaseVersionTest {
   @Test
   void defaultVersion() {
     if (DatabaseVersion.isLevelDbSupported()) {
-      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB_TREE);
+      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB2);
     } else {
       assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
     }
