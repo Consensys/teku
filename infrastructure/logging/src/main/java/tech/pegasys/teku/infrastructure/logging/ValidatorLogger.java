@@ -189,7 +189,7 @@ public class ValidatorLogger {
         ColorConsolePrinter.print(
             "Producing block at slot "
                 + slot
-                + ", no proposer was prepared, and no default fee recipient defined, using 0x00 BURN address",
+                + ", no proposer was prepared, and no default fee recipient defined, inclusion fees will be lost",
             Color.RED));
   }
 
