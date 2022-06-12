@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,7 +26,7 @@ public class ValidatorLivenessRequest {
 
   ValidatorLivenessRequest() {}
 
-  ValidatorLivenessRequest(final UInt64 epoch, final List<UInt64> indices) {
+  public ValidatorLivenessRequest(final UInt64 epoch, final List<UInt64> indices) {
     this.epoch = epoch;
     this.indices = indices;
   }
@@ -78,5 +78,10 @@ public class ValidatorLivenessRequest {
   @Override
   public int hashCode() {
     return Objects.hash(epoch, indices);
+  }
+
+  @Override
+  public String toString() {
+    return "ValidatorLivenessRequest{" + "epoch=" + epoch + ", indices=" + indices + '}';
   }
 }
